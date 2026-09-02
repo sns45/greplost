@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { extractSection, main, syncReadme } from "./sync-readme";
+import { extractSection, main, missingImages, stripFences, syncReadme } from "./sync-readme";
 
 const RESULTS = [
   "# Results", "", "## Machine", "", "| cpu | x |", "|---|---|", "",
@@ -58,5 +58,23 @@ describe("sync-readme", () => {
     expect(readFileSync(join(root, "README.md"), "utf8")).toContain("| X1 | ≥ 0.95 | 1.000 |");
     expect(main(["--root", root, "--check"])).toBe(0);
     expect(main(["--root", root, "--bogus"])).toBe(2);
+  });
+});
+
+describe("readme rendering guards", () => {
+  test("mermaid fences are dropped from copied sections, other fences survive", () => {
+    const lines = ["| a |", "```mermaid", "xychart-beta", "```", "text", "```bash", "echo hi", "```"];
+    expect(stripFences(lines, "mermaid")).toEqual(["| a |", "text", "```bash", "echo hi", "```"]);
+    const results = RESULTS.replace("## Head-to-head\n", "## Head-to-head\n\n```mermaid\nxychart-beta\n```\n");
+    expect(extractSection(results, "Head-to-head")).not.toContain("mermaid");
+  });
+
+  test("every referenced image must exist and be tracked", () => {
+    const root = mkdtempSync(join(tmpdir(), "sync-readme-img-"));
+    mkdirSync(join(root, "docs", "assets"), { recursive: true });
+    writeFileSync(join(root, "docs", "assets", "a.png"), "x");
+    const readme = "![a](docs/assets/a.png)\n![b](docs/assets/b.png)\n![c](https://example.com/c.png)\n";
+    expect(missingImages(readme, root, () => true)).toEqual(["docs/assets/b.png (missing on disk)"]);
+    expect(missingImages(readme, root, () => false)).toEqual(["docs/assets/a.png (not tracked by git)", "docs/assets/b.png (missing on disk)"]);
   });
 });

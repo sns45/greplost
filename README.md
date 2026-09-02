@@ -175,61 +175,17 @@ greplost against Graphify, Understand-Anything and code-review-graph (tech spec 
 
 **X2 (hero chart): freshness under each tool's own sync mechanism over a synthetic commit walk, F1 vs commit**
 
-```mermaid
-xychart-beta
-    title "Freshness under each tool's own sync mechanism: F1 vs commit"
-    x-axis "commit index" ["0", "12", "24", "36", "48", "60", "72", "84", "96", "100"]
-    y-axis "F1 vs compiler truth" 0 --> 1
-    line [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    line [0.131, 0.131, 0.129, 0.126, 0.124, 0.127, 0.128, 0.126, 0.126, 0.125]
-    line [0.894, 0.896, 0.898, 0.9, 0.902, 0.904, 0.906, 0.908, 0.9, 0.897]
-    %% series, in order: greplost, graphify, crg
-    %% Arm: documented-sync — each tool's sync mechanism was installed exactly as its README describes and then left alone; the harness only commits, except that crg's `visualize --format json` export is run at each scoring checkpoint because nothing else writes the JSON its artifact is read from (it is outside every timing and does not rebuild). This is the arm tech spec 10.0 X2 words. Read the FALL of each line, not its height: the height is that tool's import coverage (X1's subject) and only the fall is staleness. At commit 0 the freshly built artifacts scored greplost 1.000, graphify 0.131, crg 0.894; over the walk their decay (F1 at commit 0 minus F1 at the last commit) was greplost 0.000, graphify +0.005, crg -0.003, a negative decay being ground gained. The distance between the lines is mostly that starting difference, which is coverage and belongs to X1; the staleness X2 measures is the movement. Omitted (not run here): ua. Measured on corpus hono, tier M (248 files); 100 replayed commits. The walk is synthetic: each commit appends exactly one resolvable import line to one file, so truth moves by exactly one edge per commit, and the walk contains no deletions, no renames and no new files.
-```
 
 
 **X2 companion: the same artifacts, never updated**
 
-```mermaid
-xychart-beta
-    title "X2 staleness with no refresh"
-    x-axis "commit index" ["0", "12", "24", "36", "48", "60", "72", "84", "96", "100"]
-    y-axis "F1 vs compiler truth" 0 --> 1
-    line [1, 0.99, 0.979, 0.969, 0.96, 0.95, 0.941, 0.931, 0.922, 0.919]
-    line [0.131, 0.128, 0.126, 0.123, 0.121, 0.119, 0.117, 0.115, 0.113, 0.112]
-    line [0.894, 0.884, 0.874, 0.864, 0.855, 0.845, 0.836, 0.827, 0.818, 0.816]
-    %% series, in order: greplost, graphify, crg
-    %% Arm: no-refresh — each tool's commit-0 artifact scored against truth at that commit, which is what a reader gets when a sync mechanism is absent or silently does not fire. greplost is the only one of the four that can report this state mechanically, through `verify`. Omitted (not run here): ua. Measured on corpus hono, tier M (248 files); 100 replayed commits. The walk is synthetic: each commit appends exactly one resolvable import line to one file, so truth moves by exactly one edge per commit, and the walk contains no deletions, no renames and no new files.
-```
 
 
 **X1 precision per tool per edge kind**
 
-```mermaid
-xychart-beta
-    title "X1 structural precision vs compiler truth"
-    x-axis ["greplost", "graphify", "crg"]
-    y-axis "precision" 0 --> 1
-    bar [1, 1, 1]
-    bar [1, 0.877, 0.361]
-    %% series, in order: imports, calls
-    %% not measured, omitted from the x axis: ua
-    %% A dashed stub is a tool that could not be run; see the reason column. Measured on corpus anyq, tier S (148 files).
-```
 
 
 **X3 cost per tool**
-
-```mermaid
-xychart-beta
-    title "X3 cost to stay fresh"
-    x-axis ["greplost", "graphify", "crg"]
-    y-axis "USD over 100 commits" 0 --> 1
-    bar [0, 0, 0]
-    %% series, in order: USD
-    %% not measured, omitted from the x axis: ua
-    %% Every tool that ran here ran its no-LLM path, so USD is 0 for all of them; the wall-clock that separates them is in the table. Measured on corpus hono, tier M (248 files); 100 replayed commits.
-```
 <!-- headtohead:end -->
 
 ### Single-tool numbers
