@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/serialize/index.ts`](index.ts.md), [`packages/core/src/serialize/read.ts`](read.ts.md), [`packages/core/src/serialize/write.ts`](write.ts.md)
 
-**Blast radius:** 21 files (`greplost impact packages/core/src/serialize/json.ts`)
+**Blast radius:** 27 files (`greplost impact packages/core/src/serialize/json.ts`)
 
 **Key symbols:**
 - `function toJson(value: unknown): string`  L9-11

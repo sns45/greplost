@@ -10,8 +10,8 @@
 
 **Imports:** [`./schema.ts`](schema.ts.md) (*), [`./config.ts`](config.ts.md) (*), [`./discover.ts`](discover.ts.md) (*), [`./hash.ts`](hash.ts.md) (*), [`./parser.ts`](parser.ts.md) (*), [`./extract/index.ts`](extract/index.ts.md) (*), [`./resolve/index.ts`](resolve/index.ts.md) (*), [`./graph/index.ts`](graph/index.ts.md) (*), [`./graph/query.ts`](graph/query.ts.md) (*), [`./serialize/index.ts`](serialize/index.ts.md) (*), [`./build.ts`](build.ts.md) (*)
 
-**Imported by:** [`packages/cli/src/commands/query.ts`](../../../greplost/modules/src/commands/query.ts.md), [`packages/cli/src/commands/structure.ts`](../../../greplost/modules/src/commands/structure.ts.md), [`packages/sync/src/build.ts`](../../../greplost__sync/modules/src/build.ts.md), [`packages/sync/src/incremental.ts`](../../../greplost__sync/modules/src/incremental.ts.md), [`packages/sync/src/parse-cache.ts`](../../../greplost__sync/modules/src/parse-cache.ts.md)
+**Imported by:** [`packages/cli/src/commands/query.ts`](../../../greplost/modules/src/commands/query.ts.md), [`packages/cli/src/commands/structure.ts`](../../../greplost/modules/src/commands/structure.ts.md), [`packages/sync/src/build.ts`](../../../greplost__sync/modules/src/build.ts.md), [`packages/sync/src/incremental.ts`](../../../greplost__sync/modules/src/incremental.ts.md), [`packages/sync/src/parse-cache.ts`](../../../greplost__sync/modules/src/parse-cache.ts.md), [`packages/workspace/src/cross.ts`](../../../greplost__workspace/modules/src/cross.ts.md), [`packages/workspace/src/render.ts`](../../../greplost__workspace/modules/src/render.ts.md)
 
-**Blast radius:** 17 files (`greplost impact packages/core/src/index.ts`)
+**Blast radius:** 23 files (`greplost impact packages/core/src/index.ts`)
 
 **Key symbols:** None.

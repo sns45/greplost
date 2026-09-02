@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/sync/src/incremental.ts`](incremental.ts.md), [`packages/sync/src/index.ts`](index.ts.md), [`packages/sync/src/init.ts`](init.ts.md)
 
-**Blast radius:** 11 files (`greplost impact packages/sync/src/parse-cache.ts`)
+**Blast radius:** 15 files (`greplost impact packages/sync/src/parse-cache.ts`)
 
 **Key symbols:**
 - `const PARSE_CACHE_PATH = "cache/parse.json"`  L55-55

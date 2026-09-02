@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/serialize/index.ts`](index.ts.md)
 
-**Blast radius:** 19 files (`greplost impact packages/core/src/serialize/read.ts`)
+**Blast radius:** 25 files (`greplost impact packages/core/src/serialize/read.ts`)
 
 **Key symbols:**
 - `interface Structure`  L12-17

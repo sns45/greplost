@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/sync/src/incremental.ts`](incremental.ts.md), [`packages/sync/src/index.ts`](index.ts.md)
 
-**Blast radius:** 11 files (`greplost impact packages/sync/src/state.ts`)
+**Blast radius:** 15 files (`greplost impact packages/sync/src/state.ts`)
 
 **Key symbols:**
 - `interface SyncState`  L21-46

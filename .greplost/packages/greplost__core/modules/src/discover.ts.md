@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/build.ts`](build.ts.md), [`packages/core/src/index.ts`](index.ts.md)
 
-**Blast radius:** 19 files (`greplost impact packages/core/src/discover.ts`)
+**Blast radius:** 25 files (`greplost impact packages/core/src/discover.ts`)
 
 **Key symbols:**
 - `interface DiscoveredFile`  L23-28

@@ -6,12 +6,28 @@
 
 **Package:** `@greplost/workspace` ([map](../../MAP.md))
 
-**Exports:** None.
+**Exports:** `BuildWorkspaceOptions`, `CrossEdge`, `ID_SEPARATOR`, `ImpactedFile`, `RepoSummary`, `RepoView`, `ResolvedCross`, `SetWorkspaceHook (type)`, `WORKSPACE_ARTIFACTS`, `WORKSPACE_FILE`, `WorkspaceBuild`, `WorkspaceCommandContext (interface)`, `WorkspaceConfig`, `WorkspaceHook (type)`, `WorkspaceHookName (type)`, `WorkspaceImpactResult (interface)`, `WorkspaceRender`, `WorkspaceUpdateResult (interface)`, `buildWorkspace`, `crossEdges`, `findWorkspaceRoot`, `impactAcross`, `loadWorkspace`, `readRepo`, `readWorkspaceRepos`, `registerWorkspaceHooks(set: SetWorkspaceHook): void`, `renderArtifacts`, `renderCross`, `renderWorkspace`, `repoDirId`, `splitWorkspaceId`, `verifyWorkspace`, `workspaceId`, `workspacePairs`
 
-**Imports:** None.
+**Imports:** `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (stableStringify), [`./config.ts`](config.ts.md) (ID_SEPARATOR, WORKSPACE_ARTIFACTS, WORKSPACE_FILE, WorkspaceConfig, findWorkspaceRoot, loadWorkspace, repoDirId, splitWorkspaceId, workspaceId), [`./build.ts`](build.ts.md) (BuildWorkspaceOptions, WorkspaceBuild, buildWorkspace, renderArtifacts, verifyWorkspace), [`./impact.ts`](impact.ts.md) (ImpactedFile, impactAcross, readWorkspaceRepos, workspacePairs), [`./cross.ts`](cross.ts.md) (CrossEdge, RepoView, ResolvedCross, crossEdges, readRepo), [`./render.ts`](render.ts.md) (RepoSummary, WorkspaceRender, renderCross, renderWorkspace)
 
 **Imported by:** [`packages/cli/src/commands/workspace.ts`](../../../greplost/modules/src/commands/workspace.ts.md)
 
 **Blast radius:** 7 files (`greplost impact packages/workspace/src/index.ts`)
 
-**Key symbols:** None.
+**Key symbols:**
+- `type WorkspaceHookName = "update" | "verify" | "impact"`  L55-55
+- `interface WorkspaceCommandContext`  L62-73
+- `type WorkspaceHook = (ctx: WorkspaceCommandContext) => Promise<number | undefined>`  L76-76
+- `type SetWorkspaceHook = (name: WorkspaceHookName, hook: WorkspaceHook) => void`  L78-78
+- `interface WorkspaceUpdateResult`  L81-88
+- `interface WorkspaceImpactResult`  L91-96
+- `function registerWorkspaceHooks(set: SetWorkspaceHook): void`  L99-103
+- `function workspaceRootFor(ctx: WorkspaceCommandContext): string | null`  L112-116
+- `const updateHook: WorkspaceHook = async (ctx) =>`  L118-143
+- `const verifyHook: WorkspaceHook = async (ctx) =>`  L145-176
+- `const impactHook: WorkspaceHook = async (ctx) =>`  L178-211
+- `function printJson(value: unknown): void`  L218-220
+- `function table(headers: readonly string[] | undefined, rows: readonly string[][]): string[]`  L223-239
+- `function count(value: number, noun: string): string`  L241-243
+
+**Calls:** `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high), `buildWorkspace` → [`packages/workspace/src/build.ts#buildWorkspace`](build.ts.md) (high), `verifyWorkspace` → [`packages/workspace/src/build.ts#verifyWorkspace`](build.ts.md) (high), `findWorkspaceRoot` → [`packages/workspace/src/config.ts#findWorkspaceRoot`](config.ts.md) (high), `impactAcross` → [`packages/workspace/src/impact.ts#impactAcross`](impact.ts.md) (high), `count` → [`packages/workspace/src/index.ts#count`](index.ts.md) (high), `printJson` → [`packages/workspace/src/index.ts#printJson`](index.ts.md) (high), `table` → [`packages/workspace/src/index.ts#table`](index.ts.md) (high), `workspaceRootFor` → [`packages/workspace/src/index.ts#workspaceRootFor`](index.ts.md) (high)

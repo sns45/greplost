@@ -22,16 +22,16 @@
 | greplost-monorepo | . | 1 | 17 | 2 | 0 | 0 | [MAP](packages/greplost-monorepo/MAP.md) |
 | @greplost/bench | bench | 20 | 6593 | 27 | 0 | 2 | [MAP](packages/greplost__bench/MAP.md) |
 | greplost | packages/cli | 18 | 1861 | 4 | 0 | 5 | [MAP](packages/greplost/MAP.md) |
-| @greplost/core | packages/core | 29 | 5492 | 10 | 4 | 0 | [MAP](packages/greplost__core/MAP.md) |
-| @greplost/render | packages/render | 13 | 1768 | 1 | 2 | 1 | [MAP](packages/greplost__render/MAP.md) |
+| @greplost/core | packages/core | 29 | 5492 | 10 | 5 | 0 | [MAP](packages/greplost__core/MAP.md) |
+| @greplost/render | packages/render | 13 | 1768 | 1 | 3 | 1 | [MAP](packages/greplost__render/MAP.md) |
 | @greplost/semantic | packages/semantic | 1 | 2 | 0 | 1 | 0 | [MAP](packages/greplost__semantic/MAP.md) |
-| @greplost/sync | packages/sync | 12 | 2946 | 4 | 2 | 2 | [MAP](packages/greplost__sync/MAP.md) |
-| @greplost/workspace | packages/workspace | 1 | 2 | 0 | 1 | 0 | [MAP](packages/greplost__workspace/MAP.md) |
+| @greplost/sync | packages/sync | 12 | 2946 | 4 | 3 | 2 | [MAP](packages/greplost__sync/MAP.md) |
+| @greplost/workspace | packages/workspace | 6 | 1313 | 2 | 1 | 3 | [MAP](packages/greplost__workspace/MAP.md) |
 
 ## Hotspots
 
-- Most imported: `packages/core/src/schema.ts` (fan-in 61), `packages/cli/src/args.ts` (fan-in 14), `packages/cli/src/output.ts` (fan-in 11), `packages/core/src/graph/index.ts` (fan-in 7), `packages/render/src/render.ts` (fan-in 7)
-- Largest blast radius: `packages/core/src/schema.ts` (79 files), `packages/core/src/resolve/go.ts` (33 files), `packages/core/src/graph/tarjan.ts` (32 files), `packages/core/src/resolve/tsconfig.ts` (32 files), `packages/core/src/graph/directories.ts` (31 files)
+- Most imported: `packages/core/src/schema.ts` (fan-in 66), `packages/cli/src/args.ts` (fan-in 14), `packages/cli/src/output.ts` (fan-in 11), `packages/core/src/graph/index.ts` (fan-in 9), `packages/core/src/index.ts` (fan-in 7)
+- Largest blast radius: `packages/core/src/schema.ts` (85 files), `packages/core/src/resolve/go.ts` (39 files), `packages/core/src/graph/tarjan.ts` (38 files), `packages/core/src/resolve/tsconfig.ts` (38 files), `packages/core/src/graph/directories.ts` (37 files)
 - Import cycles: 2, see [repo/HOTSPOTS.md](repo/HOTSPOTS.md)
 
 ## Navigation

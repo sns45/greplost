@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/render/src/docs/api.ts`](docs/api.ts.md), [`packages/render/src/docs/card.ts`](docs/card.ts.md), [`packages/render/src/docs/hotspots.ts`](docs/hotspots.ts.md), [`packages/render/src/docs/index-doc.ts`](docs/index-doc.ts.md), [`packages/render/src/docs/package-map.ts`](docs/package-map.ts.md), [`packages/render/src/docs/repo-map.ts`](docs/repo-map.ts.md), [`packages/render/src/index.ts`](index.ts.md)
 
-**Blast radius:** 24 files (`greplost impact packages/render/src/render.ts`)
+**Blast radius:** 28 files (`greplost impact packages/render/src/render.ts`)
 
 **Key symbols:**
 - `interface RenderInput`  L44-47

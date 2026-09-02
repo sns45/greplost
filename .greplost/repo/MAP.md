@@ -33,6 +33,9 @@ graph LR
   _greplost_render -->|21| _greplost_core
   _greplost_sync -->|18| _greplost_core
   _greplost_sync --> _greplost_render
+  _greplost_workspace -->|11| _greplost_core
+  _greplost_workspace -->|2| _greplost_render
+  _greplost_workspace -->|2| _greplost_sync
   greplost -->|15| _greplost_core
   greplost -->|2| _greplost_render
   greplost --> _greplost_semantic
@@ -51,4 +54,4 @@ graph LR
 | @greplost/render | packages/render | 13 | 1768 | @greplost/core | [MAP](../packages/greplost__render/MAP.md) |
 | @greplost/semantic | packages/semantic | 1 | 2 | none | [MAP](../packages/greplost__semantic/MAP.md) |
 | @greplost/sync | packages/sync | 12 | 2946 | @greplost/core, @greplost/render | [MAP](../packages/greplost__sync/MAP.md) |
-| @greplost/workspace | packages/workspace | 1 | 2 | none | [MAP](../packages/greplost__workspace/MAP.md) |
+| @greplost/workspace | packages/workspace | 6 | 1313 | @greplost/core, @greplost/render, @greplost/sync | [MAP](../packages/greplost__workspace/MAP.md) |
