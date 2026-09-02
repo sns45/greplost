@@ -50,10 +50,10 @@ export interface Resolver { resolve(fromFile: string, specifier: string, lang: L
 export function createResolver(ctx: RepoContext): Resolver;
 
 // graph/link.ts
-export function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge[];   // one edge per ImportRecord; sorted, deduped on (from,to,kind,symbols)
-export interface ExportTarget { file: string; symbol: string; hops: 0 | 1; }
+export function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge[];   // one edge per ImportRecord; sorted, deduped on (from,to,kind,symbols,importKind)
+export interface ExportTarget { file: string; symbol: string; hops: 0 | 1; unpinned?: true; }   // unpinned: listed in exportNames, never a call target
 export type ExportIndex = Map<string /* file */, Map<string /* exported name */, ExportTarget>>;
-export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex;   // direct decls (hops 0) + one hop of re-exports (hops 1)
+export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex;   // direct decls (hops 0), one hop of named re-exports (hops 1), export * followed transitively for names (see Linking rules)
 export function exportNames(index: ExportIndex, file: string): string[];                    // sorted, for FileEntry.exports
 export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[];
 // graph/tarjan.ts
@@ -88,7 +88,8 @@ Grammar: `typescript` for ts/js (JS is a subset the TS grammar accepts), `tsx` f
 - `class_declaration`, `abstract_class_declaration` → `class`. Each `method_definition` in the body → `method`, name `Class.member` (constructor included as `Class.constructor`, getters/setters/static included, `#private` keeps the `#`), `parent: "Class"`.
 - `interface_declaration` → `interface`; `type_alias_declaration` → `type`; `enum_declaration` → `enum`.
 - `lexical_declaration` / `variable_declaration` → one entry per `variable_declarator` whose name is an identifier (destructuring patterns produce no declaration); kind `const` | `let` | `var`.
-- `internal_module` (`namespace X {}`) → `namespace`; nested members are not tracked.
+- `internal_module` (`namespace X {}`) → `namespace`. Members declared directly in a namespace body are tracked at any depth with dotted symbol paths (`N.f`, `A.B.f`), `parent` set to the enclosing namespace path, and `exported` true only when the member and every enclosing namespace carry `export` (ruling 2026-09-02).
+- Class fields whose initializer is an arrow function or function expression are `method` declarations (`C.handle`, signature cut before the body); `abstract` method signatures and method signatures inside `declare class` bodies are `method` declarations; data fields and interface members are not declarations (ruling 2026-09-02).
 - Wrapped in `export_statement` → `exported: true`. `export default function foo`/`class Foo` → exported, name as written. Anonymous `export default function () {}` / `export default class {}` → a declaration named `default`. `export default <expression>` → no declaration (export record only).
 - `declare` (ambient) declarations are treated like ordinary ones.
 - `signature`: node text from the declaration start (including a leading `export`/`export default`/`declare`) to the byte before the body node (`statement_block`, `class_body`, `interface_body`/`object_type`, `enum_body`); type aliases use the whole node; variables use the whole `variable_declarator`, cut before the body of an arrow-function or function-expression initializer. Whitespace runs collapse to one space, trailing space trimmed; longer than 200 characters → first 199 plus `…`.
@@ -98,7 +99,8 @@ Grammar: `typescript` for ts/js (JS is a subset the TS grammar accepts), `tsx` f
 
 - `import_statement`: specifier = source string without quotes. `import type …` → kind `type`; otherwise `static`. Symbols: named `{ a, b as c }` → `{name:"a", local:"a"}, {name:"b", local:"c"}`; default `import X` → `{name:"default", local:"X"}`; namespace `import * as ns` → `{name:"*", local:"ns"}`; `import "x"` → kind `side-effect`, symbols `[]`. Inline `type` modifiers on specifiers do not change the kind.
 - `export … from "x"` → `reexport: true`, kind `static` (`export type { } from` → `type`). `export * from "x"` → symbols `[{name:"*", local:"*"}]`; `export * as ns from "x"` → `[{name:"*", local:"ns"}]`; `export { a as b } from "x"` → `[{name:"a", local:"b"}]`.
-- `import("x")` with a string-literal argument → kind `dynamic`; symbols: `const { a, b } = await import("x")` → named; `const m = await import("x")` → `[{name:"*", local:"m"}]`; otherwise `[{name:"*", local:"*"}]`. Non-literal arguments are ignored.
+- A type-position `import("x").T` (inside a type annotation, type alias or generic argument) → kind `type`, symbols `[{name:"T",local:"T"}]` (or `*` when no member is accessed), and no call site (ruling 2026-09-02).
+- `import("x")` with a string-literal argument in value position → kind `dynamic`; symbols: `const { a, b } = await import("x")` → named; `const m = await import("x")` → `[{name:"*", local:"m"}]`; otherwise `[{name:"*", local:"*"}]`. Non-literal arguments are ignored.
 - `require("x")` with a string literal → kind `static`; `const m = require("x")` → `[{name:"*", local:"m"}]`; `const { a } = require("x")` → named; bare statement → `side-effect`. `import m = require("x")` → static, `[{name:"*", local:"m"}]`.
 - `line`: 1-based start row of the statement (or of the call for dynamic/require).
 
@@ -112,8 +114,8 @@ Grammar: `typescript` for ts/js (JS is a subset the TS grammar accepts), `tsx` f
 
 **Call sites** (`calls`): every `call_expression` and `new_expression` anywhere in the file.
 
-- `caller`: symbol path of the nearest enclosing tracked declaration: `function_declaration` name; `method_definition` → `Class.member`; a `variable_declarator` whose value is a function/arrow → its name; a class field initializer → `Class`; otherwise `""`.
-- `callee`: identifier → `name`; `member_expression` whose object is an identifier → `obj.prop`; object `this` → `this.prop`; `new X` → `new X`; `new ns.X` → `new ns.X`; optional chains (`a?.b()`) are treated like plain members. Skip `import(...)`, `require(...)`, `super`, deeper chains, computed members, calls on call results, and calls on parenthesised or `await` expressions.
+- `caller`: symbol path of the nearest enclosing tracked declaration: `function_declaration` name; `method_definition` → `Class.member`; a `variable_declarator` whose value is a function/arrow → its name; a class field initializer or a `static {}` block → `Class`; a function-valued class field → `Class.field`; a namespace member → its dotted path; otherwise `""`. Enclosing declarations are matched by node identity, never by name (a shadowing local cannot hijack attribution).
+- `callee`: identifier → `name`; `member_expression` whose object is an identifier → `obj.prop`; object `this` → `this.prop`; `new X` → `new X`; `new ns.X` → `new ns.X`; optional chains (`a?.b()`) are treated like plain members; non-null assertions (`a!.b()`, `f!()`) are unwrapped. Skip `import(...)`, `require(...)`, `super`, deeper chains, computed members, calls on call results, and calls on parenthesised or `await` expressions.
 
 ## Resolution rules
 
