@@ -1,19 +1,28 @@
 /**
  * Materialising a built map onto disk (sync spec "Write", tech spec 4.2).
  *
- * Two properties matter more than speed here.
+ * Three properties matter more than speed here.
  *
  * Minimal churn: a file is written only when its bytes actually differ, so an
  * update that changes one card leaves the other few thousand artifacts with
  * their original mtimes. Editors, watchers and `git status` all stay quiet, and
  * "greplost ran" stops being visible in the working tree.
  *
- * Bounded ownership: the writer touches exactly the structure paths
- * (`isStructurePath`) and nothing else. Files the map no longer produces — the
- * card of a deleted source file, the docs of a renamed package — are pruned,
- * and directories emptied by that pruning are removed; `config.json`, the
- * caches, `FLOWS.md`, `WORKSPACE.md` and the runtime files are invisible to it.
- * Nothing outside `<root>/.greplost/` is ever written, read or deleted.
+ * Containment: every byte written and every path deleted is inside
+ * `<root>/.greplost/`, and "inside" is decided by `realpath`, not by string
+ * arithmetic. `.greplost/` is committed and git stores symlinks, so a
+ * repository can carry a link that points anywhere; `update` then runs
+ * unattended from a `post-checkout` hook. So the directory walk never follows a
+ * symlink — it unlinks one and puts a real directory in its place — and the
+ * containment check is re-made against the resolved path immediately before
+ * each write and each delete.
+ *
+ * Bounded ownership: the writer touches structure paths (`isStructurePath`) and
+ * nothing else. Files the map no longer produces — the card of a deleted source
+ * file, the docs of a removed package — are pruned, and the directories that
+ * emptied are removed; `config.json`, the caches, `FLOWS.md`, `WORKSPACE.md`
+ * and the runtime files are invisible to it. Where something greplost does not
+ * own blocks its way, it refuses rather than deletes.
  */
 
 import {
@@ -21,10 +30,13 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
+  realpathSync,
   rmSync,
   rmdirSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
+import type { Dirent, Stats } from "node:fs";
 import path from "node:path";
 
 import { ARTIFACT_DIR, compareStrings } from "@greplost/core/schema";
@@ -41,6 +53,27 @@ export interface WriteResult {
 }
 
 /**
+ * The one filesystem write this module performs, behind an indirection so a
+ * test can make it fail with a chosen errno (there is no portable way to
+ * provoke `ENOSPC` on a real path). Test-only: `index.ts` does not re-export
+ * it, so it is not part of the package's public surface.
+ */
+export const writeSeam = {
+  writeFile(target: string, bytes: Buffer): void {
+    writeFileSync(target, bytes);
+  },
+};
+
+/**
+ * Write failures worth clearing the path and retrying once: something is at the
+ * path, or on the way to it, that greplost owns and can replace. Everything
+ * else — a full disk, a read-only filesystem, a quota — says nothing about the
+ * path, and destroying a good committed artifact before failing anyway would be
+ * the worst possible response.
+ */
+const REPAIRABLE_WRITE_ERRORS: ReadonlySet<string> = new Set(["EACCES", "EPERM", "EISDIR", "ENOTDIR"]);
+
+/**
  * Write `files` (artifact-relative path -> contents) under `<root>/.greplost/`,
  * pruning structure paths the map does not contain.
  *
@@ -49,21 +82,23 @@ export interface WriteResult {
  * artifact directory.
  */
 export function writeArtifacts(root: string, files: Map<string, string>): WriteResult {
-  const artifactRoot = path.resolve(root, ARTIFACT_DIR);
-
   for (const rel of files.keys()) {
     if (!isStructurePath(rel)) {
       throw new Error(`greplost: refusing to write ${rel}: not a structure-layer artifact path`);
     }
   }
 
+  const artifactRoot = openArtifactRoot(root);
+
   const written: string[] = [];
   let unchanged = 0;
 
   for (const rel of [...files.keys()].sort(compareStrings)) {
     const contents = files.get(rel) as string;
-    const target = resolveInside(artifactRoot, rel);
-    if (writeIfDifferent(artifactRoot, rel, target, contents)) written.push(rel);
+    const target = path.join(artifactRoot, rel);
+    ensureDirectory(artifactRoot, rel);
+    assertInside(artifactRoot, path.dirname(target));
+    if (writeIfDifferent(rel, target, contents)) written.push(rel);
     else unchanged++;
   }
 
@@ -73,40 +108,98 @@ export function writeArtifacts(root: string, files: Map<string, string>): WriteR
 }
 
 /**
- * Join an artifact-relative path onto the artifact root and prove the result is
- * still inside it. `isStructurePath` already rejects `..`, absolute paths and
- * backslashes; this is the belt to that pair of braces, because the cost of
- * being wrong is a write outside `.greplost/`.
+ * Make `<root>/.greplost` exist as a directory and return its resolved path,
+ * which is the containment boundary for everything below.
+ *
+ * The artifact root itself may legitimately be a symlink to a real directory —
+ * `.greplost` parked on another volume is a reasonable thing for a user to do,
+ * and every artifact then lives under the link's target, which is where the
+ * boundary belongs. A *dangling* link is a link and nothing else, so it is
+ * replaced; a regular file there is content greplost never wrote, so it is not.
  */
-function resolveInside(artifactRoot: string, rel: string): string {
-  const target = path.resolve(artifactRoot, rel);
-  if (target !== artifactRoot && !target.startsWith(artifactRoot + path.sep)) {
-    throw new Error(`greplost: refusing to write ${rel}: outside ${ARTIFACT_DIR}/`);
+function openArtifactRoot(root: string): string {
+  const artifactRoot = path.resolve(root, ARTIFACT_DIR);
+  const link = lstatSafe(artifactRoot);
+
+  if (link !== undefined) {
+    const resolved = statSafe(artifactRoot);
+    if (resolved === undefined || !resolved.isDirectory()) {
+      if (!link.isSymbolicLink()) {
+        throw new Error(`greplost: refusing to delete ${ARTIFACT_DIR}: not a greplost artifact`);
+      }
+      discard(artifactRoot);
+    }
   }
-  return target;
+
+  mkdirSync(artifactRoot, { recursive: true });
+  return realpathSync(artifactRoot);
+}
+
+/**
+ * Make every directory on the way to `rel` exist, walking one segment at a time
+ * and never through a symlink.
+ *
+ * `mkdirSync(dir, { recursive: true })` cannot be used as a fast path here, not
+ * even a hopeful one: it resolves each component, so a committed
+ * `.greplost/packages -> /somewhere/else` would silently succeed and every
+ * write below it would land outside the artifact directory. A link found on the
+ * way is unlinked (which loses only the link) and replaced by a real directory;
+ * a regular file there is someone else's content and stops the write instead.
+ */
+function ensureDirectory(artifactRoot: string, rel: string): void {
+  const segments = rel.split("/");
+  segments.pop();
+
+  let current = artifactRoot;
+  let prefix = "";
+  for (const segment of segments) {
+    current = path.join(current, segment);
+    prefix = prefix === "" ? segment : `${prefix}/${segment}`;
+
+    const entry = lstatSafe(current);
+    if (entry !== undefined && !entry.isDirectory()) {
+      if (!entry.isSymbolicLink()) {
+        throw new Error(`greplost: refusing to delete ${ARTIFACT_DIR}/${prefix}: not a greplost artifact`);
+      }
+      discard(current);
+    }
+    // Ancestors are verified real directories by this point, so `recursive`
+    // here is idempotence, not path resolution.
+    mkdirSync(current, { recursive: true });
+  }
+}
+
+/**
+ * Prove `dir` is still inside the artifact root after the filesystem has had
+ * its say. `path.resolve` is lexical and a symlink is not, so this is the only
+ * check that actually holds; it runs immediately before every write and every
+ * delete.
+ */
+function assertInside(artifactRoot: string, dir: string): void {
+  let resolved: string;
+  try {
+    resolved = realpathSync(dir);
+  } catch {
+    throw new Error(`greplost: refusing to write outside ${ARTIFACT_DIR}: ${dir}`);
+  }
+  if (resolved !== artifactRoot && !resolved.startsWith(artifactRoot + path.sep)) {
+    throw new Error(`greplost: refusing to write outside ${ARTIFACT_DIR}: ${dir}`);
+  }
 }
 
 /**
  * Write `contents` to `target` unless the file already holds exactly those
  * bytes. Returns true when the file was written.
  *
- * Whatever else is at the path goes: a directory left by a botched merge, a
- * symlink pointing somewhere else entirely (writing through it would put
- * generated bytes outside `.greplost/`), a file the process cannot read or
- * cannot open for writing. The structure layer owns this path and regenerates
- * it from source every time, so replacing it loses nothing and keeps `greplost
- * update` working on a damaged artifact directory instead of stopping there.
- * The byte comparison is only ever an optimisation.
+ * `target` is a structure path, so whatever occupies it is greplost's to
+ * replace: a stale file, an unreadable one, a symlink (writing through which
+ * would put generated bytes outside `.greplost/`). A *directory* there is
+ * replaced only once its contents are known to be artifacts too — see
+ * `assertOwnedTree`. The byte comparison is only ever an optimisation.
  */
-function writeIfDifferent(artifactRoot: string, rel: string, target: string, contents: string): boolean {
+function writeIfDifferent(rel: string, target: string, contents: string): boolean {
   const expected = Buffer.from(contents, "utf8");
-
-  let existing: ReturnType<typeof lstatSync> | undefined;
-  try {
-    existing = lstatSync(target);
-  } catch {
-    existing = undefined;
-  }
+  const existing = lstatSafe(target);
 
   if (existing !== undefined) {
     if (existing.isFile()) {
@@ -116,69 +209,72 @@ function writeIfDifferent(artifactRoot: string, rel: string, target: string, con
         // Unreadable: it cannot be compared, so it is replaced.
         discard(target);
       }
+    } else if (existing.isDirectory()) {
+      assertOwnedTree(rel, target);
+      discard(target);
     } else {
+      // A symlink, or something stranger: no content of ours to lose.
       discard(target);
     }
   }
 
-  ensureDirectory(artifactRoot, path.dirname(target));
   try {
-    writeFileSync(target, expected);
+    writeSeam.writeFile(target, expected);
   } catch (cause) {
-    // A read-only artifact (mode 444, a stray `chmod`) is still ours to replace.
+    if (!REPAIRABLE_WRITE_ERRORS.has(errorCode(cause))) {
+      throw new Error(`greplost: cannot write ${ARTIFACT_DIR}/${rel}: ${reasonOf(cause)}`);
+    }
+    // Something greplost owns is in the way (a read-only artifact, a directory
+    // that appeared under us). Clear it and try once more.
     discard(target);
     try {
-      writeFileSync(target, expected);
-    } catch {
-      const reason = cause instanceof Error ? cause.message : String(cause);
-      throw new Error(`greplost: cannot write ${ARTIFACT_DIR}/${rel}: ${reason}`);
+      writeSeam.writeFile(target, expected);
+    } catch (second) {
+      throw new Error(`greplost: cannot write ${ARTIFACT_DIR}/${rel}: ${reasonOf(second)}`);
     }
   }
   return true;
 }
 
 /**
- * Make `dir` exist, replacing anything on the way to it that is not a
- * directory. The mirror of `writeIfDifferent`'s handling of a directory
- * squatting on an artifact: a file sitting where `repo/` belongs is damage the
- * structure layer can repair, and the alternative is a raw `ENOTDIR` that
- * blocks every future update.
- *
- * The repair path only runs after the ordinary `mkdirSync` has failed, so a
- * `.greplost` that is a symlink to a real directory (which `mkdirSync`
- * happily follows) is never disturbed.
+ * A directory sitting where an artifact belongs is removed only when everything
+ * under it is an artifact too. `.greplost/INDEX.md/` holding a user's notes is
+ * damage greplost reports; the same path holding nothing, or holding only files
+ * that are themselves structure paths, is damage it repairs.
  */
-function ensureDirectory(artifactRoot: string, dir: string): void {
-  try {
-    mkdirSync(dir, { recursive: true });
-    return;
-  } catch {
-    // Something along the way is not a directory.
-  }
-
-  let current = artifactRoot;
-  replaceIfNotDirectory(current);
-  mkdirSync(current, { recursive: true });
-  for (const segment of path.relative(artifactRoot, dir).split(path.sep)) {
-    if (segment === "") continue;
-    current = path.join(current, segment);
-    replaceIfNotDirectory(current);
-    mkdirSync(current, { recursive: true });
+function assertOwnedTree(rel: string, target: string): void {
+  const foreign = firstForeignFile(target, rel);
+  if (foreign !== undefined) {
+    throw new Error(`greplost: refusing to delete ${ARTIFACT_DIR}/${rel}: contains files greplost does not own`);
   }
 }
 
-function replaceIfNotDirectory(target: string): void {
+/** The first file under `dir` whose artifact-relative path is not a structure path. */
+function firstForeignFile(dir: string, prefix: string): string | undefined {
+  let entries: Dirent[];
   try {
-    if (lstatSync(target).isDirectory()) return;
+    entries = readdirSync(dir, { withFileTypes: true });
   } catch {
-    return;
+    // A directory greplost cannot look inside is one it must not delete.
+    return prefix;
   }
-  discard(target);
+  for (const entry of entries) {
+    const rel = `${prefix}/${entry.name}`;
+    if (entry.isDirectory()) {
+      const nested = firstForeignFile(path.join(dir, entry.name), rel);
+      if (nested !== undefined) return nested;
+      continue;
+    }
+    if (!isStructurePath(rel)) return rel;
+  }
+  return undefined;
 }
 
 /**
- * Remove whatever is at `target`. Failure is left to the caller's own write or
- * `mkdir` to report, which can name the artifact the user actually cares about.
+ * Remove whatever is at `target`. `rmSync` does not follow symlinks, so a link
+ * here loses the link and never its target. Failure is left to the operation
+ * this was clearing the way for, which can name the artifact the user cares
+ * about.
  */
 function discard(target: string): void {
   try {
@@ -202,15 +298,19 @@ function prune(artifactRoot: string, files: Map<string, string>): string[] {
 
   for (const rel of listStructurePaths(artifactRoot)) {
     if (files.has(rel)) continue;
+    const target = path.join(artifactRoot, rel);
+    assertInside(artifactRoot, path.dirname(target));
+
+    // A directory squatting on a structure path is as stale as a file, but only
+    // once everything it holds is an artifact too.
+    if (lstatSafe(target)?.isDirectory() === true) assertOwnedTree(rel, target);
+
     try {
-      // A directory squatting on a structure path is as stale as a file:
-      // whatever it holds, the structure layer no longer produces this path.
-      rmSync(path.join(artifactRoot, rel), { recursive: true, force: true });
+      rmSync(target, { recursive: true, force: true });
     } catch (cause) {
       // Swallowing this would leave `verify` reporting the path as extra
       // forever with nothing to explain why.
-      const reason = cause instanceof Error ? cause.message : String(cause);
-      throw new Error(`greplost: cannot delete ${ARTIFACT_DIR}/${rel}: ${reason}`);
+      throw new Error(`greplost: cannot delete ${ARTIFACT_DIR}/${rel}: ${reasonOf(cause)}`);
     }
     deleted.push(rel);
     const slash = rel.lastIndexOf("/");
@@ -244,4 +344,29 @@ function expandAncestors(dirs: ReadonlySet<string>): Set<string> {
     for (let i = segments.length; i > 0; i--) out.add(segments.slice(0, i).join("/"));
   }
   return out;
+}
+
+function lstatSafe(target: string): Stats | undefined {
+  try {
+    return lstatSync(target);
+  } catch {
+    return undefined;
+  }
+}
+
+function statSafe(target: string): Stats | undefined {
+  try {
+    return statSync(target);
+  } catch {
+    return undefined;
+  }
+}
+
+function errorCode(cause: unknown): string {
+  const code = (cause as { code?: unknown } | null)?.code;
+  return typeof code === "string" ? code : "";
+}
+
+function reasonOf(cause: unknown): string {
+  return cause instanceof Error ? cause.message : String(cause);
 }

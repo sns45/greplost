@@ -33,7 +33,7 @@ import { compareStrings, stableStringify } from "@greplost/core/schema";
 
 import { isStructurePath } from "../src/artifacts.ts";
 import { buildArtifacts, readSummaries } from "../src/build.ts";
-import { writeArtifacts } from "../src/write.ts";
+import { writeArtifacts, writeSeam } from "../src/write.ts";
 
 const FIXTURE_ROOT = path.resolve(import.meta.dir, "../../../fixtures/tiny-ts");
 const CORE_GOLDEN = path.resolve(import.meta.dir, "../../core/test/golden/tiny-ts");
@@ -432,10 +432,9 @@ describe("write", () => {
     expect(result.deleted).toEqual([...artifacts.keys()].filter((rel) => rel !== "INDEX.md").sort(compareStrings));
   });
 
-  test("replaces a directory squatting on a structure path", () => {
-    const root = emptyRepo("write-dirsquat");
-    mkdirSync(path.join(artifactDir(root), "INDEX.md/inner"), { recursive: true });
-    writeFileSync(path.join(artifactDir(root), "INDEX.md/inner/junk.txt"), "junk\n");
+  test("replaces an empty directory squatting on a structure path", () => {
+    const root = emptyRepo("write-dirsquat-empty");
+    mkdirSync(path.join(artifactDir(root), "INDEX.md"), { recursive: true });
 
     const result = writeArtifacts(root, artifacts);
 
@@ -444,12 +443,35 @@ describe("write", () => {
     expect(readFileSync(path.join(artifactDir(root), "INDEX.md"), "utf8")).toBe(artifacts.get("INDEX.md") as string);
   });
 
-  test("prunes a directory squatting on a structure path the map no longer produces", () => {
+  test("replaces a squatting directory that holds nothing but artifacts", () => {
+    const root = emptyRepo("write-dirsquat-owned");
+    // Every path inside is itself a card path, so none of it is anyone else's.
+    mkdirSync(path.join(artifactDir(root), CARD, "deeper"), { recursive: true });
+    writeFileSync(path.join(artifactDir(root), CARD, "deeper/inner.md"), "# stale\n");
+
+    const result = writeArtifacts(root, artifacts);
+
+    expect(result.written).toContain(CARD);
+    expect(statSync(path.join(artifactDir(root), CARD)).isFile()).toBe(true);
+  });
+
+  test("refuses to delete a squatting directory that holds anything else", () => {
+    const root = emptyRepo("write-dirsquat-foreign");
+    mkdirSync(path.join(artifactDir(root), "INDEX.md/inner"), { recursive: true });
+    writeFileSync(path.join(artifactDir(root), "INDEX.md/inner/notes.txt"), "my notes\n");
+
+    expect(() => writeArtifacts(root, artifacts)).toThrow(
+      /greplost: refusing to delete \.greplost\/INDEX\.md: contains files greplost does not own/,
+    );
+    expect(readFileSync(path.join(artifactDir(root), "INDEX.md/inner/notes.txt"), "utf8")).toBe("my notes\n");
+  });
+
+  test("prunes an owned directory squatting on a path the map no longer produces", () => {
     const root = emptyRepo("write-dirsquat-prune");
     writeArtifacts(root, artifacts);
     rmSync(path.join(artifactDir(root), CARD));
     mkdirSync(path.join(artifactDir(root), CARD), { recursive: true });
-    writeFileSync(path.join(artifactDir(root), CARD, "junk.txt"), "junk\n");
+    writeFileSync(path.join(artifactDir(root), CARD, "stale.md"), "# stale\n");
 
     const without = new Map(artifacts);
     without.delete(CARD);
@@ -459,26 +481,39 @@ describe("write", () => {
     expect(existsSync(path.join(artifactDir(root), CARD))).toBe(false);
   });
 
-  test("replaces a file squatting where an artifact directory belongs", () => {
+  test("refuses to prune a squatting directory that holds anything else", () => {
+    const root = emptyRepo("write-dirsquat-prune-foreign");
+    writeArtifacts(root, artifacts);
+    rmSync(path.join(artifactDir(root), CARD));
+    mkdirSync(path.join(artifactDir(root), CARD), { recursive: true });
+    writeFileSync(path.join(artifactDir(root), CARD, "notes.txt"), "my notes\n");
+
+    const without = new Map(artifacts);
+    without.delete(CARD);
+
+    expect(() => writeArtifacts(root, without)).toThrow(/contains files greplost does not own/);
+    expect(readFileSync(path.join(artifactDir(root), CARD, "notes.txt"), "utf8")).toBe("my notes\n");
+  });
+
+  test("refuses to delete a file squatting where an artifact directory belongs", () => {
     const root = emptyRepo("write-filesquat");
     mkdirSync(artifactDir(root), { recursive: true });
     writeFileSync(path.join(artifactDir(root), "repo"), "not a directory\n");
 
-    const result = writeArtifacts(root, artifacts);
-
-    expect(result.written).toContain("repo/MAP.md");
-    expect(readFileSync(path.join(artifactDir(root), "repo/MAP.md"), "utf8")).toBe(
-      artifacts.get("repo/MAP.md") as string,
+    expect(() => writeArtifacts(root, artifacts)).toThrow(
+      /greplost: refusing to delete \.greplost\/repo: not a greplost artifact/,
     );
+    expect(readFileSync(path.join(artifactDir(root), "repo"), "utf8")).toBe("not a directory\n");
   });
 
-  test("replaces a file squatting on the artifact directory itself", () => {
+  test("refuses to delete a file squatting on the artifact directory itself", () => {
     const root = emptyRepo("write-rootsquat");
     writeFileSync(artifactDir(root), "not a directory\n");
 
-    writeArtifacts(root, artifacts);
-
-    expect(listFiles(artifactDir(root))).toEqual([...artifacts.keys()].sort(compareStrings));
+    expect(() => writeArtifacts(root, artifacts)).toThrow(
+      /greplost: refusing to delete \.greplost: not a greplost artifact/,
+    );
+    expect(readFileSync(artifactDir(root), "utf8")).toBe("not a directory\n");
   });
 
   test("replaces a symlink at a structure path instead of writing through it", () => {
@@ -523,5 +558,117 @@ describe("write", () => {
     } finally {
       chmodSync(target, 0o644);
     }
+  });
+
+  test("clears the path and retries once when an artifact is read-only", () => {
+    const root = emptyRepo("write-readonly");
+    writeArtifacts(root, artifacts);
+    const target = path.join(artifactDir(root), "INDEX.md");
+    writeFileSync(target, "stale\n");
+    chmodSync(target, 0o444);
+
+    const result = writeArtifacts(root, artifacts);
+
+    expect(result.written).toContain("INDEX.md");
+    expect(readFileSync(target, "utf8")).toBe(artifacts.get("INDEX.md") as string);
+  });
+
+  test("keeps the committed artifact when the write fails for a reason the path cannot explain", () => {
+    const root = emptyRepo("write-enospc");
+    writeArtifacts(root, artifacts);
+    const target = path.join(artifactDir(root), "INDEX.md");
+    writeFileSync(target, "committed but stale\n");
+
+    const real = writeSeam.writeFile;
+    writeSeam.writeFile = (): never => {
+      throw Object.assign(new Error("ENOSPC: no space left on device, open"), { code: "ENOSPC" });
+    };
+    try {
+      expect(() => writeArtifacts(root, artifacts)).toThrow(
+        /greplost: cannot write \.greplost\/INDEX\.md: ENOSPC: no space left on device/,
+      );
+    } finally {
+      writeSeam.writeFile = real;
+    }
+
+    // The artifact that was there is still there: a full disk says nothing
+    // about the file, so destroying it before failing anyway would be worse.
+    expect(readFileSync(target, "utf8")).toBe("committed but stale\n");
+  });
+
+  test("writes nothing through a symlinked intermediate directory", () => {
+    const root = emptyRepo("write-symlink-dir");
+    const outside = path.join(root, "outside");
+    mkdirSync(outside, { recursive: true });
+    writeFileSync(path.join(outside, "sentinel.txt"), "sentinel\n");
+    mkdirSync(artifactDir(root), { recursive: true });
+    symlinkSync(outside, path.join(artifactDir(root), "packages"));
+
+    const result = writeArtifacts(root, artifacts);
+
+    // The link is gone, replaced by a real directory holding the real artifacts.
+    expect(lstatSync(path.join(artifactDir(root), "packages")).isSymbolicLink()).toBe(false);
+    expect(result.written).toEqual([...artifacts.keys()].sort(compareStrings));
+    expect(listFiles(artifactDir(root))).toEqual([...artifacts.keys()].sort(compareStrings));
+    // Nothing landed outside, and nothing outside was deleted.
+    expect(readdirSync(outside)).toEqual(["sentinel.txt"]);
+    expect(readFileSync(path.join(outside, "sentinel.txt"), "utf8")).toBe("sentinel\n");
+  });
+
+  test("prunes nothing through a symlinked intermediate directory", () => {
+    const root = emptyRepo("prune-symlink-dir");
+    const outside = path.join(root, "outside");
+    mkdirSync(path.join(outside, "modules"), { recursive: true });
+    writeFileSync(path.join(outside, "MAP.md"), "outside map\n");
+    writeFileSync(path.join(outside, "modules/card.md"), "outside card\n");
+
+    // A map with no `packages/**` entries at all, so the link is never walked
+    // for a write: pruning is the only thing that could reach through it.
+    const repoOnly = new Map([...artifacts].filter(([rel]) => !rel.startsWith("packages/")));
+    writeArtifacts(root, repoOnly);
+    symlinkSync(outside, path.join(artifactDir(root), "packages"));
+
+    const result = writeArtifacts(root, repoOnly);
+
+    expect(result.deleted).toEqual([]);
+    expect(readdirSync(outside).sort(compareStrings)).toEqual(["MAP.md", "modules"]);
+    expect(readFileSync(path.join(outside, "MAP.md"), "utf8")).toBe("outside map\n");
+    expect(readFileSync(path.join(outside, "modules/card.md"), "utf8")).toBe("outside card\n");
+  });
+
+  test("accepts a symlinked artifact root and treats its target as the boundary", () => {
+    const root = emptyRepo("write-symlink-root");
+    const elsewhere = path.join(root, "elsewhere");
+    mkdirSync(elsewhere, { recursive: true });
+    symlinkSync(elsewhere, artifactDir(root));
+
+    const result = writeArtifacts(root, artifacts);
+
+    expect(result.written).toEqual([...artifacts.keys()].sort(compareStrings));
+    expect(listFiles(elsewhere)).toEqual([...artifacts.keys()].sort(compareStrings));
+    expect(lstatSync(artifactDir(root)).isSymbolicLink()).toBe(true);
+    expect(readFileSync(path.join(elsewhere, "INDEX.md"), "utf8")).toBe(artifacts.get("INDEX.md") as string);
+
+    // And it stays a working artifact directory across runs.
+    expect(writeArtifacts(root, artifacts).unchanged).toBe(artifacts.size);
+  });
+
+  test("collapses a package directory when the whole package disappears", () => {
+    const root = emptyRepo("write-package-gone");
+    writeArtifacts(root, artifacts);
+
+    const gone = [...artifacts.keys()].filter((rel) => rel.startsWith("packages/worker/")).sort(compareStrings);
+    expect(gone).toContain("packages/worker/MAP.md");
+    expect(gone).toContain("packages/worker/API.md");
+    expect(gone.some((rel) => rel.startsWith("packages/worker/modules/"))).toBe(true);
+
+    const without = new Map(artifacts);
+    for (const rel of gone) without.delete(rel);
+    const result = writeArtifacts(root, without);
+
+    expect(result.deleted).toEqual(gone);
+    expect(existsSync(path.join(artifactDir(root), "packages/worker"))).toBe(false);
+    expect(existsSync(path.join(artifactDir(root), "packages"))).toBe(true);
+    expect(listFiles(artifactDir(root))).toEqual([...without.keys()].sort(compareStrings));
   });
 });
