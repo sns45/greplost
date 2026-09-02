@@ -14,6 +14,8 @@ jobs:
       - uses: actions/setup-go@v5
         with: { go-version: "1.25" }
       - run: bun install --frozen-lockfile
+      - name: go modules for the Go truth generator
+        run: cd bench/truth/gocallgraph && go mod download
       - run: bun run typecheck
       - run: bun test
       - name: verify the committed map of this repo
