@@ -25,10 +25,12 @@ const ARMS: readonly { prefix: string; slug: string; title: string; caption: str
     prefix: "syncF1",
     slug: "x2-staleness",
     title: "Freshness under each tool's own sync mechanism: F1 vs commit",
-    caption: "X2 (hero chart): freshness under each tool's own sync mechanism, F1 vs commit",
+    caption: "X2 (hero chart): freshness under each tool's own sync mechanism over a synthetic commit walk, F1 vs commit",
     note:
       "Arm: documented-sync — each tool's sync mechanism was installed exactly as its README describes and " +
-      "then left alone; the harness only commits. This is the arm tech spec 10.0 X2 words. Read the FALL of " +
+      "then left alone; the harness only commits, except that crg's `visualize --format json` export is run " +
+      "at each scoring checkpoint because nothing else writes the JSON its artifact is read from (it is " +
+      "outside every timing and does not rebuild). This is the arm tech spec 10.0 X2 words. Read the FALL of " +
       "each line, not its height: the height is that tool's import coverage (X1's subject) and only the fall " +
       "is staleness.",
   },
@@ -69,6 +71,18 @@ const ARMS: readonly { prefix: string; slug: string; title: string; caption: str
  * Appended to every head-to-head chart's note, because a curve with no
  * denominator invites the reader to size it wrongly and these walks are short.
  */
+/**
+ * What the commit walk behind every X2 curve actually is.
+ *
+ * The tech spec asks for 500 real commits of a corpus checkout; what runs here is a
+ * generated history over the pinned tree (`planImportEdits`). One added import line per
+ * commit is the easy direction for an incremental updater, and a chart that does not say
+ * so lets a reader take a flat line for a claim about real repository churn.
+ */
+export const SYNTHETIC_WALK_NOTE =
+  " The walk is synthetic: each commit appends exactly one resolvable import line to one file, so truth " +
+  "moves by exactly one edge per commit, and the walk contains no deletions, no renames and no new files.";
+
 export function scaleNote(target: RunTarget | undefined, commits: number | null): string {
   const parts: string[] = [];
   if (target?.repo !== undefined) {
@@ -210,7 +224,9 @@ export function stalenessCharts(
       yMax: 1,
       categories: curve.categories,
       series: curve.series,
-      note: `${arm.note}${freshness}${absent.length === 0 ? "" : ` Omitted (not run here): ${absent.join(", ")}.`}${scale}`,
+      note:
+        `${arm.note}${freshness}${absent.length === 0 ? "" : ` Omitted (not run here): ${absent.join(", ")}.`}` +
+        `${scale}${SYNTHETIC_WALK_NOTE}`,
     };
     charts.push(chartRef(arm.caption, spec, arm.slug, assetsRel, lineChart(spec)));
   }

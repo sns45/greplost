@@ -48,6 +48,20 @@ import { generateTsTruth, type Truth } from "./truth/ts.ts";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
 const SUITE = "headtohead";
+
+/**
+ * Where one run's result lands: `headtohead` for a corpus run, `headtohead-fixture` for
+ * a `--fixture` run (the same split `perf`, `replay`, `agent` and `structural` make).
+ *
+ * A fixture run and a corpus run on the same day at the same commit would otherwise write
+ * the *same file*, and the twelve-file fixture numbers would replace the corpus ones under
+ * it. `latestResult("headtohead")` and the report's head-to-head table must never resolve
+ * to a fixture run.
+ */
+export function resultSuite(fixture: boolean): string {
+  return fixture ? `${SUITE}-fixture` : SUITE;
+}
+
 /** Where the installed competitor binaries and the sandbox HOME live. Gitignored. */
 const COMPETITORS_DIR = path.join(REPO_ROOT, "bench", ".competitors");
 /**
@@ -1020,12 +1034,24 @@ export async function run(args: string[]): Promise<number> {
     return 0;
   }
 
-  const target = resolveTarget(options);
-  if (typeof target === "string") {
-    console.error(target);
-    return 2;
+  const resolved = resolveTarget(options);
+  if (typeof resolved === "string") {
+    // A corpus checkout is only needed by the metrics that read a repository.
+    // X9 is the human study and X10 is a capability probe of the workspace CLI
+    // against its own fixture: neither opens a corpus repo, and demanding one
+    // made `bench:headtohead --metrics X10` — a free, hermetic run — impossible
+    // on a machine with no corpus (review round 3, important 5).
+    if (needsCorpus(options.metrics)) {
+      console.error(resolved);
+      return 2;
+    }
+    console.log(`${SUITE}: no corpus needed for ${[...(options.metrics ?? new Set(X_IDS))].join(",")}`);
+    return await guarded(options, NO_CORPUS_TARGET);
   }
+  return await guarded(options, resolved);
+}
 
+async function guarded(options: Options, target: Target): Promise<number> {
   try {
     return await execute(options, target);
   } catch (err) {
@@ -1033,6 +1059,23 @@ export async function run(args: string[]): Promise<number> {
     return 1;
   }
 }
+
+/** The metrics that read no repository at all (tech spec 10.0: X9 and X10). */
+const CORPUS_FREE_METRICS: ReadonlySet<XId> = new Set<XId>(["X9", "X10"]);
+
+/** True when any selected metric needs a corpus checkout. */
+export function needsCorpus(metrics: ReadonlySet<XId> | null): boolean {
+  return X_IDS.some((id) => (metrics === null || metrics.has(id)) && !CORPUS_FREE_METRICS.has(id));
+}
+
+/**
+ * The stand-in target for a run that opens no repository.
+ *
+ * `root` is empty and nothing reads it: `execute` skips the competitor copies and the
+ * oracle when no selected metric needs a corpus, and the payload records no corpus and
+ * no run scale rather than naming a repo that was never touched.
+ */
+const NO_CORPUS_TARGET: Target = { name: "", root: "", sha: null, tier: null, lang: "ts" };
 
 function printPlan(options: Options): void {
   const selected = (id: XId): boolean => options.metrics === null || options.metrics.has(id);
@@ -1055,6 +1098,10 @@ function printPlan(options: Options): void {
 
 async function execute(options: Options, target: Target): Promise<number> {
   const selected = (id: XId): boolean => options.metrics === null || options.metrics.has(id);
+  // A run of corpus-free metrics only (X9, X10) opens no repository: no competitor
+  // copy, no snapshot, no oracle, and a payload that records no corpus and no scale
+  // rather than a repo nothing was measured on.
+  const corpusRun = needsCorpus(options.metrics);
   const skipped = "not selected by --metrics";
   const metrics = emptyMetrics(skipped);
   const method: string[] = [];
@@ -1074,6 +1121,11 @@ async function execute(options: Options, target: Target): Promise<number> {
       artifact: null,
       reason: binary === null ? unavailableReason(name, spec) : null,
     });
+    // Only a run that would have invoked the competitors says anything about how they
+    // were invoked. A corpus-free run (X9, X10) never reaches for a competitor binary,
+    // and its "not installed here" line would land in `RESULTS.md` beside another run's
+    // "ran through `graphify update .`" — two true sentences reading as a contradiction.
+    if (!corpusRun) continue;
     if (invocation.caveat !== null && binary !== null) method.push(`${name}: ${invocation.caveat}.`);
     if (binary !== null) {
       method.push(
@@ -1086,7 +1138,7 @@ async function execute(options: Options, target: Target): Promise<number> {
   }
 
   // One repo copy and one tool run per competitor, reused by X1, X4, X5 and X6.
-  for (const state of states.values()) {
+  for (const state of corpusRun ? states.values() : []) {
     if (state.binary === null) continue;
     const dir = path.join(WORK_DIR, state.name, target.name);
     prepareCopy(target.root, dir);
@@ -1111,14 +1163,16 @@ async function execute(options: Options, target: Target): Promise<number> {
   // the whole table: the metrics that depend on it record why, and the rest run.
   let snapshot: Snapshot | null = null;
   let truth: Truth | null = null;
-  let oracleFailure: string | null = null;
-  try {
-    const snapshotBuilder = await loadBuildSnapshot();
-    snapshot = await snapshotBuilder({ root: target.root });
-    truth = generateTsTruth(target.root, scoredFiles(snapshot, "ts"));
-  } catch (err) {
-    oracleFailure = (err as Error).message;
-    method.push(`X1, X2, X5: ${snapshot === null ? "the greplost snapshot" : "the compiler oracle"} could not be built — ${oracleFailure}.`);
+  let oracleFailure: string | null = corpusRun ? null : "no selected metric reads a repository";
+  if (corpusRun) {
+    try {
+      const snapshotBuilder = await loadBuildSnapshot();
+      snapshot = await snapshotBuilder({ root: target.root });
+      truth = generateTsTruth(target.root, scoredFiles(snapshot, "ts"));
+    } catch (err) {
+      oracleFailure = (err as Error).message;
+      method.push(`X1, X2, X5: ${snapshot === null ? "the greplost snapshot" : "the compiler oracle"} could not be built — ${oracleFailure}.`);
+    }
   }
   // The file universe X1, X2 and X5 score inside: the compiler's file list when
   // the oracle loaded, and greplost's own scored files when it did not.
@@ -1175,13 +1229,17 @@ async function execute(options: Options, target: Target): Promise<number> {
   // target that says "(tier M)" in the JSON and "(measured on anyq, tier S, not
   // tier M)" in the document is one fact with two spellings, and the one a
   // future reader diffs is the JSON (review round 2, minor).
-  const runTarget: RunTarget = {
-    repo: target.name,
-    fixture: options.fixture,
-    ...(options.fixture || (target.tier ?? options.tier) === null ? {} : { tier: (target.tier ?? options.tier) as string }),
-    files: scoredFileCount,
-    commits: walked,
-  };
+  // A corpus-free run has no scale to record: an empty target renders as
+  // "Measured <date> at <sha>." rather than as a repo and a file count nobody took.
+  const runTarget: RunTarget = corpusRun
+    ? {
+        repo: target.name,
+        fixture: options.fixture,
+        ...(options.fixture || (target.tier ?? options.tier) === null ? {} : { tier: (target.tier ?? options.tier) as string }),
+        files: scoredFileCount,
+        commits: walked,
+      }
+    : {};
   for (const row of Object.values(metrics)) {
     row.target = scopeTarget(row.target, runTarget);
     for (const cellValue of Object.values(row.tools)) cellValue.target = scopeTarget(cellValue.target, runTarget);
@@ -1195,9 +1253,11 @@ async function execute(options: Options, target: Target): Promise<number> {
     date: todayIso(),
     greplostSha: gitSha7(),
     machine: machineProfile(),
-    corpus: target.sha === null
-      ? [{ name: target.name }]
-      : [{ name: target.name, sha: target.sha, ...(target.tier === null ? {} : { tier: target.tier }), lang: target.lang }],
+    corpus: !corpusRun
+      ? []
+      : target.sha === null
+        ? [{ name: target.name }]
+        : [{ name: target.name, sha: target.sha, ...(target.tier === null ? {} : { tier: target.tier }), lang: target.lang }],
     // The scale the numbers were taken at, so `RESULTS.md` can print it beside
     // them and refuse to print a tier-scoped target against a fixture run
     // (review round 1, critical 3). `files` is the file universe the oracle and
@@ -1230,7 +1290,7 @@ async function execute(options: Options, target: Target): Promise<number> {
     method,
   };
 
-  const file = writeResult(SUITE, payload);
+  const file = writeResult(resultSuite(options.fixture), payload);
   console.log(`${SUITE}: wrote ${path.relative(REPO_ROOT, file)}`);
   return 0;
 }
@@ -1452,7 +1512,11 @@ export const ARM_PREFIX: Record<Arm, string> = {
 export const ARM_DESCRIPTION: Record<Arm, string> = {
   "documented-sync":
     "each tool's own sync mechanism was installed exactly as its README describes and then left alone: the " +
-    "harness commits, and nothing else",
+    "harness commits, and nothing else — with one qualification, for crg. crg keeps its graph in SQLite and " +
+    "only `code-review-graph visualize --format json` writes the JSON the adapters read, so the harness runs " +
+    "that export at each scoring checkpoint. It reads crg's state rather than advancing it (`visualize` does " +
+    "not rebuild), and it is outside every timing X3 reports; without it crg would have no artifact to score " +
+    "at all. No other tool needs an export, and nothing else is run for any of them",
   "refresh-every-commit":
     "the harness invoked each tool's documented refresh command after every commit, so this arm compares " +
     "incremental accuracy under manual driving and is not a staleness curve",
@@ -1599,10 +1663,13 @@ function processAlive(needle: string): boolean {
  * checkpoints (tech spec 10.0, X2 and X3).
  *
  * The measured quantity is **import edge F1**, not the F1 over every edge kind.
- * Imports are the one relationship all four tools model the same way, and the
- * one where a fresh greplost build already scores 1.0, so a drop in the line is
- * drift rather than a modelling difference. Call F1 is recorded next to it in
- * each cell's detail, where the level rather than the shape is the story.
+ * It is the one where a fresh greplost build already scores 1.0, so a drop in
+ * greplost's line is drift rather than a modelling difference. That is not true
+ * across tools: they do not model imports alike either — on hono graphify's
+ * freshly built artifact scores about 0.13 — which is why the verdict is on each
+ * line's *fall* and not on where it sits (`decayVerdict`). Call F1 is recorded
+ * next to it in each cell's detail, where the level rather than the shape is the
+ * story.
  *
  * One deviation from the tech spec's letter, because of what this machine has
  * rather than what the tools are: the history is synthetic. Each commit appends
@@ -1913,8 +1980,13 @@ async function replayStaleness(
   }
 
   notes.push(
-    `the walk is ${commits} synthetic commits over ${target.name}, each adding one resolvable import line, ` +
-      `scored every ${every} commit${every === 1 ? "" : "s"} against compiler truth at that commit`,
+    `the walk is **synthetic**: ${commits} commits generated over ${target.name}'s pinned checkout, not ` +
+      `${commits} of its real ones. Each commit appends exactly one resolvable import line to one file, ` +
+      "chosen from the repo's own specifiers, so every commit adds exactly one architecture edge and truth " +
+      "moves by exactly one edge. There are no deletions, no renames and no file additions in the walk, which " +
+      "is the easy direction for an incremental updater — a real history would also delete and move code. " +
+      `Scored every ${every} commit${every === 1 ? "" : "s"} against compiler truth at that commit. Tech spec ` +
+      "10.0 asks for 500 real commits of a corpus checkout; that is not what was run here",
   );
   return { commits, every, corpus: target.name, arms: armRuns, stale, mechanisms, notes };
 }
@@ -2337,13 +2409,23 @@ export function describeFreshness(tool: string, freshness: Freshness): string {
   );
 }
 
-/** The comparison sentence on a competitor cell, when there is one to make. */
-function decayReason(ours: Freshness, theirs: Freshness, tool: string): string {
+/**
+ * The comparison sentence on a competitor cell, when there is one to make.
+ *
+ * `decay` is F1 at commit 0 minus F1 at the last commit, so a *negative* decay is a tool
+ * whose F1 rose over the walk. Saying that tool "lost -0.003" was a sentence with the
+ * wrong verb in it (review round 3, minor): a rise is reported as a rise.
+ */
+export function decayReason(ours: Freshness, theirs: Freshness, tool: string): string {
   if (ours.decay === null || theirs.decay === null) return "";
-  if (theirs.decay <= ours.decay) {
-    return `. ${tool} lost ${signed(theirs.decay)} against greplost's ${signed(ours.decay)} over the same walk`;
-  }
-  return `. greplost lost ${signed(ours.decay)} over the same walk`;
+  return `. Over the same walk ${tool} ${movement(theirs.decay)} and greplost ${movement(ours.decay)}`;
+}
+
+/** `lost 0.006` / `gained 0.003` / `held level`. Never "lost" a negative number. */
+function movement(decay: number): string {
+  // A twentieth of a thousandth: below that the walk cannot tell a movement from none.
+  if (Math.abs(decay) < 0.00005) return "held level";
+  return decay < 0 ? `gained ${round(-decay, 4)}` : `lost ${round(decay, 4)}`;
 }
 
 /**
@@ -3066,24 +3148,20 @@ function metricX10(metrics: Record<XId, MetricRow>, states: Map<CompetitorName, 
   const plan = PLAN_BY_ID.get("X10") as MetricDef;
   const row = metrics["X10"];
 
-  // Workspace mode is a capability probe, not a score: either the command exists
-  // and answers across repos, or it does not exist yet.
-  const fixture = path.join(REPO_ROOT, "fixtures", "two-repo-workspace");
-  const workspaceCli = spawnSync("bun", [path.join(REPO_ROOT, "packages", "cli", "src", "main.ts"), "workspace", "--help"], {
-    cwd: REPO_ROOT,
-    encoding: "utf8",
-    timeout: 60_000,
-  });
-  const hasCommand = workspaceCli.status === 0;
-  const hasFixture = existsSync(fixture);
-  row.tools["greplost"] = hasCommand && hasFixture
-    ? measured("works", plan.target, "win", "")
-    : na(
-        plan.target,
-        `workspace mode (tech spec 4.4) is not available in this checkout yet: ` +
-          `${hasCommand ? "" : "`greplost workspace` is not a command"}${hasCommand || hasFixture ? "" : "; "}` +
-          `${hasFixture ? "" : "the `two-repo-workspace` fixture does not exist"}`,
-      );
+  // Workspace mode is a capability probe, not a score — but it is still a probe that
+  // has to run something. This used to ask `greplost workspace --help` for an exit code
+  // and record `n/a: not a command`, which was true and beside the point: there is no
+  // `workspace` subcommand by design (tech spec 4.4 — `update`, `verify`, `query` and
+  // `impact` act across repos when run from a directory holding
+  // `greplost.workspace.json`). So X10 read `n/a` for a capability the CLI has (review
+  // round 3, important 5). The probe now does what the tech spec's X10 says: `greplost
+  // impact` on the two-repo fixture, asserting the answer crosses the repo boundary.
+  const probe = probeCrossRepoImpact();
+  row.tools["greplost"] =
+    probe.reason === null
+      ? measured("works", plan.target, "win", "", probe.detail)
+      : na(plan.target, probe.reason);
+  method.push(`X10 (greplost): ${probe.method}`);
 
   const sentences: Record<CompetitorName, string> = {
     graphify:
@@ -3101,6 +3179,95 @@ function metricX10(metrics: Record<XId, MetricRow>, states: Map<CompetitorName, 
     row.tools[state.name] = na(plan.target, sentences[state.name]);
   }
   method.push("X10: a capability row, not a score (tech spec 3.1). Each competitor's cell says what it would need to do this.");
+}
+
+/**
+ * The file X10 asks for a blast radius of, and the repo whose files the answer must
+ * reach for the capability to have been demonstrated.
+ *
+ * `fixtures/two-repo-workspace` is `repo-a` (a package exporting `greet`) plus `repo-b`
+ * (which imports it). A blast radius of `repo-a`'s source that stops at `repo-a`'s
+ * boundary is a single-repo answer wearing a workspace's clothes.
+ */
+const X10_SUBJECT = "repo-a/src/greet.ts";
+const X10_OTHER_REPO = "repo-b";
+
+/**
+ * Does `greplost impact` cross a repository boundary on the two-repo fixture?
+ *
+ * Runs the real CLI against a throwaway copy: `init --workspace --no-hooks` from the
+ * directory holding `greplost.workspace.json`, then `impact <subject> --json`. Nothing
+ * here is a score — X10 is a capability row — but the `works` is now something that ran,
+ * and every way it can fail returns the reason instead.
+ */
+function probeCrossRepoImpact(): { reason: string | null; detail: Record<string, number>; method: string } {
+  const ran = `\`greplost init --workspace --no-hooks\` then \`greplost impact ${X10_SUBJECT} --json\` on a copy of \`fixtures/two-repo-workspace\``;
+  const fixture = path.join(REPO_ROOT, "fixtures", "two-repo-workspace");
+  if (!existsSync(fixture)) {
+    return { reason: "the `two-repo-workspace` fixture does not exist in this checkout", detail: {}, method: `${ran}: the fixture is missing.` };
+  }
+  const cli = path.join(REPO_ROOT, "packages", "cli", "src", "main.ts");
+  const dir = path.join(WORK_DIR, "greplost", "two-repo-workspace");
+  // Its own git repository, for the reason `prepareCopy` documents: the work dir is
+  // gitignored by the greplost checkout, and greplost's discovery honours ignore rules.
+  prepareCopy(fixture, dir);
+
+  // `--root` explicitly, never cwd: `findRoot` walks up looking for a `.greplost`, and
+  // from inside `bench/.competitors/` the first one it meets is greplost's own — which
+  // is how this probe came to report "there is no greplost.workspace.json here" while
+  // standing in a directory that has one.
+  const call = (args: string[]): { status: number | null; stdout: string; stderr: string } => {
+    const spawned = spawnSync("bun", [cli, ...args, "--root", dir], { cwd: dir, encoding: "utf8", timeout: 120_000 });
+    return { status: spawned.status, stdout: spawned.stdout ?? "", stderr: spawned.stderr ?? "" };
+  };
+
+  const init = call(["init", "--workspace", "--no-hooks"]);
+  if (init.status !== 0) {
+    const why = (init.stderr || init.stdout).trim().split("\n")[0] ?? `exit ${init.status}`;
+    return { reason: `\`greplost init --workspace\` failed on the fixture: ${why}`, detail: {}, method: `${ran}: init failed — ${why}.` };
+  }
+
+  const impact = call(["impact", X10_SUBJECT, "--json"]);
+  if (impact.status !== 0) {
+    const why = (impact.stderr || impact.stdout).trim().split("\n")[0] ?? `exit ${impact.status}`;
+    return { reason: `\`greplost impact\` failed in workspace mode: ${why}`, detail: {}, method: `${ran}: impact failed — ${why}.` };
+  }
+
+  let files: { path?: unknown; depth?: unknown }[];
+  try {
+    const parsed = JSON.parse(impact.stdout) as { files?: unknown };
+    files = Array.isArray(parsed.files) ? (parsed.files as { path?: unknown; depth?: unknown }[]) : [];
+  } catch (err) {
+    const why = (err as Error).message;
+    return { reason: `\`greplost impact --json\` did not produce readable JSON: ${why}`, detail: {}, method: `${ran}: unreadable JSON — ${why}.` };
+  }
+
+  // Workspace ids are `<repo>::<path within repo>` (tech spec 4.4), so a cross-repo hit
+  // is a file whose repo prefix is not the subject's.
+  const crossRepo = files.filter((file) => typeof file.path === "string" && file.path.startsWith(`${X10_OTHER_REPO}::`));
+  const depths = files.map((file) => (typeof file.depth === "number" ? file.depth : 0));
+  if (crossRepo.length === 0) {
+    return {
+      reason:
+        `\`greplost impact\` answered inside one repository only: ${files.length} affected file` +
+        `${files.length === 1 ? "" : "s"}, none of them in \`${X10_OTHER_REPO}\`, so no cross-repo edge was resolved`,
+      detail: { affectedFiles: files.length, crossRepoFiles: 0 },
+      method: `${ran}: the answer stayed inside \`repo-a\`, so the capability was not demonstrated.`,
+    };
+  }
+  return {
+    reason: null,
+    detail: {
+      affectedFiles: files.length,
+      crossRepoFiles: crossRepo.length,
+      radius: depths.length === 0 ? 0 : Math.max(...depths),
+    },
+    method:
+      `${ran} returned ${files.length} affected file${files.length === 1 ? "" : "s"}, ` +
+      `${crossRepo.length} of them in \`${X10_OTHER_REPO}\` — the blast radius crossed the repository boundary, ` +
+      "which is the capability tech spec 3.1 X10 asks for. It is not a score: no competitor has an equivalent " +
+      "to compare it against.",
+  };
 }
 
 // ---------------------------------------------------------------------------

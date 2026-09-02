@@ -393,6 +393,19 @@ function headToHeadSection(model: ReportModel): string[] {
   }
   out.push("");
 
+  // One line, because the X1 row's two verdict kinds are not the same comparison and a
+  // reader has no way to tell from the cells. The `vs <tool>` columns are decided on
+  // call precision alone (tech spec 10.0's headline for X1); greplost's own cell is
+  // decided against both halves of the section 3.1 target at once, +0.10 on calls *and*
+  // +0.03 on imports, which is why it can read `tie` beside three `win`s.
+  out.push(
+    "> Reading the X1 row: each `vs <tool>` column is greplost against that tool on **call edge precision**, " +
+      "the headline tech spec 10.0 names. greplost's own `Measured` verdict is against **both halves** of the " +
+      "3.1 target at once (+0.10 on calls and +0.03 on imports), so it can be a `tie` in the same row where " +
+      "every competitor column is a `win`.",
+    "",
+  );
+
   for (const id of X_IDS) {
     const row = byId.get(id);
     if (row === undefined) continue;

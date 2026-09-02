@@ -91,8 +91,8 @@ const EPSILON = 1e-9;
 const SESSION_TIMEOUT_MS = 300_000;
 /** Timeout for the cheap probes (`--version`, `--help`, `greplost init`). */
 const SETUP_TIMEOUT_MS = 120_000;
-/** Default spend ceiling for a corpus run. Fixture runs are hermetic and uncapped. */
-const DEFAULT_MAX_USD = 25;
+/** Default spend ceiling for any run, fixture included, unless `--max-usd` overrides it. */
+export const DEFAULT_MAX_USD = 25;
 
 /** Flags the runner depends on, confirmed against `claude --help` before any run. */
 const REQUIRED_FLAGS = [
@@ -821,7 +821,7 @@ interface Options {
   tasks: number;
   seed: number;
   timeoutMs: number;
-  /** Spend ceiling for the whole run; null means uncapped (the fixture default). */
+  /** Spend ceiling for the whole run. Defaults to `DEFAULT_MAX_USD`, the fixture included. */
   maxUsd: number | null;
   /** Explicit per-session ceiling (`--max-session-usd`); undefined derives one. */
   maxSessionUsd: number | undefined;
@@ -891,10 +891,15 @@ function parseArgs(args: string[]): Options {
     else if (arg === "--max-session-usd") options.maxSessionUsd = positiveNumber("--max-session-usd", args[++i]);
     else if (arg === "--categories") options.categories = parseCategories(args[++i]);
   }
-  // A corpus run bills a real account, so it is capped unless the caller says
-  // otherwise. The fixture run is hermetic (a fake `claude` in tests, a handful
-  // of tiny sessions by hand) and a cap there would only get in the way.
-  options.maxUsd = maxUsd ?? (options.fixture ? null : DEFAULT_MAX_USD);
+  // Every run is capped unless the caller says otherwise, the fixture included.
+  //
+  // The fixture arm used to be uncapped on the argument that it is hermetic. It is not:
+  // `--fixture` only chooses the repo and the task set, and the runner still resolves
+  // `claude` on PATH. Under `bun test` that is a fake binary, but a developer running
+  // `bench agent --fixture` on their own machine reaches the real CLI and bills a real
+  // account — with no ceiling, which is precisely the dangerous case. A cap that is
+  // never reached costs a hermetic run nothing (review round 3, important 6).
+  options.maxUsd = maxUsd ?? DEFAULT_MAX_USD;
 
   if (options.conditions.length === 0) options.conditions.push("base", "gl");
   // De-duplicated and put in table order, so the results file is stable whatever

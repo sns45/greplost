@@ -104,6 +104,14 @@ const Y_INTERVALS = 4;
 const NOTE_LINE_HEIGHT = 13;
 /** Average advance of the 10px note font, in pixels. Deliberately conservative. */
 const NOTE_CHAR_WIDTH = 5.2;
+/**
+ * Minimum horizontal distance between two x-axis labels, in pixels.
+ *
+ * Wide enough for a four-character label in the 11px axis font plus air, so a
+ * proportionally spaced axis whose last two checkpoints sit close together prints one
+ * label rather than two overlapping ones.
+ */
+const MIN_LABEL_GAP = 34;
 
 /** How many characters of the note font fit across the canvas, minus margins. */
 function noteWidth(width: number): number {
@@ -379,11 +387,42 @@ function bars(spec: ChartSpec, series: readonly Series[]): string {
 // ---------------------------------------------------------------------------
 
 /**
+ * Where each category sits on the x axis, as a fraction of the plot width.
+ *
+ * Evenly spaced by position, unless every category is a number and they ascend — then
+ * spaced by *value*. The X2 checkpoints are commit indices `0, 12, 24 … 96, 100`, and the
+ * last gap is 4 commits, not 12: drawing it the same width as the others stretched the
+ * final segment threefold and made the end of every curve look like a slope it does not
+ * have (review round 3, minor).
+ */
+export function categoryOffsets(categories: readonly string[]): number[] {
+  const count = categories.length;
+  if (count <= 1) return count === 1 ? [0] : [];
+  const even = categories.map((_, index) => index / (count - 1));
+
+  const values = categories.map((label) => Number(label));
+  if (values.some((value) => !Number.isFinite(value))) return even;
+  const first = values[0] as number;
+  const last = values[count - 1] as number;
+  const span = last - first;
+  // A flat or descending axis (every label the same, or unsorted) has no scale to
+  // read; fall back to even spacing rather than folding points on top of each other.
+  if (!(span > 0)) return even;
+  for (let i = 1; i < count; i++) {
+    if ((values[i] as number) <= (values[i - 1] as number)) return even;
+  }
+  return values.map((value) => (value - first) / span);
+}
+
+/**
  * One polyline per series: the X2 staleness curve and the build-time chart.
  *
  * A run of `null`s breaks the line into segments rather than interpolating over
  * a gap, and a series with no finite value at all draws nothing — which is how
  * the hero chart shows "greplost only" honestly (tech spec 10.9).
+ *
+ * A numeric, ascending x axis is plotted to scale (`categoryOffsets`), so a chart of
+ * commit indices reads as commits rather than as checkpoints.
  */
 export function lineChart(spec: ChartSpec): string {
   const max = spec.yMax ?? axisMax(peak(spec.series));
@@ -399,8 +438,11 @@ export function lineChart(spec: ChartSpec): string {
   });
 
   const count = Math.max(spec.categories.length, 1);
-  const step = count > 1 ? (frame.right - frame.left) / (count - 1) : 0;
-  const xAt = (index: number): number => (count > 1 ? frame.left + step * index : (frame.left + frame.right) / 2);
+  const offsets = categoryOffsets(spec.categories);
+  const xAt = (index: number): number =>
+    count > 1
+      ? frame.left + (frame.right - frame.left) * (offsets[index] ?? index / (count - 1))
+      : (frame.left + frame.right) / 2;
 
   for (let s = 0; s < spec.series.length; s++) {
     const one = spec.series[s];
@@ -428,12 +470,22 @@ export function lineChart(spec: ChartSpec): string {
     flush();
   }
 
-  // Category labels are thinned so a 500-commit x axis stays readable; the
-  // divisor is derived from the count, so it does not depend on the data.
+  // Category labels are thinned so a 500-commit x axis stays readable; the divisor is
+  // derived from the count, so it does not depend on the data. With proportional spacing
+  // two checkpoints can also land close together (the X2 walk ends 96, 100), so a label
+  // is additionally dropped when it would collide with the one before it. The last
+  // category always survives: it is the end of the walk.
   const every = Math.max(1, Math.ceil(count / 10));
+  const last = spec.categories.length - 1;
+  let previousX = Number.NEGATIVE_INFINITY;
   for (let c = 0; c < spec.categories.length; c++) {
-    if (c % every !== 0 && c !== spec.categories.length - 1) continue;
-    frame.lines.push(categoryLabel(frame, xAt(c), spec.categories[c] ?? ""));
+    if (c % every !== 0 && c !== last) continue;
+    const x = xAt(c);
+    if (c !== last && x - previousX < MIN_LABEL_GAP) continue;
+    // The final label wins its slot: drop the neighbour that would run into it.
+    if (c === last && x - previousX < MIN_LABEL_GAP) frame.lines.pop();
+    frame.lines.push(categoryLabel(frame, x, spec.categories[c] ?? ""));
+    previousX = x;
   }
 
   return finishFrame(frame);

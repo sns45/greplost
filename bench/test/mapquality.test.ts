@@ -5,7 +5,7 @@
  * `packages/render/test/golden/tiny-ts` (leaf 1.2.2, wave 2).
  */
 import { describe, test, expect, afterEach } from "bun:test";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readdirSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -16,6 +16,8 @@ import {
   countTokens,
   walkMarkdown,
   resolveTarget,
+  indexedFileCount,
+  ownRepoName,
   M1_TOKEN_BUDGET,
   DEFAULT_MAX_NODES,
 } from "../src/mapquality.ts";
@@ -26,8 +28,15 @@ const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
 const GOLDEN_DIR = path.join(REPO_ROOT, "packages", "render", "test", "golden", "tiny-ts");
 
 /** Base `Options`-shaped object for `resolveTarget`; each test overrides only what it needs. */
-function baseOptions(): { dirArg: string | undefined; repo: string | undefined; fixture: boolean; gate: boolean; json: boolean } {
-  return { dirArg: undefined, repo: undefined, fixture: false, gate: false, json: false };
+function baseOptions(): {
+  dirArg: string | undefined;
+  repo: string | undefined;
+  fixture: boolean;
+  gate: boolean;
+  json: boolean;
+  dryRun: boolean;
+} {
+  return { dirArg: undefined, repo: undefined, fixture: false, gate: false, json: false, dryRun: false };
 }
 
 /**
@@ -257,6 +266,45 @@ describe("mapquality run (golden tiny-ts)", () => {
     expect(code).toBe(0);
   });
 
+  test("--dry-run prints the shape and writes no result file", async () => {
+    // The defect this pins: the suite ignored `--dry-run` entirely, so
+    // `bun run bench:all --dry-run` wrote a real `mapquality-*.json` and that
+    // payload became the published M1/M2. A dry run must produce the shape and
+    // nothing else.
+    const results = tempResultsDir();
+    const { code, stdout } = await runCaptured(["--dir", GOLDEN_DIR, "--dry-run"], results);
+    expect(code).toBe(0);
+    expect(stdout[stdout.length - 1]).toBe("mapquality: dry-run ok");
+    expect(readdirSync(results)).toEqual([]);
+    expect(latestResult("mapquality", results)).toBeUndefined();
+    // The shape, so a reader of the dry run sees which rows a real run fills.
+    expect(stdout.some((line) => line.includes("INDEX.md tokens"))).toBe(true);
+    expect(stdout.some((line) => line.includes("max nodes per fence"))).toBe(true);
+    // Nothing was measured, so no number is offered as if it were.
+    expect(stdout.some((line) => /INDEX\.md tokens.*not run/.test(line))).toBe(true);
+  });
+
+  test("--dry-run with --gate writes nothing and never claims a gate result", async () => {
+    const results = tempResultsDir();
+    const { code, stdout } = await runCaptured(["--dir", GOLDEN_DIR, "--dry-run", "--gate"], results);
+    expect(code).toBe(0);
+    expect(stdout[stdout.length - 1]).toBe("mapquality: dry-run ok");
+    expect(stdout.some((line) => /GATE (PASS|FAIL)/.test(line))).toBe(false);
+    expect(readdirSync(results)).toEqual([]);
+  });
+
+  test("--dry-run does not need the artifact dir to exist", async () => {
+    // `bench all --dry-run` runs on a fresh clone with no `.greplost/` yet.
+    const results = tempResultsDir();
+    const { code, stdout } = await runCaptured(
+      ["--dir", path.join(GOLDEN_DIR, "definitely-not-here"), "--dry-run"],
+      results,
+    );
+    expect(code).toBe(0);
+    expect(stdout[stdout.length - 1]).toBe("mapquality: dry-run ok");
+    expect(readdirSync(results)).toEqual([]);
+  });
+
   test("default (non-json) output prints the checker line for the gate to match on", async () => {
     const results = tempResultsDir();
     const { stdout } = await runCaptured(["--dir", GOLDEN_DIR], results);
@@ -465,6 +513,52 @@ describe("resolveTarget (--dir / --repo / --fixture)", () => {
     const target = resolveTarget(baseOptions());
     expect(target.dir).toBe(path.join(REPO_ROOT, ".greplost"));
     expect(target.corpus).toEqual([]);
+  });
+
+  test("every target names the repo it is the map of, so M1 keeps its scale", () => {
+    // Named for the main checkout, not for the worktree this happens to run in.
+    expect(resolveTarget(baseOptions()).repo).toBe(ownRepoName());
+    expect(ownRepoName()).not.toMatch(/^agent-[0-9a-f]+$/);
+    expect(resolveTarget({ ...baseOptions(), fixture: true })).toMatchObject({ repo: "tiny-ts", fixture: true });
+    const pinned = loadCorpus().repos[0]!;
+    expect(resolveTarget({ ...baseOptions(), repo: pinned.name })).toMatchObject({
+      repo: pinned.name,
+      tier: pinned.tier,
+    });
+    // An arbitrary `--dir` is named by the tree it maps, which is its parent.
+    expect(resolveTarget({ ...baseOptions(), dirArg: "/tmp/some-repo/.greplost" }).repo).toBe("some-repo");
+  });
+
+  test("indexedFileCount reads the artifact manifest, and is null when there is none", () => {
+    // The golden render is a rendered map with no manifest beside it; the repo's
+    // own `.greplost` has one, and its `files` map is the indexed file count.
+    expect(indexedFileCount(GOLDEN_DIR)).toBeNull();
+    const own = indexedFileCount(path.join(REPO_ROOT, ".greplost"));
+    expect(own).not.toBeNull();
+    expect(own!).toBeGreaterThan(0);
+  });
+
+  test("the payload's target carries the repo and the indexed file count", async () => {
+    const results = mkdtempSync(path.join(tmpdir(), "greplost-mapquality-target-"));
+    const previous = process.env["GREPLOST_BENCH_RESULTS_DIR"];
+    process.env["GREPLOST_BENCH_RESULTS_DIR"] = results;
+    const realLog = console.log;
+    console.log = (): void => {};
+    try {
+      // The default target — `.greplost` at the repo root — because that is the one the
+      // published M1/M2 payload is taken on. An explicit `--dir` names the tree by its
+      // own path instead, which is checked above.
+      expect(await run([])).toBe(0);
+    } finally {
+      console.log = realLog;
+      if (previous === undefined) delete process.env["GREPLOST_BENCH_RESULTS_DIR"];
+      else process.env["GREPLOST_BENCH_RESULTS_DIR"] = previous;
+    }
+    const target = latestResult("mapquality", results)!.payload["target"] as Record<string, unknown>;
+    expect(target["repo"]).toBe(ownRepoName());
+    expect(typeof target["files"]).toBe("number");
+    expect(target["files"] as number).toBeGreaterThan(0);
+    rmSync(results, { recursive: true, force: true });
   });
 });
 

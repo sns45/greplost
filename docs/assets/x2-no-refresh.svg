@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="406" viewBox="0 0 720 406" font-family="sans-serif" font-size="12">
-<rect x="0" y="0" width="720" height="406" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="432" viewBox="0 0 720 432" font-family="sans-serif" font-size="12">
+<rect x="0" y="0" width="720" height="432" fill="#ffffff"/>
 <text x="20" y="26" font-size="15" font-weight="bold" fill="#111827">X2 staleness with no refresh</text>
 <rect x="20" y="38" width="10" height="10" fill="#1d4ed8"/>
 <text x="35" y="47" fill="#6b7280">greplost</text>
@@ -23,18 +23,19 @@
 <text x="382" y="356" fill="#6b7280" font-size="11" text-anchor="middle">commit index</text>
 <text x="20" y="372" fill="#6b7280" font-size="10">Arm: no-refresh — each tool's commit-0 artifact scored against truth at that commit, which is what a reader gets when a sync</text>
 <text x="20" y="385" fill="#6b7280" font-size="10">mechanism is absent or silently does not fire. greplost is the only one of the four that can report this state mechanically,</text>
-<text x="20" y="398" fill="#6b7280" font-size="10">through `verify`. Omitted (not run here): ua. Measured on corpus hono, tier M (248 files); 100 replayed commits.</text>
-<polyline points="64,58 134.67,60.75 205.33,63.44 276,66.08 346.67,68.64 417.33,71.17 488,73.66 558.67,76.08 629.33,78.46 700,79.25" fill="none" stroke="#1d4ed8" stroke-width="2"/>
-<polyline points="64,287.55 134.67,288.21 205.33,288.84 276,289.45 346.67,290.06 417.33,290.61 488,291.16 558.67,291.69 629.33,292.22 700,292.38" fill="none" stroke="#ea580c" stroke-width="2"/>
-<polyline points="64,85.85 134.67,88.57 205.33,91.21 276,93.8 346.67,96.33 417.33,98.81 488,101.24 558.67,103.62 629.33,105.94 700,106.71" fill="none" stroke="#0f766e" stroke-width="2"/>
+<text x="20" y="398" fill="#6b7280" font-size="10">through `verify`. Omitted (not run here): ua. Measured on corpus hono, tier M (248 files); 100 replayed commits. The walk is</text>
+<text x="20" y="411" fill="#6b7280" font-size="10">synthetic: each commit appends exactly one resolvable import line to one file, so truth moves by exactly one edge per commit, and</text>
+<text x="20" y="424" fill="#6b7280" font-size="10">the walk contains no deletions, no renames and no new files.</text>
+<polyline points="64,58 140.32,60.75 216.64,63.44 292.96,66.08 369.28,68.64 445.6,71.17 521.92,73.66 598.24,76.08 674.56,78.46 700,79.25" fill="none" stroke="#1d4ed8" stroke-width="2"/>
+<polyline points="64,287.55 140.32,288.21 216.64,288.84 292.96,289.45 369.28,290.06 445.6,290.61 521.92,291.16 598.24,291.69 674.56,292.22 700,292.38" fill="none" stroke="#ea580c" stroke-width="2"/>
+<polyline points="64,85.85 140.32,88.57 216.64,91.21 292.96,93.8 369.28,96.33 445.6,98.81 521.92,101.24 598.24,103.62 674.56,105.94 700,106.71" fill="none" stroke="#0f766e" stroke-width="2"/>
 <text x="64" y="338" fill="#6b7280" font-size="11" text-anchor="middle">0</text>
-<text x="134.67" y="338" fill="#6b7280" font-size="11" text-anchor="middle">12</text>
-<text x="205.33" y="338" fill="#6b7280" font-size="11" text-anchor="middle">24</text>
-<text x="276" y="338" fill="#6b7280" font-size="11" text-anchor="middle">36</text>
-<text x="346.67" y="338" fill="#6b7280" font-size="11" text-anchor="middle">48</text>
-<text x="417.33" y="338" fill="#6b7280" font-size="11" text-anchor="middle">60</text>
-<text x="488" y="338" fill="#6b7280" font-size="11" text-anchor="middle">72</text>
-<text x="558.67" y="338" fill="#6b7280" font-size="11" text-anchor="middle">84</text>
-<text x="629.33" y="338" fill="#6b7280" font-size="11" text-anchor="middle">96</text>
+<text x="140.32" y="338" fill="#6b7280" font-size="11" text-anchor="middle">12</text>
+<text x="216.64" y="338" fill="#6b7280" font-size="11" text-anchor="middle">24</text>
+<text x="292.96" y="338" fill="#6b7280" font-size="11" text-anchor="middle">36</text>
+<text x="369.28" y="338" fill="#6b7280" font-size="11" text-anchor="middle">48</text>
+<text x="445.6" y="338" fill="#6b7280" font-size="11" text-anchor="middle">60</text>
+<text x="521.92" y="338" fill="#6b7280" font-size="11" text-anchor="middle">72</text>
+<text x="598.24" y="338" fill="#6b7280" font-size="11" text-anchor="middle">84</text>
 <text x="700" y="338" fill="#6b7280" font-size="11" text-anchor="middle">100</text>
 </svg>

@@ -9,6 +9,7 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { findUnparsableFiles } from "@greplost/core";
 import {
   DEFAULT_CONFIG,
   type CallEdge,
@@ -19,7 +20,15 @@ import {
 } from "@greplost/core/schema";
 import { edgeKey, exportKeys, jaccardCycles, scoreEdges, scoreSet } from "../src/score.ts";
 import { gitSha7, latestResult, todayIso, writeResult } from "../src/results-io.ts";
-import { locate, missedMetrics, scoreAgainstTruth, scoredFiles } from "../src/structural.ts";
+import {
+  locate,
+  missedMetrics,
+  resultSuite as structuralResultSuite,
+  scoreAgainstTruth,
+  scoredFiles,
+  unparsableBucket,
+  type RepoScores,
+} from "../src/structural.ts";
 import type { Truth } from "../src/truth/ts.ts";
 
 const edge = (from: string, to: string, kind: Edge["kind"] = "import"): Edge => ({
@@ -209,7 +218,7 @@ describe("results-io", () => {
     expect(payload["suite"]).toBe("structural");
     expect(payload["date"]).toBe(todayIso());
     expect(payload["greplostSha"]).toBe(gitSha7());
-    expect(Object.keys(payload)).toEqual(["alpha", "date", "greplostSha", "suite", "zebra"]);
+    expect(Object.keys(payload)).toEqual(["alpha", "date", "greplostSha", "recordedAt", "suite", "zebra"]);
   });
 
   test("does not overwrite an explicit suite, date or sha in the payload", () => {
@@ -229,6 +238,56 @@ describe("results-io", () => {
     const latest = latestResult("structural", dir);
     expect(latest?.file).toBe(path.join(dir, "structural-2026-09-02-bbbbbbb.json"));
     expect(latest?.payload["marker"]).toBe("newest");
+  });
+
+  test("latestResult orders by recordedAt, not by the sha in the file name", () => {
+    // The defect this pins: `<suite>-<date>-<sha7>.json` was ordered
+    // lexicographically, so a newer run at a commit whose short sha sorts low
+    // lost to an older run at a commit whose sha sorts high (headtohead 173a463
+    // lost to b908e0f, and the Versions table then named the wrong commit).
+    // Here the sha order (aaaaaaa < mmmmmmm < zzzzzzz) is the exact reverse of
+    // the recording order, so a name sort and a time sort cannot both be right.
+    const dir = temp();
+    writeFileSync(
+      path.join(dir, "structural-2026-09-02-zzzzzzz.json"),
+      '{"marker":"oldest","recordedAt":"2026-09-02T01:00:00.000Z"}\n',
+    );
+    writeFileSync(
+      path.join(dir, "structural-2026-09-02-mmmmmmm.json"),
+      '{"marker":"middle","recordedAt":"2026-09-02T02:00:00.000Z"}\n',
+    );
+    writeFileSync(
+      path.join(dir, "structural-2026-09-02-aaaaaaa.json"),
+      '{"marker":"newest","recordedAt":"2026-09-02T03:00:00.000Z"}\n',
+    );
+    const latest = latestResult("structural", dir);
+    expect(latest?.payload["marker"]).toBe("newest");
+    expect(latest?.file).toBe(path.join(dir, "structural-2026-09-02-aaaaaaa.json"));
+  });
+
+  test("a payload with no recordedAt never displaces one that has it", () => {
+    // Every result committed before the stamp existed sorts before every stamped
+    // one, whatever its name: an unstamped file cannot be shown to be the newer
+    // of the two, and guessing that from its sha is the defect above.
+    const dir = temp();
+    writeFileSync(path.join(dir, "structural-2026-09-02-zzzzzzz.json"), '{"marker":"unstamped"}\n');
+    writeFileSync(
+      path.join(dir, "structural-2026-09-02-aaaaaaa.json"),
+      '{"marker":"stamped","recordedAt":"2026-01-01T00:00:00.000Z"}\n',
+    );
+    expect(latestResult("structural", dir)?.payload["marker"]).toBe("stamped");
+  });
+
+  test("writeResult stamps recordedAt in ISO 8601 UTC and keeps an explicit one", () => {
+    const dir = temp();
+    const stamped = JSON.parse(
+      readFileSync(writeResult("structural", { a: 1 }, dir), "utf8"),
+    ) as Record<string, unknown>;
+    expect(stamped["recordedAt"]).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+    const kept = JSON.parse(
+      readFileSync(writeResult("perf", { recordedAt: "2020-01-01T00:00:00.000Z" }, dir), "utf8"),
+    ) as Record<string, unknown>;
+    expect(kept["recordedAt"]).toBe("2020-01-01T00:00:00.000Z");
   });
 
   test("latestResult ignores other suites and unrelated files", () => {
@@ -537,5 +596,104 @@ describe("structural gate", () => {
     expect(locate(snapshot, "a.ts -> zzz.ts", "import")).toBe("a.ts:1");
     expect(locate(snapshot, "a.ts -> b.ts#helper", "call")).toBe("a.ts:1");
     expect(locate(snapshot, "b.ts#helper", "export")).toBe("b.ts:2");
+  });
+
+  test("unparsableBucket carries the count and the repo each file came from", () => {
+    const withFiles = (name: string, unparsable: { path: string; reason: string }[]): RepoScores => ({
+      ...scoreAgainstTruth(name, snapshotOf(), truthOf(), "ts"),
+      unparsable,
+    });
+    const bucket = unparsableBucket([
+      withFiles("zeta", [{ path: "z.ts", reason: "error-root" }]),
+      withFiles("alpha", [
+        { path: "b.ts", reason: "error-child" },
+        { path: "a.ts", reason: "error-root" },
+      ]),
+    ]);
+    expect(bucket.count).toBe(3);
+    expect(bucket.files.map((entry) => `${entry.repo}:${entry.path}`)).toEqual([
+      "alpha:a.ts",
+      "alpha:b.ts",
+      "zeta:z.ts",
+    ]);
+    expect(unparsableBucket([]).count).toBe(0);
+  });
+});
+
+/**
+ * The unparsable bucket (Appendix C ruling 2026-09-03).
+ *
+ * tree-sitter-typescript 0.23.2 is the newest grammar that exists and hono's generic
+ * call signatures hit open upstream issue #335. The extractor recovers around ERROR
+ * nodes, so those files still score — but whatever the grammar could not read costs S1
+ * and S2 recall with nothing in the report saying so. `findUnparsableFiles` is the reader
+ * that names them.
+ */
+describe("findUnparsableFiles", () => {
+  let dir = "";
+  const write = (name: string, source: string): string => {
+    if (dir === "") dir = mkdtempSync(path.join(tmpdir(), "greplost-unparsable-"));
+    writeFileSync(path.join(dir, name), source);
+    return name;
+  };
+  afterAll(() => {
+    if (dir !== "") rmSync(dir, { recursive: true, force: true });
+  });
+
+  test("reports a file whose top level is a broken generic signature, and nothing else", async () => {
+    // A generic call signature at file scope: valid inside an `interface` body (this is
+    // the shape hono's `HandlerInterface` is built from), a syntax error outside one.
+    // tree-sitter puts it under an ERROR node that is a direct child of the root, which
+    // is exactly the "root-level ERROR" the ruling names.
+    const broken = write("broken.ts", "<T,>(value: T): T;\nexport const after = 1;\n");
+    const clean = write("clean.ts", "export function ok<T>(value: T): T {\n  return value;\n}\n");
+    // An ERROR deep in the tree is the recoverable case and is deliberately not counted:
+    // the extractor reads what survives around it.
+    const nested = write("nested.ts", "export interface Deep {\n  m<T extends >(x: T): T;\n}\n");
+    const missing = "not-on-disk.ts";
+    const notCode = write("notes.md", "# not source\n");
+
+    const found = await findUnparsableFiles(dir, [broken, clean, nested, missing, notCode]);
+    expect(found.map((entry) => entry.path)).toEqual([broken]);
+    expect(found[0]?.reason).toBe("error-child");
+    expect(found[0]?.lang).toBe("ts");
+  });
+
+  test("a file of pure syntax rubbish is reported, and a clean list comes back empty", async () => {
+    const rubbish = write("rubbish.ts", "}}}} <<<< ==== )))\n");
+    const clean = write("clean2.ts", "export const x = 1;\n");
+    const found = await findUnparsableFiles(dir, [rubbish, clean]);
+    expect(found.map((entry) => `${entry.path}:${entry.reason}`)).toEqual([`${rubbish}:error-child`]);
+    expect(await findUnparsableFiles(dir, [clean])).toEqual([]);
+    expect(await findUnparsableFiles(dir, [])).toEqual([]);
+  });
+});
+
+/**
+ * A fixture run must never land on the corpus suite's file name (review round 3,
+ * important 1). `perf`, `replay` and `agent` already split; `structural` and
+ * `headtohead` wrote fixture runs under the corpus name, so a twelve-file smoke run at
+ * the same commit on the same day silently replaced the published corpus numbers.
+ * `headtohead`'s half of this is in `report.test.ts`, where that suite is already loaded.
+ */
+describe("structural fixture runs write to their own suite name", () => {
+  test("the suite name splits on --fixture", () => {
+    expect(structuralResultSuite(false)).toBe("structural");
+    expect(structuralResultSuite(true)).toBe("structural-fixture");
+  });
+
+  test("the file name a fixture run writes cannot become the corpus latest", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "greplost-fixture-suite-"));
+    try {
+      writeResult(structuralResultSuite(false), { marker: "corpus" }, dir);
+      writeResult(structuralResultSuite(true), { marker: "fixture" }, dir);
+      const names = readdirSync(dir).sort();
+      expect(names.some((name) => name.startsWith("structural-fixture-"))).toBe(true);
+      // The corpus payload is still the newest `structural-*` result, even though the
+      // fixture ran after it.
+      expect(latestResult("structural", dir)?.payload["marker"]).toBe("corpus");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

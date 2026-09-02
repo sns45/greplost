@@ -19,6 +19,7 @@ import {
   axisMax,
   barChart,
   boxChart,
+  categoryOffsets,
   groupedBarChart,
   lineChart,
   mermaidXy,
@@ -32,6 +33,7 @@ import {
   METRIC_PLAN,
   TOOLS,
   byteDistance,
+  decayReason,
   describeDifference,
   decayVerdict,
   describeFreshness,
@@ -41,7 +43,9 @@ import {
   fillMissingReasons,
   median,
   planImportEdits,
+  needsCorpus,
   readHookLog,
+  resultSuite as headtoheadResultSuite,
   run as headtoheadRun,
   scaleTitles,
   shimRuns,
@@ -52,9 +56,25 @@ import {
   x3GreplostVerdict,
 } from "../src/headtohead.ts";
 import { stalenessCharts, scaleNote, freshnessNote } from "../src/report-charts.ts";
+import { latestResult, writeResult } from "../src/results-io.ts";
 import { CAPTURES, checkTools, fitForCapture, run as screenshotsRun, x4Summary } from "../src/screenshots.ts";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
+
+/**
+ * A chart's note, read back out of the SVG with the line wrapping undone.
+ *
+ * `startFrame` wraps the note into one `<text font-size="10">` per line, so a phrase
+ * that happens to straddle a wrap is not findable in the raw markup.
+ */
+function svgNote(svg: string): string {
+  return [...svg.matchAll(/<text[^>]*font-size="10"[^>]*>([^<]*)<\/text>/g)]
+    .map((match) => match[1] ?? "")
+    .join(" ")
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, "&");
+}
 
 const temps: string[] = [];
 function tempDir(prefix: string): string {
@@ -176,6 +196,38 @@ describe("charts", () => {
     });
     // A series with no data contributes no polyline points at all.
     expect(svg.match(/<polyline/g)?.length ?? 0).toBe(1);
+  });
+
+  test("a numeric ascending x axis is plotted to scale, not evenly by slot", () => {
+    // The X2 checkpoints are 0, 12, 24 … 96, 100: the last gap is 4 commits, not 12.
+    // Even spacing stretched it threefold and gave every curve a slope at the end that
+    // the data does not have (review round 3, minor).
+    expect(categoryOffsets(["0", "12", "24", "96", "100"])).toEqual([0, 0.12, 0.24, 0.96, 1]);
+    // Evenly spaced input stays evenly spaced.
+    expect(categoryOffsets(["0", "25", "50", "75", "100"])).toEqual([0, 0.25, 0.5, 0.75, 1]);
+    // Non-numeric, repeated or descending labels have no scale to read: even slots.
+    expect(categoryOffsets(["greplost", "graphify", "crg"])).toEqual([0, 0.5, 1]);
+    expect(categoryOffsets(["58", "58", "148"])).toEqual([0, 0.5, 1]);
+    expect(categoryOffsets(["100", "50", "0"])).toEqual([0, 0.5, 1]);
+    expect(categoryOffsets(["7"])).toEqual([0]);
+    expect(categoryOffsets([])).toEqual([]);
+
+    // And the SVG follows it: the last segment of the polyline is the short one.
+    const svg = lineChart({
+      title: "X2 staleness",
+      yLabel: "F1",
+      yMax: 1,
+      categories: ["0", "50", "100", "104"],
+      series: [{ name: "greplost", values: [1, 1, 1, 1] }],
+    });
+    const points = (/<polyline points="([^"]+)"/.exec(svg)?.[1] ?? "").split(" ").map((p) => Number(p.split(",")[0]));
+    expect(points).toHaveLength(4);
+    const gaps = points.slice(1).map((x, i) => x - (points[i] as number));
+    expect(gaps[0]).toBeCloseTo(gaps[1] as number, 6);
+    expect(gaps[2] as number).toBeLessThan((gaps[0] as number) / 10);
+    // Two labels that would collide print as one, and the end of the walk survives.
+    expect(svg).toContain(">104<");
+    expect(svg).not.toContain(">100<");
   });
 
   test("axisMax climbs a fixed ladder, so a new series cannot silently rescale a chart", () => {
@@ -448,6 +500,26 @@ describe("headtohead", () => {
     expect(signed(-0.001)).toBe("-0.001");
   });
 
+  test("decayReason never says a tool `lost` ground its F1 gained", () => {
+    const flat = { at0: 1, atLast: 1, decay: 0 };
+    // crg's F1 rose over the walk: `lost -0.001` was the wrong verb (review round 3).
+    const rose = decayReason(flat, { at0: 0.896, atLast: 0.897, decay: -0.001 }, "crg");
+    expect(rose).toContain("crg gained 0.001");
+    expect(rose).not.toContain("lost -");
+    expect(rose).toContain("greplost held level");
+
+    const fell = decayReason(flat, { at0: 0.131, atLast: 0.125, decay: 0.006 }, "graphify");
+    expect(fell).toContain("graphify lost 0.006");
+
+    // Both sides are always stated, whichever decayed more.
+    const worse = decayReason({ at0: 1, atLast: 0.9, decay: 0.1 }, { at0: 0.9, atLast: 0.89, decay: 0.01 }, "crg");
+    expect(worse).toContain("crg lost 0.01");
+    expect(worse).toContain("greplost lost 0.1");
+
+    // Nothing to compare, nothing said.
+    expect(decayReason(flat, { at0: null, atLast: null, decay: null }, "ua")).toBe("");
+  });
+
   test("every loss carries a reason, even one no metric wrote", () => {
     const metrics = emptyMetrics("not run");
     metrics["X5"].title = "Diff signal after a one-line change";
@@ -484,6 +556,71 @@ describe("headtohead", () => {
     expect(ours?.missedCommits).toEqual([2]);
     expect(ours?.fired).toBe(3);
     expect(ours?.walked).toBe(4);
+  });
+
+  test("X9 and X10 need no corpus checkout, every other metric does", () => {
+    expect(needsCorpus(null)).toBe(true);
+    expect(needsCorpus(new Set(["X10"]))).toBe(false);
+    expect(needsCorpus(new Set(["X9", "X10"]))).toBe(false);
+    expect(needsCorpus(new Set(["X9", "X10", "X4"]))).toBe(true);
+    expect(needsCorpus(new Set(["X1"]))).toBe(true);
+    // Nothing selected is nothing to run, and nothing to run needs no corpus.
+    expect(needsCorpus(new Set())).toBe(false);
+  });
+
+  test("--metrics X10 measures the cross-repo blast radius without a corpus", async () => {
+    // X10 was implemented and free, and read `n/a`: the probe asked for a `greplost
+    // workspace` subcommand that by design does not exist, and the suite refused to
+    // start at all without a corpus checkout (review round 3, important 5).
+    const results = tempDir("x10-results");
+    const work = tempDir("x10-work");
+    const beforeResults = process.env["GREPLOST_BENCH_RESULTS_DIR"];
+    const beforeWork = process.env["GREPLOST_BENCH_WORK_DIR"];
+    process.env["GREPLOST_BENCH_RESULTS_DIR"] = results;
+    process.env["GREPLOST_BENCH_WORK_DIR"] = work;
+    const log = console.log;
+    console.log = () => {};
+    let code: number;
+    try {
+      code = await headtoheadRun(["--metrics", "X10"]);
+    } finally {
+      console.log = log;
+      if (beforeResults === undefined) delete process.env["GREPLOST_BENCH_RESULTS_DIR"];
+      else process.env["GREPLOST_BENCH_RESULTS_DIR"] = beforeResults;
+      if (beforeWork === undefined) delete process.env["GREPLOST_BENCH_WORK_DIR"];
+      else process.env["GREPLOST_BENCH_WORK_DIR"] = beforeWork;
+    }
+    expect(code).toBe(0);
+
+    const payload = latestResult("headtohead", results)?.payload as Record<string, unknown>;
+    const x10 = (payload["metrics"] as Record<string, { tools: Record<string, Record<string, unknown>> }>)["X10"];
+    const ours = x10?.tools["greplost"];
+    expect(ours?.["value"]).toBe("works");
+    expect(ours?.["verdict"]).toBe("win");
+    // Measured, not asserted: the answer reached files in the *other* repository.
+    const detail = ours?.["detail"] as Record<string, number>;
+    expect(detail["crossRepoFiles"]).toBeGreaterThan(0);
+    expect(detail["affectedFiles"]).toBeGreaterThanOrEqual(detail["crossRepoFiles"] as number);
+    // A run that touched no repository records no corpus and no scale.
+    expect(payload["corpus"]).toEqual([]);
+    expect(payload["target"]).toEqual({});
+    const method = (payload["method"] as string[]).find((line) => line.startsWith("X10 (greplost)"));
+    expect(method).toContain("greplost impact");
+    expect(method).toContain("crossed the repository boundary");
+  }, 180_000);
+
+  test("a fixture run writes to headtohead-fixture, so it cannot become the corpus latest", () => {
+    // Review round 3, important 1: the suite wrote `--fixture` runs under the corpus
+    // name, so a twelve-file fixture run on the same day at the same commit replaced the
+    // published head-to-head table under it.
+    expect(headtoheadResultSuite(false)).toBe("headtohead");
+    expect(headtoheadResultSuite(true)).toBe("headtohead-fixture");
+
+    const dir = tempDir("h2h-suite-name");
+    writeResult(headtoheadResultSuite(false), { marker: "corpus" }, dir);
+    writeResult(headtoheadResultSuite(true), { marker: "fixture" }, dir);
+    expect(readdirSync(dir).some((name) => name.startsWith("headtohead-fixture-"))).toBe(true);
+    expect(latestResult("headtohead", dir)?.payload["marker"]).toBe("corpus");
   });
 
   test("--fixture --dry-run prints the convention line and writes nothing", async () => {
@@ -787,6 +924,50 @@ describe("results-md", () => {
     expect(section).toContain("not run");
   });
 
+  test("the head-to-head table carries a legend for X1's two kinds of verdict", () => {
+    // The `vs <tool>` columns are call precision; greplost's own cell is both halves of
+    // the 3.1 target at once, which is how a row reads `tie` beside three `win`s.
+    const text = renderResultsMd(buildModel({ resultsDir: tempDir("x1-legend") }));
+    const section = text.slice(text.indexOf("## Head-to-head"), text.indexOf("## Single-tool"));
+    const legend = section.split("\n").find((line) => line.startsWith("> Reading the X1 row:"));
+    expect(legend).toBeDefined();
+    expect(legend).toContain("call edge precision");
+    expect(legend).toContain("both halves");
+    expect(legend).toContain("+0.10 on calls and +0.03 on imports");
+    // Under the table, not above it.
+    expect(section.indexOf("| X10 ")).toBeLessThan(section.indexOf("> Reading the X1 row:"));
+  });
+
+  test("the F2 note states how many comparisons it rests on", () => {
+    const dir = tempDir("f2-denominator");
+    writeFileSync(
+      path.join(dir, "replay-2026-09-02-abc1234.json"),
+      JSON.stringify({
+        suite: "replay",
+        date: "2026-09-02",
+        greplostSha: "abc1234",
+        commits: 100,
+        driftCaught: 82,
+        driftTotal: 82,
+        f2Mismatches: 0,
+        f2Checks: 1,
+      }),
+    );
+    const note = renderResultsMd(buildModel({ resultsDir: dir }))
+      .split("\n")
+      .find((line) => line.startsWith("> F2 rests on"));
+    // "0% divergence" over one comparison and over fifty read identically in the
+    // measured column; the denominator has to be visible (review round 3, minor).
+    expect(note).toContain("1 full-vs-incremental comparison over a walk of 100 commits");
+    expect(note).not.toContain("comparisons over");
+
+    // No replay at all: the note says there is nothing behind the rate, not a number.
+    const empty = renderResultsMd(buildModel({ resultsDir: tempDir("f2-none") }))
+      .split("\n")
+      .find((line) => line.startsWith("> F2 rests on"));
+    expect(empty).toContain("the replay suite has not run");
+  });
+
   test("the two 2026-09-02 caveats are stated where they are read", () => {
     const text = renderResultsMd(buildModel({ resultsDir: tempDir("caveats") }));
     const section = text.slice(text.indexOf("## Single-tool"), text.indexOf("## Eval 1"));
@@ -806,6 +987,31 @@ describe("results-md", () => {
     );
     const filled = renderResultsMd(buildModel({ resultsDir: withCount }));
     expect(filled.split("\n").find((l) => l.startsWith("| unparsable "))).toContain("| 3 |");
+
+    // The shape `structural.ts` writes: a count and the files behind it.
+    const bucket = tempDir("unparsable-bucket");
+    writeFileSync(
+      path.join(bucket, "structural-2026-09-02-abc1234.json"),
+      JSON.stringify({
+        suite: "structural",
+        date: "2026-09-02",
+        greplostSha: "abc1234",
+        repos: {},
+        unparsable: {
+          count: 2,
+          files: [
+            { repo: "hono", path: "src/types.ts", reason: "error-child" },
+            { repo: "hono", path: "src/hono-base.ts", reason: "error-child" },
+          ],
+        },
+      }),
+    );
+    const bucketRow = renderResultsMd(buildModel({ resultsDir: bucket }))
+      .split("\n")
+      .find((l) => l.startsWith("| unparsable "));
+    expect(bucketRow).toContain("| 2 |");
+    // Read, not derived: the payload said so.
+    expect(bucketRow).not.toContain("derived");
 
     // Derived when the payload carries per-file truth totals: a file every one
     // of whose truth items was missed is a file nothing was extracted from.
@@ -1082,11 +1288,19 @@ describe("charts: X2 arms", () => {
     expect(hero?.body).toContain('["0", "50", "100"]');
     expect(hero?.caption).toContain("freshness under each tool's own sync mechanism");
     expect(hero?.svg).toContain("Freshness under each tool's own sync mechanism");
-    // And the note says what the distance between the lines actually is.
-    expect(hero?.svg).toContain("At commit 0");
-    expect(hero?.svg).toContain("graphify 0.131");
-    expect(hero?.svg).toContain("coverage");
+    // And the note says what the distance between the lines actually is. The note is
+    // wrapped across several `<text>` elements, so it is read back unwrapped.
+    const note = svgNote(hero?.svg ?? "");
+    expect(note).toContain("At commit 0");
+    expect(note).toContain("graphify 0.131");
+    expect(note).toContain("coverage");
     expect(hero?.svg).not.toContain("X2 staleness under each tool");
+    // The walk is synthetic, and the chart a README reader meets first says so.
+    expect(note).toContain("The walk is synthetic");
+    expect(note).toContain("no deletions, no renames and no new files");
+    expect(hero?.caption).toContain("synthetic commit walk");
+    // The documented-sync arm's one qualification: crg's export at each checkpoint.
+    expect(note).toContain("crg's `visualize --format json` export is run at each scoring checkpoint");
   });
 
   test("freshnessNote falls back to the cell's freshF1 when the curve has no @0", () => {
