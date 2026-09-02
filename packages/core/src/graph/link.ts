@@ -14,6 +14,7 @@ import type {
   Lang,
 } from "../schema.ts";
 import { compareEdges, compareStrings, externalId, symbolId, unresolvedId } from "../schema.ts";
+import { sccComponents } from "./tarjan.ts";
 
 /**
  * Resolution result for one import specifier.
@@ -37,6 +38,14 @@ export interface ExportTarget {
   file: string;
   symbol: string;
   hops: 0 | 1;
+  /**
+   * The name is exported but this leaf cannot say which declaration it names:
+   * it comes from outside the repo, from a namespace object, or from more than
+   * one re-export hop. Such an entry exists only so `exportNames` reports the
+   * name; it is never a call target, whatever happens to be declared under
+   * `file`/`symbol`.
+   */
+  unpinned?: true;
 }
 
 /** file -> exported name -> target. */
@@ -55,9 +64,10 @@ function sortedUnique(values: string[]): string[] {
 
 /**
  * One `ImportEdge` per `ImportRecord`, sorted with `compareEdges` and deduped
- * on the comparator key (from, to, kind, symbols). The survivor of a tie is the
- * one with the smallest (specifier, importKind), which makes the result
- * independent of the order the records arrive in.
+ * on (from, to, kind, symbols, importKind): a static and a dynamic import of the
+ * same names are two different facts about the file. The survivor of a tie is
+ * the one with the smallest specifier, which makes the result independent of
+ * the order the records arrive in.
  */
 export function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge[] {
   const edges: ImportEdge[] = [];
@@ -84,13 +94,15 @@ export function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge
   edges.sort(
     (a, b) =>
       compareEdges(a, b) ||
-      compareStrings(a.specifier, b.specifier) ||
-      compareStrings(a.importKind, b.importKind),
+      compareStrings(a.importKind, b.importKind) ||
+      compareStrings(a.specifier, b.specifier),
   );
   const out: ImportEdge[] = [];
   for (const edge of edges) {
     const previous = out[out.length - 1];
-    if (previous !== undefined && compareEdges(previous, edge) === 0) continue;
+    if (previous !== undefined && compareEdges(previous, edge) === 0 && previous.importKind === edge.importKind) {
+      continue;
+    }
     out.push(edge);
   }
   return out;
@@ -146,13 +158,18 @@ function topLevelDeclarations(file: FileRecord): Map<string, DeclKind> {
 }
 
 /**
- * Exported name -> declaration site, per file: direct declarations (hops 0) plus
- * one hop of re-exports (hops 1). Deeper chains are never followed.
+ * Exported name -> declaration site, per file.
  *
- * A name that is exported but cannot be pinned to a declaration (re-exported
- * from an external package, `export * as ns from`, a binding this leaf cannot
- * see) still gets an entry so `exportNames` reports it; `linkCalls` discards
- * targets that are not declared anywhere, so such entries never become edges.
+ * Two different jobs, deliberately kept apart:
+ *
+ *  - The *name set* (`exportNames`, `FileEntry.exports`) matches what a
+ *    compiler would report: direct declarations, one hop of named re-exports,
+ *    and `export *` followed transitively through nested barrels.
+ *  - The *pinned targets* are only those this leaf can name with certainty:
+ *    a declaration in the file (hops 0) or one re-export hop onto a declaration
+ *    (hops 1). Everything else — an external or unresolved source, a namespace
+ *    object, a name arriving through more than one hop — is marked `unpinned`
+ *    and can never become a call edge.
  */
 export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex {
   const specifiersByFile = resolvedSpecifiers(files, imports);
@@ -199,7 +216,7 @@ export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): Ex
       const binding = bindings.get(localName);
       const target = binding !== undefined && binding.name !== "*" ? local.get(binding.module)?.get(binding.name) : undefined;
       if (target !== undefined) setIfAbsent(map, record.name, { file: target.file, symbol: target.symbol, hops: 1 });
-      else setIfAbsent(map, record.name, { file: file.path, symbol: localName, hops: 0 });
+      else setIfAbsent(map, record.name, { file: file.path, symbol: localName, hops: 0, unpinned: true });
     }
 
     // `export { a as b } from "x"`, including `export { default as X } from "x"`.
@@ -209,22 +226,81 @@ export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): Ex
       const module = specifiers?.get(record.from);
       const target = module !== undefined && localName !== "*" ? local.get(module)?.get(localName) : undefined;
       if (target !== undefined) setIfAbsent(map, record.name, { file: target.file, symbol: target.symbol, hops: 1 });
-      else setIfAbsent(map, record.name, { file: file.path, symbol: record.name, hops: 0 });
+      else setIfAbsent(map, record.name, { file: file.path, symbol: record.name, hops: 0, unpinned: true });
     }
+  }
 
-    // `export * from "x"`: every name x declares, except default. Names the file
-    // exports itself win, and the first star wins a collision between stars.
+  // Pass 3: `export * from "x"`, transitively, so a barrel over barrels reports
+  // the leaf's names the way a compiler does. Only the first hop onto a
+  // declaration stays pinned; anything deeper is a name without a usable target.
+  //
+  // The star graph is condensed with Tarjan and walked in the order the
+  // components come out (every target finished before the file that stars it),
+  // so each name is copied once per edge rather than chased to a fixpoint.
+  const starTargets = new Map<string, string[]>();
+  const starEdges: Array<[string, string]> = [];
+  for (const file of files) {
+    const specifiers = specifiersByFile.get(file.path);
+    const targets: string[] = [];
     for (const record of file.exports) {
       if (record.kind !== "star" || record.from === undefined) continue;
       const module = specifiers?.get(record.from);
-      if (module === undefined) continue;
-      const source = local.get(module);
-      if (source === undefined) continue;
-      for (const name of [...source.keys()].sort(compareStrings)) {
-        if (name === "default") continue;
-        const target = source.get(name);
-        if (target === undefined) continue;
-        setIfAbsent(map, name, { file: target.file, symbol: target.symbol, hops: 1 });
+      if (module === undefined || module === file.path || targets.includes(module)) continue;
+      targets.push(module);
+      starEdges.push([file.path, module]);
+    }
+    starTargets.set(file.path, targets);
+  }
+
+  const closure = new Map<string, Set<string>>();
+  for (const file of files) closure.set(file.path, new Set(index.get(file.path)?.keys()));
+
+  const stars = sccComponents(
+    files.map((f) => f.path),
+    starEdges,
+  );
+  for (const component of stars.components) {
+    const members = component.map((i) => stars.nodes[i] ?? "");
+    const memberSet = new Set(members);
+    // Names every member of the component ends up exporting. A star never
+    // carries a `default`, not even between two files that star each other.
+    const shared = new Set<string>();
+    for (const member of members) {
+      if (members.length > 1) {
+        for (const name of closure.get(member) ?? []) {
+          if (name !== "default") shared.add(name);
+        }
+      }
+      for (const module of starTargets.get(member) ?? []) {
+        if (memberSet.has(module)) continue;
+        for (const name of closure.get(module) ?? []) {
+          if (name !== "default") shared.add(name);
+        }
+      }
+    }
+    for (const member of members) {
+      const names = closure.get(member);
+      if (names === undefined) continue;
+      for (const name of shared) names.add(name);
+    }
+  }
+
+  for (const file of files) {
+    const map = index.get(file.path);
+    const names = closure.get(file.path);
+    if (map === undefined || names === undefined) continue;
+    for (const name of [...names].sort(compareStrings)) {
+      if (map.has(name)) continue;
+      // The first star that can supply the name wins, in source order.
+      for (const module of starTargets.get(file.path) ?? []) {
+        if (!closure.get(module)?.has(name)) continue;
+        const declared = local.get(module)?.get(name);
+        if (declared !== undefined) {
+          map.set(name, { file: declared.file, symbol: declared.symbol, hops: 1 });
+        } else {
+          map.set(name, { file: module, symbol: name, hops: 1, unpinned: true });
+        }
+        break;
       }
     }
   }
@@ -240,7 +316,7 @@ export function exportNames(index: ExportIndex, file: string): string[] {
 
 function targetOf(index: ExportIndex, module: string, name: string): { to: string; confidence: Confidence } | null {
   const target = index.get(module)?.get(name);
-  if (target === undefined) return null;
+  if (target === undefined || target.unpinned === true) return null;
   return { to: symbolId(target.file, target.symbol), confidence: target.hops === 0 ? "high" : "med" };
 }
 
@@ -355,7 +431,7 @@ function resolveMember(
   // An imported class used statically. Only a direct (hops 0) import is
   // resolved: through a re-export the declaring file is not known here.
   const target = index.get(binding.module)?.get(binding.name);
-  if (target === undefined || target.hops !== 0) return null;
+  if (target === undefined || target.hops !== 0 || target.unpinned === true) return null;
   const id = symbolId(target.file, `${target.symbol}.${member}`);
   return declKinds.has(id) ? { to: id, confidence: "high" } : null;
 }

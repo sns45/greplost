@@ -14,6 +14,7 @@ import type {
   PackageInfo,
 } from "../schema.ts";
 import { compareStrings, isFileId } from "../schema.ts";
+import { packageOf } from "../resolve/index.ts";
 import { blastRadius } from "./blast.ts";
 import { stronglyConnected } from "./tarjan.ts";
 
@@ -26,27 +27,6 @@ export interface ComputedMetrics {
   metrics: Metrics;
 }
 
-const ROOT_PACKAGE: PackageInfo = { name: ".", path: ".", source: "root" };
-
-/**
- * The package a file belongs to: deepest package path that prefixes it, root
- * otherwise. Mirrors `packageOf` in `resolve/packages.ts` (leaf 1.1.2); it is
- * repeated here so the graph layer depends on nothing but the schema.
- */
-function packageOf(path: string, packages: readonly PackageInfo[]): PackageInfo {
-  let best: PackageInfo | undefined;
-  let bestLength = -1;
-  for (const pkg of packages) {
-    if (pkg.path === ".") continue;
-    const prefix = pkg.path.endsWith("/") ? pkg.path : `${pkg.path}/`;
-    if (path.startsWith(prefix) && prefix.length > bestLength) {
-      best = pkg;
-      bestLength = prefix.length;
-    }
-  }
-  if (best !== undefined) return best;
-  return packages.find((p) => p.path === ".") ?? packages[0] ?? ROOT_PACKAGE;
-}
 
 function addTo(map: Map<string, Set<string>>, key: string, value: string): void {
   const set = map.get(key);
