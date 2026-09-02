@@ -95,8 +95,10 @@ export function singleTool(
       "are excluded, because they are not the map and are not committed (ruling 2026-09-02).",
     "`unparsable` counts files whose tree-sitter parse returns an ERROR root node, which the extractor " +
       "cannot read at all. They are not scored in S1 or S2, so they cost recall silently unless they are " +
-      "counted here. The count and any named file come from the structural payload; nothing is asserted " +
-      "here. Upstream: https://github.com/tree-sitter/tree-sitter-typescript/issues/335.",
+      "counted here. The count is read from the structural payload when it reports one, and otherwise " +
+      "derived from it — a file every one of whose truth items was missed is a file nothing was extracted " +
+      "from — and it is `n/a` with `not measured` when the payload carries neither. Nothing about it is " +
+      "asserted here. Upstream: https://github.com/tree-sitter/tree-sitter-typescript/issues/335.",
   ];
   if (replay === null || perf === null || agent === null || mapquality === null) {
     notes.push(
@@ -108,19 +110,26 @@ export function singleTool(
 }
 
 /**
- * The unparsable-files row. Its count comes out of the structural payload if
- * that payload carries one, under any of the names the extractor might use, and
- * is `n/a` otherwise — never a number written here, which would be exactly the
- * hand-filled cell tech spec 10.10 forbids.
+ * The unparsable-files row.
+ *
+ * Three sources, in order, and never a fourth: the payload's own count under
+ * any of the names the extractor might use; a count derived from the payload —
+ * files every one of whose truth items was missed, which is what "nothing was
+ * extracted from this file" looks like in a score sheet; and `n/a` with `not
+ * measured`. The third branch used to carry a sentence about the extractor's
+ * error recovery being in progress, which is a claim about the code and not a
+ * reading of a payload — exactly the hand-filled cell tech spec 10.10 forbids.
  */
 function unparsableRow(structural: Payload | null): SummaryRow {
-  const count = structural === null ? null : firstNum(structural.data, [
+  const reported = structural === null ? null : firstNum(structural.data, [
     "unparsable",
     "unparsableFiles",
     "parseErrors",
     "errorFiles",
     "truth.unparsable",
   ]);
+  const derived = reported === null ? derivedUnparsable(structural) : null;
+  const count = reported ?? derived;
   return {
     id: "unparsable",
     metric: "files whose tree-sitter parse root is ERROR (excluded from S1 and S2)",
@@ -129,10 +138,44 @@ function unparsableRow(structural: Payload | null): SummaryRow {
     // different claim from "this metric was never measured". The count itself is
     // only ever read out of the payload (ruling 2026-09-02).
     measured: count === null ? NOT_APPLICABLE : String(Math.round(count)),
-    source: count === null
-      ? "not reported by the structural payload; the extractor's error recovery is in progress"
-      : "Eval 1, `structural`",
+    source: reported !== null
+      ? "Eval 1, `structural`"
+      : derived !== null
+        ? "Eval 1, `structural` (derived: files where every truth item was missed)"
+        : "not measured: the structural payload reports no unparsable count and carries no per-file truth totals to derive one from",
   };
+}
+
+/**
+ * Files where every truth item was missed, summed over the payload's repos.
+ *
+ * Needs per-file truth totals beside per-file misses; a payload that carries
+ * only flat false-negative lists cannot answer the question, and this returns
+ * null rather than guessing from the list's length (a file with one missed edge
+ * out of forty would otherwise be counted as unreadable).
+ */
+function derivedUnparsable(structural: Payload | null): number | null {
+  if (structural === null) return null;
+  const repos = rec(structural.data["repos"]);
+  if (repos === null) return null;
+  let total = 0;
+  let sawAny = false;
+  for (const repo of Object.values(repos)) {
+    const entry = rec(repo);
+    if (entry === null) continue;
+    const perFile = rec(entry["perFile"]) ?? rec(entry["fileScores"]);
+    if (perFile === null) continue;
+    for (const value of Object.values(perFile)) {
+      const file = rec(value);
+      if (file === null) continue;
+      const truth = num(file["truth"]) ?? num(file["truthItems"]) ?? num(file["expected"]);
+      const missed = num(file["missed"]) ?? num(file["fn"]) ?? num(file["falseNegatives"]);
+      if (truth === null || missed === null || truth <= 0) continue;
+      sawAny = true;
+      if (missed >= truth) total++;
+    }
+  }
+  return sawAny ? total : null;
 }
 
 /** Names and targets for a summary row whose section did not run (tech spec 3). */

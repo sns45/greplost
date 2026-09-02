@@ -625,10 +625,36 @@ describe("results-md", () => {
     const filled = renderResultsMd(buildModel({ resultsDir: withCount }));
     expect(filled.split("\n").find((l) => l.startsWith("| unparsable "))).toContain("| 3 |");
 
+    // Derived when the payload carries per-file truth totals: a file every one
+    // of whose truth items was missed is a file nothing was extracted from.
+    const derived = tempDir("unparsable-derived");
+    writeFileSync(
+      path.join(derived, "structural-2026-09-02-abc1234.json"),
+      JSON.stringify({
+        suite: "structural", date: "2026-09-02", greplostSha: "abc1234",
+        repos: {
+          hono: {
+            perFile: {
+              "src/a.ts": { truth: 12, missed: 12 },
+              "src/b.ts": { truth: 40, missed: 1 },
+              "src/c.ts": { truth: 3, missed: 3 },
+            },
+          },
+        },
+      }),
+    );
+    const derivedRow = renderResultsMd(buildModel({ resultsDir: derived }))
+      .split("\n")
+      .find((l) => l.startsWith("| unparsable "));
+    expect(derivedRow).toContain("| 2 |");
+    expect(derivedRow).toContain("derived");
+
+    // Neither reported nor derivable: `not measured`, and no claim about why.
     const without = renderResultsMd(buildModel({ resultsDir: tempDir("unparsable-no") }));
     const row = without.split("\n").find((l) => l.startsWith("| unparsable "));
     expect(row).toContain("n/a");
-    expect(row).toContain("recovery is in progress");
+    expect(row).toContain("not measured");
+    expect(row).not.toContain("recovery is in progress");
   });
 
   test("the X2 row's target names the walk that was actually run", () => {
