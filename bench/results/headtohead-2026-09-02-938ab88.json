@@ -1,0 +1,508 @@
+{
+  "competitors": {
+    "crg": {
+      "artifactDir": "bench/.competitors/crg/anyq",
+      "binary": "bench/.competitors/_bin/code-review-graph",
+      "caveat": "`code-review-graph install` is not run: it writes MCP config and hooks into every AI coding tool it detects on the machine. `build` + `visualize --format json` produce the same artifact. `graph.db` is excluded from the byte comparison because a SQLite page layout is not the tool's output contract",
+      "home": "bench/.competitors/home",
+      "pinnedVersion": "v2.3.8",
+      "ran": true,
+      "reason": null,
+      "reportedVersion": "code-review-graph 2.3.8",
+      "syncMechanism": "platform hooks plus a watcher. `code-review-graph install` detects the installed AI coding tools, writes their MCP config and installs platform-native hooks/skills where the platform supports them; those hooks and supported commit hooks trigger `update`, which diffs changed files, walks the graph's own import and call edges to find dependents, and re-parses only the files whose SHA-256 changed. For editors without hooks there is `code-review-graph watch` (single repo) and `crg-daemon` (multi-repo background watcher). `code-review-graph update` is the manual incremental path. Freshness is not verified against the tree; the graph is refreshed, never checked."
+    },
+    "graphify": {
+      "artifactDir": "bench/.competitors/graphify/anyq",
+      "binary": "bench/.competitors/_bin/graphify",
+      "caveat": "run through `graphify update .` (the documented no-LLM rebuild) rather than the `/graphify .` slash command, which needs a model; graph.html is excluded from the byte comparison because it is a viewer, not the graph",
+      "home": "bench/.competitors/home",
+      "pinnedVersion": "v0.9.53",
+      "ran": true,
+      "reason": null,
+      "reportedVersion": "graphify 0.9.53",
+      "syncMechanism": "git hooks. `graphify hook install` writes post-commit and post-checkout hooks that rebuild the graph in the background (AST only, no API cost) plus a git merge driver that union-merges graph.json. `git pull` / `git merge` are NOT covered: the README tells the user to run `graphify update .` afterwards. Separately, `graphify install` writes a CLAUDE.md section and a Claude Code PreToolUse hook (`graphify hook-guard`) that nudges the assistant to query the graph before grepping; that hook reads the graph, it does not refresh it. There is no mechanical staleness check equivalent to `greplost verify`."
+    },
+    "ua": {
+      "artifactDir": null,
+      "binary": null,
+      "caveat": "distributed only as a Claude Code plugin, and `/understand` is a multi-agent LLM pipeline: there is no headless CLI, so the only way to drive it is `claude --plugin-dir <clone>/understand-anything-plugin -p \"/understand\"` against a clone pinned at v2.9.0, inside the scratch HOME. That spends model tokens on every commit of every metric, so this harness does not run it and never installs the plugin into the machine’s real Claude Code configuration",
+      "home": "bench/.competitors/home",
+      "pinnedVersion": "v2.9.0",
+      "ran": false,
+      "reason": "distributed only as a Claude Code plugin, and `/understand` is a multi-agent LLM pipeline: there is no headless CLI, so the only way to drive it is `claude --plugin-dir <clone>/understand-anything-plugin -p \"/understand\"` against a clone pinned at v2.9.0, inside the scratch HOME. That spends model tokens on every commit of every metric, so this harness does not run it and never installs the plugin into the machine’s real Claude Code configuration",
+      "reportedVersion": null,
+      "syncMechanism": "git post-commit hook, opt-in. `/understand --auto-update` installs a post-commit hook that incrementally patches the graph so each commit lands with a matching graph. Without it, freshness relies on re-running `/understand`, which is incremental: the skill reads `.ua/meta.json`, takes `gitCommitHash`, runs `git diff <last-hash>..HEAD --name-only` and re-analyzes only the changed files. Re-analysis of a changed file is an LLM pass, so staying fresh costs tokens. There is no verify/staleness gate beyond that commit-hash comparison."
+    }
+  },
+  "corpus": [
+    {
+      "lang": "ts",
+      "name": "anyq",
+      "sha": "657f41c2cbe06039c0d82cf81c17759d1149eda2",
+      "tier": "S"
+    }
+  ],
+  "date": "2026-09-02",
+  "greplostSha": "938ab88",
+  "machine": {
+    "arch": "arm64",
+    "bun": "1.2.21",
+    "cores": 16,
+    "cpu": "Apple M4 Max",
+    "go": "go version go1.25.3 darwin/arm64",
+    "greplostSha": "938ab88",
+    "greplostVersion": "0.0.1",
+    "memoryGB": 128,
+    "node": "24.3.0",
+    "os": "Darwin 25.5.0"
+  },
+  "method": [
+    "graphify: run through `graphify update .` (the documented no-LLM rebuild) rather than the `/graphify .` slash command, which needs a model; graph.html is excluded from the byte comparison because it is a viewer, not the graph.",
+    "graphify: every command ran with HOME=bench/.competitors/home (XDG and CLAUDE_CONFIG_DIR pointed inside it), so nothing it writes outside the repo copy reaches the machine's real configuration.",
+    "ua: N/A — distributed only as a Claude Code plugin, and `/understand` is a multi-agent LLM pipeline: there is no headless CLI, so the only way to drive it is `claude --plugin-dir <clone>/understand-anything-plugin -p \"/understand\"` against a clone pinned at v2.9.0, inside the scratch HOME. That spends model tokens on every commit of every metric, so this harness does not run it and never installs the plugin into the machine’s real Claude Code configuration.",
+    "crg: `code-review-graph install` is not run: it writes MCP config and hooks into every AI coding tool it detects on the machine. `build` + `visualize --format json` produce the same artifact. `graph.db` is excluded from the byte comparison because a SQLite page layout is not the tool's output contract.",
+    "crg: every command ran with HOME=bench/.competitors/home (XDG and CLAUDE_CONFIG_DIR pointed inside it), so nothing it writes outside the repo copy reaches the machine's real configuration.",
+    "X1: both sides restricted to the 148 files the TypeScript compiler loaded, and both scored over every edge each tool emits at any confidence. The confidence=high arm (greplost's S3 gate, graphify's and crg's `EXTRACTED` tier) is reported beside it in each cell's detail; scoring greplost at high while scoring a competitor at every confidence would flatter greplost on precision by construction.",
+    "X4: every tool is built twice on the same tree, each build in its own process, and the differing bytes of its documented artifact files are counted after trimming the common prefix and suffix (an upper bound on the edit distance, exact for a single contiguous change). greplost is compared over the structure artifacts `listStructurePaths` enumerates; viewer and database files are excluded per competitor, and each cell's `caveat` says which.",
+    "X5: the one-line change is `import \"./kafka.js\";` appended to `apps/examples/retry-strategies/src/adapters/nats.ts`, adding the edge apps/examples/retry-strategies/src/adapters/nats.ts -> apps/examples/retry-strategies/src/adapters/kafka.ts.",
+    "X5: lines changed is added plus removed lines from a line-level longest-common-subsequence per artifact file (multiset difference above 4000 lines).",
+    "X5 readability (tech spec 10.0's \"can a human read the architectural change from the diff alone\"): greplost added a line naming both the importer and the imported module; graphify, crg did not, so the new edge is not legible in the diff at any length.",
+    "X6: timed from a fresh copy of the repo (no cache, no artifact) to the tool's own first usable output, 3 runs each, median reported and the spread in each cell's detail, every tool in its own child process so interpreter startup is counted for all of them. greplost's command is `greplost init --no-hooks` and its USD is 0; a competitor's documented first pass may cost model tokens, and where the no-LLM path was used instead the cell's caveat says so."
+  ],
+  "metrics": {
+    "X1": {
+      "id": "X1",
+      "target": ">= +10pt calls, >= +3pt imports",
+      "title": "Structural precision vs compiler truth",
+      "tools": {
+        "crg": {
+          "detail": {
+            "callFp": 367,
+            "callPrecision": 0.3606271777003484,
+            "callPrecisionHighOnly": 0.3606271777003484,
+            "callRecall": 0.2797297297297297,
+            "callRecallHighOnly": 0.2797297297297297,
+            "callTp": 207,
+            "importFp": 0,
+            "importPrecision": 1,
+            "importRecall": 0.6843657817109144,
+            "importTp": 232
+          },
+          "reason": "",
+          "target": ">= +10pt calls, >= +3pt imports",
+          "value": "calls 0.361 P / 0.28 R, imports 1 P / 0.684 R",
+          "verdict": "win"
+        },
+        "graphify": {
+          "detail": {
+            "callFp": 10,
+            "callPrecision": 0.8765432098765432,
+            "callPrecisionHighOnly": 0.8875,
+            "callRecall": 0.09594594594594595,
+            "callRecallHighOnly": 0.09594594594594595,
+            "callTp": 71,
+            "importFp": 0,
+            "importPrecision": 1,
+            "importRecall": 0.08849557522123894,
+            "importTp": 30
+          },
+          "reason": "",
+          "target": ">= +10pt calls, >= +3pt imports",
+          "value": "calls 0.877 P / 0.096 R, imports 1 P / 0.088 R",
+          "verdict": "win"
+        },
+        "greplost": {
+          "detail": {
+            "callFp": 0,
+            "callPrecision": 1,
+            "callPrecisionHighOnly": 1,
+            "callRecall": 0.46756756756756757,
+            "callRecallHighOnly": 0.3027027027027027,
+            "callTp": 346,
+            "importFp": 0,
+            "importPrecision": 1,
+            "importRecall": 1,
+            "importTp": 339
+          },
+          "reason": "gap over the best competitor is 0.123 on calls and 0 on imports; the target is +0.10 and +0.03",
+          "target": ">= +10pt calls, >= +3pt imports",
+          "value": "calls 1 P / 0.468 R, imports 1 P / 1 R",
+          "verdict": "tie"
+        },
+        "ua": {
+          "reason": "distributed only as a Claude Code plugin, and `/understand` is a multi-agent LLM pipeline: there is no headless CLI, so the only way to drive it is `claude --plugin-dir <clone>/understand-anything-plugin -p \"/understand\"` against a clone pinned at v2.9.0, inside the scratch HOME. That spends model tokens on every commit of every metric, so this harness does not run it and never installs the plugin into the machine’s real Claude Code configuration",
+          "target": ">= +10pt calls, >= +3pt imports",
+          "value": null,
+          "verdict": "na"
+        }
+      }
+    },
+    "X10": {
+      "id": "X10",
+      "target": "works (capability, not a score)",
+      "title": "Cross-repo blast radius in workspace mode",
+      "tools": {
+        "crg": {
+          "reason": "not selected by --metrics",
+          "target": "works (capability, not a score)",
+          "value": null,
+          "verdict": "na"
+        },
+        "graphify": {
+          "reason": "not selected by --metrics",
+          "target": "works (capability, not a score)",
+          "value": null,
+          "verdict": "na"
+        },
+        "greplost": {
+          "reason": "not selected by --metrics",
+          "target": "works (capability, not a score)",
+          "value": null,
+          "verdict": "na"
+        },
+        "ua": {
+          "reason": "not selected by --metrics",
+          "target": "works (capability, not a score)",
+          "value": null,
+          "verdict": "na"
+        }
+      }
+    },
+    "X2": {
+      "id": "X2",
+      "target": "greplost F1 >= 0.99",
+      "title": "Staleness after 500 replayed commits",
+      "tools": {
+        "crg": {
+          "reason": "not selected by --metrics",
+          "target": "greplost F1 >= 0.99",
+          "value": null,
+          "verdict": "na"
+        },
+        "graphify": {
+          "reason": "not selected by --metrics",
+          "target": "greplost F1 >= 0.99",
+          "value": null,
+          "verdict": "na"
+        },
+        "greplost": {
+          "reason": "not selected by --metrics",
+          "target": "greplost F1 >= 0.99",
+          "value": null,
+          "verdict": "na"
+        },
+        "ua": {
+          "reason": "not selected by --metrics",
+          "target": "greplost F1 >= 0.99",
+          "value": null,
+          "verdict": "na"
+        }
+      }
+    },
+    "X3": {
+      "id": "X3",
+      "target": "<= 1% of ua, <= 20% of graphify",
+      "title": "Cost to stay fresh over 500 commits",
+      "tools": {
+        "crg": {
+          "reason": "not selected by --metrics",
+          "target": "<= 1% of ua, <= 20% of graphify",
+          "value": null,
+          "verdict": "na"
+        },
+        "graphify": {
+          "reason": "not selected by --metrics",
+          "target": "<= 1% of ua, <= 20% of graphify",
+          "value": null,
+          "verdict": "na"
+        },
+        "greplost": {
+          "reason": "not selected by --metrics",
+          "target": "<= 1% of ua, <= 20% of graphify",
+          "value": null,
+          "verdict": "na"
+        },
+        "ua": {
+          "reason": "not selected by --metrics",
+          "target": "<= 1% of ua, <= 20% of graphify",
+          "value": null,
+          "verdict": "na"
+        }
+      }
+    },
+    "X4": {
+      "id": "X4",
+      "target": "0 bytes differ",
+      "title": "Reproducibility: two builds of one commit",
+      "tools": {
+        "crg": {
+          "detail": {
+            "artifacts": 1,
+            "bytes": 4196428,
+            "files": 1
+          },
+          "reason": "4196428 bytes over 1 of 1 artifact files changed between two builds of the same tree: .code-review-graph/graph.json (communities, edges, flows, nodes, stats); at least one differing value is a wall-clock timestamp",
+          "target": "0 bytes differ",
+          "value": "4196428 bytes",
+          "verdict": "win"
+        },
+        "graphify": {
+          "detail": {
+            "artifacts": 3,
+            "bytes": 0,
+            "files": 0
+          },
+          "reason": "",
+          "target": "0 bytes differ",
+          "value": "0 bytes",
+          "verdict": "tie"
+        },
+        "greplost": {
+          "detail": {
+            "artifacts": 199,
+            "bytes": 0,
+            "files": 0
+          },
+          "reason": "",
+          "target": "0 bytes differ",
+          "value": "0 bytes",
+          "verdict": "win"
+        },
+        "ua": {
+          "reason": "distributed only as a Claude Code plugin, and `/understand` is a multi-agent LLM pipeline: there is no headless CLI, so the only way to drive it is `claude --plugin-dir <clone>/understand-anything-plugin -p \"/understand\"` against a clone pinned at v2.9.0, inside the scratch HOME. That spends model tokens on every commit of every metric, so this harness does not run it and never installs the plugin into the machine’s real Claude Code configuration",
+          "target": "0 bytes differ",
+          "value": null,
+          "verdict": "na"
+        }
+      }
+    },
+    "X5": {
+      "id": "X5",
+      "target": "<= 10 artifact lines",
+      "title": "Diff signal after a one-line change",
+      "tools": {
+        "crg": {
+          "detail": {
+            "artifactLines": 88119,
+            "changedShare": 0.0007,
+            "files": 1,
+            "lines": 60,
+            "namesBothEndpoints": 0
+          },
+          "reason": "60 lines of 88119 in the committed artifact changed for a one-line source change",
+          "target": "<= 10 artifact lines",
+          "value": "60 of 88119 lines",
+          "verdict": "win"
+        },
+        "graphify": {
+          "detail": {
+            "artifactLines": 99031,
+            "changedShare": 0.0002,
+            "files": 3,
+            "lines": 24,
+            "namesBothEndpoints": 0
+          },
+          "reason": "",
+          "target": "<= 10 artifact lines",
+          "value": "24 of 99031 lines",
+          "verdict": "loss"
+        },
+        "greplost": {
+          "detail": {
+            "artifactLines": 10511,
+            "changedShare": 0.0051,
+            "files": 12,
+            "lines": 54,
+            "namesBothEndpoints": 1
+          },
+          "reason": "54 artifact lines of 10511 changed across 12 files for a one-line source change; the target is 10 lines",
+          "target": "<= 10 artifact lines",
+          "value": "54 of 10511 lines",
+          "verdict": "loss"
+        },
+        "ua": {
+          "reason": "distributed only as a Claude Code plugin, and `/understand` is a multi-agent LLM pipeline: there is no headless CLI, so the only way to drive it is `claude --plugin-dir <clone>/understand-anything-plugin -p \"/understand\"` against a clone pinned at v2.9.0, inside the scratch HOME. That spends model tokens on every commit of every metric, so this harness does not run it and never installs the plugin into the machine’s real Claude Code configuration",
+          "target": "<= 10 artifact lines",
+          "value": null,
+          "verdict": "na"
+        }
+      }
+    },
+    "X6": {
+      "id": "X6",
+      "target": "<= 5s and $0 (tier M)",
+      "title": "Cold start to first usable map",
+      "tools": {
+        "crg": {
+          "detail": {
+            "fastest": 1.058,
+            "runs": 3,
+            "seconds": 1.067,
+            "slowest": 1.099
+          },
+          "reason": "",
+          "target": "<= 5s and $0 (tier M)",
+          "value": "1.067 s",
+          "verdict": "win"
+        },
+        "graphify": {
+          "detail": {
+            "fastest": 1.919,
+            "runs": 3,
+            "seconds": 1.928,
+            "slowest": 1.936
+          },
+          "reason": "",
+          "target": "<= 5s and $0 (tier M)",
+          "value": "1.928 s",
+          "verdict": "win"
+        },
+        "greplost": {
+          "detail": {
+            "artifacts": 203,
+            "fastest": 0.27,
+            "runs": 3,
+            "seconds": 0.272,
+            "slowest": 0.277,
+            "usd": 0
+          },
+          "reason": "",
+          "target": "<= 5s and $0 (tier M)",
+          "value": "0.272 s ($0)",
+          "verdict": "win"
+        },
+        "ua": {
+          "reason": "distributed only as a Claude Code plugin, and `/understand` is a multi-agent LLM pipeline: there is no headless CLI, so the only way to drive it is `claude --plugin-dir <clone>/understand-anything-plugin -p \"/understand\"` against a clone pinned at v2.9.0, inside the scratch HOME. That spends model tokens on every commit of every metric, so this harness does not run it and never installs the plugin into the machine’s real Claude Code configuration",
+          "target": "<= 5s and $0 (tier M)",
+          "value": null,
+          "verdict": "na"
+        }
+      }
+    },
+    "X7": {
+      "id": "X7",
+      "target": "accuracy >= best, tool calls <= 50% of best",
+      "title": "Agent structural tasks",
+      "tools": {
+        "crg": {
+          "reason": "not selected by --metrics",
+          "target": "accuracy >= best, tool calls <= 50% of best",
+          "value": null,
+          "verdict": "na"
+        },
+        "graphify": {
+          "reason": "not selected by --metrics",
+          "target": "accuracy >= best, tool calls <= 50% of best",
+          "value": null,
+          "verdict": "na"
+        },
+        "greplost": {
+          "reason": "not selected by --metrics",
+          "target": "accuracy >= best, tool calls <= 50% of best",
+          "value": null,
+          "verdict": "na"
+        },
+        "ua": {
+          "reason": "not selected by --metrics",
+          "target": "accuracy >= best, tool calls <= 50% of best",
+          "value": null,
+          "verdict": "na"
+        }
+      }
+    },
+    "X8": {
+      "id": "X8",
+      "target": "<= 50% of best competitor tokens",
+      "title": "Orientation cost",
+      "tools": {
+        "crg": {
+          "reason": "not selected by --metrics",
+          "target": "<= 50% of best competitor tokens",
+          "value": null,
+          "verdict": "na"
+        },
+        "graphify": {
+          "reason": "not selected by --metrics",
+          "target": "<= 50% of best competitor tokens",
+          "value": null,
+          "verdict": "na"
+        },
+        "greplost": {
+          "reason": "not selected by --metrics",
+          "target": "<= 50% of best competitor tokens",
+          "value": null,
+          "verdict": "na"
+        },
+        "ua": {
+          "reason": "not selected by --metrics",
+          "target": "<= 50% of best competitor tokens",
+          "value": null,
+          "verdict": "na"
+        }
+      }
+    },
+    "X9": {
+      "id": "X9",
+      "target": "fastest, highest hit rate",
+      "title": "Reviewer task: spot the new cross-package dependency",
+      "tools": {
+        "crg": {
+          "reason": "not selected by --metrics",
+          "target": "fastest, highest hit rate",
+          "value": null,
+          "verdict": "na"
+        },
+        "graphify": {
+          "reason": "not selected by --metrics",
+          "target": "fastest, highest hit rate",
+          "value": null,
+          "verdict": "na"
+        },
+        "greplost": {
+          "reason": "not selected by --metrics",
+          "target": "fastest, highest hit rate",
+          "value": null,
+          "verdict": "na"
+        },
+        "ua": {
+          "reason": "not selected by --metrics",
+          "target": "fastest, highest hit rate",
+          "value": null,
+          "verdict": "na"
+        }
+      }
+    }
+  },
+  "suite": "headtohead",
+  "target": {
+    "fixture": false,
+    "repo": "anyq",
+    "tier": "S"
+  },
+  "tools": [
+    "greplost",
+    "graphify",
+    "ua",
+    "crg"
+  ],
+  "winLossTie": {
+    "crg": {
+      "loss": 0,
+      "na": 6,
+      "tie": 0,
+      "win": 4
+    },
+    "graphify": {
+      "loss": 1,
+      "na": 6,
+      "tie": 1,
+      "win": 2
+    },
+    "ua": {
+      "loss": 0,
+      "na": 10,
+      "tie": 0,
+      "win": 0
+    }
+  }
+}
