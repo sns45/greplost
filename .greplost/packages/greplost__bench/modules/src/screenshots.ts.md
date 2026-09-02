@@ -6,39 +6,48 @@
 
 **Package:** `@greplost/bench` ([map](../../MAP.md))
 
-**Exports:** `CAPTURES (const)`, `Capture (interface)`, `ToolId (type)`, `ToolStatus (interface)`, `checkTools(): ToolStatus[]`, `run(args: string[]): Promise<number>`
+**Exports:** `CAPTURES (const)`, `Capture (interface)`, `ToolId (type)`, `ToolStatus (interface)`, `checkTools(): ToolStatus[]`, `chromiumBuild(executable: string): string | null`, `fitForCapture(text: string, columns = FREEZE_COLUMNS, lines = FREEZE_LINES): string`, `querySubject(root: string): { symbol: string; file: string }`, `run(args: string[]): Promise<number>`, `x4Summary(output: string): string`
 
-**Imports:** `node:child_process` (spawnSync), `node:fs` (copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync), `node:module` (createRequire), `node:os` (tmpdir), `node:path` (default)
+**Imports:** `node:child_process` (spawnSync), `node:fs` (copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync), `node:module` (createRequire), `node:os` (tmpdir), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (compareStrings)
 
 **Imported by:** None.
 
 **Blast radius:** 0 files (`greplost impact bench/src/screenshots.ts`)
 
 **Key symbols:**
-- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L31-31
-- `const SUITE = "screenshots"`  L32-32
-- `const ASSETS_DIR = path.join(REPO_ROOT, "docs", "assets")`  L33-33
-- `const TAPES_DIR = path.join(REPO_ROOT, "docs", "tapes")`  L34-34
-- `const CAPTURE_TIMEOUT_MS = 900_000`  L36-36
-- `type ToolId = "vhs" | "freeze" | "playwright"`  L42-42
-- `interface ToolStatus`  L44-55
-- `function onPath(binary: string): string | null`  L57-61
-- `function versionOf(binary: string): string | null`  L63-67
-- `function playwrightStatus(): ToolStatus`  L74-101
-- `function checkTools(): ToolStatus[]`  L104-126
-- `interface CaptureContext`  L132-137
-- `interface CaptureResult`  L139-144
-- `interface Capture`  L146-156
-- `function runCommand(binary: string, args: string[], cwd: string): { ok: boolean; output: string }`  L158-164
-- `function runTape(ctx: CaptureContext, tape: string): CaptureResult`  L167-174
-- `function freezeCommand( ctx: CaptureContext, out: string, command: string[], cwd: string, env?: NodeJS.ProcessEnv, ): CaptureResult`  L184-205
-- `function collect(ctx: CaptureContext, outputs: readonly string[]): string[]`  L208-221
-- `function lastLine(text: string): string`  L223-226
-- `function corpusRepo(name: string): string | null`  L229-232
-- `const CAPTURES: Capture[] = [ { id: 1, name: "init", description: "`greplost init` on hono with timing output (GIF plus final-frame PNG)", needs: ["vhs"], paid: false, perform: (ctx) => { if (…`  L234-358
-- `function compose(ctx: CaptureContext, pngs: (string | undefined)[]): string | null`  L365-394
-- `interface Options`  L400-406
-- `function parseArgs(args: string[]): Options`  L408-423
-- `async function run(args: string[]): Promise<number>`  L425-491
+- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L33-33
+- `const SUITE = "screenshots"`  L34-34
+- `const ASSETS_DIR = path.join(REPO_ROOT, "docs", "assets")`  L35-35
+- `const TAPES_DIR = path.join(REPO_ROOT, "docs", "tapes")`  L36-36
+- `const CAPTURE_TIMEOUT_MS = 900_000`  L38-38
+- `type ToolId = "vhs" | "freeze" | "playwright"`  L44-44
+- `interface ToolStatus`  L46-57
+- `function onPath(binary: string): string | null`  L59-63
+- `function versionOf(binary: string): string | null`  L65-69
+- `function chromiumBuild(executable: string): string | null`  L77-82
+- `function playwrightStatus(): ToolStatus`  L84-114
+- `function checkTools(): ToolStatus[]`  L117-139
+- `interface CaptureContext`  L145-150
+- `interface CaptureResult`  L152-157
+- `interface Capture`  L159-169
+- `function runCommand(binary: string, args: string[], cwd: string): { ok: boolean; output: string }`  L171-177
+- `function runTape(ctx: CaptureContext, tape: string): CaptureResult`  L189-199
+- `const FREEZE_COLUMNS = 100`  L202-202
+- `const FREEZE_LINES = 40`  L203-203
+- `const FREEZE_WIDTH_PX = 1200`  L212-212
+- `const MAX_CAPTURE_BYTES = 300_000`  L214-214
+- `function fitForCapture(text: string, columns = FREEZE_COLUMNS, lines = FREEZE_LINES): string`  L225-238
+- `function freezeText(ctx: CaptureContext, out: string, text: string): CaptureResult`  L247-271
+- `function freezeCommand( ctx: CaptureContext, out: string, command: string[], cwd: string, env?: NodeJS.ProcessEnv, shape: (output: string) => string = (output) => output, ): CaptureResult`  L277-297
+- `function collect(ctx: CaptureContext, outputs: readonly string[]): string[]`  L300-316
+- `function lastLine(text: string): string`  L318-321
+- `function x4Summary(output: string): string`  L332-346
+- `function querySubject(root: string): { symbol: string; file: string }`  L356-388
+- `function corpusRepo(name: string): string | null`  L391-394
+- `const CAPTURES: Capture[] = [ { id: 1, name: "init", description: "`greplost init` on hono with timing output (GIF plus final-frame PNG)", needs: ["vhs"], paid: false, perform: (ctx) => { if (…`  L396-576
+- `function compose(ctx: CaptureContext, pngs: (string | undefined)[]): string | null`  L583-612
+- `interface Options`  L618-624
+- `function parseArgs(args: string[]): Options`  L626-641
+- `async function run(args: string[]): Promise<number>`  L643-709
 
-**Calls:** `checkTools` → [`bench/src/screenshots.ts#checkTools`](screenshots.ts.md) (high), `collect` → [`bench/src/screenshots.ts#collect`](screenshots.ts.md) (high), `compose` → [`bench/src/screenshots.ts#compose`](screenshots.ts.md) (high), `corpusRepo` → [`bench/src/screenshots.ts#corpusRepo`](screenshots.ts.md) (high), `freezeCommand` → [`bench/src/screenshots.ts#freezeCommand`](screenshots.ts.md) (high), `lastLine` → [`bench/src/screenshots.ts#lastLine`](screenshots.ts.md) (high), `onPath` → [`bench/src/screenshots.ts#onPath`](screenshots.ts.md) (high), `parseArgs` → [`bench/src/screenshots.ts#parseArgs`](screenshots.ts.md) (high), `playwrightStatus` → [`bench/src/screenshots.ts#playwrightStatus`](screenshots.ts.md) (high), `runCommand` → [`bench/src/screenshots.ts#runCommand`](screenshots.ts.md) (high), `runTape` → [`bench/src/screenshots.ts#runTape`](screenshots.ts.md) (high), `versionOf` → [`bench/src/screenshots.ts#versionOf`](screenshots.ts.md) (high)
+**Calls:** `checkTools` → [`bench/src/screenshots.ts#checkTools`](screenshots.ts.md) (high), `chromiumBuild` → [`bench/src/screenshots.ts#chromiumBuild`](screenshots.ts.md) (high), `collect` → [`bench/src/screenshots.ts#collect`](screenshots.ts.md) (high), `compose` → [`bench/src/screenshots.ts#compose`](screenshots.ts.md) (high), `corpusRepo` → [`bench/src/screenshots.ts#corpusRepo`](screenshots.ts.md) (high), `fitForCapture` → [`bench/src/screenshots.ts#fitForCapture`](screenshots.ts.md) (high), `freezeCommand` → [`bench/src/screenshots.ts#freezeCommand`](screenshots.ts.md) (high), `freezeText` → [`bench/src/screenshots.ts#freezeText`](screenshots.ts.md) (high), `lastLine` → [`bench/src/screenshots.ts#lastLine`](screenshots.ts.md) (high), `onPath` → [`bench/src/screenshots.ts#onPath`](screenshots.ts.md) (high), `parseArgs` → [`bench/src/screenshots.ts#parseArgs`](screenshots.ts.md) (high), `playwrightStatus` → [`bench/src/screenshots.ts#playwrightStatus`](screenshots.ts.md) (high), `querySubject` → [`bench/src/screenshots.ts#querySubject`](screenshots.ts.md) (high), `runCommand` → [`bench/src/screenshots.ts#runCommand`](screenshots.ts.md) (high), `runTape` → [`bench/src/screenshots.ts#runTape`](screenshots.ts.md) (high), `versionOf` → [`bench/src/screenshots.ts#versionOf`](screenshots.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high)

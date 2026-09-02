@@ -10,9 +10,9 @@
 
 **Imports:** `node:fs` (mkdirSync, writeFileSync), `node:module` (createRequire), `node:path` (default)
 
-**Imported by:** [`bench/src/report.ts`](report.ts.md)
+**Imported by:** [`bench/src/report-charts.ts`](report-charts.ts.md), [`bench/src/report-evals.ts`](report-evals.ts.md), [`bench/src/report.ts`](report.ts.md)
 
-**Blast radius:** 1 file (`greplost impact bench/src/charts.ts`)
+**Blast radius:** 4 files (`greplost impact bench/src/charts.ts`)
 
 **Key symbols:**
 - `interface Series`  L37-41

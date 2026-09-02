@@ -110,13 +110,13 @@
       "fanIn": 0,
       "fanOut": 5,
       "lang": "ts",
-      "loc": 1738,
+      "loc": 1743,
       "pkg": "@greplost/bench",
-      "sha256": "07b7a1fdf2069135663d654a6ec8a94e00773ee80134005f786316612faaed04",
+      "sha256": "2533ca13c7c9d3bb058a51a8e06505ef0993b35431939c0b2c66a037acdc0809",
       "staleSummary": false
     },
     "bench/src/charts.ts": {
-      "blast": 1,
+      "blast": 4,
       "exports": [
         "BoxDatum",
         "BoxSpec",
@@ -136,7 +136,7 @@
         "wrapText",
         "writeChart"
       ],
-      "fanIn": 1,
+      "fanIn": 3,
       "fanOut": 0,
       "lang": "ts",
       "loc": 617,
@@ -208,6 +208,9 @@
     "bench/src/headtohead.ts": {
       "blast": 0,
       "exports": [
+        "ARM_DESCRIPTION",
+        "ARM_PREFIX",
+        "Arm",
         "CompetitorName",
         "ImportEdit",
         "METRIC_PLAN",
@@ -218,6 +221,7 @@
         "byteDistance",
         "competitorSpecs",
         "describeDifference",
+        "describeLineChange",
         "diffLineCount",
         "emptyMetrics",
         "findBinary",
@@ -226,16 +230,23 @@
         "planImportEdit",
         "planImportEdits",
         "readGreplostArtifact",
+        "readHookLog",
         "run",
         "sandboxEnv",
-        "verdictFor"
+        "scaleTitles",
+        "shimRuns",
+        "shimTime",
+        "verdictFor",
+        "writeGreplostShim",
+        "writeShim",
+        "x3GreplostVerdict"
       ],
       "fanIn": 0,
       "fanOut": 9,
       "lang": "ts",
-      "loc": 2207,
+      "loc": 2929,
       "pkg": "@greplost/bench",
-      "sha256": "0abaf5dae48edbc78679e2e53337950784ed012f0ee756621e7bec6d55b4639a",
+      "sha256": "8a576ef74ddbe711c384a7755225b5181731899e45d5becfa04e8ab0fe1c520c",
       "staleSummary": false
     },
     "bench/src/machine.ts": {
@@ -359,26 +370,102 @@
       "sha256": "fe5342431ddf0834b312c8605b82009cfa50f24938c42961c4ba55a2150bf9bf",
       "staleSummary": false
     },
+    "bench/src/report-charts.ts": {
+      "blast": 2,
+      "exports": [
+        "chartRef",
+        "headToHeadCharts",
+        "scaleNote",
+        "stalenessCharts"
+      ],
+      "fanIn": 1,
+      "fanOut": 3,
+      "lang": "ts",
+      "loc": 301,
+      "pkg": "@greplost/bench",
+      "sha256": "bbf8117eedc7c4b163dd0c402056d0505b045b6fb3f39255114e030cb0f7aeeb",
+      "staleSummary": false
+    },
+    "bench/src/report-evals.ts": {
+      "blast": 1,
+      "exports": [
+        "bench3Section",
+        "eval1Section",
+        "eval2Section",
+        "eval4Section",
+        "eval5Section",
+        "mapqualitySection"
+      ],
+      "fanIn": 1,
+      "fanOut": 3,
+      "lang": "ts",
+      "loc": 506,
+      "pkg": "@greplost/bench",
+      "sha256": "3d8f4cf83c4a50552bb4eda0a5cc9f1ad2403ea76dedb30cc41a0aa78a3ed42b",
+      "staleSummary": false
+    },
+    "bench/src/report-payload.ts": {
+      "blast": 4,
+      "exports": [
+        "ConditionStats",
+        "Payload",
+        "Scenario",
+        "agentCategories",
+        "arr",
+        "assumptions",
+        "competitors",
+        "firstMachine",
+        "firstNum",
+        "firstStr",
+        "fmt",
+        "mergeCorpus",
+        "num",
+        "provenanceOf",
+        "rec",
+        "replayF1",
+        "replayF2",
+        "resetAssumptions",
+        "scenariosOf",
+        "str",
+        "targetOf",
+        "versionRows"
+      ],
+      "fanIn": 4,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 413,
+      "pkg": "@greplost/bench",
+      "sha256": "c7e18d27c127ae85c9a371d35799239b5431d5775cb542835bcf9c752ed052a3",
+      "staleSummary": false
+    },
+    "bench/src/report-sections.ts": {
+      "blast": 1,
+      "exports": [
+        "headToHead",
+        "headToHeadFrom",
+        "singleTool"
+      ],
+      "fanIn": 1,
+      "fanOut": 3,
+      "lang": "ts",
+      "loc": 390,
+      "pkg": "@greplost/bench",
+      "sha256": "523c0781139edb1766e3e8c8779b317a35b87e683220a6e4fc55d0e637660ee4",
+      "staleSummary": false
+    },
     "bench/src/report.ts": {
       "blast": 0,
       "exports": [
         "BuildOptions",
-        "NOT_APPLICABLE",
-        "SECTION_HEADERS",
-        "XId",
-        "X_IDS",
-        "agentCategories",
         "buildModel",
-        "competitors",
-        "run",
-        "scenariosOf"
+        "run"
       ],
       "fanIn": 0,
-      "fanOut": 3,
+      "fanOut": 7,
       "lang": "ts",
-      "loc": 1396,
+      "loc": 274,
       "pkg": "@greplost/bench",
-      "sha256": "9ca61710d5d10b00deb983981e316bf258a1f66776f9ca02590acdf28506d91e",
+      "sha256": "84e10767e33cf754b7cd3188f9a905e6713faf33e6dee1c0d9ebfc115a57b788",
       "staleSummary": false
     },
     "bench/src/results-io.ts": {
@@ -400,7 +487,7 @@
       "staleSummary": false
     },
     "bench/src/results-md.ts": {
-      "blast": 2,
+      "blast": 6,
       "exports": [
         "ChartRef",
         "EvalRow",
@@ -411,6 +498,7 @@
         "NOT_APPLICABLE",
         "NOT_RUN",
         "ReportModel",
+        "RunTarget",
         "SECTION_HEADERS",
         "SummaryRow",
         "Verdict",
@@ -419,14 +507,16 @@
         "cell",
         "emptySection",
         "formatNumber",
-        "renderResultsMd"
+        "provenanceLine",
+        "renderResultsMd",
+        "scopeTarget"
       ],
-      "fanIn": 2,
+      "fanIn": 6,
       "fanOut": 0,
       "lang": "ts",
-      "loc": 456,
+      "loc": 564,
       "pkg": "@greplost/bench",
-      "sha256": "3e9b8c770d1cac8b6ce779c4ed17b0b69ecdbc520ace3fbbf8d43eb1e9125c6c",
+      "sha256": "ead2768504af67da07be36305e1dc22f60a17e1236c88995dd51c9b5bb223ebb",
       "staleSummary": false
     },
     "bench/src/score.ts": {
@@ -455,14 +545,18 @@
         "ToolId",
         "ToolStatus",
         "checkTools",
-        "run"
+        "chromiumBuild",
+        "fitForCapture",
+        "querySubject",
+        "run",
+        "x4Summary"
       ],
       "fanIn": 0,
-      "fanOut": 0,
+      "fanOut": 1,
       "lang": "ts",
-      "loc": 491,
+      "loc": 709,
       "pkg": "@greplost/bench",
-      "sha256": "f62e135a4a255a8305f8ec9474de200d8fc7b506dc4b9d6dea607502f2c5a7d9",
+      "sha256": "5888a4f6601f9f596342bb597ed3e45eb1ba03a9bf8899d4c73ef2416d1a0df6",
       "staleSummary": false
     },
     "bench/src/structural.ts": {
@@ -1391,7 +1485,7 @@
       "staleSummary": false
     },
     "packages/core/src/schema.ts": {
-      "blast": 96,
+      "blast": 97,
       "exports": [
         "ARTIFACT_DIR",
         "ARTIFACT_PATHS",
@@ -1433,7 +1527,7 @@
         "symbolId",
         "unresolvedId"
       ],
-      "fanIn": 74,
+      "fanIn": 76,
       "fanOut": 0,
       "lang": "ts",
       "loc": 361,
@@ -1748,7 +1842,7 @@
       "lang": "ts",
       "loc": 232,
       "pkg": "@greplost/semantic",
-      "sha256": "257b8c4e4c7b086b4b7bd23fa4a313b06ef40a764867ca87841f9889cff5776d",
+      "sha256": "306b69f849a92a2c915f4d5a58cc0f6847c2875f893ae84993febdfe9af57972",
       "staleSummary": false
     },
     "packages/semantic/src/index.ts": {
@@ -2298,8 +2392,8 @@
         "@greplost/core",
         "@greplost/sync"
       ],
-      "files": 29,
-      "loc": 14211,
+      "files": 33,
+      "loc": 15752,
       "path": "bench",
       "rdeps": []
     },

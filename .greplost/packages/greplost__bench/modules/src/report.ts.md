@@ -6,65 +6,25 @@
 
 **Package:** `@greplost/bench` ([map](../../MAP.md))
 
-**Exports:** `BuildOptions (interface)`, `NOT_APPLICABLE`, `SECTION_HEADERS`, `XId`, `X_IDS`, `agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>`, `buildModel(options: BuildOptions = {}): ReportModel`, `competitors(): CompetitorEntry[]`, `run(args: string[]): Promise<number>`, `scenariosOf(payload: Payload): Scenario[]`
+**Exports:** `BuildOptions (interface)`, `buildModel(options: BuildOptions = {}): ReportModel`, `run(args: string[]): Promise<number>`
 
-**Imports:** `node:fs` (existsSync, mkdirSync, readFileSync, writeFileSync), `node:path` (default), [`./charts.ts`](charts.ts.md) (BoxDatum, ChartSpec, boxChart, groupedBarChart, lineChart, mermaidXy, writeChart), [`./results-io.ts`](results-io.ts.md) (latestResult), [`./results-md.ts`](results-md.ts.md) (ChartRef, EvalRow, EvalSection, METRIC_TITLES, MetricCell, MetricRow, NOT_APPLICABLE, ReportModel, SECTION_HEADERS, SummaryRow, XId, X_IDS, emptySection, renderResultsMd)
+**Imports:** `node:fs` (existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (compareStrings), [`./charts.ts`](charts.ts.md) (BoxDatum, ChartSpec, boxChart, groupedBarChart, lineChart, mermaidXy, writeChart), [`./results-io.ts`](results-io.ts.md) (latestResult, resultsDir), [`./report-payload.ts`](report-payload.ts.md) (Payload, assumptions, firstMachine, mergeCorpus, resetAssumptions, versionRows), [`./report-sections.ts`](report-sections.ts.md) (headToHeadFrom, singleTool), [`./report-evals.ts`](report-evals.ts.md) (bench3Section, eval1Section, eval2Section, eval4Section, eval5Section, mapqualitySection), [`./results-md.ts`](results-md.ts.md) (ChartRef, EvalRow, EvalSection, METRIC_TITLES, MetricCell, MetricRow, NOT_APPLICABLE, ReportModel, SECTION_HEADERS, SummaryRow, XId, X_IDS, emptySection, renderResultsMd)
 
 **Imported by:** None.
 
 **Blast radius:** 0 files (`greplost impact bench/src/report.ts`)
 
 **Key symbols:**
-- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L45-45
-- `const SUITE = "report"`  L46-46
-- `const RESULTS_MD = "bench/RESULTS.md"`  L48-48
-- `const ASSETS_DIR = "docs/assets"`  L50-50
-- `interface BuildOptions`  L52-57
-- `interface Options`  L59-66
-- `async function run(args: string[]): Promise<number>`  L72-96
-- `function parseArgs(args: string[]): Options`  L98-123
-- `function rasterise(model: ReportModel, assetsDir: string): number`  L126-134
-- `function allCharts(model: ReportModel): ChartRef[]`  L136-138
-- `function buildModel(options: BuildOptions = {}): ReportModel`  L144-206
-- `interface Payload`  L208-211
-- `function singleTool( sections: ReportModel["sections"], structural: Payload | null, replay: Payload | null, perf: Payload | null, agent: Payload | null, mapquality: Payload | null, ): ReportModel["si…`  L218-272
-- `function unparsableRow(structural: Payload | null): SummaryRow`  L280-300
-- `const METRIC_NAMES: Record<string, string> = { S1: "import edge precision / recall vs tsc", S2: "export precision / recall vs tsc", S3: "call edge precision at confidence=high", S4: "import cycle det…`  L303-319
-- `const TARGETS: Record<string, string> = { S1: ">= 0.99 / >= 0.97", S2: ">= 0.99 / >= 0.99", S3: ">= 0.95", S4: "exact set match", F1: "100%", F2: "0% (byte-identical)", P1: "<= 1s / <= 10s", P2: "<= …`  L321-337
-- `function provenanceOf(payload: Payload | null): string | null`  L340-346
-- `function firstMachine(payloads: readonly (Payload | null)[]): Record<string, unknown> | null`  L348-355
-- `function mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel["corpus"]`  L357-374
-- `function versionRows(agent: Payload | null, headtohead: Payload | null): { name: string; value: string }[]`  L381-397
-- `interface CompetitorEntry`  L399-404
-- `function competitors(): CompetitorEntry[]`  L407-426
-- `function headToHead(payload: Payload | null, replay: Payload | null, assetsRel: string): ReportModel["headToHead"]`  L432-494
-- `function asVerdict(value: unknown): MetricCell["verdict"]`  L496-498
-- `function numbersOf(record: Record<string, unknown>): Record<string, number>`  L500-507
-- `function firstSentence(text: string): string`  L510-513
-- `function headToHeadCharts(rows: readonly MetricRow[], replay: Payload | null, assetsRel: string): ChartRef[]`  L519-559
-- `function stalenessCharts(x2: MetricRow | undefined, replay: Payload | null, assetsRel: string): ChartRef[]`  L580-659
-- `function curveFrom( x2: MetricRow | undefined, prefix: "f1" | "staleF1", ): { categories: string[]; series: { name: string; values: (number | null)[] }[] } | null`  L665-695
-- `function chartRef( caption: string, spec: ChartSpec, name: string, assetsRel: string, svg: string, kind: "line" | "bar" = "line", ): ChartRef`  L697-706
-- `function eval1Section(payload: Payload | null): EvalSection`  L712-769
-- `const TRUTH_NOTES: Record<string, string> = { "workspace-entry-mapping": "the TypeScript truth generator emulated the installed-and-built state of workspace packages (package " + "manifests plus tsco…`  L776-786
-- `function scoreRow(id: string, metric: string, target: string, score: Record<string, unknown> | null): EvalRow`  L788-798
-- `function callRow(high: Record<string, unknown> | null, all: Record<string, unknown> | null): EvalRow`  L800-814
-- `function counts(score: Record<string, unknown> | null): string`  L816-821
-- `function replayF1(payload: Payload): number | null`  L828-835
-- `function replayF2(payload: Payload): number | null`  L837-844
-- `function eval2Section(payload: Payload | null): EvalSection`  L846-901
-- `interface Scenario`  L907-913
-- `function scenariosOf(payload: Payload): Scenario[]`  L922-958
-- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection`  L960-1056
-- `interface ConditionStats`  L1062-1068
-- `function agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>`  L1071-1108
-- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection`  L1110-1197
-- `function meanOver( categories: Map<string, Map<string, ConditionStats>>, condition: string, pick: (stats: ConditionStats) => number | null, ): number | null`  L1199-1211
-- `function pct(ratio: number | null): string | null`  L1213-1215
-- `function eval5Section(payload: Payload | null): EvalSection`  L1221-1249
-- `function mapqualitySection(payload: Payload | null): EvalSection`  L1251-1295
-- `function rec(value: unknown): Record<string, unknown> | null`  L1301-1303
-- `function arr(value: unknown): unknown[]`  L1305-1307
-- … 8 more
+- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L57-57
+- `const SUITE = "report"`  L58-58
+- `const RESULTS_MD = "bench/RESULTS.md"`  L60-60
+- `const ASSETS_DIR = "docs/assets"`  L62-62
+- `interface BuildOptions`  L64-69
+- `interface Options`  L71-78
+- `async function run(args: string[]): Promise<number>`  L83-107
+- `function parseArgs(args: string[]): Options`  L109-134
+- `function rasterise(model: ReportModel, assetsDir: string): number`  L137-145
+- `function allCharts(model: ReportModel): ChartRef[]`  L147-149
+- `function buildModel(options: BuildOptions = {}): ReportModel`  L154-274
 
-**Calls:** `boxChart` → [`bench/src/charts.ts#boxChart`](charts.ts.md) (high), `groupedBarChart` → [`bench/src/charts.ts#groupedBarChart`](charts.ts.md) (high), `lineChart` → [`bench/src/charts.ts#lineChart`](charts.ts.md) (high), `mermaidXy` → [`bench/src/charts.ts#mermaidXy`](charts.ts.md) (high), `writeChart` → [`bench/src/charts.ts#writeChart`](charts.ts.md) (high), `agentCategories` → [`bench/src/report.ts#agentCategories`](report.ts.md) (high), `allCharts` → [`bench/src/report.ts#allCharts`](report.ts.md) (high), `arr` → [`bench/src/report.ts#arr`](report.ts.md) (high), `asVerdict` → [`bench/src/report.ts#asVerdict`](report.ts.md) (high), `at` → [`bench/src/report.ts#at`](report.ts.md) (high), `bench3Section` → [`bench/src/report.ts#bench3Section`](report.ts.md) (high), `buildModel` → [`bench/src/report.ts#buildModel`](report.ts.md) (high), `callRow` → [`bench/src/report.ts#callRow`](report.ts.md) (high), `chartRef` → [`bench/src/report.ts#chartRef`](report.ts.md) (high), `competitors` → [`bench/src/report.ts#competitors`](report.ts.md) (high), `counts` → [`bench/src/report.ts#counts`](report.ts.md) (high), `curveFrom` → [`bench/src/report.ts#curveFrom`](report.ts.md) (high), `deepFind` → [`bench/src/report.ts#deepFind`](report.ts.md) (high), `eval1Section` → [`bench/src/report.ts#eval1Section`](report.ts.md) (high), `eval2Section` → [`bench/src/report.ts#eval2Section`](report.ts.md) (high), `eval4Section` → [`bench/src/report.ts#eval4Section`](report.ts.md) (high), `eval5Section` → [`bench/src/report.ts#eval5Section`](report.ts.md) (high), `firstMachine` → [`bench/src/report.ts#firstMachine`](report.ts.md) (high), `firstNum` → [`bench/src/report.ts#firstNum`](report.ts.md) (high), `firstSentence` → [`bench/src/report.ts#firstSentence`](report.ts.md) (high), `firstStr` → [`bench/src/report.ts#firstStr`](report.ts.md) (high), `fmt` → [`bench/src/report.ts#fmt`](report.ts.md) (high), `headToHead` → [`bench/src/report.ts#headToHead`](report.ts.md) (high), `headToHeadCharts` → [`bench/src/report.ts#headToHeadCharts`](report.ts.md) (high), `mapqualitySection` → [`bench/src/report.ts#mapqualitySection`](report.ts.md) (high), `meanOver` → [`bench/src/report.ts#meanOver`](report.ts.md) (high), `mergeCorpus` → [`bench/src/report.ts#mergeCorpus`](report.ts.md) (high), `num` → [`bench/src/report.ts#num`](report.ts.md) (high), `numbersOf` → [`bench/src/report.ts#numbersOf`](report.ts.md) (high), `parseArgs` → [`bench/src/report.ts#parseArgs`](report.ts.md) (high), `pct` → [`bench/src/report.ts#pct`](report.ts.md) (high), `provenanceOf` → [`bench/src/report.ts#provenanceOf`](report.ts.md) (high), `rasterise` → [`bench/src/report.ts#rasterise`](report.ts.md) (high), `rec` → [`bench/src/report.ts#rec`](report.ts.md) (high), `replayF1` → [`bench/src/report.ts#replayF1`](report.ts.md) (high), `replayF2` → [`bench/src/report.ts#replayF2`](report.ts.md) (high), `scenariosOf` → [`bench/src/report.ts#scenariosOf`](report.ts.md) (high), `scoreRow` → [`bench/src/report.ts#scoreRow`](report.ts.md) (high), `singleTool` → [`bench/src/report.ts#singleTool`](report.ts.md) (high), `stalenessCharts` → [`bench/src/report.ts#stalenessCharts`](report.ts.md) (high), `str` → [`bench/src/report.ts#str`](report.ts.md) (high), `unparsableRow` → [`bench/src/report.ts#unparsableRow`](report.ts.md) (high), `versionRows` → [`bench/src/report.ts#versionRows`](report.ts.md) (high), `latestResult` → [`bench/src/results-io.ts#latestResult`](results-io.ts.md) (high), `emptySection` → [`bench/src/results-md.ts#emptySection`](results-md.ts.md) (high), `renderResultsMd` → [`bench/src/results-md.ts#renderResultsMd`](results-md.ts.md) (high)
+**Calls:** `writeChart` → [`bench/src/charts.ts#writeChart`](charts.ts.md) (high), `bench3Section` → [`bench/src/report-evals.ts#bench3Section`](report-evals.ts.md) (high), `eval1Section` → [`bench/src/report-evals.ts#eval1Section`](report-evals.ts.md) (high), `eval2Section` → [`bench/src/report-evals.ts#eval2Section`](report-evals.ts.md) (high), `eval4Section` → [`bench/src/report-evals.ts#eval4Section`](report-evals.ts.md) (high), `eval5Section` → [`bench/src/report-evals.ts#eval5Section`](report-evals.ts.md) (high), `mapqualitySection` → [`bench/src/report-evals.ts#mapqualitySection`](report-evals.ts.md) (high), `firstMachine` → [`bench/src/report-payload.ts#firstMachine`](report-payload.ts.md) (high), `mergeCorpus` → [`bench/src/report-payload.ts#mergeCorpus`](report-payload.ts.md) (high), `resetAssumptions` → [`bench/src/report-payload.ts#resetAssumptions`](report-payload.ts.md) (high), `versionRows` → [`bench/src/report-payload.ts#versionRows`](report-payload.ts.md) (high), `headToHeadFrom` → [`bench/src/report-sections.ts#headToHeadFrom`](report-sections.ts.md) (high), `singleTool` → [`bench/src/report-sections.ts#singleTool`](report-sections.ts.md) (high), `allCharts` → [`bench/src/report.ts#allCharts`](report.ts.md) (high), `buildModel` → [`bench/src/report.ts#buildModel`](report.ts.md) (high), `parseArgs` → [`bench/src/report.ts#parseArgs`](report.ts.md) (high), `rasterise` → [`bench/src/report.ts#rasterise`](report.ts.md) (high), `latestResult` → [`bench/src/results-io.ts#latestResult`](results-io.ts.md) (high), `resultsDir` → [`bench/src/results-io.ts#resultsDir`](results-io.ts.md) (high), `renderResultsMd` → [`bench/src/results-md.ts#renderResultsMd`](results-md.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high)

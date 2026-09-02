@@ -6,13 +6,13 @@
 
 **Package:** `@greplost/bench` ([map](../../MAP.md))
 
-**Exports:** `ChartRef (interface)`, `EvalRow (interface)`, `EvalSection (interface)`, `METRIC_TITLES (const)`, `MetricCell (interface)`, `MetricRow (interface)`, `NOT_APPLICABLE (const)`, `NOT_RUN (const)`, `ReportModel (interface)`, `SECTION_HEADERS (const)`, `SummaryRow (interface)`, `Verdict (type)`, `XId (type)`, `X_IDS (const)`, `cell(text: string): string`, `emptySection(): EvalSection`, `formatNumber(value: number): string`, `renderResultsMd(model: ReportModel): string`
+**Exports:** `ChartRef (interface)`, `EvalRow (interface)`, `EvalSection (interface)`, `METRIC_TITLES (const)`, `MetricCell (interface)`, `MetricRow (interface)`, `NOT_APPLICABLE (const)`, `NOT_RUN (const)`, `ReportModel (interface)`, `RunTarget (interface)`, `SECTION_HEADERS (const)`, `SummaryRow (interface)`, `Verdict (type)`, `XId (type)`, `X_IDS (const)`, `cell(text: string): string`, `emptySection(): EvalSection`, `formatNumber(value: number): string`, `provenanceLine( date: string | null, sha: string | null, target: RunTarget | undefined, ): string`, `renderResultsMd(model: ReportModel): string`, `scopeTarget(target: string, run: RunTarget | undefined): string`
 
 **Imports:** None.
 
-**Imported by:** [`bench/src/headtohead.ts`](headtohead.ts.md), [`bench/src/report.ts`](report.ts.md)
+**Imported by:** [`bench/src/headtohead.ts`](headtohead.ts.md), [`bench/src/report-charts.ts`](report-charts.ts.md), [`bench/src/report-evals.ts`](report-evals.ts.md), [`bench/src/report-payload.ts`](report-payload.ts.md), [`bench/src/report-sections.ts`](report-sections.ts.md), [`bench/src/report.ts`](report.ts.md)
 
-**Blast radius:** 2 files (`greplost impact bench/src/results-md.ts`)
+**Blast radius:** 6 files (`greplost impact bench/src/results-md.ts`)
 
 **Key symbols:**
 - `const X_IDS = ["X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9", "X10"] as const`  L29-29
@@ -22,27 +22,30 @@
 - `const NOT_APPLICABLE = "n/a"`  L50-50
 - `type Verdict = "win" | "loss" | "tie" | "na"`  L52-52
 - `interface MetricCell`  L55-69
-- `interface MetricRow`  L71-76
-- `interface EvalRow`  L79-87
-- `interface EvalSection`  L89-100
-- `interface ChartRef`  L102-115
-- `interface SummaryRow`  L118-126
-- `interface ReportModel`  L128-150
-- `function emptySection(): EvalSection`  L153-155
-- `function renderResultsMd(model: ReportModel): string`  L162-191
-- `function machineSection(model: ReportModel): string[]`  L193-205
-- `function corpusSection(model: ReportModel): string[]`  L207-219
-- `function versionsSection(model: ReportModel): string[]`  L221-231
-- `function headToHeadSection(model: ReportModel): string[]`  L233-302
-- `function singleToolSection(model: ReportModel): string[]`  L310-327
-- `function evalSection(heading: string, subtitle: string, section: EvalSection): string[]`  L329-351
-- `function renderCharts(charts: readonly ChartRef[]): string[]`  L353-374
-- `function cell(text: string): string`  L381-383
-- `function formatCell(cellValue: MetricCell | undefined): string`  L385-389
-- `function verdictCell(cellValue: MetricCell | undefined): string`  L391-396
-- `function formatNumber(value: number): string`  L399-405
-- `function lossReasonsOf(row: MetricRow, competitors: readonly string[]): string`  L413-422
-- `function perToolLine(row: MetricRow, tools: readonly string[]): string | null`  L425-433
-- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…`  L445-456
+- `interface MetricRow`  L71-90
+- `interface EvalRow`  L93-101
+- `interface EvalSection`  L103-114
+- `interface ChartRef`  L116-129
+- `interface SummaryRow`  L132-140
+- `interface RunTarget`  L146-154
+- `function provenanceLine( date: string | null, sha: string | null, target: RunTarget | undefined, ): string`  L165-190
+- `function scopeTarget(target: string, run: RunTarget | undefined): string`  L202-213
+- `interface ReportModel`  L215-240
+- `function emptySection(): EvalSection`  L243-245
+- `function renderResultsMd(model: ReportModel): string`  L252-281
+- `function machineSection(model: ReportModel): string[]`  L283-295
+- `function corpusSection(model: ReportModel): string[]`  L297-309
+- `function versionsSection(model: ReportModel): string[]`  L311-321
+- `function headToHeadSection(model: ReportModel): string[]`  L323-406
+- `function singleToolSection(model: ReportModel): string[]`  L414-431
+- `function evalSection(heading: string, subtitle: string, section: EvalSection): string[]`  L433-455
+- `function renderCharts(charts: readonly ChartRef[]): string[]`  L457-478
+- `function cell(text: string): string`  L485-487
+- `function formatCell(cellValue: MetricCell | undefined): string`  L489-493
+- `function verdictCell(cellValue: MetricCell | undefined): string`  L495-500
+- `function formatNumber(value: number): string`  L503-509
+- `function lossReasonsOf(row: MetricRow, competitors: readonly string[]): string`  L521-530
+- `function perToolLine(row: MetricRow, tools: readonly string[]): string | null`  L533-541
+- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…`  L553-564
 
-**Calls:** `cell` → [`bench/src/results-md.ts#cell`](results-md.ts.md) (high), `corpusSection` → [`bench/src/results-md.ts#corpusSection`](results-md.ts.md) (high), `evalSection` → [`bench/src/results-md.ts#evalSection`](results-md.ts.md) (high), `formatCell` → [`bench/src/results-md.ts#formatCell`](results-md.ts.md) (high), `formatNumber` → [`bench/src/results-md.ts#formatNumber`](results-md.ts.md) (high), `headToHeadSection` → [`bench/src/results-md.ts#headToHeadSection`](results-md.ts.md) (high), `lossReasonsOf` → [`bench/src/results-md.ts#lossReasonsOf`](results-md.ts.md) (high), `machineSection` → [`bench/src/results-md.ts#machineSection`](results-md.ts.md) (high), `perToolLine` → [`bench/src/results-md.ts#perToolLine`](results-md.ts.md) (high), `renderCharts` → [`bench/src/results-md.ts#renderCharts`](results-md.ts.md) (high), `singleToolSection` → [`bench/src/results-md.ts#singleToolSection`](results-md.ts.md) (high), `verdictCell` → [`bench/src/results-md.ts#verdictCell`](results-md.ts.md) (high), `versionsSection` → [`bench/src/results-md.ts#versionsSection`](results-md.ts.md) (high)
+**Calls:** `cell` → [`bench/src/results-md.ts#cell`](results-md.ts.md) (high), `corpusSection` → [`bench/src/results-md.ts#corpusSection`](results-md.ts.md) (high), `evalSection` → [`bench/src/results-md.ts#evalSection`](results-md.ts.md) (high), `formatCell` → [`bench/src/results-md.ts#formatCell`](results-md.ts.md) (high), `formatNumber` → [`bench/src/results-md.ts#formatNumber`](results-md.ts.md) (high), `headToHeadSection` → [`bench/src/results-md.ts#headToHeadSection`](results-md.ts.md) (high), `lossReasonsOf` → [`bench/src/results-md.ts#lossReasonsOf`](results-md.ts.md) (high), `machineSection` → [`bench/src/results-md.ts#machineSection`](results-md.ts.md) (high), `perToolLine` → [`bench/src/results-md.ts#perToolLine`](results-md.ts.md) (high), `renderCharts` → [`bench/src/results-md.ts#renderCharts`](results-md.ts.md) (high), `scopeTarget` → [`bench/src/results-md.ts#scopeTarget`](results-md.ts.md) (high), `singleToolSection` → [`bench/src/results-md.ts#singleToolSection`](results-md.ts.md) (high), `verdictCell` → [`bench/src/results-md.ts#verdictCell`](results-md.ts.md) (high), `versionsSection` → [`bench/src/results-md.ts#versionsSection`](results-md.ts.md) (high)
