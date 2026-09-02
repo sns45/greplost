@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/bench` ([map](../../MAP.md))
 
-**Exports:** `ANSWER_FILES (const)`, `ANSWER_FILES_AND_SYMBOLS (const)`, `Task (interface)`, `TaskCategory (type)`, `TaskTruth (interface)`, `flowTasksFile(repo: string): string`, `generateStructuralTasks(repo: string, truth: Truth, n: number, seed: number = 1): Task[]`, `loadFlowTasks(repo: string): Task[]`, `loadTasks(repo: string, truth: Truth, n: number, seed: number = 1): Task[]`, `reverseClosure(imports: Edge[], file: string): string[]`
+**Exports:** `ALL_CATEGORIES (const)`, `ANSWER_FILES (const)`, `ANSWER_FILES_AND_SYMBOLS (const)`, `ANSWER_SHAPE (const)`, `CuratedCategory (type)`, `STRUCTURAL_CATEGORIES (const)`, `Task (interface)`, `TaskCategory (type)`, `TaskTruth (interface)`, `curatedTasksFile(repo: string, category: CuratedCategory, dir?: string): string`, `flowTasksFile(repo: string, dir?: string): string`, `generateStructuralTasks(repo: string, truth: Truth, n: number, seed: number = 1): Task[]`, `loadFlowTasks(repo: string, dir?: string): Task[]`, `loadOrientationTasks(repo: string, dir?: string): Task[]`, `loadTasks( repo: string, truth: Truth, n: number, seed: number = 1, categories?: readonly TaskCategory[], ): Task[]`, `reverseClosure(imports: Edge[], file: string): string[]`
 
 **Imports:** [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (Edge, compareStrings), `node:fs` (existsSync, readFileSync), `node:path` (default), [`./truth/ts.ts`](truth/ts.ts.md) (Truth)
 
@@ -18,33 +18,40 @@
 - `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L28-28
 - `const ANSWER_FILES = 'Answer with a JSON block {"files": [...]}'`  L36-36
 - `const ANSWER_FILES_AND_SYMBOLS = 'Answer with a JSON block {"files": [...], "symbols": [...]}'`  L38-38
-- `type TaskCategory = "definition" | "importers" | "callers" | "blast_radius" | "flow"`  L41-41
-- `interface TaskTruth`  L44-49
-- `interface Task`  L52-61
-- `const STRUCTURAL: readonly { category: TaskCategory; slug: string }[] = [ { category: "definition", slug: "def" }, { category: "importers", slug: "imp" }, { category: "callers", slug: "call" }, { cat…`  L64-69
-- `const NON_SUBJECT = /(^|\/)(tests?|__tests__|runtime-tests|benchmarks?|perf-measures|examples?|fixtures)\//`  L79-79
-- `const NON_SUBJECT_FILE = /\.(test|spec|bench)\.[cm]?[jt]sx?$/`  L80-80
-- `function isSubjectCandidate(file: string): boolean`  L82-84
-- `function fnv1a(text: string): number`  L91-98
-- `function mulberry32(state: number): () => number`  L101-110
-- `function pick<T>(items: T[], count: number, seed: number): T[]`  L118-129
-- `function preferring<T>(all: T[], preferred: T[], count: number): T[]`  L139-141
-- `function split(n: number, parts: number): number[]`  L144-148
-- `function fileOf(id: string): string`  L155-158
-- `function symbolOf(id: string): string`  L161-164
-- `function sortedUnique(values: string[]): string[]`  L166-168
-- `interface DefinitionCandidate`  L170-173
-- `function definitionCandidates(truth: Truth): DefinitionCandidate[]`  L187-206
-- `interface FileCandidate`  L208-211
-- `function importerCandidates(truth: Truth): FileCandidate[]`  L214-224
-- `interface CallerCandidate`  L226-233
-- `function callerCandidates(truth: Truth): CallerCandidate[]`  L236-263
-- `function reverseClosure(imports: Edge[], file: string): string[]`  L272-290
-- `function blastCandidates(truth: Truth): FileCandidate[]`  L293-299
-- `function id(repo: string, slug: string, index: number): string`  L305-307
-- `function generateStructuralTasks(repo: string, truth: Truth, n: number, seed: number = 1): Task[]`  L319-397
-- `function flowTasksFile(repo: string): string`  L400-402
-- `function loadFlowTasks(repo: string): Task[]`  L411-433
-- `function loadTasks(repo: string, truth: Truth, n: number, seed: number = 1): Task[]`  L436-438
+- `const ANSWER_SHAPE = '{"files": [...]}'`  L40-40
+- `type TaskCategory = "definition" | "importers" | "callers" | "blast_radius" | "flow" | "orientation"`  L46-46
+- `const STRUCTURAL_CATEGORIES: readonly TaskCategory[] = [ "definition", "importers", "callers", "blast_radius", ]`  L49-54
+- `const ALL_CATEGORIES: readonly TaskCategory[] = [...STRUCTURAL_CATEGORIES, "flow", "orientation"]`  L57-57
+- `interface TaskTruth`  L60-65
+- `interface Task`  L68-77
+- `const STRUCTURAL: readonly { category: TaskCategory; slug: string }[] = [ { category: "definition", slug: "def" }, { category: "importers", slug: "imp" }, { category: "callers", slug: "call" }, { cat…`  L80-85
+- `const NON_SUBJECT = /(^|\/)(tests?|__tests__|runtime-tests|benchmarks?|perf-measures|examples?|fixtures)\//`  L95-95
+- `const NON_SUBJECT_FILE = /\.(test|spec|bench)\.[cm]?[jt]sx?$/`  L96-96
+- `function isSubjectCandidate(file: string): boolean`  L98-100
+- `function fnv1a(text: string): number`  L107-114
+- `function mulberry32(state: number): () => number`  L117-126
+- `function pick<T>(items: T[], count: number, seed: number): T[]`  L134-145
+- `function preferring<T>(all: T[], preferred: T[], count: number): T[]`  L155-157
+- `function split(n: number, parts: number): number[]`  L160-164
+- `function fileOf(id: string): string`  L171-174
+- `function symbolOf(id: string): string`  L177-180
+- `function sortedUnique(values: string[]): string[]`  L182-184
+- `interface DefinitionCandidate`  L186-189
+- `function definitionCandidates(truth: Truth): DefinitionCandidate[]`  L203-222
+- `interface FileCandidate`  L224-227
+- `function importerCandidates(truth: Truth): FileCandidate[]`  L230-240
+- `interface CallerCandidate`  L242-249
+- `function callerCandidates(truth: Truth): CallerCandidate[]`  L252-279
+- `function reverseClosure(imports: Edge[], file: string): string[]`  L288-306
+- `function blastCandidates(truth: Truth): FileCandidate[]`  L309-315
+- `function id(repo: string, slug: string, index: number): string`  L321-323
+- `function generateStructuralTasks(repo: string, truth: Truth, n: number, seed: number = 1): Task[]`  L335-413
+- `type CuratedCategory = "flow" | "orientation"`  L416-416
+- `function curatedTasksFile(repo: string, category: CuratedCategory, dir?: string): string`  L419-421
+- `function flowTasksFile(repo: string, dir?: string): string`  L424-426
+- `function loadCuratedTasks(repo: string, category: CuratedCategory, dir?: string): Task[]`  L439-477
+- `function loadFlowTasks(repo: string, dir?: string): Task[]`  L486-488
+- `function loadOrientationTasks(repo: string, dir?: string): Task[]`  L498-500
+- `function loadTasks( repo: string, truth: Truth, n: number, seed: number = 1, categories?: readonly TaskCategory[], ): Task[]`  L509-523
 
-**Calls:** `blastCandidates` → [`bench/src/tasks.ts#blastCandidates`](tasks.ts.md) (high), `callerCandidates` → [`bench/src/tasks.ts#callerCandidates`](tasks.ts.md) (high), `definitionCandidates` → [`bench/src/tasks.ts#definitionCandidates`](tasks.ts.md) (high), `fileOf` → [`bench/src/tasks.ts#fileOf`](tasks.ts.md) (high), `flowTasksFile` → [`bench/src/tasks.ts#flowTasksFile`](tasks.ts.md) (high), `fnv1a` → [`bench/src/tasks.ts#fnv1a`](tasks.ts.md) (high), `generateStructuralTasks` → [`bench/src/tasks.ts#generateStructuralTasks`](tasks.ts.md) (high), `id` → [`bench/src/tasks.ts#id`](tasks.ts.md) (high), `importerCandidates` → [`bench/src/tasks.ts#importerCandidates`](tasks.ts.md) (high), `isSubjectCandidate` → [`bench/src/tasks.ts#isSubjectCandidate`](tasks.ts.md) (high), `loadFlowTasks` → [`bench/src/tasks.ts#loadFlowTasks`](tasks.ts.md) (high), `mulberry32` → [`bench/src/tasks.ts#mulberry32`](tasks.ts.md) (high), `pick` → [`bench/src/tasks.ts#pick`](tasks.ts.md) (high), `preferring` → [`bench/src/tasks.ts#preferring`](tasks.ts.md) (high), `reverseClosure` → [`bench/src/tasks.ts#reverseClosure`](tasks.ts.md) (high), `sortedUnique` → [`bench/src/tasks.ts#sortedUnique`](tasks.ts.md) (high), `split` → [`bench/src/tasks.ts#split`](tasks.ts.md) (high), `symbolOf` → [`bench/src/tasks.ts#symbolOf`](tasks.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high)
+**Calls:** `blastCandidates` → [`bench/src/tasks.ts#blastCandidates`](tasks.ts.md) (high), `callerCandidates` → [`bench/src/tasks.ts#callerCandidates`](tasks.ts.md) (high), `curatedTasksFile` → [`bench/src/tasks.ts#curatedTasksFile`](tasks.ts.md) (high), `definitionCandidates` → [`bench/src/tasks.ts#definitionCandidates`](tasks.ts.md) (high), `fileOf` → [`bench/src/tasks.ts#fileOf`](tasks.ts.md) (high), `fnv1a` → [`bench/src/tasks.ts#fnv1a`](tasks.ts.md) (high), `generateStructuralTasks` → [`bench/src/tasks.ts#generateStructuralTasks`](tasks.ts.md) (high), `id` → [`bench/src/tasks.ts#id`](tasks.ts.md) (high), `importerCandidates` → [`bench/src/tasks.ts#importerCandidates`](tasks.ts.md) (high), `isSubjectCandidate` → [`bench/src/tasks.ts#isSubjectCandidate`](tasks.ts.md) (high), `loadCuratedTasks` → [`bench/src/tasks.ts#loadCuratedTasks`](tasks.ts.md) (high), `loadFlowTasks` → [`bench/src/tasks.ts#loadFlowTasks`](tasks.ts.md) (high), `loadOrientationTasks` → [`bench/src/tasks.ts#loadOrientationTasks`](tasks.ts.md) (high), `mulberry32` → [`bench/src/tasks.ts#mulberry32`](tasks.ts.md) (high), `pick` → [`bench/src/tasks.ts#pick`](tasks.ts.md) (high), `preferring` → [`bench/src/tasks.ts#preferring`](tasks.ts.md) (high), `reverseClosure` → [`bench/src/tasks.ts#reverseClosure`](tasks.ts.md) (high), `sortedUnique` → [`bench/src/tasks.ts#sortedUnique`](tasks.ts.md) (high), `split` → [`bench/src/tasks.ts#split`](tasks.ts.md) (high), `symbolOf` → [`bench/src/tasks.ts#symbolOf`](tasks.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high)

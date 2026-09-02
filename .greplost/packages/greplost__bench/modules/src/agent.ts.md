@@ -6,65 +6,65 @@
 
 **Package:** `@greplost/bench` ([map](../../MAP.md))
 
-**Exports:** `Answer (interface)`, `CONDITIONS (const)`, `DEFAULT_MODEL (const)`, `Stats (interface)`, `TaskScore (interface)`, `extractAnswer(text: string, root?: string): Answer | null`, `lcsRatio(a: string[], b: string[]): number`, `normalizeAnswerPath(value: string, root?: string): string`, `resolveClaude(): string`, `run(args: string[]): Promise<number>`, `scoreAnswer(task: Task, answer: Answer | null): TaskScore`, `summarize(values: number[]): Stats`
+**Exports:** `Answer (interface)`, `CONDITIONS (const)`, `DEFAULT_MODEL (const)`, `RunRecord (interface)`, `RunTaskOptions (interface)`, `Stats (interface)`, `TaskScore (interface)`, `createGreplostShim(dir: string): string`, `extractAnswer(text: string, root?: string): Answer | null`, `lcsRatio(a: string[], b: string[]): number`, `normalizeAnswerPath(value: string, root?: string): string`, `resolveClaude(): string`, `run(args: string[]): Promise<number>`, `runTask(task: Task, condition: string, options: RunTaskOptions): RunRecord`, `scoreAnswer(task: Task, answer: Answer | null): TaskScore`, `summarize(values: number[]): Stats`
 
-**Imports:** `node:fs` (accessSync, constants, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync), `node:child_process` (spawnSync), `node:os` (tmpdir), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (compareStrings), [`./results-io.ts`](results-io.ts.md) (writeResult), [`./score.ts`](score.ts.md) (scoreSet), [`./tasks.ts`](tasks.ts.md) (Task, TaskCategory, loadTasks), [`./truth/ts.ts`](truth/ts.ts.md) (generateTsTruth, listTypeScriptFiles)
+**Imports:** `node:fs` (accessSync, chmodSync, constants, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync), `node:child_process` (spawnSync), `node:os` (tmpdir), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (compareStrings), [`./results-io.ts`](results-io.ts.md) (writeResult), [`./score.ts`](score.ts.md) (scoreSet), [`./tasks.ts`](tasks.ts.md) (ALL_CATEGORIES, Task, TaskCategory, loadTasks), [`./truth/ts.ts`](truth/ts.ts.md) (generateTsTruth, listTypeScriptFiles)
 
 **Imported by:** None.
 
 **Blast radius:** 0 files (`greplost impact bench/src/agent.ts`)
 
 **Key symbols:**
-- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L43-43
-- `const SUITE = "agent"`  L44-44
-- `const DEFAULT_MODEL = "claude-opus-5"`  L50-50
-- `const DEFAULT_RUNS = 5`  L52-52
-- `const DEFAULT_TASKS = 16`  L54-54
-- `const A3_MARGIN = 0.02`  L56-56
-- `const EPSILON = 1e-9`  L58-58
-- `const REQUIRED_FLAGS = ["--print", "--model", "--output-format", "--allowedTools", "--disallowedTools", "--verbose"]`  L61-61
-- `type Artifacts = { kind: "none" } | { kind: "greplost" } | { kind: "competitor"; tool: string }`  L68-68
-- `interface Condition`  L70-77
-- `const CONDITIONS: Readonly<Record<string, Condition>> = { base: { allowed: ["Read", "Grep", "Glob"], disallowed: [], artifacts: { kind: "none" }, note: "stock Claude Code" }, gl: { allowed: ["…`  L79-111
-- `const CONDITION_ORDER = ["base", "gl", "gl-strict", "graphify", "ua", "crg"] as const`  L113-113
-- `interface Answer`  L120-123
-- `interface TaskScore`  L126-139
-- `function normalizeAnswerPath(value: string, root?: string): string`  L142-151
-- `function stringList(value: unknown, root?: string): string[]`  L153-164
-- `function toAnswer(parsed: unknown, root?: string): Answer | null`  L166-171
-- `function extractAnswer(text: string, root?: string): Answer | null`  L180-206
-- `function balancedObjects(text: string): string[]`  L209-233
-- `function lcsRatio(a: string[], b: string[]): number`  L242-254
-- `function symbolName(value: string): string`  L257-260
-- `function scoreAnswer(task: Task, answer: Answer | null): TaskScore`  L274-294
-- `interface Stats`  L301-308
-- `function summarize(values: number[]): Stats`  L310-319
-- `interface Session`  L326-335
-- `function numberAt(record: Record<string, unknown> | undefined, key: string): number`  L337-340
-- `function toolCallsInEnvelope(envelope: Record<string, unknown>): number | undefined`  L343-349
-- `function readEnvelope(envelope: Record<string, unknown>, wallMs: number, toolCalls: number | undefined): Session`  L351-368
-- `function parseJsonOutput(stdout: string): Record<string, unknown> | null`  L371-390
-- `function parseStreamOutput(stdout: string): { envelope: Record<string, unknown> | null; toolCalls: number }`  L396-422
-- `function resolveClaude(): string`  L434-446
-- `function spawnOptions(cwd: string): { cwd: string; encoding: "utf8"; env: NodeJS.ProcessEnv; maxBuffer: number }`  L449-457
-- `interface Invocation`  L459-465
-- `function claudeArgs(invocation: Invocation): string[]`  L467-484
-- `function invokeClaude(invocation: Invocation): Session`  L487-510
-- `function claudeVersion(): string | null`  L513-517
-- `function confirmFlags(): { missing: string[]; help: boolean }`  L525-530
-- `const SKIP_COPY = new Set([".git", "node_modules", ".greplost", "dist", "build"])`  L537-537
-- `function copyRepo(from: string, to: string): void`  L539-547
-- `function runtimeBinary(): string`  L550-552
-- `function runGreplostInit(root: string): string | null`  L554-560
-- `interface CompetitorTool`  L562-566
-- `function competitorArtifactPaths(tool: string): string[]`  L568-573
-- `function installCompetitor(tool: string, repo: string, copy: string): string | null`  L584-603
-- `interface Options`  L609-620
-- `function parseArgs(args: string[]): Options`  L622-658
-- `interface Target`  L660-664
-- `interface CorpusRepo`  L666-670
-- `function resolveTarget(options: Options): Target`  L672-690
-- `function buildTasks(target: Target, options: Options): Task[]`  L692-699
-- … 19 more
+- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L55-55
+- `const SUITE = "agent"`  L56-56
+- `const DEFAULT_MODEL = "claude-opus-5"`  L62-62
+- `const DEFAULT_RUNS = 5`  L64-64
+- `const DEFAULT_TASKS = 16`  L66-66
+- `const A3_MARGIN = 0.02`  L68-68
+- `const A3_BLAST_TARGET = 0.1`  L70-70
+- `const A1_TARGET = 0.5`  L72-72
+- `const A2_TARGET = 0.4`  L74-74
+- `const A4_TARGET = 0.6`  L76-76
+- `const EPSILON = 1e-9`  L78-78
+- `const SESSION_TIMEOUT_MS = 300_000`  L87-87
+- `const SETUP_TIMEOUT_MS = 120_000`  L89-89
+- `const DEFAULT_MAX_USD = 25`  L91-91
+- `const REQUIRED_FLAGS = [ "--print", "--model", "--output-format", "--allowedTools", "--disallowedTools", "--verbose", "--plugin-dir", "--max-budget-usd", ]`  L94-103
+- `const PLUGIN_DIR = path.join(REPO_ROOT, "greplost-plugin")`  L106-106
+- `function resultSuite(fixture: boolean): string`  L116-118
+- `type Artifacts = { kind: "none" } | { kind: "greplost" } | { kind: "competitor"; tool: string }`  L125-125
+- `interface Condition`  L127-140
+- `const CONDITIONS: Readonly<Record<string, Condition>> = { base: { allowed: ["Read", "Grep", "Glob"], disallowed: [], artifacts: { kind: "none" }, plugin: false, note: "stock Claude Code", }, g…`  L142-185
+- `const CONDITION_ORDER = ["base", "gl", "gl-strict", "graphify", "ua", "crg"] as const`  L187-187
+- `interface Answer`  L194-197
+- `interface TaskScore`  L200-213
+- `function normalizeAnswerPath(value: string, root?: string): string`  L225-234
+- `function stringList(value: unknown, root?: string): string[]`  L236-247
+- `function toAnswer(parsed: unknown, root?: string): Answer | null`  L249-254
+- `function extractAnswer(text: string, root?: string): Answer | null`  L263-289
+- `function balancedObjects(text: string): string[]`  L292-316
+- `function lcsRatio(a: string[], b: string[]): number`  L325-337
+- `function symbolName(value: string): string`  L340-343
+- `function scoreAnswer(task: Task, answer: Answer | null): TaskScore`  L357-377
+- `interface Stats`  L384-391
+- `function summarize(values: number[]): Stats`  L393-402
+- `interface Session`  L409-418
+- `function numberAt(record: Record<string, unknown> | undefined, key: string): number`  L420-423
+- `function toolCallsInEnvelope(envelope: Record<string, unknown>): number | undefined`  L426-432
+- `function readEnvelope(envelope: Record<string, unknown>, wallMs: number, toolCalls: number | undefined): Session`  L434-469
+- `function parseJsonOutput(stdout: string): Record<string, unknown> | null`  L472-491
+- `function parseStreamOutput(stdout: string): { envelope: Record<string, unknown> | null; toolCalls: number }`  L497-523
+- `function resolveClaude(): string`  L535-547
+- `interface SpawnConfig`  L549-556
+- `function spawnOptions(cwd: string, timeout: number, extraPath?: string): SpawnConfig`  L570-582
+- `interface Invocation`  L584-595
+- `function claudeArgs(invocation: Invocation): string[]`  L597-619
+- `function invokeClaude(invocation: Invocation): Session`  L622-656
+- `function fromStream(stdout: string, wallMs: number, empty: Session, status: number | null): Session`  L658-662
+- `function fromJson(stdout: string, wallMs: number, empty: Session, status: number | null): Session`  L664-668
+- `function claudeVersion(): string | null`  L671-675
+- `function createGreplostShim(dir: string): string`  L689-696
+- `let sharedShimDir: string | undefined`  L699-699
+- … 46 more
 
-**Calls:** `a3Gate` → [`bench/src/agent.ts#a3Gate`](agent.ts.md) (high), `aggregate` → [`bench/src/agent.ts#aggregate`](agent.ts.md) (high), `balancedObjects` → [`bench/src/agent.ts#balancedObjects`](agent.ts.md) (high), `block` → [`bench/src/agent.ts#block`](agent.ts.md) (high), `buildPayload` → [`bench/src/agent.ts#buildPayload`](agent.ts.md) (high), `buildTasks` → [`bench/src/agent.ts#buildTasks`](agent.ts.md) (high), `claudeArgs` → [`bench/src/agent.ts#claudeArgs`](agent.ts.md) (high), `claudeVersion` → [`bench/src/agent.ts#claudeVersion`](agent.ts.md) (high), `competitorArtifactPaths` → [`bench/src/agent.ts#competitorArtifactPaths`](agent.ts.md) (high), `confirmFlags` → [`bench/src/agent.ts#confirmFlags`](agent.ts.md) (high), `copyRepo` → [`bench/src/agent.ts#copyRepo`](agent.ts.md) (high), `dryRun` → [`bench/src/agent.ts#dryRun`](agent.ts.md) (high), `execute` → [`bench/src/agent.ts#execute`](agent.ts.md) (high), `extractAnswer` → [`bench/src/agent.ts#extractAnswer`](agent.ts.md) (high), `installCompetitor` → [`bench/src/agent.ts#installCompetitor`](agent.ts.md) (high), `invokeClaude` → [`bench/src/agent.ts#invokeClaude`](agent.ts.md) (high), `lcsRatio` → [`bench/src/agent.ts#lcsRatio`](agent.ts.md) (high), `loadMachine` → [`bench/src/agent.ts#loadMachine`](agent.ts.md) (high), `normalizeAnswerPath` → [`bench/src/agent.ts#normalizeAnswerPath`](agent.ts.md) (high), `num` → [`bench/src/agent.ts#num`](agent.ts.md) (high), `numberAt` → [`bench/src/agent.ts#numberAt`](agent.ts.md) (high), `parseArgs` → [`bench/src/agent.ts#parseArgs`](agent.ts.md) (high), `parseJsonOutput` → [`bench/src/agent.ts#parseJsonOutput`](agent.ts.md) (high), `parseStreamOutput` → [`bench/src/agent.ts#parseStreamOutput`](agent.ts.md) (high), `perTaskAccuracy` → [`bench/src/agent.ts#perTaskAccuracy`](agent.ts.md) (high), `prepare` → [`bench/src/agent.ts#prepare`](agent.ts.md) (high), `printAggregate` → [`bench/src/agent.ts#printAggregate`](agent.ts.md) (high), `readEnvelope` → [`bench/src/agent.ts#readEnvelope`](agent.ts.md) (high), `resolveClaude` → [`bench/src/agent.ts#resolveClaude`](agent.ts.md) (high), `resolveTarget` → [`bench/src/agent.ts#resolveTarget`](agent.ts.md) (high), `runGreplostInit` → [`bench/src/agent.ts#runGreplostInit`](agent.ts.md) (high), `runtimeBinary` → [`bench/src/agent.ts#runtimeBinary`](agent.ts.md) (high), `scoreAnswer` → [`bench/src/agent.ts#scoreAnswer`](agent.ts.md) (high), `spawnOptions` → [`bench/src/agent.ts#spawnOptions`](agent.ts.md) (high), `stringList` → [`bench/src/agent.ts#stringList`](agent.ts.md) (high), `summarize` → [`bench/src/agent.ts#summarize`](agent.ts.md) (high), `toAnswer` → [`bench/src/agent.ts#toAnswer`](agent.ts.md) (high), `toolCallsInEnvelope` → [`bench/src/agent.ts#toolCallsInEnvelope`](agent.ts.md) (high), `warnOnRedirectedResults` → [`bench/src/agent.ts#warnOnRedirectedResults`](agent.ts.md) (high), `winLossTie` → [`bench/src/agent.ts#winLossTie`](agent.ts.md) (high), `writeResult` → [`bench/src/results-io.ts#writeResult`](results-io.ts.md) (high), `scoreSet` → [`bench/src/score.ts#scoreSet`](score.ts.md) (high), `loadTasks` → [`bench/src/tasks.ts#loadTasks`](tasks.ts.md) (high), `generateTsTruth` → [`bench/src/truth/ts.ts#generateTsTruth`](truth/ts.ts.md) (high), `listTypeScriptFiles` → [`bench/src/truth/ts.ts#listTypeScriptFiles`](truth/ts.ts.md) (high)
+**Calls:** `a3Gate` → [`bench/src/agent.ts#a3Gate`](agent.ts.md) (high), `aggregate` → [`bench/src/agent.ts#aggregate`](agent.ts.md) (high), `balancedObjects` → [`bench/src/agent.ts#balancedObjects`](agent.ts.md) (high), `block` → [`bench/src/agent.ts#block`](agent.ts.md) (high), `buildPayload` → [`bench/src/agent.ts#buildPayload`](agent.ts.md) (high), `buildTasks` → [`bench/src/agent.ts#buildTasks`](agent.ts.md) (high), `claudeArgs` → [`bench/src/agent.ts#claudeArgs`](agent.ts.md) (high), `claudeVersion` → [`bench/src/agent.ts#claudeVersion`](agent.ts.md) (high), `competitorArtifactPaths` → [`bench/src/agent.ts#competitorArtifactPaths`](agent.ts.md) (high), `confirmFlags` → [`bench/src/agent.ts#confirmFlags`](agent.ts.md) (high), `copyRepo` → [`bench/src/agent.ts#copyRepo`](agent.ts.md) (high), `createGreplostShim` → [`bench/src/agent.ts#createGreplostShim`](agent.ts.md) (high), `defaultShimDir` → [`bench/src/agent.ts#defaultShimDir`](agent.ts.md) (high), `deltaMetric` → [`bench/src/agent.ts#deltaMetric`](agent.ts.md) (high), `dryRun` → [`bench/src/agent.ts#dryRun`](agent.ts.md) (high), `execute` → [`bench/src/agent.ts#execute`](agent.ts.md) (high), `extractAnswer` → [`bench/src/agent.ts#extractAnswer`](agent.ts.md) (high), `fromJson` → [`bench/src/agent.ts#fromJson`](agent.ts.md) (high), `fromStream` → [`bench/src/agent.ts#fromStream`](agent.ts.md) (high), `installCompetitor` → [`bench/src/agent.ts#installCompetitor`](agent.ts.md) (high), `invokeClaude` → [`bench/src/agent.ts#invokeClaude`](agent.ts.md) (high), `lcsRatio` → [`bench/src/agent.ts#lcsRatio`](agent.ts.md) (high), `loadMachine` → [`bench/src/agent.ts#loadMachine`](agent.ts.md) (high), `normalizeAnswerPath` → [`bench/src/agent.ts#normalizeAnswerPath`](agent.ts.md) (high), `num` → [`bench/src/agent.ts#num`](agent.ts.md) (high), `numberAt` → [`bench/src/agent.ts#numberAt`](agent.ts.md) (high), `parseArgs` → [`bench/src/agent.ts#parseArgs`](agent.ts.md) (high), `parseCategories` → [`bench/src/agent.ts#parseCategories`](agent.ts.md) (high), `parseJsonOutput` → [`bench/src/agent.ts#parseJsonOutput`](agent.ts.md) (high), `parseStreamOutput` → [`bench/src/agent.ts#parseStreamOutput`](agent.ts.md) (high), `perTaskAccuracy` → [`bench/src/agent.ts#perTaskAccuracy`](agent.ts.md) (high), `positiveInt` → [`bench/src/agent.ts#positiveInt`](agent.ts.md) (high), `positiveNumber` → [`bench/src/agent.ts#positiveNumber`](agent.ts.md) (high), `prepare` → [`bench/src/agent.ts#prepare`](agent.ts.md) (high), `printAggregate` → [`bench/src/agent.ts#printAggregate`](agent.ts.md) (high), `ratioMetric` → [`bench/src/agent.ts#ratioMetric`](agent.ts.md) (high), `readEnvelope` → [`bench/src/agent.ts#readEnvelope`](agent.ts.md) (high), `record` → [`bench/src/agent.ts#record`](agent.ts.md) (high), `resolveClaude` → [`bench/src/agent.ts#resolveClaude`](agent.ts.md) (high), `resolveTarget` → [`bench/src/agent.ts#resolveTarget`](agent.ts.md) (high), `resolvedRoot` → [`bench/src/agent.ts#resolvedRoot`](agent.ts.md) (high), `resultSuite` → [`bench/src/agent.ts#resultSuite`](agent.ts.md) (high), `runGreplostInit` → [`bench/src/agent.ts#runGreplostInit`](agent.ts.md) (high), `runtimeBinary` → [`bench/src/agent.ts#runtimeBinary`](agent.ts.md) (high), `scoreAnswer` → [`bench/src/agent.ts#scoreAnswer`](agent.ts.md) (high), `spawnOptions` → [`bench/src/agent.ts#spawnOptions`](agent.ts.md) (high), `specMetrics` → [`bench/src/agent.ts#specMetrics`](agent.ts.md) (high), `stringList` → [`bench/src/agent.ts#stringList`](agent.ts.md) (high), `summarize` → [`bench/src/agent.ts#summarize`](agent.ts.md) (high), `toAnswer` → [`bench/src/agent.ts#toAnswer`](agent.ts.md) (high), `toolCallsInEnvelope` → [`bench/src/agent.ts#toolCallsInEnvelope`](agent.ts.md) (high), `warnOnRedirectedResults` → [`bench/src/agent.ts#warnOnRedirectedResults`](agent.ts.md) (high), `winLossTie` → [`bench/src/agent.ts#winLossTie`](agent.ts.md) (high), `writeResult` → [`bench/src/results-io.ts#writeResult`](results-io.ts.md) (high), `scoreSet` → [`bench/src/score.ts#scoreSet`](score.ts.md) (high), `loadTasks` → [`bench/src/tasks.ts#loadTasks`](tasks.ts.md) (high), `generateTsTruth` → [`bench/src/truth/ts.ts#generateTsTruth`](truth/ts.ts.md) (high), `listTypeScriptFiles` → [`bench/src/truth/ts.ts#listTypeScriptFiles`](truth/ts.ts.md) (high)

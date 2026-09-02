@@ -43,18 +43,22 @@
 
 ## bench/src/agent.ts
 
-- `const DEFAULT_MODEL = "claude-opus-5"` L50-50
-- `const CONDITIONS: Readonly<Record<string, Condition>> = { base: { allowed: ["Read", "Grep", "Glob"], disallowed: [], artifacts: { kind: "none" }, note: "stock Claude Code" }, gl: { allowed: ["…` L79-111
-- `interface Answer` L120-123
-- `interface TaskScore` L126-139
-- `function normalizeAnswerPath(value: string, root?: string): string` L142-151
-- `function extractAnswer(text: string, root?: string): Answer | null` L180-206
-- `function lcsRatio(a: string[], b: string[]): number` L242-254
-- `function scoreAnswer(task: Task, answer: Answer | null): TaskScore` L274-294
-- `interface Stats` L301-308
-- `function summarize(values: number[]): Stats` L310-319
-- `function resolveClaude(): string` L434-446
-- `async function run(args: string[]): Promise<number>` L911-928
+- `const DEFAULT_MODEL = "claude-opus-5"` L62-62
+- `const CONDITIONS: Readonly<Record<string, Condition>> = { base: { allowed: ["Read", "Grep", "Glob"], disallowed: [], artifacts: { kind: "none" }, plugin: false, note: "stock Claude Code", }, g…` L142-185
+- `interface Answer` L194-197
+- `interface TaskScore` L200-213
+- `function normalizeAnswerPath(value: string, root?: string): string` L225-234
+- `function extractAnswer(text: string, root?: string): Answer | null` L263-289
+- `function lcsRatio(a: string[], b: string[]): number` L325-337
+- `function scoreAnswer(task: Task, answer: Answer | null): TaskScore` L357-377
+- `interface Stats` L384-391
+- `function summarize(values: number[]): Stats` L393-402
+- `function resolveClaude(): string` L535-547
+- `function createGreplostShim(dir: string): string` L689-696
+- `interface RunRecord` L960-982
+- `interface RunTaskOptions` L985-998
+- `function runTask(task: Task, condition: string, options: RunTaskOptions): RunRecord` L1009-1025
+- `async function run(args: string[]): Promise<number>` L1343-1360
 
 ## bench/src/charts.ts
 
@@ -273,14 +277,20 @@
 
 - `const ANSWER_FILES = 'Answer with a JSON block {"files": [...]}'` L36-36
 - `const ANSWER_FILES_AND_SYMBOLS = 'Answer with a JSON block {"files": [...], "symbols": [...]}'` L38-38
-- `type TaskCategory = "definition" | "importers" | "callers" | "blast_radius" | "flow"` L41-41
-- `interface TaskTruth` L44-49
-- `interface Task` L52-61
-- `function reverseClosure(imports: Edge[], file: string): string[]` L272-290
-- `function generateStructuralTasks(repo: string, truth: Truth, n: number, seed: number = 1): Task[]` L319-397
-- `function flowTasksFile(repo: string): string` L400-402
-- `function loadFlowTasks(repo: string): Task[]` L411-433
-- `function loadTasks(repo: string, truth: Truth, n: number, seed: number = 1): Task[]` L436-438
+- `const ANSWER_SHAPE = '{"files": [...]}'` L40-40
+- `type TaskCategory = "definition" | "importers" | "callers" | "blast_radius" | "flow" | "orientation"` L46-46
+- `const STRUCTURAL_CATEGORIES: readonly TaskCategory[] = [ "definition", "importers", "callers", "blast_radius", ]` L49-54
+- `const ALL_CATEGORIES: readonly TaskCategory[] = [...STRUCTURAL_CATEGORIES, "flow", "orientation"]` L57-57
+- `interface TaskTruth` L60-65
+- `interface Task` L68-77
+- `function reverseClosure(imports: Edge[], file: string): string[]` L288-306
+- `function generateStructuralTasks(repo: string, truth: Truth, n: number, seed: number = 1): Task[]` L335-413
+- `type CuratedCategory = "flow" | "orientation"` L416-416
+- `function curatedTasksFile(repo: string, category: CuratedCategory, dir?: string): string` L419-421
+- `function flowTasksFile(repo: string, dir?: string): string` L424-426
+- `function loadFlowTasks(repo: string, dir?: string): Task[]` L486-488
+- `function loadOrientationTasks(repo: string, dir?: string): Task[]` L498-500
+- `function loadTasks( repo: string, truth: Truth, n: number, seed: number = 1, categories?: readonly TaskCategory[], ): Task[]` L509-523
 
 ## bench/src/truth/go.ts
 
