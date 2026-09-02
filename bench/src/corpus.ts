@@ -6,8 +6,8 @@
 // selectRepos for the other bench suites to reuse (see "Shared conventions"
 // in docs/superpowers/specs/2026-09-02-bench-design.md).
 
+import { BACKFILL_TIMEOUT_MS, GIT_TIMEOUT_MS, git as sharedGit, type GitResult } from "./git.ts";
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
-import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
 
 export type Tier = "S" | "M" | "L" | "XL";
@@ -117,21 +117,14 @@ export function selectRepos(args: string[]): CorpusRepoEntry[] {
 
 // --- git plumbing ---------------------------------------------------------
 
-interface GitResult {
-  status: number;
-  stdout: string;
-  stderr: string;
-}
-
-function git(args: string[], cwd: string): GitResult {
-  const res = spawnSync("git", args, { cwd, encoding: "utf8" });
-  if (res.error) {
-    // spawnSync couldn't even launch the process (e.g. git isn't on PATH) —
-    // res.status is null in that case, so surface a message that says so
-    // instead of the generic "exit code 1" every caller would otherwise print.
-    return { status: 127, stdout: "", stderr: `could not run "git ${args.join(" ")}": ${res.error.message}` };
-  }
-  return { status: res.status ?? 1, stdout: res.stdout ?? "", stderr: res.stderr ?? "" };
+/**
+ * Every corpus git call goes through the shared bounded wrapper (`./git.ts`):
+ * a fetch that loses its connection is killed and reported, never left to hang
+ * the whole `corpus setup`. Network fetches get the long backfill budget; local
+ * plumbing keeps the default.
+ */
+function git(args: string[], cwd: string, timeout: number = GIT_TIMEOUT_MS): GitResult {
+  return sharedGit(cwd, args, { timeout });
 }
 
 function isGitRepo(dir: string): boolean {
@@ -205,7 +198,7 @@ export function fetchAndCheckout(entry: CorpusRepoEntry, depth: number = HISTORY
   const dir = ensureRepoInitialized(entry);
 
   if (!commitAvailableLocally(dir, entry.sha)) {
-    const res = git(["fetch", "--quiet", `--depth=${depth}`, "--filter=blob:none", "origin", entry.sha], dir);
+    const res = git(["fetch", "--quiet", `--depth=${depth}`, "--filter=blob:none", "origin", entry.sha], dir, BACKFILL_TIMEOUT_MS);
     if (res.status !== 0) {
       throw new Error(`fetch of ${entry.name}@${entry.sha} failed: ${res.stderr.trim()}`);
     }
@@ -226,7 +219,7 @@ export function fetchAndCheckout(entry: CorpusRepoEntry, depth: number = HISTORY
 export function deepenHistory(entry: CorpusRepoEntry): void {
   const dir = repoDir(entry.name);
   if (!hasEnoughHistory(dir, entry.sha)) {
-    const res = git(["fetch", `--deepen=${HISTORY_DEPTH}`], dir);
+    const res = git(["fetch", `--deepen=${HISTORY_DEPTH}`], dir, BACKFILL_TIMEOUT_MS);
     if (res.status !== 0) {
       throw new Error(`deepen of ${entry.name} failed: ${res.stderr.trim()}`);
     }
