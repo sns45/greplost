@@ -43,8 +43,7 @@
  * `verify` failure with nothing to write is recorded as a false positive and
  * gated under F2.
  */
-import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -59,6 +58,8 @@ import {
   type Lang,
 } from "@greplost/core/schema";
 import { init, listStructurePaths, update, verify } from "@greplost/sync";
+
+import { cloneWorkingCopy, copySourceTree, git, gitOrThrow, percentile } from "./git.ts";
 
 import { repoDir, selectRepos, type CorpusRepoEntry } from "./corpus.ts";
 import { machineProfile } from "./machine.ts";
@@ -211,79 +212,8 @@ export interface ReplayRun {
 }
 
 // ---------------------------------------------------------------------------
-// git plumbing (shared with perf.ts)
+// git helpers specific to a replay
 // ---------------------------------------------------------------------------
-
-export interface GitResult {
-  status: number;
-  stdout: string;
-  stderr: string;
-}
-
-/** Run git in `cwd`. Never throws: every caller decides what a failure means. */
-export function git(cwd: string, args: string[], env?: Record<string, string>): GitResult {
-  const res = spawnSync("git", args, {
-    cwd,
-    encoding: "utf8",
-    env: env === undefined ? process.env : { ...process.env, ...env },
-  });
-  if (res.error) return { status: 127, stdout: "", stderr: `could not run "git ${args.join(" ")}": ${res.error.message}` };
-  return { status: res.status ?? 1, stdout: res.stdout ?? "", stderr: res.stderr ?? "" };
-}
-
-/** Run git in `cwd`, or throw with git's own message. */
-export function gitOrThrow(cwd: string, args: string[], env?: Record<string, string>): string {
-  const res = git(cwd, args, env);
-  if (res.status !== 0) {
-    throw new Error(`git ${args.join(" ")} failed in ${cwd}: ${res.stderr.trim() || res.stdout.trim()}`);
-  }
-  return res.stdout;
-}
-
-/**
- * True when `dir` is a partial clone: it holds commits and trees whose blobs it
- * has never downloaded, and fetches them from its promisor remote on demand.
- * `corpus.ts` clones every corpus repo this way (`--filter=blob:none`).
- */
-export function isPartialClone(dir: string): boolean {
-  const promisor = git(dir, ["config", "--get", "remote.origin.promisor"]);
-  if (promisor.status === 0 && promisor.stdout.trim() === "true") return true;
-  const extension = git(dir, ["config", "--get", "extensions.partialclone"]);
-  return extension.status === 0 && extension.stdout.trim() !== "";
-}
-
-/**
- * A private working copy of `source`, checked out at `sha`.
- *
- * Two ways to make one, and which is right depends on the source.
- *
- * `git clone --shared` is the cheap one: the objects stay where they are and
- * the clone cannot write to them. It is wrong for a partial clone, twice over.
- * It fails outright, because the local transport asks the source for objects it
- * has never downloaded and dies mid-pack; and even where it survives it drops
- * `remote.origin.promisor`, so the copy has no way to fetch the blobs of an
- * older commit and every checkout before the pinned one fails on a missing
- * object. Copying `.git` wholesale keeps the shallow boundary, the filter and
- * the promisor remote, so the working copy backfills blobs from the real remote
- * exactly as the corpus clone would.
- *
- * Both paths only ever read the source, which is the invariant that matters:
- * the corpus clone is shared with every other suite and a replay must not be
- * able to disturb it.
- */
-export function cloneWorkingCopy(source: string, dest: string, sha: string): void {
-  rmSync(dest, { recursive: true, force: true });
-  let cloned = false;
-  if (!isPartialClone(source)) {
-    cloned = git(path.dirname(dest), ["clone", "--quiet", "--shared", "--no-checkout", source, dest]).status === 0;
-  }
-  if (!cloned) {
-    rmSync(dest, { recursive: true, force: true });
-    mkdirSync(dest, { recursive: true });
-    cpSync(path.join(source, ".git"), path.join(dest, ".git"), { recursive: true });
-  }
-  gitOrThrow(dest, ["checkout", "--quiet", "--force", sha]);
-}
 
 /**
  * `git checkout --force`, leaving untracked files alone, which is what keeps
@@ -296,47 +226,11 @@ function checkout(root: string, sha: string): void {
   gitOrThrow(root, ["checkout", "--quiet", "--force", sha]);
 }
 
-/** Directory entries never worth copying into a scratch repository. */
-const COPY_SKIP: ReadonlySet<string> = new Set([".git", "node_modules", ".greplost"]);
-
-/**
- * Copy a source tree into a scratch directory, minus anything derived.
- *
- * `node_modules` would be copied file by file for no benefit, `.git` would give
- * the scratch repo two histories, and a stray `.greplost/` would seed the
- * measurement with a map nobody built.
- */
-export function copySourceTree(from: string, to: string): void {
-  cpSync(from, to, {
-    recursive: true,
-    filter: (source) => !COPY_SKIP.has(path.basename(source)),
-  });
-}
-
 /** Paths the commit range `from..to` touched, repo-relative. */
 function changedPaths(root: string, from: string, to: string): string[] {
   const out = git(root, ["diff", "--name-only", "-z", `${from}..${to}`, "--"]);
   if (out.status !== 0) return [];
   return out.stdout.split("\0").filter((entry) => entry !== "");
-}
-
-// ---------------------------------------------------------------------------
-// statistics
-// ---------------------------------------------------------------------------
-
-/**
- * Nearest-rank percentile over `samples` (unsorted input is fine).
- *
- * Nearest rank rather than interpolation: every reported value is a
- * measurement that actually happened, which is what a latency gate should be
- * argued about. `0` for an empty sample set.
- */
-export function percentile(samples: readonly number[], p: number): number {
-  if (samples.length === 0) return 0;
-  const sorted = [...samples].sort((a, b) => a - b);
-  const rank = Math.ceil((p / 100) * sorted.length);
-  const index = Math.min(sorted.length - 1, Math.max(0, rank - 1));
-  return sorted[index] as number;
 }
 
 // ---------------------------------------------------------------------------
@@ -422,8 +316,8 @@ export function createSyntheticHistory(
         appendLine(path.join(dest, file), `export const marker${commit} = ${commit};`);
       }
     }
-    gitOrThrow(dest, ["add", "-A"], SYNTHETIC_GIT_ENV);
-    gitOrThrow(dest, ["commit", "--quiet", "--allow-empty", "-m", `commit ${commit}`], SYNTHETIC_GIT_ENV);
+    gitOrThrow(dest, ["add", "-A"], { env: SYNTHETIC_GIT_ENV });
+    gitOrThrow(dest, ["commit", "--quiet", "--allow-empty", "-m", `commit ${commit}`], { env: SYNTHETIC_GIT_ENV });
   }
 
   return gitOrThrow(dest, ["rev-list", "--reverse", "HEAD"])
@@ -471,6 +365,12 @@ interface Target {
   sha: string;
   /** Languages to index, when the repo needs a config it does not carry itself. */
   config: GreplostConfig | undefined;
+  /**
+   * Download the working copy's blobs up front. True for a corpus repo, whose
+   * clone is partial: without it every checkout that needs an undownloaded blob
+   * goes to the network, once per replayed commit.
+   */
+  backfill: boolean;
 }
 
 /**
@@ -481,7 +381,7 @@ interface Target {
  * replay a map that cannot go stale. `structural.ts` makes the same one
  * override, and only when the repo has not already made the choice itself.
  */
-function configFor(entry: CorpusRepoEntry): GreplostConfig | undefined {
+export function configFor(entry: CorpusRepoEntry): GreplostConfig | undefined {
   if (entry.lang !== "go") return undefined;
   return { ...DEFAULT_CONFIG, languages: ["go"] };
 }
@@ -502,34 +402,37 @@ export async function replay(options: ReplayOptions = {}): Promise<ReplayRun> {
     return dir;
   };
 
-  let target: Target;
-  if (fixture) {
-    const origin = scratch("replay-origin");
-    const shas = createSyntheticHistory(origin, commits, {
-      ...(options.syntheticDocsEvery === undefined ? {} : { docsEvery: options.syntheticDocsEvery }),
-    });
-    target = {
-      name: "tiny-ts",
-      origin,
-      sha: shas[shas.length - 1] as string,
-      config: undefined,
-    };
-  } else {
-    const entry = corpusEntry(options.repo);
-    target = {
-      name: entry.name,
-      origin: repoDir(entry.name),
-      sha: entry.sha,
-      config: configFor(entry),
-    };
-    if (!existsSync(path.join(target.origin, ".git"))) {
-      throw new Error(
-        `${SUITE}: ${entry.name} is not cloned; run \`bun bench/src/cli.ts corpus setup --repo ${entry.name}\``,
-      );
-    }
-  }
-
+  // Everything that can allocate a temporary directory happens inside the try,
+  // so a synthetic history that fails halfway through is still cleaned up.
   try {
+    let target: Target;
+    if (fixture) {
+      const origin = scratch("replay-origin");
+      const shas = createSyntheticHistory(origin, commits, {
+        ...(options.syntheticDocsEvery === undefined ? {} : { docsEvery: options.syntheticDocsEvery }),
+      });
+      target = {
+        name: "tiny-ts",
+        origin,
+        sha: shas[shas.length - 1] as string,
+        config: undefined,
+        backfill: false,
+      };
+    } else {
+      const entry = corpusEntry(options.repo);
+      target = {
+        name: entry.name,
+        origin: repoDir(entry.name),
+        sha: entry.sha,
+        config: configFor(entry),
+        backfill: true,
+      };
+      if (!existsSync(path.join(target.origin, ".git"))) {
+        throw new Error(
+          `${SUITE}: ${entry.name} is not cloned; run \`bun bench/src/cli.ts corpus setup --repo ${entry.name}\``,
+        );
+      }
+    }
     return await replayTarget(target, { commits, f2Every, options, scratch });
   } finally {
     if (options.keep !== true) {
@@ -553,7 +456,7 @@ async function replayTarget(
   const quiet = options.quiet === true;
 
   const incRoot = ctx.scratch("replay-inc");
-  cloneWorkingCopy(target.origin, incRoot, target.sha);
+  cloneWorkingCopy(target.origin, incRoot, target.sha, { backfill: target.backfill });
 
   const shas = listCommits(incRoot, target.sha, commits);
   const first = shas[0];
@@ -639,7 +542,7 @@ async function replayTarget(
     if (f2Every > 0 && (i % f2Every === 0 || (lastStep && noCheckYet))) {
       if (fullRoot === undefined) {
         fullRoot = ctx.scratch("replay-full");
-        cloneWorkingCopy(target.origin, fullRoot, sha);
+        cloneWorkingCopy(target.origin, fullRoot, sha, { backfill: target.backfill });
       } else {
         checkout(fullRoot, sha);
       }
@@ -702,7 +605,7 @@ function listCommits(root: string, sha: string, commits: number): string[] {
 }
 
 /** Write `.greplost/config.json` when the target needs one and the repo has none. */
-function writeConfig(root: string, config: GreplostConfig | undefined): void {
+export function writeConfig(root: string, config: GreplostConfig | undefined): void {
   if (config === undefined) return;
   const file = path.join(root, ARTIFACT_DIR, ARTIFACT_PATHS.config);
   if (existsSync(file)) return;
