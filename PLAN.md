@@ -88,3 +88,6 @@ Wave 6 leaf 1.8 also edits `packages/core/src/extract/index.ts` and `packages/co
 Append-only. One line per event.
 
 - 2026-09-02 plan written, contract fixed (schema.ts, 8 sub-project specs)
+- 2026-09-02 spec received from user; scaffold committed f941b3d; plan-check OK (21 leaves, 6 waves); 213 gates red
+- 2026-09-02 wave 1 dispatched: 1.1.1, 1.1.2, 1.1.3, 1.1.4, 1.2.1, 1.5.1, 1.5.2, 1.5.3 (worktree subagents)
+- 2026-09-02 leaf 1.1.4 discover merged (5215fd8), driver re-verified 9/9 gates PASS; Ruling (leaf): fast-glob ignore option dropped so picomatch is the sole exclude mechanism in both discovery modes; task review dispatched

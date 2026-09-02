@@ -8,3 +8,4 @@ bench/.competitors/
 *.log
 .DS_Store
 .superpowers/
+.claude/worktrees/
