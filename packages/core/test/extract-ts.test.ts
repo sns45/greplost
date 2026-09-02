@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, test } from "bun:test";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createParser, grammarDir } from "../src/parser.ts";
+import { createParser, disposeSpareParser, grammarDir } from "../src/parser.ts";
 import type { ParserHandle } from "../src/parser.ts";
 import { extractFile } from "../src/extract/index.ts";
 import { extractTs } from "../src/extract/ts.ts";
@@ -106,6 +106,22 @@ describe("parser", () => {
     const record = extract("package main\n\nfunc main() {}\n", "go", "main.go");
     expect(record.lang).toBe("go");
     expect(record.decls.map((d) => d.name)).toEqual(["main"]);
+  });
+
+  test("the spare parser recovery uses can be released and rebuilt", () => {
+    // A source the grammar cannot read, so extraction goes through `reparse`.
+    const broken = ["export interface I {", "  <T = 1>(a: T): T", "  <T = 2>(): T", "}", "export type Kept = string;", ""].join(
+      "\n",
+    );
+    const before = extract(broken);
+    disposeSpareParser();
+    const after = extract(broken);
+    expect(stableStringify(after, 2)).toBe(stableStringify(before, 2));
+    expect(after.decls.map((d) => d.name)).toContain("Kept");
+    // Releasing twice is a no-op, and extraction still works afterwards.
+    disposeSpareParser();
+    disposeSpareParser();
+    expect(extract(broken).decls.map((d) => d.name)).toContain("Kept");
   });
 
   test("extractFile refuses a language with no extractor", () => {
@@ -846,6 +862,56 @@ describe("call sites", () => {
       ].join("\n"),
     );
     expect(r.calls.map((c) => c.callee)).toEqual(["make", "this.go"]);
+  });
+
+  test("a named function expression binds its own name", () => {
+    const r = extract(
+      ["export function g() {}", "export const run = function g() {", "  g();", "};"].join("\n"),
+    );
+    // The inner `g` is the expression itself, not the top-level function.
+    expect(r.calls).toEqual([]);
+  });
+
+  test("a named generator expression binds its own name", () => {
+    const r = extract(
+      ["export function* g() {}", "export const run = function* g() {", "  g();", "};"].join("\n"),
+    );
+    expect(r.calls).toEqual([]);
+  });
+
+  test("a class expression binds its own name", () => {
+    const r = extract(
+      [
+        "export class Helper {}",
+        "export function make() {",
+        "  return class Helper {",
+        "    build() {",
+        "      return new Helper();",
+        "    }",
+        "  };",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.calls).toEqual([]);
+  });
+
+  test("a local namespace or enum shadows a top-level one", () => {
+    const r = extract(
+      [
+        "export function f() {",
+        "  namespace N {",
+        "    export const a = 1;",
+        "  }",
+        "  enum E {",
+        "    A,",
+        "  }",
+        "  N.go();",
+        "  E.valueOf();",
+        "  Other.go();",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.calls).toEqual([{ caller: "f", callee: "Other.go", line: 10 }]);
   });
 
   test("a generic arrow initialiser is a caller scope", () => {

@@ -291,6 +291,27 @@ describe("resolution edge cases", () => {
     expect(edgeKeys(local.calls)).toEqual(["src/a.ts#f -> src/g.ts#g", "src/a.ts#h -> src/g.ts#g"]);
   });
 
+  test("attributes a call inside a wrapped function-valued const to that const", () => {
+    const dir = project({
+      "src/g.ts": "export function g(): void {}\n",
+      "src/a.ts": [
+        "import { g } from './g.js';",
+        "type Fn = () => void;",
+        "export const paren = ((): void => {",
+        "  g();",
+        "});",
+        "export const cast = (function (): void {",
+        "  g();",
+        "} as Fn);",
+        "",
+      ].join("\n"),
+    });
+    const local = generateTsTruth(dir, ["src/a.ts", "src/g.ts"]);
+    // A parenthesised or cast initializer is the same function: the const owns its calls,
+    // exactly as a bare arrow does.
+    expect(edgeKeys(local.calls)).toEqual(["src/a.ts#cast -> src/g.ts#g", "src/a.ts#paren -> src/g.ts#g"]);
+  });
+
   test("attributes a call in a namespace function to the dotted path, and one in the body to the file", () => {
     const dir = project({
       "src/g.ts": "export function g(): void {}\n",
