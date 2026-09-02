@@ -56,8 +56,8 @@ Scope: measured numbers, head-to-head results, README, dogfood, CI parity
   EXPECT: mapquality: GATE PASS
   EVIDENCE: truth-ts: 148 files, 0 tsconfig errors (semantic diagnostics off: --diagnostics or GREPLOST_BENCH_DIAGNOSTICS=1 to check them) | $ bun bench/src/cli.ts mapquality --gate
 
-- [ ] R12: every loss in the head-to-head table carries a one-line reason (quote the rows)
-  EVIDENCE: pending
+- [x] R12: every loss in the head-to-head table carries a one-line reason (quote the rows)
+  EVIDENCE: | X5 | <= 10 artifact lines | 54 of 10511 lines | loss (24 of 99031 lines) | n/a | win (60 of 88119 lines) | greplost: 54 artifact lines of 10511 changed across 12 files for a one-line source change; the target is 10 lines. Where: `manifest.json` 20 lines, `packages/anyq__kafka/MAP.md` 8 lines, `packages/anyq__example-retry-strategies/MAP.md` 7 lines, `packages/anyq__example-re
 
 - [ ] R13: user notified through TicketTok with the results summary and asked whether to create github.com/sns45/greplost and publish 0.0.1 (quote the notification and the answer, or note that no answer arrived)
   EVIDENCE: pending
