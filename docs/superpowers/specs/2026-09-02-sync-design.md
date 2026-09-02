@@ -36,7 +36,7 @@ export async function update(root: string, opts: UpdateOptions): Promise<UpdateR
 export interface InitResult { created: string[]; update: UpdateResult; hooks: string[]; }
 export async function init(root: string, opts?: { hooks?: boolean }): Promise<InitResult>;   // writes .greplost/config.json (DEFAULT_CONFIG) when absent, .greplost/.gitignore, full update, git hooks
 // state.ts
-export interface SyncState { lastIndexedCommit?: string; treeClean?: boolean; }   // treeClean: the dirty set and git status were empty when the map was built (ruling 2026-09-03)
+export interface SyncState { lastIndexedCommit?: string; treeClean?: boolean; configHash?: string; }   // treeClean: the dirty set and git status were empty when the map was built (ruling 2026-09-03)
 export function readState(root: string): SyncState;  export function writeState(root: string, state: SyncState): void;   // .greplost/.state.json
 // lock.ts
 export async function withLock<T>(root: string, fn: () => Promise<T>): Promise<T | undefined>;   // undefined when another live holder exists
@@ -63,7 +63,7 @@ export const HOOK_MARKER = "# greplost-hook";
 **Update (incremental).**
 1. `withLock`. If locked → `{ skipped: "locked" }` and nothing else.
 2. Dirty set = `readAndClearDirty` ∪ `opts.files` ∪ (git available: `git diff --name-only <lastIndexedCommit>..HEAD` when `lastIndexedCommit` is set and still exists, plus `git status --porcelain` paths). Files that no longer exist are still "dirty" (their cards get pruned).
-3. Fast path: dirty set empty, `lastIndexedCommit === HEAD`, recorded `treeClean === true`, and `git status --porcelain` empty → `{ skipped: "clean" }` (still inside the lock). A build from a dirty tree records `treeClean: false`, so a later revert to a clean tree always rebuilds once (ruling 2026-09-03). The dirty set is filtered through the discovery predicate (config include/exclude, known languages), keeping deleted paths that are in the manifest.
+3. Fast path: filtered dirty set empty, `lastIndexedCommit === HEAD`, recorded `treeClean === true`, recorded `configHash` equal to the current config's hash, and the filtered working-tree change set empty → `{ skipped: "clean" }` (still inside the lock). Working-tree changes are read with `git status --porcelain -z --untracked-files=all` so new directories are seen file by file (ruling 2026-09-03). A build from a dirty tree records `treeClean: false`, so a later revert to a clean tree always rebuilds once (ruling 2026-09-03). The dirty set is filtered through the discovery predicate (config include/exclude, known languages), keeping deleted paths that are in the manifest.
 4. Load `FileParseCache`, run `buildArtifacts` with it (unchanged files hit the cache by sha256; `reparsed` counts misses, `cached` counts hits), save the cache (pruning entries whose sha256 is not in the current manifest), `writeArtifacts`, `writeState({ lastIndexedCommit: HEAD })`.
 5. `mode: "full"` skips steps 2 and 3, ignores the parse cache for reads (still saves it), and otherwise does the same. Full and incremental produce byte-identical `.greplost/` by construction: both render the whole map in memory and write only differing bytes. The tech spec's "regenerate only dependent artifacts" is satisfied at the write layer; parse work is the only thing skipped.
 6. `ms` is measured wall-clock; `quiet` suppresses console output.
@@ -72,16 +72,18 @@ export const HOOK_MARKER = "# greplost-hook";
 
 **Dirty file.** `.greplost/.dirty`, one path per line, appended with `appendFileSync`. Paths are normalised to repo-relative posix form; absolute paths outside the repo are ignored.
 
-**Init.** Creates `.greplost/config.json` from `DEFAULT_CONFIG` (2-space stable JSON) if absent, `.greplost/.gitignore` containing `.dirty*`, `.lock`, `.state.json`, `cache/parse.json`; runs `update({ mode: "full" })`; installs git hooks unless `hooks === false`.
+**Init.** Creates `.greplost/config.json` from `DEFAULT_CONFIG` (2-space stable JSON) if absent, `.greplost/.gitignore` containing `.dirty*`, `.lock`, `.state.json`, `cache/parse.json`, `*.tmp`; runs `update({ mode: "full" })`; installs git hooks unless `hooks === false`.
 
 **Git hooks.** For `post-commit`, `post-merge`, `post-checkout`: if `.husky/` exists, append the block to `.husky/<hook>` (creating it, executable); else write or append to `.git/hooks/<hook>` (creating with a `#!/bin/sh` shebang, executable). The block is idempotent (skip when `HOOK_MARKER` present) and detached:
 
 ```sh
 # greplost-hook
 if command -v greplost >/dev/null 2>&1; then GL="greplost"; elif command -v bunx >/dev/null 2>&1; then GL="bunx greplost"; else GL=""; fi
-[ -n "$GL" ] && ( $GL update --incremental --quiet >/dev/null 2>&1 & )
+[ -n "$GL" ] && ( $GL update --incremental --quiet >/dev/null 2>&1 & ) || :
 # end greplost-hook
 ```
+
+Hook files created by greplost (plain or husky) start with `#!/bin/sh`; the trailing `|| :` keeps the line exit 0 under `sh -e` (ruling 2026-09-03).
 
 When `lefthook.yml` exists, still install plain hooks and add a note recommending a `lefthook` entry. Not a git repo → `mode: "none"`, no files touched.
 
