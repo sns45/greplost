@@ -45,7 +45,7 @@ export function isLocked(root: string): boolean;
 export function appendDirty(root: string, paths: string[]): void;   // O(1) append, one path per line
 export function readAndClearDirty(root: string): string[];            // unique, sorted, repo-relative
 // parse-cache.ts
-export class FileParseCache implements ParseCache { constructor(root: string); load(): void; save(): void; }   // .greplost/cache/parse.json, { [sha256]: FileRecord }; gitignored
+export class FileParseCache implements ParseCache { constructor(root: string); load(): void; save(): void; }   // .greplost/cache/parse.json, { [`${lang}:${sha256}`]: FileRecord }; gitignored; get(sha256, lang); records are immutable (never mutate what the cache returns)
 // githooks.ts
 export interface HookInstallResult { installed: string[]; mode: "husky" | "plain" | "none"; notes: string[]; }
 export function installGitHooks(root: string): HookInstallResult;

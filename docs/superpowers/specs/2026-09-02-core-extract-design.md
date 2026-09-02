@@ -69,7 +69,7 @@ export function parseJsonl<T>(text: string): T[];
 export interface Structure { manifest: Manifest; imports: ImportEdge[]; calls: CallEdge[]; symbols: Declaration[]; }
 export function readStructure(artifactDir: string): Structure | null;   // null when manifest.json is absent
 // build.ts
-export interface ParseCache { get(sha256: string): FileRecord | undefined; set(record: FileRecord): void; }
+export interface ParseCache { get(sha256: string, lang: Lang): FileRecord | undefined; set(record: FileRecord): void; }   // keyed by (lang, sha256); records are frozen at the boundary and must never be mutated (ruling 2026-09-02)
 export interface BuildOptions { root: string; config?: GreplostConfig; parser?: ParserHandle; cache?: ParseCache; summaries?: SummaryCache; }
 export async function buildSnapshot(opts: BuildOptions): Promise<Snapshot>;
 // graph/query.ts (over Structure, so the CLI never parses)
