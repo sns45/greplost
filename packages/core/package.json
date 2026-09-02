@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./schema": "./src/schema.ts"
+    "./schema": "./src/schema.ts",
+    "./graph": "./src/graph/index.ts"
   },
   "dependencies": {
     "web-tree-sitter": "0.27.0",

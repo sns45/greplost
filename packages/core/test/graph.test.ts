@@ -469,7 +469,7 @@ describe("export index", () => {
     expect(index.get("src/a.ts")?.get("alias")).toEqual({ file: "src/b.ts", symbol: "impl", hops: 1 });
   });
 
-  test("star re-export copies hops 0 names except default, pinned at one hop", () => {
+  test("star re-export copies hops 0 names except default, counting hops", () => {
     const c = file("src/c.ts", { decls: [decl("src/c.ts", "deep", "function")], exports: [exp("deep")] });
     const b = file("src/b.ts", {
       imports: [imp("./c", [["*", "*"]], { reexport: true })],
@@ -485,15 +485,10 @@ describe("export index", () => {
     expect(exportNames(index, "src/b.ts")).toEqual(["deep", "default", "mid"]);
     expect(index.get("src/b.ts")?.get("deep")).toEqual({ file: "src/c.ts", symbol: "deep", hops: 1 });
     // The name set is transitive, "default" never travels through a star, and
-    // only the first hop onto a declaration keeps a usable target.
+    // a name keeps its declaring file however many hops away it is.
     expect(exportNames(index, "src/a.ts")).toEqual(["deep", "mid"]);
     expect(index.get("src/a.ts")?.get("mid")).toEqual({ file: "src/b.ts", symbol: "mid", hops: 1 });
-    expect(index.get("src/a.ts")?.get("deep")).toEqual({
-      file: "src/b.ts",
-      symbol: "deep",
-      hops: 1,
-      unpinned: true,
-    });
+    expect(index.get("src/a.ts")?.get("deep")).toEqual({ file: "src/c.ts", symbol: "deep", hops: 2 });
   });
 
   test("a three-level barrel chain exports the leaf's names at the top", () => {
@@ -514,7 +509,7 @@ describe("export index", () => {
     const index = buildExportIndex(files, linkImports(files, resolver(files.map((f) => f.path))));
     expect(exportNames(index, "src/top.ts")).toEqual(["LeafType", "leafFn", "midFn"]);
     expect(index.get("src/top.ts")?.get("midFn")).toEqual({ file: "src/mid.ts", symbol: "midFn", hops: 1 });
-    expect(index.get("src/top.ts")?.get("leafFn")?.unpinned).toBe(true);
+    expect(index.get("src/top.ts")?.get("leafFn")).toEqual({ file: "src/leaf.ts", symbol: "leafFn", hops: 2 });
 
     // The star closure must not depend on the order the files arrive in.
     const reversed = [...files].reverse();
@@ -523,6 +518,142 @@ describe("export index", () => {
       expect(exportNames(other, path)).toEqual(exportNames(index, path));
       expect([...(other.get(path) ?? [])]).toEqual([...(index.get(path) ?? [])]);
     }
+  });
+
+  test("a chain of named re-exports and stars keeps counting hops", () => {
+    const leaf = file("src/leaf.ts", { decls: [decl("src/leaf.ts", "work", "function")], exports: [exp("work")] });
+    // named re-export -> star -> named re-export -> star
+    const one = file("src/one.ts", {
+      imports: [imp("./leaf", ["work"], { reexport: true })],
+      exports: [exp("work", "named", { local: "work", from: "./leaf" })],
+    });
+    const two = file("src/two.ts", {
+      imports: [imp("./one", [["*", "*"]], { reexport: true })],
+      exports: [exp("*", "star", { from: "./one" })],
+    });
+    const three = file("src/three.ts", {
+      imports: [imp("./two", [["work", "renamed"]], { reexport: true })],
+      exports: [exp("renamed", "named", { local: "work", from: "./two" })],
+    });
+    const four = file("src/four.ts", {
+      imports: [imp("./three", [["*", "*"]], { reexport: true })],
+      exports: [exp("*", "star", { from: "./three" })],
+    });
+    const files = [leaf, one, two, three, four];
+    const index = buildExportIndex(files, linkImports(files, resolver(files.map((f) => f.path))));
+    expect(index.get("src/one.ts")?.get("work")).toEqual({ file: "src/leaf.ts", symbol: "work", hops: 1 });
+    expect(index.get("src/two.ts")?.get("work")).toEqual({ file: "src/leaf.ts", symbol: "work", hops: 2 });
+    expect(index.get("src/three.ts")?.get("renamed")).toEqual({ file: "src/leaf.ts", symbol: "work", hops: 3 });
+    expect(index.get("src/four.ts")?.get("renamed")).toEqual({ file: "src/leaf.ts", symbol: "work", hops: 4 });
+  });
+
+  test("a diamond of stars over one declaration pins to it, by the shorter chain", () => {
+    // top stars a and b, both of which lead to base; b takes the long way round.
+    const base = file("src/base.ts", { decls: [decl("src/base.ts", "x", "function")], exports: [exp("x")] });
+    const a = file("src/a.ts", {
+      imports: [imp("./base", [["*", "*"]], { reexport: true })],
+      exports: [exp("*", "star", { from: "./base" })],
+    });
+    const mid = file("src/mid.ts", {
+      imports: [imp("./base", [["*", "*"]], { reexport: true })],
+      exports: [exp("*", "star", { from: "./base" })],
+    });
+    const b = file("src/b.ts", {
+      imports: [imp("./mid", [["*", "*"]], { reexport: true })],
+      exports: [exp("*", "star", { from: "./mid" })],
+    });
+    const top = file("src/top.ts", {
+      imports: [
+        imp("./a", [["*", "*"]], { reexport: true }),
+        imp("./b", [["*", "*"]], { reexport: true, line: 2 }),
+      ],
+      exports: [exp("*", "star", { from: "./a" }), exp("*", "star", { from: "./b" })],
+    });
+    const user = file("src/user.ts", {
+      imports: [imp("./top", ["x"])],
+      decls: [decl("src/user.ts", "go", "function")],
+      calls: [call("go", "x")],
+    });
+    const files = [base, a, mid, b, top, user];
+    const imports = linkImports(files, resolver(files.map((f) => f.path)));
+    const index = buildExportIndex(files, imports);
+    // Both arms are the same declaration, so the name resolves; a is the short arm.
+    expect(index.get("src/top.ts")?.get("x")).toEqual({ file: "src/base.ts", symbol: "x", hops: 2 });
+    expect(index.get("src/b.ts")?.get("x")).toEqual({ file: "src/base.ts", symbol: "x", hops: 2 });
+    expect(linkCalls(files, imports, index).map(edgeKey)).toEqual([
+      "src/user.ts#go -> src/base.ts#x (med)",
+    ]);
+
+    const reversed = [...files].reverse();
+    const other = buildExportIndex(reversed, linkImports(reversed, resolver(reversed.map((f) => f.path))));
+    for (const path of files.map((f) => f.path)) {
+      expect([...(other.get(path) ?? [])]).toEqual([...(index.get(path) ?? [])]);
+    }
+  });
+
+  test("two stars supplying different declarations stay ambiguous unless a local export shadows them", () => {
+    const a = file("src/a.ts", { decls: [decl("src/a.ts", "dup", "function")], exports: [exp("dup")] });
+    const b = file("src/b.ts", { decls: [decl("src/b.ts", "dup", "function")], exports: [exp("dup")] });
+    const ambiguous = file("src/ambiguous.ts", {
+      imports: [
+        imp("./a", [["*", "*"]], { reexport: true }),
+        imp("./b", [["*", "*"]], { reexport: true, line: 2 }),
+      ],
+      exports: [exp("*", "star", { from: "./a" }), exp("*", "star", { from: "./b" })],
+    });
+    const shadowed = file("src/shadowed.ts", {
+      imports: [
+        imp("./a", [["*", "*"]], { reexport: true }),
+        imp("./b", [["*", "*"]], { reexport: true, line: 2 }),
+        imp("./b", ["dup"], { reexport: true, line: 3 }),
+      ],
+      exports: [
+        exp("*", "star", { from: "./a" }),
+        exp("*", "star", { from: "./b" }),
+        exp("dup", "named", { local: "dup", from: "./b" }),
+      ],
+    });
+    const files = [a, b, ambiguous, shadowed];
+    const index = buildExportIndex(files, linkImports(files, resolver(files.map((f) => f.path))));
+    expect(exportNames(index, "src/ambiguous.ts")).toEqual(["dup"]);
+    expect(index.get("src/ambiguous.ts")?.get("dup")?.unpinned).toBe(true);
+    expect(index.get("src/shadowed.ts")?.get("dup")).toEqual({ file: "src/b.ts", symbol: "dup", hops: 1 });
+  });
+
+  test("a chain that dead-ends outside the repo or on a missing name is unpinned", () => {
+    const outside = file("src/outside.ts", {
+      imports: [imp("lodash", [["merge", "merge"]], { reexport: true })],
+      exports: [exp("merge", "named", { local: "merge", from: "lodash" })],
+    });
+    const viaOutside = file("src/via-outside.ts", {
+      imports: [imp("./outside", [["*", "*"]], { reexport: true })],
+      exports: [exp("*", "star", { from: "./outside" })],
+    });
+    const missing = file("src/missing.ts", {
+      imports: [imp("./outside", [["ghost", "ghost"]], { reexport: true })],
+      exports: [exp("ghost", "named", { local: "ghost", from: "./outside" })],
+    });
+    const files = [outside, viaOutside, missing];
+    const index = buildExportIndex(files, linkImports(files, resolver(files.map((f) => f.path))));
+    expect(exportNames(index, "src/via-outside.ts")).toEqual(["merge"]);
+    expect(index.get("src/via-outside.ts")?.get("merge")?.unpinned).toBe(true);
+    expect(index.get("src/missing.ts")?.get("ghost")?.unpinned).toBe(true);
+  });
+
+  test("a named re-export cycle terminates with no target", () => {
+    const a = file("src/a.ts", {
+      imports: [imp("./b", ["loop"], { reexport: true })],
+      exports: [exp("loop", "named", { local: "loop", from: "./b" })],
+    });
+    const b = file("src/b.ts", {
+      imports: [imp("./a", ["loop"], { reexport: true })],
+      exports: [exp("loop", "named", { local: "loop", from: "./a" })],
+    });
+    const files = [a, b];
+    const index = buildExportIndex(files, linkImports(files, resolver(files.map((f) => f.path))));
+    expect(exportNames(index, "src/a.ts")).toEqual(["loop"]);
+    expect(index.get("src/a.ts")?.get("loop")?.unpinned).toBe(true);
+    expect(index.get("src/b.ts")?.get("loop")?.unpinned).toBe(true);
   });
 
   test("a star cycle terminates and still reports both sides' names", () => {
@@ -828,8 +959,13 @@ describe("linkCalls", () => {
     expect(linkOne([a, b, user])).toEqual([]);
   });
 
-  test("a call through a two-hop barrel chain is dropped, one hop is med", () => {
-    const leaf = file("src/leaf.ts", { decls: [decl("src/leaf.ts", "work", "function")], exports: [exp("work")] });
+  test("a call through a three-level barrel chain resolves to med", () => {
+    // The anyq shape: `import { work } from "@pkg"` -> index.ts `export * from
+    // "./mid"` -> mid.ts `export * from "./leaf"` -> leaf.ts declares work.
+    const leaf = file("src/leaf.ts", {
+      decls: [decl("src/leaf.ts", "work", "function"), ...classDecls("src/leaf.ts", "Worker", ["run"])],
+      exports: [exp("work"), exp("Worker")],
+    });
     const mid = file("src/mid.ts", {
       imports: [imp("./leaf", [["*", "*"]], { reexport: true })],
       exports: [exp("*", "star", { from: "./leaf" })],
@@ -844,13 +980,74 @@ describe("linkCalls", () => {
       calls: [call("go", "work")],
     });
     const viaTop = file("src/via-top.ts", {
-      imports: [imp("./top", ["work"]), imp("./top", [["*", "ns"]], { line: 2 })],
+      imports: [imp("./top", ["work", "Worker"]), imp("./top", [["*", "ns"]], { line: 2 })],
       decls: [decl("src/via-top.ts", "go", "function")],
-      calls: [call("go", "work"), call("go", "ns.work")],
+      calls: [call("go", "work"), call("go", "ns.work"), call("go", "Worker.run"), call("go", "new Worker")],
     });
     expect(linkOne([leaf, mid, top, viaMid, viaTop]).map(edgeKey)).toEqual([
       "src/via-mid.ts#go -> src/leaf.ts#work (med)",
+      "src/via-top.ts#go -> src/leaf.ts#Worker (med)",
+      "src/via-top.ts#go -> src/leaf.ts#Worker.run (med)",
+      "src/via-top.ts#go -> src/leaf.ts#work (med)",
     ]);
+  });
+
+  test("a call through a named re-export then a star resolves to med", () => {
+    const leaf = file("src/leaf.ts", { decls: [decl("src/leaf.ts", "work", "function")], exports: [exp("work")] });
+    const named = file("src/named.ts", {
+      imports: [imp("./leaf", [["work", "renamed"]], { reexport: true })],
+      exports: [exp("renamed", "named", { local: "work", from: "./leaf" })],
+    });
+    const barrel = file("src/barrel.ts", {
+      imports: [imp("./named", [["*", "*"]], { reexport: true })],
+      exports: [exp("*", "star", { from: "./named" })],
+    });
+    const user = file("src/user.ts", {
+      imports: [imp("./barrel", ["renamed"])],
+      decls: [decl("src/user.ts", "go", "function")],
+      calls: [call("go", "renamed")],
+    });
+    expect(linkOne([leaf, named, barrel, user]).map(edgeKey)).toEqual([
+      "src/user.ts#go -> src/leaf.ts#work (med)",
+    ]);
+  });
+
+  test("a call is dropped when the chain is ambiguous, external or cyclic", () => {
+    const a = file("src/a.ts", { decls: [decl("src/a.ts", "dup", "function")], exports: [exp("dup")] });
+    const b = file("src/b.ts", { decls: [decl("src/b.ts", "dup", "function")], exports: [exp("dup")] });
+    const ambiguous = file("src/ambiguous.ts", {
+      imports: [
+        imp("./a", [["*", "*"]], { reexport: true }),
+        imp("./b", [["*", "*"]], { reexport: true, line: 2 }),
+      ],
+      exports: [exp("*", "star", { from: "./a" }), exp("*", "star", { from: "./b" })],
+    });
+    const external = file("src/external.ts", {
+      imports: [imp("lodash", [["merge", "merge"]], { reexport: true })],
+      exports: [exp("merge", "named", { local: "merge", from: "lodash" })],
+    });
+    const externalBarrel = file("src/external-barrel.ts", {
+      imports: [imp("./external", [["*", "*"]], { reexport: true })],
+      exports: [exp("*", "star", { from: "./external" })],
+    });
+    const loopA = file("src/loop-a.ts", {
+      imports: [imp("./loop-b", ["loop"], { reexport: true })],
+      exports: [exp("loop", "named", { local: "loop", from: "./loop-b" })],
+    });
+    const loopB = file("src/loop-b.ts", {
+      imports: [imp("./loop-a", ["loop"], { reexport: true })],
+      exports: [exp("loop", "named", { local: "loop", from: "./loop-a" })],
+    });
+    const user = file("src/user.ts", {
+      imports: [
+        imp("./ambiguous", ["dup"]),
+        imp("./external-barrel", ["merge"], { line: 2 }),
+        imp("./loop-a", ["loop"], { line: 3 }),
+      ],
+      decls: [decl("src/user.ts", "go", "function")],
+      calls: [call("go", "dup"), call("go", "merge"), call("go", "loop")],
+    });
+    expect(linkOne([a, b, ambiguous, external, externalBarrel, loopA, loopB, user])).toEqual([]);
   });
 
   test("a med edge is upgraded when a later call site resolves the same pair at high", () => {
