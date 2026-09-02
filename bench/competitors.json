@@ -1,0 +1,111 @@
+{
+  "pinnedAt": "2026-09-02",
+  "tools": [
+    {
+      "name": "graphify",
+      "repo": "https://github.com/Graphify-Labs/graphify",
+      "version": "v0.9.53",
+      "commit": "33362d969292b57eda82f3fbd9eb5f3f5bc9bbc2",
+      "install": [
+        "uv tool install graphifyy",
+        "graphify install"
+      ],
+      "run": [
+        "/graphify .",
+        "graphify hook install",
+        "graphify update .",
+        "graphify query \"<question>\""
+      ],
+      "artifactPaths": [
+        "graphify-out/graph.json",
+        "graphify-out/GRAPH_REPORT.md",
+        "graphify-out/graph.html",
+        "graphify-out/manifest.json",
+        "graphify-out/cache/",
+        "graphify-out/cost.json"
+      ],
+      "syncMechanism": "git hooks. `graphify hook install` writes post-commit and post-checkout hooks that rebuild the graph in the background (AST only, no API cost) plus a git merge driver that union-merges graph.json. `git pull` / `git merge` are NOT covered: the README tells the user to run `graphify update .` afterwards. Separately, `graphify install` writes a CLAUDE.md section and a Claude Code PreToolUse hook (`graphify hook-guard`) that nudges the assistant to query the graph before grepping; that hook reads the graph, it does not refresh it. There is no mechanical staleness check equivalent to `greplost verify`.",
+      "schemaNotes": "graphify-out/graph.json is NetworkX node-link JSON. Top-level keys: `directed`, `multigraph`, `graph`, `nodes`, `links`, `hyperedges`, and `built_at_commit` when the output dir sits in a git repo. EDGE KEY IS AMBIGUOUS: paths.py:load_node_link_graph documents that the clustered writer stores edges under `links` (networkx's node-link default) while the raw `--no-cluster` writer stores them under `edges`; the adapter accepts either. Node: `id` (a LOSSY normalized slug - graphify/ids.py casefolds, NFKC-normalizes, replaces every non-word run with `_`, so the id cannot be reversed into a path), `label` (basename for a file node, `name()` for a top-level function, `.name()` for a method, the bare name for a class), `file_type` (`code` | `document` | `paper` | `image` | `rationale` | `concept`), `source_file` (the path as scanned; can be absolute - paths.py:is_absolute_any_platform lists graph.json as a place absolute paths travel), `source_location` (`L<line>`), optional `type`, `metadata`, `community`, `community_name`, `norm_label`, and `origin_file` on sourceless cross-file stubs (`source_file` is \"\" there). Edge: `source`, `target`, `relation`, `confidence` (`EXTRACTED` | `INFERRED` | `AMBIGUOUS`), `confidence_score` (float; export.py fills a default when absent), `source_file`, `source_location`, `weight`, optional `context` (`import` | `re-export` | `call`), `type_only`, `target_file`. Relations seen in the extractors: `imports`, `imports_from`, `re_exports`, `calls`, `indirect_call`, `contains`, `method`, `inherits`, `implements`, `references`, `rationale_for`, `cites`, `defines`, `bound_to`, `uses_static_prop`, `references_constant`, `listened_by`. Structure: a file node `contains` its top-level classes and functions, a class node has a `method` edge to each of its methods; graphify has no explicit `<file>#<symbol>` identity, so symbol paths must be rebuilt from that containment tree. build.py keeps `imports`/`imports_from`/`re_exports` edges whose target is not a node at all (unresolved specifiers and external packages), so dangling import targets are expected in real output.",
+      "sources": [
+        "https://github.com/Graphify-Labs/graphify/blob/v0.9.53/README.md",
+        "https://github.com/Graphify-Labs/graphify/blob/v0.9.53/docs/how-it-works.md",
+        "https://github.com/Graphify-Labs/graphify/blob/v0.9.53/graphify/ids.py",
+        "https://github.com/Graphify-Labs/graphify/blob/v0.9.53/graphify/extractors/engine.py",
+        "https://github.com/Graphify-Labs/graphify/blob/v0.9.53/graphify/extract.py",
+        "https://github.com/Graphify-Labs/graphify/blob/v0.9.53/graphify/export.py",
+        "https://github.com/Graphify-Labs/graphify/blob/v0.9.53/graphify/paths.py",
+        "https://graphify.net/",
+        "https://graphify.net/graphify-claude-code-integration.html"
+      ]
+    },
+    {
+      "name": "ua",
+      "repo": "https://github.com/Egonex-AI/Understand-Anything",
+      "version": "v2.9.0",
+      "commit": "f08763d11d0202a8a8f52b5dedda6d1b2e2ebac8",
+      "install": [
+        "/plugin marketplace add Egonex-AI/Understand-Anything",
+        "/plugin install understand-anything"
+      ],
+      "run": [
+        "/understand",
+        "/understand-dashboard",
+        "/understand --auto-update"
+      ],
+      "artifactPaths": [
+        ".ua/knowledge-graph.json",
+        ".ua/meta.json",
+        ".ua/config.json",
+        ".ua/cache/",
+        ".ua/tours/",
+        ".ua/intermediate/",
+        ".ua/diff-overlay.json",
+        ".understand-anything/knowledge-graph.json"
+      ],
+      "syncMechanism": "git post-commit hook, opt-in. `/understand --auto-update` installs a post-commit hook that incrementally patches the graph so each commit lands with a matching graph. Without it, freshness relies on re-running `/understand`, which is incremental: the skill reads `.ua/meta.json`, takes `gitCommitHash`, runs `git diff <last-hash>..HEAD --name-only` and re-analyzes only the changed files. Re-analysis of a changed file is an LLM pass, so staying fresh costs tokens. There is no verify/staleness gate beyond that commit-hash comparison.",
+      "schemaNotes": "`.ua/knowledge-graph.json` (legacy projects keep `.understand-anything/knowledge-graph.json`) is `{ version, kind?, project, nodes, edges, layers, tour }`. `project` is `{ name, languages, frameworks, description, analyzedAt, gitCommitHash }`. Node: `{ id, type, name, filePath?, lineRange?, summary, tags, complexity, languageNotes?, domainMeta?, knowledgeMeta?, figmaMeta? }` with 27 node types; the code ones are `file`, `function`, `class`, `module`, `concept`. Node ids carry a mandatory type prefix and are the only place a path appears for sub-file nodes: `file:<relative-path>`, `function:<relative-path>:<function-name>`, `class:<relative-path>:<class-name>`, plus `config:`, `document:`, `service:`, `table:<path>:<name>`, `endpoint:<path>:<name>`, `pipeline:`, `schema:`, `resource:`. Paths are documented as relative to the project root. Edge: `{ source, target, type, direction, description?, weight }` with 38 edge types; `direction` is `forward` | `backward` | `bidirectional` (the file-analyzer agent always emits `forward`) and `weight` is a fixed per-edge-type importance constant (imports 0.7, calls 0.8, contains 1.0), NOT a confidence - the format exposes no confidence field at all. `imports` edges are emitted 1:1 from the deterministic project-scanner's resolved, project-internal import list; `calls` edges are LLM-inferred from imports plus function names. A significance filter means only functions of 10+ lines, classes with 2+ methods or 20+ lines, and exported symbols become sub-file nodes, so methods never get their own node - the finest granularity for a class is the class itself.",
+      "sources": [
+        "https://github.com/Egonex-AI/Understand-Anything/blob/v2.9.0/README.md",
+        "https://github.com/Egonex-AI/Understand-Anything/blob/v2.9.0/understand-anything-plugin/packages/core/src/types.ts",
+        "https://github.com/Egonex-AI/Understand-Anything/blob/v2.9.0/understand-anything-plugin/agents/file-analyzer.md",
+        "https://github.com/Egonex-AI/Understand-Anything/blob/v2.9.0/docs/superpowers/specs/2026-03-14-understand-anything-design.md",
+        "https://github.com/Lum1104/Understand-Anything"
+      ]
+    },
+    {
+      "name": "crg",
+      "repo": "https://github.com/tirth8205/code-review-graph",
+      "version": "v2.3.8",
+      "commit": "2c6dae32643572ee528eb9b77dbcc17f58f3a8c9",
+      "install": [
+        "pip install code-review-graph",
+        "code-review-graph install"
+      ],
+      "run": [
+        "code-review-graph build",
+        "code-review-graph visualize --format json",
+        "code-review-graph update",
+        "code-review-graph status"
+      ],
+      "artifactPaths": [
+        ".code-review-graph/graph.db",
+        ".code-review-graph/graph.json",
+        ".code-review-graph/graph.html",
+        ".code-review-graph/languages.toml",
+        "~/.code-review-graph/registry.json",
+        "~/.code-review-graph/watch.toml"
+      ],
+      "syncMechanism": "platform hooks plus a watcher. `code-review-graph install` detects the installed AI coding tools, writes their MCP config and installs platform-native hooks/skills where the platform supports them; those hooks and supported commit hooks trigger `update`, which diffs changed files, walks the graph's own import and call edges to find dependents, and re-parses only the files whose SHA-256 changed. For editors without hooks there is `code-review-graph watch` (single repo) and `crg-daemon` (multi-repo background watcher). `code-review-graph update` is the manual incremental path. Freshness is not verified against the tree; the graph is refreshed, never checked.",
+      "schemaNotes": "The graph itself is SQLite at `.code-review-graph/graph.db` (legacy `.code-review-graph.db`); `code-review-graph visualize --format json` exports it to `.code-review-graph/graph.json`, and the adapter reads that export rather than the database. Payload: `{ nodes, edges, stats, flows, communities }`. Node (graph.py:node_to_dict plus visualization.py:export_graph_data): `{ id, kind, name, qualified_name, file_path, line_start, line_end, language, parent_name, is_test, params, return_type, community_id }`. `kind` is `File` | `Class` | `Function` | `Type` | `Test` plus the Spring-enrichment kinds `Endpoint`, `Scheduler`, `ConfigProperty`. Edge: `{ id, kind, source, target, file_path, line, confidence, confidence_tier }` plus `ambiguous_targets` / `unresolved_targets` (and their `_target_count` / `_targets_truncated` companions) when the resolver could not settle on one target. `kind` is `CALLS`, `IMPORTS_FROM`, `INHERITS`, `IMPLEMENTS`, `CONTAINS`, `TESTED_BY`, `DEPENDS_ON`, `REFERENCES`, `INJECTS`, `CONSUMES`, `PRODUCES`, `TEMPORAL_STUB`, `DEPENDS_ON_CONFIG`, `HANDLES`, `TRIGGERS`, `PUBLISHES` (`OVERRIDES` is scored but never emitted). `confidence_tier` is `EXTRACTED` (default) or `INFERRED` (scoped_resolver.py rewrites). QUALIFIED NAMES ARE ABSOLUTE: docs/schema.md gives `/absolute/path/to/file.py`, `/absolute/path/to/file.py::function_name`, `/absolute/path/to/file.py::ClassName.method_name`, `/absolute/path/to/file.py::Outer.Inner.method_name`; the file path is everything before the FIRST `::`, always forward-slashed (graph.py:_bridge_qualified_name), and the symbol part may itself contain `::` or backslashes for PHP. The README warns that JSON exports can contain absolute paths, so the adapter must re-anchor them. export_graph_data already drops edges whose endpoints it cannot resolve to a known qualified name.",
+      "sources": [
+        "https://github.com/tirth8205/code-review-graph/blob/v2.3.8/README.md",
+        "https://github.com/tirth8205/code-review-graph/blob/v2.3.8/docs/schema.md",
+        "https://github.com/tirth8205/code-review-graph/blob/v2.3.8/code_review_graph/graph.py",
+        "https://github.com/tirth8205/code-review-graph/blob/v2.3.8/code_review_graph/visualization.py",
+        "https://github.com/tirth8205/code-review-graph/blob/v2.3.8/code_review_graph/exports.py",
+        "https://github.com/tirth8205/code-review-graph/blob/v2.3.8/code_review_graph/constants.py",
+        "https://dev.to/mir_mursalin_ankur/graphify-code-review-graph-build-a-self-updating-knowledge-graph-for-claude-code-and-other-ai-j1m"
+      ]
+    }
+  ]
+}

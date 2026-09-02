@@ -1,0 +1,317 @@
+{
+  "version": "2.9.0",
+  "kind": "codebase",
+  "project": {
+    "name": "tiny-ts",
+    "languages": ["TypeScript"],
+    "frameworks": [],
+    "description": "A three-package workspace: a core queue registry with a retry helper and an event bus, adapters for SQS and memory, and a worker app that wires them together.",
+    "analyzedAt": "2026-09-02T00:00:00.000Z",
+    "gitCommitHash": "0000000000000000000000000000000000000000"
+  },
+  "nodes": [
+    {
+      "id": "file:apps/worker/src/main.ts",
+      "type": "file",
+      "name": "main.ts",
+      "filePath": "apps/worker/src/main.ts",
+      "summary": "Worker entry point that loads config, builds a registry, registers the SQS and memory adapters and publishes one message to all of them.",
+      "tags": ["entry-point", "worker", "bootstrap"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:apps/worker/src/config.ts",
+      "type": "file",
+      "name": "config.ts",
+      "filePath": "apps/worker/src/config.ts",
+      "summary": "Reads the worker's queue URL and AWS region from the environment with local defaults.",
+      "tags": ["configuration", "environment", "worker"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/core/src/registry.ts",
+      "type": "file",
+      "name": "registry.ts",
+      "filePath": "packages/core/src/registry.ts",
+      "summary": "Holds the named queue registry and publishes to every registered queue through the retry helper.",
+      "tags": ["registry", "core", "fan-out"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:packages/core/src/retry.ts",
+      "type": "file",
+      "name": "retry.ts",
+      "filePath": "packages/core/src/retry.ts",
+      "summary": "Generic retry wrapper that re-invokes an async function up to a configured number of attempts.",
+      "tags": ["retry", "resilience", "utility"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/core/src/bus.ts",
+      "type": "file",
+      "name": "bus.ts",
+      "filePath": "packages/core/src/bus.ts",
+      "summary": "In-process event bus that formats an event label and fans it out to registered handlers.",
+      "tags": ["event-bus", "core", "pub-sub"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/core/src/events.ts",
+      "type": "file",
+      "name": "events.ts",
+      "filePath": "packages/core/src/events.ts",
+      "summary": "Event label formatting plus a Bus factory; imports Bus, which imports back into this file.",
+      "tags": ["events", "formatting", "factory"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:packages/core/src/queue.ts",
+      "type": "file",
+      "name": "queue.ts",
+      "filePath": "packages/core/src/queue.ts",
+      "summary": "Type-only module declaring the Msg, Ack and Queue contracts every adapter implements.",
+      "tags": ["types", "contract", "queue"],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:tsconfig.json",
+      "type": "config",
+      "name": "tsconfig.json",
+      "filePath": "tsconfig.json",
+      "summary": "Workspace TypeScript configuration mapping the @tiny/* aliases onto each package's src/index.ts.",
+      "tags": ["configuration", "typescript", "build-system"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:apps/worker/src/main.ts:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "apps/worker/src/main.ts",
+      "lineRange": [5, 12],
+      "summary": "Loads the worker config, creates the registry, registers both adapters and awaits a publish to all of them.",
+      "tags": ["entry-point", "async", "orchestration"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:apps/worker/src/config.ts:loadConfig",
+      "type": "function",
+      "name": "loadConfig",
+      "filePath": "apps/worker/src/config.ts",
+      "lineRange": [6, 11],
+      "summary": "Builds a WorkerConfig from QUEUE_URL and AWS_REGION, falling back to local defaults.",
+      "tags": ["configuration", "environment", "defaults"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:packages/core/src/registry.ts:Registry",
+      "type": "class",
+      "name": "Registry",
+      "filePath": "packages/core/src/registry.ts",
+      "lineRange": [5, 26],
+      "summary": "Keeps queues by name, emits a bus event on registration and publishes to every queue with retries.",
+      "tags": ["registry", "core", "fan-out"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:packages/core/src/registry.ts:createRegistry",
+      "type": "function",
+      "name": "createRegistry",
+      "filePath": "packages/core/src/registry.ts",
+      "lineRange": [28, 30],
+      "summary": "Factory returning a fresh Registry.",
+      "tags": ["factory", "registry", "core"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:packages/core/src/retry.ts:retry",
+      "type": "function",
+      "name": "retry",
+      "filePath": "packages/core/src/retry.ts",
+      "lineRange": [7, 20],
+      "summary": "Calls the supplied async function until it succeeds or the attempt budget runs out, then rethrows the last error.",
+      "tags": ["retry", "resilience", "async"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:packages/core/src/bus.ts:Bus",
+      "type": "class",
+      "name": "Bus",
+      "filePath": "packages/core/src/bus.ts",
+      "lineRange": [4, 15],
+      "summary": "Collects handlers and calls each of them with a formatted event label.",
+      "tags": ["event-bus", "pub-sub", "core"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:apps/worker/src/main.ts",
+      "target": "file:apps/worker/src/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:packages/core/src/registry.ts",
+      "target": "file:packages/core/src/queue.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:packages/core/src/registry.ts",
+      "target": "file:packages/core/src/retry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:packages/core/src/registry.ts",
+      "target": "file:packages/core/src/bus.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:packages/core/src/bus.ts",
+      "target": "file:packages/core/src/events.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:packages/core/src/events.ts",
+      "target": "file:packages/core/src/bus.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:apps/worker/src/main.ts",
+      "target": "function:apps/worker/src/main.ts:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:apps/worker/src/main.ts",
+      "target": "function:apps/worker/src/main.ts:main",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:apps/worker/src/config.ts",
+      "target": "function:apps/worker/src/config.ts:loadConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:packages/core/src/registry.ts",
+      "target": "class:packages/core/src/registry.ts:Registry",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:packages/core/src/registry.ts",
+      "target": "function:packages/core/src/registry.ts:createRegistry",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:packages/core/src/retry.ts",
+      "target": "function:packages/core/src/retry.ts:retry",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:packages/core/src/bus.ts",
+      "target": "class:packages/core/src/bus.ts:Bus",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "function:apps/worker/src/main.ts:main",
+      "target": "function:apps/worker/src/config.ts:loadConfig",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:apps/worker/src/main.ts:main",
+      "target": "function:packages/core/src/registry.ts:createRegistry",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "class:packages/core/src/registry.ts:Registry",
+      "target": "function:packages/core/src/retry.ts:retry",
+      "type": "calls",
+      "direction": "forward",
+      "description": "publishAll wraps every queue publish in the retry helper.",
+      "weight": 0.8
+    },
+    {
+      "source": "class:packages/core/src/registry.ts:Registry",
+      "target": "class:packages/core/src/bus.ts:Bus",
+      "type": "calls",
+      "direction": "forward",
+      "description": "register() emits a `registered` event on the bus it owns.",
+      "weight": 0.8
+    },
+    {
+      "source": "class:packages/core/src/registry.ts:Registry",
+      "target": "file:packages/core/src/queue.ts",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:tsconfig.json",
+      "target": "file:apps/worker/src/main.ts",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer-app",
+      "name": "Application Layer",
+      "description": "The worker process and its configuration.",
+      "nodeIds": ["file:apps/worker/src/main.ts", "file:apps/worker/src/config.ts"]
+    },
+    {
+      "id": "layer-core",
+      "name": "Core Layer",
+      "description": "Registry, retry, event bus and the queue contracts.",
+      "nodeIds": [
+        "file:packages/core/src/registry.ts",
+        "file:packages/core/src/retry.ts",
+        "file:packages/core/src/bus.ts",
+        "file:packages/core/src/events.ts",
+        "file:packages/core/src/queue.ts"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "title": "Start at the worker",
+      "description": "`main()` loads config, builds a `Registry` and publishes one message to every registered queue.",
+      "nodeIds": ["function:apps/worker/src/main.ts:main"]
+    },
+    {
+      "order": 2,
+      "title": "Follow the registry",
+      "description": "`Registry.publishAll` wraps each publish in `retry`, so a flaky queue does not fail the whole fan-out.",
+      "nodeIds": ["class:packages/core/src/registry.ts:Registry", "function:packages/core/src/retry.ts:retry"]
+    }
+  ]
+}
