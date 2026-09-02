@@ -28,8 +28,8 @@ Principles (10.1) are binding: deterministic scoring, compiler truth, pinned eve
 ## 1.5.1 truth-ts and structural
 
 ```ts
-export interface Truth { imports: Edge[]; exports: Record<string, string[]>; calls: Edge[]; cycles: string[][]; }
-export function generateTsTruth(root: string, files: string[]): Truth;
+export interface Truth { files: string[] /* the files the compiler loaded; both sides are scored over this set */; imports: Edge[]; exports: Record<string, string[]>; calls: Edge[]; cycles: string[][]; notes?: string[]; }
+export function generateTsTruth(root: string, files: string[], options?: { diagnostics?: boolean }): Truth;   // semantic diagnostics are opt-in (--diagnostics / GREPLOST_BENCH_DIAGNOSTICS=1); workspace package names resolve through package manifests and tsconfig outDir/rootDir to their source entry (ruling 2026-09-02, documented in RESULTS.md)
 export interface Score { precision: number; recall: number; f1: number; tp: number; fp: number; fn: number; falsePositives: string[]; falseNegatives: string[]; }
 export function scoreSet(pred: string[], truth: string[]): Score;
 export function scoreEdges(pred: Edge[], truth: Edge[]): Score;             // keys `${from} -> ${to}`
