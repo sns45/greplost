@@ -564,6 +564,7 @@ interface Harness {
 let harness: Harness;
 let savedPath: string | undefined;
 let savedResultsDir: string | undefined;
+let savedWorkDir: string | undefined;
 
 /** Every logged invocation that actually carried a prompt. */
 function invocations(): FakeInvocation[] {
@@ -612,6 +613,10 @@ beforeAll(() => {
 
   savedPath = process.env["PATH"];
   savedResultsDir = process.env["GREPLOST_BENCH_RESULTS_DIR"];
+  savedWorkDir = process.env["GREPLOST_BENCH_WORK_DIR"];
+  // An empty competitor work dir: the N/A tests must not see artifacts a head-to-head run left under bench/.competitors.
+  process.env["GREPLOST_BENCH_WORK_DIR"] = path.join(dir, "competitors");
+  mkdirSync(process.env["GREPLOST_BENCH_WORK_DIR"], { recursive: true });
   process.env["PATH"] = `${bin}${path.delimiter}${savedPath ?? ""}`;
   process.env["GREPLOST_BENCH_RESULTS_DIR"] = harness.resultsDir;
   process.env["FAKE_CLAUDE_LOG"] = harness.logFile;
@@ -628,6 +633,8 @@ afterAll(() => {
   if (savedPath === undefined) delete process.env["PATH"];
   else process.env["PATH"] = savedPath;
   if (savedResultsDir === undefined) delete process.env["GREPLOST_BENCH_RESULTS_DIR"];
+  if (savedWorkDir === undefined) delete process.env["GREPLOST_BENCH_WORK_DIR"];
+  else process.env["GREPLOST_BENCH_WORK_DIR"] = savedWorkDir;
   else process.env["GREPLOST_BENCH_RESULTS_DIR"] = savedResultsDir;
   delete process.env["FAKE_CLAUDE_LOG"];
   delete process.env["FAKE_CLAUDE_ANSWERS"];

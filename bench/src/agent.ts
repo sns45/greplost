@@ -53,6 +53,8 @@ import { ALL_CATEGORIES, loadTasks, type Task, type TaskCategory } from "./tasks
 import { generateTsTruth, listTypeScriptFiles } from "./truth/ts.ts";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
+/** Where competitor artifacts live; `GREPLOST_BENCH_WORK_DIR` redirects it, as in headtohead.ts (tests point it at an empty dir). */
+const COMPETITORS_DIR = process.env["GREPLOST_BENCH_WORK_DIR"] ?? path.join(REPO_ROOT, "bench", ".competitors");
 const SUITE = "agent";
 
 /**
@@ -784,7 +786,7 @@ function competitorArtifactPaths(tool: string): string[] {
  * absent capability to read N/A, with the reason published.
  */
 function installCompetitor(tool: string, repo: string, copy: string): string | null {
-  const source = path.join(REPO_ROOT, "bench", ".competitors", tool, repo);
+  const source = path.join(COMPETITORS_DIR, tool, repo);
   if (!existsSync(source)) {
     return `no artifacts at bench/.competitors/${tool}/${repo}; run ${tool}'s own install and run commands from bench/competitors.json at its pinned version first`;
   }
