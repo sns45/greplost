@@ -695,11 +695,26 @@ export function createGreplostShim(dir: string): string {
   return dir;
 }
 
-/** Lazily made shim for `runTask` callers that did not supply one. */
+/**
+ * One shim per process for `runTask` callers that did not supply one.
+ *
+ * Made once and removed on exit: a `runTask` loop that made a fresh `mkdtemp`
+ * per call would leave a directory behind for every task it ran.
+ */
 let sharedShimDir: string | undefined;
 
 function defaultShimDir(): string {
-  if (sharedShimDir === undefined) sharedShimDir = createGreplostShim(mkdtempSync(path.join(tmpdir(), "greplost-shim-")));
+  if (sharedShimDir === undefined) {
+    const dir = createGreplostShim(mkdtempSync(path.join(tmpdir(), "greplost-shim-")));
+    sharedShimDir = dir;
+    process.once("exit", () => {
+      try {
+        rmSync(dir, { recursive: true, force: true });
+      } catch {
+        // Exiting anyway; a leftover temp directory is not worth a crash here.
+      }
+    });
+  }
   return sharedShimDir;
 }
 
@@ -804,6 +819,8 @@ interface Options {
   timeoutMs: number;
   /** Spend ceiling for the whole run; null means uncapped (the fixture default). */
   maxUsd: number | null;
+  /** Explicit per-session ceiling (`--max-session-usd`); undefined derives one. */
+  maxSessionUsd: number | undefined;
   /** Categories to keep, or null for all of them. */
   categories: TaskCategory[] | null;
   dryRun: boolean;
@@ -846,6 +863,7 @@ function parseArgs(args: string[]): Options {
     seed: 1,
     timeoutMs: SESSION_TIMEOUT_MS,
     maxUsd: null,
+    maxSessionUsd: undefined,
     categories: null,
     dryRun: false,
     gate: false,
@@ -866,6 +884,7 @@ function parseArgs(args: string[]): Options {
     else if (arg === "--seed") options.seed = positiveInt("--seed", args[++i]);
     else if (arg === "--timeout") options.timeoutMs = positiveInt("--timeout", args[++i]);
     else if (arg === "--max-usd") maxUsd = positiveNumber("--max-usd", args[++i]);
+    else if (arg === "--max-session-usd") options.maxSessionUsd = positiveNumber("--max-session-usd", args[++i]);
     else if (arg === "--categories") options.categories = parseCategories(args[++i]);
   }
   // A corpus run bills a real account, so it is capped unless the caller says
@@ -978,6 +997,12 @@ export interface RunRecord {
   numTurns: number;
   wallMs: number;
   costUsd: number;
+  /**
+   * The `--max-budget-usd` this session was given, or null when the flag was not
+   * passed. Recorded per record so a session that stopped early because the run
+   * was nearly out of budget is attributable rather than a mystery short answer.
+   */
+  sessionBudgetUsd: number | null;
   error: string | null;
 }
 
@@ -1021,7 +1046,7 @@ export function runTask(task: Task, condition: string, options: RunTaskOptions):
     maxUsd: options.maxUsd ?? null,
     shimDir: definition.plugin ? (options.shimDir ?? defaultShimDir()) : undefined,
   });
-  return record(task, condition, options.run ?? 1, session, false, options.cwd);
+  return record(task, condition, options.run ?? 1, session, false, options.cwd, options.maxUsd ?? null);
 }
 
 /**
@@ -1046,6 +1071,7 @@ function record(
   session: Session,
   toolCallsFromProbe: boolean,
   cwd: string,
+  sessionBudgetUsd: number | null = null,
 ): RunRecord {
   // A broken session has no answer to score; scoring its empty output as a wrong
   // answer would hide a harness failure inside the accuracy column.
@@ -1065,6 +1091,7 @@ function record(
     numTurns: session.numTurns,
     wallMs: session.wallMs,
     costUsd: session.costUsd,
+    sessionBudgetUsd,
     error: session.error,
   };
 }
@@ -1194,26 +1221,43 @@ function deltaMetric(id: string, metric: string, base: number, gl: number, targe
  * every one of these is defined relative to the baseline and a number invented
  * from one condition would be worse than no number.
  */
-function specMetrics(table: Record<string, Record<string, MetricBlock>>): Record<string, SpecMetric> | null {
+function specMetrics(table: Record<string, Record<string, MetricBlock>>): Record<string, SpecMetric | null> | null {
   const base = table["base"]?.["overall"];
   const gl = table["gl"]?.["overall"];
   if (base === undefined || gl === undefined) return null;
   const baseBlast = table["base"]?.["blast_radius"];
   const glBlast = table["gl"]?.["blast_radius"];
-  const metrics: Record<string, SpecMetric> = {
+  return {
     A1: ratioMetric("A1", "tokens per task (median), gl vs base", base.tokens.median, gl.tokens.median, A1_TARGET),
-    A2: ratioMetric("A2", "tool calls per task (median), gl vs base", base.toolCalls.median, gl.toolCalls.median, A2_TARGET),
-    A3: deltaMetric("A3", "answer accuracy (mean), gl minus base", base.accuracy.mean, gl.accuracy.mean, -A3_MARGIN),
-    A3blast: deltaMetric(
-      "A3blast",
-      "blast-radius accuracy (mean), gl minus base",
-      baseBlast?.accuracy.mean ?? 0,
-      glBlast?.accuracy.mean ?? 0,
-      A3_BLAST_TARGET,
+    A2: ratioMetric(
+      "A2",
+      "tool calls per task (median), gl vs base",
+      base.toolCalls.median,
+      gl.toolCalls.median,
+      A2_TARGET,
     ),
-    A4: ratioMetric("A4", "wall clock per task (median ms), gl vs base", base.wallMs.median, gl.wallMs.median, A4_TARGET),
+    A3: deltaMetric("A3", "answer accuracy (mean), gl minus base", base.accuracy.mean, gl.accuracy.mean, -A3_MARGIN),
+    // Null, not zero, when the category did not run on both sides: a
+    // `--categories definition` run has no blast-radius numbers, and publishing
+    // `{base: 0, gl: 0, delta: 0}` would read as a measured dead heat.
+    A3blast:
+      baseBlast === undefined || glBlast === undefined
+        ? null
+        : deltaMetric(
+            "A3blast",
+            "blast-radius accuracy (mean), gl minus base",
+            baseBlast.accuracy.mean,
+            glBlast.accuracy.mean,
+            A3_BLAST_TARGET,
+          ),
+    A4: ratioMetric(
+      "A4",
+      "wall clock per task (median ms), gl vs base",
+      base.wallMs.median,
+      gl.wallMs.median,
+      A4_TARGET,
+    ),
   };
-  return metrics;
 }
 
 /** What the extra tool-call probe sessions cost, over and above the measured runs. */
@@ -1237,7 +1281,7 @@ interface PayloadParts {
   winLossTie: Record<string, WinLossTie>;
   probe: Probe;
   budget: Budget;
-  metrics: Record<string, SpecMetric> | null;
+  metrics: Record<string, SpecMetric | null> | null;
   gate: { passed: boolean; missed: string[] } | null;
 }
 
@@ -1249,6 +1293,72 @@ interface Budget {
   spentUsd: number;
   /** True when the cap stopped the run before every planned session had run. */
   stopped: boolean;
+  /**
+   * The per-session ceiling in force when the run ended, or null when no
+   * `--max-budget-usd` was passed at all (an uncapped run with no explicit
+   * `--max-session-usd`).
+   */
+  sessionCeilingUsd: number | null;
+  /**
+   * Where that ceiling came from: `flag` is `--max-session-usd`, `observed` is
+   * four times the median session cost this run has actually billed, `seed` is
+   * the 1 USD placeholder used before any session has completed, and `none` is
+   * an uncapped run that passes no per-session flag.
+   */
+  sessionCeilingSource: "flag" | "observed" | "seed" | "none";
+  /**
+   * Sessions whose `--max-budget-usd` was cut below the ceiling because that was
+   * all the run had left. A truncated session can end early for a reason that
+   * has nothing to do with the task, so it has to be attributable: the count is
+   * here and the value each session was given is on its own record.
+   */
+  truncatedSessions: number;
+}
+
+/** A ceiling seeded before any session has billed, so the first one is bounded. */
+const SEED_SESSION_USD = 1;
+/** How many times the observed median session cost the ceiling allows. */
+const SESSION_CEILING_MULTIPLE = 4;
+
+/**
+ * What one session may bill: the smaller of what the run has left and a
+ * per-session ceiling.
+ *
+ * The run-level cap alone cannot stop a single runaway session from eating the
+ * whole budget in one go, and a fixed per-session number would either strangle
+ * an expensive corpus task or fail to bound a cheap one. So the ceiling tracks
+ * what sessions on *this* run actually cost - four times the observed median -
+ * and falls back to a 1 USD seed until there is something to observe.
+ *
+ * Returns null when no flag should be passed at all.
+ */
+function sessionBudget(
+  budget: Budget,
+  explicitCeiling: number | undefined,
+  observedCosts: number[],
+): { value: number | null; source: Budget["sessionCeilingSource"]; truncated: boolean } {
+  if (budget.maxUsd === null && explicitCeiling === undefined) {
+    return { value: null, source: "none", truncated: false };
+  }
+  let ceiling: number;
+  let source: Budget["sessionCeilingSource"];
+  if (explicitCeiling !== undefined) {
+    ceiling = explicitCeiling;
+    source = "flag";
+  } else if (observedCosts.length > 0) {
+    ceiling = SESSION_CEILING_MULTIPLE * summarize(observedCosts).median;
+    source = "observed";
+  } else {
+    ceiling = SEED_SESSION_USD;
+    source = "seed";
+  }
+  const remaining = budget.maxUsd === null ? Number.POSITIVE_INFINITY : budget.maxUsd - budget.spentUsd;
+  const truncated = remaining < ceiling;
+  // Rounded to the cent's millionth so the flag never carries a float artefact
+  // like 0.005000000000000001, and floored just above zero so a nearly-spent cap
+  // still passes a value the CLI accepts.
+  const value = Math.max(1e-6, Math.round(Math.min(remaining, ceiling) * 1e6) / 1e6);
+  return { value, source, truncated };
 }
 
 /**
@@ -1415,7 +1525,16 @@ async function execute(options: Options): Promise<number> {
   // from the run records - it is the harness's overhead, not the task's price -
   // but recorded, because an unreported dollar is an unreported dollar.
   const probe: Probe = { sessions: 0, costUsd: 0, tokens: 0, wallMs: 0 };
-  const budget: Budget = { maxUsd: options.maxUsd, spentUsd: 0, stopped: false };
+  const budget: Budget = {
+    maxUsd: options.maxUsd,
+    spentUsd: 0,
+    stopped: false,
+    sessionCeilingUsd: null,
+    sessionCeilingSource: "none",
+    truncatedSessions: 0,
+  };
+  /** Every session cost this run has billed, for the observed-median ceiling. */
+  const observedCosts: number[] = [];
   /** True once the run has spent its cap; every remaining session is skipped. */
   const overBudget = (): boolean => budget.maxUsd !== null && budget.spentUsd >= budget.maxUsd - EPSILON;
   // Sticky: the first envelope without a tool-call count switches the whole run
@@ -1445,13 +1564,20 @@ async function execute(options: Options): Promise<number> {
             // Stop before spending, not after: the cap is a promise about the
             // bill, and the partial results below are still worth writing.
             budget.stopped = true;
+            // Planned against the conditions that actually ran: the requested
+            // list can include ones that were N/A and never cost anything.
+            const planned = tasks.length * options.runs * ran.length;
             console.error(
               `${SUITE}: stopping at $${budget.spentUsd.toFixed(4)} of the $${budget.maxUsd} --max-usd cap; ` +
-                `${records.length} of ${tasks.length * options.runs * options.conditions.length} planned sessions ran, ` +
-                "and the partial results are written",
+                `${records.length} of ${planned} sessions planned for the ${ran.length} condition(s) that ran ` +
+                "completed, and the partial results are written",
             );
             break;
           }
+          const perSession = sessionBudget(budget, options.maxSessionUsd, observedCosts);
+          budget.sessionCeilingUsd = perSession.value;
+          budget.sessionCeilingSource = perSession.source;
+          if (perSession.truncated) budget.truncatedSessions++;
           const invocation: Invocation = {
             cwd: copy,
             prompt: task.prompt,
@@ -1459,13 +1585,18 @@ async function execute(options: Options): Promise<number> {
             condition,
             stream,
             timeoutMs: options.timeoutMs,
-            maxUsd: options.maxUsd,
+            maxUsd: perSession.value,
             shimDir: condition.plugin ? shimDir : undefined,
           };
           let session = invokeClaude(invocation);
           budget.spentUsd += session.costUsd;
-          const probed = session.toolCalls === undefined;
-          if (session.toolCalls === undefined) {
+          if (session.costUsd > 0) observedCosts.push(session.costUsd);
+          // The probe exists to fill in a tool-call count the JSON envelope did
+          // not carry. A session that *failed* has no count to be missing: buying
+          // a second doomed session teaches nothing, doubles the damage, and used
+          // to flip the whole run to stream-json on the strength of a timeout.
+          const probed = session.error === null && session.toolCalls === undefined;
+          if (probed) {
             // The measured case on Claude Code 2.1.258: no count in the JSON
             // envelope. Pay for one extra session to learn the count for this
             // prompt, then stay on stream-json for everything after it.
@@ -1476,9 +1607,10 @@ async function execute(options: Options): Promise<number> {
             probe.tokens += transcript.tokens.total;
             probe.wallMs += transcript.wallMs;
             budget.spentUsd += transcript.costUsd;
+            if (transcript.costUsd > 0) observedCosts.push(transcript.costUsd);
             stream = true;
           }
-          records.push(record(task, name, index + 1, session, probed, copy));
+          records.push(record(task, name, index + 1, session, probed, copy, perSession.value));
         }
       }
     }
@@ -1585,7 +1717,14 @@ function dryRun(target: Target, options: Options): number {
       aggregate: {},
       winLossTie: {},
       probe: { sessions: 0, costUsd: 0, tokens: 0, wallMs: 0 },
-      budget: { maxUsd: options.maxUsd, spentUsd: 0, stopped: false },
+      budget: {
+        maxUsd: options.maxUsd,
+        spentUsd: 0,
+        stopped: false,
+        sessionCeilingUsd: null,
+        sessionCeilingSource: "none",
+        truncatedSessions: 0,
+      },
       metrics: null,
       gate: null,
     }),
