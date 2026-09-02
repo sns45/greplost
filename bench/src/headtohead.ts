@@ -2197,6 +2197,9 @@ function fromWalk(
             // carries both absolutes so the reader can see the level too.
             theirs.decay === null
               ? `${round(theirs.atLast, 4)} (no commit-0 point)`
+              // `decay` is F1 at commit 0 minus F1 at the last commit, so `+` is
+              // ground lost and `-` is ground gained; both absolutes sit beside
+              // it because the level is a different fact from the fall.
               : `decay ${signed(theirs.decay)} (${round(theirs.at0 ?? 0, 3)} to ${round(theirs.atLast, 3)})`,
             x2.target,
             decayVerdict(ours.decay, theirs.decay),
