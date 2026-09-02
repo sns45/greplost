@@ -54,6 +54,10 @@ const GITIGNORE_ENTRIES: readonly string[] = [
   ARTIFACT_PATHS.lock,
   ARTIFACT_PATHS.state,
   PARSE_CACHE_PATH,
+  // Sibling temporaries from an atomic replace. `update` sweeps the ones a
+  // killed writer left behind, but a hook firing while a build is mid-rename
+  // must not make them show up in someone's status either.
+  "*.tmp",
 ];
 
 export async function init(root: string, opts: InitOptions = {}): Promise<InitResult> {

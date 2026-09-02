@@ -33,15 +33,21 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { readFileSync, readdirSync, realpathSync, rmSync } from "node:fs";
+import { lstatSync, readFileSync, readdirSync, realpathSync, rmSync } from "node:fs";
 import type { Dirent } from "node:fs";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 
-import { discoverFiles, loadConfig } from "@greplost/core";
+import { discoverFiles, loadConfig, sha256Hex } from "@greplost/core";
 import type { ParseCache } from "@greplost/core";
 import type { FileRecord, GreplostConfig, Lang, Snapshot } from "@greplost/core/schema";
-import { ARTIFACT_DIR, ARTIFACT_PATHS, LANG_BY_EXTENSION, compareStrings } from "@greplost/core/schema";
+import {
+  ARTIFACT_DIR,
+  ARTIFACT_PATHS,
+  LANG_BY_EXTENSION,
+  compareStrings,
+  stableStringify,
+} from "@greplost/core/schema";
 
 import { buildArtifacts } from "./build.ts";
 import { appendDirty, readAndClearDirty, toRepoRelative } from "./dirty.ts";
@@ -110,57 +116,76 @@ async function runUpdate(root: string, opts: UpdateOptions, started: number): Pr
   // make the next incremental run redo work that is already done (tech spec
   // 8.8, "Clear .dirty").
   const consumed = readAndClearDirty(root);
-  const state = readState(root);
-  const indexed = isCommitish(state.lastIndexedCommit) ? state.lastIndexedCommit : undefined;
 
-  // What something told us changed, and what git can see has changed. Both are
-  // needed in full mode too — not to decide anything, but to record whether the
-  // tree this build indexed was the tree HEAD describes.
-  const signalled = uniqueSorted([...consumed, ...normalisePaths(root, opts.files ?? [])]);
-  const working = git === undefined ? [] : workingTreePaths(root);
-  const committed =
-    // Skipped when the map was built from HEAD itself: the diff is empty by
-    // definition, and this is the hot path — the plugin's `Stop` hook runs it
-    // after every turn, so two fewer process spawns is most of what it costs.
-    incremental && indexed !== undefined && indexed !== git?.head && commitExists(root, indexed)
-      ? committedSince(root, indexed)
-      : [];
-
-  // Everything above is raw: `git status` reports a rebuilt `dist/`, a new
-  // `.env.local` and a swap file just as readily as a source edit, and none of
-  // those can change a byte of the map. Keeping them would mean the fast path
-  // never fires on a repository that builds into its own tree.
-  const relevant = await keepIndexable(root, uniqueSorted([...signalled, ...working, ...committed]), git !== undefined);
-  const dirty = incremental
-    ? uniqueSorted([...signalled, ...working, ...committed]).filter((p) => relevant.has(p))
-    : [];
-
-  // The tree this build is about to index: clean when nothing outside HEAD
-  // reached it. Recorded so the next run knows whether HEAD alone describes the
-  // map — a build of a dirty tree is not repeatable from the commit it names,
-  // and a revert would otherwise leave the map describing code that is gone.
-  const treeClean =
-    git?.head !== undefined &&
-    signalled.filter((p) => relevant.has(p)).length === 0 &&
-    working.filter((p) => relevant.has(p)).length === 0;
-
-  // Clean means three things, all of which have to hold: nothing is dirty now,
-  // HEAD is exactly the commit the map was built from, and that build saw the
-  // same tree HEAD describes. Drop any one and there is a sequence that leaves
-  // a stale map in place forever. `git.head === undefined` — no git, or a repo
-  // with no commits — can never confirm the second, so those repositories
-  // always rebuild rather than trusting a state file nothing corroborates.
-  if (incremental && dirty.length === 0 && git?.head !== undefined && state.lastIndexedCommit === git.head && state.treeClean === true) {
-    return report({ ...empty(opts.mode, started), skipped: "clean" }, opts.quiet);
-  }
-
-  // Residue from a writer that was killed between a sibling write and its
-  // rename. Swept here rather than at the top of `update` because state is
-  // written last: a run that left a temporary behind never recorded its commit,
-  // so the next run cannot take the fast path and always reaches this line.
-  sweepTemporaries(path.join(root, ARTIFACT_DIR));
-
+  // Everything from here on can throw — an unreadable config, a discovery that
+  // fails, a build that fails — and the queue has already been emptied, so all
+  // of it runs under the restore below.
   try {
+    const state = readState(root);
+    const indexed = isCommitish(state.lastIndexedCommit) ? state.lastIndexedCommit : undefined;
+    const config = loadConfig(root);
+    // The config decides which files are indexed and how they are rendered, so
+    // a map built under one config says nothing about what the next one would
+    // produce: an edit to `exclude` has to invalidate the fast path exactly the
+    // way an edit to a source file does.
+    const configHash = sha256Hex(stableStringify(config));
+
+    // What something told us changed, and what git can see has changed. Both
+    // are needed in full mode too — not to decide anything, but to record
+    // whether the tree this build indexed was the tree HEAD describes.
+    const signalled = uniqueSorted([...consumed, ...normalisePaths(root, opts.files ?? [])]);
+    const working = git === undefined ? [] : workingTreePaths(root);
+    const committed =
+      // Skipped when the map was built from HEAD itself: the diff is empty by
+      // definition, and this is the hot path — the plugin's `Stop` hook runs it
+      // after every turn, so two fewer process spawns is most of what it costs.
+      incremental && indexed !== undefined && indexed !== git?.head && commitExists(root, indexed)
+        ? committedSince(root, indexed)
+        : [];
+
+    // Everything above is raw: `git status` reports a rebuilt `dist/`, a new
+    // `.env.local` and a swap file just as readily as a source edit, and none
+    // of those can change a byte of the map. Keeping them would mean the fast
+    // path never fires on a repository that builds into its own tree.
+    const changed = uniqueSorted([...signalled, ...working, ...committed]);
+    const relevant = await keepIndexable(root, changed, config, git !== undefined);
+    const dirty = incremental ? changed.filter((candidate) => relevant.has(candidate)) : [];
+
+    // The tree this build is about to index: clean when nothing outside HEAD
+    // reached it. Recorded so the next run knows whether HEAD alone describes
+    // the map — a build of a dirty tree is not repeatable from the commit it
+    // names, and a revert would otherwise leave the map describing code that is
+    // gone.
+    const treeClean =
+      git?.head !== undefined &&
+      signalled.filter((candidate) => relevant.has(candidate)).length === 0 &&
+      working.filter((candidate) => relevant.has(candidate)).length === 0;
+
+    // Residue from a writer that was killed between a sibling write and its
+    // rename. Before the fast path rather than after it: a repository that is
+    // otherwise clean would keep the residue until something unrelated changed,
+    // and an untracked file inside `.greplost/` is precisely what nobody wants
+    // to find in `git status` weeks later.
+    sweepTemporaries(path.join(root, ARTIFACT_DIR));
+
+    // Clean means four things, all of which have to hold: nothing is dirty now,
+    // HEAD is exactly the commit the map was built from, that build saw the
+    // same tree HEAD describes, and it ran under the config in force today.
+    // Drop any one and there is a sequence that leaves a stale map in place
+    // forever. `git.head === undefined` — no git, or a repo with no commits —
+    // can never confirm the second, so those repositories always rebuild rather
+    // than trusting a state file nothing corroborates.
+    if (
+      incremental &&
+      dirty.length === 0 &&
+      git?.head !== undefined &&
+      state.lastIndexedCommit === git.head &&
+      state.treeClean === true &&
+      state.configHash === configHash
+    ) {
+      return report({ ...empty(opts.mode, started), skipped: "clean" }, opts.quiet);
+    }
+
     const store = new FileParseCache(root);
     store.load();
     // A full update ignores the cache for reads but still fills it, so the
@@ -175,7 +200,7 @@ async function runUpdate(root: string, opts: UpdateOptions, started: number): Pr
     // The commit read before the build, not after: a commit that landed while
     // this ran is not indexed by it, and recording it would mean the next run
     // diffs from a commit whose changes never reached the map.
-    writeState(root, git?.head === undefined ? {} : { lastIndexedCommit: git.head, treeClean });
+    writeState(root, git?.head === undefined ? {} : { lastIndexedCommit: git.head, treeClean, configHash });
 
     return report(
       {
@@ -316,19 +341,37 @@ function gitContext(root: string): GitContext | undefined {
  * read when such a path exists, so the ordinary case (edits to files that still
  * exist) never parses it.
  *
+ * A candidate that is a directory on disk is kept whatever its name, because a
+ * directory is not a file that failed the tests — it is an unknown number of
+ * them. Sources of directory-shaped candidates are meant to be rare now that
+ * the working tree is read with `--untracked-files=all`, but a caller can pass
+ * one in `files`, and the cost of treating one as "nothing changed" is a whole
+ * subtree missing from the map.
+ *
  * `precise` is false outside git, where the answer cannot affect anything: the
  * fast path needs a commit to compare against, so a non-git checkout rebuilds
  * either way and the filter would only be refining a number in a report.
  */
-async function keepIndexable(root: string, candidates: string[], precise: boolean): Promise<Set<string>> {
+async function keepIndexable(
+  root: string,
+  candidates: string[],
+  config: GreplostConfig,
+  precise: boolean,
+): Promise<Set<string>> {
   if (candidates.length === 0) return new Set();
 
-  const config = loadConfig(root);
-  const named = candidates.filter((candidate) => isIndexableName(candidate, config));
-  if (named.length === 0 || !precise) return new Set(named);
+  const kept = new Set<string>();
+  const named: string[] = [];
+  for (const candidate of candidates) {
+    if (isDirectory(path.join(root, candidate))) kept.add(candidate);
+    else if (isIndexableName(candidate, config)) named.push(candidate);
+  }
+  if (named.length === 0 || !precise) {
+    for (const candidate of named) kept.add(candidate);
+    return kept;
+  }
 
   const discovered = new Set((await discoverFiles(root, config)).map((file) => file.path));
-  const kept = new Set<string>();
   const gone: string[] = [];
   for (const candidate of named) {
     if (discovered.has(candidate)) kept.add(candidate);
@@ -340,6 +383,14 @@ async function keepIndexable(root: string, candidates: string[], precise: boolea
     for (const candidate of gone) if (indexed.has(candidate)) kept.add(candidate);
   }
   return kept;
+}
+
+function isDirectory(target: string): boolean {
+  try {
+    return lstatSync(target).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 /** Could a file with this name be indexed at all, given the configured languages? */
@@ -409,9 +460,35 @@ function sweepTemporaries(artifactDir: string): void {
   walk(artifactDir);
 }
 
-/** Everything uncommitted: staged, unstaged, untracked, and both sides of a rename. */
+/**
+ * Everything uncommitted: staged, unstaged, untracked, and both sides of a
+ * rename.
+ *
+ * `--untracked-files=all` is load-bearing, not tidiness. Porcelain output
+ * collapses an untracked directory to a single `newpkg/` entry, and a
+ * directory has no extension, no discovery entry and no manifest entry — so a
+ * whole new package would be filtered out of the dirty set and the tree would
+ * be declared clean while none of it was indexed. Listing every untracked file
+ * individually is what makes "a new directory appeared" indistinguishable from
+ * "new files appeared", which is what it actually is.
+ *
+ * The pathspec keeps that affordable: with `-uall`, a `.greplost/` that has not
+ * been committed yet would otherwise be listed artifact by artifact on every
+ * single run. `toRepoRelative` drops those paths anyway, so the exclusion is
+ * only about not asking git to enumerate them — and a git too old for pathspec
+ * magic falls back to the plain form rather than reporting a clean tree.
+ */
 function workingTreePaths(root: string): string[] {
-  const out = runGit(root, ["status", "--porcelain", "-z"]);
+  const out =
+    runGit(root, [
+      "status",
+      "--porcelain",
+      "-z",
+      "--untracked-files=all",
+      "--",
+      ".",
+      `:(exclude)${ARTIFACT_DIR}`,
+    ]) ?? runGit(root, ["status", "--porcelain", "-z", "--untracked-files=all"]);
   if (out === undefined) return [];
 
   const paths: string[] = [];

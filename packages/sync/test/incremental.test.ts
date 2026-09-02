@@ -30,7 +30,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { ARTIFACT_DIR, DEFAULT_CONFIG, stableStringify } from "@greplost/core/schema";
-import type { FileRecord } from "@greplost/core/schema";
+import type { FileRecord, GreplostConfig } from "@greplost/core/schema";
 
 import { appendDirty, readAndClearDirty } from "../src/dirty.ts";
 import { HOOK_NAMES } from "../src/githooks.ts";
@@ -397,6 +397,71 @@ describe("dirty", () => {
     expect((await update(root, { mode: "incremental", quiet: true })).skipped).toBe("clean");
   });
 
+  test("indexes a new untracked directory, which git reports as one collapsed entry", async () => {
+    const root = gitFixture("untracked-package");
+    await init(root, { hooks: false, quiet: true });
+
+    const source = "packages/newpkg/src/thing.ts";
+    const other = "packages/newpkg/src/other.ts";
+    mkdirSync(path.join(root, "packages/newpkg/src"), { recursive: true });
+    writeFileSync(path.join(root, "packages/newpkg/package.json"), `{ "name": "tiny-new", "version": "0.0.0" }\n`);
+    writeFileSync(path.join(root, source), "export function thing(): number {\n  return 1;\n}\n");
+    writeFileSync(path.join(root, other), "export const other = 2;\n");
+
+    // Porcelain collapses the whole subtree to `packages/newpkg/` by default —
+    // a path with no extension, no discovery entry and no manifest entry, which
+    // every filter would drop.
+    expect(git(root, ["status", "--porcelain"])).toContain("packages/newpkg/");
+
+    const result = await update(root, { mode: "incremental", quiet: true });
+
+    expect(result.skipped).toBeUndefined();
+    // Both new sources, individually: the collapsed directory entry would have
+    // been one candidate, not two, and `package.json` is not indexable.
+    expect(result.dirty).toBe(2);
+    expect(result.reparsed).toBe(2);
+    expect(result.cached).toBe(FIXTURE_SOURCES);
+    const manifest = JSON.parse(readFileSync(artifact(root, "manifest.json"), "utf8")) as {
+      files: Record<string, unknown>;
+    };
+    expect(Object.keys(manifest.files)).toContain(source);
+    expect(Object.keys(manifest.files)).toContain(other);
+    expect((await verify(root)).ok).toBe(true);
+    // Uncommitted, so the map still describes something no commit contains.
+    expect(readState(root).treeClean).toBe(false);
+
+    git(root, ["add", "packages/newpkg"]);
+    git(root, ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", "commit", "-q", "-m", "new"]);
+
+    // HEAD moved, so one rebuild — and now the tree does match its commit.
+    expect((await update(root, { mode: "incremental", quiet: true })).skipped).toBeUndefined();
+    expect(readState(root).treeClean).toBe(true);
+    expect((await update(root, { mode: "incremental", quiet: true })).skipped).toBe("clean");
+  });
+
+  test("a change to the config invalidates the fast path", async () => {
+    const root = gitFixture("config-change");
+    await init(root, { hooks: false, quiet: true });
+    expect((await update(root, { mode: "incremental", quiet: true })).skipped).toBe("clean");
+
+    // Nothing about this is visible to git: config.json lives inside the
+    // artifact directory, which is filtered out of the dirty set by definition.
+    const config = JSON.parse(readFileSync(artifact(root, "config.json"), "utf8")) as GreplostConfig;
+    writeFileSync(
+      artifact(root, "config.json"),
+      `${stableStringify({ ...config, exclude: [...config.exclude, "**/adapters/**"] }, 2)}\n`,
+    );
+
+    const result = await update(root, { mode: "incremental", quiet: true });
+
+    expect(result.skipped).toBeUndefined();
+    // The adapters sources are no longer part of the map, so their cards go.
+    expect(result.deleted).toBeGreaterThan(0);
+    expect(existsSync(artifact(root, "packages/tiny__adapters/modules/src/sqs.ts.md"))).toBe(false);
+    expect((await verify(root)).ok).toBe(true);
+    expect((await update(root, { mode: "incremental", quiet: true })).skipped).toBe("clean");
+  });
+
   test("churn that could never be indexed does not defeat the fast path", async () => {
     const root = gitFixture("irrelevant-churn");
     await init(root, { hooks: false, quiet: true });
@@ -427,10 +492,12 @@ describe("dirty", () => {
     const inFlight = artifact(root, `.INDEX.md.${process.pid}.0.tmp`);
     writeFileSync(residue, "half an artifact");
     writeFileSync(inFlight, "mid-rename");
-    appendDirty(root, [QUEUE_SOURCE]);
 
-    await update(root, { mode: "incremental", quiet: true });
+    // Nothing is dirty, so this run takes the fast path — and must still sweep,
+    // or a repository that stays clean keeps the residue in its status forever.
+    const result = await update(root, { mode: "incremental", quiet: true });
 
+    expect(result.skipped).toBe("clean");
     expect(existsSync(residue)).toBe(false);
     // A temporary this process owns may be between its write and its rename.
     expect(existsSync(inFlight)).toBe(true);
@@ -713,7 +780,7 @@ describe("init", () => {
 
     expect(readFileSync(artifact(root, "config.json"), "utf8")).toBe(`${stableStringify(DEFAULT_CONFIG, 2)}\n`);
     expect(readFileSync(artifact(root, ".gitignore"), "utf8")).toBe(
-      [".dirty*", ".lock", ".state.json", "cache/parse.json", ""].join("\n"),
+      [".dirty*", ".lock", ".state.json", "cache/parse.json", "*.tmp", ""].join("\n"),
     );
 
     expect(result.update.mode).toBe("full");
@@ -760,7 +827,7 @@ describe("init", () => {
     const lines = readFileSync(artifact(root, ".gitignore"), "utf8").split("\n");
     expect(lines[0]).toBe("# mine");
     expect(lines.filter((line) => line === ".lock")).toHaveLength(1);
-    for (const entry of [".dirty*", ".lock", ".state.json", "cache/parse.json"]) {
+    for (const entry of [".dirty*", ".lock", ".state.json", "cache/parse.json", "*.tmp"]) {
       expect(lines).toContain(entry);
     }
   });

@@ -33,6 +33,16 @@ export interface SyncState {
    * build outside git) reads as `false`: one extra rebuild, never a stale map.
    */
   treeClean?: boolean;
+  /**
+   * Hash of the resolved config that build ran under.
+   *
+   * The config decides which files are indexed, which languages are read and
+   * how the diagrams are split, so editing it changes the map without changing
+   * a byte of source. Nothing else in this file would notice: HEAD does not
+   * move and the tree stays clean. Absent reads as "unknown", which never
+   * matches and so always rebuilds.
+   */
+  configHash?: string;
 }
 
 /** Read `.greplost/.state.json`. `{}` when it is absent, empty or unreadable. */
@@ -52,13 +62,21 @@ export function readState(root: string): SyncState {
   }
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return {};
 
-  const { lastIndexedCommit, treeClean } = parsed as { lastIndexedCommit?: unknown; treeClean?: unknown };
+  const { lastIndexedCommit, treeClean, configHash } = parsed as {
+    lastIndexedCommit?: unknown;
+    treeClean?: unknown;
+    configHash?: unknown;
+  };
   // A non-string commit would be handed straight to `git rev-parse`; the type
   // check is the boundary between a hint file and an argument list.
   if (typeof lastIndexedCommit !== "string" || lastIndexedCommit === "") return {};
   // Anything but an explicit `true` — missing, null, a string, a state file
   // written before this field existed — is not a claim that the tree was clean.
-  return { lastIndexedCommit, treeClean: treeClean === true };
+  return {
+    lastIndexedCommit,
+    treeClean: treeClean === true,
+    ...(typeof configHash === "string" && configHash !== "" ? { configHash } : {}),
+  };
 }
 
 /**
