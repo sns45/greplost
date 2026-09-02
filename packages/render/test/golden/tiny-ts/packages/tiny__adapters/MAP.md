@@ -23,8 +23,6 @@ Path: `packages/adapters` · 3 files · 51 LOC · depends on: @tiny/core · depe
 
 ## Components
 
-### packages/adapters
-
 ```mermaid
 graph LR
   packages_adapters_src_index_ts["index.ts"]

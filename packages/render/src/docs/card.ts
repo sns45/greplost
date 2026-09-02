@@ -14,7 +14,7 @@ import { compareStrings } from "@greplost/core/schema";
 
 import type { DocContext } from "../render.ts";
 import { packageDir, relLink } from "../slug.ts";
-import { exportEntry, keySymbol, shortName } from "./api.ts";
+import { exportEntry, keySymbol, localNames, shortName } from "./api.ts";
 
 /** Tech spec 4.3: a card lists at most this many declarations, then says how many were dropped. */
 const KEY_SYMBOL_CAP = 50;
@@ -31,20 +31,23 @@ export function buildCard(ctx: DocContext, file: string): string {
   const link = (target: string | undefined): string | undefined =>
     target === undefined ? undefined : relLink(self, target);
 
-  const blocks: string[] = [`# ${file}`, ctx.generatedLine, summaryBlock(ctx, file)];
+  // Every field is its own block, so the join below puts a blank line between
+  // them: repository Markdown treats a single newline as a space, and bare
+  // newlines would run the whole card together as one wrapped paragraph and
+  // swallow `**Calls:**` into the last key-symbol bullet (render spec, GitHub
+  // rendering rule). Trailing double spaces are not used: editors strip them.
+  const blocks: string[] = [`# ${file}`, ctx.generatedLine, ...summaryBlocks(ctx, file)];
 
-  const fields: string[] = [];
   const mapLink = relLink(self, `${packageDir(pkg.name)}/MAP.md`);
-  fields.push(`**Package:** \`${pkg.name}\` ([map](${mapLink}))`);
-  fields.push(`**Exports:** ${exportsField(ctx, file)}`);
-  fields.push(`**Imports:** ${importsField(ctx, file, link)}`);
-  fields.push(`**Imported by:** ${importersField(ctx, file, link)}`);
+  blocks.push(`**Package:** \`${pkg.name}\` ([map](${mapLink}))`);
+  blocks.push(`**Exports:** ${exportsField(ctx, file)}`);
+  blocks.push(`**Imports:** ${importsField(ctx, file, link)}`);
+  blocks.push(`**Imported by:** ${importersField(ctx, file, link)}`);
   const blast = `${entry.blast} file${entry.blast === 1 ? "" : "s"}`;
-  fields.push(`**Blast radius:** ${blast} (\`greplost impact ${file}\`)`);
-  fields.push(`**Key symbols:**${keySymbolsField(ctx, file)}`);
+  blocks.push(`**Blast radius:** ${blast} (\`greplost impact ${file}\`)`);
+  blocks.push(`**Key symbols:**${keySymbolsField(ctx, file)}`);
   const calls = callsField(ctx, file, link);
-  if (calls !== undefined) fields.push(`**Calls:** ${calls}`);
-  blocks.push(fields.join("\n"));
+  if (calls !== undefined) blocks.push(`**Calls:** ${calls}`);
 
   return `${blocks.map((b) => b.replace(/\n+$/, "")).join("\n\n")}\n`;
 }
@@ -55,13 +58,17 @@ export function buildCard(ctx: DocContext, file: string): string {
  * last summary written for this path plus the banner; otherwise the
  * placeholder. `summaryHash` is what the core build resolved, so the card never
  * re-scans the cache.
+ *
+ * The summary and the banner are two blocks, so they render as two separate
+ * blockquotes: joined by a bare newline the banner would be swallowed into the
+ * summary paragraph (render spec, GitHub rendering rule).
  */
-function summaryBlock(ctx: DocContext, file: string): string {
+function summaryBlocks(ctx: DocContext, file: string): string[] {
   const entry = ctx.fileEntry(file);
-  if (entry === undefined) return `> ${NO_SUMMARY}`;
+  if (entry === undefined) return [`> ${NO_SUMMARY}`];
 
   const fresh = ctx.summaries[entry.sha256];
-  if (fresh !== undefined) return `> ${fresh.text}`;
+  if (fresh !== undefined) return [`> ${fresh.text}`];
 
   if (entry.staleSummary) {
     const previous = entry.summaryHash === undefined ? undefined : ctx.summaries[entry.summaryHash];
@@ -71,10 +78,10 @@ function summaryBlock(ctx: DocContext, file: string): string {
       refreshedAt === undefined
         ? "> summary may lag code"
         : `> summary may lag code, last refreshed ${refreshedAt}`;
-    return `> ${text}\n${banner}`;
+    return [`> ${text}`, banner];
   }
 
-  return `> ${NO_SUMMARY}`;
+  return [`> ${NO_SUMMARY}`];
 }
 
 function exportsField(ctx: DocContext, file: string): string {
@@ -86,9 +93,13 @@ function exportsField(ctx: DocContext, file: string): string {
     const short = shortName(decl.name);
     if (!byName.has(short)) byName.set(short, exportEntry(decl));
   }
-  // A re-exported name has no local declaration to describe, so it is listed
-  // bare; `manifest.files[f].exports` is the authoritative name set either way.
-  return names.map((name) => `\`${byName.get(name) ?? name}\``).join(", ");
+  // A renamed or default export names its local declaration through the export
+  // record; a purely re-exported name has no local declaration to describe and
+  // is listed bare. `manifest.files[f].exports` is the authoritative name set.
+  const locals = localNames(ctx, file);
+  return names
+    .map((name) => `\`${byName.get(locals.get(name) ?? name) ?? name}\``)
+    .join(", ");
 }
 
 interface ImportGroup {

@@ -7,10 +7,9 @@
 ```text
 ├── apps
 │   └── worker  worker
-├── packages
-│   ├── adapters  @tiny/adapters
-│   └── core  @tiny/core
-└── .  tiny-ts
+└── packages
+    ├── adapters  @tiny/adapters
+    └── core  @tiny/core
 ```
 
 ## Package dependencies
@@ -19,7 +18,6 @@
 graph LR
   _tiny_adapters["@tiny/adapters"]
   _tiny_core["@tiny/core"]
-  tiny_ts["tiny-ts"]
   worker["worker"]
   _tiny_adapters -->|4| _tiny_core
   worker --> _tiny_adapters

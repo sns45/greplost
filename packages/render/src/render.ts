@@ -64,6 +64,13 @@ export interface DocContext {
   rootName: string;
   /** Every package, sorted by path. */
   packages: PackageInfo[];
+  /**
+   * Packages with at least one indexed file, sorted by path. A package with no
+   * indexed files keeps its INDEX table row but is left out of the ASCII
+   * package tree and the container diagram, where it would be a dead branch and
+   * an isolated node (render spec, GitHub rendering rule).
+   */
+  indexedPackages: PackageInfo[];
   packageByName: Map<string, PackageInfo>;
   /** Repo-relative file paths, sorted, per package name. */
   filesByPackage: Map<string, string[]>;
@@ -176,6 +183,8 @@ export function createContext(input: RenderInput): DocContext {
     return pkgName === undefined ? undefined : packageByName.get(pkgName);
   };
 
+  const indexedPackages = packages.filter((pkg) => (filesByPackage.get(pkg.name) ?? []).length > 0);
+
   return {
     snapshot,
     summaries: input.summaries,
@@ -184,6 +193,7 @@ export function createContext(input: RenderInput): DocContext {
     generatedLine: GENERATED_LINE,
     rootName,
     packages,
+    indexedPackages,
     packageByName,
     filesByPackage,
     files,
@@ -217,6 +227,7 @@ function fileOfSymbol(id: string): string {
  */
 export function renderArtifacts(input: RenderInput): Map<string, string> {
   const ctx = createContext(input);
+  assertNoSlugCollision(ctx.packages);
   const out = new Map<string, string>();
 
   out.set("INDEX.md", buildIndex(ctx));
@@ -233,6 +244,23 @@ export function renderArtifacts(input: RenderInput): Map<string, string> {
   }
 
   return out;
+}
+
+/**
+ * `packageSlug` is not injective (`@a/b` and `a__b` both slug to `a__b`), and a
+ * collision would silently overwrite one package's whole artifact directory
+ * with another's. Checked in package-name order so the message is stable.
+ */
+function assertNoSlugCollision(packages: readonly PackageInfo[]): void {
+  const seen = new Map<string, string>();
+  for (const pkg of [...packages].sort((a, b) => compareStrings(a.name, b.name))) {
+    const dir = packageDir(pkg.name);
+    const other = seen.get(dir);
+    if (other !== undefined) {
+      throw new Error(`greplost: package slug collision: ${other} and ${pkg.name} both map to ${dir}`);
+    }
+    seen.set(dir, pkg.name);
+  }
 }
 
 export function renderIndex(input: RenderInput): string {

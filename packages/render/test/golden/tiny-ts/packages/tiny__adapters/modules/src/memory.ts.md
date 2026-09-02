@@ -5,10 +5,15 @@
 > No summary yet; run `greplost refresh`.
 
 **Package:** `@tiny/adapters` ([map](../../MAP.md))
+
 **Exports:** `MemoryAdapter (class)`
+
 **Imports:** [`@tiny/core`](../../../tiny__core/modules/src/index.ts.md) (Ack, Msg, Priority, Queue)
+
 **Imported by:** [`packages/adapters/src/index.ts`](index.ts.md)
+
 **Blast radius:** 2 files (`greplost impact packages/adapters/src/memory.ts`)
+
 **Key symbols:**
 - `class MemoryAdapter implements Queue`  L3-16
 - `MemoryAdapter.publish(body: string): Promise<Ack>`  L6-11

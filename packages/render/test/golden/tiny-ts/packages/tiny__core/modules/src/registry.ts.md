@@ -5,14 +5,20 @@
 > No summary yet; run `greplost refresh`.
 
 **Package:** `@tiny/core` ([map](../../MAP.md))
+
 **Exports:** `Registry (class)`, `createRegistry(): Registry`
+
 **Imports:** [`./queue`](queue.ts.md) (Queue), [`./retry`](retry.ts.md) (retry), [`./bus`](bus.ts.md) (Bus)
+
 **Imported by:** [`packages/core/src/index.ts`](index.ts.md)
+
 **Blast radius:** 5 files (`greplost impact packages/core/src/registry.ts`)
+
 **Key symbols:**
 - `class Registry`  L5-26
 - `Registry.register(name: string, queue: Queue): void`  L9-12
 - `Registry.publishAll(msg: string): Promise<number>`  L14-21
 - `Registry.get(name: string): Queue | undefined`  L23-25
 - `function createRegistry(): Registry`  L28-30
+
 **Calls:** `Bus` → [`packages/core/src/bus.ts#Bus`](bus.ts.md) (high), `Registry` → [`packages/core/src/registry.ts#Registry`](registry.ts.md) (high), `retry` → [`packages/core/src/retry.ts#retry`](retry.ts.md) (high)

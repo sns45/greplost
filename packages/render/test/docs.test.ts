@@ -20,6 +20,7 @@ import { buildSnapshot, sha256Hex } from "@greplost/core";
 import type {
   CallEdge,
   Declaration,
+  ExportRecord,
   FileEntry,
   FileRecord,
   GreplostConfig,
@@ -93,6 +94,8 @@ interface SynthFile {
   decls?: Declaration[];
   staleSummary?: boolean;
   summaryHash?: string;
+  /** Export records as the extractor would emit them; defaults to plain named exports. */
+  exportRecords?: ExportRecord[];
 }
 
 interface SynthOptions {
@@ -125,7 +128,7 @@ function synthSnapshot(opts: SynthOptions): Snapshot {
     loc: f.loc ?? 10,
     decls: f.decls ?? [],
     imports: [],
-    exports: (f.exports ?? []).map((name) => ({ name, kind: "named" as const })),
+    exports: f.exportRecords ?? (f.exports ?? []).map((name) => ({ name, kind: "named" as const })),
     calls: [],
   }));
 
@@ -272,6 +275,19 @@ function manyFiles(count: number, dirs: number, maxNodes: number): RenderInput {
   });
 }
 
+/** The same wide package, but rooted at "." so its diagram titles come from its name. */
+function manyFilesInRootPackage(count: number, dirs: number, maxNodes: number): RenderInput {
+  const files: SynthFile[] = [];
+  for (let i = 0; i < count; i++) {
+    files.push({ path: "src/d" + pad(i % dirs, 2) + "/f" + pad(i, 3) + ".ts", pkg: "solo", loc: 12 });
+  }
+  return synthInput({
+    packages: [{ name: "solo", path: "." }],
+    files,
+    config: { diagram: { maxNodes, splitBy: "directory" } },
+  });
+}
+
 // --------------------------------------------------------------------------
 // Shared helpers
 // --------------------------------------------------------------------------
@@ -316,6 +332,20 @@ function tableRows(text: string, heading: string): string[] {
 function fieldLine(card: string, label: string): string {
   const line = card.split("\n").find((l) => l.startsWith("**" + label + ":**"));
   return line ?? "";
+}
+
+/** `text` with fenced code blocks and inline code spans removed. */
+function withoutCode(text: string): string {
+  const kept: string[] = [];
+  let inFence = false;
+  for (const line of text.split("\n")) {
+    if (line.startsWith("```")) {
+      inFence = !inFence;
+      continue;
+    }
+    if (!inFence) kept.push(line.replace(/`[^`]*`/g, ""));
+  }
+  return kept.join("\n");
 }
 
 function listGoldenFiles(dir: string, prefix = ""): string[] {
@@ -419,9 +449,23 @@ describe("INDEX budget", () => {
 
   test("degrades the table before the tree and the tree before the hotspot lists", () => {
     const text = renderIndex(manyPackages(500));
+    // The tree is cut (a depth-2 tree of 500 packages cannot fit), the table is
+    // cut, but the hotspot lists are the last thing to go and must survive.
     expect(text).toContain("… and ");
+    expect(text).toContain("- Most imported: ");
+    expect(text).toContain("- Largest blast radius: ");
+    expect(text).toContain("- Import cycles: ");
     expect(text).toContain("## Navigation");
     expect(text).toContain("[repo/MAP.md](repo/MAP.md)");
+  });
+
+  test("re-maximises the table against the smaller tree instead of pinning it at 10", () => {
+    const text = renderIndex(manyPackages(500));
+    const rows = tableRows(text, "## Packages (501)");
+    expect(rows.length).toBeGreaterThanOrEqual(40);
+    const tokens = estimateTokens(text);
+    expect(tokens).toBeGreaterThan(2400);
+    expect(tokens).toBeLessThanOrEqual(3000);
   });
 
   test("the fixture INDEX is well under budget", () => {
@@ -466,6 +510,33 @@ describe("node cap", () => {
 });
 
 describe("card", () => {
+  test("separates every field with a blank line so GitHub renders paragraphs", () => {
+    for (const [rel, text] of artifacts) {
+      if (!rel.includes("/modules/")) continue;
+      const lines = text.split("\n");
+      for (let i = 0; i < lines.length - 1; i++) {
+        const here = lines[i] ?? "";
+        const next = lines[i + 1] ?? "";
+        if (!here.startsWith("**")) continue;
+        // A field is a paragraph of its own: the only thing that may follow its
+        // line directly is its own bullet list (Key symbols).
+        const ok = next === "" || next.startsWith("- ");
+        expect({ rel, here, next, ok }).toEqual({ rel, here, next, ok: true });
+      }
+      const callsAt = lines.findIndex((l) => l.startsWith("**Calls:**"));
+      if (callsAt !== -1) expect({ rel, before: lines[callsAt - 1] }).toEqual({ rel, before: "" });
+      // Trailing double spaces are not a line-break mechanism here: editors strip them.
+      expect({ rel, hit: /  $/m.test(text) }).toEqual({ rel, hit: false });
+    }
+  });
+
+  test("keeps the staleness banner as its own blockquote", () => {
+    const bus = artifacts.get("packages/tiny__core/modules/src/bus.ts.md") ?? "";
+    expect(bus).toContain(
+      "> Fan-out event bus used by the registry.\n\n> summary may lag code, last refreshed 2026-08-15\n",
+    );
+  });
+
   test("formats exports as signatures for callables and name (kind) otherwise", () => {
     const sqs = artifacts.get("packages/tiny__adapters/modules/src/sqs.ts.md") ?? "";
     expect(fieldLine(sqs, "Exports")).toBe(
@@ -659,6 +730,84 @@ describe("card", () => {
 });
 
 describe("package docs", () => {
+  test("a package with no indexed files is left out of the tree and the diagram", () => {
+    const index = artifacts.get("INDEX.md") ?? "";
+    const repo = artifacts.get("repo/MAP.md") ?? "";
+    // tiny-ts (the fixture root) has zero indexed files.
+    const indexTree = index.slice(index.indexOf("```text"), index.indexOf("| Package |"));
+    expect(indexTree).not.toContain("tiny-ts");
+    const repoTree = repo.slice(repo.indexOf("```text"), repo.indexOf("## Package dependencies"));
+    expect(repoTree).not.toContain("tiny-ts");
+    const diagram = repo.slice(repo.indexOf("## Package dependencies"), repo.indexOf("## Packages"));
+    expect(diagram).not.toContain("tiny_ts");
+    // But it keeps its table row in both documents, and its own artifacts.
+    expect(index).toContain("| tiny-ts | . | 0 | 0 |");
+    expect(repo).toContain("| tiny-ts | . | 0 | 0 | none |");
+    expect(artifacts.has("packages/tiny-ts/MAP.md")).toBe(true);
+  });
+
+  test("renderArtifacts refuses two package names that slug to one directory", () => {
+    const input = synthInput({
+      packages: [
+        { name: "root", path: "." },
+        { name: "@tiny/core", path: "packages/a" },
+        { name: "tiny__core", path: "packages/b" },
+      ],
+      files: [
+        { path: "packages/a/x.ts", pkg: "@tiny/core", exports: ["x"] },
+        { path: "packages/b/y.ts", pkg: "tiny__core", exports: ["y"] },
+      ],
+    });
+    expect(() => renderArtifacts(input)).toThrow(
+      "greplost: package slug collision: @tiny/core and tiny__core both map to packages/tiny__core",
+    );
+  });
+
+  test("API.md keeps a section for an anonymous default export", () => {
+    const rendered = renderArtifacts(
+      synthInput({
+        packages: [{ name: "solo", path: "." }],
+        files: [{ path: "src/anon.ts", pkg: "solo", exports: ["default"], exportRecords: [{ name: "default", kind: "default" }] }],
+      }),
+    );
+    const api = rendered.get("packages/solo/API.md") ?? "";
+    expect(api).toContain("## src/anon.ts");
+    expect(api).toContain("- `default` (expression)");
+  });
+
+  test("a renamed export shows the local declaration's signature", () => {
+    const decls: Declaration[] = [
+      {
+        id: "src/r.ts#helper",
+        file: "src/r.ts",
+        name: "helper",
+        kind: "function",
+        signature: "function helper(x: string): number",
+        exported: false,
+        span: [1, 3],
+      },
+    ];
+    const rendered = renderArtifacts(
+      synthInput({
+        packages: [{ name: "solo", path: "." }],
+        files: [
+          {
+            path: "src/r.ts",
+            pkg: "solo",
+            exports: ["pub"],
+            decls,
+            exportRecords: [{ name: "pub", kind: "named", local: "helper" }],
+          },
+        ],
+      }),
+    );
+    const card = rendered.get("packages/solo/modules/src/r.ts.md") ?? "";
+    expect(fieldLine(card, "Exports")).toBe("**Exports:** `helper(x: string): number`");
+    expect(rendered.get("packages/solo/API.md") ?? "").toContain(
+      "- `function helper(x: string): number` L1-3",
+    );
+  });
+
   test("an empty package renders None. in every section", () => {
     const map = artifacts.get("packages/tiny-ts/MAP.md") ?? "";
     expect(map.split("\n")[0]).toBe("# tiny-ts");
@@ -693,16 +842,21 @@ describe("package docs", () => {
     expect(rendered.get("packages/root/API.md") ?? "").toContain("No exported symbols.");
   });
 
-  test("the root package titles its component diagram with its name, never a bare dot", () => {
-    const rendered = renderArtifacts(
-      synthInput({
-        packages: [{ name: "solo", path: "." }],
-        files: [{ path: "src/a.ts", pkg: "solo", exports: ["a"] }],
-      }),
-    );
-    const map = rendered.get("packages/solo/MAP.md") ?? "";
-    expect(map).toContain("### solo");
-    expect(map).not.toContain("### .");
+  test("a single component diagram carries no heading, like the container view", () => {
+    const map = artifacts.get("packages/tiny__core/MAP.md") ?? "";
+    const section = map.slice(map.indexOf("## Components"), map.indexOf("## External dependencies"));
+    expect(section).not.toContain("###");
+    expect(section).toContain("```mermaid");
+  });
+
+  test("a split component view titles each diagram, never with a bare dot", () => {
+    const rendered = renderArtifacts(manyFiles(300, 12, 25));
+    const map = rendered.get("packages/acme__wide/MAP.md") ?? "";
+    expect(map).toContain("### packages/wide (overview)");
+    const rootPkg = renderArtifacts(manyFilesInRootPackage(300, 12, 25));
+    const rootMap = rootPkg.get("packages/solo/MAP.md") ?? "";
+    expect(rootMap).toContain("### solo (overview)");
+    expect(rootMap).not.toContain("### .");
   });
 
   test("the package dependency diagram is unheaded when it is the only one", () => {
@@ -798,6 +952,13 @@ describe("no leaks", () => {
         .filter((line) => /\b20\d{2}-\d{2}-\d{2}\b/.test(line))
         .filter((line) => !line.startsWith("> summary may lag code, last refreshed "));
       expect({ rel, offenders }).toEqual({ rel, offenders: [] });
+    }
+  });
+
+  test("no artifact carries a bare angle bracket outside code", () => {
+    for (const [rel, text] of artifacts) {
+      const prose = withoutCode(text);
+      expect({ rel, hit: prose.includes("<") }).toEqual({ rel, hit: false });
     }
   });
 

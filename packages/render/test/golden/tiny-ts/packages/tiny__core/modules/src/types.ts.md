@@ -5,10 +5,15 @@
 > No summary yet; run `greplost refresh`.
 
 **Package:** `@tiny/core` ([map](../../MAP.md))
+
 **Exports:** `Handler (type)`, `Priority (enum)`, `VERSION (const)`
+
 **Imports:** None.
+
 **Imported by:** [`packages/core/src/bus.ts`](bus.ts.md), [`packages/core/src/index.ts`](index.ts.md), [`packages/core/src/queue.ts`](queue.ts.md)
+
 **Blast radius:** 9 files (`greplost impact packages/core/src/types.ts`)
+
 **Key symbols:**
 - `enum Priority`  L1-5
 - `type Handler = (name: string) => void`  L7-7
