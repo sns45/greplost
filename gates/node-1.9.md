@@ -7,10 +7,10 @@ Scope: measured numbers, head-to-head results, README, dogfood, CI parity
   EXPECT: /hono: ready at [0-9a-f]{40}/
   EVIDENCE: hono: ready at e2740d5a1bd0b4254e517e3af8b60789284bc7bd | bubbletea: ready at 73b6d91ac1c3854dd4af046ab5f9e51d3b3b4290
 
-- [ ] R2: structural gate on tier M (hono)
+- [x] R2: structural gate on tier M (hono)
   CHECK: bun run bench:structural --repo hono --gate
   EXPECT: structural: GATE PASS
-  EVIDENCE: pending
+  EVIDENCE: $ bun bench/src/cli.ts structural --repo hono --gate | truth-ts: 248 files, 0 tsconfig errors (semantic diagnostics off: --diagnostics or GREPLOST_BENCH_DIAGNOSTICS=1 to check them)
 
 - [x] R3: map quality gate on hono's generated map
   CHECK: d=$(mktemp -d) && cp -R bench/.corpus/hono/. "$d" && bun packages/cli/src/main.ts init --no-hooks --root "$d" >/dev/null && bun run bench:mapquality --dir "$d/.greplost" --gate
@@ -37,10 +37,10 @@ Scope: measured numbers, head-to-head results, README, dogfood, CI parity
   EXPECT: 2
   EVIDENCE: pending
 
-- [ ] R8: greplost's own map is committed and verifies
+- [x] R8: greplost's own map is committed and verifies
   CHECK: bun packages/cli/src/main.ts verify --diff >/dev/null && git ls-files .greplost/INDEX.md
   EXPECT: .greplost/INDEX.md
-  EVIDENCE: pending
+  EVIDENCE: .greplost/INDEX.md
 
 - [x] R9: whole repo typechecks
   CHECK: bun run typecheck
