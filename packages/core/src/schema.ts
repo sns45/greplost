@@ -199,11 +199,11 @@ export interface FileEntry {
   pkg: string;
   lang: Lang;
   loc: number;
-  /** Exported names, sorted; `export *` targets are followed one level. */
+  /** Exported names, sorted; `export *` chains are followed transitively (ruling 2026-09-02). */
   exports: string[];
   /** Number of distinct repo files importing this file (import + reexport edges). */
   fanIn: number;
-  /** Number of distinct import targets this file resolves inside the repo: files for TypeScript, package directories for Go (ruling 2026-09-02). */
+  /** Number of distinct import targets this file resolves inside the repo: files for TypeScript, package directories for Go (ruling 2026-09-03). */
   fanOut: number;
   /** Blast radius: size of the reverse transitive closure over import + reexport edges. */
   blast: number;
