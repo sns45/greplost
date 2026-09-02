@@ -8,23 +8,23 @@
 
 **Exports:** `BuildOptions (interface)`, `buildModel(options: BuildOptions = {}): ReportModel`, `run(args: string[]): Promise<number>`
 
-**Imports:** `node:fs` (existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (compareStrings), [`./charts.ts`](charts.ts.md) (BoxDatum, ChartSpec, boxChart, groupedBarChart, lineChart, mermaidXy, writeChart), [`./results-io.ts`](results-io.ts.md) (latestResult, resultsDir), [`./report-payload.ts`](report-payload.ts.md) (Payload, assumptions, firstMachine, mergeCorpus, resetAssumptions, versionRows), [`./report-sections.ts`](report-sections.ts.md) (headToHeadFrom, singleTool), [`./report-evals.ts`](report-evals.ts.md) (bench3Section, eval1Section, eval2Section, eval4Section, eval5Section, mapqualitySection), [`./results-md.ts`](results-md.ts.md) (ChartRef, EvalRow, EvalSection, METRIC_TITLES, MetricCell, MetricRow, NOT_APPLICABLE, ReportModel, SECTION_HEADERS, SummaryRow, XId, X_IDS, emptySection, renderResultsMd)
+**Imports:** `node:fs` (mkdirSync, writeFileSync), `node:path` (default), [`./charts.ts`](charts.ts.md) (BoxDatum, ChartSpec, boxChart, groupedBarChart, lineChart, mermaidXy, writeChart), [`./results-io.ts`](results-io.ts.md) (latestResult, orderedResults), [`./report-payload.ts`](report-payload.ts.md) (Payload, assumptions, firstMachine, mergeCorpus, resetAssumptions, versionRows), [`./report-sections.ts`](report-sections.ts.md) (headToHeadFrom, singleTool), [`./report-evals.ts`](report-evals.ts.md) (bench3Section, eval1Section, eval2Section, eval4Section, eval5Section, mapqualitySection), [`./results-md.ts`](results-md.ts.md) (ChartRef, EvalRow, EvalSection, METRIC_TITLES, MetricCell, MetricRow, NOT_APPLICABLE, ReportModel, SECTION_HEADERS, SummaryRow, XId, X_IDS, emptySection, renderResultsMd)
 
 **Imported by:** None.
 
 **Blast radius:** 0 files (`greplost impact bench/src/report.ts`)
 
 **Key symbols:**
-- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L57-57
-- `const SUITE = "report"`  L58-58
-- `const RESULTS_MD = "bench/RESULTS.md"`  L60-60
-- `const ASSETS_DIR = "docs/assets"`  L62-62
-- `interface BuildOptions`  L64-69
-- `interface Options`  L71-78
-- `async function run(args: string[]): Promise<number>`  L83-107
-- `function parseArgs(args: string[]): Options`  L109-134
-- `function rasterise(model: ReportModel, assetsDir: string): number`  L137-145
-- `function allCharts(model: ReportModel): ChartRef[]`  L147-149
-- `function buildModel(options: BuildOptions = {}): ReportModel`  L154-267
+- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L55-55
+- `const SUITE = "report"`  L56-56
+- `const RESULTS_MD = "bench/RESULTS.md"`  L58-58
+- `const ASSETS_DIR = "docs/assets"`  L60-60
+- `interface BuildOptions`  L62-67
+- `interface Options`  L69-76
+- `async function run(args: string[]): Promise<number>`  L81-105
+- `function parseArgs(args: string[]): Options`  L107-132
+- `function rasterise(model: ReportModel, assetsDir: string): number`  L135-143
+- `function allCharts(model: ReportModel): ChartRef[]`  L145-147
+- `function buildModel(options: BuildOptions = {}): ReportModel`  L152-242
 
-**Calls:** `writeChart` → [`bench/src/charts.ts#writeChart`](charts.ts.md) (high), `bench3Section` → [`bench/src/report-evals.ts#bench3Section`](report-evals.ts.md) (high), `eval1Section` → [`bench/src/report-evals.ts#eval1Section`](report-evals.ts.md) (high), `eval2Section` → [`bench/src/report-evals.ts#eval2Section`](report-evals.ts.md) (high), `eval4Section` → [`bench/src/report-evals.ts#eval4Section`](report-evals.ts.md) (high), `eval5Section` → [`bench/src/report-evals.ts#eval5Section`](report-evals.ts.md) (high), `mapqualitySection` → [`bench/src/report-evals.ts#mapqualitySection`](report-evals.ts.md) (high), `firstMachine` → [`bench/src/report-payload.ts#firstMachine`](report-payload.ts.md) (high), `mergeCorpus` → [`bench/src/report-payload.ts#mergeCorpus`](report-payload.ts.md) (high), `resetAssumptions` → [`bench/src/report-payload.ts#resetAssumptions`](report-payload.ts.md) (high), `versionRows` → [`bench/src/report-payload.ts#versionRows`](report-payload.ts.md) (high), `headToHeadFrom` → [`bench/src/report-sections.ts#headToHeadFrom`](report-sections.ts.md) (high), `singleTool` → [`bench/src/report-sections.ts#singleTool`](report-sections.ts.md) (high), `allCharts` → [`bench/src/report.ts#allCharts`](report.ts.md) (high), `buildModel` → [`bench/src/report.ts#buildModel`](report.ts.md) (high), `parseArgs` → [`bench/src/report.ts#parseArgs`](report.ts.md) (high), `rasterise` → [`bench/src/report.ts#rasterise`](report.ts.md) (high), `latestResult` → [`bench/src/results-io.ts#latestResult`](results-io.ts.md) (high), `resultsDir` → [`bench/src/results-io.ts#resultsDir`](results-io.ts.md) (high), `renderResultsMd` → [`bench/src/results-md.ts#renderResultsMd`](results-md.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high)
+**Calls:** `writeChart` → [`bench/src/charts.ts#writeChart`](charts.ts.md) (high), `bench3Section` → [`bench/src/report-evals.ts#bench3Section`](report-evals.ts.md) (high), `eval1Section` → [`bench/src/report-evals.ts#eval1Section`](report-evals.ts.md) (high), `eval2Section` → [`bench/src/report-evals.ts#eval2Section`](report-evals.ts.md) (high), `eval4Section` → [`bench/src/report-evals.ts#eval4Section`](report-evals.ts.md) (high), `eval5Section` → [`bench/src/report-evals.ts#eval5Section`](report-evals.ts.md) (high), `mapqualitySection` → [`bench/src/report-evals.ts#mapqualitySection`](report-evals.ts.md) (high), `firstMachine` → [`bench/src/report-payload.ts#firstMachine`](report-payload.ts.md) (high), `mergeCorpus` → [`bench/src/report-payload.ts#mergeCorpus`](report-payload.ts.md) (high), `resetAssumptions` → [`bench/src/report-payload.ts#resetAssumptions`](report-payload.ts.md) (high), `versionRows` → [`bench/src/report-payload.ts#versionRows`](report-payload.ts.md) (high), `headToHeadFrom` → [`bench/src/report-sections.ts#headToHeadFrom`](report-sections.ts.md) (high), `singleTool` → [`bench/src/report-sections.ts#singleTool`](report-sections.ts.md) (high), `allCharts` → [`bench/src/report.ts#allCharts`](report.ts.md) (high), `buildModel` → [`bench/src/report.ts#buildModel`](report.ts.md) (high), `parseArgs` → [`bench/src/report.ts#parseArgs`](report.ts.md) (high), `rasterise` → [`bench/src/report.ts#rasterise`](report.ts.md) (high), `latestResult` → [`bench/src/results-io.ts#latestResult`](results-io.ts.md) (high), `orderedResults` → [`bench/src/results-io.ts#orderedResults`](results-io.ts.md) (high), `renderResultsMd` → [`bench/src/results-md.ts#renderResultsMd`](results-md.ts.md) (high)

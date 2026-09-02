@@ -44,6 +44,7 @@
 ## bench/src/agent.ts
 
 - `const DEFAULT_MODEL = "claude-opus-5"` L66-66
+- `const DEFAULT_MAX_USD = 25` L95-95
 - `const CONDITIONS: Readonly<Record<string, Condition>> = { base: { allowed: ["Read", "Grep", "Glob"], disallowed: [], artifacts: { kind: "none" }, plugin: false, note: "stock Claude Code", }, g…` L146-189
 - `interface Answer` L198-201
 - `interface TaskScore` L204-217
@@ -55,10 +56,10 @@
 - `function summarize(values: number[]): Stats` L397-406
 - `function resolveClaude(): string` L539-551
 - `function createGreplostShim(dir: string): string` L693-700
-- `interface RunRecord` L983-1011
-- `interface RunTaskOptions` L1014-1027
-- `function runTask(task: Task, condition: string, options: RunTaskOptions): RunRecord` L1038-1054
-- `async function run(args: string[]): Promise<number>` L1457-1474
+- `interface RunRecord` L988-1016
+- `interface RunTaskOptions` L1019-1032
+- `function runTask(task: Task, condition: string, options: RunTaskOptions): RunRecord` L1043-1059
+- `async function run(args: string[]): Promise<number>` L1462-1479
 
 ## bench/src/charts.ts
 
@@ -67,18 +68,19 @@
 - `interface BoxDatum` L59-66
 - `interface BoxSpec` L68-76
 - `const PALETTE: readonly string[] = ["#1d4ed8", "#ea580c", "#0f766e", "#a21caf", "#4d7c0f", "#b91c1c"]` L87-87
-- `function wrapText(text: string, columns: number): string[]` L118-132
-- `function coord(value: number): string` L143-147
-- `function label(value: number): string` L150-155
-- `function esc(text: string): string` L162-168
-- `function axisMax(raw: number): number` L175-183
-- `function barChart(spec: ChartSpec): string` L314-316
-- `function groupedBarChart(spec: ChartSpec): string` L319-321
-- `function lineChart(spec: ChartSpec): string` L388-440
-- `function boxChart(spec: BoxSpec): string` L447-497
-- `function mermaidXy(spec: ChartSpec, kind: "line" | "bar" = "line"): string` L520-559
-- `function toPng(svg: string): Buffer` L577-581
-- `function writeChart(dir: string, name: string, svg: string): { svg: string; png: string }` L610-617
+- `function wrapText(text: string, columns: number): string[]` L126-140
+- `function coord(value: number): string` L151-155
+- `function label(value: number): string` L158-163
+- `function esc(text: string): string` L170-176
+- `function axisMax(raw: number): number` L183-191
+- `function barChart(spec: ChartSpec): string` L322-324
+- `function groupedBarChart(spec: ChartSpec): string` L327-329
+- `function categoryOffsets(categories: readonly string[]): number[]` L398-415
+- `function lineChart(spec: ChartSpec): string` L427-492
+- `function boxChart(spec: BoxSpec): string` L499-549
+- `function mermaidXy(spec: ChartSpec, kind: "line" | "bar" = "line"): string` L572-611
+- `function toPng(svg: string): Buffer` L629-633
+- `function writeChart(dir: string, name: string, svg: string): { svg: string; png: string }` L662-669
 
 ## bench/src/cli.ts
 
@@ -116,46 +118,49 @@
 
 ## bench/src/headtohead.ts
 
-- `const TOOLS = ["greplost", "graphify", "ua", "crg"] as const` L113-113
-- `type Tool = (typeof TOOLS)[number]` L114-114
-- `type CompetitorName = "graphify" | "ua" | "crg"` L115-115
-- `interface MetricDef` L122-137
-- `const METRIC_PLAN: readonly MetricDef[] = [ { id: "X1", title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports", higherIsBetter: true, margin: 0.1, unit: "ca…` L140-155
-- `function verdictFor(opts: { ours: number | null; theirs: number | null; higherIsBetter: boolean; margin: number; }): Verdict` L169-181
-- `function scaleTitles(metrics: Record<XId, MetricRow>, commits: number): void` L207-221
-- `function fillMissingReasons(metrics: Record<XId, MetricRow>): void` L232-243
-- `function emptyMetrics(reason: string): Record<XId, MetricRow>` L246-254
-- `function competitorSpecs(): Map<string, CompetitorSpec>` L359-366
-- `function findBinary(name: string): string | null` L473-479
-- `function sandboxEnv(): NodeJS.ProcessEnv` L522-535
-- `function writeShim(name: string, real: string): string` L547-569
-- `function writeGreplostShim(): string` L579-586
-- `function readHookLog(file: string): HookCall[]` L595-606
-- `function shimTime(calls: readonly HookCall[], tool: string): { ms: number; runs: number; pending: number }` L613-630
-- `function shimRuns(calls: readonly HookCall[], tool: string): number[]` L638-653
-- `function byteDelta(a: Map<string, string>, b: Map<string, string>): { bytes: number; files: number }` L746-758
-- `function byteDistance(a: string, b: string): number` L775-792
-- `function describeDifference(a: Map<string, string>, b: Map<string, string>): string` L805-824
-- `function describeLineChange(a: Map<string, string>, b: Map<string, string>, limit = 4): string` L865-883
-- `function lineDelta(a: Map<string, string>, b: Map<string, string>): { lines: number; files: number; total: number }` L886-900
-- `function diffLineCount(a: readonly string[], b: readonly string[]): number` L910-937
-- `function readGreplostArtifact(dir: string): { imports: Edge[]; calls: Edge[] } | null` L986-1004
-- `async function run(args: string[]): Promise<number>` L1010-1035
-- `type Arm = "documented-sync" | "refresh-every-commit"` L1443-1443
-- `const ARM_PREFIX: Record<Arm, string> = { "documented-sync": "syncF1", "refresh-every-commit": "refreshF1", }` L1446-1449
-- `const ARM_DESCRIPTION: Record<Arm, string> = { "documented-sync": "each tool's own sync mechanism was installed exactly as its README describes and then left alone: the " + "harness commits, a…` L1452-1459
-- `interface SyncEvidence` L1501-1517
-- `function syncEvidence(mechanisms: ReadonlyMap<string, SyncMechanism>): SyncEvidence[]` L1520-1539
-- `interface Freshness` L2291-2295
-- `function signed(value: number): string` L2298-2301
-- `function decayVerdict(ourDecay: number | null, theirDecay: number | null): Verdict` L2314-2320
-- `function describeFreshness(tool: string, freshness: Freshness): string` L2323-2338
-- `function coverageVersusDecay( ours: Freshness, ...others: readonly Freshness[] ): string | null` L2353-2374
-- `function x3GreplostVerdict( ourMinutes: number | null, graphifyMinutes: number | null, ): { verdict: MetricCell["verdict"]; reason: string }` L2386-2409
-- `function planImportEdit(snapshot: Snapshot): ImportEdit | null` L2632-2634
-- `interface ImportEdit` L2637-2641
-- `function planImportEdits(snapshot: Snapshot, limit: number): ImportEdit[]` L2652-2685
-- `function median(values: readonly number[]): number | null` L2826-2832
+- `function resultSuite(fixture: boolean): string` L61-63
+- `const TOOLS = ["greplost", "graphify", "ua", "crg"] as const` L127-127
+- `type Tool = (typeof TOOLS)[number]` L128-128
+- `type CompetitorName = "graphify" | "ua" | "crg"` L129-129
+- `interface MetricDef` L136-151
+- `const METRIC_PLAN: readonly MetricDef[] = [ { id: "X1", title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports", higherIsBetter: true, margin: 0.1, unit: "ca…` L154-169
+- `function verdictFor(opts: { ours: number | null; theirs: number | null; higherIsBetter: boolean; margin: number; }): Verdict` L183-195
+- `function scaleTitles(metrics: Record<XId, MetricRow>, commits: number): void` L221-235
+- `function fillMissingReasons(metrics: Record<XId, MetricRow>): void` L246-257
+- `function emptyMetrics(reason: string): Record<XId, MetricRow>` L260-268
+- `function competitorSpecs(): Map<string, CompetitorSpec>` L373-380
+- `function findBinary(name: string): string | null` L487-493
+- `function sandboxEnv(): NodeJS.ProcessEnv` L536-549
+- `function writeShim(name: string, real: string): string` L561-583
+- `function writeGreplostShim(): string` L593-600
+- `function readHookLog(file: string): HookCall[]` L609-620
+- `function shimTime(calls: readonly HookCall[], tool: string): { ms: number; runs: number; pending: number }` L627-644
+- `function shimRuns(calls: readonly HookCall[], tool: string): number[]` L652-667
+- `function byteDelta(a: Map<string, string>, b: Map<string, string>): { bytes: number; files: number }` L760-772
+- `function byteDistance(a: string, b: string): number` L789-806
+- `function describeDifference(a: Map<string, string>, b: Map<string, string>): string` L819-838
+- `function describeLineChange(a: Map<string, string>, b: Map<string, string>, limit = 4): string` L879-897
+- `function lineDelta(a: Map<string, string>, b: Map<string, string>): { lines: number; files: number; total: number }` L900-914
+- `function diffLineCount(a: readonly string[], b: readonly string[]): number` L924-951
+- `function readGreplostArtifact(dir: string): { imports: Edge[]; calls: Edge[] } | null` L1000-1018
+- `async function run(args: string[]): Promise<number>` L1024-1052
+- `function needsCorpus(metrics: ReadonlySet<XId> | null): boolean` L1067-1069
+- `type Arm = "documented-sync" | "refresh-every-commit"` L1503-1503
+- `const ARM_PREFIX: Record<Arm, string> = { "documented-sync": "syncF1", "refresh-every-commit": "refreshF1", }` L1506-1509
+- `const ARM_DESCRIPTION: Record<Arm, string> = { "documented-sync": "each tool's own sync mechanism was installed exactly as its README describes and then left alone: the " + "harness commits, a…` L1512-1523
+- `interface SyncEvidence` L1565-1581
+- `function syncEvidence(mechanisms: ReadonlyMap<string, SyncMechanism>): SyncEvidence[]` L1584-1603
+- `interface Freshness` L2363-2367
+- `function signed(value: number): string` L2370-2373
+- `function decayVerdict(ourDecay: number | null, theirDecay: number | null): Verdict` L2386-2392
+- `function describeFreshness(tool: string, freshness: Freshness): string` L2395-2410
+- `function decayReason(ours: Freshness, theirs: Freshness, tool: string): string` L2419-2422
+- `function coverageVersusDecay( ours: Freshness, ...others: readonly Freshness[] ): string | null` L2435-2456
+- `function x3GreplostVerdict( ourMinutes: number | null, graphifyMinutes: number | null, ): { verdict: MetricCell["verdict"]; reason: string }` L2468-2491
+- `function planImportEdit(snapshot: Snapshot): ImportEdit | null` L2714-2716
+- `interface ImportEdit` L2719-2723
+- `function planImportEdits(snapshot: Snapshot, limit: number): ImportEdit[]` L2734-2767
+- `function median(values: readonly number[]): number | null` L2908-2914
 
 ## bench/src/machine.ts
 
@@ -164,14 +169,16 @@
 
 ## bench/src/mapquality.ts
 
-- `const M1_TOKEN_BUDGET = 3000` L30-30
-- `const DEFAULT_MAX_NODES = 25` L32-32
-- `interface FenceReport` L62-71
-- `async function run(args: string[]): Promise<number>` L73-82
-- `function resolveTarget(options: Options): Target` L118-134
-- `function walkMarkdown(dir: string): string[]` L229-241
-- `function countNodes(fenceBody: string): number` L243-245
-- `function countTokens(text: string): number` L264-267
+- `const M1_TOKEN_BUDGET = 3000` L36-36
+- `const DEFAULT_MAX_NODES = 25` L38-38
+- `interface FenceReport` L86-95
+- `async function run(args: string[]): Promise<number>` L97-106
+- `function resolveTarget(options: Options): Target` L150-178
+- `function ownRepoName(): string` L189-202
+- `function indexedFileCount(dir: string): number | null` L212-222
+- `function walkMarkdown(dir: string): string[]` L353-365
+- `function countNodes(fenceBody: string): number` L367-369
+- `function countTokens(text: string): number` L388-391
 
 ## bench/src/mermaid-check.ts
 
@@ -226,20 +233,21 @@
 
 ## bench/src/report-charts.ts
 
-- `function scaleNote(target: RunTarget | undefined, commits: number | null): string` L72-86
-- `function headToHeadCharts( rows: readonly MetricRow[], replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]` L89-145
-- `function stalenessCharts( x2: MetricRow | undefined, replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]` L185-260
-- `function freshnessNote( x2: MetricRow | undefined, curve: { categories: string[]; series: { name: string; values: (number | null)[] }[] }, ): string` L270-298
-- `function chartRef( caption: string, spec: ChartSpec, name: string, assetsRel: string, svg: string, kind: "line" | "bar" = "line", ): ChartRef` L336-345
+- `const SYNTHETIC_WALK_NOTE = " The walk is synthetic: each commit appends exactly one resolvable import line to one file, so truth " + "moves by exactly one edge per commit, and the walk contai…` L82-84
+- `function scaleNote(target: RunTarget | undefined, commits: number | null): string` L86-100
+- `function headToHeadCharts( rows: readonly MetricRow[], replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]` L103-159
+- `function stalenessCharts( x2: MetricRow | undefined, replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]` L199-276
+- `function freshnessNote( x2: MetricRow | undefined, curve: { categories: string[]; series: { name: string; values: (number | null)[] }[] }, ): string` L286-314
+- `function chartRef( caption: string, spec: ChartSpec, name: string, assetsRel: string, svg: string, kind: "line" | "bar" = "line", ): ChartRef` L352-361
 
 ## bench/src/report-evals.ts
 
-- `function eval1Section(payload: Payload | null): EvalSection` L45-104
-- `function eval2Section(payload: Payload | null): EvalSection` L162-217
-- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection` L230-335
-- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection` L341-428
-- `function eval5Section(payload: Payload | null): EvalSection` L452-480
-- `function mapqualitySection(payload: Payload | null): EvalSection` L482-526
+- `function eval1Section(payload: Payload | null): EvalSection` L46-105
+- `function eval2Section(payload: Payload | null): EvalSection` L163-218
+- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection` L231-336
+- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection` L342-429
+- `function eval5Section(payload: Payload | null): EvalSection` L453-481
+- `function mapqualitySection(payload: Payload | null): EvalSection` L483-541
 
 ## bench/src/report-payload.ts
 
@@ -271,24 +279,26 @@
 
 ## bench/src/report-sections.ts
 
-- `function singleTool( sections: ReportModel["sections"], structural: Payload | null, replay: Payload | null, perf: Payload | null, agent: Payload | null, mapquality: Payload | null, ): ReportMo…` L45-110
-- `function headToHeadFrom( payloads: readonly Payload[], replay: Payload | null, assetsRel: string, ): ReportModel["headToHead"]` L233-290
-- `function headToHead(payload: Payload | null, replay: Payload | null, assetsRel: string): ReportModel["headToHead"]` L316-380
+- `function singleTool( sections: ReportModel["sections"], structural: Payload | null, replay: Payload | null, perf: Payload | null, agent: Payload | null, mapquality: Payload | null, ): ReportMo…` L45-115
+- `function headToHeadFrom( payloads: readonly Payload[], replay: Payload | null, assetsRel: string, ): ReportModel["headToHead"]` L256-313
+- `function headToHead(payload: Payload | null, replay: Payload | null, assetsRel: string): ReportModel["headToHead"]` L339-420
 
 ## bench/src/report.ts
 
-- `interface BuildOptions` L64-69
-- `async function run(args: string[]): Promise<number>` L83-107
-- `function buildModel(options: BuildOptions = {}): ReportModel` L154-267
+- `interface BuildOptions` L62-67
+- `async function run(args: string[]): Promise<number>` L81-105
+- `function buildModel(options: BuildOptions = {}): ReportModel` L152-242
 
 ## bench/src/results-io.ts
 
-- `const RESULTS_DIR = "bench/results"` L27-27
-- `function resultsDir(dir?: string): string` L33-37
-- `function todayIso(): string` L40-42
-- `function gitSha7(cwd: string = REPO_ROOT): string` L45-56
-- `function writeResult(suite: string, payload: object, dir?: string): string` L64-75
-- `function latestResult( suite: string, dir?: string, ): { file: string; payload: Record<string, unknown> } | undefined` L78-92
+- `const RESULTS_DIR = "bench/results"` L37-37
+- `function resultsDir(dir?: string): string` L43-47
+- `function todayIso(): string` L50-52
+- `function gitSha7(cwd: string = REPO_ROOT): string` L55-66
+- `function nowIso(): string` L69-71
+- `function writeResult(suite: string, payload: object, dir?: string): string` L80-92
+- `function orderedResults( suite: string, dir?: string, ): { file: string; name: string; payload: Record<string, unknown> }[]` L101-127
+- `function latestResult( suite: string, dir?: string, ): { file: string; payload: Record<string, unknown> } | undefined` L130-137
 
 ## bench/src/results-md.ts
 
@@ -310,9 +320,9 @@
 - `interface ReportModel` L241-266
 - `function emptySection(): EvalSection` L269-271
 - `function renderResultsMd(model: ReportModel): string` L278-307
-- `function cell(text: string): string` L516-518
-- `function formatNumber(value: number): string` L534-540
-- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L584-595
+- `function cell(text: string): string` L529-531
+- `function formatNumber(value: number): string` L547-553
+- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L597-608
 
 ## bench/src/score.ts
 
@@ -338,14 +348,16 @@
 
 ## bench/src/structural.ts
 
-- `const TARGETS = { S1: [0.99, 0.97], S2: [0.99, 0.99], S3: 0.95, S4: 1.0 } as const` L39-39
-- `type TruthLang = "ts" | "go"` L47-47
-- `interface RepoScores` L71-104
-- `async function run(args: string[]): Promise<number>` L106-118
-- `function scoredFiles(snapshot: Snapshot, lang: TruthLang): string[]` L344-353
-- `function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang): RepoScores` L361-455
-- `function missedMetrics(scores: RepoScores): string[]` L464-475
-- `function locate(snapshot: Snapshot, key: string, kind: "import" | "call" | "export"): string` L525-537
+- `function resultSuite(fixture: boolean): string` L49-51
+- `const TARGETS = { S1: [0.99, 0.97], S2: [0.99, 0.99], S3: 0.95, S4: 1.0 } as const` L54-54
+- `type TruthLang = "ts" | "go"` L62-62
+- `interface RepoScores` L86-129
+- `async function run(args: string[]): Promise<number>` L131-143
+- `function scoredFiles(snapshot: Snapshot, lang: TruthLang): string[]` L407-416
+- `function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang): RepoScores` L424-520
+- `function unparsableBucket( scores: readonly RepoScores[], ): { count: number; files: { repo: string; path: string; reason: string }[] }` L535-542
+- `function missedMetrics(scores: RepoScores): string[]` L554-565
+- `function locate(snapshot: Snapshot, key: string, kind: "import" | "call" | "export"): string` L615-627
 
 ## bench/src/tasks.ts
 

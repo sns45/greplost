@@ -6,36 +6,39 @@
 
 **Package:** `@greplost/bench` ([map](../../MAP.md))
 
-**Exports:** `DEFAULT_MAX_NODES (const)`, `FenceReport (interface)`, `M1_TOKEN_BUDGET (const)`, `countNodes(fenceBody: string): number`, `countTokens(text: string): number`, `resolveTarget(options: Options): Target`, `run(args: string[]): Promise<number>`, `walkMarkdown(dir: string): string[]`
+**Exports:** `DEFAULT_MAX_NODES (const)`, `FenceReport (interface)`, `M1_TOKEN_BUDGET (const)`, `countNodes(fenceBody: string): number`, `countTokens(text: string): number`, `indexedFileCount(dir: string): number | null`, `ownRepoName(): string`, `resolveTarget(options: Options): Target`, `run(args: string[]): Promise<number>`, `walkMarkdown(dir: string): string[]`
 
-**Imports:** `node:fs` (existsSync, readFileSync, readdirSync, statSync), `node:path` (default), `js-tiktoken` (Tiktoken, getEncoding), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (compareStrings, stableStringify), [`./mermaid-check.ts`](mermaid-check.ts.md) (Checker, checkMermaid), [`./corpus.ts`](corpus.ts.md) (loadCorpus, repoDir), [`./machine.ts`](machine.ts.md) (machineProfile), [`./results-io.ts`](results-io.ts.md) (gitSha7, todayIso, writeResult)
+**Imports:** `node:child_process` (execFileSync), `node:fs` (existsSync, readFileSync, readdirSync, statSync), `node:path` (default), `js-tiktoken` (Tiktoken, getEncoding), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (compareStrings, stableStringify), [`./mermaid-check.ts`](mermaid-check.ts.md) (Checker, checkMermaid), [`./corpus.ts`](corpus.ts.md) (loadCorpus, repoDir), [`./machine.ts`](machine.ts.md) (machineProfile), [`./results-io.ts`](results-io.ts.md) (gitSha7, todayIso, writeResult)
 
 **Imported by:** None.
 
 **Blast radius:** 0 files (`greplost impact bench/src/mapquality.ts`)
 
 **Key symbols:**
-- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L24-24
-- `const SUITE = "mapquality"`  L25-25
-- `const GOLDEN_FIXTURE_DIR = path.join(REPO_ROOT, "packages", "render", "test", "golden", "tiny-ts")`  L27-27
-- `const M1_TOKEN_BUDGET = 3000`  L30-30
-- `const DEFAULT_MAX_NODES = 25`  L32-32
-- `const NODE_LINE_RE = /^\s+\S+\["/`  L35-35
-- `const MERMAID_FENCE_RE = /```mermaid\r?\n([\s\S]*?)```/g`  L42-42
-- `interface Options`  L44-53
-- `interface Target`  L55-60
-- `interface FenceReport`  L62-71
-- `async function run(args: string[]): Promise<number>`  L73-82
-- `function reportFailure(options: Options, message: string, gateReason: string, code: number): number`  L90-94
-- `function parseArgs(args: string[]): Options`  L96-109
-- `function resolveTarget(options: Options): Target`  L118-134
-- `async function execute(options: Options): Promise<number>`  L136-201
-- `async function collectFences(dir: string): Promise<FenceReport[]>`  L207-226
-- `function walkMarkdown(dir: string): string[]`  L229-241
-- `function countNodes(fenceBody: string): number`  L243-245
-- `function readMaxNodes(dir: string): number`  L247-261
-- `let encoder: Tiktoken | undefined`  L263-263
-- `function countTokens(text: string): number`  L264-267
-- `function printTable(info: { dir: string; tokens: number | null; fenceCount: number; maxNodeCount: number; maxNodes: number; failures: FenceReport[]; checker: Checker; }): void`  L273-291
+- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L30-30
+- `const SUITE = "mapquality"`  L31-31
+- `const GOLDEN_FIXTURE_DIR = path.join(REPO_ROOT, "packages", "render", "test", "golden", "tiny-ts")`  L33-33
+- `const M1_TOKEN_BUDGET = 3000`  L36-36
+- `const DEFAULT_MAX_NODES = 25`  L38-38
+- `const NODE_LINE_RE = /^\s+\S+\["/`  L41-41
+- `const NOT_RUN = "not run"`  L43-43
+- `const MERMAID_FENCE_RE = /```mermaid\r?\n([\s\S]*?)```/g`  L50-50
+- `interface Options`  L52-63
+- `interface Target`  L65-84
+- `interface FenceReport`  L86-95
+- `async function run(args: string[]): Promise<number>`  L97-106
+- `function reportFailure(options: Options, message: string, gateReason: string, code: number): number`  L114-118
+- `function parseArgs(args: string[]): Options`  L120-141
+- `function resolveTarget(options: Options): Target`  L150-178
+- `function ownRepoName(): string`  L189-202
+- `function indexedFileCount(dir: string): number | null`  L212-222
+- `async function execute(options: Options): Promise<number>`  L224-325
+- `async function collectFences(dir: string): Promise<FenceReport[]>`  L331-350
+- `function walkMarkdown(dir: string): string[]`  L353-365
+- `function countNodes(fenceBody: string): number`  L367-369
+- `function readMaxNodes(dir: string): number`  L371-385
+- `let encoder: Tiktoken | undefined`  L387-387
+- `function countTokens(text: string): number`  L388-391
+- `function printTable(info: { dir: string; tokens: number | "missing" | null; fenceCount: number | null; maxNodeCount: number | null; maxNodes: number | null; failures: FenceReport[]; checker: Checker …`  L405-424
 
-**Calls:** `loadCorpus` → [`bench/src/corpus.ts#loadCorpus`](corpus.ts.md) (high), `repoDir` → [`bench/src/corpus.ts#repoDir`](corpus.ts.md) (high), `machineProfile` → [`bench/src/machine.ts#machineProfile`](machine.ts.md) (high), `collectFences` → [`bench/src/mapquality.ts#collectFences`](mapquality.ts.md) (high), `countNodes` → [`bench/src/mapquality.ts#countNodes`](mapquality.ts.md) (high), `countTokens` → [`bench/src/mapquality.ts#countTokens`](mapquality.ts.md) (high), `execute` → [`bench/src/mapquality.ts#execute`](mapquality.ts.md) (high), `parseArgs` → [`bench/src/mapquality.ts#parseArgs`](mapquality.ts.md) (high), `printTable` → [`bench/src/mapquality.ts#printTable`](mapquality.ts.md) (high), `readMaxNodes` → [`bench/src/mapquality.ts#readMaxNodes`](mapquality.ts.md) (high), `reportFailure` → [`bench/src/mapquality.ts#reportFailure`](mapquality.ts.md) (high), `resolveTarget` → [`bench/src/mapquality.ts#resolveTarget`](mapquality.ts.md) (high), `walkMarkdown` → [`bench/src/mapquality.ts#walkMarkdown`](mapquality.ts.md) (high), `checkMermaid` → [`bench/src/mermaid-check.ts#checkMermaid`](mermaid-check.ts.md) (high), `gitSha7` → [`bench/src/results-io.ts#gitSha7`](results-io.ts.md) (high), `todayIso` → [`bench/src/results-io.ts#todayIso`](results-io.ts.md) (high), `writeResult` → [`bench/src/results-io.ts#writeResult`](results-io.ts.md) (high), `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high)
+**Calls:** `loadCorpus` → [`bench/src/corpus.ts#loadCorpus`](corpus.ts.md) (high), `repoDir` → [`bench/src/corpus.ts#repoDir`](corpus.ts.md) (high), `machineProfile` → [`bench/src/machine.ts#machineProfile`](machine.ts.md) (high), `collectFences` → [`bench/src/mapquality.ts#collectFences`](mapquality.ts.md) (high), `countNodes` → [`bench/src/mapquality.ts#countNodes`](mapquality.ts.md) (high), `countTokens` → [`bench/src/mapquality.ts#countTokens`](mapquality.ts.md) (high), `execute` → [`bench/src/mapquality.ts#execute`](mapquality.ts.md) (high), `indexedFileCount` → [`bench/src/mapquality.ts#indexedFileCount`](mapquality.ts.md) (high), `ownRepoName` → [`bench/src/mapquality.ts#ownRepoName`](mapquality.ts.md) (high), `parseArgs` → [`bench/src/mapquality.ts#parseArgs`](mapquality.ts.md) (high), `printTable` → [`bench/src/mapquality.ts#printTable`](mapquality.ts.md) (high), `readMaxNodes` → [`bench/src/mapquality.ts#readMaxNodes`](mapquality.ts.md) (high), `reportFailure` → [`bench/src/mapquality.ts#reportFailure`](mapquality.ts.md) (high), `resolveTarget` → [`bench/src/mapquality.ts#resolveTarget`](mapquality.ts.md) (high), `walkMarkdown` → [`bench/src/mapquality.ts#walkMarkdown`](mapquality.ts.md) (high), `checkMermaid` → [`bench/src/mermaid-check.ts#checkMermaid`](mermaid-check.ts.md) (high), `gitSha7` → [`bench/src/results-io.ts#gitSha7`](results-io.ts.md) (high), `todayIso` → [`bench/src/results-io.ts#todayIso`](results-io.ts.md) (high), `writeResult` → [`bench/src/results-io.ts#writeResult`](results-io.ts.md) (high), `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high)

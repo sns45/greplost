@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/bench` ([map](../../MAP.md))
 
-**Exports:** `BoxDatum (interface)`, `BoxSpec (interface)`, `ChartSpec (interface)`, `PALETTE (const)`, `Series (interface)`, `axisMax(raw: number): number`, `barChart(spec: ChartSpec): string`, `boxChart(spec: BoxSpec): string`, `coord(value: number): string`, `esc(text: string): string`, `groupedBarChart(spec: ChartSpec): string`, `label(value: number): string`, `lineChart(spec: ChartSpec): string`, `mermaidXy(spec: ChartSpec, kind: "line" | "bar" = "line"): string`, `toPng(svg: string): Buffer`, `wrapText(text: string, columns: number): string[]`, `writeChart(dir: string, name: string, svg: string): { svg: string; png: string }`
+**Exports:** `BoxDatum (interface)`, `BoxSpec (interface)`, `ChartSpec (interface)`, `PALETTE (const)`, `Series (interface)`, `axisMax(raw: number): number`, `barChart(spec: ChartSpec): string`, `boxChart(spec: BoxSpec): string`, `categoryOffsets(categories: readonly string[]): number[]`, `coord(value: number): string`, `esc(text: string): string`, `groupedBarChart(spec: ChartSpec): string`, `label(value: number): string`, `lineChart(spec: ChartSpec): string`, `mermaidXy(spec: ChartSpec, kind: "line" | "bar" = "line"): string`, `toPng(svg: string): Buffer`, `wrapText(text: string, columns: number): string[]`, `writeChart(dir: string, name: string, svg: string): { svg: string; png: string }`
 
 **Imports:** `node:fs` (mkdirSync, writeFileSync), `node:module` (createRequire), `node:path` (default)
 
@@ -34,31 +34,33 @@
 - `const Y_INTERVALS = 4`  L102-102
 - `const NOTE_LINE_HEIGHT = 13`  L104-104
 - `const NOTE_CHAR_WIDTH = 5.2`  L106-106
-- `function noteWidth(width: number): number`  L109-111
-- `function wrapText(text: string, columns: number): string[]`  L118-132
-- `function coord(value: number): string`  L143-147
-- `function label(value: number): string`  L150-155
-- `function trimZeros(text: string): string`  L157-159
-- `function esc(text: string): string`  L162-168
-- `function axisMax(raw: number): number`  L175-183
-- `function round6(value: number): number`  L186-188
-- `interface Frame`  L194-206
-- `function startFrame( opts: { title: string; yLabel: string | undefined; xLabel: string | undefined; note: string | undefined; width: number | undefined; height: number | undefined; max: number; legen…`  L208-282
-- `function finishFrame(frame: Frame): string`  L284-287
-- `function peak(series: readonly Series[]): number`  L290-298
-- `function legendOf(series: readonly Series[]): { name: string; color: string }[]`  L300-302
-- `function categoryLabel(frame: Frame, x: number, text: string): string`  L305-307
-- `function barChart(spec: ChartSpec): string`  L314-316
-- `function groupedBarChart(spec: ChartSpec): string`  L319-321
-- `function bars(spec: ChartSpec, series: readonly Series[]): string`  L323-375
-- `function lineChart(spec: ChartSpec): string`  L388-440
-- `function boxChart(spec: BoxSpec): string`  L447-497
-- `function mermaidXy(spec: ChartSpec, kind: "line" | "bar" = "line"): string`  L520-559
-- `function quoteCategory(text: string): string`  L562-564
-- `function toPng(svg: string): Buffer`  L577-581
-- `interface ResvgModule`  L583-587
-- `let resvgModule: ResvgModule | undefined`  L589-589
-- `function loadResvg(): ResvgModule`  L597-607
-- `function writeChart(dir: string, name: string, svg: string): { svg: string; png: string }`  L610-617
+- `const MIN_LABEL_GAP = 34`  L114-114
+- `function noteWidth(width: number): number`  L117-119
+- `function wrapText(text: string, columns: number): string[]`  L126-140
+- `function coord(value: number): string`  L151-155
+- `function label(value: number): string`  L158-163
+- `function trimZeros(text: string): string`  L165-167
+- `function esc(text: string): string`  L170-176
+- `function axisMax(raw: number): number`  L183-191
+- `function round6(value: number): number`  L194-196
+- `interface Frame`  L202-214
+- `function startFrame( opts: { title: string; yLabel: string | undefined; xLabel: string | undefined; note: string | undefined; width: number | undefined; height: number | undefined; max: number; legen…`  L216-290
+- `function finishFrame(frame: Frame): string`  L292-295
+- `function peak(series: readonly Series[]): number`  L298-306
+- `function legendOf(series: readonly Series[]): { name: string; color: string }[]`  L308-310
+- `function categoryLabel(frame: Frame, x: number, text: string): string`  L313-315
+- `function barChart(spec: ChartSpec): string`  L322-324
+- `function groupedBarChart(spec: ChartSpec): string`  L327-329
+- `function bars(spec: ChartSpec, series: readonly Series[]): string`  L331-383
+- `function categoryOffsets(categories: readonly string[]): number[]`  L398-415
+- `function lineChart(spec: ChartSpec): string`  L427-492
+- `function boxChart(spec: BoxSpec): string`  L499-549
+- `function mermaidXy(spec: ChartSpec, kind: "line" | "bar" = "line"): string`  L572-611
+- `function quoteCategory(text: string): string`  L614-616
+- `function toPng(svg: string): Buffer`  L629-633
+- `interface ResvgModule`  L635-639
+- `let resvgModule: ResvgModule | undefined`  L641-641
+- `function loadResvg(): ResvgModule`  L649-659
+- `function writeChart(dir: string, name: string, svg: string): { svg: string; png: string }`  L662-669
 
-**Calls:** `axisMax` → [`bench/src/charts.ts#axisMax`](charts.ts.md) (high), `bars` → [`bench/src/charts.ts#bars`](charts.ts.md) (high), `categoryLabel` → [`bench/src/charts.ts#categoryLabel`](charts.ts.md) (high), `coord` → [`bench/src/charts.ts#coord`](charts.ts.md) (high), `esc` → [`bench/src/charts.ts#esc`](charts.ts.md) (high), `finishFrame` → [`bench/src/charts.ts#finishFrame`](charts.ts.md) (high), `label` → [`bench/src/charts.ts#label`](charts.ts.md) (high), `legendOf` → [`bench/src/charts.ts#legendOf`](charts.ts.md) (high), `loadResvg` → [`bench/src/charts.ts#loadResvg`](charts.ts.md) (high), `noteWidth` → [`bench/src/charts.ts#noteWidth`](charts.ts.md) (high), `peak` → [`bench/src/charts.ts#peak`](charts.ts.md) (high), `quoteCategory` → [`bench/src/charts.ts#quoteCategory`](charts.ts.md) (high), `round6` → [`bench/src/charts.ts#round6`](charts.ts.md) (high), `startFrame` → [`bench/src/charts.ts#startFrame`](charts.ts.md) (high), `toPng` → [`bench/src/charts.ts#toPng`](charts.ts.md) (high), `trimZeros` → [`bench/src/charts.ts#trimZeros`](charts.ts.md) (high), `wrapText` → [`bench/src/charts.ts#wrapText`](charts.ts.md) (high)
+**Calls:** `axisMax` → [`bench/src/charts.ts#axisMax`](charts.ts.md) (high), `bars` → [`bench/src/charts.ts#bars`](charts.ts.md) (high), `categoryLabel` → [`bench/src/charts.ts#categoryLabel`](charts.ts.md) (high), `categoryOffsets` → [`bench/src/charts.ts#categoryOffsets`](charts.ts.md) (high), `coord` → [`bench/src/charts.ts#coord`](charts.ts.md) (high), `esc` → [`bench/src/charts.ts#esc`](charts.ts.md) (high), `finishFrame` → [`bench/src/charts.ts#finishFrame`](charts.ts.md) (high), `label` → [`bench/src/charts.ts#label`](charts.ts.md) (high), `legendOf` → [`bench/src/charts.ts#legendOf`](charts.ts.md) (high), `loadResvg` → [`bench/src/charts.ts#loadResvg`](charts.ts.md) (high), `noteWidth` → [`bench/src/charts.ts#noteWidth`](charts.ts.md) (high), `peak` → [`bench/src/charts.ts#peak`](charts.ts.md) (high), `quoteCategory` → [`bench/src/charts.ts#quoteCategory`](charts.ts.md) (high), `round6` → [`bench/src/charts.ts#round6`](charts.ts.md) (high), `startFrame` → [`bench/src/charts.ts#startFrame`](charts.ts.md) (high), `toPng` → [`bench/src/charts.ts#toPng`](charts.ts.md) (high), `trimZeros` → [`bench/src/charts.ts#trimZeros`](charts.ts.md) (high), `wrapText` → [`bench/src/charts.ts#wrapText`](charts.ts.md) (high)

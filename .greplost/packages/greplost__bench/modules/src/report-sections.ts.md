@@ -15,17 +15,18 @@
 **Blast radius:** 1 file (`greplost impact bench/src/report-sections.ts`)
 
 **Key symbols:**
-- `function singleTool( sections: ReportModel["sections"], structural: Payload | null, replay: Payload | null, perf: Payload | null, agent: Payload | null, mapquality: Payload | null, ): ReportMo…`  L45-110
-- `function unparsableRow(structural: Payload | null): SummaryRow`  L123-147
-- `function derivedUnparsable(structural: Payload | null): number | null`  L157-179
-- `const METRIC_NAMES: Record<string, string> = { S1: "import edge precision / recall vs tsc", S2: "export precision / recall vs tsc", S3: "call edge precision at confidence=high", S4: "import cycle det…`  L182-198
-- `const TARGETS: Record<string, string> = { S1: ">= 0.99 / >= 0.97", S2: ">= 0.99 / >= 0.99", S3: ">= 0.95", S4: "exact set match", F1: "100%", F2: "0% (byte-identical)", P1: "<= 1s / <= 10s", P2: "<= …`  L200-216
-- `function headToHeadFrom( payloads: readonly Payload[], replay: Payload | null, assetsRel: string, ): ReportModel["headToHead"]`  L233-290
-- `function measuredAtAll(row: MetricRow): boolean`  L293-295
-- `function rowOf(id: string, entry: Record<string, unknown>, tools: readonly string[]): MetricRow`  L298-314
-- `function headToHead(payload: Payload | null, replay: Payload | null, assetsRel: string): ReportModel["headToHead"]`  L316-380
-- `function asVerdict(value: unknown): MetricCell["verdict"]`  L382-384
-- `function numbersOf(record: Record<string, unknown>): Record<string, number>`  L386-393
-- `function firstSentence(text: string): string`  L396-399
+- `function singleTool( sections: ReportModel["sections"], structural: Payload | null, replay: Payload | null, perf: Payload | null, agent: Payload | null, mapquality: Payload | null, ): ReportMo…`  L45-115
+- `function f2Denominator(replay: Payload | null): string`  L125-132
+- `function unparsableRow(structural: Payload | null): SummaryRow`  L145-170
+- `function derivedUnparsable(structural: Payload | null): number | null`  L180-202
+- `const METRIC_NAMES: Record<string, string> = { S1: "import edge precision / recall vs tsc", S2: "export precision / recall vs tsc", S3: "call edge precision at confidence=high", S4: "import cycle det…`  L205-221
+- `const TARGETS: Record<string, string> = { S1: ">= 0.99 / >= 0.97", S2: ">= 0.99 / >= 0.99", S3: ">= 0.95", S4: "exact set match", F1: "100%", F2: "0% (byte-identical)", P1: "<= 1s / <= 10s", P2: "<= …`  L223-239
+- `function headToHeadFrom( payloads: readonly Payload[], replay: Payload | null, assetsRel: string, ): ReportModel["headToHead"]`  L256-313
+- `function measuredAtAll(row: MetricRow): boolean`  L316-318
+- `function rowOf(id: string, entry: Record<string, unknown>, tools: readonly string[]): MetricRow`  L321-337
+- `function headToHead(payload: Payload | null, replay: Payload | null, assetsRel: string): ReportModel["headToHead"]`  L339-420
+- `function asVerdict(value: unknown): MetricCell["verdict"]`  L422-424
+- `function numbersOf(record: Record<string, unknown>): Record<string, number>`  L426-433
+- `function firstSentence(text: string): string`  L436-439
 
-**Calls:** `headToHeadCharts` → [`bench/src/report-charts.ts#headToHeadCharts`](report-charts.ts.md) (high), `arr` → [`bench/src/report-payload.ts#arr`](report-payload.ts.md) (high), `competitors` → [`bench/src/report-payload.ts#competitors`](report-payload.ts.md) (high), `firstNum` → [`bench/src/report-payload.ts#firstNum`](report-payload.ts.md) (high), `num` → [`bench/src/report-payload.ts#num`](report-payload.ts.md) (high), `provenanceOf` → [`bench/src/report-payload.ts#provenanceOf`](report-payload.ts.md) (high), `rec` → [`bench/src/report-payload.ts#rec`](report-payload.ts.md) (high), `str` → [`bench/src/report-payload.ts#str`](report-payload.ts.md) (high), `targetOf` → [`bench/src/report-payload.ts#targetOf`](report-payload.ts.md) (high), `asVerdict` → [`bench/src/report-sections.ts#asVerdict`](report-sections.ts.md) (high), `derivedUnparsable` → [`bench/src/report-sections.ts#derivedUnparsable`](report-sections.ts.md) (high), `firstSentence` → [`bench/src/report-sections.ts#firstSentence`](report-sections.ts.md) (high), `headToHead` → [`bench/src/report-sections.ts#headToHead`](report-sections.ts.md) (high), `measuredAtAll` → [`bench/src/report-sections.ts#measuredAtAll`](report-sections.ts.md) (high), `numbersOf` → [`bench/src/report-sections.ts#numbersOf`](report-sections.ts.md) (high), `rowOf` → [`bench/src/report-sections.ts#rowOf`](report-sections.ts.md) (high), `unparsableRow` → [`bench/src/report-sections.ts#unparsableRow`](report-sections.ts.md) (high)
+**Calls:** `headToHeadCharts` → [`bench/src/report-charts.ts#headToHeadCharts`](report-charts.ts.md) (high), `arr` → [`bench/src/report-payload.ts#arr`](report-payload.ts.md) (high), `competitors` → [`bench/src/report-payload.ts#competitors`](report-payload.ts.md) (high), `firstNum` → [`bench/src/report-payload.ts#firstNum`](report-payload.ts.md) (high), `fmt` → [`bench/src/report-payload.ts#fmt`](report-payload.ts.md) (high), `num` → [`bench/src/report-payload.ts#num`](report-payload.ts.md) (high), `provenanceOf` → [`bench/src/report-payload.ts#provenanceOf`](report-payload.ts.md) (high), `rec` → [`bench/src/report-payload.ts#rec`](report-payload.ts.md) (high), `str` → [`bench/src/report-payload.ts#str`](report-payload.ts.md) (high), `targetOf` → [`bench/src/report-payload.ts#targetOf`](report-payload.ts.md) (high), `asVerdict` → [`bench/src/report-sections.ts#asVerdict`](report-sections.ts.md) (high), `derivedUnparsable` → [`bench/src/report-sections.ts#derivedUnparsable`](report-sections.ts.md) (high), `f2Denominator` → [`bench/src/report-sections.ts#f2Denominator`](report-sections.ts.md) (high), `firstSentence` → [`bench/src/report-sections.ts#firstSentence`](report-sections.ts.md) (high), `headToHead` → [`bench/src/report-sections.ts#headToHead`](report-sections.ts.md) (high), `measuredAtAll` → [`bench/src/report-sections.ts#measuredAtAll`](report-sections.ts.md) (high), `numbersOf` → [`bench/src/report-sections.ts#numbersOf`](report-sections.ts.md) (high), `rowOf` → [`bench/src/report-sections.ts#rowOf`](report-sections.ts.md) (high), `unparsableRow` → [`bench/src/report-sections.ts#unparsableRow`](report-sections.ts.md) (high)

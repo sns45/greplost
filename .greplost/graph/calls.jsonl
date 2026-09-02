@@ -130,6 +130,7 @@
 {"confidence":"high","from":"bench/src/charts.ts#label","kind":"call","to":"bench/src/charts.ts#trimZeros"}
 {"confidence":"high","from":"bench/src/charts.ts#lineChart","kind":"call","to":"bench/src/charts.ts#axisMax"}
 {"confidence":"high","from":"bench/src/charts.ts#lineChart","kind":"call","to":"bench/src/charts.ts#categoryLabel"}
+{"confidence":"high","from":"bench/src/charts.ts#lineChart","kind":"call","to":"bench/src/charts.ts#categoryOffsets"}
 {"confidence":"high","from":"bench/src/charts.ts#lineChart","kind":"call","to":"bench/src/charts.ts#coord"}
 {"confidence":"high","from":"bench/src/charts.ts#lineChart","kind":"call","to":"bench/src/charts.ts#finishFrame"}
 {"confidence":"high","from":"bench/src/charts.ts#lineChart","kind":"call","to":"bench/src/charts.ts#legendOf"}
@@ -186,7 +187,7 @@
 {"confidence":"high","from":"bench/src/headtohead.ts#cellText","kind":"call","to":"bench/src/headtohead.ts#round"}
 {"confidence":"high","from":"bench/src/headtohead.ts#countFiles","kind":"call","to":"bench/src/headtohead.ts#countFiles"}
 {"confidence":"high","from":"bench/src/headtohead.ts#coverageVersusDecay","kind":"call","to":"bench/src/headtohead.ts#round"}
-{"confidence":"high","from":"bench/src/headtohead.ts#decayReason","kind":"call","to":"bench/src/headtohead.ts#signed"}
+{"confidence":"high","from":"bench/src/headtohead.ts#decayReason","kind":"call","to":"bench/src/headtohead.ts#movement"}
 {"confidence":"high","from":"bench/src/headtohead.ts#describeDifference","kind":"call","to":"bench/src/headtohead.ts#differingJsonKeys"}
 {"confidence":"high","from":"bench/src/headtohead.ts#describeDifference","kind":"call","to":"bench/src/headtohead.ts#hasDifferingTimestamp"}
 {"confidence":"high","from":"bench/src/headtohead.ts#describeFreshness","kind":"call","to":"bench/src/headtohead.ts#round"}
@@ -209,8 +210,10 @@
 {"confidence":"high","from":"bench/src/headtohead.ts#execute","kind":"call","to":"bench/src/headtohead.ts#metricX7X8"}
 {"confidence":"high","from":"bench/src/headtohead.ts#execute","kind":"call","to":"bench/src/headtohead.ts#metricX9"}
 {"confidence":"high","from":"bench/src/headtohead.ts#execute","kind":"call","to":"bench/src/headtohead.ts#na"}
+{"confidence":"high","from":"bench/src/headtohead.ts#execute","kind":"call","to":"bench/src/headtohead.ts#needsCorpus"}
 {"confidence":"high","from":"bench/src/headtohead.ts#execute","kind":"call","to":"bench/src/headtohead.ts#prepareCopy"}
 {"confidence":"high","from":"bench/src/headtohead.ts#execute","kind":"call","to":"bench/src/headtohead.ts#printTable"}
+{"confidence":"high","from":"bench/src/headtohead.ts#execute","kind":"call","to":"bench/src/headtohead.ts#resultSuite"}
 {"confidence":"high","from":"bench/src/headtohead.ts#execute","kind":"call","to":"bench/src/headtohead.ts#runInvocation"}
 {"confidence":"high","from":"bench/src/headtohead.ts#execute","kind":"call","to":"bench/src/headtohead.ts#scaleTitles"}
 {"confidence":"high","from":"bench/src/headtohead.ts#execute","kind":"call","to":"bench/src/headtohead.ts#tally"}
@@ -243,6 +246,7 @@
 {"confidence":"high","from":"bench/src/headtohead.ts#fromWalk","kind":"call","to":"bench/src/headtohead.ts#signed"}
 {"confidence":"high","from":"bench/src/headtohead.ts#fromWalk","kind":"call","to":"bench/src/headtohead.ts#verdictFor"}
 {"confidence":"high","from":"bench/src/headtohead.ts#fromWalk","kind":"call","to":"bench/src/headtohead.ts#x3GreplostVerdict"}
+{"confidence":"high","from":"bench/src/headtohead.ts#guarded","kind":"call","to":"bench/src/headtohead.ts#execute"}
 {"confidence":"high","from":"bench/src/headtohead.ts#initGit","kind":"call","to":"bench/src/headtohead.ts#runTool"}
 {"confidence":"high","from":"bench/src/headtohead.ts#lineDelta","kind":"call","to":"bench/src/headtohead.ts#diffLineCount"}
 {"confidence":"high","from":"bench/src/headtohead.ts#lossReason","kind":"call","to":"bench/src/headtohead.ts#round"}
@@ -257,6 +261,7 @@
 {"confidence":"high","from":"bench/src/headtohead.ts#metricX1","kind":"call","to":"bench/src/structural.ts#scoredFiles"}
 {"confidence":"high","from":"bench/src/headtohead.ts#metricX10","kind":"call","to":"bench/src/headtohead.ts#measured"}
 {"confidence":"high","from":"bench/src/headtohead.ts#metricX10","kind":"call","to":"bench/src/headtohead.ts#na"}
+{"confidence":"high","from":"bench/src/headtohead.ts#metricX10","kind":"call","to":"bench/src/headtohead.ts#probeCrossRepoImpact"}
 {"confidence":"high","from":"bench/src/headtohead.ts#metricX2X3","kind":"call","to":"bench/src/headtohead.ts#fromReplayResult"}
 {"confidence":"high","from":"bench/src/headtohead.ts#metricX2X3","kind":"call","to":"bench/src/headtohead.ts#fromWalk"}
 {"confidence":"high","from":"bench/src/headtohead.ts#metricX2X3","kind":"call","to":"bench/src/headtohead.ts#replayStaleness"}
@@ -303,6 +308,7 @@
 {"confidence":"high","from":"bench/src/headtohead.ts#metricX7X8","kind":"call","to":"bench/src/headtohead.ts#verdictFor"}
 {"confidence":"high","from":"bench/src/headtohead.ts#metricX9","kind":"call","to":"bench/src/headtohead.ts#na"}
 {"confidence":"high","from":"bench/src/headtohead.ts#metricX9","kind":"call","to":"bench/src/headtohead.ts#safeLatest"}
+{"confidence":"high","from":"bench/src/headtohead.ts#movement","kind":"call","to":"bench/src/headtohead.ts#round"}
 {"confidence":"high","from":"bench/src/headtohead.ts#numberAt","kind":"call","to":"bench/src/headtohead.ts#asRecord"}
 {"confidence":"high","from":"bench/src/headtohead.ts#observation","kind":"call","to":"bench/src/headtohead.ts#lineCount"}
 {"confidence":"high","from":"bench/src/headtohead.ts#observation","kind":"call","to":"bench/src/headtohead.ts#readHookLog"}
@@ -315,6 +321,7 @@
 {"confidence":"high","from":"bench/src/headtohead.ts#prepareCopy","kind":"call","to":"bench/src/headtohead.ts#initGit"}
 {"confidence":"high","from":"bench/src/headtohead.ts#printPlan","kind":"call","to":"bench/src/headtohead.ts#findBinary"}
 {"confidence":"high","from":"bench/src/headtohead.ts#printTable","kind":"call","to":"bench/src/headtohead.ts#cellText"}
+{"confidence":"high","from":"bench/src/headtohead.ts#probeCrossRepoImpact","kind":"call","to":"bench/src/headtohead.ts#prepareCopy"}
 {"confidence":"high","from":"bench/src/headtohead.ts#readStructureArtifacts","kind":"call","to":"bench/src/headtohead.ts#walkFiles"}
 {"confidence":"high","from":"bench/src/headtohead.ts#replayRate","kind":"call","to":"bench/src/headtohead.ts#numberAt"}
 {"confidence":"high","from":"bench/src/headtohead.ts#replayStaleness","kind":"call","to":"bench/src/headtohead.ts#appendLine"}
@@ -337,7 +344,8 @@
 {"confidence":"high","from":"bench/src/headtohead.ts#replayStaleness","kind":"call","to":"bench/src/score.ts#scoreEdges"}
 {"confidence":"high","from":"bench/src/headtohead.ts#replayStaleness","kind":"call","to":"bench/src/structural.ts#scoredFiles"}
 {"confidence":"high","from":"bench/src/headtohead.ts#replayStaleness","kind":"call","to":"bench/src/truth/ts.ts#generateTsTruth"}
-{"confidence":"high","from":"bench/src/headtohead.ts#run","kind":"call","to":"bench/src/headtohead.ts#execute"}
+{"confidence":"high","from":"bench/src/headtohead.ts#run","kind":"call","to":"bench/src/headtohead.ts#guarded"}
+{"confidence":"high","from":"bench/src/headtohead.ts#run","kind":"call","to":"bench/src/headtohead.ts#needsCorpus"}
 {"confidence":"high","from":"bench/src/headtohead.ts#run","kind":"call","to":"bench/src/headtohead.ts#parseArgs"}
 {"confidence":"high","from":"bench/src/headtohead.ts#run","kind":"call","to":"bench/src/headtohead.ts#printPlan"}
 {"confidence":"high","from":"bench/src/headtohead.ts#run","kind":"call","to":"bench/src/headtohead.ts#resolveTarget"}
@@ -368,6 +376,7 @@
 {"confidence":"high","from":"bench/src/mapquality.ts#execute","kind":"call","to":"bench/src/machine.ts#machineProfile"}
 {"confidence":"high","from":"bench/src/mapquality.ts#execute","kind":"call","to":"bench/src/mapquality.ts#collectFences"}
 {"confidence":"high","from":"bench/src/mapquality.ts#execute","kind":"call","to":"bench/src/mapquality.ts#countTokens"}
+{"confidence":"high","from":"bench/src/mapquality.ts#execute","kind":"call","to":"bench/src/mapquality.ts#indexedFileCount"}
 {"confidence":"high","from":"bench/src/mapquality.ts#execute","kind":"call","to":"bench/src/mapquality.ts#printTable"}
 {"confidence":"high","from":"bench/src/mapquality.ts#execute","kind":"call","to":"bench/src/mapquality.ts#readMaxNodes"}
 {"confidence":"high","from":"bench/src/mapquality.ts#execute","kind":"call","to":"bench/src/mapquality.ts#reportFailure"}
@@ -379,6 +388,7 @@
 {"confidence":"high","from":"bench/src/mapquality.ts#execute","kind":"call","to":"packages/core/src/schema.ts#stableStringify"}
 {"confidence":"high","from":"bench/src/mapquality.ts#resolveTarget","kind":"call","to":"bench/src/corpus.ts#loadCorpus"}
 {"confidence":"high","from":"bench/src/mapquality.ts#resolveTarget","kind":"call","to":"bench/src/corpus.ts#repoDir"}
+{"confidence":"high","from":"bench/src/mapquality.ts#resolveTarget","kind":"call","to":"bench/src/mapquality.ts#ownRepoName"}
 {"confidence":"high","from":"bench/src/mapquality.ts#run","kind":"call","to":"bench/src/mapquality.ts#execute"}
 {"confidence":"high","from":"bench/src/mapquality.ts#run","kind":"call","to":"bench/src/mapquality.ts#parseArgs"}
 {"confidence":"high","from":"bench/src/mapquality.ts#run","kind":"call","to":"bench/src/mapquality.ts#reportFailure"}
@@ -541,6 +551,7 @@
 {"confidence":"high","from":"bench/src/report-evals.ts#mapqualitySection","kind":"call","to":"bench/src/report-payload.ts#firstStr"}
 {"confidence":"high","from":"bench/src/report-evals.ts#mapqualitySection","kind":"call","to":"bench/src/report-payload.ts#fmt"}
 {"confidence":"high","from":"bench/src/report-evals.ts#mapqualitySection","kind":"call","to":"bench/src/report-payload.ts#provenanceOf"}
+{"confidence":"high","from":"bench/src/report-evals.ts#mapqualitySection","kind":"call","to":"bench/src/report-payload.ts#targetOf"}
 {"confidence":"high","from":"bench/src/report-evals.ts#mapqualitySection","kind":"call","to":"bench/src/results-md.ts#emptySection"}
 {"confidence":"high","from":"bench/src/report-evals.ts#pct","kind":"call","to":"bench/src/report-payload.ts#fmt"}
 {"confidence":"high","from":"bench/src/report-evals.ts#runOfScenario","kind":"call","to":"bench/src/report-payload.ts#runFor"}
@@ -585,6 +596,8 @@
 {"confidence":"high","from":"bench/src/report-payload.ts#versionRows","kind":"call","to":"bench/src/report-payload.ts#firstStr"}
 {"confidence":"high","from":"bench/src/report-sections.ts#derivedUnparsable","kind":"call","to":"bench/src/report-payload.ts#num"}
 {"confidence":"high","from":"bench/src/report-sections.ts#derivedUnparsable","kind":"call","to":"bench/src/report-payload.ts#rec"}
+{"confidence":"high","from":"bench/src/report-sections.ts#f2Denominator","kind":"call","to":"bench/src/report-payload.ts#firstNum"}
+{"confidence":"high","from":"bench/src/report-sections.ts#f2Denominator","kind":"call","to":"bench/src/report-payload.ts#fmt"}
 {"confidence":"high","from":"bench/src/report-sections.ts#headToHead","kind":"call","to":"bench/src/report-charts.ts#headToHeadCharts"}
 {"confidence":"high","from":"bench/src/report-sections.ts#headToHead","kind":"call","to":"bench/src/report-payload.ts#arr"}
 {"confidence":"high","from":"bench/src/report-sections.ts#headToHead","kind":"call","to":"bench/src/report-payload.ts#competitors"}
@@ -607,6 +620,7 @@
 {"confidence":"high","from":"bench/src/report-sections.ts#rowOf","kind":"call","to":"bench/src/report-payload.ts#rec"}
 {"confidence":"high","from":"bench/src/report-sections.ts#rowOf","kind":"call","to":"bench/src/report-payload.ts#str"}
 {"confidence":"high","from":"bench/src/report-sections.ts#rowOf","kind":"call","to":"bench/src/report-sections.ts#asVerdict"}
+{"confidence":"high","from":"bench/src/report-sections.ts#singleTool","kind":"call","to":"bench/src/report-sections.ts#f2Denominator"}
 {"confidence":"high","from":"bench/src/report-sections.ts#singleTool","kind":"call","to":"bench/src/report-sections.ts#unparsableRow"}
 {"confidence":"high","from":"bench/src/report-sections.ts#unparsableRow","kind":"call","to":"bench/src/report-payload.ts#firstNum"}
 {"confidence":"high","from":"bench/src/report-sections.ts#unparsableRow","kind":"call","to":"bench/src/report-sections.ts#derivedUnparsable"}
@@ -623,17 +637,19 @@
 {"confidence":"high","from":"bench/src/report.ts#buildModel","kind":"call","to":"bench/src/report-sections.ts#headToHeadFrom"}
 {"confidence":"high","from":"bench/src/report.ts#buildModel","kind":"call","to":"bench/src/report-sections.ts#singleTool"}
 {"confidence":"high","from":"bench/src/report.ts#buildModel","kind":"call","to":"bench/src/results-io.ts#latestResult"}
-{"confidence":"high","from":"bench/src/report.ts#buildModel","kind":"call","to":"bench/src/results-io.ts#resultsDir"}
-{"confidence":"high","from":"bench/src/report.ts#buildModel","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
+{"confidence":"high","from":"bench/src/report.ts#buildModel","kind":"call","to":"bench/src/results-io.ts#orderedResults"}
 {"confidence":"high","from":"bench/src/report.ts#rasterise","kind":"call","to":"bench/src/charts.ts#writeChart"}
 {"confidence":"high","from":"bench/src/report.ts#rasterise","kind":"call","to":"bench/src/report.ts#allCharts"}
 {"confidence":"high","from":"bench/src/report.ts#run","kind":"call","to":"bench/src/report.ts#buildModel"}
 {"confidence":"high","from":"bench/src/report.ts#run","kind":"call","to":"bench/src/report.ts#parseArgs"}
 {"confidence":"high","from":"bench/src/report.ts#run","kind":"call","to":"bench/src/report.ts#rasterise"}
 {"confidence":"high","from":"bench/src/report.ts#run","kind":"call","to":"bench/src/results-md.ts#renderResultsMd"}
-{"confidence":"high","from":"bench/src/results-io.ts#latestResult","kind":"call","to":"bench/src/results-io.ts#escapeRegExp"}
-{"confidence":"high","from":"bench/src/results-io.ts#latestResult","kind":"call","to":"bench/src/results-io.ts#resultsDir"}
+{"confidence":"high","from":"bench/src/results-io.ts#latestResult","kind":"call","to":"bench/src/results-io.ts#orderedResults"}
+{"confidence":"high","from":"bench/src/results-io.ts#orderedResults","kind":"call","to":"bench/src/results-io.ts#escapeRegExp"}
+{"confidence":"high","from":"bench/src/results-io.ts#orderedResults","kind":"call","to":"bench/src/results-io.ts#resultsDir"}
+{"confidence":"high","from":"bench/src/results-io.ts#orderedResults","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
 {"confidence":"high","from":"bench/src/results-io.ts#writeResult","kind":"call","to":"bench/src/results-io.ts#gitSha7"}
+{"confidence":"high","from":"bench/src/results-io.ts#writeResult","kind":"call","to":"bench/src/results-io.ts#nowIso"}
 {"confidence":"high","from":"bench/src/results-io.ts#writeResult","kind":"call","to":"bench/src/results-io.ts#resultsDir"}
 {"confidence":"high","from":"bench/src/results-io.ts#writeResult","kind":"call","to":"bench/src/results-io.ts#todayIso"}
 {"confidence":"high","from":"bench/src/results-io.ts#writeResult","kind":"call","to":"packages/core/src/schema.ts#stableStringify"}
@@ -683,12 +699,15 @@
 {"confidence":"high","from":"bench/src/screenshots.ts#runTape","kind":"call","to":"bench/src/screenshots.ts#lastLine"}
 {"confidence":"high","from":"bench/src/screenshots.ts#runTape","kind":"call","to":"bench/src/screenshots.ts#runCommand"}
 {"confidence":"high","from":"bench/src/structural.ts#execute","kind":"call","to":"bench/src/results-io.ts#writeResult"}
+{"confidence":"high","from":"bench/src/structural.ts#execute","kind":"call","to":"bench/src/structural.ts#isFixtureRun"}
 {"confidence":"high","from":"bench/src/structural.ts#execute","kind":"call","to":"bench/src/structural.ts#loadMachine"}
 {"confidence":"high","from":"bench/src/structural.ts#execute","kind":"call","to":"bench/src/structural.ts#printMisses"}
 {"confidence":"high","from":"bench/src/structural.ts#execute","kind":"call","to":"bench/src/structural.ts#printTable"}
 {"confidence":"high","from":"bench/src/structural.ts#execute","kind":"call","to":"bench/src/structural.ts#resolveTargets"}
+{"confidence":"high","from":"bench/src/structural.ts#execute","kind":"call","to":"bench/src/structural.ts#resultSuite"}
 {"confidence":"high","from":"bench/src/structural.ts#execute","kind":"call","to":"bench/src/structural.ts#scoreTarget"}
 {"confidence":"high","from":"bench/src/structural.ts#execute","kind":"call","to":"bench/src/structural.ts#serializeScores"}
+{"confidence":"high","from":"bench/src/structural.ts#execute","kind":"call","to":"bench/src/structural.ts#unparsableBucket"}
 {"confidence":"high","from":"bench/src/structural.ts#locate","kind":"call","to":"bench/src/structural.ts#fileOf"}
 {"confidence":"high","from":"bench/src/structural.ts#locateAll","kind":"call","to":"bench/src/structural.ts#locate"}
 {"confidence":"high","from":"bench/src/structural.ts#printTable","kind":"call","to":"bench/src/structural.ts#counts"}
@@ -708,11 +727,13 @@
 {"confidence":"high","from":"bench/src/structural.ts#scoreAgainstTruth","kind":"call","to":"bench/src/structural.ts#scoredFiles"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreAgainstTruth","kind":"call","to":"packages/core/src/schema.ts#isFileId"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreTarget","kind":"call","to":"bench/src/structural.ts#buildOptionsFor"}
+{"confidence":"high","from":"bench/src/structural.ts#scoreTarget","kind":"call","to":"bench/src/structural.ts#findUnparsable"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreTarget","kind":"call","to":"bench/src/structural.ts#loadBuildSnapshot"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreTarget","kind":"call","to":"bench/src/structural.ts#loadGoTruth"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreTarget","kind":"call","to":"bench/src/structural.ts#scoreAgainstTruth"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreTarget","kind":"call","to":"bench/src/structural.ts#scoredFiles"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreTarget","kind":"call","to":"bench/src/truth/ts.ts#generateTsTruth"}
+{"confidence":"high","from":"bench/src/structural.ts#unparsableBucket","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
 {"confidence":"high","from":"bench/src/tasks.ts#blastCandidates","kind":"call","to":"bench/src/tasks.ts#reverseClosure"}
 {"confidence":"high","from":"bench/src/tasks.ts#blastCandidates","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
 {"confidence":"high","from":"bench/src/tasks.ts#callerCandidates","kind":"call","to":"bench/src/tasks.ts#fileOf"}
@@ -1280,6 +1301,10 @@
 {"confidence":"high","from":"packages/core/src/serialize/read.ts#readStructure","kind":"call","to":"packages/core/src/serialize/read.ts#isManifest"}
 {"confidence":"high","from":"packages/core/src/serialize/write.ts#serializeSnapshot","kind":"call","to":"packages/core/src/serialize/json.ts#toJson"}
 {"confidence":"high","from":"packages/core/src/serialize/write.ts#serializeSnapshot","kind":"call","to":"packages/core/src/serialize/json.ts#toJsonl"}
+{"confidence":"high","from":"packages/core/src/unparsable.ts#findUnparsableFiles","kind":"call","to":"packages/core/src/parser.ts#createParser"}
+{"confidence":"high","from":"packages/core/src/unparsable.ts#findUnparsableFiles","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
+{"confidence":"high","from":"packages/core/src/unparsable.ts#findUnparsableFiles","kind":"call","to":"packages/core/src/unparsable.ts#brokenRoot"}
+{"confidence":"high","from":"packages/core/src/unparsable.ts#findUnparsableFiles","kind":"call","to":"packages/core/src/unparsable.ts#langOf"}
 {"confidence":"high","from":"packages/render/src/ascii.ts#renderChildren","kind":"call","to":"packages/render/src/ascii.ts#renderChildren"}
 {"confidence":"high","from":"packages/render/src/ascii.ts#renderChildren","kind":"call","to":"packages/render/src/ascii.ts#sortedEntries"}
 {"confidence":"high","from":"packages/render/src/ascii.ts#renderTree","kind":"call","to":"packages/render/src/ascii.ts#renderChildren"}

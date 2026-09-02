@@ -137,6 +137,7 @@
 - re-exports * from `./discover.ts`
 - re-exports * from `./hash.ts`
 - re-exports * from `./parser.ts`
+- re-exports * from `./unparsable.ts`
 - re-exports * from `./extract/index.ts`
 - re-exports * from `./resolve/index.ts`
 - re-exports * from `./graph/index.ts`
@@ -252,3 +253,9 @@
 ## packages/core/src/serialize/write.ts
 
 - `function serializeSnapshot(snapshot: Snapshot): Map<string, string>` L15-22
+
+## packages/core/src/unparsable.ts
+
+- `interface UnparsableFile` L28-39
+- `async function findUnparsableFiles( root: string, files: readonly string[], opts?: { parser?: ParserHandle; grammarDir?: string }, ): Promise<UnparsableFile[]>` L61-87
+- `function brokenRoot(source: string, lang: Lang, parser: ParserHandle): UnparsableFile["reason"] | null` L97-111

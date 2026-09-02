@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/bench` ([map](../../MAP.md))
 
-**Exports:** `RESULTS_DIR (const)`, `gitSha7(cwd: string = REPO_ROOT): string`, `latestResult( suite: string, dir?: string, ): { file: string; payload: Record<string, unknown> } | undefined`, `resultsDir(dir?: string): string`, `todayIso(): string`, `writeResult(suite: string, payload: object, dir?: string): string`
+**Exports:** `RESULTS_DIR (const)`, `gitSha7(cwd: string = REPO_ROOT): string`, `latestResult( suite: string, dir?: string, ): { file: string; payload: Record<string, unknown> } | undefined`, `nowIso(): string`, `orderedResults( suite: string, dir?: string, ): { file: string; name: string; payload: Record<string, unknown> }[]`, `resultsDir(dir?: string): string`, `todayIso(): string`, `writeResult(suite: string, payload: object, dir?: string): string`
 
 **Imports:** `node:child_process` (execFileSync), `node:fs` (existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (compareStrings, stableStringify)
 
@@ -15,13 +15,15 @@
 **Blast radius:** 7 files (`greplost impact bench/src/results-io.ts`)
 
 **Key symbols:**
-- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L24-24
-- `const RESULTS_DIR = "bench/results"`  L27-27
-- `function resultsDir(dir?: string): string`  L33-37
-- `function todayIso(): string`  L40-42
-- `function gitSha7(cwd: string = REPO_ROOT): string`  L45-56
-- `function writeResult(suite: string, payload: object, dir?: string): string`  L64-75
-- `function latestResult( suite: string, dir?: string, ): { file: string; payload: Record<string, unknown> } | undefined`  L78-92
-- `function escapeRegExp(value: string): string`  L94-96
+- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L34-34
+- `const RESULTS_DIR = "bench/results"`  L37-37
+- `function resultsDir(dir?: string): string`  L43-47
+- `function todayIso(): string`  L50-52
+- `function gitSha7(cwd: string = REPO_ROOT): string`  L55-66
+- `function nowIso(): string`  L69-71
+- `function writeResult(suite: string, payload: object, dir?: string): string`  L80-92
+- `function orderedResults( suite: string, dir?: string, ): { file: string; name: string; payload: Record<string, unknown> }[]`  L101-127
+- `function latestResult( suite: string, dir?: string, ): { file: string; payload: Record<string, unknown> } | undefined`  L130-137
+- `function escapeRegExp(value: string): string`  L139-141
 
-**Calls:** `escapeRegExp` → [`bench/src/results-io.ts#escapeRegExp`](results-io.ts.md) (high), `gitSha7` → [`bench/src/results-io.ts#gitSha7`](results-io.ts.md) (high), `resultsDir` → [`bench/src/results-io.ts#resultsDir`](results-io.ts.md) (high), `todayIso` → [`bench/src/results-io.ts#todayIso`](results-io.ts.md) (high), `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high)
+**Calls:** `escapeRegExp` → [`bench/src/results-io.ts#escapeRegExp`](results-io.ts.md) (high), `gitSha7` → [`bench/src/results-io.ts#gitSha7`](results-io.ts.md) (high), `nowIso` → [`bench/src/results-io.ts#nowIso`](results-io.ts.md) (high), `orderedResults` → [`bench/src/results-io.ts#orderedResults`](results-io.ts.md) (high), `resultsDir` → [`bench/src/results-io.ts#resultsDir`](results-io.ts.md) (high), `todayIso` → [`bench/src/results-io.ts#todayIso`](results-io.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high), `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high)

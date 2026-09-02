@@ -63,6 +63,7 @@
 {"confidence":"high","from":"bench/src/mapquality.ts","importKind":"static","kind":"import","specifier":"./mermaid-check.ts","symbols":["Checker","checkMermaid"],"to":"bench/src/mermaid-check.ts"}
 {"confidence":"high","from":"bench/src/mapquality.ts","importKind":"static","kind":"import","specifier":"./results-io.ts","symbols":["gitSha7","todayIso","writeResult"],"to":"bench/src/results-io.ts"}
 {"confidence":"high","from":"bench/src/mapquality.ts","importKind":"static","kind":"import","specifier":"js-tiktoken","symbols":["Tiktoken","getEncoding"],"to":"ext:js-tiktoken"}
+{"confidence":"high","from":"bench/src/mapquality.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["execFileSync"],"to":"ext:node:child_process"}
 {"confidence":"high","from":"bench/src/mapquality.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","readFileSync","readdirSync","statSync"],"to":"ext:node:fs"}
 {"confidence":"high","from":"bench/src/mapquality.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
 {"confidence":"high","from":"bench/src/mapquality.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareStrings","stableStringify"],"to":"packages/core/src/schema.ts"}
@@ -96,7 +97,7 @@
 {"confidence":"high","from":"bench/src/report-charts.ts","importKind":"static","kind":"import","specifier":"./report-payload.ts","symbols":["Payload","firstNum","num","replayF1"],"to":"bench/src/report-payload.ts"}
 {"confidence":"high","from":"bench/src/report-charts.ts","importKind":"type","kind":"import","specifier":"./results-md.ts","symbols":["ChartRef","MetricRow","RunTarget"],"to":"bench/src/results-md.ts"}
 {"confidence":"high","from":"bench/src/report-evals.ts","importKind":"static","kind":"import","specifier":"./charts.ts","symbols":["BoxDatum","ChartSpec","boxChart","groupedBarChart","lineChart","mermaidXy"],"to":"bench/src/charts.ts"}
-{"confidence":"high","from":"bench/src/report-evals.ts","importKind":"static","kind":"import","specifier":"./report-payload.ts","symbols":["ConditionStats","Payload","agentCategories","arr","firstNum","firstStr","fmt","num","provenanceOf","rec","replayF1","replayF2","runFor","scenariosOf","str"],"to":"bench/src/report-payload.ts"}
+{"confidence":"high","from":"bench/src/report-evals.ts","importKind":"static","kind":"import","specifier":"./report-payload.ts","symbols":["ConditionStats","Payload","agentCategories","arr","firstNum","firstStr","fmt","num","provenanceOf","rec","replayF1","replayF2","runFor","scenariosOf","str","targetOf"],"to":"bench/src/report-payload.ts"}
 {"confidence":"high","from":"bench/src/report-evals.ts","importKind":"static","kind":"import","specifier":"./results-md.ts","symbols":["EvalRow","EvalSection","RunTarget","emptySection"],"to":"bench/src/results-md.ts"}
 {"confidence":"high","from":"bench/src/report-payload.ts","importKind":"type","kind":"import","specifier":"./results-md.ts","symbols":["ReportModel","RunTarget"],"to":"bench/src/results-md.ts"}
 {"confidence":"high","from":"bench/src/report-payload.ts","importKind":"static","kind":"import","specifier":"./results-md.ts","symbols":["provenanceLine"],"to":"bench/src/results-md.ts"}
@@ -110,11 +111,10 @@
 {"confidence":"high","from":"bench/src/report.ts","importKind":"static","kind":"import","specifier":"./report-evals.ts","symbols":["bench3Section","eval1Section","eval2Section","eval4Section","eval5Section","mapqualitySection"],"to":"bench/src/report-evals.ts"}
 {"confidence":"high","from":"bench/src/report.ts","importKind":"static","kind":"import","specifier":"./report-payload.ts","symbols":["Payload","assumptions","firstMachine","mergeCorpus","resetAssumptions","versionRows"],"to":"bench/src/report-payload.ts"}
 {"confidence":"high","from":"bench/src/report.ts","importKind":"static","kind":"import","specifier":"./report-sections.ts","symbols":["headToHeadFrom","singleTool"],"to":"bench/src/report-sections.ts"}
-{"confidence":"high","from":"bench/src/report.ts","importKind":"static","kind":"import","specifier":"./results-io.ts","symbols":["latestResult","resultsDir"],"to":"bench/src/results-io.ts"}
+{"confidence":"high","from":"bench/src/report.ts","importKind":"static","kind":"import","specifier":"./results-io.ts","symbols":["latestResult","orderedResults"],"to":"bench/src/results-io.ts"}
 {"confidence":"high","from":"bench/src/report.ts","importKind":"static","kind":"import","specifier":"./results-md.ts","symbols":["ChartRef","EvalRow","EvalSection","METRIC_TITLES","MetricCell","MetricRow","NOT_APPLICABLE","ReportModel","SECTION_HEADERS","SummaryRow","XId","X_IDS","emptySection","renderResultsMd"],"to":"bench/src/results-md.ts"}
-{"confidence":"high","from":"bench/src/report.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","mkdirSync","readFileSync","readdirSync","writeFileSync"],"to":"ext:node:fs"}
+{"confidence":"high","from":"bench/src/report.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["mkdirSync","writeFileSync"],"to":"ext:node:fs"}
 {"confidence":"high","from":"bench/src/report.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
-{"confidence":"high","from":"bench/src/report.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/results-io.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["execFileSync"],"to":"ext:node:child_process"}
 {"confidence":"high","from":"bench/src/results-io.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","mkdirSync","readFileSync","readdirSync","writeFileSync"],"to":"ext:node:fs"}
 {"confidence":"high","from":"bench/src/results-io.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
@@ -362,6 +362,7 @@
 {"confidence":"high","from":"packages/core/src/index.ts","importKind":"static","kind":"reexport","specifier":"./resolve/index.ts","symbols":["*"],"to":"packages/core/src/resolve/index.ts"}
 {"confidence":"high","from":"packages/core/src/index.ts","importKind":"static","kind":"reexport","specifier":"./schema.ts","symbols":["*"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/index.ts","importKind":"static","kind":"reexport","specifier":"./serialize/index.ts","symbols":["*"],"to":"packages/core/src/serialize/index.ts"}
+{"confidence":"high","from":"packages/core/src/index.ts","importKind":"static","kind":"reexport","specifier":"./unparsable.ts","symbols":["*"],"to":"packages/core/src/unparsable.ts"}
 {"confidence":"high","from":"packages/core/src/parser.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["join"],"to":"ext:node:path"}
 {"confidence":"high","from":"packages/core/src/parser.ts","importKind":"static","kind":"import","specifier":"node:url","symbols":["fileURLToPath"],"to":"ext:node:url"}
 {"confidence":"high","from":"packages/core/src/parser.ts","importKind":"static","kind":"import","specifier":"web-tree-sitter","symbols":["Language","Parser"],"to":"ext:web-tree-sitter"}
@@ -398,6 +399,11 @@
 {"confidence":"high","from":"packages/core/src/serialize/write.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["ARTIFACT_PATHS","compareDeclarations","compareEdges"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/serialize/write.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["Snapshot"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/serialize/write.ts","importKind":"static","kind":"import","specifier":"./json.ts","symbols":["toJson","toJsonl"],"to":"packages/core/src/serialize/json.ts"}
+{"confidence":"high","from":"packages/core/src/unparsable.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["readFileSync"],"to":"ext:node:fs"}
+{"confidence":"high","from":"packages/core/src/unparsable.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["isAbsolute","join"],"to":"ext:node:path"}
+{"confidence":"high","from":"packages/core/src/unparsable.ts","importKind":"static","kind":"import","specifier":"./parser.ts","symbols":["ParserHandle","createParser"],"to":"packages/core/src/parser.ts"}
+{"confidence":"high","from":"packages/core/src/unparsable.ts","importKind":"static","kind":"import","specifier":"./schema.ts","symbols":["LANG_BY_EXTENSION","compareStrings"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/unparsable.ts","importKind":"type","kind":"import","specifier":"./schema.ts","symbols":["Lang"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/render/src/ascii.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/render/src/docs/api.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["Declaration","ImportRecord","PackageInfo"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/render/src/docs/api.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareStrings"],"to":"packages/core/src/schema.ts"}
