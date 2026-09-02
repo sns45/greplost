@@ -187,36 +187,10 @@ greplost against Graphify, Understand-Anything and code-review-graph (tech spec 
 
 **X2 (hero chart): freshness under each tool's own sync mechanism over a synthetic commit walk, F1 vs commit**
 
-```mermaid
-%%{init: {"theme": "dark", "themeVariables": {"xyChart": {"backgroundColor": "#000000", "titleColor": "#ffffff", "xAxisLabelColor": "#c3c2b7", "yAxisLabelColor": "#c3c2b7", "xAxisTitleColor": "#ffffff", "yAxisTitleColor": "#ffffff", "plotColorPalette": "#0fa976,#e0561c,#2f86ef"}}}}%%
-xychart-beta
-    title "Freshness under each tool's own sync mechanism: F1 vs commit"
-    x-axis "commit index" ["0", "12", "24", "36", "48", "60", "72", "84", "96", "100"]
-    y-axis "F1 vs compiler truth" 0 --> 1
-    line [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    line [0.131, 0.131, 0.129, 0.126, 0.124, 0.127, 0.128, 0.126, 0.126, 0.125]
-    line [0.894, 0.896, 0.898, 0.9, 0.902, 0.904, 0.906, 0.908, 0.9, 0.897]
-    %% series, in order: greplost, graphify, crg
-    %% Arm: documented-sync; corpus hono, tier M (248 files); 100 replayed commits; the walk is synthetic (one added import line per commit). Read the fall of a line, not its height.
-    %% Arm: documented-sync — each tool's sync mechanism was installed exactly as its README describes and then left alone; the harness only commits, except that crg's `visualize --format json` export is run at each scoring checkpoint because nothing else writes the JSON its artifact is read from (it is outside every timing and does not rebuild). This is the arm tech spec 10.0 X2 words. Read the FALL of each line, not its height: the height is that tool's import coverage (X1's subject) and only the fall is staleness. At commit 0 the freshly built artifacts scored greplost 1.000, graphify 0.131, crg 0.894; over the walk their decay (F1 at commit 0 minus F1 at the last commit) was greplost 0.000, graphify +0.005, crg -0.003, a negative decay being ground gained. The distance between the lines is mostly that starting difference, which is coverage and belongs to X1; the staleness X2 measures is the movement. Omitted (not run here): ua. Measured on corpus hono, tier M (248 files); 100 replayed commits. The walk is synthetic: each commit appends exactly one resolvable import line to one file, so truth moves by exactly one edge per commit, and the walk contains no deletions, no renames and no new files.
-```
 
 
 **X2 companion: the same artifacts, never updated**
 
-```mermaid
-%%{init: {"theme": "dark", "themeVariables": {"xyChart": {"backgroundColor": "#000000", "titleColor": "#ffffff", "xAxisLabelColor": "#c3c2b7", "yAxisLabelColor": "#c3c2b7", "xAxisTitleColor": "#ffffff", "yAxisTitleColor": "#ffffff", "plotColorPalette": "#0fa976,#e0561c,#2f86ef"}}}}%%
-xychart-beta
-    title "X2 staleness with no refresh"
-    x-axis "commit index" ["0", "12", "24", "36", "48", "60", "72", "84", "96", "100"]
-    y-axis "F1 vs compiler truth" 0 --> 1
-    line [1, 0.99, 0.979, 0.969, 0.96, 0.95, 0.941, 0.931, 0.922, 0.919]
-    line [0.131, 0.128, 0.126, 0.123, 0.121, 0.119, 0.117, 0.115, 0.113, 0.112]
-    line [0.894, 0.884, 0.874, 0.864, 0.855, 0.845, 0.836, 0.827, 0.818, 0.816]
-    %% series, in order: greplost, graphify, crg
-    %% Arm: no-refresh; corpus hono, tier M (248 files); 100 replayed commits; the walk is synthetic (one added import line per commit). Read the fall of a line, not its height.
-    %% Arm: no-refresh — each tool's commit-0 artifact scored against truth at that commit, which is what a reader gets when a sync mechanism is absent or silently does not fire. greplost is the only one of the four that can report this state mechanically, through `verify`. Omitted (not run here): ua. Measured on corpus hono, tier M (248 files); 100 replayed commits. The walk is synthetic: each commit appends exactly one resolvable import line to one file, so truth moves by exactly one edge per commit, and the walk contains no deletions, no renames and no new files.
-```
 
 
 **Cost to stay fresh against freshness, one dot per tool**
@@ -231,84 +205,21 @@ _Mermaid's `xychart-beta` has no scatter form, so this quadrant has no inline fe
 
 **X1 precision per tool per edge kind**
 
-```mermaid
-%%{init: {"theme": "dark", "themeVariables": {"xyChart": {"backgroundColor": "#000000", "titleColor": "#ffffff", "xAxisLabelColor": "#c3c2b7", "yAxisLabelColor": "#c3c2b7", "xAxisTitleColor": "#ffffff", "yAxisTitleColor": "#ffffff", "plotColorPalette": "#0fa976,#e0561c,#2f86ef"}}}}%%
-xychart-beta
-    title "X1 structural precision vs compiler truth"
-    x-axis ["call edges", "import edges"]
-    y-axis "precision vs compiler truth" 0 --> 1
-    bar [1, 1]
-    bar [0.877, 1]
-    bar [0.361, 1]
-    %% series, in order: greplost, graphify, crg
-    %% omitted (no data, or a gap Mermaid cannot draw): ua
-    %% Precision by edge kind, every confidence; higher is better. Corpus anyq, tier S (148 files).
-    %% A dashed stub is a tool that could not be run; see the reason column. Measured on corpus anyq, tier S (148 files).
-```
 
 
 **X3 cost per tool**
 
-```mermaid
-%%{init: {"theme": "dark", "themeVariables": {"xyChart": {"backgroundColor": "#000000", "titleColor": "#ffffff", "xAxisLabelColor": "#c3c2b7", "yAxisLabelColor": "#c3c2b7", "xAxisTitleColor": "#ffffff", "yAxisTitleColor": "#ffffff", "plotColorPalette": "#0fa976,#e0561c,#2f86ef"}}}}%%
-xychart-beta
-    title "X3 cost to stay fresh"
-    x-axis ["greplost", "graphify", "crg"]
-    y-axis "USD over 100 commits" 0 --> 1
-    bar [0, 0, 0]
-    %% series, in order: USD
-    %% not measured, omitted from the x axis: ua
-    %% USD spent keeping the artifact fresh; lower is better. Corpus hono, tier M (248 files); 100 replayed commits.
-    %% Every tool that ran here ran its no-LLM path, so USD is 0 for all of them; the wall-clock that separates them is in the table and on the freshness quadrant chart. A bar at the baseline is a measured zero; a dashed stub is a tool that could not be run. Measured on corpus hono, tier M (248 files); 100 replayed commits.
-```
 
 
 **X4 bytes that differ between two builds of one commit**
 
-```mermaid
-%%{init: {"theme": "dark", "themeVariables": {"xyChart": {"backgroundColor": "#000000", "titleColor": "#ffffff", "xAxisLabelColor": "#c3c2b7", "yAxisLabelColor": "#c3c2b7", "xAxisTitleColor": "#ffffff", "yAxisTitleColor": "#ffffff", "plotColorPalette": "#0fa976,#e0561c,#2f86ef"}}}}%%
-xychart-beta
-    title "X4 reproducibility: bytes that differ between two builds"
-    x-axis ["crg", "greplost", "graphify"]
-    y-axis "bytes differing between two builds of one commit" 0 --> 7500000
-    bar [5160286, 0, 0]
-    %% series, in order: bytes
-    %% not measured, omitted from the x axis: ua
-    %% Bytes differing between two builds of one commit; lower is better. Corpus anyq, tier S (148 files).
-    %% Two builds of the same tree, each in its own process, compared over that tool's own documented artifact files; viewer and database files are excluded per competitor and each cell's caveat says which. A bar at the baseline is a measured zero — the best result this metric has — and a dashed stub is a tool that could not be run. Measured on corpus anyq, tier S (148 files).
-```
 
 
 **X5 artifact lines changed by a one-line source change**
 
-```mermaid
-%%{init: {"theme": "dark", "themeVariables": {"xyChart": {"backgroundColor": "#000000", "titleColor": "#ffffff", "xAxisLabelColor": "#c3c2b7", "yAxisLabelColor": "#c3c2b7", "xAxisTitleColor": "#ffffff", "yAxisTitleColor": "#ffffff", "plotColorPalette": "#0fa976,#e0561c,#2f86ef"}}}}%%
-xychart-beta
-    title "X5 diff signal after a one-line change"
-    x-axis ["crg", "greplost", "graphify"]
-    y-axis "artifact lines added plus removed" 0 --> 75
-    bar [60, 54, 24]
-    %% series, in order: lines
-    %% not measured, omitted from the x axis: ua
-    %% Artifact lines added plus removed; lower is better. Corpus anyq, tier S (148 files).
-    %% Absolute lines, and the artifacts they are lines of are not the same size: the denominators are in the table (and in each cell's value) and they differ by an order of magnitude, so this chart ranks the size of the diff a reviewer reads, not the share of the artifact it touched. Measured on corpus anyq, tier S (148 files).
-```
 
 
 **X6 cold start to a first usable map**
-
-```mermaid
-%%{init: {"theme": "dark", "themeVariables": {"xyChart": {"backgroundColor": "#000000", "titleColor": "#ffffff", "xAxisLabelColor": "#c3c2b7", "yAxisLabelColor": "#c3c2b7", "xAxisTitleColor": "#ffffff", "yAxisTitleColor": "#ffffff", "plotColorPalette": "#0fa976,#e0561c,#2f86ef"}}}}%%
-xychart-beta
-    title "X6 cold start to a first usable map"
-    x-axis ["graphify", "crg", "greplost"]
-    y-axis "seconds, median of the timed runs" 0 --> 2.5
-    bar [2.159, 1.207, 0.283]
-    %% series, in order: seconds
-    %% not measured, omitted from the x axis: ua
-    %% Seconds, median of the timed runs; lower is better. Corpus anyq, tier S (148 files).
-    %% Timed from a fresh copy of the repo (no cache, no artifact) to the tool's own first usable output, every tool in its own child process so interpreter startup is counted for all of them; the spread is in each cell's detail. Measured on corpus anyq, tier S (148 files).
-```
 <!-- headtohead:end -->
 
 ### Single-tool numbers
