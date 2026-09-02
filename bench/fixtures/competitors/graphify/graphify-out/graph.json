@@ -1,0 +1,542 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {
+    "hyperedges": []
+  },
+  "nodes": [
+    {
+      "id": "packages_core_src_queue_queue",
+      "label": "Queue",
+      "community": 0,
+      "community_name": "Registry & retry",
+      "file_type": "code",
+      "norm_label": "queue",
+      "source_file": "packages/core/src/queue.ts",
+      "source_location": "L11",
+      "type": "interface"
+    },
+    {
+      "id": "packages_core_src_queue_ts",
+      "label": "queue.ts",
+      "community": 0,
+      "community_name": "Registry & retry",
+      "file_type": "code",
+      "norm_label": "queue.ts",
+      "source_file": "packages/core/src/queue.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "packages_core_src_registry_createregistry",
+      "label": "createRegistry()",
+      "community": 0,
+      "community_name": "Registry & retry",
+      "file_type": "code",
+      "norm_label": "createregistry()",
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L28"
+    },
+    {
+      "id": "packages_core_src_registry_registry",
+      "label": "Registry",
+      "community": 0,
+      "community_name": "Registry & retry",
+      "file_type": "code",
+      "norm_label": "registry",
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L5",
+      "type": "class"
+    },
+    {
+      "id": "packages_core_src_registry_registry_publishall",
+      "label": ".publishAll()",
+      "community": 0,
+      "community_name": "Registry & retry",
+      "file_type": "code",
+      "norm_label": ".publishall()",
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L14"
+    },
+    {
+      "id": "packages_core_src_registry_registry_register",
+      "label": ".register()",
+      "community": 0,
+      "community_name": "Registry & retry",
+      "file_type": "code",
+      "norm_label": ".register()",
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L9"
+    },
+    {
+      "id": "packages_core_src_registry_ts",
+      "label": "registry.ts",
+      "community": 0,
+      "community_name": "Registry & retry",
+      "file_type": "code",
+      "norm_label": "registry.ts",
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "packages_core_src_retry_retry",
+      "label": "retry()",
+      "community": 0,
+      "community_name": "Registry & retry",
+      "file_type": "code",
+      "norm_label": "retry()",
+      "source_file": "packages/core/src/retry.ts",
+      "source_location": "L7"
+    },
+    {
+      "id": "packages_core_src_retry_ts",
+      "label": "retry.ts",
+      "community": 0,
+      "community_name": "Registry & retry",
+      "file_type": "code",
+      "norm_label": "retry.ts",
+      "source_file": "packages/core/src/retry.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "packages_core_src_bus_bus",
+      "label": "Bus",
+      "community": 1,
+      "community_name": "Event bus",
+      "file_type": "code",
+      "norm_label": "bus",
+      "source_file": "packages/core/src/bus.ts",
+      "source_location": "L4",
+      "type": "class"
+    },
+    {
+      "id": "packages_core_src_bus_bus_emit",
+      "label": ".emit()",
+      "community": 1,
+      "community_name": "Event bus",
+      "file_type": "code",
+      "norm_label": ".emit()",
+      "source_file": "packages/core/src/bus.ts",
+      "source_location": "L11"
+    },
+    {
+      "id": "packages_core_src_bus_ts",
+      "label": "bus.ts",
+      "community": 1,
+      "community_name": "Event bus",
+      "file_type": "code",
+      "norm_label": "bus.ts",
+      "source_file": "packages/core/src/bus.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "packages_core_src_events_formatevent",
+      "label": "formatEvent()",
+      "community": 1,
+      "community_name": "Event bus",
+      "file_type": "code",
+      "norm_label": "formatevent()",
+      "source_file": "packages/core/src/events.ts",
+      "source_location": "L3"
+    },
+    {
+      "id": "packages_core_src_events_ts",
+      "label": "events.ts",
+      "community": 1,
+      "community_name": "Event bus",
+      "file_type": "code",
+      "norm_label": "events.ts",
+      "source_file": "packages/core/src/events.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_worker_src_config_loadconfig",
+      "label": "loadConfig()",
+      "community": 2,
+      "community_name": "Worker app",
+      "file_type": "code",
+      "norm_label": "loadconfig()",
+      "source_file": "apps/worker/src/config.ts",
+      "source_location": "L6"
+    },
+    {
+      "id": "apps_worker_src_config_ts",
+      "label": "config.ts",
+      "community": 2,
+      "community_name": "Worker app",
+      "file_type": "code",
+      "norm_label": "config.ts",
+      "source_file": "apps/worker/src/config.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_worker_src_main_main",
+      "label": "main()",
+      "community": 2,
+      "community_name": "Worker app",
+      "file_type": "code",
+      "norm_label": "main()",
+      "source_file": "apps/worker/src/main.ts",
+      "source_location": "L5"
+    },
+    {
+      "id": "apps_worker_src_main_ts",
+      "label": "main.ts",
+      "community": 2,
+      "community_name": "Worker app",
+      "file_type": "code",
+      "norm_label": "main.ts",
+      "source_file": "apps/worker/src/main.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "handler",
+      "label": "Handler",
+      "file_type": "code",
+      "norm_label": "handler",
+      "origin_file": "packages/core/src/bus.ts",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "packages_core_src_retry_rationale_6",
+      "label": "NOTE: retry swallows the error until the last attempt",
+      "file_type": "rationale",
+      "norm_label": "note: retry swallows the error until the last attempt",
+      "source_file": "packages/core/src/retry.ts",
+      "source_location": "L6"
+    }
+  ],
+  "links": [
+    {
+      "source": "apps_worker_src_main_main",
+      "target": "apps_worker_src_config_loadconfig",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "call",
+      "source_file": "apps/worker/src/main.ts",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "apps_worker_src_main_main",
+      "target": "packages_core_src_registry_createregistry",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "call",
+      "source_file": "apps/worker/src/main.ts",
+      "source_location": "L7",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_registry_registry_publishall",
+      "target": "packages_core_src_retry_retry",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "call",
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L17",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_registry_registry_register",
+      "target": "packages_core_src_bus_bus_emit",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "call",
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L11",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_bus_ts",
+      "target": "packages_core_src_events_formatevent",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "import",
+      "source_file": "packages/core/src/bus.ts",
+      "source_location": "L1",
+      "target_file": "packages/core/src/events.ts",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_events_ts",
+      "target": "packages_core_src_bus_bus",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "import",
+      "source_file": "packages/core/src/events.ts",
+      "source_location": "L1",
+      "target_file": "packages/core/src/bus.ts",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_registry_ts",
+      "target": "packages_core_src_retry_retry",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "import",
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L2",
+      "target_file": "packages/core/src/retry.ts",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_registry_ts",
+      "target": "packages_core_src_bus_bus",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "import",
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L3",
+      "target_file": "packages/core/src/bus.ts",
+      "weight": 1
+    },
+    {
+      "source": "apps_worker_src_main_ts",
+      "target": "ref_tiny_core",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "import",
+      "source_file": "apps/worker/src/main.ts",
+      "source_location": "L1",
+      "weight": 1
+    },
+    {
+      "source": "apps_worker_src_main_ts",
+      "target": "ref_tiny_adapters",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "import",
+      "source_file": "apps/worker/src/main.ts",
+      "source_location": "L2",
+      "weight": 1
+    },
+    {
+      "source": "apps_worker_src_main_ts",
+      "target": "apps_worker_src_config_ts",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "import",
+      "source_file": "apps/worker/src/main.ts",
+      "source_location": "L3",
+      "target_file": "apps/worker/src/config.ts",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_bus_ts",
+      "target": "packages_core_src_events_ts",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "import",
+      "source_file": "packages/core/src/bus.ts",
+      "source_location": "L1",
+      "target_file": "packages/core/src/events.ts",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_events_ts",
+      "target": "packages_core_src_bus_ts",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "import",
+      "source_file": "packages/core/src/events.ts",
+      "source_location": "L1",
+      "target_file": "packages/core/src/bus.ts",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_registry_ts",
+      "target": "packages_core_src_queue_ts",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "import",
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L1",
+      "target_file": "packages/core/src/queue.ts",
+      "type_only": true,
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_registry_ts",
+      "target": "packages_core_src_retry_ts",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "import",
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L2",
+      "target_file": "packages/core/src/retry.ts",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_registry_ts",
+      "target": "packages_core_src_bus_ts",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "import",
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L3",
+      "target_file": "packages/core/src/bus.ts",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_registry_registry",
+      "target": "handler",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "context": "parameter_type",
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "apps_worker_src_config_ts",
+      "target": "apps_worker_src_config_loadconfig",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "source_file": "apps/worker/src/config.ts",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "apps_worker_src_main_ts",
+      "target": "apps_worker_src_main_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "source_file": "apps/worker/src/main.ts",
+      "source_location": "L5",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_bus_ts",
+      "target": "packages_core_src_bus_bus",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "source_file": "packages/core/src/bus.ts",
+      "source_location": "L4",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_events_ts",
+      "target": "packages_core_src_events_formatevent",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "source_file": "packages/core/src/events.ts",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_queue_ts",
+      "target": "packages_core_src_queue_queue",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "source_file": "packages/core/src/queue.ts",
+      "source_location": "L11",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_registry_ts",
+      "target": "packages_core_src_registry_createregistry",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L28",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_registry_ts",
+      "target": "packages_core_src_registry_registry",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L5",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_retry_ts",
+      "target": "packages_core_src_retry_retry",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "source_file": "packages/core/src/retry.ts",
+      "source_location": "L7",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_bus_bus",
+      "target": "packages_core_src_bus_bus_emit",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "source_file": "packages/core/src/bus.ts",
+      "source_location": "L11",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_registry_registry",
+      "target": "packages_core_src_registry_registry_publishall",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L14",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_registry_registry",
+      "target": "packages_core_src_registry_registry_register",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "source_file": "packages/core/src/registry.ts",
+      "source_location": "L9",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_retry_rationale_6",
+      "target": "packages_core_src_retry_ts",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1,
+      "source_file": "packages/core/src/retry.ts",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "packages_core_src_bus_bus_emit",
+      "target": "packages_core_src_events_formatevent",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "packages/core/src/bus.ts",
+      "source_location": "L12",
+      "weight": 1
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "0000000000000000000000000000000000000000"
+}
