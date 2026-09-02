@@ -73,6 +73,7 @@
 {"confidence":"high","from":"bench/src/agent.ts#fromStream","kind":"call","to":"bench/src/agent.ts#parseStreamOutput"}
 {"confidence":"high","from":"bench/src/agent.ts#fromStream","kind":"call","to":"bench/src/agent.ts#readEnvelope"}
 {"confidence":"high","from":"bench/src/agent.ts#installCompetitor","kind":"call","to":"bench/src/agent.ts#competitorArtifactPaths"}
+{"confidence":"high","from":"bench/src/agent.ts#installCompetitor","kind":"call","to":"bench/src/agent.ts#competitorsDir"}
 {"confidence":"high","from":"bench/src/agent.ts#invokeClaude","kind":"call","to":"bench/src/agent.ts#claudeArgs"}
 {"confidence":"high","from":"bench/src/agent.ts#invokeClaude","kind":"call","to":"bench/src/agent.ts#fromJson"}
 {"confidence":"high","from":"bench/src/agent.ts#invokeClaude","kind":"call","to":"bench/src/agent.ts#fromStream"}

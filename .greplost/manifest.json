@@ -110,9 +110,9 @@
       "fanIn": 0,
       "fanOut": 5,
       "lang": "ts",
-      "loc": 1745,
+      "loc": 1747,
       "pkg": "@greplost/bench",
-      "sha256": "7504bd1bad39e53e3485ffc9ec09372dbc9fcf5d977fdec5dd0d71c429f30387",
+      "sha256": "e481babd5133ba3ff62b499a974fecdea0c0b0b19cd99fa09ef53cfb7ed2f983",
       "staleSummary": false
     },
     "bench/src/charts.ts": {
@@ -2393,7 +2393,7 @@
         "@greplost/sync"
       ],
       "files": 33,
-      "loc": 15754,
+      "loc": 15756,
       "path": "bench",
       "rdeps": []
     },

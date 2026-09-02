@@ -51,10 +51,10 @@ Scope: measured numbers, head-to-head results, README, dogfood, CI parity
   EXPECT: / [1-9]\d* pass\n 0 fail/
   EVIDENCE: 12397 expect() calls | Ran 992 tests across 28 files. [25.97s]
 
-- [ ] R11: CI workflow steps run locally in order
+- [x] R11: CI workflow steps run locally in order
   CHECK: bun install --frozen-lockfile >/dev/null && bun run typecheck >/dev/null && bun test >/dev/null 2>&1 && bun packages/cli/src/main.ts verify --diff >/dev/null && bun run readme:check >/dev/null && bun run bench:structural --tier S --gate | tail -1 && bun run bench:mapquality --gate | tail -1
   EXPECT: mapquality: GATE PASS
-  EVIDENCE: pending
+  EVIDENCE: truth-ts: 148 files, 0 tsconfig errors (semantic diagnostics off: --diagnostics or GREPLOST_BENCH_DIAGNOSTICS=1 to check them) | $ bun bench/src/cli.ts mapquality --gate
 
 - [ ] R12: every loss in the head-to-head table carries a one-line reason (quote the rows)
   EVIDENCE: pending
