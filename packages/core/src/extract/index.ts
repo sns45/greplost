@@ -7,6 +7,7 @@
 
 import type { FileRecord, Lang } from "../schema.ts";
 import type { ParserHandle } from "../parser.ts";
+import { countLoc } from "../hash.ts";
 import { extractTs } from "./ts.ts";
 
 export interface ExtractInput {
@@ -20,17 +21,6 @@ export interface ExtractInput {
 
 export { extractTs } from "./ts.ts";
 
-/**
- * Lines in a file: "\n" count, plus one when the last line has no newline.
- * An empty file has none.
- */
-export function countLines(source: string): number {
-  if (source.length === 0) return 0;
-  let newlines = 0;
-  for (let i = source.indexOf("\n"); i !== -1; i = source.indexOf("\n", i + 1)) newlines += 1;
-  return source.endsWith("\n") ? newlines : newlines + 1;
-}
-
 export function extractFile(input: ExtractInput, parser: ParserHandle): FileRecord {
   const { path, lang, source, sha256 } = input;
   switch (lang) {
@@ -41,7 +31,7 @@ export function extractFile(input: ExtractInput, parser: ParserHandle): FileReco
       const tree = parser.parse(source, lang);
       try {
         const parts = extractTs(path, lang, source, tree);
-        return { path, lang, sha256, loc: countLines(source), ...parts };
+        return { path, lang, sha256, loc: countLoc(source), ...parts };
       } finally {
         // The record copies every string it needs, so the WASM tree can go now
         // instead of waiting for a finalizer: a whole-repo build holds one tree.

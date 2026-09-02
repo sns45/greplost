@@ -1,0 +1,12 @@
+{"confidence":"high","from":"apps/worker/src/main.ts","kind":"call","to":"apps/worker/src/main.ts#main"}
+{"confidence":"high","from":"apps/worker/src/main.ts#main","kind":"call","to":"apps/worker/src/config.ts#loadConfig"}
+{"confidence":"med","from":"apps/worker/src/main.ts#main","kind":"call","to":"packages/adapters/src/memory.ts#MemoryAdapter"}
+{"confidence":"med","from":"apps/worker/src/main.ts#main","kind":"call","to":"packages/adapters/src/sqs.ts#createSqsAdapter"}
+{"confidence":"med","from":"apps/worker/src/main.ts#main","kind":"call","to":"packages/core/src/registry.ts#createRegistry"}
+{"confidence":"med","from":"packages/adapters/src/sqs.ts#SqsAdapter.publish","kind":"call","to":"packages/core/src/retry.ts#retry"}
+{"confidence":"high","from":"packages/adapters/src/sqs.ts#createSqsAdapter","kind":"call","to":"packages/adapters/src/sqs.ts#SqsAdapter"}
+{"confidence":"high","from":"packages/core/src/bus.ts#Bus.emit","kind":"call","to":"packages/core/src/events.ts#formatEvent"}
+{"confidence":"high","from":"packages/core/src/events.ts#createBus","kind":"call","to":"packages/core/src/bus.ts#Bus"}
+{"confidence":"high","from":"packages/core/src/registry.ts#Registry","kind":"call","to":"packages/core/src/bus.ts#Bus"}
+{"confidence":"high","from":"packages/core/src/registry.ts#Registry.publishAll","kind":"call","to":"packages/core/src/retry.ts#retry"}
+{"confidence":"high","from":"packages/core/src/registry.ts#createRegistry","kind":"call","to":"packages/core/src/registry.ts#Registry"}
