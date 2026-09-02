@@ -164,6 +164,28 @@ describe("verify", () => {
     expect(lines.some((line) => line.startsWith("+# "))).toBe(true);
   });
 
+  test("reports every artifact as missing when there is no .greplost at all", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "greplost-verify-unbuilt-"));
+    temporaries.push(dir);
+    const root = path.join(dir, "repo");
+    cpSync(FIXTURE_ROOT, root, { recursive: true });
+
+    const expected = (await buildArtifacts(root, { parser })).files;
+    const result = await verify(root, { parser, diff: true });
+
+    expect(result.ok).toBe(false);
+    expect(result.missing).toEqual([...expected.keys()].sort());
+    expect(result.missing.length).toBe(27);
+    expect(result.changed).toEqual([]);
+    expect(result.extra).toEqual([]);
+
+    const lines = (result.diff as string).split("\n");
+    expect(lines[0]).toBe("--- a/.greplost/INDEX.md");
+    expect(lines[1]).toBe("+++ b/.greplost/INDEX.md");
+    expect(lines[2]).toMatch(/^@@ -0,0 \+1,\d+ @@$/);
+    expect(lines.filter((line) => line.startsWith("-") && !line.startsWith("---"))).toEqual([]);
+  });
+
   test("omits the diff unless it is asked for", async () => {
     const root = await freshRepo("nodiff");
     rmSync(artifact(root, "INDEX.md"));
