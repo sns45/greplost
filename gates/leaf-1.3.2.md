@@ -5,7 +5,7 @@ Scope: incremental update, state, lock, dirty file, parse cache, init, git hooks
 - [x] G1: incremental test file passes
   CHECK: bun test packages/sync/test/incremental.test.ts
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 200 expect() calls | Ran 40 tests across 1 file. [4.55s]
+  EVIDENCE: 220 expect() calls | Ran 42 tests across 1 file. [4.58s]
 
 - [x] G2: lock test file passes
   CHECK: bun test packages/sync/test/lock.test.ts
@@ -25,7 +25,7 @@ Scope: incremental update, state, lock, dirty file, parse cache, init, git hooks
 - [x] G5: clean repo second run reports skipped clean; dirty file consumed and cleared; reparsed/cached counts correct after one edit; describe('dirty')
   CHECK: bun test packages/sync/test/incremental.test.ts -t dirty
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 78 expect() calls | Ran 18 tests across 1 file. [2.64s]
+  EVIDENCE: 97 expect() calls | Ran 20 tests across 1 file. [2.40s]
 
 - [x] G6: parse cache round-trips and prunes entries no longer in the manifest; describe('parse cache')
   CHECK: bun test packages/sync/test/incremental.test.ts -t "parse cache"
@@ -50,7 +50,7 @@ Scope: incremental update, state, lock, dirty file, parse cache, init, git hooks
 - [x] G10: sync package tests green
   CHECK: bun test packages/sync
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 744 expect() calls | Ran 147 tests across 5 files. [6.41s]
+  EVIDENCE: 764 expect() calls | Ran 149 tests across 5 files. [5.37s]
 
 - [x] G11: sync package typechecks
   CHECK: bunx tsc -p packages/sync/tsconfig.json --noEmit
