@@ -643,6 +643,54 @@ describe("results-md", () => {
     expect(p1).toContain("203 ms (p50)");
   });
 
+  test("a fixture-shaped X2 payload renders decay, not the end-point gap", () => {
+    const dir = tempDir("x2-decay-payload");
+    const series = (at0: number, mid: number, last: number, decay: number) => ({
+      value: `decay ${decay >= 0 ? "+" : ""}${decay} (${at0} to ${last})`,
+      target: "greplost F1 >= 0.99 after 24 commits",
+      verdict: "tie",
+      reason: "",
+      detail: { "syncF1@0": at0, "syncF1@12": mid, "syncF1@24": last, freshF1: at0, decay, finalF1: last },
+    });
+    writeFileSync(
+      path.join(dir, "headtohead-2026-09-02-fix1234.json"),
+      JSON.stringify({
+        suite: "headtohead", date: "2026-09-02", greplostSha: "fix1234",
+        tools: ["greplost", "graphify", "ua", "crg"],
+        target: { repo: "tiny-ts", fixture: true, files: 12, commits: 24 },
+        metrics: {
+          X2: {
+            id: "X2",
+            title: "Staleness after 24 replayed commits",
+            target: "greplost F1 >= 0.99 after 24 commits",
+            tools: {
+              greplost: {
+                value: 1, target: "greplost F1 >= 0.99 after 24 commits", verdict: "win",
+                reason: "greplost started the walk at 1.000 import F1 and ended at 1.000, a fall of 0.000",
+                detail: { "syncF1@0": 1, "syncF1@12": 1, "syncF1@24": 1, freshF1: 1, decay: 0, commits: 24 },
+              },
+              graphify: series(0.563, 0.556, 0.571, -0.008),
+              crg: series(0.813, 0.833, 0.842, -0.029),
+            },
+          },
+        },
+      }),
+    );
+    const text = renderResultsMd(buildModel({ resultsDir: dir }));
+    const row = text.split("\n").find((line) => line.startsWith("| X2 "));
+    // The cell states the fall and both absolutes, never the end-point alone.
+    expect(row).toContain("decay -0.008 (0.563 to 0.571)");
+    expect(row).toContain("decay -0.029 (0.813 to 0.842)");
+    // greplost's own cell keeps the spec target, an absolute F1.
+    expect(row).toContain("| 1 |");
+    expect(row).toContain("greplost: greplost started the walk at 1.000");
+    // And the hero chart opens at commit 0 with each tool's fresh artifact.
+    const fence = text.slice(text.indexOf("Freshness under each tool"), text.indexOf("![X2 (hero chart)"));
+    expect(fence).toContain('["0", "12", "24"]');
+    expect(fence).toContain("At commit 0 the freshly built artifacts scored greplost 1.000, graphify 0.563, crg 0.813");
+    expect(fence).toContain("coverage");
+  });
+
   test("regenerating from the committed payloads is byte-identical in a fresh copy", () => {
     const committed = path.join(REPO_ROOT, "bench", "results");
     const fresh = tempDir("fresh-clone-results");

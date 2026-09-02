@@ -5,12 +5,12 @@ Scope: X1 to X10 orchestration, RESULTS.md generation, charts, screenshots (spec
 - [x] G1: report test file passes
   CHECK: bun test bench/test/report.test.ts
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 443 expect() calls | Ran 53 tests across 1 file. [1379.00ms]
+  EVIDENCE: 495 expect() calls | Ran 63 tests across 1 file. [1475.00ms]
 
 - [x] G2: charts render a fixed dataset to a golden SVG and a non-empty PNG; describe('charts')
   CHECK: bun test bench/test/report.test.ts -t charts
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 61 expect() calls | Ran 14 tests across 1 file. [913.00ms]
+  EVIDENCE: 73 expect() calls | Ran 16 tests across 1 file. [975.00ms]
 
 - [x] G3: report --dry-run writes RESULTS.md
   CHECK: bun run bench:report --dry-run
