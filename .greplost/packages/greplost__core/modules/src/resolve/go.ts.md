@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/graph/link.ts`](../graph/link.ts.md), [`packages/core/src/resolve/resolver.ts`](resolver.ts.md)
 
-**Blast radius:** 46 files (`greplost impact packages/core/src/resolve/go.ts`)
+**Blast radius:** 48 files (`greplost impact packages/core/src/resolve/go.ts`)
 
 **Key symbols:**
 - `type GoTarget = { type: "file"; path: string } | { type: "external"; pkg: string }`  L33-33

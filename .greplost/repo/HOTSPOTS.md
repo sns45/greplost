@@ -6,51 +6,51 @@
 
 | File | Fan-in | Fan-out | Blast |
 |---|---|---|---|
-| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 74 | 0 | 96 |
+| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 76 | 0 | 98 |
 | [`packages/cli/src/args.ts`](../packages/greplost/modules/src/args.ts.md) | 14 | 1 | 14 |
 | [`packages/cli/src/output.ts`](../packages/greplost/modules/src/output.ts.md) | 11 | 1 | 13 |
-| [`packages/core/src/graph/index.ts`](../packages/greplost__core/modules/src/graph/index.ts.md) | 10 | 5 | 41 |
-| [`packages/core/src/index.ts`](../packages/greplost__core/modules/src/index.ts.md) | 9 | 11 | 28 |
-| [`packages/sync/src/index.ts`](../packages/greplost__sync/modules/src/index.ts.md) | 9 | 11 | 17 |
+| [`packages/sync/src/index.ts`](../packages/greplost__sync/modules/src/index.ts.md) | 11 | 11 | 19 |
+| [`packages/core/src/graph/index.ts`](../packages/greplost__core/modules/src/graph/index.ts.md) | 10 | 5 | 43 |
+| [`packages/core/src/index.ts`](../packages/greplost__core/modules/src/index.ts.md) | 9 | 11 | 30 |
 | [`bench/src/results-io.ts`](../packages/greplost__bench/modules/src/results-io.ts.md) | 7 | 1 | 7 |
-| [`packages/render/src/render.ts`](../packages/greplost__render/modules/src/render.ts.md) | 7 | 9 | 33 |
-| [`packages/render/src/slug.ts`](../packages/greplost__render/modules/src/slug.ts.md) | 7 | 1 | 34 |
+| [`packages/render/src/render.ts`](../packages/greplost__render/modules/src/render.ts.md) | 7 | 9 | 35 |
+| [`packages/render/src/slug.ts`](../packages/greplost__render/modules/src/slug.ts.md) | 7 | 1 | 36 |
 | [`packages/cli/src/commands/workspace.ts`](../packages/greplost/modules/src/commands/workspace.ts.md) | 6 | 2 | 7 |
-| [`packages/render/src/index.ts`](../packages/greplost__render/modules/src/index.ts.md) | 6 | 6 | 26 |
+| [`packages/render/src/index.ts`](../packages/greplost__render/modules/src/index.ts.md) | 6 | 6 | 28 |
 | [`bench/src/adapters/types.ts`](../packages/greplost__bench/modules/src/adapters/types.ts.md) | 5 | 1 | 5 |
 | [`bench/src/truth/ts.ts`](../packages/greplost__bench/modules/src/truth/ts.ts.md) | 5 | 3 | 5 |
 | [`packages/workspace/src/config.ts`](../packages/greplost__workspace/modules/src/config.ts.md) | 5 | 1 | 14 |
 | [`packages/workspace/src/cross.ts`](../packages/greplost__workspace/modules/src/cross.ts.md) | 5 | 5 | 13 |
 | [`bench/src/corpus.ts`](../packages/greplost__bench/modules/src/corpus.ts.md) | 4 | 1 | 5 |
 | [`bench/src/machine.ts`](../packages/greplost__bench/modules/src/machine.ts.md) | 4 | 1 | 4 |
-| [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 4 | 0 | 35 |
-| [`packages/core/src/graph/tarjan.ts`](../packages/greplost__core/modules/src/graph/tarjan.ts.md) | 4 | 1 | 45 |
-| [`packages/core/src/parser.ts`](../packages/greplost__core/modules/src/parser.ts.md) | 4 | 1 | 34 |
+| [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 4 | 0 | 37 |
+| [`packages/core/src/graph/tarjan.ts`](../packages/greplost__core/modules/src/graph/tarjan.ts.md) | 4 | 1 | 47 |
+| [`packages/core/src/parser.ts`](../packages/greplost__core/modules/src/parser.ts.md) | 4 | 1 | 36 |
 
 ## Largest blast radius
 
 | File | Fan-in | Fan-out | Blast |
 |---|---|---|---|
-| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 74 | 0 | 96 |
-| [`packages/core/src/resolve/go.ts`](../packages/greplost__core/modules/src/resolve/go.ts.md) | 2 | 1 | 46 |
-| [`packages/core/src/graph/tarjan.ts`](../packages/greplost__core/modules/src/graph/tarjan.ts.md) | 4 | 1 | 45 |
-| [`packages/core/src/resolve/tsconfig.ts`](../packages/greplost__core/modules/src/resolve/tsconfig.ts.md) | 2 | 0 | 45 |
-| [`packages/core/src/graph/directories.ts`](../packages/greplost__core/modules/src/graph/directories.ts.md) | 3 | 1 | 44 |
-| [`packages/core/src/resolve/packages.ts`](../packages/greplost__core/modules/src/resolve/packages.ts.md) | 1 | 1 | 44 |
-| [`packages/core/src/resolve/resolver.ts`](../packages/greplost__core/modules/src/resolve/resolver.ts.md) | 1 | 3 | 44 |
-| [`packages/core/src/graph/blast.ts`](../packages/greplost__core/modules/src/graph/blast.ts.md) | 2 | 2 | 43 |
-| [`packages/core/src/resolve/index.ts`](../packages/greplost__core/modules/src/resolve/index.ts.md) | 3 | 3 | 43 |
-| [`packages/core/src/graph/link.ts`](../packages/greplost__core/modules/src/graph/link.ts.md) | 1 | 3 | 42 |
-| [`packages/core/src/graph/metrics.ts`](../packages/greplost__core/modules/src/graph/metrics.ts.md) | 1 | 5 | 42 |
-| [`packages/core/src/graph/index.ts`](../packages/greplost__core/modules/src/graph/index.ts.md) | 10 | 5 | 41 |
-| [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 4 | 0 | 35 |
-| [`packages/render/src/mermaid.ts`](../packages/greplost__render/modules/src/mermaid.ts.md) | 4 | 1 | 35 |
-| [`packages/core/src/parser.ts`](../packages/greplost__core/modules/src/parser.ts.md) | 4 | 1 | 34 |
-| [`packages/render/src/ascii.ts`](../packages/greplost__render/modules/src/ascii.ts.md) | 3 | 1 | 34 |
-| [`packages/render/src/slug.ts`](../packages/greplost__render/modules/src/slug.ts.md) | 7 | 1 | 34 |
-| [`packages/render/src/split.ts`](../packages/greplost__render/modules/src/split.ts.md) | 3 | 2 | 34 |
-| [`packages/render/src/tokens.ts`](../packages/greplost__render/modules/src/tokens.ts.md) | 2 | 0 | 34 |
-| [`packages/core/src/extract/ts-calls.ts`](../packages/greplost__core/modules/src/extract/ts-calls.ts.md) | 1 | 2 | 33 |
+| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 76 | 0 | 98 |
+| [`packages/core/src/resolve/go.ts`](../packages/greplost__core/modules/src/resolve/go.ts.md) | 2 | 1 | 48 |
+| [`packages/core/src/graph/tarjan.ts`](../packages/greplost__core/modules/src/graph/tarjan.ts.md) | 4 | 1 | 47 |
+| [`packages/core/src/resolve/tsconfig.ts`](../packages/greplost__core/modules/src/resolve/tsconfig.ts.md) | 2 | 0 | 47 |
+| [`packages/core/src/graph/directories.ts`](../packages/greplost__core/modules/src/graph/directories.ts.md) | 3 | 1 | 46 |
+| [`packages/core/src/resolve/packages.ts`](../packages/greplost__core/modules/src/resolve/packages.ts.md) | 1 | 1 | 46 |
+| [`packages/core/src/resolve/resolver.ts`](../packages/greplost__core/modules/src/resolve/resolver.ts.md) | 1 | 3 | 46 |
+| [`packages/core/src/graph/blast.ts`](../packages/greplost__core/modules/src/graph/blast.ts.md) | 2 | 2 | 45 |
+| [`packages/core/src/resolve/index.ts`](../packages/greplost__core/modules/src/resolve/index.ts.md) | 3 | 3 | 45 |
+| [`packages/core/src/graph/link.ts`](../packages/greplost__core/modules/src/graph/link.ts.md) | 1 | 3 | 44 |
+| [`packages/core/src/graph/metrics.ts`](../packages/greplost__core/modules/src/graph/metrics.ts.md) | 1 | 5 | 44 |
+| [`packages/core/src/graph/index.ts`](../packages/greplost__core/modules/src/graph/index.ts.md) | 10 | 5 | 43 |
+| [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 4 | 0 | 37 |
+| [`packages/render/src/mermaid.ts`](../packages/greplost__render/modules/src/mermaid.ts.md) | 4 | 1 | 37 |
+| [`packages/core/src/parser.ts`](../packages/greplost__core/modules/src/parser.ts.md) | 4 | 1 | 36 |
+| [`packages/render/src/ascii.ts`](../packages/greplost__render/modules/src/ascii.ts.md) | 3 | 1 | 36 |
+| [`packages/render/src/slug.ts`](../packages/greplost__render/modules/src/slug.ts.md) | 7 | 1 | 36 |
+| [`packages/render/src/split.ts`](../packages/greplost__render/modules/src/split.ts.md) | 3 | 2 | 36 |
+| [`packages/render/src/tokens.ts`](../packages/greplost__render/modules/src/tokens.ts.md) | 2 | 0 | 36 |
+| [`packages/core/src/extract/ts-calls.ts`](../packages/greplost__core/modules/src/extract/ts-calls.ts.md) | 1 | 2 | 35 |
 
 ## Import cycles
 

@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/render/src/docs/package-map.ts`](docs/package-map.ts.md), [`packages/render/src/docs/repo-map.ts`](docs/repo-map.ts.md), [`packages/render/src/index.ts`](index.ts.md)
 
-**Blast radius:** 34 files (`greplost impact packages/render/src/ascii.ts`)
+**Blast radius:** 36 files (`greplost impact packages/render/src/ascii.ts`)
 
 **Key symbols:**
 - `interface RenderTreeOptions`  L11-18

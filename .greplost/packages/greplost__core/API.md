@@ -68,7 +68,7 @@
 ## packages/core/src/extract/ts.ts
 
 - `interface TsContext` L59-77
-- `function extractTs( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L170-689
+- `function extractTs( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L178-712
 
 ## packages/core/src/graph/blast.ts
 
@@ -148,7 +148,8 @@
 - `interface ParserHandle` L15-17
 - `function grammarDir(): string` L32-36
 - `async function createParser(opts?: { grammarDir?: string }): Promise<ParserHandle>` L79-106
-- `function reparse(language: Language, source: string): Tree | null` L118-122
+- `function reparse(language: Language, source: string): Tree | null` L129-136
+- `function disposeSpareParser(): void` L139-144
 
 ## packages/core/src/resolve/go.ts
 

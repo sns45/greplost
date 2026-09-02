@@ -10,9 +10,9 @@
 
 **Imports:** `node:fs` (existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync), `node:path` (default), [`@greplost/core`](../../../greplost__core/modules/src/index.ts.md) (buildSnapshot, loadConfig), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, Manifest, PackageInfo, Snapshot, SummaryCache, SummaryEntry, compareStrings, packageSlug, stableStringify), [`@greplost/render`](../../../greplost__render/modules/src/index.ts.md) (packageDir), [`@greplost/sync`](../../../greplost__sync/modules/src/index.ts.md) (FileParseCache, readSummaries, update, withLock), [`./flows.ts`](flows.ts.md) (REACH_DEPTH, callLines, importGraph, isoDate, reachableFrom, renderFlows, selectEntryPoints), [`./prompts.ts`](prompts.ts.md) (FlowRequest, HEAD_LINES, SummaryRequest, buildFlowsPrompt, buildSummaryPrompt, parseFlowsResponse, parseSummaryResponse), [`./runner.ts`](runner.ts.md) (PromptRunner, defaultRunner)
 
-**Imported by:** [`packages/semantic/src/index.ts`](index.ts.md)
+**Imported by:** [`.probe-leaf16/probe.ts`](../../../greplost-monorepo/modules/.probe-leaf16/probe.ts.md), [`.probe-leaf16/probe2.ts`](../../../greplost-monorepo/modules/.probe-leaf16/probe2.ts.md), [`packages/semantic/src/index.ts`](index.ts.md)
 
-**Blast radius:** 5 files (`greplost impact packages/semantic/src/refresh.ts`)
+**Blast radius:** 7 files (`greplost impact packages/semantic/src/refresh.ts`)
 
 **Key symbols:**
 - `const DEFAULT_BATCH_SIZE = 12`  L62-62

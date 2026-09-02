@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md), [`packages/core/src/extract/ts-calls.ts`](ts-calls.ts.md), [`packages/core/src/extract/ts-imports.ts`](ts-imports.ts.md)
 
-**Blast radius:** 33 files (`greplost impact packages/core/src/extract/ts.ts`)
+**Blast radius:** 35 files (`greplost impact packages/core/src/extract/ts.ts`)
 
 **Key symbols:**
 - `interface TsContext`  L59-77
@@ -26,17 +26,20 @@
 - `const RECOVERY_MIN_CHARS = 8`  L140-140
 - `const RECOVERY_MAX_RESUMES = 32`  L141-141
 - `const RECOVERY_MAX_PARSES = 512`  L142-142
-- `const DECLARATION_KEYWORDS = [ "export", "import", "type ", "interface ", "class ", "function", "const ", "let ", "var ", "enum ", "namespace ", "declare ", ]`  L145-158
-- `function mayDeclare(text: string): boolean`  L160-163
-- `function isSound(node: Node): boolean`  L165-168
-- `function extractTs( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">`  L170-689
-- `function importKey(record: ImportRecord): string`  L691-694
-- `function exportKey(record: ExportRecord): string`  L696-698
-- `function callKey(record: CallSite): string`  L700-702
-- `function boundNames(root: Node): ReadonlySet<string>`  L705-746
-- `function addPattern(node: Node | null, names: Set<string>): void`  L749-771
-- `function sortByLine<T extends { line: number }>(records: T[]): T[]`  L773-775
-- `function dedupe<T>(records: T[], key: (record: T) => string): T[]`  L777-787
-- `function collapseOverloads(entries: Entry[]): Declaration[]`  L794-814
+- `const RECOVERY_MAX_RETAINED_RATIO = 4`  L150-150
+- `const DECLARATION_KEYWORDS = [ "export", "import", "type ", "interface ", "class ", "function", "const ", "let ", "var ", "enum ", "namespace ", "declare ", ]`  L153-166
+- `function mayDeclare(text: string): boolean`  L168-171
+- `function isSound(node: Node): boolean`  L173-176
+- `function extractTs( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">`  L178-712
+- `function importKey(record: ImportRecord): string`  L714-717
+- `function exportKey(record: ExportRecord): string`  L719-721
+- `function callKey(record: CallSite): string`  L723-725
+- `const SELF_BINDING: ReadonlySet<string> = new Set(["function_expression", "generator_function", "class"])`  L731-731
+- `function boundNames(root: Node): ReadonlySet<string>`  L734-782
+- `function addName(node: Node, names: Set<string>): void`  L785-792
+- `function addPattern(node: Node | null, names: Set<string>): void`  L795-817
+- `function sortByLine<T extends { line: number }>(records: T[]): T[]`  L819-821
+- `function dedupe<T>(records: T[], key: (record: T) => string): T[]`  L823-833
+- `function collapseOverloads(entries: Entry[]): Declaration[]`  L840-860
 
-**Calls:** `recordCall` → [`packages/core/src/extract/ts-calls.ts#recordCall`](ts-calls.ts.md) (high), `collectCommonJsExport` → [`packages/core/src/extract/ts-imports.ts#collectCommonJsExport`](ts-imports.ts.md) (high), `collectExportStatement` → [`packages/core/src/extract/ts-imports.ts#collectExportStatement`](ts-imports.ts.md) (high), `collectImportStatement` → [`packages/core/src/extract/ts-imports.ts#collectImportStatement`](ts-imports.ts.md) (high), `recordModuleCall` → [`packages/core/src/extract/ts-imports.ts#recordModuleCall`](ts-imports.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](ts-signature.ts.md) (high), `functionValue` → [`packages/core/src/extract/ts-signature.ts#functionValue`](ts-signature.ts.md) (high), `initialiserSignature` → [`packages/core/src/extract/ts-signature.ts#initialiserSignature`](ts-signature.ts.md) (high), `nameOf` → [`packages/core/src/extract/ts-signature.ts#nameOf`](ts-signature.ts.md) (high), `signatureText` → [`packages/core/src/extract/ts-signature.ts#signatureText`](ts-signature.ts.md) (high), `variableSignature` → [`packages/core/src/extract/ts-signature.ts#variableSignature`](ts-signature.ts.md) (high), `addPattern` → [`packages/core/src/extract/ts.ts#addPattern`](ts.ts.md) (high), `boundNames` → [`packages/core/src/extract/ts.ts#boundNames`](ts.ts.md) (high), `collapseOverloads` → [`packages/core/src/extract/ts.ts#collapseOverloads`](ts.ts.md) (high), `dedupe` → [`packages/core/src/extract/ts.ts#dedupe`](ts.ts.md) (high), `isSound` → [`packages/core/src/extract/ts.ts#isSound`](ts.ts.md) (high), `mayDeclare` → [`packages/core/src/extract/ts.ts#mayDeclare`](ts.ts.md) (high), `sortByLine` → [`packages/core/src/extract/ts.ts#sortByLine`](ts.ts.md) (high), `reparse` → [`packages/core/src/parser.ts#reparse`](../parser.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)
+**Calls:** `recordCall` → [`packages/core/src/extract/ts-calls.ts#recordCall`](ts-calls.ts.md) (high), `collectCommonJsExport` → [`packages/core/src/extract/ts-imports.ts#collectCommonJsExport`](ts-imports.ts.md) (high), `collectExportStatement` → [`packages/core/src/extract/ts-imports.ts#collectExportStatement`](ts-imports.ts.md) (high), `collectImportStatement` → [`packages/core/src/extract/ts-imports.ts#collectImportStatement`](ts-imports.ts.md) (high), `recordModuleCall` → [`packages/core/src/extract/ts-imports.ts#recordModuleCall`](ts-imports.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](ts-signature.ts.md) (high), `functionValue` → [`packages/core/src/extract/ts-signature.ts#functionValue`](ts-signature.ts.md) (high), `initialiserSignature` → [`packages/core/src/extract/ts-signature.ts#initialiserSignature`](ts-signature.ts.md) (high), `nameOf` → [`packages/core/src/extract/ts-signature.ts#nameOf`](ts-signature.ts.md) (high), `signatureText` → [`packages/core/src/extract/ts-signature.ts#signatureText`](ts-signature.ts.md) (high), `variableSignature` → [`packages/core/src/extract/ts-signature.ts#variableSignature`](ts-signature.ts.md) (high), `addName` → [`packages/core/src/extract/ts.ts#addName`](ts.ts.md) (high), `addPattern` → [`packages/core/src/extract/ts.ts#addPattern`](ts.ts.md) (high), `boundNames` → [`packages/core/src/extract/ts.ts#boundNames`](ts.ts.md) (high), `collapseOverloads` → [`packages/core/src/extract/ts.ts#collapseOverloads`](ts.ts.md) (high), `dedupe` → [`packages/core/src/extract/ts.ts#dedupe`](ts.ts.md) (high), `isSound` → [`packages/core/src/extract/ts.ts#isSound`](ts.ts.md) (high), `mayDeclare` → [`packages/core/src/extract/ts.ts#mayDeclare`](ts.ts.md) (high), `sortByLine` → [`packages/core/src/extract/ts.ts#sortByLine`](ts.ts.md) (high), `reparse` → [`packages/core/src/parser.ts#reparse`](../parser.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)

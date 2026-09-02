@@ -12,6 +12,6 @@
 
 **Imported by:** [`packages/cli/src/commands/flows.ts`](../../../greplost/modules/src/commands/flows.ts.md), [`packages/cli/src/commands/structure.ts`](../../../greplost/modules/src/commands/structure.ts.md), [`packages/semantic/src/refresh.ts`](../../../greplost__semantic/modules/src/refresh.ts.md), [`packages/sync/src/build.ts`](../../../greplost__sync/modules/src/build.ts.md), [`packages/workspace/src/query.ts`](../../../greplost__workspace/modules/src/query.ts.md), [`packages/workspace/src/render.ts`](../../../greplost__workspace/modules/src/render.ts.md)
 
-**Blast radius:** 26 files (`greplost impact packages/render/src/index.ts`)
+**Blast radius:** 28 files (`greplost impact packages/render/src/index.ts`)
 
 **Key symbols:** None.

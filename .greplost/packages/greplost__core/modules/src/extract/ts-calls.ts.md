@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/ts.ts`](ts.ts.md)
 
-**Blast radius:** 33 files (`greplost impact packages/core/src/extract/ts-calls.ts`)
+**Blast radius:** 35 files (`greplost impact packages/core/src/extract/ts-calls.ts`)
 
 **Key symbols:**
 - `interface Callee`  L12-15

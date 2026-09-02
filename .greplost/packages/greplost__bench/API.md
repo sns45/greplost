@@ -302,11 +302,12 @@
 
 - `interface CallEndpoints` L22-27
 - `function resolveCallEdge( node: ts.CallExpression | ts.NewExpression, checker: ts.TypeChecker, toId: (fileName: string) => string | undefined, fileId: string, ): CallEndpoints | undefined` L36-55
-- `function calleeIdentifier(node: ts.CallExpression | ts.NewExpression): ts.Node | undefined` L58-69
-- `function unalias(checker: ts.TypeChecker, symbol: ts.Symbol | undefined): ts.Symbol | undefined` L72-85
-- `function declarationSymbolPath(declaration: ts.Declaration): string | undefined` L88-115
-- `function moduleScopePath(node: ts.Node): string | undefined` L122-130
-- `function enclosingCaller(node: ts.Node, fileId: string): string` L194-204
+- `function unwrapExpression(expr: ts.Expression): ts.Expression` L58-65
+- `function calleeIdentifier(node: ts.CallExpression | ts.NewExpression): ts.Node | undefined` L68-74
+- `function unalias(checker: ts.TypeChecker, symbol: ts.Symbol | undefined): ts.Symbol | undefined` L77-90
+- `function declarationSymbolPath(declaration: ts.Declaration): string | undefined` L93-120
+- `function moduleScopePath(node: ts.Node): string | undefined` L127-135
+- `function enclosingCaller(node: ts.Node, fileId: string): string` L201-211
 
 ## bench/src/truth/ts-workspace.ts
 

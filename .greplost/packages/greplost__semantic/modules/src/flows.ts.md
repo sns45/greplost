@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/semantic/src/index.ts`](index.ts.md), [`packages/semantic/src/prompts.ts`](prompts.ts.md), [`packages/semantic/src/refresh.ts`](refresh.ts.md)
 
-**Blast radius:** 7 files (`greplost impact packages/semantic/src/flows.ts`)
+**Blast radius:** 9 files (`greplost impact packages/semantic/src/flows.ts`)
 
 **Key symbols:**
 - `interface FlowStep`  L31-35

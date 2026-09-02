@@ -10,9 +10,9 @@
 
 **Imports:** [`./flows.ts`](flows.ts.md) (Flow, FlowStep)
 
-**Imported by:** [`packages/semantic/src/index.ts`](index.ts.md), [`packages/semantic/src/refresh.ts`](refresh.ts.md)
+**Imported by:** [`.probe-leaf16/probe.ts`](../../../greplost-monorepo/modules/.probe-leaf16/probe.ts.md), [`.probe-leaf16/probe2.ts`](../../../greplost-monorepo/modules/.probe-leaf16/probe2.ts.md), [`packages/semantic/src/index.ts`](index.ts.md), [`packages/semantic/src/refresh.ts`](refresh.ts.md)
 
-**Blast radius:** 6 files (`greplost impact packages/semantic/src/prompts.ts`)
+**Blast radius:** 8 files (`greplost impact packages/semantic/src/prompts.ts`)
 
 **Key symbols:**
 - `const SUMMARY_TASK = "greplost:summarise-modules"`  L28-28

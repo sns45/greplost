@@ -6,13 +6,13 @@
 
 **Package:** `@greplost/core` ([map](../../MAP.md))
 
-**Exports:** `ParserHandle (interface)`, `createParser(opts?: { grammarDir?: string }): Promise<ParserHandle>`, `grammarDir(): string`, `reparse(language: Language, source: string): Tree | null`
+**Exports:** `ParserHandle (interface)`, `createParser(opts?: { grammarDir?: string }): Promise<ParserHandle>`, `disposeSpareParser(): void`, `grammarDir(): string`, `reparse(language: Language, source: string): Tree | null`
 
 **Imports:** `web-tree-sitter` (Language, Parser, Tree), `node:path` (join), `node:url` (fileURLToPath), [`./schema.ts`](schema.ts.md) (Lang)
 
 **Imported by:** [`packages/core/src/build.ts`](build.ts.md), [`packages/core/src/extract/index.ts`](extract/index.ts.md), [`packages/core/src/extract/ts.ts`](extract/ts.ts.md), [`packages/core/src/index.ts`](index.ts.md)
 
-**Blast radius:** 34 files (`greplost impact packages/core/src/parser.ts`)
+**Blast radius:** 36 files (`greplost impact packages/core/src/parser.ts`)
 
 **Key symbols:**
 - `interface ParserHandle`  L15-17
@@ -25,7 +25,9 @@
 - `function loadLanguage(file: string): Promise<Language>`  L58-67
 - `function message(cause: unknown): string`  L69-71
 - `async function createParser(opts?: { grammarDir?: string }): Promise<ParserHandle>`  L79-106
-- `let spare: Parser | null = null`  L116-116
-- `function reparse(language: Language, source: string): Tree | null`  L118-122
+- `let spare: Parser | null = null`  L118-118
+- `let spareLanguage: Language | null = null`  L119-119
+- `function reparse(language: Language, source: string): Tree | null`  L129-136
+- `function disposeSpareParser(): void`  L139-144
 
 **Calls:** `grammarDir` → [`packages/core/src/parser.ts#grammarDir`](parser.ts.md) (high), `initRuntime` → [`packages/core/src/parser.ts#initRuntime`](parser.ts.md) (high), `loadLanguage` → [`packages/core/src/parser.ts#loadLanguage`](parser.ts.md) (high), `message` → [`packages/core/src/parser.ts#message`](parser.ts.md) (high)

@@ -28,19 +28,19 @@ Path: `packages/render` · 13 files · 1768 LOC · depends on: @greplost/core ·
 
 | File | LOC | Exports | Fan-in | Fan-out | Blast |
 |---|---|---|---|---|---|
-| [`src/ascii.ts`](modules/src/ascii.ts.md) | 82 | 2 | 3 | 1 | 34 |
-| [`src/docs/api.ts`](modules/src/docs/api.ts.md) | 176 | 8 | 2 | 2 | 33 |
-| [`src/docs/card.ts`](modules/src/docs/card.ts.md) | 220 | 1 | 1 | 4 | 33 |
-| [`src/docs/hotspots.ts`](modules/src/docs/hotspots.ts.md) | 90 | 5 | 2 | 4 | 33 |
-| [`src/docs/index-doc.ts`](modules/src/docs/index-doc.ts.md) | 185 | 1 | 1 | 6 | 33 |
-| [`src/docs/package-map.ts`](modules/src/docs/package-map.ts.md) | 140 | 2 | 1 | 6 | 33 |
-| [`src/docs/repo-map.ts`](modules/src/docs/repo-map.ts.md) | 111 | 3 | 2 | 6 | 33 |
-| [`src/index.ts`](modules/src/index.ts.md) | 26 | 26 | 6 | 6 | 26 |
-| [`src/mermaid.ts`](modules/src/mermaid.ts.md) | 133 | 5 | 4 | 1 | 35 |
-| [`src/render.ts`](modules/src/render.ts.md) | 298 | 11 | 7 | 9 | 33 |
-| [`src/slug.ts`](modules/src/slug.ts.md) | 45 | 3 | 7 | 1 | 34 |
-| [`src/split.ts`](modules/src/split.ts.md) | 248 | 3 | 3 | 2 | 34 |
-| [`src/tokens.ts`](modules/src/tokens.ts.md) | 14 | 2 | 2 | 0 | 34 |
+| [`src/ascii.ts`](modules/src/ascii.ts.md) | 82 | 2 | 3 | 1 | 36 |
+| [`src/docs/api.ts`](modules/src/docs/api.ts.md) | 176 | 8 | 2 | 2 | 35 |
+| [`src/docs/card.ts`](modules/src/docs/card.ts.md) | 220 | 1 | 1 | 4 | 35 |
+| [`src/docs/hotspots.ts`](modules/src/docs/hotspots.ts.md) | 90 | 5 | 2 | 4 | 35 |
+| [`src/docs/index-doc.ts`](modules/src/docs/index-doc.ts.md) | 185 | 1 | 1 | 6 | 35 |
+| [`src/docs/package-map.ts`](modules/src/docs/package-map.ts.md) | 140 | 2 | 1 | 6 | 35 |
+| [`src/docs/repo-map.ts`](modules/src/docs/repo-map.ts.md) | 111 | 3 | 2 | 6 | 35 |
+| [`src/index.ts`](modules/src/index.ts.md) | 26 | 26 | 6 | 6 | 28 |
+| [`src/mermaid.ts`](modules/src/mermaid.ts.md) | 133 | 5 | 4 | 1 | 37 |
+| [`src/render.ts`](modules/src/render.ts.md) | 298 | 11 | 7 | 9 | 35 |
+| [`src/slug.ts`](modules/src/slug.ts.md) | 45 | 3 | 7 | 1 | 36 |
+| [`src/split.ts`](modules/src/split.ts.md) | 248 | 3 | 3 | 2 | 36 |
+| [`src/tokens.ts`](modules/src/tokens.ts.md) | 14 | 2 | 2 | 0 | 36 |
 
 ## Components
 
