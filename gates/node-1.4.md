@@ -2,10 +2,10 @@
 
 Scope: CLI and plugin merged
 
-- [ ] N1: every child gates file is fully met
+- [x] N1: every child gates file is fully met
   CHECK: node ~/.claude/skills/unlazy/scripts/gate-check.mjs --status gates/leaf-1.4.1.md gates/leaf-1.4.2.md
   EXPECT: ALL MET
-  EVIDENCE: pending
+  EVIDENCE: gates/leaf-1.4.2.md: 7 gates | ALL MET (17 met)
 
 - [x] N2: cli typechecks
   CHECK: bunx tsc -p packages/cli/tsconfig.json --noEmit
