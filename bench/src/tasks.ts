@@ -332,8 +332,18 @@ function id(repo: string, slug: string, index: number): string {
  * `seed` selects *which* candidates are used; it does not affect ids, ordering
  * or the answer keys. Record it next to the results.
  */
-export function generateStructuralTasks(repo: string, truth: Truth, n: number, seed: number = 1): Task[] {
-  const quotas = split(n, STRUCTURAL.length);
+export function generateStructuralTasks(
+  repo: string,
+  truth: Truth,
+  n: number,
+  seed: number = 1,
+  categories?: readonly TaskCategory[],
+): Task[] {
+  // `n` is split over the categories that will actually be generated. Splitting
+  // over all four and filtering afterwards would hand a caller who asked for 8
+  // definition tasks the 2 that survived the filter.
+  const wanted = categories === undefined ? STRUCTURAL : STRUCTURAL.filter((e) => categories.includes(e.category));
+  const quotas = split(n, Math.max(1, wanted.length));
   const tasks: Task[] = [];
 
   const definitions = definitionCandidates(truth);
@@ -341,8 +351,8 @@ export function generateStructuralTasks(repo: string, truth: Truth, n: number, s
   const callers = callerCandidates(truth);
   const blast = blastCandidates(truth);
 
-  for (let category = 0; category < STRUCTURAL.length; category++) {
-    const entry = STRUCTURAL[category] as { category: TaskCategory; slug: string };
+  for (let category = 0; category < wanted.length; category++) {
+    const entry = wanted[category] as { category: TaskCategory; slug: string };
     const quota = quotas[category] ?? 0;
     // The seed is mixed with the repo and the category so the four categories
     // walk their candidate lists independently.
@@ -513,11 +523,14 @@ export function loadTasks(
   seed: number = 1,
   categories?: readonly TaskCategory[],
 ): Task[] {
-  const wanted = categories === undefined ? null : new Set<TaskCategory>(categories);
+  const keep = categories === undefined ? null : new Set<TaskCategory>(categories);
+  // The generator is told which categories to fill so `n` means what the caller
+  // asked for; the curated categories are filtered here, since their task count
+  // is whatever was curated and `n` never applied to them.
   const all = [
-    ...generateStructuralTasks(repo, truth, n, seed),
+    ...generateStructuralTasks(repo, truth, n, seed, categories),
     ...loadFlowTasks(repo),
     ...loadOrientationTasks(repo),
   ];
-  return wanted === null ? all : all.filter((task) => wanted.has(task.category));
+  return keep === null ? all : all.filter((task) => keep.has(task.category));
 }
