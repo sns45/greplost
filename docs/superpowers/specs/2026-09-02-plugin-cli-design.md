@@ -52,7 +52,7 @@ Human output is short and column aligned; `--json` output is `stableStringify(va
 Reads the hook payload JSON from stdin (fields per the Claude Code hooks reference: `hook_event_name`, `cwd`, `tool_name`, `tool_input`) and prints JSON to stdout:
 
 - `session-start`: when `<cwd>/.greplost/INDEX.md` exists print `{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"This repo has a greplost map: read .greplost/INDEX.md before exploring; use `greplost query`/`impact --json`."}}`, else print nothing.
-- `pre-tool-use` (Glob, Grep): when the map exists print `{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","additionalContext":"greplost: consult .greplost/INDEX.md or `greplost query <symbol> --json` before grepping."}}`. Never blocks.
+- `pre-tool-use` (Glob, Grep): when the map exists print `{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"greplost: consult .greplost/INDEX.md or `greplost query <symbol> --json` before grepping."}}`. Never blocks and never emits a `permissionDecision` (an `allow` would bypass the user's permission prompts; ruling 2026-09-03).
 - `post-tool-use` (Edit, Write, MultiEdit): `appendDirty(root, [tool_input.file_path])` for paths inside the repo; prints nothing.
 - `stop`: runs `update({ mode: "incremental", quiet: true })` when the map exists; prints nothing; always exits 0 (a failed update must never block the session; log to stderr).
 
