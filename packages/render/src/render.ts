@@ -31,6 +31,7 @@ import type {
   SummaryCache,
 } from "@greplost/core/schema";
 import { compareStrings, isFileId } from "@greplost/core/schema";
+import { filesByDirectory } from "@greplost/core/graph";
 
 import { cardPath, packageDir } from "./slug.ts";
 import { buildIndex } from "./docs/index-doc.ts";
@@ -120,15 +121,24 @@ export function createContext(input: RenderInput): DocContext {
   const importsFrom = new Map<string, ImportEdge[]>();
   const importerSets = new Map<string, Set<string>>();
   const externalSets = new Map<string, Set<string>>();
+  // The indexed files an import target reaches. A Go import names a package, so
+  // its target is a *directory* and it imports every indexed file in it (tech
+  // spec Appendix C); a file target is just itself, which leaves every
+  // TypeScript card unchanged. Same rule as `expandDirectoryTargets` in the
+  // graph layer, which is where fan-in and blast radius get it from.
+  const filesInDirectory = filesByDirectory(files);
+  const importReaches = (to: string): readonly string[] =>
+    manifest.files[to] !== undefined && isFileId(to) ? [to] : (filesInDirectory.get(to) ?? []);
   for (const edge of snapshot.imports) {
     const bucket = importsFrom.get(edge.from);
     if (bucket) bucket.push(edge);
     else importsFrom.set(edge.from, [edge]);
 
-    if (manifest.files[edge.to] !== undefined && isFileId(edge.to)) {
-      const importers = importerSets.get(edge.to);
+    for (const target of importReaches(edge.to)) {
+      if (target === edge.from) continue;
+      const importers = importerSets.get(target);
       if (importers) importers.add(edge.from);
-      else importerSets.set(edge.to, new Set([edge.from]));
+      else importerSets.set(target, new Set([edge.from]));
     }
 
     if (edge.to.startsWith("ext:")) {

@@ -8,8 +8,9 @@
  * principle 2: the oracle must not be able to agree with greplost by
  * construction.
  */
-import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { afterAll, describe, expect, test } from "bun:test";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { compareEdges, stableStringify } from "@greplost/core/schema";
 import { generateGoTruth, goCallgraphTool, GO_TRUTH_NOTES } from "../src/truth/go.ts";
@@ -136,6 +137,70 @@ describe("fixture truth", () => {
       "internal/store/store.go#Store.Put -> internal/store/store.go#Store.set",
     ]);
     expect(Object.keys(narrowed.exports)).toEqual(["internal/store/memory.go", "internal/store/store.go"]);
+  });
+});
+
+describe("empty truth", () => {
+  const temps: string[] = [];
+
+  function module(files: Record<string, string>): string {
+    const root = mkdtempSync(path.join(tmpdir(), "greplost-go-truth-"));
+    temps.push(root);
+    for (const [name, body] of Object.entries(files)) {
+      const file = path.join(root, name);
+      mkdirSync(path.dirname(file), { recursive: true });
+      writeFileSync(file, body);
+    }
+    return root;
+  }
+
+  afterAll(() => {
+    for (const root of temps) rmSync(root, { recursive: true, force: true });
+  });
+
+  test("a module with no Go package is an error, not four perfect scores", () => {
+    // The whole point of the guard (tech spec 10.1, principle 2): an empty truth
+    // set scores an empty prediction as 1.000 across the board.
+    const root = module({ "go.mod": "module example.com/empty\n\ngo 1.25\n", "README.md": "nothing here\n" });
+    expect(() => generateGoTruth(root, [])).toThrow(/greplost: go truth is empty for .*no packages/);
+  });
+
+  test("a file list the toolchain never loaded is an error too", () => {
+    // The package loads, but the caller asked about a file behind a build tag.
+    const root = module({
+      "go.mod": "module example.com/tagged\n\ngo 1.25\n",
+      "a.go": "package tagged\n\nfunc A() {}\n",
+      "b.go": "//go:build never\n\npackage tagged\n\nfunc B() {}\n",
+    });
+    expect(generateGoTruth(root, ["a.go"]).files).toEqual(["a.go"]);
+    expect(() => generateGoTruth(root, ["b.go"])).toThrow(
+      /greplost: go truth is empty for .*loaded none of the 1 requested files/,
+    );
+  });
+
+  test("the structural runner calls a truth set that covers nothing empty", () => {
+    // Belt and braces: even a truth generator that returns empty rather than
+    // throwing cannot produce a vacuous GATE PASS.
+    const snapshot = {
+      files: FIXTURE_FILES.map((p) => ({ path: p, lang: "go" as const, imports: [] })),
+      imports: [],
+      calls: [],
+      manifest: { files: {} },
+      metrics: { cycles: [] as string[][] },
+      symbols: [],
+    } as unknown as Parameters<typeof scoreAgainstTruth>[1];
+    // Non-empty but disjoint: the truth covered real files, none of them ours.
+    // The intersection is empty, so every "across the covered files" test used to
+    // be vacuously true and the gate passed on nothing at all.
+    const nothing: Truth = {
+      files: ["elsewhere/x.go"],
+      imports: [],
+      exports: { "elsewhere/x.go": ["X"] },
+      calls: [],
+      cycles: [],
+      notes: [],
+    };
+    expect(scoreAgainstTruth("tiny-go", snapshot, nothing, "go").truthEmpty).toBe(true);
   });
 });
 

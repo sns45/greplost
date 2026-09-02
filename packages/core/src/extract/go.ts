@@ -44,6 +44,35 @@ const SPEC_PARENTS: ReadonlySet<string> = new Set([
 /** Declarations that own the calls written inside them. */
 const CALLER_NODES: ReadonlySet<string> = new Set(["function_declaration", "method_declaration"]);
 
+/** Nodes that open a set of local bindings (a function body of any kind). */
+const SCOPE_NODES: ReadonlySet<string> = new Set([
+  "func_literal",
+  "function_declaration",
+  "method_declaration",
+]);
+
+/**
+ * Nodes that bind names through `name:` fields: parameters (the receiver and
+ * named results included), body-level `var`/`const` specs, and local types.
+ */
+const NAME_FIELD_BINDERS: ReadonlySet<string> = new Set([
+  "const_spec",
+  "parameter_declaration",
+  "type_spec",
+  "var_spec",
+  "variadic_parameter_declaration",
+]);
+
+/**
+ * Nodes that bind names through a `left:`/`alias:` expression list: `x := 1`,
+ * `for i, v := range xs`, `switch t := v.(type)`.
+ */
+const LIST_BINDERS: ReadonlyArray<readonly [string, string]> = [
+  ["short_var_declaration", "left"],
+  ["range_clause", "left"],
+  ["type_switch_statement", "alias"],
+];
+
 /**
  * Go's export rule: the first rune of the name is an upper-case letter. `_`,
  * digits and lower-case letters (in any script) are unexported.
@@ -240,16 +269,94 @@ function calleeText(node: Node): string | null {
   return `${operand.text}.${member.text}`;
 }
 
+/**
+ * Every name bound anywhere inside one function: parameters, the receiver,
+ * named results, `:=` short declarations, body-level `var`/`const`/`type`
+ * declarations, `range` variables, type-switch aliases, and the parameters of
+ * every function literal nested in it.
+ *
+ * Block scoping is deliberately flattened to the whole function. Go's package
+ * scope is the outermost one, so any local of the same name shadows it, and a
+ * name bound in another block of the same function is far likelier to be a local
+ * than a coincidence. Over-dropping costs recall; under-dropping emits a wrong
+ * `high` edge, which is the one thing the structure layer must never do.
+ */
+function boundNames(fn: Node): Set<string> {
+  const names = new Set<string>();
+  const add = (node: Node | null): void => {
+    if (node === null) return;
+    if (node.type === "identifier" || node.type === "package_identifier") names.add(node.text);
+  };
+  const visit = (node: Node): void => {
+    if (NAME_FIELD_BINDERS.has(node.type)) {
+      for (const name of node.childrenForFieldName("name")) add(name);
+    }
+    for (const [type, fieldName] of LIST_BINDERS) {
+      if (node.type !== type) continue;
+      const list = field(node, fieldName);
+      if (list === null) continue;
+      // `for k := range m` binds a single identifier rather than a list.
+      if (list.type === "identifier") add(list);
+      else for (const item of list.namedChildren) add(item);
+    }
+    for (const child of node.namedChildren) visit(child);
+  };
+  visit(fn);
+  return names;
+}
+
+/** The receiver variable of a method declaration, or null when it has no name. */
+function receiverVariableOf(node: Node): string | null {
+  if (node.type !== "method_declaration") return null;
+  const receiver = field(node, "receiver");
+  const parameter = receiver === null ? null : receiver.namedChild(0);
+  const name = parameter === null ? null : field(parameter, "name");
+  return name === null ? null : name.text;
+}
+
+/** The local bindings in force at a call site, and the receiver they exclude. */
+interface Scope {
+  bound: ReadonlySet<string>;
+  /** The enclosing method's receiver: bound, but the one name `obj.m` wants. */
+  receiver: string | null;
+}
+
+/**
+ * A callee whose leading identifier is a local binding is not recorded at all.
+ *
+ * Go resolves a bare `handler()` to the local `handler := func(){}` and never to
+ * a package-scope `func handler()`, and `w.Write()` on a local `w` is not a call
+ * on the method receiver. Recording those and hoping the resolver drops them is
+ * how a wrong `high` edge gets out, and a CHA oracle over-approximates enough to
+ * score it as a true positive - so the extractor withholds them.
+ */
+function shadowed(callee: string, scope: Scope | null): boolean {
+  if (scope === null) return false;
+  const dot = callee.indexOf(".");
+  if (dot === -1) return scope.bound.has(callee);
+  const object = callee.slice(0, dot);
+  if (object === scope.receiver) return false;
+  return scope.bound.has(object);
+}
+
 function collectCalls(state: GoState, root: Node): void {
-  const walk = (node: Node, caller: string): void => {
+  const walk = (node: Node, caller: string, scope: Scope | null): void => {
     const next = CALLER_NODES.has(node.type) ? (state.callerByNode.get(node.id) ?? caller) : caller;
+    // The outermost function-like node owns the bindings of everything nested in
+    // it, so a literal inside a declaration reuses the declaration's set.
+    const inner =
+      scope === null && SCOPE_NODES.has(node.type)
+        ? { bound: boundNames(node), receiver: receiverVariableOf(node) }
+        : scope;
     if (node.type === "call_expression") {
       const callee = calleeText(node);
-      if (callee !== null) state.calls.push({ caller: next, callee, line: lineOf(node) });
+      if (callee !== null && !shadowed(callee, inner)) {
+        state.calls.push({ caller: next, callee, line: lineOf(node) });
+      }
     }
-    for (const child of node.namedChildren) walk(child, next);
+    for (const child of node.namedChildren) walk(child, next, inner);
   };
-  walk(root, "");
+  walk(root, "", null);
 }
 
 /**

@@ -181,6 +181,16 @@ function receiverVariable(signature: string): string | null {
   return match === null ? null : (match[1] ?? null);
 }
 
+/**
+ * Whether `local` is the name an import gets when nothing was written down: the
+ * last segment of its path. `extractGo` produces exactly that default, so this
+ * recovers "was there an explicit alias?" without widening `ImportRecord`.
+ */
+function isDefaultLocal(specifier: string, local: string): boolean {
+  const segments = specifier.split("/");
+  return (segments[segments.length - 1] ?? specifier) === local;
+}
+
 function addDeclarer(map: Map<string, Declarers>, dir: string, name: string, file: string): void {
   let byName = map.get(dir);
   if (byName === undefined) {
@@ -241,14 +251,21 @@ export function buildGoCallIndex(files: readonly FileRecord[], imports: readonly
     const specifiers = targetsByFile.get(file.path);
     if (specifiers === undefined) continue;
     const aliases = new Map<string, string>();
-    for (const record of file.imports) {
-      const local = record.symbols[0]?.local;
-      // `_` binds nothing (side-effect) and `.` merges the package into file
-      // scope without a qualifier: neither can appear as `obj` in `obj.m()`.
-      if (local === undefined || local === "." || local === "_") continue;
-      const target = specifiers.get(record.specifier);
-      if (target === undefined || aliases.has(local)) continue;
-      aliases.set(local, target);
+    // Two passes, explicit aliases first. A default local is the last path
+    // segment, which is only a guess at the package's declared name; an alias is
+    // written down. So `import "y/bar"` must never take the name `bar` away from
+    // `import bar "x/baz"`, whatever order they appear in.
+    for (const explicit of [true, false]) {
+      for (const record of file.imports) {
+        const local = record.symbols[0]?.local;
+        // `_` binds nothing (side-effect) and `.` merges the package into file
+        // scope without a qualifier: neither can appear as `obj` in `obj.m()`.
+        if (local === undefined || local === "." || local === "_") continue;
+        if (isDefaultLocal(record.specifier, local) === explicit) continue;
+        const target = specifiers.get(record.specifier);
+        if (target === undefined || aliases.has(local)) continue;
+        aliases.set(local, target);
+      }
     }
     if (aliases.size > 0) index.aliases.set(file.path, aliases);
   }

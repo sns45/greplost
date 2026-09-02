@@ -296,12 +296,13 @@ func (s *Store) Put() {
 	defer s.set()
 }
 `);
+    // `s.data.get()` is a deeper chain and `f()` calls the local `f`, which
+    // shadows package scope: neither is a call site the resolver could ever use.
     expect(record.calls).toEqual([
       { caller: "Store.Put", callee: "s.set", line: 8 },
       { caller: "Store.Put", callee: "New", line: 9 },
       { caller: "Store.Put", callee: "fmt.Println", line: 10 },
       { caller: "Store.Put", callee: "New", line: 12 },
-      { caller: "Store.Put", callee: "f", line: 13 },
       { caller: "Store.Put", callee: "s.set", line: 14 },
       { caller: "Store.Put", callee: "s.set", line: 15 },
     ]);
@@ -523,16 +524,19 @@ describe("resolve-go calls", () => {
     ).toEqual(["s.set -> store/b.go#Store.set (high)"]);
   });
 
-  test("a member call on anything but the receiver variable is dropped", () => {
+  test("a member call on a package-level name that is not an alias is dropped", () => {
+    // `shared` is not locally bound, so the extractor records the site; the
+    // resolver drops it because `shared` is neither an import alias nor the
+    // enclosing method's receiver.
     expect(
       resolveCalls(
         {
           "store/a.go":
-            "package store\n\ntype Store struct{}\n\nfunc (s *Store) set() {}\n\nfunc Free(other *Store) { other.set() }\n",
+            "package store\n\ntype Store struct{}\n\nvar shared *Store\n\nfunc (s *Store) set() {}\n\nfunc Free() { shared.set() }\n",
         },
         "store/a.go",
       ),
-    ).toEqual(["other.set -> (dropped)"]);
+    ).toEqual(["shared.set -> (dropped)"]);
   });
 
   test("a method with no receiver variable resolves no member calls", () => {
@@ -545,6 +549,80 @@ describe("resolve-go calls", () => {
         "store/a.go",
       ),
     ).toEqual(["s.set -> (dropped)"]);
+  });
+
+  test("a local function value shadows a package-scope func of the same name", () => {
+    // Review reproduction 1: `handler := func(){}` then `handler()`.
+    expect(
+      resolveCalls(
+        {
+          "app/a.go": "package app\n\nfunc handler() {}\n\nfunc Run() {\n\thandler := func() {}\n\thandler()\n}\n",
+        },
+        "app/a.go",
+      ),
+    ).toEqual([]);
+  });
+
+  test("a parameter shadows a package-scope func of the same name", () => {
+    // Review reproduction 2: a parameter named `do` over `func do()`.
+    expect(
+      resolveCalls(
+        { "app/a.go": "package app\n\nfunc do() {}\n\nfunc Run(do func()) {\n\tdo()\n}\n" },
+        "app/a.go",
+      ),
+    ).toEqual([]);
+  });
+
+  test("an unshadowed call to the same func still resolves (control)", () => {
+    expect(
+      resolveCalls(
+        { "app/a.go": "package app\n\nfunc do() {}\n\nfunc Run() {\n\tdo()\n}\n" },
+        "app/a.go",
+      ),
+    ).toEqual(["do -> app/a.go#do (high)"]);
+  });
+
+  test("a range variable, a type-switch alias and a named result all shadow", () => {
+    expect(
+      resolveCalls(
+        {
+          "app/a.go":
+            "package app\n\nfunc each() {}\nfunc kind() {}\nfunc out() {}\n\n" +
+            "func Run(xs []int, v any) (out func()) {\n" +
+            "\tfor each := range xs {\n\t\t_ = each\n\t}\n" +
+            "\tswitch kind := v.(type) {\n\tcase int:\n\t\t_ = kind\n\t}\n" +
+            "\teach()\n\tkind()\n\tout()\n\treturn nil\n}\n",
+        },
+        "app/a.go",
+      ),
+    ).toEqual([]);
+  });
+
+  test("a local named like an import alias hides that alias too", () => {
+    expect(
+      resolveCalls(
+        {
+          "app/main.go":
+            'package main\n\nimport "example.com/m/store"\n\nfunc Run() {\n\tstore := newThing()\n\tstore.New()\n}\n',
+          "store/a.go": "package store\n\nfunc New() {}\n",
+        },
+        "app/main.go",
+      ),
+    ).toEqual(["newThing -> (dropped)"]);
+  });
+
+  test("an explicit alias wins over another import's default local name", () => {
+    expect(
+      resolveCalls(
+        {
+          "app/main.go":
+            'package main\n\nimport (\n\t"example.com/m/y/bar"\n\tbar "example.com/m/x/baz"\n)\n\nfunc Run() { bar.Only() }\n',
+          "y/bar/a.go": "package bar\n\nfunc Other() {}\n",
+          "x/baz/a.go": "package baz\n\nfunc Only() {}\n",
+        },
+        "app/main.go",
+      ),
+    ).toEqual(["bar.Only -> x/baz/a.go#Only (high)"]);
   });
 
   test("a repo with no Go file costs the linker nothing", () => {
@@ -638,10 +716,10 @@ describe("tiny-go", () => {
     expect(sites).toEqual([
       "cmd/app/main.go: main -> store.New",
       "cmd/app/main.go: main -> retry.Do",
-      "cmd/app/main.go: main -> s.Put",
+      // `s.Put` is a call on the local `s`, and `op()` in retry.Do calls a
+      // parameter: both are locally bound, so neither is recorded at all.
       "cmd/app/main.go: main -> fmt.Println",
       "internal/retry/backoff.go: Backoff.Wait -> time.Sleep",
-      "internal/retry/retry.go: Do -> op",
       "internal/store/memory.go: NewMemory -> New",
       "internal/store/store.go:  -> errorString",
       "internal/store/store.go: errorString.Error -> string",

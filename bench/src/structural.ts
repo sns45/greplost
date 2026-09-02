@@ -390,11 +390,19 @@ export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth
   // Integrity guard (tech spec 10.1, principle 2). An empty truth set scores an empty
   // prediction as a perfect 1.000 across the board, so a truth generator that quietly
   // resolved nothing would turn Eval 1 into a rubber stamp.
-  const truthEmpty = files.length > 0 && truthImports.length === 0 && exportKeys(truthExports).length === 0;
+  //
+  // Two ways to be empty, and the second one used to slip through: a truth set
+  // that covered *none* of the language's files leaves `files` empty, so every
+  // "across the covered files" test is vacuously true. The universe therefore
+  // has to be judged against what the snapshot offered, not against what
+  // survived the intersection.
+  const offered = scoredFiles(snapshot, lang).length;
+  const truthEmpty =
+    offered > 0 && (files.length === 0 || (truthImports.length === 0 && exportKeys(truthExports).length === 0));
   if (truthEmpty) {
     console.error(
-      `${SUITE}: compiler truth for ${name} is empty across ${files.length} files; ` +
-        "the scores below are meaningless (check the repo root and its tsconfig.json)",
+      `${SUITE}: compiler truth for ${name} is empty across ${offered} files ` +
+        `(${files.length} covered); the scores below are meaningless (check the repo root and its toolchain)`,
     );
   }
 
