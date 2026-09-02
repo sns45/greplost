@@ -24,10 +24,14 @@ import path from "node:path";
 import { readStructure } from "@greplost/core";
 import type { Structure } from "@greplost/core";
 import { filesByDirectory } from "@greplost/core/graph";
-import type { ImportEdge } from "@greplost/core/schema";
+import type { CallEdge, Declaration, ImportEdge, Manifest } from "@greplost/core/schema";
 import { ARTIFACT_DIR, compareEdges, compareStrings } from "@greplost/core/schema";
 
 import { isDirectory, workspaceId } from "./config.ts";
+import { joinRelative, normalizeDir, resolveNpmTarget, subpathOf } from "./entry.ts";
+import type { NpmPackage } from "./entry.ts";
+
+export type { NpmPackage } from "./entry.ts";
 
 /**
  * One import that crosses a repository boundary.
@@ -73,10 +77,16 @@ export interface RepoView {
   fileSet: Set<string>;
   filesByDir: Map<string, string[]>;
   imports: ImportEdge[];
+  /** Call edges, for the cross-repo `query`. */
+  calls: CallEdge[];
+  /** Declarations, for the cross-repo `query`. */
+  symbols: Declaration[];
+  /** The repo's manifest, or `null` when it has no map. */
+  manifest: Manifest | null;
   /** True when `.greplost/manifest.json` was readable. */
   indexed: boolean;
-  /** npm package names this repo publishes -> entry file id, when one is indexed. */
-  npmPackages: Map<string, string | undefined>;
+  /** npm package names this repo publishes -> what the package declares. */
+  npmPackages: Map<string, NpmPackage>;
   /** Go module paths this repo publishes -> the module's repo-relative directory. */
   goModules: Map<string, string>;
 }
@@ -104,6 +114,9 @@ export function readRepo(root: string, dir: string): RepoView {
     fileSet: new Set(files),
     filesByDir: filesByDirectory(files),
     imports: structure?.imports ?? [],
+    calls: structure?.calls ?? [],
+    symbols: structure?.symbols ?? [],
+    manifest: structure?.manifest ?? null,
     indexed: structure !== null,
     npmPackages: new Map(),
     goModules: new Map(),
@@ -121,7 +134,22 @@ export function readRepo(root: string, dir: string): RepoView {
     const manifest = readJson(path.join(absolute, entry.path, "package.json"));
     const declared = manifest !== null && typeof manifest["name"] === "string" ? manifest["name"].trim() : "";
     if (manifest !== null && declared !== "") {
-      view.npmPackages.set(declared, entryFile(view, entry.path, manifest));
+      const existing = view.npmPackages.get(declared);
+      if (existing !== undefined) {
+        // Two packages in one repo claiming one name: only one of them can be
+        // what a sibling means by it, and nothing here can tell which. The
+        // first in sorted order wins so the artifacts stay deterministic, and
+        // the ambiguity is said out loud rather than settled by luck.
+        console.error(
+          `greplost: repo "${dir}" declares the npm name "${declared}" in two packages ` +
+            `("${existing.path}" and "${normalizeDir(entry.path)}"); ` +
+            "cross-repo imports of it resolve to the first",
+        );
+        continue;
+      }
+      const pkg: NpmPackage = { path: normalizeDir(entry.path), manifest, entry: undefined };
+      pkg.entry = resolveNpmTarget(view.fileSet, pkg, "");
+      view.npmPackages.set(declared, pkg);
       continue;
     }
 
@@ -149,7 +177,7 @@ export function crossEdges(repos: readonly RepoView[]): ResolvedCross[] {
       if (!edge.to.startsWith("ext:")) continue;
       if (!from.fileSet.has(edge.from)) continue;
 
-      const match = matchSibling(ordered, from, edge.to.slice("ext:".length));
+      const match = matchSibling(ordered, from, edge.to.slice("ext:".length), edge.specifier);
       if (match === null) continue;
 
       const symbols = edge.symbols ?? [];
@@ -208,12 +236,21 @@ interface SiblingMatch {
  * directory in sorted order, which is at least deterministic; a workspace that
  * does that has a real ambiguity nothing here can resolve.
  */
-function matchSibling(repos: readonly RepoView[], from: RepoView, pkg: string): SiblingMatch | null {
+function matchSibling(
+  repos: readonly RepoView[],
+  from: RepoView,
+  pkg: string,
+  specifier: string,
+): SiblingMatch | null {
   for (const repo of repos) {
     if (repo.dir === from.dir) continue;
-    if (!repo.npmPackages.has(pkg)) continue;
-    const entry = repo.npmPackages.get(pkg);
-    return { repo, target: entry ?? `pkg:${pkg}`, pkg };
+    const npm = repo.npmPackages.get(pkg);
+    if (npm === undefined) continue;
+    // The edge id lost the subpath (`ext:` carries the package name only), so
+    // it is recovered from the specifier the edge kept: `@fx/a/sub` is a
+    // question about `./sub`, not about the package entry.
+    const target = resolveNpmTarget(repo.fileSet, npm, subpathOf(specifier, pkg));
+    return { repo, target: target ?? `pkg:${pkg}`, pkg };
   }
 
   let best: SiblingMatch | null = null;
@@ -242,76 +279,6 @@ function matchSibling(repos: readonly RepoView[], from: RepoView, pkg: string): 
 function goTarget(repo: RepoView, moduleDir: string, subpath: string, module: string): string {
   const dir = normalizeDir(subpath === "" ? moduleDir : joinRelative(moduleDir, subpath));
   return (repo.filesByDir.get(dir) ?? []).length > 0 ? dir : `pkg:${module}`;
-}
-
-/**
- * The indexed file a package's `exports`/`main` points at, or `undefined`.
- *
- * Every condition of `exports` is collected in a fixed order and the first
- * candidate that is actually in the sibling's map wins, so a package whose
- * `exports` names both a built `dist/index.js` and a `source` entry resolves to
- * the one the map has. A short extension probe covers the common extensionless
- * `main`. Nothing is invented: a package that ships only built output the map
- * does not index has no entry file, and its edges land on `pkg:<name>`.
- */
-function entryFile(repo: RepoView, packagePath: string, manifest: Record<string, unknown>): string | undefined {
-  const candidates = [...exportTargets(manifest["exports"], 0)];
-  if (typeof manifest["main"] === "string") candidates.push(manifest["main"]);
-
-  const base = normalizeDir(packagePath);
-  for (const candidate of candidates) {
-    const joined = normalizeJoin(base, candidate);
-    if (joined === null) continue;
-    for (const probe of probes(joined)) {
-      if (repo.fileSet.has(probe)) return probe;
-    }
-  }
-  return undefined;
-}
-
-/** Conditions tried in order; `types` last because it names declarations, not source. */
-const EXPORT_CONDITIONS: readonly string[] = [
-  "source",
-  "development",
-  "import",
-  "module",
-  "default",
-  "require",
-  "node",
-  "browser",
-  "types",
-];
-
-const MAX_EXPORTS_DEPTH = 8;
-
-/** Every string an `exports` value can resolve to, richest condition first. */
-function exportTargets(value: unknown, depth: number): string[] {
-  if (depth > MAX_EXPORTS_DEPTH) return [];
-  if (typeof value === "string") return [value];
-  if (Array.isArray(value)) return value.flatMap((entry) => exportTargets(entry, depth + 1));
-  if (value === null || typeof value !== "object") return [];
-
-  const map = value as Record<string, unknown>;
-  const keys = Object.keys(map);
-  // A subpath map: only the package's own entry point is relevant here.
-  if (keys.some((key) => key.startsWith("."))) {
-    return Object.hasOwn(map, ".") ? exportTargets(map["."], depth + 1) : [];
-  }
-
-  const out: string[] = [];
-  for (const condition of EXPORT_CONDITIONS) {
-    if (Object.hasOwn(map, condition)) out.push(...exportTargets(map[condition], depth + 1));
-  }
-  for (const key of keys.sort(compareStrings)) {
-    if (!EXPORT_CONDITIONS.includes(key)) out.push(...exportTargets(map[key], depth + 1));
-  }
-  return out;
-}
-
-/** The file ids one entry-point path could mean, most literal first. */
-function probes(target: string): string[] {
-  const extensions = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"];
-  return [target, ...extensions.map((ext) => `${target}${ext}`), ...extensions.map((ext) => `${target}/index${ext}`)];
 }
 
 // ---------------------------------------------------------------------------
@@ -376,37 +343,4 @@ export function goModulePath(text: string | null): string {
     return value.startsWith('"') && value.endsWith('"') && value.length >= 2 ? value.slice(1, -1) : value;
   }
   return "";
-}
-
-// ---------------------------------------------------------------------------
-// paths
-// ---------------------------------------------------------------------------
-
-/** A repo-relative directory as the map spells it: posix, no `./`, `"."` at the root. */
-function normalizeDir(dir: string): string {
-  const segments: string[] = [];
-  for (const segment of dir.replace(/\\/g, "/").split("/")) {
-    if (segment === "" || segment === ".") continue;
-    segments.push(segment);
-  }
-  return segments.length === 0 ? "." : segments.join("/");
-}
-
-function joinRelative(dir: string, rest: string): string {
-  return dir === "." || dir === "" ? rest : `${dir}/${rest}`;
-}
-
-/** Join and normalise a repo-relative path, or `null` when it escapes the repo. */
-function normalizeJoin(dir: string, rest: string): string | null {
-  const segments: string[] = [];
-  for (const segment of joinRelative(dir, rest.replace(/\\/g, "/")).split("/")) {
-    if (segment === "" || segment === ".") continue;
-    if (segment === "..") {
-      if (segments.length === 0) return null;
-      segments.pop();
-      continue;
-    }
-    segments.push(segment);
-  }
-  return segments.length === 0 ? null : segments.join("/");
 }

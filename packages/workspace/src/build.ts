@@ -12,7 +12,8 @@
  * trace in `git status` or in any watcher.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import type { Dirent } from "node:fs";
 import path from "node:path";
 
 import { ARTIFACT_DIR, ARTIFACT_PATHS, compareStrings } from "@greplost/core/schema";
@@ -39,6 +40,13 @@ export interface WorkspaceBuild {
 export interface BuildWorkspaceOptions {
   /** Passed to each repo's `update`; `"full"` ignores the incremental fast path. */
   mode?: "incremental" | "full";
+  /**
+   * Install git hooks in a member repo this build has to initialise. Default
+   * `false`: `update` must never change what a commit in a repository the user
+   * may not own now runs. `greplost init --workspace` passes `true`, because
+   * that is a user asking for exactly that.
+   */
+  hooks?: boolean;
 }
 
 /**
@@ -47,9 +55,9 @@ export interface BuildWorkspaceOptions {
  * A repo with no map at all is initialised rather than updated: `init` writes
  * the repo's `config.json` and `.gitignore` and runs the first full build, and
  * doing it here means adding a repo to the workspace file is the only step a
- * user has to take. Git hooks are never installed from a workspace build — the
- * user asked to build a workspace, not to change what every commit in a
- * repository they may not own now runs.
+ * user has to take. Git hooks are not installed unless `hooks` asks for them:
+ * an `update` must never change what every commit in a repository the user may
+ * not own now runs, and only `init --workspace` is a user asking for that.
  */
 export async function buildWorkspace(root: string, opts: BuildWorkspaceOptions = {}): Promise<WorkspaceBuild> {
   const absolute = path.resolve(root);
@@ -62,7 +70,7 @@ export async function buildWorkspace(root: string, opts: BuildWorkspaceOptions =
     if (!isDirectory(repoRoot)) {
       throw new Error(`greplost: workspace repo "${dir}" does not exist`);
     }
-    await ensureRepoMap(repoRoot, mode);
+    await ensureRepoMap(repoRoot, mode, opts.hooks === true);
 
     const view = readRepo(absolute, dir);
     if (!view.indexed) {
@@ -135,6 +143,10 @@ export async function verifyWorkspace(root: string, opts: { diff?: boolean } = {
     }
   }
 
+  for (const rel of strayArtifacts(path.join(absolute, ARTIFACT_DIR), expected)) {
+    extra.push(`${ARTIFACT_DIR}/${rel}`);
+  }
+
   changed.sort(compareStrings);
   missing.sort(compareStrings);
   extra.sort(compareStrings);
@@ -177,13 +189,13 @@ function repoDirs(entries: readonly string[]): string[] {
  * update when it has. `init` already runs a full build, so an update after it
  * would only repeat the work it just did.
  */
-async function ensureRepoMap(repoRoot: string, mode: "incremental" | "full"): Promise<void> {
+async function ensureRepoMap(repoRoot: string, mode: "incremental" | "full", hooks: boolean): Promise<void> {
   const manifest = path.join(repoRoot, ARTIFACT_DIR, ARTIFACT_PATHS.manifest);
   if (existsSync(manifest)) {
     await update(repoRoot, { mode, quiet: true });
     return;
   }
-  await init(repoRoot, { hooks: false, quiet: true });
+  await init(repoRoot, { hooks, quiet: true });
 }
 
 /** Write the artifacts that changed; returns the workspace-relative paths written. */
@@ -203,6 +215,39 @@ function writeWorkspaceArtifacts(root: string, files: Map<string, string>): stri
     written.push(`${ARTIFACT_DIR}/${rel}`);
   }
   return written;
+}
+
+/**
+ * Files under the workspace's own `.greplost/` that no build produces, sorted.
+ *
+ * The workspace artifact set is fixed at two files, so anything else there is
+ * either a leftover from an older layout or something that does not belong —
+ * and `graph/cross.jsonl` sits in a directory a repo build would prune, so
+ * saying "there is a third file here" is worth the walk.
+ *
+ * Dotfiles are left alone. Every runtime and VCS file in this codebase is a
+ * dotfile (`.dirty`, `.lock`, `.state.json`, `.gitignore`), none of them is
+ * produced by a build, and reporting them would make `verify` fail on a
+ * perfectly healthy workspace.
+ */
+function strayArtifacts(artifactDir: string, expected: ReadonlyMap<string, string>): string[] {
+  const out: string[] = [];
+  const walk = (dir: string, prefix: string): void => {
+    let entries: Dirent[];
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (entry.name.startsWith(".")) continue;
+      const rel = prefix === "" ? entry.name : `${prefix}/${entry.name}`;
+      if (entry.isDirectory()) walk(path.join(dir, entry.name), rel);
+      else if (entry.isFile() && !expected.has(rel)) out.push(rel);
+    }
+  };
+  walk(artifactDir, "");
+  return out.sort(compareStrings);
 }
 
 /**

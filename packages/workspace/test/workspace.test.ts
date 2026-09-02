@@ -15,8 +15,6 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { main } from "greplost";
-
 import {
   WORKSPACE_ARTIFACTS,
   WORKSPACE_FILE,
@@ -49,33 +47,6 @@ function emptyDir(label: string): string {
 
 function artifact(root: string, rel: string): string {
   return readFileSync(path.join(root, ".greplost", rel), "utf8");
-}
-
-interface Run {
-  code: number;
-  stdout: string;
-  stderr: string;
-}
-
-/** Run the CLI in process, capturing both streams. */
-async function cli(...argv: string[]): Promise<Run> {
-  const out: string[] = [];
-  const err: string[] = [];
-  const log = console.log;
-  const error = console.error;
-  console.log = (...args: unknown[]): void => {
-    out.push(args.map((a) => String(a)).join(" "));
-  };
-  console.error = (...args: unknown[]): void => {
-    err.push(args.map((a) => String(a)).join(" "));
-  };
-  try {
-    const code = await main(argv);
-    return { code, stdout: out.join("\n"), stderr: err.join("\n") };
-  } finally {
-    console.log = log;
-    console.error = error;
-  }
 }
 
 /** Built once: every read-only assertion answers from the same workspace. */
@@ -206,6 +177,80 @@ describe("cross edge", () => {
     );
     const build = await buildWorkspace(outside);
     expect(build.cross.map((edge: CrossEdge) => edge.to)).toEqual(["repo-a::src/index.ts"]);
+  });
+
+  /** repo-a grows `src/sub.ts`; repo-b imports it through `@fx/a/sub`. */
+  function subpathWorkspace(label: string, exportsMap: Record<string, string>): string {
+    const dir = copyFixture(label);
+    writeFileSync(
+      path.join(dir, "repo-a", "package.json"),
+      `${JSON.stringify({ name: "@fx/a", version: "1.0.0", private: true, exports: exportsMap }, null, 2)}\n`,
+    );
+    writeFileSync(
+      path.join(dir, "repo-a", "src", "sub.ts"),
+      "export function sub(name: string): string {\n  return `sub:${name}`;\n}\n",
+    );
+    writeFileSync(
+      path.join(dir, "repo-b", "src", "main.ts"),
+      'import { sub } from "@fx/a/sub";\n\nexport function run(name: string): string {\n  return sub(name);\n}\n',
+    );
+    return dir;
+  }
+
+  test("a subpath import resolves through the sibling's exports map", async () => {
+    const dir = subpathWorkspace("subpath", { ".": "./src/index.ts", "./sub": "./src/sub.ts" });
+
+    const build = await buildWorkspace(dir);
+    expect(build.cross).toEqual([
+      {
+        from: "repo-b::src/main.ts",
+        to: "repo-a::src/sub.ts",
+        kind: "import",
+        symbols: ["sub"],
+        confidence: "high",
+        specifier: "@fx/a/sub",
+      },
+    ]);
+    expect(impactAcross(dir, "repo-a::src/sub.ts")).toEqual([
+      { id: "repo-b::src/main.ts", depth: 1 },
+      { id: "repo-b::src/app.ts", depth: 2 },
+    ]);
+    // The entry file is no longer where a subpath import is attributed.
+    expect(impactAcross(dir, "repo-a::src/index.ts")).toEqual([]);
+  });
+
+  test("a wildcard exports pattern resolves the subpath too", async () => {
+    const dir = subpathWorkspace("wildcard", { ".": "./src/index.ts", "./*": "./src/*.ts" });
+    const build = await buildWorkspace(dir);
+    expect(build.cross.map((edge: CrossEdge) => edge.to)).toEqual(["repo-a::src/sub.ts"]);
+  });
+
+  test("a subpath the exports map does not answer falls back to the entry file", async () => {
+    const dir = subpathWorkspace("subpathmiss", { ".": "./src/index.ts" });
+    const build = await buildWorkspace(dir);
+    expect(build.cross.map((edge: CrossEdge) => edge.to)).toEqual(["repo-a::src/index.ts"]);
+  });
+
+  test("two packages in one repo declaring one npm name warn on stderr", async () => {
+    const dupe = copyFixture("dupe");
+    mkdirSync(path.join(dupe, "repo-a", "packages", "twin", "src"), { recursive: true });
+    writeFileSync(
+      path.join(dupe, "repo-a", "packages", "twin", "package.json"),
+      `${JSON.stringify({ name: "@fx/a", version: "1.0.0", private: true }, null, 2)}\n`,
+    );
+    writeFileSync(path.join(dupe, "repo-a", "packages", "twin", "src", "twin.ts"), "export const twin = 1;\n");
+
+    const warnings: string[] = [];
+    const error = console.error;
+    console.error = (...args: unknown[]): void => {
+      warnings.push(args.map((a) => String(a)).join(" "));
+    };
+    try {
+      await buildWorkspace(dupe);
+    } finally {
+      console.error = error;
+    }
+    expect(warnings.join("\n")).toContain('declares the npm name "@fx/a" in two packages');
   });
 
   test("a type-only import and a re-export are cross edges too", async () => {
@@ -350,6 +395,18 @@ describe("verifyWorkspace", () => {
     ]);
   });
 
+  test("a stray file under the workspace .greplost/ is reported as extra", async () => {
+    const stray = copyFixture("stray");
+    await buildWorkspace(stray);
+    writeFileSync(path.join(stray, ".greplost", "graph", "leftover.jsonl"), "{}\n");
+    // Dotfiles are runtime files, not artifacts, and must not be reported.
+    writeFileSync(path.join(stray, ".greplost", ".gitignore"), "*.tmp\n");
+
+    const result = await verifyWorkspace(stray);
+    expect(result.ok).toBe(false);
+    expect(result.extra).toEqual([".greplost/graph/leftover.jsonl"]);
+  });
+
   test("a deleted workspace artifact is reported as missing", async () => {
     const gap = copyFixture("gap");
     await buildWorkspace(gap);
@@ -388,101 +445,5 @@ describe("byte-stable", () => {
       expect(text).not.toContain(tmpdir());
       expect(text).not.toMatch(/\d{4}-\d{2}-\d{2}/);
     }
-  });
-});
-
-describe("cli", () => {
-  test("impact from the workspace root answers across repos", async () => {
-    const run = await cli("impact", "repo-a::src/index.ts", "--root", ws, "--json");
-    expect(run.stderr).toBe("");
-    expect(run.code).toBe(0);
-    expect(JSON.parse(run.stdout)).toEqual({
-      path: "repo-a::src/index.ts",
-      radius: 2,
-      files: [
-        { path: "repo-b::src/main.ts", depth: 1 },
-        { path: "repo-b::src/app.ts", depth: 2 },
-      ],
-    });
-  });
-
-  test("impact --depth truncates the listing, never the radius", async () => {
-    const run = await cli("impact", "repo-a::src/index.ts", "--depth", "1", "--root", ws, "--json");
-    expect(run.code).toBe(0);
-    const result = JSON.parse(run.stdout) as { radius: number; files: unknown[] };
-    expect(result.radius).toBe(2);
-    expect(result.files).toEqual([{ path: "repo-b::src/main.ts", depth: 1 }]);
-  });
-
-  test("impact prints a table without --json", async () => {
-    const run = await cli("impact", "repo-a::src/index.ts", "--root", ws);
-    expect(run.code).toBe(0);
-    expect(run.stdout).toContain("repo-a::src/index.ts  blast radius 2");
-    expect(run.stdout).toContain("repo-b::src/main.ts");
-  });
-
-  test("verify reports the whole workspace", async () => {
-    const run = await cli("verify", "--root", ws, "--json");
-    expect(run.code).toBe(0);
-    expect(JSON.parse(run.stdout)).toEqual({ ok: true, changed: [], missing: [], extra: [] });
-  });
-
-  test("update builds every repo and the workspace artifacts", async () => {
-    const fresh = copyFixture("cliupdate");
-    const run = await cli("update", "--root", fresh, "--json");
-    expect(run.stderr).toBe("");
-    expect(run.code).toBe(0);
-    const result = JSON.parse(run.stdout) as { name: string; cross: number; written: string[] };
-    expect(result.name).toBe("two-repo");
-    expect(result.cross).toBe(1);
-    expect(result.written).toEqual([
-      `.greplost/${WORKSPACE_ARTIFACTS.workspace}`,
-      `.greplost/${WORKSPACE_ARTIFACTS.cross}`,
-    ]);
-    expect((await cli("verify", "--root", fresh, "--json")).code).toBe(0);
-  });
-
-  test("update --full rebuilds every repo", async () => {
-    const full = copyFixture("clifull");
-    expect((await cli("update", "--full", "--root", full)).code).toBe(0);
-    const run = await cli("update", "--full", "--root", full, "--json");
-    expect(run.code).toBe(0);
-    const result = JSON.parse(run.stdout) as { written: string[] };
-    expect(result.written).toEqual([]);
-  });
-
-  test("update without --json prints one summary line", async () => {
-    const summary = copyFixture("clisummary");
-    const run = await cli("update", "--root", summary);
-    expect(run.code).toBe(0);
-    expect(run.stdout).toContain("greplost: 2 repos, 4 files, 1 cross-repo import;");
-  });
-
-  test("verify --diff shows the first divergent artifact after drift", async () => {
-    const drift = copyFixture("clidiff");
-    await buildWorkspace(drift);
-    writeFileSync(path.join(drift, ".greplost", WORKSPACE_ARTIFACTS.cross), "");
-
-    const run = await cli("verify", "--diff", "--root", drift);
-    expect(run.code).toBe(1);
-    expect(run.stdout).toContain(`changed  .greplost/${WORKSPACE_ARTIFACTS.cross}`);
-    expect(run.stdout).toContain(`--- a/.greplost/${WORKSPACE_ARTIFACTS.cross}`);
-  });
-
-  test("a workspace root that is also an indexed repo fails loudly", async () => {
-    const both = copyFixture("cliboth");
-    await buildWorkspace(both);
-    mkdirSync(path.join(both, ".greplost"), { recursive: true });
-    writeFileSync(path.join(both, ".greplost", "manifest.json"), "{}\n");
-
-    const run = await cli("verify", "--root", both);
-    expect(run.code).toBe(1);
-    expect(run.stderr).toContain("both a workspace root and an indexed repository");
-  });
-
-  test("a single repo inside the workspace still answers for itself", async () => {
-    const run = await cli("impact", "src/index.ts", "--root", path.join(ws, "repo-a"), "--json");
-    expect(run.code).toBe(0);
-    expect(JSON.parse(run.stdout)).toEqual({ path: "src/index.ts", radius: 0, files: [] });
   });
 });

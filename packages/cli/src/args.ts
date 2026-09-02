@@ -42,6 +42,8 @@ export type HookEvent = (typeof HOOK_EVENTS)[number];
 export interface CommandOptions {
   /** `init --no-hooks` -> false. */
   hooks?: boolean;
+  /** `init --workspace`: build every repo of the workspace rooted here. */
+  workspace?: boolean;
   /** `update` mode; always set for `update`. */
   mode?: "incremental" | "full";
   /** `update --files a b`. */
@@ -90,7 +92,7 @@ export interface CommandContext {
 
 export const USAGE = `usage: greplost <command> [options]
 
-  greplost init [--no-hooks]                     build the map, install git hooks, write config
+  greplost init [--no-hooks] [--workspace]       build the map, install git hooks, write config
   greplost update [--incremental|--full] [--files <p>...] [--quiet]
   greplost verify [--diff]                       exit 1 on drift
   greplost query <symbol|path>                   definition, importers, callers, package, card
@@ -103,7 +105,11 @@ export const USAGE = `usage: greplost <command> [options]
   greplost --version | --help
 
 Every command accepts --root <dir> and --json.
-Exit codes: 0 success, 1 drift or not found, 2 usage error.`;
+Exit codes: 0 success, 1 drift or not found, 2 usage error.
+
+In a workspace (a directory holding greplost.workspace.json), update, verify,
+impact and query answer across every repo and take <repo>::<file> ids; init
+needs --workspace; update --files is ignored and --semantic is refused.`;
 
 const COMMANDS: ReadonlySet<string> = new Set<CommandName>([
   "init",
@@ -284,9 +290,15 @@ function applyCommandFlag(
 ): true | string {
   const noValue = (): true | string => (inline === undefined ? true : `${flag} takes no value`);
 
-  if (name === "init" && flag === "--no-hooks") {
-    options.hooks = false;
-    return noValue();
+  if (name === "init") {
+    if (flag === "--no-hooks") {
+      options.hooks = false;
+      return noValue();
+    }
+    if (flag === "--workspace") {
+      options.workspace = true;
+      return noValue();
+    }
   }
 
   if (name === "update") {
