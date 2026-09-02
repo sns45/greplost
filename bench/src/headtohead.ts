@@ -42,7 +42,7 @@ import type { CompetitorArtifact } from "./adapters/types.ts";
 import { machineProfile } from "./machine.ts";
 import { gitSha7, latestResult, todayIso, writeResult } from "./results-io.ts";
 import { scoreEdges, type Score } from "./score.ts";
-import { X_IDS, type MetricCell, type MetricRow, type Verdict, type XId } from "./results-md.ts";
+import { X_IDS, scopeTarget, type MetricCell, type MetricRow, type RunTarget, type Verdict, type XId } from "./results-md.ts";
 import { scoredFiles } from "./structural.ts";
 import { generateTsTruth, type Truth } from "./truth/ts.ts";
 
@@ -217,6 +217,28 @@ export function scaleTitles(metrics: Record<XId, MetricRow>, commits: number): v
   for (const [id, row] of [["X2", x2], ["X3", x3]] as const) {
     void id;
     for (const cell of Object.values(row.tools)) cell.target = row.target;
+  }
+}
+
+/**
+ * Give every `loss` cell a reason, from the numbers, when its metric did not.
+ *
+ * Not a substitute for a written reason — the metrics that have one keep it —
+ * but a backstop, because "every loss carries a one-line reason" is a rule
+ * about the published table and not about the diligence of whoever wrote the
+ * eleventh metric. `na` cells are left alone: their reasons are collected under
+ * the table instead.
+ */
+export function fillMissingReasons(metrics: Record<XId, MetricRow>): void {
+  for (const row of Object.values(metrics)) {
+    const ours = row.tools["greplost"];
+    for (const [tool, cell] of Object.entries(row.tools)) {
+      if (tool === "greplost" || cell.verdict !== "loss" || cell.reason.length > 0) continue;
+      cell.reason =
+        ours === undefined || ours.value === null
+          ? `${tool} measured ${String(cell.value)} on ${row.title.toLowerCase()}, and greplost has no comparable number`
+          : `${tool} measured ${String(cell.value)} against greplost's ${String(ours.value)} on ${row.title.toLowerCase()}`;
+    }
   }
 }
 
@@ -1115,9 +1137,12 @@ async function execute(options: Options, target: Target): Promise<number> {
     else for (const tool of TOOLS) (metrics["X1"] as MetricRow).tools[tool] = na(METRIC_PLAN[0]?.target ?? "", noOracle("X1"));
   }
   let walked = 0;
+  let sync: SyncEvidence[] = [];
   if (selected("X2") || selected("X3")) {
     if (snapshot !== null) {
-      walked = await metricX2X3(metrics, target, snapshot, states, method, selected, options.commits ?? 0, options.arms);
+      const walk = await metricX2X3(metrics, target, snapshot, states, method, selected, options.commits ?? 0, options.arms);
+      walked = walk.commits;
+      sync = walk.sync;
     } else {
       for (const tool of TOOLS) {
         if (selected("X2")) (metrics["X2"] as MetricRow).tools[tool] = na(METRIC_PLAN[1]?.target ?? "", noOracle("X2"));
@@ -1135,10 +1160,32 @@ async function execute(options: Options, target: Target): Promise<number> {
   if (selected("X9")) metricX9(metrics, method);
   if (selected("X10")) metricX10(metrics, states, method);
 
+  // The publishing rule (tech spec 10.0) is that every loss carries a reason.
+  // Enforced here rather than trusted to eleven call sites: a metric added later
+  // cannot publish a silent loss.
+  fillMissingReasons(metrics);
+
   // X2 and X3 are worded against 500 commits in tech spec 3.1. Printing that
   // over a 24- or 100-commit walk states a target nobody tested, in the one
   // column a reader trusts to be the target (review round 1, important 6).
   scaleTitles(metrics, walked);
+
+  // The scale the numbers were taken at, and the scoping it implies. Both the
+  // payload and the renderer need it, and only the payload is committed: a
+  // target that says "(tier M)" in the JSON and "(measured on anyq, tier S, not
+  // tier M)" in the document is one fact with two spellings, and the one a
+  // future reader diffs is the JSON (review round 2, minor).
+  const runTarget: RunTarget = {
+    repo: target.name,
+    fixture: options.fixture,
+    ...(options.fixture || (target.tier ?? options.tier) === null ? {} : { tier: (target.tier ?? options.tier) as string }),
+    files: scoredFileCount,
+    commits: walked,
+  };
+  for (const row of Object.values(metrics)) {
+    row.target = scopeTarget(row.target, runTarget);
+    for (const cellValue of Object.values(row.tools)) cellValue.target = scopeTarget(cellValue.target, runTarget);
+  }
 
   const rows = METRIC_PLAN.map((metric) => metrics[metric.id]);
   printTable(rows);
@@ -1155,14 +1202,11 @@ async function execute(options: Options, target: Target): Promise<number> {
     // them and refuse to print a tier-scoped target against a fixture run
     // (review round 1, critical 3). `files` is the file universe the oracle and
     // every prediction were cut to, which is the honest size of what was measured.
-    target: {
-      repo: target.name,
-      fixture: options.fixture,
-      tier: options.fixture ? null : (target.tier ?? options.tier),
-      files: scoredFileCount,
-      commits: walked,
-    },
+    target: runTarget,
     tools: [...TOOLS],
+    // Per-commit evidence that each tool's own mechanism fired, so "100 of 100
+    // commits" is auditable from the repository without re-running the walk.
+    sync,
     competitors: Object.fromEntries(
       [...states.values()].map((state) => [
         state.name,
@@ -1440,7 +1484,58 @@ interface SyncMechanism {
   walked: number;
   /** Milliseconds its child processes spent, summed over the walk. */
   ms: number;
+  /**
+   * Per commit, whether the mechanism ran and for how long.
+   *
+   * "observed to run on 100 of 100 commits" is a claim, and a claim in a
+   * benchmark has to be checkable from the repository without re-running the
+   * walk (review round 2, minor). `firedPerCommit` is one character per commit
+   * in walk order and `msPerCommit` the matching wall-clock, so a reader can
+   * count the zeroes themselves.
+   */
+  perCommit: { fired: boolean; ms: number }[];
   notes: string[];
+}
+
+/** A `SyncMechanism` as it is written to the payload. */
+export interface SyncEvidence {
+  tool: string;
+  install: string[];
+  hook: string | null;
+  evidence: string;
+  automatic: boolean;
+  fired: number;
+  walked: number;
+  totalMs: number;
+  /** One character per commit, in walk order: `1` fired, `0` did not. */
+  firedPerCommit: string;
+  /** Milliseconds per commit, in the same order. */
+  msPerCommit: number[];
+  /** The commit indices (1-based) where the mechanism did not fire. */
+  missedCommits: number[];
+  notes: string[];
+}
+
+/** The JSON-friendly evidence for every mechanism the walk installed. */
+export function syncEvidence(mechanisms: ReadonlyMap<string, SyncMechanism>): SyncEvidence[] {
+  const out: SyncEvidence[] = [];
+  for (const mechanism of mechanisms.values()) {
+    out.push({
+      tool: mechanism.tool,
+      install: mechanism.install,
+      hook: mechanism.hook,
+      evidence: mechanism.evidence,
+      automatic: mechanism.automatic,
+      fired: mechanism.fired,
+      walked: mechanism.walked,
+      totalMs: mechanism.ms,
+      firedPerCommit: mechanism.perCommit.map((entry) => (entry.fired ? "1" : "0")).join(""),
+      msPerCommit: mechanism.perCommit.map((entry) => entry.ms),
+      missedCommits: mechanism.perCommit.flatMap((entry, index) => (entry.fired ? [] : [index + 1])),
+      notes: mechanism.notes,
+    });
+  }
+  return out.sort((a, b) => compareStrings(a.tool, b.tool));
 }
 
 /** One scoring checkpoint of one arm. */
@@ -1618,6 +1713,7 @@ async function replayStaleness(
         fired: 0,
         walked: 0,
         ms: 0,
+        perCommit: [],
         notes: [],
       });
     }
@@ -1650,6 +1746,7 @@ async function replayStaleness(
           fired: 0,
           walked: 0,
           ms: 0,
+          perCommit: [],
           notes:
             hook === null
               ? [
@@ -1680,10 +1777,48 @@ async function replayStaleness(
     }
   }
 
-  // -- the walk -------------------------------------------------------------
+  // -- commit 0: what each tool knew before anything changed -----------------
 
   const buildSnapshot = await loadBuildSnapshot();
   const stale: { index: number; f1: Map<string, number> }[] = [];
+
+  /**
+   * The freshly built artifact of every tool, scored against truth at commit 0.
+   *
+   * Without this point a reader cannot tell decay from coverage, and the
+   * difference is the whole finding. graphify ends the hono walk at 0.125 while
+   * greplost holds 1.0, which reads as an eight-fold staleness gap — but
+   * graphify's *fresh* import F1 is about the same 0.13, so almost none of that
+   * gap is staleness. The curve has to start where each tool starts (review
+   * round 2, critical).
+   */
+  const oracleAtZero = primary?.dirs.get("greplost") ?? armRuns[0]?.dirs.get("greplost");
+  if (oracleAtZero !== undefined) {
+    const base = await buildSnapshot({ root: oracleAtZero });
+    const baseFiles = scoredFiles(base, "ts");
+    const baseTruth = generateTsTruth(oracleAtZero, baseFiles);
+    const baseUniverse = new Set(baseTruth.files.length > 0 ? baseTruth.files : baseFiles);
+    const inZero = (id: string): boolean => baseUniverse.has(fileOf(id));
+    const zeroImports = baseTruth.imports.filter((e) => inZero(e.from) && inZero(e.to));
+    const zeroCalls = baseTruth.calls.filter((e) => inZero(e.from) && inZero(e.to));
+    const keepZero = (edges: Edge[]): Edge[] => edges.filter((e) => inZero(e.from) && inZero(e.to));
+
+    const importF1 = new Map<string, number>();
+    const callF1 = new Map<string, number>();
+    for (const [tool, artifact] of atZero) {
+      importF1.set(tool, scoreEdges(keepZero(artifact.imports), zeroImports).f1);
+      callF1.set(tool, scoreEdges(keepZero(artifact.calls), zeroCalls).f1);
+    }
+    // Every arm starts from the same freshly built artifacts, so the same point
+    // opens each curve; the unrefreshed arm's commit-0 value is that number by
+    // construction.
+    for (const run of armRuns) run.points.push({ index: 0, importF1, callF1 });
+    stale.push({ index: 0, f1: new Map(importF1) });
+  } else {
+    notes.push("no greplost copy was prepared, so no commit-0 checkpoint could be scored and decay is unknown");
+  }
+
+  // -- the walk -------------------------------------------------------------
 
   for (let k = 1; k <= commits; k++) {
     const edit = edits[k - 1];
@@ -1704,6 +1839,7 @@ async function replayStaleness(
             mechanism.walked++;
             if (after.ran) mechanism.fired++;
             mechanism.ms += after.ms;
+            mechanism.perCommit.push({ fired: after.ran, ms: after.ms });
           }
           run.ms.set(tool, (run.ms.get(tool) ?? 0) + after.ms);
           continue;
@@ -1926,7 +2062,7 @@ async function metricX2X3(
   selected: (id: XId) => boolean,
   commits: number,
   arms: readonly Arm[],
-): Promise<number> {
+): Promise<{ commits: number; sync: SyncEvidence[] }> {
   const x2 = PLAN_BY_ID.get("X2") as MetricDef;
   const x3 = PLAN_BY_ID.get("X3") as MetricDef;
 
@@ -1943,10 +2079,10 @@ async function metricX2X3(
 
   if (walk !== null) {
     fromWalk(metrics, states, walk, method, selected, x2, x3);
-    return walk.commits;
+    return { commits: walk.commits, sync: syncEvidence(walk.mechanisms) };
   }
   fromReplayResult(metrics, states, method, selected, x2, x3);
-  return 0;
+  return { commits: 0, sync: [] };
 }
 
 function fromWalk(
@@ -1960,9 +2096,13 @@ function fromWalk(
 ): void {
   for (const note of walk.notes) method.push(`X2: ${note}.`);
   method.push(
-    "X2: the plotted number is import edge F1 against compiler truth at that commit. Imports are the one " +
-      "relationship all four tools model the same way and the one a fresh greplost build already scores 1.0 " +
-      "on, so a fall in the line is drift and not a modelling difference; call F1 is in each cell's detail.",
+    "X2: the plotted number is import edge F1 against compiler truth at that commit, and the curve starts at " +
+      "commit 0 with each tool's freshly built artifact. The **level** of a line is that tool's import " +
+      "coverage, not its freshness: the four tools do not model imports alike, and X1 measures how far apart " +
+      "they start (on this corpus graphify recalls a small fraction of the import edges the compiler sees). " +
+      "The **fall** of a line between commit 0 and the last commit is the staleness this metric is about, and " +
+      "it is reported as `decay` in every cell. A reader comparing two end-points is comparing coverage plus " +
+      "decay; only the decay belongs to X2. Call F1 is in each cell's detail.",
   );
   for (const arm of walk.arms) {
     method.push(`X2 arm \`${arm.arm}\` (\`${ARM_PREFIX[arm.arm]}@<commit>\` in each cell's detail): ${ARM_DESCRIPTION[arm.arm]}.`);
@@ -1983,8 +2123,17 @@ function fromWalk(
   }
 
   const primary = walk.arms.find((run) => run.arm === "documented-sync") ?? walk.arms[0];
-  const last = primary?.points[primary.points.length - 1];
+  const scored = (primary?.points ?? []).filter((point) => point.index > 0);
+  const last = scored[scored.length - 1];
+  const first = primary?.points.find((point) => point.index === 0);
   const staleLast = walk.stale[walk.stale.length - 1];
+
+  /** A tool's freshly built F1, its final F1, and how much it lost between them. */
+  const freshness = (tool: string): { at0: number | null; atLast: number | null; decay: number | null } => {
+    const at0 = first?.importF1.get(tool) ?? null;
+    const atLast = last?.importF1.get(tool) ?? null;
+    return { at0, atLast, decay: at0 === null || atLast === null ? null : at0 - atLast };
+  };
 
   const seriesFor = (tool: string): Record<string, number> => {
     const detail: Record<string, number> = {};
@@ -2004,10 +2153,14 @@ function fromWalk(
     return detail;
   };
 
-  const ourFinal = last?.importF1.get("greplost") ?? null;
+  const ours = freshness("greplost");
+  const ourFinal = ours.atLast;
   if (selected("X2")) {
     const row = metrics["X2"];
     const ourMechanism = walk.mechanisms.get("greplost");
+    // greplost's own cell keeps the tech spec 3.1 target: F1 at or above 0.99
+    // after the walk. That is an absolute claim about greplost's own artifact
+    // and it does not depend on anyone else's coverage.
     row.tools["greplost"] = ourFinal === null
       ? na(x2.target, `the walk ran ${walk.commits} commits but greplost's artifact could not be scored at the last checkpoint`)
       : measured(
@@ -2015,44 +2168,53 @@ function fromWalk(
           x2.target,
           ourFinal >= 0.99 ? "win" : "loss",
           ourFinal >= 0.99
-            ? ""
-            : `greplost's committed graph scored ${round(ourFinal, 3)} import F1 after ${walk.commits} commits; the target is 0.99`,
+            ? `${describeFreshness("greplost", ours)}`
+            : `greplost's committed graph scored ${round(ourFinal, 3)} import F1 after ${walk.commits} commits; ` +
+              `the target is 0.99. ${describeFreshness("greplost", ours)}`,
           {
             ...seriesFor("greplost"),
             commits: walk.commits,
             refreshFailures: primary?.failures.get("greplost") ?? 0,
             syncFired: ourMechanism?.fired ?? 0,
             syncWalked: ourMechanism?.walked ?? 0,
+            ...(ours.at0 === null ? {} : { freshF1: round(ours.at0, 4) }),
+            ...(ours.decay === null ? {} : { decay: round(ours.decay, 4) }),
             unrefreshedFinalF1: round(staleLast?.f1.get("greplost") ?? 0, 4),
           },
         );
     for (const state of states.values()) {
-      const theirs = last?.importF1.get(state.name) ?? null;
+      const theirs = freshness(state.name);
       const mechanism = walk.mechanisms.get(state.name);
       const noSync =
         mechanism !== undefined && !mechanism.automatic
           ? `${state.name}'s documented install wrote no git hook here, so its commit-time mechanism is a ` +
-            "manual `update`, which is no sync in this arm"
-          : null;
-      row.tools[state.name] = theirs === null
+            "manual `update`, which is no sync in this arm. "
+          : "";
+      row.tools[state.name] = theirs.atLast === null
         ? na(x2.target, state.reason ?? `${sentenceOfSync(state)} — its artifact could not be scored during the walk`)
         : measured(
-            round(theirs, 4),
+            // The cell states the decay first, because that is the metric, and
+            // carries both absolutes so the reader can see the level too.
+            theirs.decay === null
+              ? `${round(theirs.atLast, 4)} (no commit-0 point)`
+              : `decay ${signed(theirs.decay)} (${round(theirs.at0 ?? 0, 3)} to ${round(theirs.atLast, 3)})`,
             x2.target,
-            verdictFor({ ours: ourFinal, theirs, higherIsBetter: true, margin: x2.margin }),
-            noSync ??
-              (ourFinal !== null && theirs > ourFinal
-                ? `${state.name} held ${round(theirs, 3)} import F1 against greplost's ${round(ourFinal, 3)} after ${walk.commits} commits`
-                : ""),
+            decayVerdict(ours.decay, theirs.decay),
+            `${noSync}${describeFreshness(state.name, theirs)}${decayReason(ours, theirs, state.name)}`,
             {
               ...seriesFor(state.name),
               refreshFailures: primary?.failures.get(state.name) ?? 0,
               syncFired: mechanism?.fired ?? 0,
               syncWalked: mechanism?.walked ?? 0,
+              ...(theirs.at0 === null ? {} : { freshF1: round(theirs.at0, 4) }),
+              ...(theirs.decay === null ? {} : { decay: round(theirs.decay, 4) }),
+              finalF1: round(theirs.atLast, 4),
               unrefreshedFinalF1: round(staleLast?.f1.get(state.name) ?? 0, 4),
             },
           );
     }
+    const gap = coverageVersusDecay(ours, freshness("graphify"), freshness("crg"));
+    if (gap !== null) method.push(`X2: ${gap}`);
   }
 
   if (selected("X3")) {
@@ -2120,6 +2282,92 @@ function fromWalk(
         "that their documented path is free.",
     );
   }
+}
+
+/** One tool's freshly built F1, its F1 after the walk, and the fall between them. */
+export interface Freshness {
+  at0: number | null;
+  atLast: number | null;
+  decay: number | null;
+}
+
+/** `+0.004` / `-0.001` / `0.000`, so a sign is never read as a minus in prose. */
+export function signed(value: number): string {
+  const rounded = round(value, 4);
+  return rounded > 0 ? `+${rounded}` : String(rounded);
+}
+
+/**
+ * X2's verdict for one competitor, on decay rather than on the end-point.
+ *
+ * The end-point comparison was wrong, and flatteringly so: on hono graphify
+ * ends at 0.125 against greplost's 1.000, which reads as an eight-fold
+ * staleness gap, while graphify's *freshly built* artifact already scores about
+ * 0.13. Almost the whole gap is import coverage, which is X1's subject, and
+ * almost none of it is staleness, which is X2's. The verdict is now a greplost
+ * win only when greplost's artifact decayed less than the competitor's over the
+ * same walk (review round 2, critical).
+ */
+export function decayVerdict(ourDecay: number | null, theirDecay: number | null): Verdict {
+  if (ourDecay === null || theirDecay === null) return "na";
+  // A hundredth of an F1 point: below that the walk cannot tell them apart.
+  const margin = 0.01;
+  if (Math.abs(ourDecay - theirDecay) <= margin) return "tie";
+  return ourDecay < theirDecay ? "win" : "loss";
+}
+
+/** `graphify started at 0.131 and ended at 0.125, a fall of 0.006.` */
+export function describeFreshness(tool: string, freshness: Freshness): string {
+  if (freshness.at0 === null || freshness.atLast === null || freshness.decay === null) {
+    return `${tool}: no commit-0 checkpoint was scored, so its decay is unknown`;
+  }
+  const fall = freshness.decay;
+  return (
+    `${tool} started the walk at ${round(freshness.at0, 3)} import F1 and ended at ` +
+    `${round(freshness.atLast, 3)}, ` +
+    (Math.abs(fall) < 0.0005
+      ? "a fall of 0.000"
+      : fall > 0
+        ? `a fall of ${round(fall, 3)}`
+        : `a rise of ${round(-fall, 3)}`) +
+    `. The level is coverage (X1's subject); only the fall is staleness`
+  );
+}
+
+/** The comparison sentence on a competitor cell, when there is one to make. */
+function decayReason(ours: Freshness, theirs: Freshness, tool: string): string {
+  if (ours.decay === null || theirs.decay === null) return "";
+  if (theirs.decay <= ours.decay) {
+    return `. ${tool} lost ${signed(theirs.decay)} against greplost's ${signed(ours.decay)} over the same walk`;
+  }
+  return `. greplost lost ${signed(ours.decay)} over the same walk`;
+}
+
+/**
+ * How much of the end-point gap is coverage and how much is decay, in one
+ * sentence, for the payload's method list and the hero chart's note.
+ */
+export function coverageVersusDecay(
+  ours: Freshness,
+  ...others: readonly Freshness[]
+): string | null {
+  if (ours.at0 === null || ours.atLast === null) return null;
+  const parts: string[] = [];
+  for (const [index, other] of others.entries()) {
+    const name = index === 0 ? "graphify" : "crg";
+    if (other.at0 === null || other.atLast === null || other.decay === null) continue;
+    const endGap = ours.atLast - other.atLast;
+    const startGap = ours.at0 - other.at0;
+    parts.push(
+      `${name}: end-point gap ${round(endGap, 3)}, of which ${round(startGap, 3)} was already there at ` +
+        `commit 0 (coverage) and ${round(other.decay - (ours.decay ?? 0), 3)} is the difference in decay`,
+    );
+  }
+  if (parts.length === 0) return null;
+  return (
+    "how much of the gap is coverage and how much is staleness — " +
+    `${parts.join("; ")}. X1 is where a coverage difference belongs; X2 is only the fall.`
+  );
 }
 
 /**
@@ -2495,10 +2743,13 @@ async function metricX5(
       `${delta.lines} of ${delta.total} lines`,
       plan.target,
       verdictFor({ ours: ourDelta.lines, theirs: delta.lines, higherIsBetter: false, margin: plan.margin }),
-      delta.lines <= ourDelta.lines
-        ? ""
-        : `${delta.lines} lines of ${delta.total} in the committed artifact changed for a one-line source ` +
-          `change. Where: ${describeLineChange(theirBefore, theirAfter)}`,
+      // A reason on both sides of the comparison. The publishing rule asks for
+      // one on every loss, and a loss here is the competitor changing *fewer*
+      // lines than greplost — which is exactly the case the old condition left
+      // empty (review round 2, minor).
+      `${delta.lines} of ${delta.total} artifact lines changed against greplost's ${ourDelta.lines} of ` +
+        `${ourDelta.total}${delta.lines < ourDelta.lines ? ", a quieter diff than greplost's" : ""}. ` +
+        `Where: ${describeLineChange(theirBefore, theirAfter)}`,
       {
         lines: delta.lines,
         files: delta.files,

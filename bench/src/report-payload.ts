@@ -16,6 +16,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
+import { compareStrings } from "@greplost/core/schema";
+
 import type { ReportModel, RunTarget } from "./results-md.ts";
 import { provenanceLine } from "./results-md.ts";
 
@@ -155,7 +157,17 @@ export function firstMachine(payloads: readonly (Payload | null)[]): Record<stri
   return null;
 }
 
+/**
+ * The corpus table: every repo any payload named, with its pinned facts.
+ *
+ * A payload carries whatever the suite that wrote it recorded, and several
+ * record only the repo's name — which rendered as `| gin | - | - | - |`, three
+ * dashes for facts the repository already knows. Tier, language and the pinned
+ * SHA come from `bench/corpus.json` whenever it lists the repo, and the payload
+ * fills in only what the pinned file does not have (review round 2, minor).
+ */
 export function mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel["corpus"] {
+  const pinned = corpusIndex();
   const seen = new Map<string, ReportModel["corpus"][number]>();
   for (const payload of payloads) {
     if (payload === null) continue;
@@ -163,15 +175,19 @@ export function mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel[
       const record = rec(entry);
       const name = record === null ? null : str(record["name"]);
       if (name === null || seen.has(name)) continue;
+      const listed = pinned.get(name);
+      const sha = listed?.sha ?? str(record?.["sha"]);
+      const tier = listed?.tier ?? str(record?.["tier"]);
+      const lang = listed?.lang ?? str(record?.["lang"]);
       seen.set(name, {
         name,
-        ...(str(record?.["sha"]) === null ? {} : { sha: str(record?.["sha"]) as string }),
-        ...(str(record?.["tier"]) === null ? {} : { tier: str(record?.["tier"]) as string }),
-        ...(str(record?.["lang"]) === null ? {} : { lang: str(record?.["lang"]) as string }),
+        ...(sha === null || sha === undefined ? {} : { sha }),
+        ...(tier === null || tier === undefined ? {} : { tier }),
+        ...(lang === null || lang === undefined ? {} : { lang }),
       });
     }
   }
-  return [...seen.values()].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  return [...seen.values()].sort((a, b) => compareStrings(a.name, b.name));
 }
 
 /**
@@ -224,6 +240,60 @@ export function competitors(): CompetitorEntry[] {
   } catch {
     return [];
   }
+}
+
+export interface CorpusEntry {
+  name: string;
+  sha: string | null;
+  tier: string | null;
+  lang: string | null;
+}
+
+/**
+ * `bench/corpus.json`, keyed by repo name.
+ *
+ * The pinned record is where a repo's tier and language live; a result payload
+ * carries whatever the suite that wrote it happened to include, which for some
+ * suites is the name alone. Tech spec 10.1 asks `RESULTS.md` to pin the corpus,
+ * and it can only do that from the pinned file (review round 2, minor).
+ */
+export function corpusIndex(): Map<string, CorpusEntry> {
+  const out = new Map<string, CorpusEntry>();
+  try {
+    const file = path.join(REPO_ROOT, "bench", "corpus.json");
+    if (!existsSync(file)) return out;
+    const parsed = JSON.parse(readFileSync(file, "utf8")) as { repos?: unknown };
+    for (const entry of arr(parsed.repos)) {
+      const record = rec(entry);
+      const name = record === null ? null : str(record["name"]);
+      if (name === null) continue;
+      out.set(name, {
+        name,
+        sha: str(record?.["sha"]),
+        tier: str(record?.["tier"]),
+        lang: str(record?.["lang"]),
+      });
+    }
+  } catch {
+    return out;
+  }
+  return out;
+}
+
+/**
+ * The scale one suite's row was measured at: repo, tier, and file count.
+ *
+ * A repo the pinned corpus does not list is a fixture, which is exactly the
+ * distinction `scopeTarget` needs to decide whether a tier- or file-scoped
+ * target was earned.
+ */
+export function runFor(repo: string | null, files: number | null): RunTarget | undefined {
+  if (repo === null) return files === null ? undefined : { files };
+  const pinned = corpusIndex().get(repo);
+  const out: RunTarget = { repo, fixture: pinned === undefined };
+  if (pinned?.tier != null) out.tier = pinned.tier;
+  if (files !== null) out.files = files;
+  return out;
 }
 
 // ---------------------------------------------------------------------------

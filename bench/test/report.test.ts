@@ -33,9 +33,12 @@ import {
   TOOLS,
   byteDistance,
   describeDifference,
+  decayVerdict,
+  describeFreshness,
   describeLineChange,
   diffLineCount,
   emptyMetrics,
+  fillMissingReasons,
   median,
   planImportEdits,
   readHookLog,
@@ -43,10 +46,12 @@ import {
   scaleTitles,
   shimRuns,
   shimTime,
+  signed,
+  syncEvidence,
   verdictFor,
   x3GreplostVerdict,
 } from "../src/headtohead.ts";
-import { stalenessCharts, scaleNote } from "../src/report-charts.ts";
+import { stalenessCharts, scaleNote, freshnessNote } from "../src/report-charts.ts";
 import { CAPTURES, checkTools, fitForCapture, run as screenshotsRun, x4Summary } from "../src/screenshots.ts";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
@@ -416,6 +421,71 @@ describe("headtohead", () => {
     expect(describeLineChange(before, before)).toBe("");
   });
 
+  test("X2's verdict is decay, not the end-point, so coverage cannot pass for staleness", () => {
+    // hono's real shape: graphify starts at 0.131 and ends at 0.125, greplost
+    // holds 1.0. The end-point gap is eight-fold; the decay gap is 0.006.
+    expect(decayVerdict(0, 0.006)).toBe("tie");
+    expect(decayVerdict(0, 0.2)).toBe("win");
+    expect(decayVerdict(0.2, 0)).toBe("loss");
+    // Inside a hundredth of an F1 point the walk cannot tell them apart.
+    expect(decayVerdict(0.001, 0.004)).toBe("tie");
+    // A tool with no commit-0 point has no decay to compare.
+    expect(decayVerdict(null, 0.2)).toBe("na");
+    expect(decayVerdict(0, null)).toBe("na");
+  });
+
+  test("describeFreshness separates the level from the fall", () => {
+    const text = describeFreshness("graphify", { at0: 0.131, atLast: 0.125, decay: 0.006 });
+    expect(text).toContain("started the walk at 0.131");
+    expect(text).toContain("ended at 0.125");
+    expect(text).toContain("a fall of 0.006");
+    expect(text).toContain("The level is coverage");
+    // A line that gained ground says so rather than reporting a negative fall.
+    expect(describeFreshness("crg", { at0: 0.896, atLast: 0.897, decay: -0.001 })).toContain("a rise of 0.001");
+    expect(describeFreshness("greplost", { at0: 1, atLast: 1, decay: 0 })).toContain("a fall of 0.000");
+    expect(describeFreshness("ua", { at0: null, atLast: null, decay: null })).toContain("decay is unknown");
+    expect(signed(0.006)).toBe("+0.006");
+    expect(signed(-0.001)).toBe("-0.001");
+  });
+
+  test("every loss carries a reason, even one no metric wrote", () => {
+    const metrics = emptyMetrics("not run");
+    metrics["X5"].title = "Diff signal after a one-line change";
+    metrics["X5"].tools["greplost"] = { value: "54 of 10511 lines", target: "<= 10", verdict: "loss", reason: "over target" };
+    metrics["X5"].tools["graphify"] = { value: "24 of 99031 lines", target: "<= 10", verdict: "loss", reason: "" };
+    metrics["X5"].tools["crg"] = { value: "60 of 88119 lines", target: "<= 10", verdict: "win", reason: "" };
+    fillMissingReasons(metrics);
+    expect(metrics["X5"].tools["graphify"]?.reason).toContain("24 of 99031 lines");
+    expect(metrics["X5"].tools["graphify"]?.reason).toContain("greplost's 54 of 10511 lines");
+    // A win needs no reason, and greplost's own reason is never overwritten.
+    expect(metrics["X5"].tools["crg"]?.reason).toBe("");
+    expect(metrics["X5"].tools["greplost"]?.reason).toBe("over target");
+  });
+
+  test("the sync evidence is per commit, so 100 of 100 is auditable", () => {
+    const evidence = syncEvidence(
+      new Map([
+        ["greplost", {
+          tool: "greplost", install: ["greplost init"], hook: ".git/hooks/post-commit",
+          evidence: "shim log", automatic: true, fired: 3, walked: 4, ms: 400,
+          perCommit: [
+            { fired: true, ms: 100 },
+            { fired: false, ms: 0 },
+            { fired: true, ms: 150 },
+            { fired: true, ms: 150 },
+          ],
+          notes: [],
+        }],
+      ]),
+    );
+    const ours = evidence[0];
+    expect(ours?.firedPerCommit).toBe("1011");
+    expect(ours?.msPerCommit).toEqual([100, 0, 150, 150]);
+    expect(ours?.missedCommits).toEqual([2]);
+    expect(ours?.fired).toBe(3);
+    expect(ours?.walked).toBe(4);
+  });
+
   test("--fixture --dry-run prints the convention line and writes nothing", async () => {
     const results = tempDir("h2h-results");
     const before = process.env["GREPLOST_BENCH_RESULTS_DIR"];
@@ -525,6 +595,66 @@ describe("results-md", () => {
     );
     // A target with no tier clause is untouched.
     expect(scopeTarget("0 bytes differ", { repo: "tiny-ts", fixture: true })).toBe("0 bytes differ");
+  });
+
+  test("a file-scoped target is not printed verbatim against a run at another scale", () => {
+    // P1's scale claim lives in the metric column, P3's in both; either way the
+    // target the reader compares against has to carry what was measured.
+    expect(scopeTarget("<= 1s / <= 10s", { repo: "anyq", fixture: false, tier: "S", files: 148 }, "full build, 1k / 10k files"))
+      .toBe("<= 1s / <= 10s (measured on anyq, tier S, 148 files)");
+    expect(scopeTarget("<= 500MB (reported)", { repo: "anyq", fixture: false, tier: "S", files: 148 }, "peak RSS at 10k files"))
+      .toBe("<= 500MB (reported) (measured on anyq, tier S, 148 files)");
+    // A run that reached the largest scale the text names earned the target as
+    // written; one between the two named scales has still not earned the 10k
+    // half, so it is qualified.
+    expect(scopeTarget("<= 1s / <= 10s", { repo: "grafana", fixture: false, tier: "L", files: 12_000 }, "full build, 1k / 10k files"))
+      .toBe("<= 1s / <= 10s");
+    expect(scopeTarget("<= 1s / <= 10s", { repo: "vite", fixture: false, tier: "L", files: 4200 }, "full build, 1k / 10k files"))
+      .toBe("<= 1s / <= 10s (measured on vite, tier L, 4200 files)");
+    // No scale named, or no file count known: untouched.
+    expect(scopeTarget("0 bytes differ", { repo: "anyq", fixture: false, files: 148 })).toBe("0 bytes differ");
+    expect(scopeTarget("<= 1s / <= 10s", undefined, "full build, 1k / 10k files")).toBe("<= 1s / <= 10s");
+  });
+
+  test("the Single-tool P rows carry the scale they were measured at", () => {
+    const dir = tempDir("single-tool-scale");
+    writeFileSync(
+      path.join(dir, "perf-2026-09-02-abc1234.json"),
+      JSON.stringify({
+        suite: "perf", date: "2026-09-02", greplostSha: "abc1234",
+        corpus: [{ name: "anyq" }],
+        repos: [{
+          name: "anyq",
+          files: 148,
+          scenarios: [
+            { scenario: "full", ms: { p50: 203, p95: 216 }, peakRssBytes: 241_000_000 },
+            { scenario: "incremental-1", ms: { p50: 131, p95: 145 }, peakRssBytes: 147_000_000 },
+          ],
+        }],
+      }),
+    );
+    const text = renderResultsMd(buildModel({ resultsDir: dir }));
+    const single = text.slice(text.indexOf("## Single-tool"), text.indexOf("## Eval 1"));
+    const p1 = single.split("\n").find((line) => line.startsWith("| P1 "));
+    const p3 = single.split("\n").find((line) => line.startsWith("| P3 "));
+    expect(p1).toContain("measured on anyq, tier S, 148 files");
+    expect(p3).toContain("measured on anyq, tier S, 148 files");
+    // The measurement itself is untouched; only the target is qualified.
+    expect(p1).toContain("203 ms (p50)");
+  });
+
+  test("regenerating from the committed payloads is byte-identical in a fresh copy", () => {
+    const committed = path.join(REPO_ROOT, "bench", "results");
+    const fresh = tempDir("fresh-clone-results");
+    // Copied newest-name-first, so every mtime ordering is the reverse of the
+    // original's: a report that depended on write order would differ here.
+    const names = readdirSync(committed).filter((name) => name.endsWith(".json")).sort().reverse();
+    for (const name of names) writeFileSync(path.join(fresh, name), readFileSync(path.join(committed, name)));
+
+    const original = renderResultsMd(buildModel({ resultsDir: committed }));
+    const clone = renderResultsMd(buildModel({ resultsDir: fresh }));
+    expect(clone).toBe(original);
+    expect(clone.length).toBeGreaterThan(0);
   });
 
   test("a head-to-head payload fills the win/loss/tie columns and every loss reason", () => {
@@ -883,6 +1013,45 @@ describe("charts: X2 arms", () => {
     expect(companion?.svg).toContain("fixtures/tiny-ts");
     const noRefresh = charts.find((chart) => chart.png === "docs/assets/x2-no-refresh.png");
     expect(noRefresh?.svg).toContain("no-refresh");
+  });
+
+  test("the hero chart opens at commit 0 and its note separates coverage from decay", () => {
+    const row = {
+      id: "X2" as const,
+      title: "Staleness after 100 replayed commits",
+      target: "greplost F1 >= 0.99 after 100 commits",
+      tools: {
+        greplost: cell({ "syncF1@0": 1, "syncF1@50": 1, "syncF1@100": 1, freshF1: 1, decay: 0 }),
+        graphify: cell({ "syncF1@0": 0.131, "syncF1@50": 0.127, "syncF1@100": 0.125, freshF1: 0.131, decay: 0.006 }),
+        crg: cell({ "syncF1@0": 0.896, "syncF1@50": 0.904, "syncF1@100": 0.897, freshF1: 0.896, decay: -0.001 }),
+      },
+    };
+    const target = { repo: "hono", fixture: false, tier: "M", files: 248, commits: 100 };
+    const hero = stalenessCharts(row, null, "docs/assets", target)
+      .find((chart) => chart.png === "docs/assets/x2-staleness.png");
+    expect(hero).toBeDefined();
+    // The curve starts where each tool starts.
+    expect(hero?.body).toContain('["0", "50", "100"]');
+    expect(hero?.caption).toContain("freshness under each tool's own sync mechanism");
+    expect(hero?.svg).toContain("Freshness under each tool's own sync mechanism");
+    // And the note says what the distance between the lines actually is.
+    expect(hero?.svg).toContain("At commit 0");
+    expect(hero?.svg).toContain("graphify 0.131");
+    expect(hero?.svg).toContain("coverage");
+    expect(hero?.svg).not.toContain("X2 staleness under each tool");
+  });
+
+  test("freshnessNote falls back to the cell's freshF1 when the curve has no @0", () => {
+    const row = {
+      id: "X2" as const,
+      title: "",
+      target: "",
+      tools: { graphify: cell({ freshF1: 0.131, decay: 0.006 }) },
+    };
+    const note = freshnessNote(row, { categories: ["50", "100"], series: [{ name: "graphify", values: [0.127, 0.125] }] });
+    expect(note).toContain("graphify 0.131");
+    expect(note).toContain("graphify -0.006");
+    expect(freshnessNote(undefined, { categories: [], series: [] })).toBe("");
   });
 
   test("scaleNote states the corpus and the walk, and nothing it was not given", () => {
