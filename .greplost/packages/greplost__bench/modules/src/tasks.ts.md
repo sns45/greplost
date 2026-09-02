@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/bench` ([map](../../MAP.md))
 
-**Exports:** `ALL_CATEGORIES (const)`, `ANSWER_FILES (const)`, `ANSWER_FILES_AND_SYMBOLS (const)`, `ANSWER_SHAPE (const)`, `CuratedCategory (type)`, `STRUCTURAL_CATEGORIES (const)`, `Task (interface)`, `TaskCategory (type)`, `TaskTruth (interface)`, `curatedTasksFile(repo: string, category: CuratedCategory, dir?: string): string`, `flowTasksFile(repo: string, dir?: string): string`, `generateStructuralTasks(repo: string, truth: Truth, n: number, seed: number = 1): Task[]`, `loadFlowTasks(repo: string, dir?: string): Task[]`, `loadOrientationTasks(repo: string, dir?: string): Task[]`, `loadTasks( repo: string, truth: Truth, n: number, seed: number = 1, categories?: readonly TaskCategory[], ): Task[]`, `reverseClosure(imports: Edge[], file: string): string[]`
+**Exports:** `ALL_CATEGORIES (const)`, `ANSWER_FILES (const)`, `ANSWER_FILES_AND_SYMBOLS (const)`, `ANSWER_SHAPE (const)`, `CuratedCategory (type)`, `STRUCTURAL_CATEGORIES (const)`, `Task (interface)`, `TaskCategory (type)`, `TaskTruth (interface)`, `curatedTasksFile(repo: string, category: CuratedCategory, dir?: string): string`, `flowTasksFile(repo: string, dir?: string): string`, `generateStructuralTasks( repo: string, truth: Truth, n: number, seed: number = 1, categories?: readonly TaskCategory[], ): Task[]`, `loadFlowTasks(repo: string, dir?: string): Task[]`, `loadOrientationTasks(repo: string, dir?: string): Task[]`, `loadTasks( repo: string, truth: Truth, n: number, seed: number = 1, categories?: readonly TaskCategory[], ): Task[]`, `reverseClosure(imports: Edge[], file: string): string[]`
 
 **Imports:** [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (Edge, compareStrings), `node:fs` (existsSync, readFileSync), `node:path` (default), [`./truth/ts.ts`](truth/ts.ts.md) (Truth)
 
@@ -45,13 +45,13 @@
 - `function reverseClosure(imports: Edge[], file: string): string[]`  L288-306
 - `function blastCandidates(truth: Truth): FileCandidate[]`  L309-315
 - `function id(repo: string, slug: string, index: number): string`  L321-323
-- `function generateStructuralTasks(repo: string, truth: Truth, n: number, seed: number = 1): Task[]`  L335-413
-- `type CuratedCategory = "flow" | "orientation"`  L416-416
-- `function curatedTasksFile(repo: string, category: CuratedCategory, dir?: string): string`  L419-421
-- `function flowTasksFile(repo: string, dir?: string): string`  L424-426
-- `function loadCuratedTasks(repo: string, category: CuratedCategory, dir?: string): Task[]`  L439-477
-- `function loadFlowTasks(repo: string, dir?: string): Task[]`  L486-488
-- `function loadOrientationTasks(repo: string, dir?: string): Task[]`  L498-500
-- `function loadTasks( repo: string, truth: Truth, n: number, seed: number = 1, categories?: readonly TaskCategory[], ): Task[]`  L509-523
+- `function generateStructuralTasks( repo: string, truth: Truth, n: number, seed: number = 1, categories?: readonly TaskCategory[], ): Task[]`  L335-423
+- `type CuratedCategory = "flow" | "orientation"`  L426-426
+- `function curatedTasksFile(repo: string, category: CuratedCategory, dir?: string): string`  L429-431
+- `function flowTasksFile(repo: string, dir?: string): string`  L434-436
+- `function loadCuratedTasks(repo: string, category: CuratedCategory, dir?: string): Task[]`  L449-487
+- `function loadFlowTasks(repo: string, dir?: string): Task[]`  L496-498
+- `function loadOrientationTasks(repo: string, dir?: string): Task[]`  L508-510
+- `function loadTasks( repo: string, truth: Truth, n: number, seed: number = 1, categories?: readonly TaskCategory[], ): Task[]`  L519-536
 
 **Calls:** `blastCandidates` → [`bench/src/tasks.ts#blastCandidates`](tasks.ts.md) (high), `callerCandidates` → [`bench/src/tasks.ts#callerCandidates`](tasks.ts.md) (high), `curatedTasksFile` → [`bench/src/tasks.ts#curatedTasksFile`](tasks.ts.md) (high), `definitionCandidates` → [`bench/src/tasks.ts#definitionCandidates`](tasks.ts.md) (high), `fileOf` → [`bench/src/tasks.ts#fileOf`](tasks.ts.md) (high), `fnv1a` → [`bench/src/tasks.ts#fnv1a`](tasks.ts.md) (high), `generateStructuralTasks` → [`bench/src/tasks.ts#generateStructuralTasks`](tasks.ts.md) (high), `id` → [`bench/src/tasks.ts#id`](tasks.ts.md) (high), `importerCandidates` → [`bench/src/tasks.ts#importerCandidates`](tasks.ts.md) (high), `isSubjectCandidate` → [`bench/src/tasks.ts#isSubjectCandidate`](tasks.ts.md) (high), `loadCuratedTasks` → [`bench/src/tasks.ts#loadCuratedTasks`](tasks.ts.md) (high), `loadFlowTasks` → [`bench/src/tasks.ts#loadFlowTasks`](tasks.ts.md) (high), `loadOrientationTasks` → [`bench/src/tasks.ts#loadOrientationTasks`](tasks.ts.md) (high), `mulberry32` → [`bench/src/tasks.ts#mulberry32`](tasks.ts.md) (high), `pick` → [`bench/src/tasks.ts#pick`](tasks.ts.md) (high), `preferring` → [`bench/src/tasks.ts#preferring`](tasks.ts.md) (high), `reverseClosure` → [`bench/src/tasks.ts#reverseClosure`](tasks.ts.md) (high), `sortedUnique` → [`bench/src/tasks.ts#sortedUnique`](tasks.ts.md) (high), `split` → [`bench/src/tasks.ts#split`](tasks.ts.md) (high), `symbolOf` → [`bench/src/tasks.ts#symbolOf`](tasks.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high)

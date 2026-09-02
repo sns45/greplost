@@ -55,10 +55,10 @@
 - `function summarize(values: number[]): Stats` L393-402
 - `function resolveClaude(): string` L535-547
 - `function createGreplostShim(dir: string): string` L689-696
-- `interface RunRecord` L960-982
-- `interface RunTaskOptions` L985-998
-- `function runTask(task: Task, condition: string, options: RunTaskOptions): RunRecord` L1009-1025
-- `async function run(args: string[]): Promise<number>` L1343-1360
+- `interface RunRecord` L979-1007
+- `interface RunTaskOptions` L1010-1023
+- `function runTask(task: Task, condition: string, options: RunTaskOptions): RunRecord` L1034-1050
+- `async function run(args: string[]): Promise<number>` L1453-1470
 
 ## bench/src/charts.ts
 
@@ -284,13 +284,13 @@
 - `interface TaskTruth` L60-65
 - `interface Task` L68-77
 - `function reverseClosure(imports: Edge[], file: string): string[]` L288-306
-- `function generateStructuralTasks(repo: string, truth: Truth, n: number, seed: number = 1): Task[]` L335-413
-- `type CuratedCategory = "flow" | "orientation"` L416-416
-- `function curatedTasksFile(repo: string, category: CuratedCategory, dir?: string): string` L419-421
-- `function flowTasksFile(repo: string, dir?: string): string` L424-426
-- `function loadFlowTasks(repo: string, dir?: string): Task[]` L486-488
-- `function loadOrientationTasks(repo: string, dir?: string): Task[]` L498-500
-- `function loadTasks( repo: string, truth: Truth, n: number, seed: number = 1, categories?: readonly TaskCategory[], ): Task[]` L509-523
+- `function generateStructuralTasks( repo: string, truth: Truth, n: number, seed: number = 1, categories?: readonly TaskCategory[], ): Task[]` L335-423
+- `type CuratedCategory = "flow" | "orientation"` L426-426
+- `function curatedTasksFile(repo: string, category: CuratedCategory, dir?: string): string` L429-431
+- `function flowTasksFile(repo: string, dir?: string): string` L434-436
+- `function loadFlowTasks(repo: string, dir?: string): Task[]` L496-498
+- `function loadOrientationTasks(repo: string, dir?: string): Task[]` L508-510
+- `function loadTasks( repo: string, truth: Truth, n: number, seed: number = 1, categories?: readonly TaskCategory[], ): Task[]` L519-536
 
 ## bench/src/truth/go.ts
 

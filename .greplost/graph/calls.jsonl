@@ -62,6 +62,7 @@
 {"confidence":"high","from":"bench/src/agent.ts#execute","kind":"call","to":"bench/src/agent.ts#record"}
 {"confidence":"high","from":"bench/src/agent.ts#execute","kind":"call","to":"bench/src/agent.ts#resolveTarget"}
 {"confidence":"high","from":"bench/src/agent.ts#execute","kind":"call","to":"bench/src/agent.ts#resultSuite"}
+{"confidence":"high","from":"bench/src/agent.ts#execute","kind":"call","to":"bench/src/agent.ts#sessionBudget"}
 {"confidence":"high","from":"bench/src/agent.ts#execute","kind":"call","to":"bench/src/agent.ts#specMetrics"}
 {"confidence":"high","from":"bench/src/agent.ts#execute","kind":"call","to":"bench/src/agent.ts#winLossTie"}
 {"confidence":"high","from":"bench/src/agent.ts#execute","kind":"call","to":"bench/src/results-io.ts#writeResult"}
@@ -100,6 +101,7 @@
 {"confidence":"high","from":"bench/src/agent.ts#scoreAnswer","kind":"call","to":"bench/src/agent.ts#lcsRatio"}
 {"confidence":"high","from":"bench/src/agent.ts#scoreAnswer","kind":"call","to":"bench/src/agent.ts#stringList"}
 {"confidence":"high","from":"bench/src/agent.ts#scoreAnswer","kind":"call","to":"bench/src/score.ts#scoreSet"}
+{"confidence":"high","from":"bench/src/agent.ts#sessionBudget","kind":"call","to":"bench/src/agent.ts#summarize"}
 {"confidence":"high","from":"bench/src/agent.ts#specMetrics","kind":"call","to":"bench/src/agent.ts#deltaMetric"}
 {"confidence":"high","from":"bench/src/agent.ts#specMetrics","kind":"call","to":"bench/src/agent.ts#ratioMetric"}
 {"confidence":"high","from":"bench/src/agent.ts#stringList","kind":"call","to":"bench/src/agent.ts#normalizeAnswerPath"}

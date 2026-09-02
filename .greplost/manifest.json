@@ -110,9 +110,9 @@
       "fanIn": 0,
       "fanOut": 5,
       "lang": "ts",
-      "loc": 1599,
+      "loc": 1738,
       "pkg": "@greplost/bench",
-      "sha256": "b0dc03ca78fd8d56efa2f0b7f6a53d6895d188df7ed45a777dad0a92dd6db722",
+      "sha256": "07b7a1fdf2069135663d654a6ec8a94e00773ee80134005f786316612faaed04",
       "staleSummary": false
     },
     "bench/src/charts.ts": {
@@ -508,9 +508,9 @@
       "fanIn": 1,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 523,
+      "loc": 536,
       "pkg": "@greplost/bench",
-      "sha256": "05ca3a1fdac8bb8957644c07a1ef21cb51ca5d0dee84537300909ebec2a842b0",
+      "sha256": "a699fd1222eedb889977e7b582d4179a9d8a52a73bc8e8f405a2df524f4a3e14",
       "staleSummary": false
     },
     "bench/src/truth/go.ts": {
@@ -2299,7 +2299,7 @@
         "@greplost/sync"
       ],
       "files": 29,
-      "loc": 14059,
+      "loc": 14211,
       "path": "bench",
       "rdeps": []
     },
