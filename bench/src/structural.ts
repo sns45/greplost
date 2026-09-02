@@ -64,15 +64,34 @@ export interface RepoScores {
   /** Calls at any confidence, reported next to S3 so dropped edges stay visible. */
   callsAll: Score;
   S4: number;
+  /**
+   * True when the compiler truth for a non-empty file set contains no imports and no
+   * exports at all. Every metric then scores a vacuous 1.000, so this is a gate miss in
+   * its own right (`truth-empty`) rather than a warning.
+   */
+  truthEmpty: boolean;
   /** Metric id -> `file:line (key)` for the first false positives, so a failure is actionable. */
   falsePositives: Record<string, string[]>;
 }
 
 export async function run(args: string[]): Promise<number> {
   const options = parseArgs(args);
+  try {
+    return await execute(options);
+  } catch (err) {
+    // Nothing below the argument parser may escape: `run` always returns an exit code, and
+    // the last stdout line always follows the suite's convention.
+    console.error(`${SUITE}: ${(err as Error).message}`);
+    console.log(`${SUITE}: GATE FAIL (error)`);
+    return 1;
+  }
+}
+
+async function execute(options: Options): Promise<number> {
   const targets = resolveTargets(options);
   if (typeof targets === "string") {
     console.error(targets);
+    console.log(`${SUITE}: GATE FAIL (targets)`);
     return 2;
   }
 
@@ -87,6 +106,7 @@ export async function run(args: string[]): Promise<number> {
     for (const target of targets) scores.push(await scoreTarget(target));
   } catch (err) {
     console.error(`${SUITE}: ${(err as Error).message}`);
+    console.log(`${SUITE}: GATE FAIL (build)`);
     return 1;
   }
   for (const score of scores) printTable(score.name, score);
@@ -243,16 +263,6 @@ async function scoreTarget(target: Target): Promise<RepoScores> {
   const files = scoredFiles(snapshot, target.lang);
   const truth =
     target.lang === "go" ? (await loadGoTruth())(target.root, files) : generateTsTruth(target.root, files);
-
-  // Integrity guard (tech spec 10.1, principle 2). An empty truth set scores an empty
-  // prediction as a perfect 1.000 across the board, so a truth generator that quietly
-  // resolved nothing would turn Eval 1 into a rubber stamp. Say so out loud.
-  if (files.length > 0 && truth.imports.length === 0 && exportKeys(truth.exports).length === 0) {
-    console.error(
-      `${SUITE}: warning: compiler truth for ${target.name} is empty across ${files.length} files; ` +
-        "the scores below are meaningless (check the repo root and its tsconfig.json)",
-    );
-  }
   return scoreAgainstTruth(target.name, snapshot, truth, target.lang);
 }
 
@@ -275,7 +285,13 @@ export function scoredFiles(snapshot: Snapshot, lang: TruthLang): string[] {
  * greplost for an edge the truth generator was structurally unable to produce.
  */
 export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang): RepoScores {
-  const files = scoredFiles(snapshot, lang);
+  // The universe is what *both* sides could speak about: the snapshot's files for this
+  // language, intersected with the files the truth generator actually covered. A file the
+  // compiler could not load would otherwise be scored as "exports nothing".
+  // `truth.files` is defensive: a truth generator that predates the field (leaf 1.8's Go
+  // implementation) falls back to the snapshot's own list.
+  const covered = Array.isArray(truth.files) && truth.files.length > 0 ? new Set(truth.files) : null;
+  const files = scoredFiles(snapshot, lang).filter((file) => covered === null || covered.has(file));
   const fileSet = new Set(files);
 
   const predImports = snapshot.imports.filter((e) => isFileId(e.to) && fileSet.has(e.from) && fileSet.has(e.to));
@@ -298,6 +314,17 @@ export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth
   const callsAll = scoreEdges(predCalls, truthCalls);
   const S4 = jaccardCycles(predCycles, truth.cycles);
 
+  // Integrity guard (tech spec 10.1, principle 2). An empty truth set scores an empty
+  // prediction as a perfect 1.000 across the board, so a truth generator that quietly
+  // resolved nothing would turn Eval 1 into a rubber stamp.
+  const truthEmpty = files.length > 0 && truthImports.length === 0 && exportKeys(truthExports).length === 0;
+  if (truthEmpty) {
+    console.error(
+      `${SUITE}: compiler truth for ${name} is empty across ${files.length} files; ` +
+        "the scores below are meaningless (check the repo root and its tsconfig.json)",
+    );
+  }
+
   return {
     name,
     files: files.length,
@@ -306,6 +333,7 @@ export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth
     S3,
     callsAll,
     S4,
+    truthEmpty,
     falsePositives: {
       S1: locateAll(snapshot, S1.falsePositives, "import"),
       S2: locateAll(snapshot, S2.falsePositives, "export"),
@@ -318,7 +346,12 @@ export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth
   };
 }
 
-/** The gate ids this repo missed, in id order. Empty means the repo passes Eval 1. */
+/**
+ * The gate ids this repo missed, in id order. Empty means the repo passes Eval 1.
+ *
+ * `truth-empty` is a miss in its own right: without it a run where both the compiler and
+ * greplost produced nothing would report four perfect scores and pass the gate.
+ */
 export function missedMetrics(scores: RepoScores): string[] {
   const missed: string[] = [];
   const [p1 = 1, r1 = 1] = TARGETS.S1;
@@ -327,6 +360,7 @@ export function missedMetrics(scores: RepoScores): string[] {
   if (scores.S2.precision < p2 - EPSILON || scores.S2.recall < r2 - EPSILON) missed.push("S2");
   if (scores.S3.precision < TARGETS.S3 - EPSILON) missed.push("S3");
   if (scores.S4 < TARGETS.S4 - EPSILON) missed.push("S4");
+  if (scores.truthEmpty) missed.push("truth-empty");
   return missed;
 }
 
@@ -346,6 +380,7 @@ function serializeScores(scores: RepoScores): Record<string, unknown> {
     S3: brief(scores.S3),
     callsAllConfidences: brief(scores.callsAll),
     S4: scores.S4,
+    truthEmpty: scores.truthEmpty,
     falsePositives: scores.falsePositives,
   };
 }

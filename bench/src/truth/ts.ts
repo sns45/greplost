@@ -6,33 +6,42 @@
  * of a repo are, in greplost's own id vocabulary (tech spec 5.3), so both sides of
  * every comparison speak the same language.
  *
+ * This file owns the program, module resolution, imports, exports and cycles;
+ * `truth/ts-calls.ts` owns call resolution and symbol paths.
+ *
  * Identity, restated for this file:
  *   file   -> repo-relative posix path, no leading "./"
  *   symbol -> `<file>#<Name>` or `<file>#<Class>.<member>`
- *   caller -> the enclosing function / method / variable-initializer symbol, or the
+ *   caller -> the enclosing declaration that owns its calls (see `ts-calls.ts`), or the
  *             file id for top-level code.
  *
  * Conservatism rules (a truth set that over-claims is worse than useless):
- *   - only declarations inside the given file list are ever named; lib.d.ts,
- *     node_modules and files the program pulled in but the caller did not list are
- *     dropped on both sides of every edge;
- *   - only module-scope declarations and class/interface/enum members are addressable,
- *     so locals, parameters, loop bindings and import specifiers are never call targets;
+ *   - only files the program actually loaded *and* the caller listed are in the scored
+ *     universe; lib.d.ts, node_modules and unlisted files are dropped from both ends of
+ *     every edge, and a listed file the program could not load is dropped entirely
+ *     (`Truth.files` reports what survived);
  *   - module-loading expressions (`import("x")`, `require("x")`) are import edges, never
  *     call edges.
  */
 import { readdirSync, realpathSync } from "node:fs";
 import path from "node:path";
 import ts from "typescript";
-import { compareEdges, compareStrings, symbolId, type Edge } from "@greplost/core/schema";
+import { compareEdges, compareStrings, type Edge } from "@greplost/core/schema";
+import { resolveCallEdge } from "./ts-calls.ts";
 
 /** Compiler truth for one repo, in greplost ids. */
 export interface Truth {
-  /** Import and re-export edges between listed files, sorted with `compareEdges`. */
+  /**
+   * The files this truth actually covers: the caller's list minus anything the program
+   * could not load. Consumers must intersect their own file set with this before scoring,
+   * otherwise a file the compiler never saw is scored as "exports nothing".
+   */
+  files: string[];
+  /** Import and re-export edges between covered files, sorted with `compareEdges`. */
   imports: Edge[];
-  /** file id -> exported names (`checker.getExportsOfModule`), sorted. Every listed file is a key. */
+  /** file id -> exported names, sorted. Every covered file is a key. */
   exports: Record<string, string[]>;
-  /** Call edges between listed files, sorted with `compareEdges`. */
+  /** Call edges between covered files, sorted with `compareEdges`. */
   calls: Edge[];
   /** Tarjan SCCs of size > 1 over the import graph; each cycle sorted, the list sorted. */
   cycles: string[][];
@@ -72,39 +81,54 @@ export function listTypeScriptFiles(root: string): string[] {
  * Compiler truth for `files` (repo-relative posix paths) under `root`.
  *
  * Compiler options come from `<root>/tsconfig.json` via `ts.parseJsonConfigFileContent`,
- * falling back to bundler resolution when there is no config.
+ * falling back to bundler resolution when there is no config. Config errors and the
+ * semantic diagnostic count are reported on stderr: a truth set built from a program that
+ * could not understand the repo is not trustworthy, and silence would hide that.
  */
 export function generateTsTruth(root: string, files: string[]): Truth {
   const absRoot = path.resolve(root);
   // Sorted, unique, normalised: the root file order reaches the program, and the program's
   // declaration order reaches the output, so this is part of the determinism contract.
-  const ids = [...new Set(files.map((f) => normalizeId(absRoot, f)))].sort(compareStrings);
-  const absFiles = ids.map((id) => path.join(absRoot, id));
+  const requested = [...new Set(files.map((file) => normalizeId(absRoot, file)))].sort(compareStrings);
+
+  const { options, configErrors } = readCompilerOptions(absRoot);
+  const program = ts.createProgram(
+    requested.map((id) => path.join(absRoot, id)),
+    options,
+  );
+  const checker = program.getTypeChecker();
+
+  // Files the program could not load leave the scored universe entirely: recording them
+  // as "exports nothing" would score real exports as false positives.
+  const covered: { id: string; absolute: string; sourceFile: ts.SourceFile }[] = [];
+  const missing: string[] = [];
+  for (const id of requested) {
+    const absolute = path.join(absRoot, id);
+    const sourceFile = program.getSourceFile(absolute);
+    if (sourceFile) covered.push({ id, absolute, sourceFile });
+    else missing.push(id);
+  }
+  reportDiagnostics(program, configErrors, covered.length, missing);
 
   const canonical = ts.sys.useCaseSensitiveFileNames ? (p: string) => p : (p: string) => p.toLowerCase();
   const idByPath = new Map<string, string>();
-  for (let i = 0; i < ids.length; i++) {
-    const absolute = absFiles[i] as string;
-    const id = ids[i] as string;
+  for (const { id, absolute } of covered) {
     idByPath.set(canonical(toPosix(absolute)), id);
     // TypeScript resolves modules through symlinks by default (`preserveSymlinks: false`),
     // so a workspace package linked into node_modules, or a repo checked out under a
-    // symlinked path, comes back as its real path. Index that too, first id wins.
+    // symlinked path, comes back as its real path. Index that too; the first id wins.
     try {
       const real = canonical(toPosix(realpathSync(absolute)));
       if (!idByPath.has(real)) idByPath.set(real, id);
     } catch {
-      // The file may not exist on disk (a caller-supplied list can be stale); the
-      // literal path is already indexed, which is all the resolver needs.
+      // The file may have vanished since the program read it; the literal path is already
+      // indexed, which is all the resolver needs.
     }
   }
 
-  const options = readCompilerOptions(absRoot);
-  const program = ts.createProgram(absFiles, options);
-  const checker = program.getTypeChecker();
   const resolutionCache = ts.createModuleResolutionCache(absRoot, canonical, options);
 
-  /** Absolute file name -> listed file id, following `.js`/`.d.ts` specifiers back to source. */
+  /** Absolute file name -> covered file id, following `.js`/`.d.ts` specifiers back to source. */
   const toId = (fileName: string): string | undefined => {
     const direct = idByPath.get(canonical(toPosix(fileName)));
     if (direct !== undefined) return direct;
@@ -119,16 +143,11 @@ export function generateTsTruth(root: string, files: string[]): Truth {
   const calls = new EdgeSet();
   const exports: Record<string, string[]> = {};
 
-  for (let i = 0; i < ids.length; i++) {
-    const fileId = ids[i] as string;
-    exports[fileId] = [];
-    const sourceFile = program.getSourceFile(absFiles[i] as string);
-    if (!sourceFile) continue;
-
+  for (const { id: fileId, sourceFile } of covered) {
     const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
-    if (moduleSymbol) exports[fileId] = moduleExportNames(checker, moduleSymbol);
+    exports[fileId] = moduleSymbol ? moduleExportNames(checker, moduleSymbol) : [];
 
-    /** Resolve a module specifier to a listed file id, or undefined. */
+    /** Resolve a module specifier to a covered file id, or undefined. */
     const resolveTarget = (specifier: string, specifierNode: ts.Expression): string | undefined => {
       const resolved = ts.resolveModuleName(specifier, sourceFile.fileName, options, ts.sys, resolutionCache);
       const byResolver = resolved.resolvedModule ? toId(resolved.resolvedModule.resolvedFileName) : undefined;
@@ -138,17 +157,13 @@ export function generateTsTruth(root: string, files: string[]): Truth {
       // `.js` specifiers redirected to their `.ts` source, package `exports` maps).
       const symbol = checker.getSymbolAtLocation(specifierNode);
       for (const declaration of symbol?.declarations ?? []) {
-        const id = toId(declaration.getSourceFile().fileName);
-        if (id !== undefined) return id;
+        const resolvedId = toId(declaration.getSourceFile().fileName);
+        if (resolvedId !== undefined) return resolvedId;
       }
       return undefined;
     };
 
-    const addImport = (
-      kind: "import" | "reexport",
-      specifierNode: ts.Expression,
-      symbols: string[],
-    ): void => {
+    const addImport = (kind: "import" | "reexport", specifierNode: ts.Expression, symbols: string[]): void => {
       if (!ts.isStringLiteralLike(specifierNode)) return;
       const target = resolveTarget(specifierNode.text, specifierNode);
       if (target === undefined || target === fileId) return;
@@ -162,12 +177,19 @@ export function generateTsTruth(root: string, files: string[]): Truth {
         addImport("reexport", node.moduleSpecifier, reexportedNames(node.exportClause));
       } else if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) {
         addImport("import", node.moduleReference.expression, ["*"]);
+      } else if (ts.isImportTypeNode(node)) {
+        // `type X = import("./mod").Foo` is a type-only dependency on ./mod; core emits an
+        // ImportRecord of kind "type" for it, which is an `import` edge here.
+        const argument = node.argument;
+        if (ts.isLiteralTypeNode(argument) && ts.isStringLiteralLike(argument.literal)) {
+          addImport("import", argument.literal, [importTypeName(node.qualifier)]);
+        }
       } else if (ts.isCallExpression(node)) {
         const moduleLoad = moduleLoadSpecifier(node);
         if (moduleLoad) {
           addImport("import", moduleLoad, ["*"]);
-          // A module load is an import edge, never a call edge: fall through to the
-          // arguments only, so `require("./x")` does not also become a call to `require`.
+          // A module load is an import edge, never a call edge: descend into the arguments
+          // only, so `require("./x")` does not also become a call to `require`.
           ts.forEachChild(node, visit);
           return;
         }
@@ -179,18 +201,8 @@ export function generateTsTruth(root: string, files: string[]): Truth {
     };
 
     const recordCall = (node: ts.CallExpression | ts.NewExpression): void => {
-      const callee = calleeIdentifier(node);
-      if (!callee) return;
-      const symbol = unalias(checker, checker.getSymbolAtLocation(callee));
-      if (!symbol) return;
-      for (const declaration of symbol.declarations ?? []) {
-        const targetFile = toId(declaration.getSourceFile().fileName);
-        if (targetFile === undefined) continue;
-        const targetPath = declarationSymbolPath(declaration);
-        if (targetPath === undefined) continue;
-        calls.add(enclosingCaller(node, fileId), symbolId(targetFile, targetPath), "call", []);
-        return;
-      }
+      const edge = resolveCallEdge(node, checker, toId, fileId);
+      if (edge) calls.add(edge.from, edge.to, "call", []);
     };
 
     ts.forEachChild(sourceFile, visit);
@@ -198,37 +210,74 @@ export function generateTsTruth(root: string, files: string[]): Truth {
 
   const importEdges = imports.toArray();
   return {
+    files: covered.map((entry) => entry.id),
     imports: importEdges,
     exports,
     calls: calls.toArray(),
-    cycles: findCycles(ids, importEdges),
+    cycles: findCycles(
+      covered.map((entry) => entry.id),
+      importEdges,
+    ),
   };
 }
 
 // ---------------------------------------------------------------------------
-// compiler options
+// compiler options and diagnostics
 // ---------------------------------------------------------------------------
 
-function readCompilerOptions(absRoot: string): ts.CompilerOptions {
+function readCompilerOptions(absRoot: string): { options: ts.CompilerOptions; configErrors: ts.Diagnostic[] } {
   const configPath = path.join(absRoot, "tsconfig.json");
   const fallback: ts.CompilerOptions = {
     allowJs: true,
+    module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Bundler,
+    jsx: ts.JsxEmit.Preserve,
     target: ts.ScriptTarget.ES2022,
   };
   const read = ts.readConfigFile(configPath, ts.sys.readFile);
-  if (read.error || !read.config) return { ...fallback, noEmit: true };
+  if (read.error || !read.config) {
+    return { options: { ...fallback, noEmit: true }, configErrors: read.error ? [read.error] : [] };
+  }
   const parsed = ts.parseJsonConfigFileContent(read.config, ts.sys, absRoot);
   // `files`/`include` from the config are ignored on purpose: the caller decides which
   // files are scored, so the program's root set is exactly the given list. `allowJs` is
   // forced for the same reason — greplost extracts `.js`/`.jsx` too, and a program that
   // refused to bind the JavaScript it was handed would report those files as exporting
   // nothing, scoring real exports as false positives.
-  return { ...parsed.options, allowJs: true, noEmit: true };
+  return { options: { ...parsed.options, allowJs: true, noEmit: true }, configErrors: parsed.errors };
+}
+
+/**
+ * Report how well the compiler understood the repo, on stderr.
+ *
+ * A high semantic diagnostic count usually means unresolved imports, which means missing
+ * truth edges, which means greplost gets scored against a truth set that is quietly wrong.
+ * This is the cheapest possible early warning; it is never written to stdout, so it cannot
+ * disturb the suite's last-line output convention.
+ */
+function reportDiagnostics(
+  program: ts.Program,
+  configErrors: ts.Diagnostic[],
+  coveredCount: number,
+  missing: string[],
+): void {
+  const semantic = program.getSemanticDiagnostics().length;
+  console.error(
+    `truth-ts: ${coveredCount} files, ${configErrors.length} tsconfig errors, ${semantic} semantic diagnostics`,
+  );
+  for (const error of configErrors) {
+    console.error(`truth-ts: tsconfig: ${ts.flattenDiagnosticMessageText(error.messageText, " ")}`);
+  }
+  if (missing.length > 0) {
+    console.error(
+      `truth-ts: ${missing.length} listed file(s) the program did not load, dropped from scoring: ` +
+        `${missing.slice(0, 5).join(", ")}${missing.length > 5 ? ", …" : ""}`,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
-// imports
+// exports and imports
 // ---------------------------------------------------------------------------
 
 /**
@@ -239,6 +288,9 @@ function readCompilerOptions(absRoot: string): ts.CompilerOptions {
  * exporting a class reports "prototype" rather than anything a consumer can import. greplost
  * has no `export =` kind, and what an importer binds is the whole module, so it is reported
  * as "default" — the same name `import X from "./m"` binds under `esModuleInterop`.
+ *
+ * `export *` is followed transitively, because that is what the compiler does and what a
+ * consumer sees (core's `buildExportIndex` matches this; driver ruling, fix round 1).
  */
 function moduleExportNames(checker: ts.TypeChecker, moduleSymbol: ts.Symbol): string[] {
   if (moduleSymbol.exports?.has(ts.InternalSymbolName.ExportEquals)) return ["default"];
@@ -266,6 +318,17 @@ function reexportedNames(clause: ts.NamedExportBindings | undefined): string[] {
   return clause.elements.map((element) => (element.propertyName ?? element.name).text);
 }
 
+/**
+ * The exported name an `import("./mod").A.B` type reaches for: the leftmost identifier of
+ * the qualifier (`A`), or `*` when the whole module is used (`typeof import("./mod")`).
+ */
+function importTypeName(qualifier: ts.EntityName | undefined): string {
+  if (!qualifier) return "*";
+  let current: ts.EntityName = qualifier;
+  while (ts.isQualifiedName(current)) current = current.left;
+  return current.text;
+}
+
 /** The string-literal specifier of `import("x")` / `require("x")`, if this call is a module load. */
 function moduleLoadSpecifier(node: ts.CallExpression): ts.Expression | undefined {
   const [first, ...rest] = node.arguments;
@@ -273,144 +336,6 @@ function moduleLoadSpecifier(node: ts.CallExpression): ts.Expression | undefined
   if (node.expression.kind === ts.SyntaxKind.ImportKeyword) return first;
   if (ts.isIdentifier(node.expression) && node.expression.text === "require") return first;
   return undefined;
-}
-
-// ---------------------------------------------------------------------------
-// calls
-// ---------------------------------------------------------------------------
-
-/** The identifier naming the callee: `foo`, the `.name` of `a.foo`, else nothing. */
-function calleeIdentifier(node: ts.CallExpression | ts.NewExpression): ts.Node | undefined {
-  let expr: ts.Expression = node.expression;
-  for (;;) {
-    if (ts.isParenthesizedExpression(expr) || ts.isNonNullExpression(expr)) expr = expr.expression;
-    else if (ts.isAsExpression(expr) || ts.isSatisfiesExpression(expr)) expr = expr.expression;
-    else break;
-  }
-  if (ts.isIdentifier(expr)) return expr;
-  if (ts.isPropertyAccessExpression(expr)) return expr.name;
-  // Element access, `super()`, `import()`, calls on call results: never guessed.
-  return undefined;
-}
-
-/** Follow import/export aliases to the declaration that actually defines the symbol. */
-function unalias(checker: ts.TypeChecker, symbol: ts.Symbol | undefined): ts.Symbol | undefined {
-  let current = symbol;
-  for (let depth = 0; current && (current.flags & ts.SymbolFlags.Alias) !== 0 && depth < 32; depth++) {
-    let next: ts.Symbol | undefined;
-    try {
-      next = checker.getAliasedSymbol(current);
-    } catch {
-      return current; // unresolvable alias (e.g. an import of a package that is not installed)
-    }
-    if (!next || next === current) return current;
-    current = next;
-  }
-  return current;
-}
-
-/** The `<file>#…` symbol path fragment of a declaration, or undefined when it is not addressable. */
-function declarationSymbolPath(declaration: ts.Declaration): string | undefined {
-  if (ts.isConstructorDeclaration(declaration)) {
-    const owner = moduleScopePath(declaration.parent);
-    return owner === undefined ? undefined : `${owner}.constructor`;
-  }
-  if (
-    ts.isMethodDeclaration(declaration) ||
-    ts.isMethodSignature(declaration) ||
-    ts.isPropertyDeclaration(declaration) ||
-    ts.isPropertySignature(declaration) ||
-    ts.isGetAccessorDeclaration(declaration) ||
-    ts.isSetAccessorDeclaration(declaration) ||
-    ts.isEnumMember(declaration)
-  ) {
-    const parent = declaration.parent;
-    const ownerIsNamedType =
-      ts.isClassDeclaration(parent) ||
-      ts.isClassExpression(parent) ||
-      ts.isInterfaceDeclaration(parent) ||
-      ts.isEnumDeclaration(parent);
-    if (!ownerIsNamedType) return undefined; // object literal / type literal member
-    const owner = moduleScopePath(parent);
-    const member = nameText(declaration.name);
-    if (owner === undefined || member === undefined) return undefined;
-    return `${owner}.${member}`;
-  }
-  return moduleScopePath(declaration);
-}
-
-/**
- * Dotted path of a declaration that lives at module scope (optionally inside namespaces).
- * Anything nested in a function, block, class body or import clause is a local binding
- * with no stable id, and yields undefined.
- */
-function moduleScopePath(node: ts.Node): string | undefined {
-  const name = nameText((node as { name?: ts.Node }).name);
-  if (name === undefined) return undefined;
-  const owner = moduleScopeOwner(node);
-  if (!owner) return undefined;
-  if (ts.isSourceFile(owner)) return name;
-  const outer = moduleScopePath(owner);
-  return outer === undefined ? undefined : `${outer}.${name}`;
-}
-
-/** The source file or namespace a declaration sits directly in, or undefined when it is local. */
-function moduleScopeOwner(node: ts.Node): ts.SourceFile | ts.ModuleDeclaration | undefined {
-  let parent: ts.Node | undefined = node.parent;
-  while (parent) {
-    if (ts.isSourceFile(parent)) return parent;
-    if (ts.isModuleDeclaration(parent)) return parent;
-    // Wrappers that do not introduce a scope of their own.
-    if (ts.isModuleBlock(parent) || ts.isVariableDeclarationList(parent) || ts.isVariableStatement(parent)) {
-      parent = parent.parent;
-      continue;
-    }
-    return undefined;
-  }
-  return undefined;
-}
-
-function nameText(name: ts.Node | undefined): string | undefined {
-  if (!name) return undefined;
-  if (ts.isIdentifier(name) || ts.isPrivateIdentifier(name)) return name.text;
-  if (ts.isStringLiteralLike(name) || ts.isNumericLiteral(name)) return name.text;
-  return undefined; // computed member name
-}
-
-/** Declaration kinds that own the calls written inside them. */
-function isCallerDeclaration(node: ts.Node): boolean {
-  return (
-    ts.isFunctionDeclaration(node) ||
-    ts.isMethodDeclaration(node) ||
-    ts.isConstructorDeclaration(node) ||
-    ts.isGetAccessorDeclaration(node) ||
-    ts.isSetAccessorDeclaration(node) ||
-    ts.isClassDeclaration(node) ||
-    ts.isClassExpression(node) ||
-    ts.isInterfaceDeclaration(node) ||
-    ts.isEnumDeclaration(node) ||
-    ts.isModuleDeclaration(node) ||
-    ts.isVariableDeclaration(node)
-  );
-}
-
-/**
- * The symbol that owns a call site: the nearest enclosing addressable declaration.
- * Anonymous functions and local declarations are walked through (a call inside
- * `retry(() => this.client.send(cmd))` belongs to the method around it), and a call in
- * a class property initializer belongs to the class, which is the enclosing declaration
- * greplost's extractor records. Top-level code belongs to the file.
- */
-function enclosingCaller(node: ts.Node, fileId: string): string {
-  let current: ts.Node | undefined = node.parent;
-  while (current && !ts.isSourceFile(current)) {
-    if (isCallerDeclaration(current)) {
-      const symbolPath = declarationSymbolPath(current as ts.Declaration);
-      if (symbolPath !== undefined) return symbolId(fileId, symbolPath);
-    }
-    current = current.parent;
-  }
-  return fileId;
 }
 
 // ---------------------------------------------------------------------------
@@ -483,30 +408,43 @@ function findCycles(nodes: string[], edges: Edge[]): string[][] {
 // helpers
 // ---------------------------------------------------------------------------
 
-/** Deduplicating edge accumulator keyed on (from, to, kind), merging imported symbols. */
+/**
+ * Deduplicating edge accumulator keyed on (from, to, kind), merging imported symbols.
+ *
+ * Nested maps rather than a joined string key: file ids may contain any character a path
+ * may contain, so there is no separator that is guaranteed not to collide, and the source
+ * of this file stays free of control characters.
+ */
 class EdgeSet {
-  private readonly byKey = new Map<string, { from: string; to: string; kind: Edge["kind"]; symbols: Set<string> }>();
+  private readonly byKind = new Map<Edge["kind"], Map<string, Map<string, Set<string>>>>();
 
   add(from: string, to: string, kind: Edge["kind"], symbols: string[]): void {
-    const key = `${from} ${to} ${kind}`;
-    let entry = this.byKey.get(key);
-    if (!entry) {
-      entry = { from, to, kind, symbols: new Set<string>() };
-      this.byKey.set(key, entry);
+    let byFrom = this.byKind.get(kind);
+    if (!byFrom) {
+      byFrom = new Map();
+      this.byKind.set(kind, byFrom);
     }
-    for (const symbol of symbols) entry.symbols.add(symbol);
+    let byTo = byFrom.get(from);
+    if (!byTo) {
+      byTo = new Map();
+      byFrom.set(from, byTo);
+    }
+    let merged = byTo.get(to);
+    if (!merged) {
+      merged = new Set();
+      byTo.set(to, merged);
+    }
+    for (const symbol of symbols) merged.add(symbol);
   }
 
   toArray(): Edge[] {
     const out: Edge[] = [];
-    for (const entry of this.byKey.values()) {
-      out.push({
-        from: entry.from,
-        to: entry.to,
-        kind: entry.kind,
-        symbols: [...entry.symbols].sort(compareStrings),
-        confidence: "high",
-      });
+    for (const [kind, byFrom] of this.byKind) {
+      for (const [from, byTo] of byFrom) {
+        for (const [to, symbols] of byTo) {
+          out.push({ from, to, kind, symbols: [...symbols].sort(compareStrings), confidence: "high" });
+        }
+      }
     }
     return out.sort(compareEdges);
   }
