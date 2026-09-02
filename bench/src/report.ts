@@ -20,13 +20,11 @@
  *   bun bench/src/cli.ts report --dry-run       # RESULTS.md only, no rasterisation
  *   bun bench/src/cli.ts report --results-dir <d> --out <f> --assets <d>
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import { compareStrings } from "@greplost/core/schema";
-
 import { boxChart, groupedBarChart, lineChart, mermaidXy, writeChart, type BoxDatum, type ChartSpec } from "./charts.ts";
-import { latestResult, resultsDir } from "./results-io.ts";
+import { latestResult, orderedResults } from "./results-io.ts";
 import { assumptions, firstMachine, mergeCorpus, resetAssumptions, versionRows, type Payload } from "./report-payload.ts";
 import { headToHeadFrom, singleTool } from "./report-sections.ts";
 import {
@@ -156,49 +154,26 @@ export function buildModel(options: BuildOptions = {}): ReportModel {
   const assetsRel = options.assetsRel ?? ASSETS_DIR;
   resetAssumptions();
   /**
-   * Every result of one suite, oldest first by file name.
+   * Every result of one suite, oldest first.
    *
    * `latestResult` answers "the newest one", which is the right question for a
    * suite that measures the same thing every time. The head-to-head suite does
    * not: a run selects metrics, and two runs at the same commit measure
    * different halves of the table.
+   *
+   * The order is `orderedResults`': the payload's own `recordedAt`, then the file
+   * name, with unstamped payloads first. Both keys are content the repository
+   * carries, so two clones of the same tree regenerate the same `RESULTS.md`; an
+   * earlier attempt broke ties on `mtime`, which is a checkout-time fact and made
+   * the document differ between clones (review round 2, important b), and a later
+   * one broke them on the short sha, which does not sort by time at all.
    */
   const loadAll = (suite: string, from: string | undefined): Payload[] => {
-    const found: Payload[] = [];
     try {
-      const target = resultsDir(from);
-      if (!existsSync(target)) return found;
-      const pattern = new RegExp(`^${suite}-\\d{4}-\\d{2}-\\d{2}-[^/]*\\.json$`);
-      const names = readdirSync(target).filter((entry) => pattern.test(entry));
-      // Oldest first, by the payload's own date, then its commit sha, then the
-      // file name. Every key is content the repository carries, so two clones of
-      // the same tree regenerate the same `RESULTS.md`; an earlier attempt broke
-      // the date tie on `mtime`, which is a checkout-time fact and made the
-      // document differ between clones (review round 2, important b).
-      const keyed = names.flatMap((name) => {
-        const file = path.join(target, name);
-        try {
-          const parsed = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
-          return [{
-            file,
-            name,
-            date: typeof parsed["date"] === "string" ? parsed["date"] : "",
-            sha: typeof parsed["greplostSha"] === "string" ? parsed["greplostSha"] : "",
-            payload: parsed,
-          }];
-        } catch {
-          // One corrupt result must not take the report down with it.
-          return [];
-        }
-      });
-      keyed.sort(
-        (a, b) => compareStrings(a.date, b.date) || compareStrings(a.sha, b.sha) || compareStrings(a.name, b.name),
-      );
-      for (const entry of keyed) found.push({ data: entry.payload, file: entry.file });
+      return orderedResults(suite, from).map((entry) => ({ data: entry.payload, file: entry.file }));
     } catch {
-      return found;
+      return [];
     }
-    return found;
   };
 
   const load = (suite: string): Payload | null => {

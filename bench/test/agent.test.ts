@@ -33,6 +33,7 @@ import {
   type TaskCategory,
 } from "../src/tasks.ts";
 import {
+  DEFAULT_MAX_USD,
   extractAnswer,
   lcsRatio,
   normalizeAnswerPath,
@@ -899,8 +900,20 @@ describe("fake claude timeouts and budget", () => {
 
     // One doomed session, not two: a session that never produced an envelope has
     // no missing tool-call count to go and buy.
-    expect(invocations()).toHaveLength(1);
+    //
+    // Counted off the payload, not off the fake's invocation log. The log line is
+    // written by the fake *before* it sleeps, and writing it spawns a real
+    // `greplost --version` to record the shim version — start-up work that under load
+    // outlives this 400 ms timeout, so the child is killed before it logs and
+    // `invocations()` comes back empty. That is the intermittent `bun test bench`
+    // failure (review round 3, important 7): a wall-clock race dressed as an assertion
+    // about behaviour. The behaviour claim is "never a second session", and the payload
+    // states it exactly, whether or not the first child lived long enough to log.
+    expect(invocations().length).toBeLessThanOrEqual(1);
     const payload = writtenResult();
+    const attempted = payload["runs"] as Record<string, unknown>[];
+    expect(attempted).toHaveLength(1);
+    expect(attempted[0]?.["error"]).toBe("timeout after 400ms");
     expect((payload["toolCallProbe"] as Record<string, number>)["sessions"]).toBe(0);
     const cli = payload["cli"] as Record<string, unknown>;
     expect(cli["streamJsonFallback"]).toBe(false);
@@ -986,10 +999,11 @@ describe("fake claude timeouts and budget", () => {
 
     const payload = writtenResult();
     const budget = payload["budget"] as Record<string, unknown>;
-    expect(budget["maxUsd"]).toBeNull();
+    // The default run cap is in force (no `--max-usd`), and it is far above what two
+    // fake sessions bill, so the per-session flag is the only binding constraint.
+    expect(budget["maxUsd"]).toBe(DEFAULT_MAX_USD);
     expect(budget["sessionCeilingUsd"]).toBe(0.5);
     expect(budget["sessionCeilingSource"]).toBe("flag");
-    // No run cap, so nothing could truncate a session below its ceiling.
     expect(budget["truncatedSessions"]).toBe(0);
     for (const call of invocations()) {
       expect(call.argv[call.argv.indexOf("--max-budget-usd") + 1]).toBe("0.5");
@@ -1021,12 +1035,33 @@ describe("fake claude timeouts and budget", () => {
     );
   });
 
-  test("a fixture run has no budget cap and passes no budget flag", async () => {
+  test("a fixture run carries the default cap and passes a budget flag", async () => {
+    // Review round 3, important 6: `--fixture` used to mean uncapped. `--fixture` only
+    // chooses the repo and the task set — the runner still resolves `claude` on PATH, so
+    // a fixture run on a developer's machine reaches the real CLI. That is the dangerous
+    // case, not the safe one, so the default ceiling applies to it too.
     resetHarness();
     writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 1));
     expect(await run(["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "1"])).toBe(0);
-    expect((writtenResult()["budget"] as Record<string, unknown>)["maxUsd"]).toBeNull();
-    for (const call of invocations()) expect(call.argv).not.toContain("--max-budget-usd");
+    const budget = writtenResult()["budget"] as Record<string, unknown>;
+    expect(budget["maxUsd"]).toBe(DEFAULT_MAX_USD);
+    expect(budget["stopped"]).toBe(false);
+    const calls = invocations();
+    expect(calls.length).toBeGreaterThan(0);
+    for (const call of calls) {
+      const at = call.argv.indexOf("--max-budget-usd");
+      expect(at).toBeGreaterThanOrEqual(0);
+      expect(Number(call.argv[at + 1])).toBeLessThanOrEqual(DEFAULT_MAX_USD);
+    }
+  });
+
+  test("--max-usd still overrides the default on a fixture run", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 1));
+    expect(
+      await run(["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "1", "--max-usd", "0.5"]),
+    ).toBe(0);
+    expect((writtenResult()["budget"] as Record<string, unknown>)["maxUsd"]).toBe(0.5);
   });
 
   test("--tasks 0 and --runs 0 are rejected rather than silently defaulted", async () => {

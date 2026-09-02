@@ -2,12 +2,22 @@
  * Committed benchmark results (bench spec "Shared conventions", tech spec 10.9).
  *
  * Every suite writes through here so results land at one path shape,
- * `bench/results/<suite>-<YYYY-MM-DD>-<sha7>.json`, with stable JSON: the file is
- * committed, so a rerun on the same day at the same commit must produce the same bytes.
+ * `bench/results/<suite>-<YYYY-MM-DD>-<sha7>.json`, with stable, sorted JSON.
  *
- * The date and the greplost SHA are the only environment values allowed in a results
- * file (tech spec 5.3 forbids them in structure-layer output, not here); machine and
- * corpus pinning are the caller's to supply.
+ * The date, the greplost SHA and `recordedAt` are the only environment values allowed in
+ * a results file (tech spec 5.3 forbids them in structure-layer output, not here; bench
+ * payloads may carry a timestamp, the structure layer may not — ruling 2026-09-04);
+ * machine and corpus pinning are the caller's to supply.
+ *
+ * **`recordedAt` is the ordering key.** The file name carries a date and a short sha, and
+ * a short sha does not sort by time: `latestResult` used to take the lexicographically
+ * greatest name, so a run at `173a463` lost to an earlier run at `b908e0f` and the report
+ * named the wrong commit in its Versions table. Every payload written from here therefore
+ * carries the wall-clock instant it was produced, and `latestResult` orders on that.
+ * Results committed before the stamp existed have no `recordedAt`; they sort before every
+ * stamped payload, because nothing in an unstamped file can show it to be the newer one.
+ * A rerun at the same date and sha still overwrites the same path, so the directory does
+ * not grow, but its bytes now differ by the stamp.
  *
  * `GREPLOST_BENCH_RESULTS_DIR` redirects every write away from `bench/results/`. It exists
  * **for tests only**, so a test can drive a suite's `run()` end to end without leaving a
@@ -55,17 +65,24 @@ export function gitSha7(cwd: string = REPO_ROOT): string {
   }
 }
 
+/** The instant a result was produced, ISO 8601 in UTC (`2026-09-02T16:20:09.001Z`). */
+export function nowIso(): string {
+  return new Date().toISOString();
+}
+
 /**
  * Write one suite result and return the absolute path written.
  *
- * `suite`, `date` and `greplostSha` are filled in when the payload does not set them;
- * an explicit value wins, which is what lets the report suite rewrite a historical run.
+ * `suite`, `date`, `greplostSha` and `recordedAt` are filled in when the payload does not
+ * set them; an explicit value wins, which is what lets the report suite rewrite a
+ * historical run without restamping it as today's.
  */
 export function writeResult(suite: string, payload: object, dir?: string): string {
   const record = payload as Record<string, unknown>;
   const date = typeof record["date"] === "string" ? record["date"] : todayIso();
   const sha = typeof record["greplostSha"] === "string" ? record["greplostSha"] : gitSha7();
-  const full = { suite, ...record, date, greplostSha: sha };
+  const recordedAt = typeof record["recordedAt"] === "string" ? record["recordedAt"] : nowIso();
+  const full = { suite, ...record, date, greplostSha: sha, recordedAt };
 
   const target = resultsDir(dir);
   mkdirSync(target, { recursive: true });
@@ -74,21 +91,49 @@ export function writeResult(suite: string, payload: object, dir?: string): strin
   return file;
 }
 
-/** The newest result for a suite by filename (dates and SHAs sort lexicographically). */
+/**
+ * Every result file for a suite, oldest first.
+ *
+ * The order is `(recordedAt, file name)`, with unstamped payloads (written before the
+ * stamp existed) ahead of every stamped one, ordered among themselves by name. A payload
+ * that cannot be parsed is dropped rather than taking the caller down with it.
+ */
+export function orderedResults(
+  suite: string,
+  dir?: string,
+): { file: string; name: string; payload: Record<string, unknown> }[] {
+  const target = resultsDir(dir);
+  if (!existsSync(target)) return [];
+  const pattern = new RegExp(`^${escapeRegExp(suite)}-\\d{4}-\\d{2}-\\d{2}-[^/]*\\.json$`);
+  const found = readdirSync(target)
+    .filter((name) => pattern.test(name))
+    .flatMap((name) => {
+      const file = path.join(target, name);
+      try {
+        const payload = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
+        const stamp = payload["recordedAt"];
+        return [{ file, name, payload, stamp: typeof stamp === "string" ? stamp : "" }];
+      } catch {
+        return [];
+      }
+    });
+  found.sort(
+    (a, b) =>
+      // "" sorts before every real ISO instant, which is exactly the rule: an
+      // unstamped result never displaces a stamped one.
+      compareStrings(a.stamp, b.stamp) || compareStrings(a.name, b.name),
+  );
+  return found.map(({ file, name, payload }) => ({ file, name, payload }));
+}
+
+/** The newest result for a suite, by `recordedAt` and then by file name. */
 export function latestResult(
   suite: string,
   dir?: string,
 ): { file: string; payload: Record<string, unknown> } | undefined {
-  const target = resultsDir(dir);
-  if (!existsSync(target)) return undefined;
-  const pattern = new RegExp(`^${escapeRegExp(suite)}-\\d{4}-\\d{2}-\\d{2}-[^/]*\\.json$`);
-  const names = readdirSync(target)
-    .filter((name) => pattern.test(name))
-    .sort(compareStrings);
-  const newest = names[names.length - 1];
-  if (newest === undefined) return undefined;
-  const file = path.join(target, newest);
-  return { file, payload: JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown> };
+  const ordered = orderedResults(suite, dir);
+  const newest = ordered[ordered.length - 1];
+  return newest === undefined ? undefined : { file: newest.file, payload: newest.payload };
 }
 
 function escapeRegExp(value: string): string {

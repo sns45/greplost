@@ -89,16 +89,21 @@ export function singleTool(
   take(sections.eval4, ["A1", "A2", "A3", "A4"], "Eval 4, `agent`");
 
   const notes: string[] = [
-    "F2 compares the structure artifacts that `listStructurePaths` enumerates — `INDEX.md`, `manifest.json`, " +
-      "`graph/*.jsonl`, `repo/*.md`, `packages/*/{MAP,API}.md` and `packages/*/modules/**` — and not the whole " +
-      "`.greplost/` directory: `config.json`, `cache/` and the runtime files (`.dirty`, `.lock`, `.state.json`) " +
-      "are excluded, because they are not the map and are not committed (ruling 2026-09-02).",
-    "`unparsable` counts files whose tree-sitter parse returns an ERROR root node, which the extractor " +
-      "cannot read at all. They are not scored in S1 or S2, so they cost recall silently unless they are " +
-      "counted here. The count is read from the structural payload when it reports one, and otherwise " +
-      "derived from it — a file every one of whose truth items was missed is a file nothing was extracted " +
-      "from — and it is `n/a` with `not measured` when the payload carries neither. Nothing about it is " +
-      "asserted here. Upstream: https://github.com/tree-sitter/tree-sitter-typescript/issues/335.",
+    `F2 rests on ${f2Denominator(replay)}. It compares the structure artifacts that \`listStructurePaths\` ` +
+      "enumerates — `INDEX.md`, `manifest.json`, `graph/*.jsonl`, `repo/*.md`, `packages/*/{MAP,API}.md` and " +
+      "`packages/*/modules/**` — and not the whole `.greplost/` directory: `config.json`, `cache/` and the " +
+      "runtime files (`.dirty`, `.lock`, `.state.json`) are excluded, because they are not the map and are " +
+      "not committed (ruling 2026-09-02).",
+    "`unparsable` counts files whose tree-sitter parse root is an ERROR node or has one as a direct child: " +
+      "the top level of the file is not a program the grammar recognises (`findUnparsableFiles` in " +
+      "`@greplost/core`, Appendix C ruling 2026-09-03). The extractor recovers around ERROR nodes, so these " +
+      "files are still scored — which is the problem: whatever the grammar could not read costs S1 and S2 " +
+      "recall with no line saying so unless it is counted here. tree-sitter-typescript 0.23.2 is the newest " +
+      "grammar that exists, and hono's generic call signatures hit open upstream issue " +
+      "https://github.com/tree-sitter/tree-sitter-typescript/issues/335. The count is read from the " +
+      "structural payload when it reports one, and otherwise derived from it — a file every one of whose " +
+      "truth items was missed is a file nothing was extracted from — and it is `n/a` with `not measured` " +
+      "when the payload carries neither. Nothing about it is asserted here.",
   ];
   if (replay === null || perf === null || agent === null || mapquality === null) {
     notes.push(
@@ -107,6 +112,23 @@ export function singleTool(
     );
   }
   return { rows, notes };
+}
+
+/**
+ * How many full-vs-incremental comparisons F2's `0%` rests on.
+ *
+ * "0% divergence" is a rate, and a rate with a hidden denominator is the weakest claim in
+ * the table pretending to be the strongest: one comparison and fifty read identically in
+ * the measured column. The replay suite runs a full rebuild every `--f2-every` commits,
+ * so the count is the number the reader has to see (review round 3, minor).
+ */
+function f2Denominator(replay: Payload | null): string {
+  if (replay === null) return "no comparison yet: the replay suite has not run";
+  const checks = firstNum(replay.data, ["f2Checks", "summary.f2Checks"]);
+  const commits = firstNum(replay.data, ["commits", "summary.commits", "commitCount"]);
+  if (checks === null) return "an unrecorded number of full-vs-incremental comparisons";
+  const walk = commits === null ? "" : ` over a walk of ${fmt(commits)} commits`;
+  return `${fmt(checks)} full-vs-incremental comparison${checks === 1 ? "" : "s"}${walk}`;
 }
 
 /**
@@ -122,6 +144,7 @@ export function singleTool(
  */
 function unparsableRow(structural: Payload | null): SummaryRow {
   const reported = structural === null ? null : firstNum(structural.data, [
+    "unparsable.count",
     "unparsable",
     "unparsableFiles",
     "parseErrors",
@@ -132,7 +155,7 @@ function unparsableRow(structural: Payload | null): SummaryRow {
   const count = reported ?? derived;
   return {
     id: "unparsable",
-    metric: "files whose tree-sitter parse root is ERROR (excluded from S1 and S2)",
+    metric: "files whose tree-sitter parse is broken at the root level",
     target: "0",
     // `n/a` rather than `not run`: the files exist and were skipped, which is a
     // different claim from "this metric was never measured". The count itself is
@@ -207,7 +230,7 @@ const TARGETS: Record<string, string> = {
   P1: "<= 1s / <= 10s",
   P2: "<= 500ms / <= 1s",
   P3: "<= 500MB",
-  M1: "<= 3,000 tokens",
+  M1: "<= 3,000 tokens at 10k files",
   M2: "0",
   A1: "<= 50%",
   A2: "<= 40%",
@@ -360,6 +383,23 @@ export function headToHead(payload: Payload | null, replay: Payload | null, asse
     if (tool.syncMechanism !== null) {
       notes.push(`${tool.name} sync mechanism (X2, from bench/competitors.json): ${firstSentence(tool.syncMechanism)}`);
     }
+  }
+  // What the X2 walk is, stated at render time rather than read out of a payload.
+  //
+  // The suite records it in its own method list, but a payload written before that
+  // sentence existed carries the old wording, and the disclosure a reader most needs —
+  // that the history is generated, one added import per commit, with no deletions and no
+  // renames — must not depend on which run last touched `bench/results/` (review round 3,
+  // important 8). It is a fact about how this harness builds every X2 walk, so it is true
+  // of every X2 row the table can show.
+  if (rows.some((row) => row.id === "X2")) {
+    notes.push(
+      "X2: the commit walk is **synthetic**. It is generated over the corpus repo's pinned checkout rather " +
+        "than replayed from its real history: each commit appends exactly one resolvable import line to one " +
+        "file, so truth moves by exactly one edge per commit, and the walk contains no deletions, no renames " +
+        "and no new files — the easy direction for an incremental updater. Tech spec 10.0 X2 asks for 500 " +
+        "real commits of a corpus checkout; that is not what was run.",
+    );
   }
   notes.push(
     "Mechanical staleness check (tech spec 10.0 X2): greplost has `verify` (byte comparison against a " +

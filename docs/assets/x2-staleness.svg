@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="458" viewBox="0 0 720 458" font-family="sans-serif" font-size="12">
-<rect x="0" y="0" width="720" height="458" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="497" viewBox="0 0 720 497" font-family="sans-serif" font-size="12">
+<rect x="0" y="0" width="720" height="497" fill="#ffffff"/>
 <text x="20" y="26" font-size="15" font-weight="bold" fill="#111827">Freshness under each tool's own sync mechanism: F1 vs commit</text>
 <rect x="20" y="38" width="10" height="10" fill="#1d4ed8"/>
 <text x="35" y="47" fill="#6b7280">greplost</text>
@@ -22,23 +22,25 @@
 <text x="18" y="190" fill="#6b7280" font-size="11" text-anchor="middle" transform="rotate(-90 18 190)">F1 vs compiler truth</text>
 <text x="382" y="356" fill="#6b7280" font-size="11" text-anchor="middle">commit index</text>
 <text x="20" y="372" fill="#6b7280" font-size="10">Arm: documented-sync — each tool's sync mechanism was installed exactly as its README describes and then left alone; the harness</text>
-<text x="20" y="385" fill="#6b7280" font-size="10">only commits. This is the arm tech spec 10.0 X2 words. Read the FALL of each line, not its height: the height is that tool's</text>
-<text x="20" y="398" fill="#6b7280" font-size="10">import coverage (X1's subject) and only the fall is staleness. At commit 0 the freshly built artifacts scored greplost 1.000,</text>
-<text x="20" y="411" fill="#6b7280" font-size="10">graphify 0.131, crg 0.894; over the walk their decay (F1 at commit 0 minus F1 at the last commit) was greplost 0.000, graphify</text>
-<text x="20" y="424" fill="#6b7280" font-size="10">+0.005, crg -0.003, a negative decay being ground gained. The distance between the lines is mostly that starting difference, which</text>
-<text x="20" y="437" fill="#6b7280" font-size="10">is coverage and belongs to X1; the staleness X2 measures is the movement. Omitted (not run here): ua. Measured on corpus hono,</text>
-<text x="20" y="450" fill="#6b7280" font-size="10">tier M (248 files); 100 replayed commits.</text>
-<polyline points="64,58 134.67,58 205.33,58 276,58 346.67,58 417.33,58 488,58 558.67,58 629.33,58 700,58" fill="none" stroke="#1d4ed8" stroke-width="2"/>
-<polyline points="64,287.55 134.67,287.42 205.33,288.08 276,288.68 346.67,289.29 417.33,288.42 488,288.29 558.67,288.87 629.33,288.71 700,288.92" fill="none" stroke="#ea580c" stroke-width="2"/>
-<polyline points="64,85.85 134.67,85.51 205.33,84.9 276,84.29 346.67,83.74 417.33,83.21 488,82.68 558.67,82.21 629.33,84.35 700,85.11" fill="none" stroke="#0f766e" stroke-width="2"/>
+<text x="20" y="385" fill="#6b7280" font-size="10">only commits, except that crg's `visualize --format json` export is run at each scoring checkpoint because nothing else writes the</text>
+<text x="20" y="398" fill="#6b7280" font-size="10">JSON its artifact is read from (it is outside every timing and does not rebuild). This is the arm tech spec 10.0 X2 words. Read</text>
+<text x="20" y="411" fill="#6b7280" font-size="10">the FALL of each line, not its height: the height is that tool's import coverage (X1's subject) and only the fall is staleness. At</text>
+<text x="20" y="424" fill="#6b7280" font-size="10">commit 0 the freshly built artifacts scored greplost 1.000, graphify 0.131, crg 0.894; over the walk their decay (F1 at commit 0</text>
+<text x="20" y="437" fill="#6b7280" font-size="10">minus F1 at the last commit) was greplost 0.000, graphify +0.005, crg -0.003, a negative decay being ground gained. The distance</text>
+<text x="20" y="450" fill="#6b7280" font-size="10">between the lines is mostly that starting difference, which is coverage and belongs to X1; the staleness X2 measures is the</text>
+<text x="20" y="463" fill="#6b7280" font-size="10">movement. Omitted (not run here): ua. Measured on corpus hono, tier M (248 files); 100 replayed commits. The walk is synthetic:</text>
+<text x="20" y="476" fill="#6b7280" font-size="10">each commit appends exactly one resolvable import line to one file, so truth moves by exactly one edge per commit, and the walk</text>
+<text x="20" y="489" fill="#6b7280" font-size="10">contains no deletions, no renames and no new files.</text>
+<polyline points="64,58 140.32,58 216.64,58 292.96,58 369.28,58 445.6,58 521.92,58 598.24,58 674.56,58 700,58" fill="none" stroke="#1d4ed8" stroke-width="2"/>
+<polyline points="64,287.55 140.32,287.42 216.64,288.08 292.96,288.68 369.28,289.29 445.6,288.42 521.92,288.29 598.24,288.87 674.56,288.71 700,288.92" fill="none" stroke="#ea580c" stroke-width="2"/>
+<polyline points="64,85.85 140.32,85.51 216.64,84.9 292.96,84.29 369.28,83.74 445.6,83.21 521.92,82.68 598.24,82.21 674.56,84.35 700,85.11" fill="none" stroke="#0f766e" stroke-width="2"/>
 <text x="64" y="338" fill="#6b7280" font-size="11" text-anchor="middle">0</text>
-<text x="134.67" y="338" fill="#6b7280" font-size="11" text-anchor="middle">12</text>
-<text x="205.33" y="338" fill="#6b7280" font-size="11" text-anchor="middle">24</text>
-<text x="276" y="338" fill="#6b7280" font-size="11" text-anchor="middle">36</text>
-<text x="346.67" y="338" fill="#6b7280" font-size="11" text-anchor="middle">48</text>
-<text x="417.33" y="338" fill="#6b7280" font-size="11" text-anchor="middle">60</text>
-<text x="488" y="338" fill="#6b7280" font-size="11" text-anchor="middle">72</text>
-<text x="558.67" y="338" fill="#6b7280" font-size="11" text-anchor="middle">84</text>
-<text x="629.33" y="338" fill="#6b7280" font-size="11" text-anchor="middle">96</text>
+<text x="140.32" y="338" fill="#6b7280" font-size="11" text-anchor="middle">12</text>
+<text x="216.64" y="338" fill="#6b7280" font-size="11" text-anchor="middle">24</text>
+<text x="292.96" y="338" fill="#6b7280" font-size="11" text-anchor="middle">36</text>
+<text x="369.28" y="338" fill="#6b7280" font-size="11" text-anchor="middle">48</text>
+<text x="445.6" y="338" fill="#6b7280" font-size="11" text-anchor="middle">60</text>
+<text x="521.92" y="338" fill="#6b7280" font-size="11" text-anchor="middle">72</text>
+<text x="598.24" y="338" fill="#6b7280" font-size="11" text-anchor="middle">84</text>
 <text x="700" y="338" fill="#6b7280" font-size="11" text-anchor="middle">100</text>
 </svg>

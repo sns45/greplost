@@ -35,6 +35,21 @@ import { generateTsTruth, type Truth } from "./truth/ts.ts";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
 const SUITE = "structural";
+
+/**
+ * Where one run's result lands: `structural` for a corpus run, `structural-fixture` for
+ * a run of `fixtures/tiny-ts` or `fixtures/tiny-go` (the same split `perf`, `replay` and
+ * `agent` make).
+ *
+ * A fixture run and a corpus run of the same suite on the same day at the same commit
+ * would otherwise write the *same file*, and a twelve-file smoke test would replace the
+ * hono numbers under it. `latestResult("structural")` is what `report.ts` reads and what
+ * fills the published S1 to S4 rows; it must never resolve to a fixture.
+ */
+export function resultSuite(fixture: boolean): string {
+  return fixture ? `${SUITE}-fixture` : SUITE;
+}
+
 /** Section 3 gate thresholds. S1/S2 are [precision, recall]; S3 is precision; S4 is Jaccard. */
 export const TARGETS = { S1: [0.99, 0.97], S2: [0.99, 0.99], S3: 0.95, S4: 1.0 } as const;
 /** Floating-point slack, so 0.98999999999 never fails a 0.99 gate for arithmetic reasons. */
@@ -101,6 +116,16 @@ export interface RepoScores {
   falseNegatives: Record<string, string[]>;
   /** Emulations the truth generator applied for this repo (see `Truth.notes`). */
   notes: string[];
+  /**
+   * Files whose tree-sitter parse root is an ERROR node, or has one as a direct child
+   * (`findUnparsableFiles` in `@greplost/core`; Appendix C ruling 2026-09-03).
+   *
+   * Not a score and not gated: a bucket. These files are still scored — the extractor
+   * recovers what it can — but whatever the grammar could not read costs S1 and S2 recall
+   * with no line in the report saying so, which is what this counts. Empty on a run that
+   * did not look (a pure `scoreAgainstTruth` call in a test).
+   */
+  unparsable: { path: string; reason: string }[];
 }
 
 export async function run(args: string[]): Promise<number> {
@@ -143,13 +168,24 @@ async function execute(options: Options): Promise<number> {
   if (options.verbose) printMisses(scores, METRIC_IDS, true);
 
   const missed = [...new Set(scores.flatMap(missedMetrics))].sort(compareStrings);
-  writeResult(SUITE, {
+  const unparsableReport = unparsableBucket(scores);
+  if (unparsableReport.count > 0) {
+    console.log(
+      `${SUITE}: ${unparsableReport.count} unparsable file${unparsableReport.count === 1 ? "" : "s"} ` +
+        `(tree-sitter root is ERROR or has an ERROR child): ${unparsableReport.files
+          .slice(0, MAX_REPORTED_FALSE_POSITIVES)
+          .map((file) => `${file.path} (${file.reason})`)
+          .join(", ")}`,
+    );
+  }
+  writeResult(resultSuite(isFixtureRun(options)), {
     corpus: targets.map((t) => (t.sha === null ? { name: t.name } : { name: t.name, sha: t.sha })),
     machine: await loadMachine(),
     repos: Object.fromEntries(scores.map((s) => [s.name, serializeScores(s)])),
     targets: TARGETS,
     // Disclosed so RESULTS.md can state how the oracle was built, not just what it scored.
     truth: { notes: [...new Set(scores.flatMap((s) => s.notes))].sort(compareStrings) },
+    unparsable: unparsableReport,
     gate: options.gate ? { passed: missed.length === 0, missed } : null,
   });
 
@@ -337,7 +373,34 @@ async function scoreTarget(target: Target, options: Options): Promise<RepoScores
     target.lang === "go"
       ? (await loadGoTruth())(target.root, files)
       : generateTsTruth(target.root, files, { diagnostics: options.diagnostics });
-  return scoreAgainstTruth(target.name, snapshot, truth, target.lang);
+  const scores = scoreAgainstTruth(target.name, snapshot, truth, target.lang);
+  return { ...scores, unparsable: await findUnparsable(target.root, files) };
+}
+
+/**
+ * The unparsable bucket for one repo, or an empty one when core does not offer the
+ * reader.
+ *
+ * A missing export is not a finding about the corpus, so it degrades to "nothing to
+ * report" rather than failing the run; the report says `not measured` when no payload
+ * carries a count.
+ */
+async function findUnparsable(root: string, files: string[]): Promise<{ path: string; reason: string }[]> {
+  try {
+    const specifier = "@greplost/core";
+    const mod = (await import(specifier)) as Partial<{
+      findUnparsableFiles: (
+        root: string,
+        files: readonly string[],
+      ) => Promise<{ path: string; lang: string; reason: string }[]>;
+    }>;
+    if (typeof mod.findUnparsableFiles !== "function") return [];
+    const found = await mod.findUnparsableFiles(root, files);
+    return found.map(({ path: file, reason }) => ({ path: file, reason }));
+  } catch (err) {
+    console.error(`${SUITE}: could not scan for unparsable files: ${(err as Error).message}`);
+    return [];
+  }
 }
 
 /** The snapshot files the truth generator for `lang` can speak about, sorted. */
@@ -433,6 +496,8 @@ export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth
     truthEmpty,
     noFiles,
     notes: Array.isArray(truth.notes) ? truth.notes : [],
+    // Filled by `scoreTarget`, which is the only caller that has a repo on disk to parse.
+    unparsable: [],
     falsePositives: {
       S1: locateAll(snapshot, S1.falsePositives, "import"),
       S2: locateAll(snapshot, S2.falsePositives, "export"),
@@ -461,6 +526,31 @@ export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth
  * oracle, or greplost, or both produced nothing would report four perfect scores and pass
  * the gate.
  */
+/**
+ * `{ count, files }` over every repo in the run, with the repo name on each entry.
+ *
+ * A count and the list behind it, in one place, because a bucket with no list is a
+ * number nobody can act on and a list with no count is one nobody reads.
+ */
+export function unparsableBucket(
+  scores: readonly RepoScores[],
+): { count: number; files: { repo: string; path: string; reason: string }[] } {
+  const files = scores
+    .flatMap((score) => score.unparsable.map((entry) => ({ repo: score.name, ...entry })))
+    .sort((a, b) => compareStrings(a.repo, b.repo) || compareStrings(a.path, b.path));
+  return { count: files.length, files };
+}
+
+/**
+ * True when the run scored a fixture rather than a pinned corpus repo.
+ *
+ * Both `--fixture` (tiny-ts) and `--fixture-go` (tiny-go) are fixtures: a dozen files
+ * either way, and neither may ever become `latestResult("structural")`.
+ */
+function isFixtureRun(options: Options): boolean {
+  return options.fixture || options.fixtureGo;
+}
+
 export function missedMetrics(scores: RepoScores): string[] {
   const missed: string[] = [];
   const [p1 = 1, r1 = 1] = TARGETS.S1;

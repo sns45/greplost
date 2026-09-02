@@ -34,6 +34,7 @@ import {
   runFor,
   scenariosOf,
   str,
+  targetOf,
   type ConditionStats,
   type Payload,
 } from "./report-payload.ts";
@@ -495,6 +496,11 @@ export function mapqualitySection(payload: Payload | null): EvalSection {
   const fences = firstNum(payload.data, ["diagrams.fences"]);
   const checker = firstStr(payload.data, ["checker"]);
   const dir = firstStr(payload.data, ["target.dir"]);
+  // The scale M1's budget is written against (tech spec 3: "<= 3,000 tokens at 10k
+  // files"). Carried on the row so `scopeTarget` can qualify the target with what was
+  // actually measured, exactly as it does for P1 and P3.
+  const run = targetOf(payload);
+  const withRun = (row: EvalRow): EvalRow => (run === undefined ? row : { ...row, run });
 
   section.groups.push({
     name: null,
@@ -502,7 +508,7 @@ export function mapqualitySection(payload: Payload | null): EvalSection {
       {
         id: "M1",
         metric: "INDEX.md token budget",
-        target: `<= ${fmt(budget)} tokens`,
+        target: `<= ${fmt(budget)} tokens at 10k files`,
         measured: tokens === null ? null : `${fmt(tokens)} tokens`,
         detail: "cl100k_base",
       },
@@ -513,8 +519,17 @@ export function mapqualitySection(payload: Payload | null): EvalSection {
         measured: maxNodeCount === null || maxNodes === null ? null : (maxNodeCount > maxNodes ? "1 or more" : "0"),
         detail: maxNodeCount === null ? "" : `largest fence ${fmt(maxNodeCount)} nodes, cap ${fmt(maxNodes)}${fences === null ? "" : `, ${fmt(fences)} fences`}`,
       },
-    ],
+    ].map(withRun),
   });
+  // Zero headroom is a fact to publish, not to hide: a map sitting exactly on the cap
+  // passes M2 today and fails on the next node the splitter has to place.
+  if (maxNodeCount !== null && maxNodes !== null && maxNodeCount === maxNodes) {
+    section.notes.push(
+      `M2 has no headroom: the largest fence is ${fmt(maxNodeCount)} nodes against a cap of ${fmt(maxNodes)}. ` +
+        "The metric passes — nothing exceeds the cap — but one more node in that diagram fails it, so the " +
+        "auto-split is at its limit rather than comfortably inside it.",
+    );
+  }
   section.notes.push(
     `Artifact dir: \`${dir ?? "not recorded"}\`. Mermaid checker: \`${checker ?? "not recorded"}\`` +
       (checker === "subset"

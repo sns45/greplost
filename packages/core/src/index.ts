@@ -17,6 +17,7 @@ export * from "./config.ts";
 export * from "./discover.ts";
 export * from "./hash.ts";
 export * from "./parser.ts";
+export * from "./unparsable.ts";
 
 export * from "./extract/index.ts";
 export * from "./resolve/index.ts";
