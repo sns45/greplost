@@ -36,7 +36,7 @@ export async function update(root: string, opts: UpdateOptions): Promise<UpdateR
 export interface InitResult { created: string[]; update: UpdateResult; hooks: string[]; }
 export async function init(root: string, opts?: { hooks?: boolean }): Promise<InitResult>;   // writes .greplost/config.json (DEFAULT_CONFIG) when absent, .greplost/.gitignore, full update, git hooks
 // state.ts
-export interface SyncState { lastIndexedCommit?: string; }
+export interface SyncState { lastIndexedCommit?: string; treeClean?: boolean; }   // treeClean: the dirty set and git status were empty when the map was built (ruling 2026-09-03)
 export function readState(root: string): SyncState;  export function writeState(root: string, state: SyncState): void;   // .greplost/.state.json
 // lock.ts
 export async function withLock<T>(root: string, fn: () => Promise<T>): Promise<T | undefined>;   // undefined when another live holder exists
@@ -45,7 +45,7 @@ export function isLocked(root: string): boolean;
 export function appendDirty(root: string, paths: string[]): void;   // O(1) append, one path per line
 export function readAndClearDirty(root: string): string[];            // unique, sorted, repo-relative
 // parse-cache.ts
-export class FileParseCache implements ParseCache { constructor(root: string); load(): void; save(): void; }   // .greplost/cache/parse.json, { [`${lang}:${sha256}`]: FileRecord }; gitignored; get(sha256, lang); records are immutable (never mutate what the cache returns)
+export class FileParseCache implements ParseCache { constructor(root: string); load(): void; save(): void; }   // .greplost/cache/parse.json, { "#version": PARSE_CACHE_VERSION, [`${lang}:${sha256}`]: FileRecord }; a cache with a different stamp is discarded; gitignored; get(sha256, lang); records are immutable (never mutate what the cache returns)
 // githooks.ts
 export interface HookInstallResult { installed: string[]; mode: "husky" | "plain" | "none"; notes: string[]; }
 export function installGitHooks(root: string): HookInstallResult;
@@ -63,16 +63,16 @@ export const HOOK_MARKER = "# greplost-hook";
 **Update (incremental).**
 1. `withLock`. If locked → `{ skipped: "locked" }` and nothing else.
 2. Dirty set = `readAndClearDirty` ∪ `opts.files` ∪ (git available: `git diff --name-only <lastIndexedCommit>..HEAD` when `lastIndexedCommit` is set and still exists, plus `git status --porcelain` paths). Files that no longer exist are still "dirty" (their cards get pruned).
-3. Fast path: dirty set empty, `lastIndexedCommit === HEAD`, and `git status --porcelain` empty → `{ skipped: "clean" }` after re-acquiring nothing (still inside the lock).
+3. Fast path: dirty set empty, `lastIndexedCommit === HEAD`, recorded `treeClean === true`, and `git status --porcelain` empty → `{ skipped: "clean" }` (still inside the lock). A build from a dirty tree records `treeClean: false`, so a later revert to a clean tree always rebuilds once (ruling 2026-09-03). The dirty set is filtered through the discovery predicate (config include/exclude, known languages), keeping deleted paths that are in the manifest.
 4. Load `FileParseCache`, run `buildArtifacts` with it (unchanged files hit the cache by sha256; `reparsed` counts misses, `cached` counts hits), save the cache (pruning entries whose sha256 is not in the current manifest), `writeArtifacts`, `writeState({ lastIndexedCommit: HEAD })`.
 5. `mode: "full"` skips steps 2 and 3, ignores the parse cache for reads (still saves it), and otherwise does the same. Full and incremental produce byte-identical `.greplost/` by construction: both render the whole map in memory and write only differing bytes. The tech spec's "regenerate only dependent artifacts" is satisfied at the write layer; parse work is the only thing skipped.
 6. `ms` is measured wall-clock; `quiet` suppresses console output.
 
-**Lock.** `.greplost/.lock` holds `{"pid":<n>,"ts":<epoch ms>}`. A lock is stale when the pid is not alive (`process.kill(pid, 0)` throws `ESRCH`) or `ts` is older than 60 s; stale locks are reclaimed. Written with `wx` flag for atomic creation; removed in `finally`.
+**Lock.** `.greplost/.lock` holds `{"pid":<n>,"ts":<epoch ms>}`. The holder refreshes `ts` every 15 s while it works (heartbeat). A lock is stale when the pid is not alive (`process.kill(pid, 0)` throws `ESRCH`), or `ts` is older than 60 s, or `ts` is more than 60 s in the future; stale locks are reclaimed (ruling 2026-09-03). Written with `wx` flag for atomic creation; removed in `finally`.
 
 **Dirty file.** `.greplost/.dirty`, one path per line, appended with `appendFileSync`. Paths are normalised to repo-relative posix form; absolute paths outside the repo are ignored.
 
-**Init.** Creates `.greplost/config.json` from `DEFAULT_CONFIG` (2-space stable JSON) if absent, `.greplost/.gitignore` containing `.dirty`, `.lock`, `.state.json`, `cache/parse.json`; runs `update({ mode: "full" })`; installs git hooks unless `hooks === false`.
+**Init.** Creates `.greplost/config.json` from `DEFAULT_CONFIG` (2-space stable JSON) if absent, `.greplost/.gitignore` containing `.dirty*`, `.lock`, `.state.json`, `cache/parse.json`; runs `update({ mode: "full" })`; installs git hooks unless `hooks === false`.
 
 **Git hooks.** For `post-commit`, `post-merge`, `post-checkout`: if `.husky/` exists, append the block to `.husky/<hook>` (creating it, executable); else write or append to `.git/hooks/<hook>` (creating with a `#!/bin/sh` shebang, executable). The block is idempotent (skip when `HOOK_MARKER` present) and detached:
 
