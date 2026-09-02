@@ -58,9 +58,12 @@ export function mermaidId(raw: string, taken?: Set<string>): string {
  * edges are emitted in sorted order (by id; edges by from, then to, then
  * label) regardless of input order, so the same spec always renders
  * byte-identical output. Labels are quoted and escaped: `"` becomes
- * `#quot;`, and `[ ] ( ) { }` (which would otherwise break Mermaid's node
- * shape syntax) are replaced with their decimal HTML character references.
- * The result always ends with a blank line after the closing fence.
+ * `#quot;`; `[ ] ( ) { }` (which would otherwise break Mermaid's node shape
+ * syntax), `#` and `;` (which could otherwise be misread as introducing or
+ * closing one of Mermaid's own `#NN;` character references), and `< >`
+ * (which could otherwise be misread as embedded HTML) are all replaced with
+ * their decimal HTML character references. The result always ends with a
+ * blank line after the closing fence.
  */
 export function renderGraph(spec: GraphSpec): string {
   const nodes = [...spec.nodes].sort((a, b) => compareStrings(a.id, b.id));
@@ -87,25 +90,44 @@ export function renderGraph(spec: GraphSpec): string {
   return `${lines.join("\n")}\n\n`;
 }
 
-const LABEL_ESCAPES: ReadonlyArray<readonly [RegExp, string]> = [
-  [/"/g, "#quot;"],
-  [/\[/g, "#91;"],
-  [/\]/g, "#93;"],
-  [/\(/g, "#40;"],
-  [/\)/g, "#41;"],
-  [/\{/g, "#123;"],
-  [/\}/g, "#125;"],
-];
+/**
+ * Every replacement is Mermaid's own `#NN;` decimal character reference
+ * shape (`#quot;` included), so a raw `#` must itself be escaped: otherwise
+ * a label containing `#` followed later by digits and a `;` could decode as
+ * an unintended character, and Mermaid could misparse an unescaped `<`/`>`
+ * as embedded HTML. Because *every* entry's replacement text contains both
+ * `#` and `;`, chaining separate `.replace()` calls for `#` and `;` cannot
+ * be made safe in either order: whichever rule runs first inserts text the
+ * other rule's pattern also matches, corrupting it. `escapeLabel` avoids
+ * that by scanning the original string once (a single regex, single
+ * replacer function) rather than chaining passes, so no already-inserted
+ * entity is ever rescanned.
+ */
+const LABEL_ESCAPES: ReadonlyMap<string, string> = new Map([
+  ['"', "#quot;"],
+  ["[", "#91;"],
+  ["]", "#93;"],
+  ["(", "#40;"],
+  [")", "#41;"],
+  ["{", "#123;"],
+  ["}", "#125;"],
+  ["#", "#35;"],
+  [";", "#59;"],
+  ["<", "#60;"],
+  [">", "#62;"],
+]);
+
+const LABEL_ESCAPE_PATTERN = /["[\](){}#;<>]/g;
 
 function escapeLabel(label: string): string {
-  let out = label;
-  for (const [pattern, replacement] of LABEL_ESCAPES) {
-    out = out.replace(pattern, replacement);
-  }
-  return out;
+  return label.replace(LABEL_ESCAPE_PATTERN, (ch) => LABEL_ESCAPES.get(ch) ?? ch);
 }
 
-/** Edge labels sit between `|` delimiters, so `|` itself must also be escaped. */
+/** Edge labels sit between `|` delimiters, so `|` must also be escaped here, alongside everything `escapeLabel` covers. */
+const EDGE_LABEL_ESCAPES: ReadonlyMap<string, string> = new Map([...LABEL_ESCAPES, ["|", "#124;"]]);
+
+const EDGE_LABEL_ESCAPE_PATTERN = /["[\](){}#;<>|]/g;
+
 function escapeEdgeLabel(label: string): string {
-  return escapeLabel(label).replace(/\|/g, "#124;");
+  return label.replace(EDGE_LABEL_ESCAPE_PATTERN, (ch) => EDGE_LABEL_ESCAPES.get(ch) ?? ch);
 }
