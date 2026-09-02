@@ -9,7 +9,7 @@
 import type { Node } from "web-tree-sitter";
 import type { ImportKind, ImportedSymbol } from "../schema.ts";
 import type { TsContext } from "./ts.ts";
-import { childOfType, field, lineOf, specifierName, stringOf } from "./ts-signature.ts";
+import { childOfType, field, specifierName, stringOf } from "./ts-signature.ts";
 
 /** Wrappers that sit between a `variable_declarator` and its `import()`/`require()` call. */
 const VALUE_WRAPPERS: ReadonlySet<string> = new Set([
@@ -64,7 +64,7 @@ export function collectImportStatement(ctx: TsContext, node: Node): void {
       kind: "static",
       symbols: [{ name: "*", local: binding === null ? "*" : binding.text }],
       reexport: false,
-      line: lineOf(node),
+      line: ctx.line(node),
     });
     return;
   }
@@ -74,11 +74,11 @@ export function collectImportStatement(ctx: TsContext, node: Node): void {
   const specifier = stringOf(specifierNode);
   const clause = childOfType(node, "import_clause");
   if (clause === null) {
-    ctx.imports.push({ specifier, kind: "side-effect", symbols: [], reexport: false, line: lineOf(node) });
+    ctx.imports.push({ specifier, kind: "side-effect", symbols: [], reexport: false, line: ctx.line(node) });
     return;
   }
   const kind: ImportKind = hasTypeKeyword(node) ? "type" : "static";
-  ctx.imports.push({ specifier, kind, symbols: clauseSymbols(clause), reexport: false, line: lineOf(node) });
+  ctx.imports.push({ specifier, kind, symbols: clauseSymbols(clause), reexport: false, line: ctx.line(node) });
 }
 
 function clauseSymbols(clause: Node): ImportedSymbol[] {
@@ -196,7 +196,7 @@ function collectReexport(
     ctx.exports.push({ name: "*", kind: "star", from: specifier });
   }
 
-  ctx.imports.push({ specifier, kind, symbols, reexport: true, line: lineOf(node) });
+  ctx.imports.push({ specifier, kind, symbols, reexport: true, line: ctx.line(node) });
 }
 
 /** `export default <value>`: anonymous functions and classes become a `default` symbol. */
@@ -258,14 +258,14 @@ export function recordModuleCall(ctx: TsContext, call: Node, form: "dynamic" | "
       kind: "type",
       symbols: typeImportSymbols(call),
       reexport: false,
-      line: lineOf(call),
+      line: ctx.line(call),
     });
     return;
   }
 
   // A bare `require("x");` statement binds nothing: it is a side effect.
   if (form === "require" && call.parent?.type === "expression_statement") {
-    ctx.imports.push({ specifier, kind: "side-effect", symbols: [], reexport: false, line: lineOf(call) });
+    ctx.imports.push({ specifier, kind: "side-effect", symbols: [], reexport: false, line: ctx.line(call) });
     return;
   }
 
@@ -274,7 +274,7 @@ export function recordModuleCall(ctx: TsContext, call: Node, form: "dynamic" | "
     kind: form === "dynamic" ? "dynamic" : "static",
     symbols: bindingSymbols(call),
     reexport: false,
-    line: lineOf(call),
+    line: ctx.line(call),
   });
 }
 

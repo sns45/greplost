@@ -6,8 +6,13 @@
 
 import type { Node } from "web-tree-sitter";
 import type { TsContext } from "./ts.ts";
-import { field, lineOf } from "./ts-signature.ts";
-import { recordModuleCall } from "./ts-imports.ts";
+import { field } from "./ts-signature.ts";
+
+/** A callee that can be named, plus the identifier it hangs off (null for `this`). */
+export interface Callee {
+  text: string;
+  root: string | null;
+}
 
 /**
  * `a!.b()` and `foo!()` are the same call as `a.b()` and `foo()`; the assertion is
@@ -16,7 +21,7 @@ import { recordModuleCall } from "./ts-imports.ts";
  */
 function unwrapAssertion(node: Node): Node {
   let current = node;
-  while (current.type === "non_null_expression") {
+  for (let guard = 0; guard < 8 && current.type === "non_null_expression"; guard += 1) {
     const inner = current.namedChildren[0];
     if (inner === undefined) return current;
     current = inner;
@@ -24,27 +29,36 @@ function unwrapAssertion(node: Node): Node {
   return current;
 }
 
-export function recordCall(ctx: TsContext, node: Node, caller: string): void {
+export function recordCall(
+  ctx: TsContext,
+  node: Node,
+  caller: string,
+  locals: ReadonlySet<string> | null,
+): void {
+  let callee: Callee | null;
   if (node.type === "new_expression") {
     const target = field(node, "constructor");
     if (target === null) return;
-    const callee = calleeText(target, "new ");
-    if (callee !== null) ctx.calls.push({ caller, callee, line: lineOf(node) });
-    return;
+    callee = calleeOf(target, "new ");
+  } else {
+    const fn = field(node, "function");
+    if (fn === null) return;
+    if (fn.type === "import") {
+      ctx.recordModuleCall(node, "dynamic");
+      return;
+    }
+    if (fn.type === "identifier" && fn.text === "require") {
+      ctx.recordModuleCall(node, "require");
+      return;
+    }
+    callee = calleeOf(fn, "");
   }
-
-  const fn = field(node, "function");
-  if (fn === null) return;
-  if (fn.type === "import") {
-    recordModuleCall(ctx, node, "dynamic");
-    return;
-  }
-  if (fn.type === "identifier" && fn.text === "require") {
-    recordModuleCall(ctx, node, "require");
-    return;
-  }
-  const callee = calleeText(fn, "");
-  if (callee !== null) ctx.calls.push({ caller, callee, line: lineOf(node) });
+  if (callee === null) return;
+  // A name bound inside the enclosing function is a local, and a local resolves to
+  // no exported symbol: emitting it would invent an edge to a same-named top-level
+  // declaration. Dropping is the conservative half of "never guess".
+  if (callee.root !== null && locals !== null && locals.has(callee.root)) return;
+  ctx.calls.push({ caller, callee: callee.text, line: ctx.line(node) });
 }
 
 /**
@@ -52,9 +66,9 @@ export function recordCall(ctx: TsContext, node: Node, caller: string): void {
  * constructors. Deeper chains, computed members, calls on call results and calls on
  * parenthesised, cast or awaited expressions have no stable name and return null.
  */
-export function calleeText(target: Node, prefix: string): string | null {
+export function calleeOf(target: Node, prefix: string): Callee | null {
   const fn = unwrapAssertion(target);
-  if (fn.type === "identifier") return `${prefix}${fn.text}`;
+  if (fn.type === "identifier") return { text: `${prefix}${fn.text}`, root: fn.text };
   if (fn.type !== "member_expression") return null;
   const property = field(fn, "property");
   if (property === null || property.type !== "property_identifier") return null;
@@ -62,7 +76,9 @@ export function calleeText(target: Node, prefix: string): string | null {
   if (objectNode === null) return null;
   // Optional chains (`a?.b()`) read like plain members.
   const object = unwrapAssertion(objectNode);
-  if (object.type === "identifier") return `${prefix}${object.text}.${property.text}`;
-  if (object.type === "this") return `${prefix}this.${property.text}`;
+  if (object.type === "identifier") {
+    return { text: `${prefix}${object.text}.${property.text}`, root: object.text };
+  }
+  if (object.type === "this") return { text: `${prefix}this.${property.text}`, root: null };
   return null;
 }

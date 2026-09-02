@@ -104,3 +104,19 @@ export async function createParser(opts?: { grammarDir?: string }): Promise<Pars
     },
   };
 }
+
+/**
+ * Re-parse a fragment with a language that is already compiled, synchronously.
+ *
+ * Error recovery uses this to re-read a region the parser could not make sense of
+ * in context: the fragment is verbatim source, so what comes back is still a real
+ * parse, never a guess. One spare parser is created on first use and reused; a
+ * `Tree` is independent of the parser that produced it, so nesting is safe.
+ */
+let spare: Parser | null = null;
+
+export function reparse(language: Language, source: string): Tree | null {
+  if (spare === null) spare = new Parser();
+  spare.setLanguage(language);
+  return spare.parse(source);
+}

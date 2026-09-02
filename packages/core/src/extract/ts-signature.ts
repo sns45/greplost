@@ -117,12 +117,50 @@ export function signatureText(source: string, node: Node, outer: Node): string {
   return clip(sliceExcluding(source, outer.startIndex, Math.max(end, outer.startIndex), cuts));
 }
 
+/**
+ * Wrappers a function initialiser can hide behind. `<T>(x) => x` is parsed as the
+ * legacy `<T>expr` type assertion by the TypeScript grammar, which is why a generic
+ * arrow has to be unwrapped before it is recognised as a function at all.
+ */
+const INITIALISER_WRAPPERS: ReadonlySet<string> = new Set([
+  "type_assertion",
+  "as_expression",
+  "satisfies_expression",
+  "parenthesized_expression",
+  "non_null_expression",
+]);
+
+/** The expression inside any number of casts, parens and assertions. */
+export function unwrapValue(node: Node): Node {
+  let current = node;
+  for (let guard = 0; guard < 8 && INITIALISER_WRAPPERS.has(current.type); guard += 1) {
+    // `type_assertion` is `<T>expr`, so its expression is last; every other wrapper
+    // carries its expression first.
+    const children = current.namedChildren;
+    const inner = current.type === "type_assertion" ? children[children.length - 1] : children[0];
+    if (inner === undefined) return current;
+    current = inner;
+  }
+  return current;
+}
+
+/** The function a binding is initialised with, looking through casts and parens. */
+export function functionValue(node: Node): Node | null {
+  const value = field(node, "value");
+  if (value === null) return null;
+  const inner = unwrapValue(value);
+  return FUNCTION_VALUES.has(inner.type) ? inner : null;
+}
+
 /** Where a value-bearing node's signature stops: before a function or class body. */
 export function bodyCut(node: Node): number {
   const value = field(node, "value");
-  if (value !== null && BODY_VALUES.has(value.type)) {
-    const body = field(value, "body");
-    if (body !== null) return body.startIndex;
+  if (value !== null) {
+    const inner = unwrapValue(value);
+    if (BODY_VALUES.has(inner.type)) {
+      const body = field(inner, "body");
+      if (body !== null) return body.startIndex;
+    }
   }
   return node.endIndex;
 }
