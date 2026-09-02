@@ -174,3 +174,4 @@ Append-only. One line per event.
 - 2026-09-03 leaf 1.5.5 replay-perf merged (7885ef7), driver re-verified 8/8; hono 100-commit replay F1 82/82 F2 0, update p50 103ms; perf anyq full 187ms inc p95 120ms; concerns: P3 450MB at 1.1k files (deferred), P2 headroom 12 percent at 1k; task review dispatched
 - 2026-09-03 leaf 1.4.1 fix round 1/5 merged (6096b40): no permissionDecision, Go symbol importers, bench --root parsing, imports on resolvedImportTargets; 10/10 re-verified, suite 968; scoped re-review dispatched
 - 2026-09-03 hono (tier M) structural: S1 1.0/1.0, S2 p1.0 r0.975 (26 fn), S3 p0.987 r0.725, S4 1.0 -> GATE FAIL (S2). Root cause: tree-sitter-typescript 0.23.2 ERROR-wraps hono src/types.ts (846 errors) and a generic arrow initializer; grammar upgrade being evaluated
+- 2026-09-03 node-1.3 sync integration ALL MET: hono 100-commit replay F1 100 percent (82/82 non-noop), F2 0 mismatches, tier S perf P1/P2 within targets; results committed
