@@ -32,7 +32,7 @@
  *   bun bench/src/cli.ts headtohead --fixture --dry-run
  */
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import { compareStrings, type Edge, type Snapshot } from "@greplost/core/schema";
@@ -70,6 +70,28 @@ const LOCAL_BIN = path.join(WORK_DIR, "_bin");
  * operator's to run, and this suite records N/A when their binaries are absent.
  */
 const SANDBOX_HOME = path.join(WORK_DIR, "home");
+/**
+ * Wrapper scripts placed ahead of everything on `PATH` for the replay.
+ *
+ * Two jobs, both required by the documented-sync arm of X2.
+ *
+ * First, resolution. Every one of these tools installs a git hook that guards
+ * itself with `command -v <tool>`: greplost's hook falls back to `bunx greplost`
+ * (which would hit the npm registry from a throwaway repo), and crg's
+ * pre-commit hook does nothing at all when its binary is absent. A hook that
+ * silently no-ops would be recorded as "the tool did not keep up", which would
+ * be a measurement of this harness's PATH. The shim makes each tool resolvable
+ * exactly as an install would.
+ *
+ * Second, evidence. The shim writes a `start` line before running the real
+ * binary and an `end` line after, both with a monotonic timestamp. That is how
+ * this suite knows a hook fired rather than assuming it, how it waits for a
+ * backgrounded rebuild to finish rather than sleeping a guessed interval, and
+ * how X3 times every tool the same way: wall-clock between `start` and `end` of
+ * a child process, interpreter startup included, for greplost as much as for
+ * the competitors.
+ */
+const SHIM_DIR = path.join(WORK_DIR, "_shim");
 /** Nothing a competitor is asked to do may take longer than this. */
 const TOOL_TIMEOUT_MS = 600_000;
 
@@ -103,6 +125,10 @@ export interface MetricDef {
 /** X1 to X10 in table order. `results-md.ts` carries the same titles for an empty report. */
 export const METRIC_PLAN: readonly MetricDef[] = [
   { id: "X1", title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports", higherIsBetter: true, margin: 0.1, unit: "call edge precision" },
+  // X2 and X3 are written in tech spec 3.1 against 500 commits. A run that walks
+  // 24 or 100 must not print "500": `scaleTitles` rewrites both from the walk
+  // that actually happened before the payload is written, and a run with no walk
+  // keeps the spec's wording with "(not walked)" attached.
   { id: "X2", title: "Staleness after 500 replayed commits", target: "greplost F1 >= 0.99", higherIsBetter: true, margin: 0.01, unit: "F1 vs compiler truth at the last checkpoint" },
   { id: "X3", title: "Cost to stay fresh over 500 commits", target: "<= 1% of ua, <= 20% of graphify", higherIsBetter: false, margin: 0.01, unit: "USD" },
   { id: "X4", title: "Reproducibility: two builds of one commit", target: "0 bytes differ", higherIsBetter: false, margin: 1, unit: "bytes differing" },
@@ -155,6 +181,29 @@ function measured(
   return detail === undefined
     ? { value, target, verdict, reason }
     : { value, target, verdict, reason, detail };
+}
+
+/**
+ * Rewrite X2's and X3's title and target for the walk that was actually run.
+ *
+ * Section 3.1 words both against 500 commits. Printing that over a 24-commit
+ * walk states a result nobody measured, in the one column a reader trusts to be
+ * the target. `commits` of 0 means no walk happened and the row says so.
+ */
+export function scaleTitles(metrics: Record<XId, MetricRow>, commits: number): void {
+  const walked = commits > 0 ? `${commits} replayed commit${commits === 1 ? "" : "s"}` : "no replayed commits";
+  const x2 = metrics["X2"];
+  x2.title = `Staleness after ${walked}`;
+  x2.target = commits > 0 ? `greplost F1 >= 0.99 after ${commits} commits` : "greplost F1 >= 0.99 (not walked)";
+  const x3 = metrics["X3"];
+  x3.title = `Cost to stay fresh over ${walked}`;
+  x3.target = commits > 0
+    ? `<= 1% of ua, <= 20% of graphify over ${commits} commits`
+    : "<= 1% of ua, <= 20% of graphify (not walked)";
+  for (const [id, row] of [["X2", x2], ["X3", x3]] as const) {
+    void id;
+    for (const cell of Object.values(row.tools)) cell.target = row.target;
+  }
 }
 
 /** The full X1 to X10 skeleton with every cell `na` for one reason. */
@@ -357,16 +406,12 @@ interface CompetitorState {
 function unavailableReason(name: CompetitorName, spec: CompetitorSpec | undefined): string {
   const invocation = INVOCATIONS[name];
   if (!invocation.headless) return invocation.caveat ?? "no headless entry point";
+  // Verbatim from `bench/competitors.json`, which is where each tool's own
+  // README commands were recorded. Paraphrasing it here would let this file and
+  // the pinned record drift, and the pinned record is the one a maintainer of
+  // the tool would check.
   const install = (spec?.install ?? []).join(" && ");
-  // The install line points at the executable-only route, because the README's
-  // own `<tool> install` step writes into the machine's AI-tool configuration
-  // and is never run by this suite (see SANDBOX_HOME).
-  const safe = name === "graphify" ? "uv tool install graphifyy" : "pipx install code-review-graph";
-  return (
-    `not installed on this machine: run \`${safe}\` (the README's full install is ` +
-    `\`${install || "see bench/competitors.json"}\`, whose \`install\` step writes MCP config, hooks and a ` +
-    "global CLAUDE.md and is never run by this suite)"
-  );
+  return `not installed on this machine; its documented install is \`${install || "recorded in bench/competitors.json"}\``;
 }
 
 // ---------------------------------------------------------------------------
@@ -398,6 +443,96 @@ export function sandboxEnv(): NodeJS.ProcessEnv {
     // and UA's installers both write there.
     CLAUDE_CONFIG_DIR: path.join(SANDBOX_HOME, ".claude"),
   };
+}
+
+/** Env var the shims read to find the log they append to. */
+const HOOK_LOG_ENV = "GREPLOST_BENCH_HOOK_LOG";
+
+/**
+ * Write a shim for `name` that logs its invocation and then runs `real`.
+ *
+ * `exec` is deliberately not used: the shim has to outlive the child so it can
+ * record the `end` line, which is what makes "wait until the hook has finished"
+ * exact rather than a sleep.
+ */
+export function writeShim(name: string, real: string): string {
+  mkdirSync(SHIM_DIR, { recursive: true });
+  const file = path.join(SHIM_DIR, name);
+  writeFileSync(
+    file,
+    [
+      "#!/bin/sh",
+      `# bench shim for ${name} (bench/src/headtohead.ts). Logs the call, runs the real binary.`,
+      "# Millisecond stamps through perl: BSD date has no %N, and X3 times refreshes",
+      "# that take a hundred milliseconds, so second resolution would report them as 0.",
+      "_now() { perl -MTime::HiRes -e 'printf \"%.0f\", Time::HiRes::time()*1000' 2>/dev/null || echo 0; }",
+      `_log="\${${HOOK_LOG_ENV}:-}"`,
+      `if [ -n "$_log" ]; then printf '%s\t%s\t%s\n' "start" "${name}" "$(_now)" >> "$_log"; fi`,
+      `${JSON.stringify(real)} "$@"`,
+      "_status=$?",
+      `if [ -n "$_log" ]; then printf '%s\t%s\t%s\t%s\n' "end" "${name}" "$(_now)" "$_status" >> "$_log"; fi`,
+      "exit $_status",
+      "",
+    ].join("\n"),
+  );
+  chmodSync(file, 0o755);
+  return file;
+}
+
+/** A shim for greplost's own CLI, so its hook's `command -v greplost` resolves. */
+export function writeGreplostShim(): string {
+  mkdirSync(SHIM_DIR, { recursive: true });
+  const runner = path.join(SHIM_DIR, "greplost-real");
+  writeFileSync(
+    runner,
+    `#!/bin/sh\nexec bun ${JSON.stringify(path.join(REPO_ROOT, "packages", "cli", "src", "main.ts"))} "$@"\n`,
+  );
+  chmodSync(runner, 0o755);
+  return writeShim("greplost", runner);
+}
+
+interface HookCall {
+  phase: "start" | "end";
+  tool: string;
+  at: number;
+}
+
+/** Parse the shim log. Malformed lines are skipped: one bad line is not a fact. */
+export function readHookLog(file: string): HookCall[] {
+  if (!existsSync(file)) return [];
+  const out: HookCall[] = [];
+  for (const line of readFileSync(file, "utf8").split("\n")) {
+    const [phase, tool, at] = line.split("\t");
+    if ((phase !== "start" && phase !== "end") || tool === undefined || at === undefined) continue;
+    const stamp = Number(at);
+    if (!Number.isFinite(stamp)) continue;
+    out.push({ phase, tool, at: stamp });
+  }
+  return out;
+}
+
+/**
+ * Milliseconds one tool spent inside shimmed calls, and how many calls there
+ * were, over `calls`. An unmatched `start` (a process still running, or one
+ * killed) contributes a call but no time.
+ */
+export function shimTime(calls: readonly HookCall[], tool: string): { ms: number; runs: number; pending: number } {
+  let ms = 0;
+  let runs = 0;
+  let open: number | null = null;
+  for (const call of calls) {
+    if (call.tool !== tool) continue;
+    if (call.phase === "start") {
+      runs++;
+      open = call.at;
+      continue;
+    }
+    if (open !== null) {
+      ms += Math.max(0, call.at - open);
+      open = null;
+    }
+  }
+  return { ms, runs, pending: open === null ? 0 : 1 };
 }
 
 function runTool(binary: string, args: string[], cwd: string, env?: NodeJS.ProcessEnv): Ran {
@@ -727,16 +862,21 @@ export function readGreplostArtifact(dir: string): { imports: Edge[]; calls: Edg
 
 export async function run(args: string[]): Promise<number> {
   const options = parseArgs(args);
-  const target = resolveTarget(options);
-  if (typeof target === "string") {
-    console.error(target);
-    return 2;
-  }
 
+  // Before `resolveTarget`, on purpose. A dry run measures nothing, so it must
+  // not need the corpus to be checked out: `bench all --dry-run` on a fresh
+  // clone used to exit 2 here, which made the one command whose whole job is to
+  // work everywhere the one command that did not.
   if (options.dryRun) {
     printPlan(options);
     console.log(`${SUITE}: dry-run ok`);
     return 0;
+  }
+
+  const target = resolveTarget(options);
+  if (typeof target === "string") {
+    console.error(target);
+    return 2;
   }
 
   try {
@@ -1490,11 +1630,15 @@ function fromReplayResult(
     const p50 = replay === null ? null : numberAt(replay, "updateP50");
     const commits = replay === null ? null : numberAt(replay, "commits");
     const minutes = p50 === null || commits === null ? null : (p50 * commits) / 60_000;
+    // Not a win: the target is "<= 1% of ua, <= 20% of graphify", and neither
+    // arm was measured. $0 is what greplost cost, not evidence that it beat a
+    // number nobody produced.
     row.tools["greplost"] = measured(
       minutes === null ? "$0" : `$0, ${round(minutes, 2)} min`,
       x3.target,
-      "win",
-      "",
+      "na",
+      "the target is a ratio against ua and graphify; neither was walked here, so there is nothing to take a " +
+        "ratio of. greplost's own cost is $0 (no model call in the structure layer)",
       minutes === null ? { usd: 0 } : { usd: 0, minutes: round(minutes, 3) },
     );
     method.push(

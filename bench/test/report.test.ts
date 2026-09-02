@@ -26,7 +26,7 @@ import {
   wrapText,
   writeChart,
 } from "../src/charts.ts";
-import { renderResultsMd, SECTION_HEADERS, X_IDS } from "../src/results-md.ts";
+import { renderResultsMd, SECTION_HEADERS, X_IDS, provenanceLine, scopeTarget } from "../src/results-md.ts";
 import { buildModel, run as reportRun } from "../src/report.ts";
 import {
   METRIC_PLAN,
@@ -402,6 +402,35 @@ describe("results-md", () => {
     expect(text).toMatch(/## Eval 2[\s\S]*not run/);
   });
 
+  test("provenanceLine names the corpus, the file count and the walk length", () => {
+    expect(
+      provenanceLine("2026-09-02", "ac3bcd1", { repo: "tiny-ts", fixture: true, files: 12, commits: 24 }),
+    ).toBe("Measured 2026-09-02 at ac3bcd1 on fixtures/tiny-ts (12 files, 24 commits).");
+    expect(
+      provenanceLine("2026-09-02", "ac3bcd1", { repo: "hono", fixture: false, tier: "M", files: 618, commits: 100 }),
+    ).toBe("Measured 2026-09-02 at ac3bcd1 on hono, tier M (618 files, 100 commits).");
+    // No walk, no commit count invented.
+    expect(provenanceLine("2026-09-02", "ac3bcd1", { repo: "anyq", fixture: false, tier: "S", files: 148 })).toBe(
+      "Measured 2026-09-02 at ac3bcd1 on anyq, tier S (148 files).",
+    );
+    expect(provenanceLine("2026-09-02", "ac3bcd1", undefined)).toBe("Measured 2026-09-02 at ac3bcd1.");
+  });
+
+  test("a tier-scoped target is not printed verbatim against a run at another scale", () => {
+    const tierM = "<= 5s and $0 (tier M)";
+    // The run that earned it keeps it.
+    expect(scopeTarget(tierM, { repo: "hono", fixture: false, tier: "M" })).toBe(tierM);
+    // A fixture run says so instead of implying a tier-M result.
+    expect(scopeTarget(tierM, { repo: "tiny-ts", fixture: true })).toBe(
+      "<= 5s and $0 (measured on fixtures/tiny-ts, not tier M)",
+    );
+    expect(scopeTarget(tierM, { repo: "anyq", fixture: false, tier: "S" })).toBe(
+      "<= 5s and $0 (measured on anyq, tier S, not tier M)",
+    );
+    // A target with no tier clause is untouched.
+    expect(scopeTarget("0 bytes differ", { repo: "tiny-ts", fixture: true })).toBe("0 bytes differ");
+  });
+
   test("a head-to-head payload fills the win/loss/tie columns and every loss reason", () => {
     const dir = tempDir("h2h-result");
     writeFileSync(
@@ -413,6 +442,19 @@ describe("results-md", () => {
         tools: ["greplost", "graphify", "ua", "crg"],
         method: ["X4: both builds ran in the same process"],
         metrics: {
+          X1: {
+            id: "X1",
+            title: "Structural precision",
+            target: ">= +10pt calls",
+            tools: {
+              greplost: {
+                value: "calls 1 P",
+                target: ">= +10pt calls",
+                verdict: "tie",
+                reason: "gap over the best competitor is 0 on calls",
+              },
+            },
+          },
           X4: {
             id: "X4",
             title: "Reproducibility",
@@ -444,6 +486,10 @@ describe("results-md", () => {
     // The method the suite recorded reaches the document, not only the JSON:
     // a head-to-head with no method is a scoreboard (tech spec 10.1).
     expect(text).toContain("X4: both builds ran in the same process");
+    // greplost's own reason is published whatever its verdict: a `tie` against
+    // a gap target is a miss, and the reason is why it missed.
+    const x1 = text.split("\n").find((l) => l.startsWith("| X1 "));
+    expect(x1).toContain("gap over the best competitor is 0");
   });
 
   test("the README sync contract: `## Head-to-head` and `## Single-tool`, once each", () => {
@@ -493,6 +539,31 @@ describe("results-md", () => {
     expect(row).toContain("recovery is in progress");
   });
 
+  test("the X2 row's target names the walk that was actually run", () => {
+    const dir = tempDir("x2-title");
+    writeFileSync(
+      path.join(dir, "headtohead-2026-09-02-abc1234.json"),
+      JSON.stringify({
+        suite: "headtohead", date: "2026-09-02", greplostSha: "abc1234",
+        tools: ["greplost"],
+        target: { repo: "hono", fixture: false, tier: "M", files: 618, commits: 100 },
+        metrics: {
+          X2: {
+            id: "X2",
+            title: "Staleness after 100 replayed commits",
+            target: "greplost F1 >= 0.99 after 100 commits",
+            tools: { greplost: { value: 1, target: "greplost F1 >= 0.99 after 100 commits", verdict: "win", reason: "" } },
+          },
+        },
+      }),
+    );
+    const text = renderResultsMd(buildModel({ resultsDir: dir }));
+    const row = text.split("\n").find((l) => l.startsWith("| X2 "));
+    expect(row).toContain("100 commits");
+    expect(row).not.toContain("500");
+    expect(text).toContain("100 commits");
+  });
+
   test("shape differences in a neighbour payload degrade to `not run`, never to a throw", () => {
     const dir = tempDir("odd-results");
     for (const suite of ["replay", "perf", "agent"]) {
@@ -505,6 +576,38 @@ describe("results-md", () => {
     expect(text).toContain("## Eval 2");
     expect(text).toContain("## Bench 3");
     expect(text).toContain("## Eval 4");
+  });
+
+  test("the perf suite's actual payload shape fills P1 to P3", () => {
+    // `repos` is an ARRAY of { name, files, tier, scenarios: [...] }, and each
+    // scenario is { scenario, ms: { p50, p95 }, peakRssBytes } — not the flat
+    // `scenarios` object this reader first assumed. Captured from
+    // bench/results/perf-2026-09-02-334b337.json.
+    const dir = tempDir("perf-real");
+    writeFileSync(
+      path.join(dir, "perf-2026-09-02-abc1234.json"),
+      JSON.stringify({
+        suite: "perf", date: "2026-09-02", greplostSha: "abc1234",
+        peakRssTargetBytes: 524_288_000,
+        repos: [
+          {
+            name: "anyq", files: 148, tier: "S",
+            scenarios: [
+              { scenario: "full", iterations: 10, ms: { p50: 203, p95: 216 }, peakRssBytes: 241_041_408 },
+              { scenario: "incremental-1", iterations: 10, ms: { p50: 131, p95: 145 }, peakRssBytes: 147_406_848 },
+              { scenario: "package-rename", iterations: 10, ms: { p50: 126, p95: 134 }, peakRssBytes: 117_293_056 },
+            ],
+          },
+        ],
+      }),
+    );
+    const text = renderResultsMd(buildModel({ resultsDir: dir }));
+    const bench3 = text.slice(text.indexOf("## Bench 3"), text.indexOf("## Eval 4"));
+    expect(bench3).not.toContain("not run");
+    expect(bench3).toContain("203");   // P1: the full build's p50
+    expect(bench3).toContain("145");   // P2: the incremental p95
+    expect(bench3).toContain("229");   // P3: 241041408 bytes as MB
+    expect(bench3).toContain("148");   // the file count the scenario ran over
   });
 
   test("replay, perf and agent payloads in their documented shapes are read", () => {
