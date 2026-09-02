@@ -31,8 +31,8 @@
 - `function renderFlows(pkg: PackageInfo, flows: readonly Flow[], today = isoDate(new Date())): string`  L170-183
 - `function renderStep(step: FlowStep): string`  L186-189
 - `function isoDate(date: Date): string`  L192-194
-- `function exportedEntryNames(snapshot: Snapshot): Set<string>`  L197-204
-- `function basename(file: string): string`  L206-209
-- `function fileOf(id: string): string`  L212-215
+- `function exportedEntryNames(snapshot: Snapshot): Set<string>`  L206-218
+- `function basename(file: string): string`  L220-223
+- `function fileOf(id: string): string`  L226-229
 
 **Calls:** `expandDirectoryTargets` → [`packages/core/src/graph/directories.ts#expandDirectoryTargets`](../../../greplost__core/modules/src/graph/directories.ts.md) (med), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high), `basename` → [`packages/semantic/src/flows.ts#basename`](flows.ts.md) (high), `buildImportGraph` → [`packages/semantic/src/flows.ts#buildImportGraph`](flows.ts.md) (high), `derived` → [`packages/semantic/src/flows.ts#derived`](flows.ts.md) (high), `exportedEntryNames` → [`packages/semantic/src/flows.ts#exportedEntryNames`](flows.ts.md) (high), `fileOf` → [`packages/semantic/src/flows.ts#fileOf`](flows.ts.md) (high), `isoDate` → [`packages/semantic/src/flows.ts#isoDate`](flows.ts.md) (high), `reachableFrom` → [`packages/semantic/src/flows.ts#reachableFrom`](flows.ts.md) (high), `renderStep` → [`packages/semantic/src/flows.ts#renderStep`](flows.ts.md) (high)

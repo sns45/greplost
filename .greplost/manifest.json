@@ -1742,9 +1742,9 @@
       "fanIn": 3,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 215,
+      "loc": 229,
       "pkg": "@greplost/semantic",
-      "sha256": "2a718e6f4266817c278e0110786af81bd17e67eaa45a9c51782e3e1264d3c030",
+      "sha256": "ca5c84df3d6d599fe67d9062712cc97c9acb87c8f3c787b47759c073ae79d448",
       "staleSummary": false
     },
     "packages/semantic/src/index.ts": {
@@ -1764,6 +1764,7 @@
         "MIN_FLOWS",
         "PromptRunner",
         "REACH_DEPTH",
+        "RETRIES_PER_BATCH",
         "RUNNER_COMMAND",
         "RefreshCommandOptions",
         "RefreshOptions",
@@ -1789,7 +1790,7 @@
       "lang": "ts",
       "loc": 46,
       "pkg": "@greplost/semantic",
-      "sha256": "edd0e2887409061f5a1255ffd0d017d5d40c85e9ad989b39cd462ada514e8a79",
+      "sha256": "7ed2a79e367d4dda4425bf6969ccda37fa44b3fc1a1410a54b081899eea27724",
       "staleSummary": false
     },
     "packages/semantic/src/prompts.ts": {
@@ -1821,6 +1822,7 @@
       "blast": 5,
       "exports": [
         "DEFAULT_BATCH_SIZE",
+        "RETRIES_PER_BATCH",
         "RefreshCommandOptions",
         "RefreshOptions",
         "RefreshResult",
@@ -1830,9 +1832,9 @@
       "fanIn": 1,
       "fanOut": 7,
       "lang": "ts",
-      "loc": 463,
+      "loc": 674,
       "pkg": "@greplost/semantic",
-      "sha256": "f120a77e9c8ec8dc6d57699c8c55f409766fd5c654d2d2ade48044a6e563dcd8",
+      "sha256": "d42825b4b0a06b1849c4099d56faf1b4d129d9907f2b2e9152c1cd29da565d8a",
       "staleSummary": false
     },
     "packages/semantic/src/runner.ts": {
@@ -2332,7 +2334,7 @@
         "@greplost/sync"
       ],
       "files": 5,
-      "loc": 1175,
+      "loc": 1400,
       "path": "packages/semantic",
       "rdeps": [
         "greplost"

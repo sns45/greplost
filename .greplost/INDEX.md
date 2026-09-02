@@ -24,7 +24,7 @@
 | greplost | packages/cli | 18 | 1898 | 4 | 0 | 5 | [MAP](packages/greplost/MAP.md) |
 | @greplost/core | packages/core | 29 | 5928 | 10 | 6 | 0 | [MAP](packages/greplost__core/MAP.md) |
 | @greplost/render | packages/render | 13 | 1768 | 1 | 4 | 1 | [MAP](packages/greplost__render/MAP.md) |
-| @greplost/semantic | packages/semantic | 5 | 1175 | 4 | 1 | 3 | [MAP](packages/greplost__semantic/MAP.md) |
+| @greplost/semantic | packages/semantic | 5 | 1400 | 4 | 1 | 3 | [MAP](packages/greplost__semantic/MAP.md) |
 | @greplost/sync | packages/sync | 12 | 2946 | 4 | 4 | 2 | [MAP](packages/greplost__sync/MAP.md) |
 | @greplost/workspace | packages/workspace | 8 | 1931 | 2 | 1 | 3 | [MAP](packages/greplost__workspace/MAP.md) |
 
