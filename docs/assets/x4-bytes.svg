@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="633" viewBox="0 0 1200 633" font-family="system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12">
+<rect x="0" y="0" width="1200" height="633" fill="#000000"/>
+<rect x="0.5" y="0.5" width="1199" height="632" fill="none" stroke="#262626"/>
+<text x="32" y="40" font-size="20" font-weight="600" fill="#FFFFFF">X4 reproducibility: bytes that differ between two builds</text>
+<text x="1168" y="40" font-size="11" fill="#8A8983" text-anchor="end">greplost bench · bench/RESULTS.md</text>
+<text x="32" y="64" font-size="13" fill="#C3C2B7">Bytes differing between two builds of one commit; lower is better. Corpus anyq, tier S (148 files).</text>
+<line x1="101" y1="516" x2="1160" y2="516" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="91" y="520" fill="#8A8983" font-size="11" text-anchor="end">0</text>
+<line x1="101" y1="438" x2="1160" y2="438" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="91" y="442" fill="#8A8983" font-size="11" text-anchor="end">1,500,000</text>
+<line x1="101" y1="360" x2="1160" y2="360" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="91" y="364" fill="#8A8983" font-size="11" text-anchor="end">3,000,000</text>
+<line x1="101" y1="282" x2="1160" y2="282" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="91" y="286" fill="#8A8983" font-size="11" text-anchor="end">4,500,000</text>
+<line x1="101" y1="204" x2="1160" y2="204" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="91" y="208" fill="#8A8983" font-size="11" text-anchor="end">6,000,000</text>
+<line x1="101" y1="126" x2="1160" y2="126" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="91" y="130" fill="#8A8983" font-size="11" text-anchor="end">7,500,000</text>
+<line x1="101" y1="516" x2="1160" y2="516" stroke="#3A3A3A"/>
+<text x="24" y="321" fill="#C3C2B7" font-size="11" text-anchor="middle" transform="rotate(-90 24 321)">bytes differing between two builds of one commit</text>
+<text x="32" y="610" fill="#8A8983" font-size="10">Two builds of the same tree, each in its own process, compared over that tool's own documented artifact files; viewer and database files are excluded per competitor and each cell's caveat says which. A bar at the</text>
+<text x="32" y="623" fill="#8A8983" font-size="10">baseline is a measured zero — the best result this metric has — and a dashed stub is a tool that could not be run. Measured on corpus anyq, tier S (148 files).</text>
+<path d="M 198.38 516 L 198.38 251.67 Q 198.38 247.67 202.38 247.67 L 264.38 247.67 Q 268.38 247.67 268.38 251.67 L 268.38 516 Z" fill="#2f86ef"/>
+<text x="233.38" y="504" fill="#FFFFFF" font-size="12" font-weight="600" text-anchor="middle">5,160,286</text>
+<text x="233.38" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">code-review-graph</text>
+<path d="M 463.13 516 L 463.13 515 Q 463.13 514 464.13 514 L 532.13 514 Q 533.13 514 533.13 515 L 533.13 516 Z" fill="#0fa976"/>
+<text x="498.13" y="506" fill="#FFFFFF" font-size="12" font-weight="600" text-anchor="middle">0</text>
+<text x="498.13" y="538" fill="#FFFFFF" font-size="12" text-anchor="middle">greplost</text>
+<circle cx="498.13" cy="556" r="4" fill="none" stroke="#FFFFFF" stroke-width="1.5"/>
+<path d="M 727.88 516 L 727.88 515 Q 727.88 514 728.88 514 L 796.88 514 Q 797.88 514 797.88 515 L 797.88 516 Z" fill="#e0561c"/>
+<text x="762.88" y="506" fill="#FFFFFF" font-size="12" font-weight="600" text-anchor="middle">0</text>
+<text x="762.88" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">Graphify</text>
+<rect x="992.63" y="508" width="70" height="8" fill="none" stroke="#3A3A3A" stroke-dasharray="2 2"/>
+<text x="1027.63" y="502" fill="#8A8983" font-size="11" text-anchor="middle">n/a</text>
+<text x="1027.63" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">Understand-Anything</text>
+</svg>

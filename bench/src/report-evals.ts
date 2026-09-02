@@ -14,6 +14,7 @@
  * which keeps the head-to-head table and the single-tool summary.
  */
 import { boxChart, groupedBarChart, lineChart, mermaidXy, type BoxDatum, type ChartSpec } from "./charts.ts";
+import { structuralAccuracyChart } from "./report-charts.ts";
 import {
   emptySection,
   type EvalRow,
@@ -43,7 +44,7 @@ import {
 // Eval 1: structural
 // ---------------------------------------------------------------------------
 
-export function eval1Section(payload: Payload | null): EvalSection {
+export function eval1Section(payload: Payload | null, assetsRel = "docs/assets"): EvalSection {
   const section = emptySection();
   if (payload === null) {
     section.notes.push("Run `bun bench/src/cli.ts structural --fixture --gate` (or `--tier S`) to fill this section.");
@@ -80,6 +81,26 @@ export function eval1Section(payload: Payload | null): EvalSection {
       section.notes.push(`${name}: greplost indexed no file of the repo's language, so its scores are vacuous (\`no-files\`).`);
     }
     section.groups.push({ name: files === null ? name : `${name} (${fmt(files)} files)`, rows });
+
+    // One chart, for the first repo in sorted order: a second one would need a
+    // second slug, and the table below already carries every repo.
+    if (section.charts.length === 0) {
+      const chart = structuralAccuracyChart(
+        name,
+        files,
+        [
+          { id: "S1", label: "S1 imports P", value: num(rec(repo["S1"])?.["precision"]) },
+          { id: "S1", label: "S1 imports R", value: num(rec(repo["S1"])?.["recall"]) },
+          { id: "S2", label: "S2 exports P", value: num(rec(repo["S2"])?.["precision"]) },
+          { id: "S2", label: "S2 exports R", value: num(rec(repo["S2"])?.["recall"]) },
+          { id: "S3", label: "S3 calls P", value: num(rec(repo["S3"])?.["precision"]) },
+          { id: "S3", label: "S3 calls R", value: num(rec(repo["S3"])?.["recall"]) },
+          { id: "S4", label: "S4 cycles J", value: num(repo["S4"]) },
+        ],
+        assetsRel,
+      );
+      if (chart !== null) section.charts.push(chart);
+    }
   }
   if (section.groups.length === 0) {
     section.groups.push({ name: null, rows: [] });
