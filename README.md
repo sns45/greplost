@@ -28,6 +28,8 @@ Status: pre-release 0.0.1. Design: [docs/greplost-tech-spec.md](docs/greplost-te
 
 Languages: TypeScript, TSX, JavaScript, JSX and Go. Imports resolve through tsconfig `paths`, workspace packages, `package.json` `exports` and Go module paths. Call edges are only recorded when the callee resolves to one declaration (`high`) or through a re-export chain (`med`); nothing is guessed.
 
+`greplost init` writes `config.json` once and never rewrites it. Its `languages` start as the TypeScript family (`ts`, `tsx`, `js`, `jsx`), plus `go` when the repository has a `go.mod` anywhere in the indexed file set — both, in a repo that has both. Edit the file to change it; a build that indexes nothing says so on stderr rather than writing an empty map in silence.
+
 ## Install
 
 ```bash

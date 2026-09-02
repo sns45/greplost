@@ -14,6 +14,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { packageSlug } from "@greplost/core/schema";
+
 import { benchRepoRoot } from "../src/commands/bench.ts";
 import { main } from "../src/main.ts";
 
@@ -120,8 +122,9 @@ describe("init", () => {
   test("--workspace outside a workspace names the missing greplost.workspace.json", async () => {
     // The workspace package is part of this build, so the flag is understood;
     // what is missing is the workspace file, and the message says exactly that.
+    // Exit 2: the command line contradicted the checkout and nothing ran.
     const run = await cli("init", "--workspace", "--root", ts);
-    expect(run.code).not.toBe(0);
+    expect(run.code).toBe(2);
     expect(run.stdout).toBe("");
     expect(run.stderr).toBe("greplost: --workspace needs a greplost.workspace.json in the root; there is none here");
   });
@@ -446,7 +449,71 @@ describe("update", () => {
     expect(run.stderr).toContain("semantic layer is disabled");
     expect(readFileSync(path.join(off, ".greplost", "manifest.json"), "utf8")).toBe(before);
   });
+
+  /**
+   * Two results, one stdout, one document.
+   *
+   * `update --semantic --json` used to print the `UpdateResult` and then let
+   * `@greplost/semantic` print the `RefreshResult` after it, which is two JSON
+   * documents concatenated and parseable by nothing. The CLI now owns the
+   * printing and puts both under one envelope.
+   *
+   * The refresh here makes no model call: every summary is already current and
+   * every package already has a `FLOWS.md`, which is the semantic layer's
+   * zero-call path.
+   */
+  test("--semantic --json prints exactly one document, holding both results", async () => {
+    const root = copyFixture(TINY_TS, "semantic-envelope");
+    expect((await cli("init", "--no-hooks", "--root", root)).code).toBe(0);
+    seedSemanticLayer(root);
+
+    const run = await cli("update", "--semantic", "--json", "--root", root);
+    expect(run.code).toBe(0);
+
+    const envelope = onlyJson(run) as {
+      update: { mode: string; written: number };
+      refresh: { calls: number; refreshed: number; skipped: number };
+    };
+    expect(Object.keys(envelope).sort()).toEqual(["refresh", "update"]);
+    expect(envelope.update.mode).toBe("incremental");
+    // The whole point: nothing was spent, and nothing was asked.
+    expect(envelope.refresh.calls).toBe(0);
+    expect(envelope.refresh.refreshed).toBe(0);
+    expect(envelope.refresh.skipped).toBeGreaterThan(0);
+  });
 });
+
+/**
+ * Make every summary current and every package's `FLOWS.md` present, so a
+ * refresh of this repository is a no-op that spends nothing. Written straight
+ * to disk rather than through a runner: this file tests the CLI, and the model
+ * seam belongs to `@greplost/semantic`'s own tests.
+ */
+function seedSemanticLayer(root: string): void {
+  const artifacts = path.join(root, ".greplost");
+  const manifest = JSON.parse(readFileSync(path.join(artifacts, "manifest.json"), "utf8")) as {
+    packages: Record<string, unknown>;
+    files: Record<string, { sha256: string }>;
+  };
+
+  const cache: Record<string, { path: string; text: string; refreshedAt: string; model: string }> = {};
+  for (const [file, entry] of Object.entries(manifest.files)) {
+    cache[entry.sha256] = {
+      path: file,
+      text: `Seeded intent for ${file}.`,
+      refreshedAt: "2026-09-02",
+      model: "seeded",
+    };
+  }
+  mkdirSync(path.join(artifacts, "cache"), { recursive: true });
+  writeFileSync(path.join(artifacts, "cache", "summaries.json"), `${JSON.stringify(cache, null, 2)}\n`);
+
+  for (const name of Object.keys(manifest.packages)) {
+    const dir = path.join(artifacts, "packages", packageSlug(name));
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, "FLOWS.md"), "# Flows\n\nSeeded.\n");
+  }
+}
 
 describe("flows", () => {
   test("exits 1 with a hint when the semantic document is absent", async () => {

@@ -6,34 +6,38 @@
 
 **Package:** `@greplost/sync` ([map](../../MAP.md))
 
-**Exports:** `WriteResult (interface)`, `writeArtifacts(root: string, files: Map<string, string>): WriteResult`, `writeSeam (const)`
+**Exports:** `WriteResult (interface)`, `containedPath(root: string, rel: string): string`, `safeWrite(root: string, rel: string, contents: string): void`, `writeArtifacts(root: string, files: Map<string, string>): WriteResult`, `writeSeam (const)`
 
 **Imports:** `node:fs` (Dirent, Stats, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, compareStrings), [`./artifacts.ts`](artifacts.ts.md) (isStructurePath, listStructurePaths)
 
-**Imported by:** [`packages/sync/src/incremental.ts`](incremental.ts.md), [`packages/sync/src/index.ts`](index.ts.md)
+**Imported by:** [`packages/sync/src/incremental.ts`](incremental.ts.md), [`packages/sync/src/index.ts`](index.ts.md), [`packages/sync/src/init.ts`](init.ts.md), [`packages/sync/src/parse-cache.ts`](parse-cache.ts.md), [`packages/sync/src/state.ts`](state.ts.md)
 
-**Blast radius:** 20 files (`greplost impact packages/sync/src/write.ts`)
+**Blast radius:** 22 files (`greplost impact packages/sync/src/write.ts`)
 
 **Key symbols:**
-- `interface WriteResult`  L58-65
-- `const writeSeam = { writeFile(target: string, bytes: Buffer): void { writeFileSync(target, bytes); }, }`  L73-77
-- `const REPAIRABLE_WRITE_ERRORS: ReadonlySet<string> = new Set(["EACCES", "EPERM", "EISDIR", "ENOTDIR"])`  L86-86
-- `function writeArtifacts(root: string, files: Map<string, string>): WriteResult`  L96-124
-- `function openArtifactRoot(root: string): string`  L136-152
-- `function ensureDirectory(artifactRoot: string, rel: string, ensured: Set<string>): void`  L169-193
-- `function assertInside(artifactRoot: string, dir: string): void`  L216-226
-- `function writeIfDifferent(artifactRoot: string, rel: string, target: string, contents: string): boolean`  L255-277
-- `let tempCounter = 0`  L280-280
-- `function replaceFile(artifactRoot: string, rel: string, target: string, expected: Buffer): void`  L291-322
-- `function assertOwnedTree(rel: string, target: string): void`  L330-335
-- `function firstForeignFile(dir: string, prefix: string): string | undefined`  L338-356
-- `function guardedDiscard(artifactRoot: string, target: string): void`  L359-362
-- `function discard(target: string): void`  L370-376
-- `function prune(artifactRoot: string, files: Map<string, string>): string[]`  L386-429
-- `function expandAncestors(dirs: ReadonlySet<string>): Set<string>`  L432-439
-- `function lstatSafe(target: string): Stats | undefined`  L441-447
-- `function statSafe(target: string): Stats | undefined`  L449-455
-- `function errorCode(cause: unknown): string`  L457-460
-- `function reasonOf(cause: unknown): string`  L462-464
+- `interface WriteResult`  L66-73
+- `const writeSeam = { writeFile(target: string, bytes: Buffer): void { writeFileSync(target, bytes); }, }`  L81-85
+- `const REPAIRABLE_WRITE_ERRORS: ReadonlySet<string> = new Set(["EACCES", "EPERM", "EISDIR", "ENOTDIR"])`  L94-94
+- `function writeArtifacts(root: string, files: Map<string, string>): WriteResult`  L104-132
+- `function containedPath(root: string, rel: string): string`  L152-154
+- `function safeWrite(root: string, rel: string, contents: string): void`  L167-170
+- `function openContained(root: string, rel: string): { artifactRoot: string; target: string }`  L172-179
+- `function artifactRelative(rel: string): string`  L187-198
+- `function openArtifactRoot(root: string): string`  L210-226
+- `function ensureDirectory(artifactRoot: string, rel: string, ensured: Set<string>): void`  L243-267
+- `function assertInside(artifactRoot: string, dir: string): void`  L290-300
+- `function writeIfDifferent(artifactRoot: string, rel: string, target: string, contents: string): boolean`  L329-351
+- `let tempCounter = 0`  L354-354
+- `function replaceFile(artifactRoot: string, rel: string, target: string, expected: Buffer): void`  L365-396
+- `function assertOwnedTree(rel: string, target: string): void`  L404-409
+- `function firstForeignFile(dir: string, prefix: string): string | undefined`  L412-430
+- `function guardedDiscard(artifactRoot: string, target: string): void`  L433-436
+- `function discard(target: string): void`  L444-450
+- `function prune(artifactRoot: string, files: Map<string, string>): string[]`  L460-503
+- `function expandAncestors(dirs: ReadonlySet<string>): Set<string>`  L506-513
+- `function lstatSafe(target: string): Stats | undefined`  L515-521
+- `function statSafe(target: string): Stats | undefined`  L523-529
+- `function errorCode(cause: unknown): string`  L531-534
+- `function reasonOf(cause: unknown): string`  L536-538
 
-**Calls:** `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high), `isStructurePath` → [`packages/sync/src/artifacts.ts#isStructurePath`](artifacts.ts.md) (high), `listStructurePaths` → [`packages/sync/src/artifacts.ts#listStructurePaths`](artifacts.ts.md) (high), `assertInside` → [`packages/sync/src/write.ts#assertInside`](write.ts.md) (high), `assertOwnedTree` → [`packages/sync/src/write.ts#assertOwnedTree`](write.ts.md) (high), `discard` → [`packages/sync/src/write.ts#discard`](write.ts.md) (high), `ensureDirectory` → [`packages/sync/src/write.ts#ensureDirectory`](write.ts.md) (high), `errorCode` → [`packages/sync/src/write.ts#errorCode`](write.ts.md) (high), `expandAncestors` → [`packages/sync/src/write.ts#expandAncestors`](write.ts.md) (high), `firstForeignFile` → [`packages/sync/src/write.ts#firstForeignFile`](write.ts.md) (high), `guardedDiscard` → [`packages/sync/src/write.ts#guardedDiscard`](write.ts.md) (high), `lstatSafe` → [`packages/sync/src/write.ts#lstatSafe`](write.ts.md) (high), `openArtifactRoot` → [`packages/sync/src/write.ts#openArtifactRoot`](write.ts.md) (high), `prune` → [`packages/sync/src/write.ts#prune`](write.ts.md) (high), `reasonOf` → [`packages/sync/src/write.ts#reasonOf`](write.ts.md) (high), `replaceFile` → [`packages/sync/src/write.ts#replaceFile`](write.ts.md) (high), `statSafe` → [`packages/sync/src/write.ts#statSafe`](write.ts.md) (high), `writeIfDifferent` → [`packages/sync/src/write.ts#writeIfDifferent`](write.ts.md) (high)
+**Calls:** `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high), `isStructurePath` → [`packages/sync/src/artifacts.ts#isStructurePath`](artifacts.ts.md) (high), `listStructurePaths` → [`packages/sync/src/artifacts.ts#listStructurePaths`](artifacts.ts.md) (high), `artifactRelative` → [`packages/sync/src/write.ts#artifactRelative`](write.ts.md) (high), `assertInside` → [`packages/sync/src/write.ts#assertInside`](write.ts.md) (high), `assertOwnedTree` → [`packages/sync/src/write.ts#assertOwnedTree`](write.ts.md) (high), `discard` → [`packages/sync/src/write.ts#discard`](write.ts.md) (high), `ensureDirectory` → [`packages/sync/src/write.ts#ensureDirectory`](write.ts.md) (high), `errorCode` → [`packages/sync/src/write.ts#errorCode`](write.ts.md) (high), `expandAncestors` → [`packages/sync/src/write.ts#expandAncestors`](write.ts.md) (high), `firstForeignFile` → [`packages/sync/src/write.ts#firstForeignFile`](write.ts.md) (high), `guardedDiscard` → [`packages/sync/src/write.ts#guardedDiscard`](write.ts.md) (high), `lstatSafe` → [`packages/sync/src/write.ts#lstatSafe`](write.ts.md) (high), `openArtifactRoot` → [`packages/sync/src/write.ts#openArtifactRoot`](write.ts.md) (high), `openContained` → [`packages/sync/src/write.ts#openContained`](write.ts.md) (high), `prune` → [`packages/sync/src/write.ts#prune`](write.ts.md) (high), `reasonOf` → [`packages/sync/src/write.ts#reasonOf`](write.ts.md) (high), `replaceFile` → [`packages/sync/src/write.ts#replaceFile`](write.ts.md) (high), `statSafe` → [`packages/sync/src/write.ts#statSafe`](write.ts.md) (high), `writeIfDifferent` → [`packages/sync/src/write.ts#writeIfDifferent`](write.ts.md) (high)

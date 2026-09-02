@@ -8,16 +8,16 @@
 
 **Exports:** `SyncState (interface)`, `readState(root: string): SyncState`, `writeState(root: string, state: SyncState): void`
 
-**Imports:** `node:fs` (mkdirSync, readFileSync, writeFileSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, stableStringify)
+**Imports:** `node:fs` (readFileSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, stableStringify), [`./write.ts`](write.ts.md) (safeWrite)
 
 **Imported by:** [`packages/sync/src/incremental.ts`](incremental.ts.md), [`packages/sync/src/index.ts`](index.ts.md)
 
 **Blast radius:** 20 files (`greplost impact packages/sync/src/state.ts`)
 
 **Key symbols:**
-- `interface SyncState`  L21-46
-- `function readState(root: string): SyncState`  L49-80
-- `function writeState(root: string, state: SyncState): void`  L89-101
-- `function statePath(root: string): string`  L103-105
+- `interface SyncState`  L23-48
+- `function readState(root: string): SyncState`  L51-82
+- `function writeState(root: string, state: SyncState): void`  L96-104
+- `function statePath(root: string): string`  L106-108
 
-**Calls:** `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high), `statePath` → [`packages/sync/src/state.ts#statePath`](state.ts.md) (high)
+**Calls:** `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high), `statePath` → [`packages/sync/src/state.ts#statePath`](state.ts.md) (high), `safeWrite` → [`packages/sync/src/write.ts#safeWrite`](write.ts.md) (high)

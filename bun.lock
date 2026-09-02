@@ -35,7 +35,7 @@
       "bin": {
         "greplost": "./bin/greplost.js",
       },
-      "dependencies": {
+      "devDependencies": {
         "@greplost/core": "workspace:*",
         "@greplost/render": "workspace:*",
         "@greplost/semantic": "workspace:*",
@@ -68,6 +68,7 @@
       "dependencies": {
         "@greplost/core": "workspace:*",
         "@greplost/render": "workspace:*",
+        "@greplost/sync": "workspace:*",
       },
     },
     "packages/sync": {
@@ -83,6 +84,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@greplost/core": "workspace:*",
+        "@greplost/render": "workspace:*",
         "@greplost/sync": "workspace:*",
       },
     },

@@ -6,16 +6,17 @@
 
 **Package:** `greplost` ([map](../../../MAP.md))
 
-**Exports:** `run(ctx: CommandContext): Promise<number>`
+**Exports:** `SemanticUpdateEnvelope (interface)`, `run(ctx: CommandContext): Promise<number>`
 
-**Imports:** [`@greplost/sync`](../../../../greplost__sync/modules/src/index.ts.md) (UpdateOptions, update), [`../args.ts`](../args.ts.md) (CommandContext), [`../output.ts`](../output.ts.md) (printError, printJson), [`./refresh.ts`](refresh.ts.md) (SEMANTIC_UNAVAILABLE, loadRefresh), [`./workspace.ts`](workspace.ts.md) (dispatchWorkspace)
+**Imports:** [`@greplost/sync`](../../../../greplost__sync/modules/src/index.ts.md) (UpdateOptions, UpdateResult, update), [`../args.ts`](../args.ts.md) (CommandContext), [`../output.ts`](../output.ts.md) (printError, printJson, printLine), [`./refresh.ts`](refresh.ts.md) (SEMANTIC_UNAVAILABLE, loadRefreshOutcome), [`./workspace.ts`](workspace.ts.md) (dispatchWorkspace)
 
-**Imported by:** [`packages/cli/src/main.ts`](../main.ts.md)
+**Imported by:** [`packages/cli/src/index.ts`](../index.ts.md), [`packages/cli/src/main.ts`](../main.ts.md)
 
 **Blast radius:** 2 files (`greplost impact packages/cli/src/commands/update.ts`)
 
 **Key symbols:**
-- `async function run(ctx: CommandContext): Promise<number>`  L20-38
-- `function updateOptions(ctx: CommandContext): UpdateOptions`  L40-47
+- `interface SemanticUpdateEnvelope`  L32-36
+- `async function run(ctx: CommandContext): Promise<number>`  L38-71
+- `function updateOptions(ctx: CommandContext): UpdateOptions`  L73-80
 
-**Calls:** `loadRefresh` → [`packages/cli/src/commands/refresh.ts#loadRefresh`](refresh.ts.md) (high), `updateOptions` → [`packages/cli/src/commands/update.ts#updateOptions`](update.ts.md) (high), `dispatchWorkspace` → [`packages/cli/src/commands/workspace.ts#dispatchWorkspace`](workspace.ts.md) (high), `printError` → [`packages/cli/src/output.ts#printError`](../output.ts.md) (high), `printJson` → [`packages/cli/src/output.ts#printJson`](../output.ts.md) (high), `update` → [`packages/sync/src/incremental.ts#update`](../../../../greplost__sync/modules/src/incremental.ts.md) (med)
+**Calls:** `loadRefreshOutcome` → [`packages/cli/src/commands/refresh.ts#loadRefreshOutcome`](refresh.ts.md) (high), `updateOptions` → [`packages/cli/src/commands/update.ts#updateOptions`](update.ts.md) (high), `dispatchWorkspace` → [`packages/cli/src/commands/workspace.ts#dispatchWorkspace`](workspace.ts.md) (high), `printError` → [`packages/cli/src/output.ts#printError`](../output.ts.md) (high), `printJson` → [`packages/cli/src/output.ts#printJson`](../output.ts.md) (high), `printLine` → [`packages/cli/src/output.ts#printLine`](../output.ts.md) (high), `update` → [`packages/sync/src/incremental.ts#update`](../../../../greplost__sync/modules/src/incremental.ts.md) (med)

@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/render/src/docs/index-doc.ts`](index-doc.ts.md), [`packages/render/src/render.ts`](../render.ts.md)
 
-**Blast radius:** 33 files (`greplost impact packages/render/src/docs/repo-map.ts`)
+**Blast radius:** 37 files (`greplost impact packages/render/src/docs/repo-map.ts`)
 
 **Key symbols:**
 - `const REPO_MAP_ARTIFACT = "repo/MAP.md"`  L20-20

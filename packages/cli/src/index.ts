@@ -22,4 +22,10 @@ export type { QueryFile, QueryMatch, QueryResult } from "./commands/query.ts";
 export type { ImpactResult } from "./commands/impact.ts";
 export type { FlowsResult } from "./commands/flows.ts";
 export type { HookPayload } from "./commands/hook.ts";
-export type { SemanticRefresh, SemanticRefreshOptions } from "./commands/refresh.ts";
+export type { SemanticUpdateEnvelope } from "./commands/update.ts";
+export type {
+  SemanticOutcome,
+  SemanticRefresh,
+  SemanticRefreshOptions,
+  SemanticRefreshOutcome,
+} from "./commands/refresh.ts";

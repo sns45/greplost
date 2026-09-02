@@ -7,13 +7,16 @@
  * a repository that never runs `greplost refresh` is still completely
  * navigable (tech spec 4.1).
  *
- * Two entry points, on purpose. `refresh` is the library call: it reports what
- * it did and throws what went wrong. `refreshCommand` is the shape the CLI's
- * seam expects: an exit code, its own output, and no exceptions.
+ * Three entry points, on purpose. `refresh` is the library call: it reports
+ * what it did and throws what went wrong. `refreshCommand` is the shape the
+ * CLI's seam expects: an exit code, its own output, and no exceptions.
+ * `refreshOutcome` sits between them — the exit code, the result and the lines
+ * that would have been printed, printed by nobody — for `greplost update
+ * --semantic --json`, which has a result of its own to put in the same envelope.
  */
 
-export { DEFAULT_BATCH_SIZE, RETRIES_PER_BATCH, refresh, refreshCommand } from "./refresh.ts";
-export type { RefreshCommandOptions, RefreshOptions, RefreshResult } from "./refresh.ts";
+export { DEFAULT_BATCH_SIZE, RETRIES_PER_BATCH, refresh, refreshCommand, refreshOutcome } from "./refresh.ts";
+export type { RefreshCommandOptions, RefreshOptions, RefreshOutcome, RefreshResult } from "./refresh.ts";
 
 export {
   MAX_ENTRY_POINTS,

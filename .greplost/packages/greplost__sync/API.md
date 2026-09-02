@@ -40,7 +40,7 @@
 - re-exports `STRUCTURE_GLOBS`, `isStructurePath`, `listStructurePaths` from `./artifacts.ts`
 - re-exports `buildArtifacts`, `readSummaries` from `./build.ts`
 - re-exports `BuildArtifactsOptions`, `BuildResult` from `./build.ts`
-- re-exports `writeArtifacts` from `./write.ts`
+- re-exports `containedPath`, `safeWrite`, `writeArtifacts` from `./write.ts`
 - re-exports `WriteResult` from `./write.ts`
 - re-exports `unifiedDiff`, `verify` from `./verify.ts`
 - re-exports `VerifyOptions`, `VerifyResult` from `./verify.ts`
@@ -59,9 +59,9 @@
 
 ## packages/sync/src/init.ts
 
-- `interface InitOptions` L27-32
-- `interface InitResult` L34-41
-- `async function init(root: string, opts: InitOptions = {}): Promise<InitResult>` L63-90
+- `interface InitOptions` L30-35
+- `interface InitResult` L37-44
+- `async function init(root: string, opts: InitOptions = {}): Promise<InitResult>` L66-93
 
 ## packages/sync/src/lock.ts
 
@@ -75,18 +75,18 @@
 
 ## packages/sync/src/parse-cache.ts
 
-- `const PARSE_CACHE_PATH = "cache/parse.json"` L55-55
-- `const PARSE_CACHE_VERSION = "1"` L62-62
-- `const PARSE_CACHE_VERSION_KEY = "#version"` L65-65
-- `const PARSE_CACHE_STAMP = `${SCHEMA_VERSION}/${PARSE_CACHE_VERSION}`` L68-68
-- `function parseCacheKey(sha256: string, lang: Lang): string` L71-73
-- `class FileParseCache implements ParseCache` L85-201
+- `const PARSE_CACHE_PATH = "cache/parse.json"` L57-57
+- `const PARSE_CACHE_VERSION = "1"` L64-64
+- `const PARSE_CACHE_VERSION_KEY = "#version"` L67-67
+- `const PARSE_CACHE_STAMP = `${SCHEMA_VERSION}/${PARSE_CACHE_VERSION}`` L70-70
+- `function parseCacheKey(sha256: string, lang: Lang): string` L73-75
+- `class FileParseCache implements ParseCache` L87-197
 
 ## packages/sync/src/state.ts
 
-- `interface SyncState` L21-46
-- `function readState(root: string): SyncState` L49-80
-- `function writeState(root: string, state: SyncState): void` L89-101
+- `interface SyncState` L23-48
+- `function readState(root: string): SyncState` L51-82
+- `function writeState(root: string, state: SyncState): void` L96-104
 
 ## packages/sync/src/verify.ts
 
@@ -97,6 +97,8 @@
 
 ## packages/sync/src/write.ts
 
-- `interface WriteResult` L58-65
-- `const writeSeam = { writeFile(target: string, bytes: Buffer): void { writeFileSync(target, bytes); }, }` L73-77
-- `function writeArtifacts(root: string, files: Map<string, string>): WriteResult` L96-124
+- `interface WriteResult` L66-73
+- `const writeSeam = { writeFile(target: string, bytes: Buffer): void { writeFileSync(target, bytes); }, }` L81-85
+- `function writeArtifacts(root: string, files: Map<string, string>): WriteResult` L104-132
+- `function containedPath(root: string, rel: string): string` L152-154
+- `function safeWrite(root: string, rel: string, contents: string): void` L167-170

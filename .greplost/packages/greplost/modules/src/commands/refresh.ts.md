@@ -6,7 +6,7 @@
 
 **Package:** `greplost` ([map](../../../MAP.md))
 
-**Exports:** `SEMANTIC_ENTRY (const)`, `SEMANTIC_UNAVAILABLE (const)`, `SemanticRefresh (type)`, `SemanticRefreshOptions (interface)`, `loadRefresh(): Promise<SemanticRefresh | undefined>`, `run(ctx: CommandContext): Promise<number>`
+**Exports:** `SEMANTIC_ENTRY (const)`, `SEMANTIC_OUTCOME_ENTRY (const)`, `SEMANTIC_UNAVAILABLE (const)`, `SemanticOutcome (interface)`, `SemanticRefresh (type)`, `SemanticRefreshOptions (interface)`, `SemanticRefreshOutcome (type)`, `loadRefresh(): Promise<SemanticRefresh | undefined>`, `loadRefreshOutcome(): Promise<SemanticRefreshOutcome | undefined>`, `run(ctx: CommandContext): Promise<number>`
 
 **Imports:** [`../args.ts`](../args.ts.md) (CommandContext), [`../output.ts`](../output.ts.md) (printError), [`@greplost/semantic`](../../../../greplost__semantic/modules/src/index.ts.md) (*)
 
@@ -17,9 +17,14 @@
 **Key symbols:**
 - `interface SemanticRefreshOptions`  L25-30
 - `type SemanticRefresh = (root: string, opts: SemanticRefreshOptions) => Promise<number>`  L32-32
-- `const SEMANTIC_UNAVAILABLE = "semantic layer not available in this build"`  L35-35
-- `const SEMANTIC_ENTRY = "refreshCommand"`  L38-38
-- `async function run(ctx: CommandContext): Promise<number>`  L40-54
-- `async function loadRefresh(): Promise<SemanticRefresh | undefined>`  L57-65
+- `interface SemanticOutcome`  L42-48
+- `type SemanticRefreshOutcome = (root: string, opts: SemanticRefreshOptions) => Promise<SemanticOutcome>`  L50-50
+- `const SEMANTIC_UNAVAILABLE = "semantic layer not available in this build"`  L53-53
+- `const SEMANTIC_ENTRY = "refreshCommand"`  L56-56
+- `const SEMANTIC_OUTCOME_ENTRY = "refreshOutcome"`  L59-59
+- `async function run(ctx: CommandContext): Promise<number>`  L61-75
+- `async function loadRefresh(): Promise<SemanticRefresh | undefined>`  L78-80
+- `async function loadRefreshOutcome(): Promise<SemanticRefreshOutcome | undefined>`  L83-85
+- `async function loadSemanticExport<T>(name: string): Promise<T | undefined>`  L87-95
 
-**Calls:** `loadRefresh` → [`packages/cli/src/commands/refresh.ts#loadRefresh`](refresh.ts.md) (high), `printError` → [`packages/cli/src/output.ts#printError`](../output.ts.md) (high)
+**Calls:** `loadRefresh` → [`packages/cli/src/commands/refresh.ts#loadRefresh`](refresh.ts.md) (high), `loadSemanticExport` → [`packages/cli/src/commands/refresh.ts#loadSemanticExport`](refresh.ts.md) (high), `printError` → [`packages/cli/src/output.ts#printError`](../output.ts.md) (high)

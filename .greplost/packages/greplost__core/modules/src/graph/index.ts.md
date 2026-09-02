@@ -12,6 +12,6 @@
 
 **Imported by:** [`packages/cli/src/commands/impact.ts`](../../../../greplost/modules/src/commands/impact.ts.md), [`packages/cli/src/commands/query.ts`](../../../../greplost/modules/src/commands/query.ts.md), [`packages/cli/src/commands/structure.ts`](../../../../greplost/modules/src/commands/structure.ts.md), [`packages/core/src/build.ts`](../build.ts.md), [`packages/core/src/index.ts`](../index.ts.md), [`packages/render/src/docs/hotspots.ts`](../../../../greplost__render/modules/src/docs/hotspots.ts.md), [`packages/render/src/render.ts`](../../../../greplost__render/modules/src/render.ts.md), [`packages/semantic/src/flows.ts`](../../../../greplost__semantic/modules/src/flows.ts.md), [`packages/workspace/src/cross.ts`](../../../../greplost__workspace/modules/src/cross.ts.md), [`packages/workspace/src/impact.ts`](../../../../greplost__workspace/modules/src/impact.ts.md)
 
-**Blast radius:** 41 files (`greplost impact packages/core/src/graph/index.ts`)
+**Blast radius:** 45 files (`greplost impact packages/core/src/graph/index.ts`)
 
 **Key symbols:** None.

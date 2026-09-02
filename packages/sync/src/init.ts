@@ -14,15 +14,18 @@
  * what this call actually brought into existence, not what happens to exist.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
+import { discoverCandidates } from "@greplost/core";
+import type { GreplostConfig } from "@greplost/core/schema";
 import { ARTIFACT_DIR, ARTIFACT_PATHS, DEFAULT_CONFIG, stableStringify } from "@greplost/core/schema";
 
 import { installGitHooks } from "./githooks.ts";
 import { update } from "./incremental.ts";
 import type { UpdateResult } from "./incremental.ts";
 import { PARSE_CACHE_PATH } from "./parse-cache.ts";
+import { safeWrite } from "./write.ts";
 
 export interface InitOptions {
   /** `false` skips hook installation; anything else installs them. */
@@ -71,8 +74,8 @@ export async function init(root: string, opts: InitOptions = {}): Promise<InitRe
   }
 
   const created: string[] = [];
-  if (createConfig(artifactDir)) created.push(`${ARTIFACT_DIR}/${ARTIFACT_PATHS.config}`);
-  if (ensureGitignore(artifactDir)) created.push(`${ARTIFACT_DIR}/.gitignore`);
+  if (await createConfig(absoluteRoot, artifactDir)) created.push(`${ARTIFACT_DIR}/${ARTIFACT_PATHS.config}`);
+  if (ensureGitignore(absoluteRoot, artifactDir)) created.push(`${ARTIFACT_DIR}/.gitignore`);
 
   // Full, not incremental: there is nothing to be incremental against, and a
   // first run must not depend on a state file that may be left over from an
@@ -90,11 +93,38 @@ export async function init(root: string, opts: InitOptions = {}): Promise<InitRe
 }
 
 /** Write `config.json` from the defaults unless the repo already has one. */
-function createConfig(artifactDir: string): boolean {
+async function createConfig(root: string, artifactDir: string): Promise<boolean> {
   const file = path.join(artifactDir, ARTIFACT_PATHS.config);
   if (existsSync(file)) return false;
-  write(file, `${stableStringify(DEFAULT_CONFIG, 2)}\n`);
+  write(root, ARTIFACT_PATHS.config, `${stableStringify(await initialConfig(root), 2)}\n`);
   return true;
+}
+
+/**
+ * The defaults, plus `"go"` when the repository has a `go.mod`.
+ *
+ * greplost indexes Go and the README says so, but `DEFAULT_CONFIG.languages` is
+ * the TypeScript set, so a Go repository used to get a config that matched
+ * nothing: `init` reported a successful build, exit 0, and an empty map. The
+ * detection is deliberately the crudest rule that cannot be wrong — a `go.mod`
+ * anywhere in the file set discovery already admits — and it *adds* rather than
+ * replaces, because a repository with both a `go.mod` and a `tsconfig.json` is
+ * ordinary and dropping either half would be the same bug with the arguments
+ * swapped. Everything after `init` is the user's: this file is never rewritten.
+ */
+async function initialConfig(root: string): Promise<GreplostConfig> {
+  let hasGoModule = false;
+  try {
+    const candidates = await discoverCandidates(root, DEFAULT_CONFIG);
+    hasGoModule = candidates.some((file) => file === "go.mod" || file.endsWith("/go.mod"));
+  } catch {
+    // Discovery is `update`'s job to report; a config written from the plain
+    // defaults is the right answer when nothing can be seen from here.
+    return DEFAULT_CONFIG;
+  }
+
+  if (!hasGoModule || DEFAULT_CONFIG.languages.includes("go")) return DEFAULT_CONFIG;
+  return { ...DEFAULT_CONFIG, languages: [...DEFAULT_CONFIG.languages, "go"] };
 }
 
 /**
@@ -106,7 +136,7 @@ function createConfig(artifactDir: string): boolean {
  * in CI) will have added lines here, and a "fix" that replaced the file would
  * silently start committing thousands of artifacts.
  */
-function ensureGitignore(artifactDir: string): boolean {
+function ensureGitignore(root: string, artifactDir: string): boolean {
   const file = path.join(artifactDir, ".gitignore");
 
   let existing: string | undefined;
@@ -117,7 +147,7 @@ function ensureGitignore(artifactDir: string): boolean {
   }
 
   if (existing === undefined) {
-    write(file, `${GITIGNORE_ENTRIES.join("\n")}\n`);
+    write(root, ".gitignore", `${GITIGNORE_ENTRIES.join("\n")}\n`);
     return true;
   }
 
@@ -125,16 +155,23 @@ function ensureGitignore(artifactDir: string): boolean {
   const missing = GITIGNORE_ENTRIES.filter((entry) => !present.has(entry));
   if (missing.length > 0) {
     const separator = existing.length === 0 || existing.endsWith("\n") ? "" : "\n";
-    write(file, `${existing}${separator}${missing.join("\n")}\n`);
+    write(root, ".gitignore", `${existing}${separator}${missing.join("\n")}\n`);
   }
   return false;
 }
 
-function write(file: string, contents: string): void {
+/**
+ * Through `safeWrite`, like every other writer under `.greplost/`: `init` is
+ * the one command that runs *before* anyone has looked at the directory, and a
+ * committed `.greplost/config.json -> anywhere` would otherwise be followed.
+ */
+function write(root: string, rel: string, contents: string): void {
   try {
-    writeFileSync(file, contents);
+    safeWrite(root, rel, contents);
   } catch (cause) {
-    throw new Error(`greplost: cannot write ${ARTIFACT_DIR}/${path.basename(file)}: ${reasonOf(cause)}`);
+    const message = reasonOf(cause);
+    if (message.startsWith("greplost: ")) throw cause;
+    throw new Error(`greplost: cannot write ${ARTIFACT_DIR}/${rel}: ${message}`);
   }
 }
 

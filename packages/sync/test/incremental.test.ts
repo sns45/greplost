@@ -19,11 +19,13 @@ import { spawnSync } from "node:child_process";
 import {
   cpSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -42,10 +44,11 @@ import {
   PARSE_CACHE_VERSION_KEY,
   parseCacheKey,
 } from "../src/parse-cache.ts";
-import { readState } from "../src/state.ts";
+import { readState, writeState } from "../src/state.ts";
 import { verify } from "../src/verify.ts";
 
 const FIXTURE_ROOT = path.resolve(import.meta.dir, "../../../fixtures/tiny-ts");
+const GO_FIXTURE_ROOT = path.resolve(import.meta.dir, "../../../fixtures/tiny-go");
 
 /** Source files in the fixture, and so the size of a cold build. */
 const FIXTURE_SOURCES = 12;
@@ -72,11 +75,11 @@ function git(root: string, args: string[]): string {
 }
 
 /** A temp copy of the fixture, no git, no `.greplost/`. */
-function copyFixture(label: string): string {
+function copyFixture(label: string, source: string = FIXTURE_ROOT): string {
   const dir = mkdtempSync(path.join(tmpdir(), `greplost-inc-${label}-`));
   temporaries.push(dir);
   const root = path.join(dir, "repo");
-  cpSync(FIXTURE_ROOT, root, { recursive: true });
+  cpSync(source, root, { recursive: true });
   return root;
 }
 
@@ -852,5 +855,136 @@ describe("init", () => {
     expect(result.update.written).toBeGreaterThan(20);
     expect(existsSync(artifact(root, "INDEX.md"))).toBe(true);
     expect(readState(root).lastIndexedCommit).toBeUndefined();
+  });
+
+  /**
+   * Go is a language greplost indexes and the README says so, but the default
+   * language set is the TypeScript one, so `init` in a Go repository used to
+   * write a config that matched nothing and then report a successful build of
+   * an empty map. The rule is the simplest one that cannot be wrong: a `go.mod`
+   * anywhere in the discovered file set adds `"go"` to the defaults, and the TS
+   * languages stay, because a Go repository with a `tsconfig.json` in it is
+   * ordinary and losing that half would be the same bug with the arguments
+   * swapped.
+   */
+  test("adds go to the languages when the repo has a go.mod", async () => {
+    const root = copyFixture("init-go", GO_FIXTURE_ROOT);
+
+    const result = await init(root, { hooks: false, quiet: true });
+
+    const config = JSON.parse(readFileSync(artifact(root, "config.json"), "utf8")) as GreplostConfig;
+    expect(config.languages).toEqual([...DEFAULT_CONFIG.languages, "go"]);
+    expect(result.update.reparsed).toBeGreaterThan(0);
+
+    const manifest = JSON.parse(readFileSync(artifact(root, "manifest.json"), "utf8")) as {
+      files: Record<string, { lang: string }>;
+    };
+    const langs = new Set(Object.values(manifest.files).map((file) => file.lang));
+    expect([...langs]).toEqual(["go"]);
+  });
+
+  test("leaves the languages alone in a repo with no go.mod", async () => {
+    const root = copyFixture("init-nogo");
+
+    await init(root, { hooks: false, quiet: true });
+
+    const config = JSON.parse(readFileSync(artifact(root, "config.json"), "utf8")) as GreplostConfig;
+    expect(config.languages).toEqual([...DEFAULT_CONFIG.languages]);
+  });
+
+  /**
+   * A build that indexes nothing exits 0 and writes a real (empty) map, which
+   * is correct and completely opaque: the config is almost always the reason,
+   * and nothing else was ever going to say so.
+   */
+  test("says so on stderr when a build indexes no files at all", async () => {
+    const root = copyFixture("init-empty");
+    rmSync(path.join(root, "packages"), { recursive: true, force: true });
+    rmSync(path.join(root, "apps"), { recursive: true, force: true });
+
+    const said: string[] = [];
+    const error = console.error;
+    console.error = (...args: unknown[]): void => {
+      said.push(args.map((arg) => String(arg)).join(" "));
+    };
+    let result;
+    try {
+      result = await init(root, { hooks: false, quiet: true });
+    } finally {
+      console.error = error;
+    }
+
+    expect(result.update.reparsed).toBe(0);
+    expect(said).toEqual([
+      "greplost: no files indexed (check languages/include/exclude in .greplost/config.json)",
+    ]);
+  });
+});
+
+/**
+ * The runtime files are inside `.greplost/` too (tech spec 7.2 containment).
+ *
+ * `.greplost/` is committed and git stores symlinks, so a repository can carry
+ * `cache -> /tmp/anywhere` or `.state.json -> ~/.ssh/authorized_keys`, and the
+ * `post-checkout` hook then runs `greplost update` over it unattended. The
+ * artifact writer has always refused that; the parse cache and the state file
+ * used to be written with a plain `mkdirSync` plus a write, which follows the
+ * link. They now go through the same containment as everything else: a link on
+ * the way is replaced by a real directory, a link at the path is replaced by a
+ * real file, and nothing lands outside the repository.
+ */
+describe("containment of the runtime files", () => {
+  /** A directory outside the repo, standing in for wherever a committed link points. */
+  function outside(label: string): string {
+    const dir = mkdtempSync(path.join(tmpdir(), `greplost-outside-${label}-`));
+    temporaries.push(dir);
+    return dir;
+  }
+
+  test("a symlinked cache directory is replaced, not followed", () => {
+    const root = copyFixture("cache-symlink");
+    const target = outside("cache");
+    mkdirSync(path.join(root, ARTIFACT_DIR), { recursive: true });
+    symlinkSync(target, artifact(root, "cache"), "dir");
+
+    const cache = new FileParseCache(root);
+    cache.set(record());
+    cache.save();
+
+    expect(lstatSync(artifact(root, "cache")).isSymbolicLink()).toBe(false);
+    expect(lstatSync(artifact(root, "cache")).isDirectory()).toBe(true);
+    expect(existsSync(artifact(root, "cache/parse.json"))).toBe(true);
+    expect(readdirSync(target)).toEqual([]);
+
+    const read = new FileParseCache(root);
+    read.load();
+    expect(read.get("a".repeat(64), "ts")).toEqual(record());
+  });
+
+  test("a symlinked .state.json is replaced, not followed", () => {
+    const root = copyFixture("state-symlink");
+    const target = path.join(outside("state"), "victim.json");
+    writeFileSync(target, "do not touch\n");
+    mkdirSync(path.join(root, ARTIFACT_DIR), { recursive: true });
+    symlinkSync(target, artifact(root, ".state.json"));
+
+    writeState(root, { lastIndexedCommit: "a".repeat(40), treeClean: true });
+
+    expect(lstatSync(artifact(root, ".state.json")).isSymbolicLink()).toBe(false);
+    expect(readFileSync(target, "utf8")).toBe("do not touch\n");
+    expect(readState(root).lastIndexedCommit).toBe("a".repeat(40));
+  });
+
+  test("a symlinked cache directory survives a real update", async () => {
+    const root = gitFixture("cache-symlink-update");
+    const target = outside("update");
+    mkdirSync(path.join(root, ARTIFACT_DIR), { recursive: true });
+    symlinkSync(target, artifact(root, "cache"), "dir");
+
+    await init(root, { hooks: false, quiet: true });
+
+    expect(lstatSync(artifact(root, "cache")).isSymbolicLink()).toBe(false);
+    expect(readdirSync(target)).toEqual([]);
+    expect(Object.keys(storedRecords(root))).toHaveLength(FIXTURE_SOURCES);
   });
 });

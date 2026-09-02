@@ -14,8 +14,8 @@
 - `const USAGE = `usage: greplost <command> [options] ${COMMAND_USAGE.map(([, synopsis, summary]) => usageLine(synopsis, summary)).join("\n")} ${USAGE_FOOTER}`` L137-141
 - `function usageFor(name: string): string` L144-148
 - `function parseArgs(argv: string[]): ParseResult` L191-214
-- `function findRoot(cwd: string): string` L471-479
-- `function resolveRoot(cwd: string, explicit: string | undefined): string` L487-492
+- `function findRoot(cwd: string): string` L479-487
+- `function resolveRoot(cwd: string, explicit: string | undefined): string` L495-500
 
 ## packages/cli/src/commands/bench.ts
 
@@ -41,7 +41,7 @@
 
 ## packages/cli/src/commands/init.ts
 
-- `async function run(ctx: CommandContext): Promise<number>` L19-59
+- `async function run(ctx: CommandContext): Promise<number>` L19-66
 
 ## packages/cli/src/commands/query.ts
 
@@ -55,10 +55,14 @@
 
 - `interface SemanticRefreshOptions` L25-30
 - `type SemanticRefresh = (root: string, opts: SemanticRefreshOptions) => Promise<number>` L32-32
-- `const SEMANTIC_UNAVAILABLE = "semantic layer not available in this build"` L35-35
-- `const SEMANTIC_ENTRY = "refreshCommand"` L38-38
-- `async function run(ctx: CommandContext): Promise<number>` L40-54
-- `async function loadRefresh(): Promise<SemanticRefresh | undefined>` L57-65
+- `interface SemanticOutcome` L42-48
+- `type SemanticRefreshOutcome = (root: string, opts: SemanticRefreshOptions) => Promise<SemanticOutcome>` L50-50
+- `const SEMANTIC_UNAVAILABLE = "semantic layer not available in this build"` L53-53
+- `const SEMANTIC_ENTRY = "refreshCommand"` L56-56
+- `const SEMANTIC_OUTCOME_ENTRY = "refreshOutcome"` L59-59
+- `async function run(ctx: CommandContext): Promise<number>` L61-75
+- `async function loadRefresh(): Promise<SemanticRefresh | undefined>` L78-80
+- `async function loadRefreshOutcome(): Promise<SemanticRefreshOutcome | undefined>` L83-85
 
 ## packages/cli/src/commands/screenshots.ts
 
@@ -76,7 +80,8 @@
 
 ## packages/cli/src/commands/update.ts
 
-- `async function run(ctx: CommandContext): Promise<number>` L20-38
+- `interface SemanticUpdateEnvelope` L32-36
+- `async function run(ctx: CommandContext): Promise<number>` L38-71
 
 ## packages/cli/src/commands/verify.ts
 
@@ -111,7 +116,8 @@
 - re-exports `ImpactResult` from `./commands/impact.ts`
 - re-exports `FlowsResult` from `./commands/flows.ts`
 - re-exports `HookPayload` from `./commands/hook.ts`
-- re-exports `SemanticRefresh`, `SemanticRefreshOptions` from `./commands/refresh.ts`
+- re-exports `SemanticUpdateEnvelope` from `./commands/update.ts`
+- re-exports `SemanticOutcome`, `SemanticRefresh`, `SemanticRefreshOptions`, `SemanticRefreshOutcome` from `./commands/refresh.ts`
 
 ## packages/cli/src/main.ts
 
@@ -124,8 +130,6 @@
 - `function printJson(value: unknown): void` L36-38
 - `function printError(message: string): void` L45-47
 - `function errorMessage(cause: unknown): string` L50-52
-- `function table(headers: readonly string[] | undefined, rows: readonly (readonly string[])[]): string[]` L59-76
-- `function fields(pairs: readonly (readonly [string, string])[]): string[]` L79-83
-- `function summarise(items: readonly string[], cap = 5): string` L86-90
-- `function packageRoot(): string` L98-106
-- `async function readStdin(): Promise<string>` L109-116
+- `function packageRoot(): string` L70-78
+- `async function readStdin(): Promise<string>` L81-88
+- re-exports `fields`, `summarise`, `table` from `@greplost/render`

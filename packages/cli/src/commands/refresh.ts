@@ -31,11 +31,32 @@ export interface SemanticRefreshOptions {
 
 export type SemanticRefresh = (root: string, opts: SemanticRefreshOptions) => Promise<number>;
 
+/**
+ * The same run, decided but not printed — what `update --semantic` needs.
+ *
+ * `refreshCommand` owns its output, which is right for `greplost refresh` and
+ * wrong for a command that has a result of its own: two writers meant two JSON
+ * documents on one stdout. This shape hands the pieces back so one caller can
+ * print one envelope.
+ */
+export interface SemanticOutcome {
+  code: number;
+  result?: unknown;
+  summary?: string;
+  warnings: string[];
+  error?: string;
+}
+
+export type SemanticRefreshOutcome = (root: string, opts: SemanticRefreshOptions) => Promise<SemanticOutcome>;
+
 /** What every command says when the optional semantic package is not present. */
 export const SEMANTIC_UNAVAILABLE = "semantic layer not available in this build";
 
 /** The named export this command delegates to. */
 export const SEMANTIC_ENTRY = "refreshCommand";
+
+/** The named export `update --semantic` delegates to. */
+export const SEMANTIC_OUTCOME_ENTRY = "refreshOutcome";
 
 export async function run(ctx: CommandContext): Promise<number> {
   const refresh = await loadRefresh();
@@ -55,10 +76,19 @@ export async function run(ctx: CommandContext): Promise<number> {
 
 /** The semantic package's `refresh`, or `undefined` when it is not in this build. */
 export async function loadRefresh(): Promise<SemanticRefresh | undefined> {
+  return loadSemanticExport<SemanticRefresh>(SEMANTIC_ENTRY);
+}
+
+/** The semantic package's `refreshOutcome`, or `undefined` when it is not in this build. */
+export async function loadRefreshOutcome(): Promise<SemanticRefreshOutcome | undefined> {
+  return loadSemanticExport<SemanticRefreshOutcome>(SEMANTIC_OUTCOME_ENTRY);
+}
+
+async function loadSemanticExport<T>(name: string): Promise<T | undefined> {
   try {
     const module = (await import("@greplost/semantic")) as Record<string, unknown>;
-    const refresh = module[SEMANTIC_ENTRY];
-    return typeof refresh === "function" ? (refresh as SemanticRefresh) : undefined;
+    const entry = module[name];
+    return typeof entry === "function" ? (entry as T) : undefined;
   } catch {
     return undefined;
   }

@@ -17,8 +17,8 @@
 
 ## packages/semantic/src/index.ts
 
-- re-exports `DEFAULT_BATCH_SIZE`, `RETRIES_PER_BATCH`, `refresh`, `refreshCommand` from `./refresh.ts`
-- re-exports `RefreshCommandOptions`, `RefreshOptions`, `RefreshResult` from `./refresh.ts`
+- re-exports `DEFAULT_BATCH_SIZE`, `RETRIES_PER_BATCH`, `refresh`, `refreshCommand`, `refreshOutcome` from `./refresh.ts`
+- re-exports `RefreshCommandOptions`, `RefreshOptions`, `RefreshOutcome`, `RefreshResult` from `./refresh.ts`
 - re-exports `MAX_ENTRY_POINTS`, `REACH_DEPTH`, `callLines`, `importGraph`, `isoDate`, `reachableFrom`, `renderFlows`, `selectEntryPoints` from `./flows.ts`
 - re-exports `Flow`, `FlowStep` from `./flows.ts`
 - re-exports `ENTRY_PREFIX`, `FILE_PREFIX`, `FLOWS_TASK`, `HEAD_LINES`, `MAX_FLOWS`, `MIN_FLOWS`, `SUMMARY_TASK`, `buildFlowsPrompt`, `buildSummaryPrompt`, `parseFlowsResponse`, `parseSummaryResponse` from `./prompts.ts`
@@ -50,7 +50,9 @@
 - `interface RefreshResult` L95-140
 - `async function refresh(root: string, opts: RefreshOptions = {}): Promise<RefreshResult>` L142-292
 - `interface RefreshCommandOptions` L299-308
-- `async function refreshCommand(root: string, opts: RefreshCommandOptions = {}): Promise<number>` L318-338
+- `interface RefreshOutcome` L320-331
+- `async function refreshOutcome(root: string, opts: RefreshCommandOptions = {}): Promise<RefreshOutcome>` L339-360
+- `async function refreshCommand(root: string, opts: RefreshCommandOptions = {}): Promise<number>` L370-380
 
 ## packages/semantic/src/runner.ts
 

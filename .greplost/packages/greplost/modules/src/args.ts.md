@@ -33,14 +33,14 @@
 - `interface Cursor`  L182-185
 - `function usageError(message: string): ParseResult`  L187-189
 - `function parseArgs(argv: string[]): ParseResult`  L191-214
-- `function parseRest(name: CommandName, argv: string[]): ParseResult`  L216-300
-- `function rootOf(root: string | undefined): { root?: string }`  L302-304
-- `interface BenchTail`  L306-311
-- `function splitBenchTail(tail: readonly string[]): BenchTail`  L323-353
-- `function takeValue(cursor: Cursor, inline: string | undefined): string | undefined`  L363-369
-- `function applyCommandFlag( name: CommandName, flag: string, inline: string | undefined, cursor: Cursor, options: CommandOptions, ): true | string`  L375-462
-- `function findRoot(cwd: string): string`  L471-479
-- `function resolveRoot(cwd: string, explicit: string | undefined): string`  L487-492
-- `function isDirectory(candidate: string): boolean`  L494-500
+- `function parseRest(name: CommandName, argv: string[]): ParseResult`  L216-308
+- `function rootOf(root: string | undefined): { root?: string }`  L310-312
+- `interface BenchTail`  L314-319
+- `function splitBenchTail(tail: readonly string[]): BenchTail`  L331-361
+- `function takeValue(cursor: Cursor, inline: string | undefined): string | undefined`  L371-377
+- `function applyCommandFlag( name: CommandName, flag: string, inline: string | undefined, cursor: Cursor, options: CommandOptions, ): true | string`  L383-470
+- `function findRoot(cwd: string): string`  L479-487
+- `function resolveRoot(cwd: string, explicit: string | undefined): string`  L495-500
+- `function isDirectory(candidate: string): boolean`  L502-508
 
 **Calls:** `applyCommandFlag` → [`packages/cli/src/args.ts#applyCommandFlag`](args.ts.md) (high), `findRoot` → [`packages/cli/src/args.ts#findRoot`](args.ts.md) (high), `isDirectory` → [`packages/cli/src/args.ts#isDirectory`](args.ts.md) (high), `parseRest` → [`packages/cli/src/args.ts#parseRest`](args.ts.md) (high), `rootOf` → [`packages/cli/src/args.ts#rootOf`](args.ts.md) (high), `splitBenchTail` → [`packages/cli/src/args.ts#splitBenchTail`](args.ts.md) (high), `takeValue` → [`packages/cli/src/args.ts#takeValue`](args.ts.md) (high), `usageError` → [`packages/cli/src/args.ts#usageError`](args.ts.md) (high), `usageLine` → [`packages/cli/src/args.ts#usageLine`](args.ts.md) (high)

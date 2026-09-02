@@ -17,12 +17,20 @@
  * containment check is re-made against the resolved path immediately before
  * each write and each delete.
  *
- * Bounded ownership: the writer touches structure paths (`isStructurePath`) and
- * nothing else. Files the map no longer produces — the card of a deleted source
- * file, the docs of a removed package — are pruned, and the directories that
- * emptied are removed; `config.json`, the caches, `FLOWS.md`, `WORKSPACE.md`
- * and the runtime files are invisible to it. Where something greplost does not
- * own blocks its way, it refuses rather than deletes.
+ * Bounded ownership: `writeArtifacts` touches structure paths
+ * (`isStructurePath`) and nothing else. Files the map no longer produces — the
+ * card of a deleted source file, the docs of a removed package — are pruned,
+ * and the directories that emptied are removed; `config.json`, the caches,
+ * `FLOWS.md`, `WORKSPACE.md` and the runtime files are invisible to it. Where
+ * something greplost does not own blocks its way, it refuses rather than
+ * deletes.
+ *
+ * The containment is exported, because the artifacts are not the only bytes
+ * that land under `.greplost/`: the parse cache, the state file and the
+ * semantic summary cache are written by other modules, at paths a committed
+ * symlink can hijack just as easily. `containedPath` and `safeWrite` are that
+ * same walk and that same replace-by-rename, available to them, so there is one
+ * answer to the threat rather than one per writer.
  *
  * What it is not: transactional. Artifacts are written one at a time in path
  * order and pruning happens after, so a refusal or a filesystem error part way
@@ -121,6 +129,72 @@ export function writeArtifacts(root: string, files: Map<string, string>): WriteR
   const deleted = prune(artifactRoot, files);
 
   return { written, deleted, unchanged };
+}
+
+/**
+ * The containment this module enforces for artifacts, for the files under
+ * `.greplost/` that are *not* artifacts: the parse cache, the state file and
+ * the semantic summary cache.
+ *
+ * Those three are written by other modules (`parse-cache.ts`, `state.ts`,
+ * `@greplost/semantic`), and each used to reach the disk through a plain
+ * `mkdirSync(dir, { recursive: true })` and a write — which resolves every
+ * component, so a committed `.greplost/cache -> /anywhere` was followed rather
+ * than replaced, and an unattended `post-checkout` `update` wrote outside the
+ * repository. `.greplost/` is committed and git stores symlinks, so that link
+ * arrives on every checkout; this is the same threat `writeArtifacts` was built
+ * against, and there is no reason for two answers to it.
+ *
+ * `rel` is artifact-relative and need not be a structure path — these files are
+ * precisely the ones that are not. What it may not be is absolute, empty, or
+ * anything that walks upwards.
+ */
+export function containedPath(root: string, rel: string): string {
+  return openContained(root, rel).target;
+}
+
+/**
+ * Write `contents` at `<root>/.greplost/<rel>`, inside the artifact directory
+ * whatever the filesystem has been told to say.
+ *
+ * Same replace-by-rename as an artifact: a sibling temporary and a `rename`, so
+ * a reader never sees half a file, a hard-linked inode is not rewritten under
+ * its other name, and a failed write leaves what was there untouched. A symlink
+ * *at* `rel` is replaced by the rename (which swaps the directory entry and
+ * never follows it), and a symlink on the way to it was already replaced by a
+ * real directory.
+ */
+export function safeWrite(root: string, rel: string, contents: string): void {
+  const { artifactRoot, target } = openContained(root, rel);
+  replaceFile(artifactRoot, rel, target, Buffer.from(contents, "utf8"));
+}
+
+function openContained(root: string, rel: string): { artifactRoot: string; target: string } {
+  const normalized = artifactRelative(rel);
+  const artifactRoot = openArtifactRoot(root);
+  ensureDirectory(artifactRoot, normalized, new Set());
+  const target = path.join(artifactRoot, normalized);
+  assertInside(artifactRoot, path.dirname(target));
+  return { artifactRoot, target };
+}
+
+/**
+ * `rel` as a clean artifact-relative path, or a refusal. Lexical, because it is
+ * a check on the *caller* — a path with a `..` in it is a defect in the code
+ * that produced it, and the filesystem checks that follow are what defend
+ * against the repository.
+ */
+function artifactRelative(rel: string): string {
+  const normalized = rel.split("\\").join("/").replace(/^\.\//, "");
+  if (
+    normalized === "" ||
+    normalized.startsWith("/") ||
+    path.isAbsolute(rel) ||
+    normalized.split("/").some((segment) => segment === "" || segment === "." || segment === "..")
+  ) {
+    throw new Error(`greplost: refusing to write outside ${ARTIFACT_DIR}: ${rel}`);
+  }
+  return normalized;
 }
 
 /**

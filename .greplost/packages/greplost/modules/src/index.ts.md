@@ -6,9 +6,9 @@
 
 **Package:** `greplost` ([map](../../MAP.md))
 
-**Exports:** `CommandContext`, `CommandName`, `CommandOptions`, `FlowsResult`, `HookEvent`, `HookPayload`, `ImpactResult`, `ParseResult`, `ParsedCommand`, `QueryFile`, `QueryMatch`, `QueryResult`, `SemanticRefresh`, `SemanticRefreshOptions`, `USAGE`, `WorkspaceHook`, `WorkspaceHookName`, `findRoot`, `main`, `parseArgs`, `resolveRoot`, `setWorkspaceHook`, `workspaceHook`
+**Exports:** `CommandContext`, `CommandName`, `CommandOptions`, `FlowsResult`, `HookEvent`, `HookPayload`, `ImpactResult`, `ParseResult`, `ParsedCommand`, `QueryFile`, `QueryMatch`, `QueryResult`, `SemanticOutcome`, `SemanticRefresh`, `SemanticRefreshOptions`, `SemanticRefreshOutcome`, `SemanticUpdateEnvelope`, `USAGE`, `WorkspaceHook`, `WorkspaceHookName`, `findRoot`, `main`, `parseArgs`, `resolveRoot`, `setWorkspaceHook`, `workspaceHook`
 
-**Imports:** [`./main.ts`](main.ts.md) (main), [`./args.ts`](args.ts.md) (CommandContext, CommandName, CommandOptions, HookEvent, ParseResult, ParsedCommand, USAGE, findRoot, parseArgs, resolveRoot), [`./commands/workspace.ts`](commands/workspace.ts.md) (WorkspaceHook, WorkspaceHookName, setWorkspaceHook, workspaceHook), [`./commands/query.ts`](commands/query.ts.md) (QueryFile, QueryMatch, QueryResult), [`./commands/impact.ts`](commands/impact.ts.md) (ImpactResult), [`./commands/flows.ts`](commands/flows.ts.md) (FlowsResult), [`./commands/hook.ts`](commands/hook.ts.md) (HookPayload), [`./commands/refresh.ts`](commands/refresh.ts.md) (SemanticRefresh, SemanticRefreshOptions)
+**Imports:** [`./main.ts`](main.ts.md) (main), [`./args.ts`](args.ts.md) (CommandContext, CommandName, CommandOptions, HookEvent, ParseResult, ParsedCommand, USAGE, findRoot, parseArgs, resolveRoot), [`./commands/workspace.ts`](commands/workspace.ts.md) (WorkspaceHook, WorkspaceHookName, setWorkspaceHook, workspaceHook), [`./commands/query.ts`](commands/query.ts.md) (QueryFile, QueryMatch, QueryResult), [`./commands/impact.ts`](commands/impact.ts.md) (ImpactResult), [`./commands/flows.ts`](commands/flows.ts.md) (FlowsResult), [`./commands/hook.ts`](commands/hook.ts.md) (HookPayload), [`./commands/update.ts`](commands/update.ts.md) (SemanticUpdateEnvelope), [`./commands/refresh.ts`](commands/refresh.ts.md) (SemanticOutcome, SemanticRefresh, SemanticRefreshOptions, SemanticRefreshOutcome)
 
 **Imported by:** None.
 

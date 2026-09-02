@@ -16,7 +16,8 @@
 ## packages/core/src/discover.ts
 
 - `interface DiscoveredFile` L23-28
-- `async function discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]>` L107-133
+- `async function discoverCandidates(root: string, config: GreplostConfig): Promise<string[]>` L117-132
+- `async function discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]>` L134-147
 
 ## packages/core/src/extract/go.ts
 

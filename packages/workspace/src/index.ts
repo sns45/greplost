@@ -21,6 +21,10 @@
 import path from "node:path";
 
 import { stableStringify } from "@greplost/core/schema";
+// The CLI prints through exactly these, so a workspace answer and a single-repo
+// answer to the same question look the same. They live in `@greplost/render`
+// because the CLI cannot be imported from here: it depends on this package.
+import { fields, summarise, table } from "@greplost/render";
 
 import { findWorkspaceRoot } from "./config.ts";
 import { buildWorkspace, verifyWorkspace } from "./build.ts";
@@ -342,38 +346,6 @@ function printJson(value: unknown): void {
   console.log(stableStringify(value, 2));
 }
 
-/** Left-aligned columns, two spaces apart. Empty input renders nothing. */
-function table(headers: readonly string[] | undefined, rows: readonly string[][]): string[] {
-  const all = headers === undefined ? rows : [[...headers], ...rows];
-  if (all.length === 0) return [];
-
-  const widths: number[] = [];
-  for (const row of all) {
-    row.forEach((cell, index) => {
-      widths[index] = Math.max(widths[index] ?? 0, cell.length);
-    });
-  }
-  return all.map((row) =>
-    row
-      .map((cell, index) => (index === row.length - 1 ? cell : cell.padEnd(widths[index] ?? 0)))
-      .join("  ")
-      .trimEnd(),
-  );
-}
-
 function count(value: number, noun: string): string {
   return `${value} ${noun}${value === 1 ? "" : "s"}`;
-}
-
-/** `key: value` lines, keys padded into one column. */
-function fields(rows: ReadonlyArray<readonly [string, string]>): string[] {
-  const width = rows.reduce((max, [key]) => Math.max(max, key.length), 0);
-  return rows.map(([key, value]) => `  ${`${key}:`.padEnd(width + 1)} ${value}`.trimEnd());
-}
-
-/** A short list, with a count when it was cut. `limit` 0 means no limit. */
-function summarise(values: readonly string[], limit = 5): string {
-  if (values.length === 0) return "none";
-  if (limit === 0 || values.length <= limit) return values.join(", ");
-  return `${values.slice(0, limit).join(", ")} … and ${values.length - limit} more`;
 }

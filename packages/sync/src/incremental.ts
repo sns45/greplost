@@ -196,6 +196,18 @@ async function runUpdate(root: string, opts: UpdateOptions, started: number): Pr
     const { snapshot, files } = await buildArtifacts(root, { cache });
     store.save(usedKeys(snapshot));
 
+    // An empty map is a legitimate answer — a repository really can have no
+    // indexable files — and it is also what a config that matches nothing
+    // produces, which is far more common and completely silent otherwise: the
+    // build succeeds, the exit code is 0 and INDEX.md describes nothing. On
+    // stderr, and regardless of `--quiet`, because `--json` owns stdout and
+    // this is not the summary line quiet exists to suppress.
+    if (snapshot.files.length === 0) {
+      console.error(
+        `greplost: no files indexed (check languages/include/exclude in ${ARTIFACT_DIR}/${ARTIFACT_PATHS.config})`,
+      );
+    }
+
     const written = writeArtifacts(root, files);
     // The commit read before the build, not after: a commit that landed while
     // this ran is not indexed by it, and recording it would mean the next run

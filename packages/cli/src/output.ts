@@ -52,42 +52,14 @@ export function errorMessage(cause: unknown): string {
 }
 
 /**
- * Column-aligned rows, two spaces between columns, no trailing whitespace.
- * A short table is easier to scan than a paragraph and costs an agent nothing,
- * because an agent asks for `--json`.
+ * The table/fields/list helpers, from `@greplost/render`.
+ *
+ * Re-exported rather than defined here so that the workspace layer, which
+ * cannot import this package (the CLI depends on *it*), renders its human
+ * output identically. Two copies had already drifted into two different looks
+ * for the same answer.
  */
-export function table(headers: readonly string[] | undefined, rows: readonly (readonly string[])[]): string[] {
-  const all = headers === undefined ? rows : [headers, ...rows];
-  if (all.length === 0) return [];
-
-  const widths: number[] = [];
-  for (const row of all) {
-    row.forEach((cell, index) => {
-      widths[index] = Math.max(widths[index] ?? 0, cell.length);
-    });
-  }
-
-  return all.map((row) =>
-    row
-      .map((cell, index) => (index === row.length - 1 ? cell : cell.padEnd(widths[index] ?? 0)))
-      .join("  ")
-      .replace(/\s+$/, ""),
-  );
-}
-
-/** An indented `key   value` block, aligned on the key. Empty values are dropped. */
-export function fields(pairs: readonly (readonly [string, string])[]): string[] {
-  const present = pairs.filter(([, value]) => value !== "");
-  const width = present.reduce((max, [key]) => Math.max(max, key.length), 0);
-  return present.map(([key, value]) => `  ${key.padEnd(width)}  ${value}`.replace(/\s+$/, ""));
-}
-
-/** A comma-joined list, capped, with a count of what was left out. */
-export function summarise(items: readonly string[], cap = 5): string {
-  if (items.length === 0) return "none";
-  if (items.length <= cap) return items.join(", ");
-  return `${items.slice(0, cap).join(", ")} (+${items.length - cap} more)`;
-}
+export { fields, summarise, table } from "@greplost/render";
 
 /**
  * The directory of the installed `greplost` package: the nearest ancestor of

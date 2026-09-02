@@ -6,9 +6,9 @@
 
 **Package:** `greplost` ([map](../../MAP.md))
 
-**Exports:** `VERSION (const)`, `errorMessage(cause: unknown): string`, `fields(pairs: readonly (readonly [string, string])[]): string[]`, `packageRoot(): string`, `printError(message: string): void`, `printJson(value: unknown): void`, `printLine(text = ""): void`, `readStdin(): Promise<string>`, `summarise(items: readonly string[], cap = 5): string`, `table(headers: readonly string[] | undefined, rows: readonly (readonly string[])[]): string[]`
+**Exports:** `VERSION (const)`, `errorMessage(cause: unknown): string`, `fields`, `packageRoot(): string`, `printError(message: string): void`, `printJson(value: unknown): void`, `printLine(text = ""): void`, `readStdin(): Promise<string>`, `summarise`, `table`
 
-**Imports:** `node:fs` (existsSync), `node:path` (default), `node:url` (fileURLToPath), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (stableStringify), `../package.json` (unresolved)
+**Imports:** `node:fs` (existsSync), `node:path` (default), `node:url` (fileURLToPath), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (stableStringify), `../package.json` (unresolved), [`@greplost/render`](../../../greplost__render/modules/src/index.ts.md) (fields, summarise, table)
 
 **Imported by:** [`packages/cli/src/commands/bench.ts`](commands/bench.ts.md), [`packages/cli/src/commands/flows.ts`](commands/flows.ts.md), [`packages/cli/src/commands/hook.ts`](commands/hook.ts.md), [`packages/cli/src/commands/impact.ts`](commands/impact.ts.md), [`packages/cli/src/commands/init.ts`](commands/init.ts.md), [`packages/cli/src/commands/query.ts`](commands/query.ts.md), [`packages/cli/src/commands/refresh.ts`](commands/refresh.ts.md), [`packages/cli/src/commands/update.ts`](commands/update.ts.md), [`packages/cli/src/commands/verify.ts`](commands/verify.ts.md), [`packages/cli/src/commands/version.ts`](commands/version.ts.md), [`packages/cli/src/main.ts`](main.ts.md)
 
@@ -20,10 +20,7 @@
 - `function printJson(value: unknown): void`  L36-38
 - `function printError(message: string): void`  L45-47
 - `function errorMessage(cause: unknown): string`  L50-52
-- `function table(headers: readonly string[] | undefined, rows: readonly (readonly string[])[]): string[]`  L59-76
-- `function fields(pairs: readonly (readonly [string, string])[]): string[]`  L79-83
-- `function summarise(items: readonly string[], cap = 5): string`  L86-90
-- `function packageRoot(): string`  L98-106
-- `async function readStdin(): Promise<string>`  L109-116
+- `function packageRoot(): string`  L70-78
+- `async function readStdin(): Promise<string>`  L81-88
 
 **Calls:** `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high)

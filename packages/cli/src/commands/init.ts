@@ -25,9 +25,15 @@ export async function run(ctx: CommandContext): Promise<number> {
   // workspace file without the flag. The second matters most: a plain `init`
   // here would write a repo map into the directory that owns the workspace's
   // own `.greplost/graph/`, and the two cannot share it.
+  //
+  // Both exit 2, not 1: the command line contradicted the checkout and nothing
+  // ran, which is precisely what the CLI's usage code means. Exit 1 is "drift
+  // or not found" — an answer — and a caller that retries on it would retry
+  // this forever.
   if (ctx.options.workspace === true) {
     if (!workspace) {
-      throw new Error("--workspace needs a greplost.workspace.json in the root; there is none here");
+      printError("--workspace needs a greplost.workspace.json in the root; there is none here");
+      return 2;
     }
     const initWorkspace = await loadWorkspaceInit();
     if (initWorkspace === undefined) {
@@ -40,7 +46,8 @@ export async function run(ctx: CommandContext): Promise<number> {
     });
   }
   if (workspace) {
-    throw new Error("this is a greplost workspace root; run `greplost init --workspace`");
+    printError("this is a greplost workspace root; run `greplost init --workspace`");
+    return 2;
   }
 
   const result = await init(ctx.root, {
