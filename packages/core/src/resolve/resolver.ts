@@ -9,20 +9,25 @@
  * Nothing is guessed: every `{ type: "file" }` answer names a path that is in
  * `ctx.files`.
  *
- * Four additions beyond the spec's four rules, each of which can only ever point
+ * Five additions beyond the spec's four rules, each of which can only ever point
  * at a file the index already holds, and each matching what tsc or Node does:
- *  - a bare specifier is probed against an explicit tsconfig `baseUrl` after
- *    `paths` misses (tsc tries baseUrl before node_modules);
+ *  - a bare specifier is probed against a *declared* tsconfig `baseUrl` after
+ *    `paths` misses (tsc tries baseUrl before node_modules; with `paths` alone and
+ *    no `baseUrl`, tsc does no such probing and neither does this);
  *  - a workspace subpath with no `exports` entry is probed against the package
- *    directory and its `src/`;
- *  - `#name` subpath imports go through the package scope's `imports` map, so
- *    they never masquerade as an external package;
+ *    directory and its `src/` - but never when `exports` matched it to `null`,
+ *    which Node and tsc both treat as deliberately unimportable;
+ *  - the root package is resolvable by its own name, so a repo that imports
+ *    itself ("my-lib/sub") gets a file edge instead of a phantom external;
+ *  - `#name` subpath imports go through the package scope's `imports` map and
+ *    then tsconfig `paths`, so they never masquerade as an external package;
  *  - `${configDir}` in a tsconfig mapping is substituted (tsconfig 5.5).
  */
 
 import { builtinModules } from "node:module";
 import { loadTsconfigPaths } from "./tsconfig.ts";
 import type { TsPaths } from "./tsconfig.ts";
+import { compareStrings } from "../schema.ts";
 import type { Lang, PackageInfo } from "../schema.ts";
 
 export type ResolvedTarget =
@@ -78,6 +83,21 @@ export function createResolver(ctx: RepoContext): Resolver {
   for (const pkg of ctx.packages) {
     if (pkg.source !== "package.json") continue;
     if (!workspaceByName.has(pkg.name)) workspaceByName.set(pkg.name, pkg);
+  }
+  seedRootPackageName();
+
+  /**
+   * A repo whose root package.json has a name may import itself by that name
+   * ("my-lib/sub"), which is a real file edge, not an external dependency. The root
+   * carries `source: "root"`, so it is registered here rather than in the loop above,
+   * and never displaces a workspace package that already owns the name.
+   */
+  function seedRootPackageName(): void {
+    const manifest = manifestFor("");
+    const name = manifest && typeof manifest["name"] === "string" ? manifest["name"].trim() : "";
+    if (!name || workspaceByName.has(name)) return;
+    const root = ctx.packages.find((pkg) => pkg.path === "." || pkg.path === "");
+    workspaceByName.set(name, root ?? { name, path: ".", source: "root" });
   }
 
   /** First indexed file for a repo-relative candidate, or null. */
@@ -165,8 +185,9 @@ export function createResolver(ctx: RepoContext): Resolver {
       const hit = probe(candidate);
       if (hit) return hit;
     }
-    // tsc resolves a non-relative specifier against baseUrl before node_modules;
-    // this only ever fires when the mapped file is actually indexed.
+    // tsc resolves a non-relative specifier against baseUrl before node_modules, but
+    // only when baseUrl was actually declared: with `paths` alone there is no such root.
+    if (!config.baseUrlDeclared) return null;
     return probe(normalizeJoin(config.baseUrl, specifier));
   }
 
@@ -177,7 +198,11 @@ export function createResolver(ctx: RepoContext): Resolver {
     const targets: string[] = [];
 
     if (manifest) {
-      targets.push(...exportsTargets(manifest["exports"], subpath === "" ? "." : `./${subpath}`));
+      const match = exportsTargets(manifest["exports"], subpath === "" ? "." : `./${subpath}`);
+      // `null` in an exports map means "not importable": Node and tsc both refuse it,
+      // so no legacy probing may resurrect the file behind it.
+      if (match.blocked) return null;
+      targets.push(...match.targets);
       if (subpath === "") {
         for (const field of ["module", "main"] as const) {
           const value = manifest[field];
@@ -211,14 +236,25 @@ export function createResolver(ctx: RepoContext): Resolver {
     return { type: "external", pkg: name };
   }
 
-  /** Node subpath imports (`#internal/x`), resolved through the package scope's `imports`. */
-  function resolveSubpathImport(fromDir: string, specifier: string): ResolvedTarget {
+  /**
+   * Node subpath imports (`#internal/x`) through the package scope's `imports` map.
+   * Returns null when no key matched, so the caller can still try tsconfig `paths`;
+   * a matched-but-blocked key resolves to `unresolved` and stops there.
+   */
+  function resolveSubpathImport(fromDir: string, specifier: string): ResolvedTarget | null {
     const scope = packageScope(fromDir);
     const manifest = scope === null ? null : manifestFor(scope);
-    if (scope === null || !manifest) return UNRESOLVED;
-    for (const target of importsTargets(manifest["imports"], specifier)) {
+    if (scope === null || !manifest) return null;
+    const match = importsTargets(manifest["imports"], specifier);
+    if (match.blocked) return UNRESOLVED;
+    if (match.targets.length === 0) return null;
+    for (const target of match.targets) {
       if (/^\.\.?(\/|$)/.test(target) || target.startsWith("/")) {
-        const hit = probe(normalizeJoin(scope, target.replace(/^\//, "")));
+        const candidate = normalizeJoin(scope, target.replace(/^\//, ""));
+        // An `imports` target may not leave its own package directory.
+        if (candidate === null) continue;
+        if (scope !== "" && candidate !== scope && !candidate.startsWith(`${scope}/`)) continue;
+        const hit = probe(candidate);
         if (hit) return { type: "file", path: hit };
         continue;
       }
@@ -246,8 +282,14 @@ export function createResolver(ctx: RepoContext): Resolver {
       return hit ? { type: "file", path: hit } : UNRESOLVED;
     }
 
-    // "#" is reserved for package-internal imports: never an npm package name.
-    if (specifier.startsWith("#")) return resolveSubpathImport(fromDir, specifier);
+    // "#" is reserved for package-internal imports: never an npm package name, so it
+    // goes through the `imports` map and then tsconfig `paths`, but never to external.
+    if (specifier.startsWith("#")) {
+      const internal = resolveSubpathImport(fromDir, specifier);
+      if (internal) return internal;
+      const aliased = resolveTsconfig(fromDir, specifier);
+      return aliased ? { type: "file", path: aliased } : UNRESOLVED;
+    }
 
     // Rule 2: tsconfig paths.
     const mapped = resolveTsconfig(fromDir, specifier);
@@ -277,30 +319,34 @@ export function createResolver(ctx: RepoContext): Resolver {
 // tsconfig paths matching
 // ---------------------------------------------------------------------------
 
-/** Mappings for `specifier`, exact keys first, then wildcards by longest prefix. */
+/**
+ * Substitutions for `specifier` from the single best-matching key, in the order the
+ * key lists them. tsc picks one pattern - an exact key, else the longest matching
+ * prefix - and never falls through to another key when its targets miss.
+ */
 function pathMappings(config: TsPaths, specifier: string): string[] {
   const keys = Object.keys(config.paths);
   if (keys.length === 0) return [];
 
-  const exact: string[] = [];
-  const wildcards: string[] = [];
+  let best: string | null = null;
   for (const key of keys) {
     if (!key.includes("*")) {
-      if (key === specifier) exact.push(key);
-    } else if (wildcardStar(key, specifier) !== null) {
-      wildcards.push(key);
+      if (key === specifier) return config.paths[key] ?? [];
+      continue;
+    }
+    if (wildcardStar(key, specifier) === null) continue;
+    if (
+      best === null ||
+      starPrefix(key).length > starPrefix(best).length ||
+      (starPrefix(key).length === starPrefix(best).length && compareStrings(key, best) < 0)
+    ) {
+      best = key;
     }
   }
-  wildcards.sort((a, b) => starPrefix(b).length - starPrefix(a).length || (a < b ? -1 : a > b ? 1 : 0));
+  if (best === null) return [];
 
-  const out: string[] = [];
-  for (const key of [...exact, ...wildcards]) {
-    const star = key.includes("*") ? (wildcardStar(key, specifier) ?? "") : "";
-    for (const mapping of config.paths[key] ?? []) {
-      out.push(key.includes("*") ? mapping.replaceAll("*", star) : mapping);
-    }
-  }
-  return out;
+  const star = wildcardStar(best, specifier) ?? "";
+  return (config.paths[best] ?? []).map((mapping) => mapping.replaceAll("*", star));
 }
 
 function starPrefix(key: string): string {
@@ -323,70 +369,112 @@ function wildcardStar(key: string, specifier: string): string | null {
 // package.json exports and imports
 // ---------------------------------------------------------------------------
 
+/**
+ * The outcome of looking one subpath up in an `exports`/`imports` map.
+ *
+ * `blocked` means a key matched but maps to `null`: the package deliberately makes
+ * that subpath unimportable, so no fallback may resolve it.
+ */
+interface SubpathMatch {
+  targets: string[];
+  blocked: boolean;
+}
+
+const NO_MATCH: SubpathMatch = { targets: [], blocked: false };
+const BLOCKED: SubpathMatch = { targets: [], blocked: true };
+
+function matched(targets: string[]): SubpathMatch {
+  return { targets, blocked: false };
+}
+
 /** Candidate targets for `key` ("." or "./sub"), best first. */
-function exportsTargets(exportsField: unknown, key: string): string[] {
-  if (exportsField === undefined || exportsField === null) return [];
-  if (typeof exportsField === "string") return key === "." ? [exportsField] : [];
-  if (Array.isArray(exportsField)) return key === "." ? conditionTargets(exportsField) : [];
-  if (typeof exportsField !== "object") return [];
+function exportsTargets(exportsField: unknown, key: string): SubpathMatch {
+  if (exportsField === undefined) return NO_MATCH;
+  if (exportsField === null) return key === "." ? BLOCKED : NO_MATCH;
+  if (typeof exportsField === "string") return key === "." ? matched([exportsField]) : NO_MATCH;
+  if (Array.isArray(exportsField)) return key === "." ? conditionTargets(exportsField) : NO_MATCH;
+  if (typeof exportsField !== "object") return NO_MATCH;
 
   const map = exportsField as Record<string, unknown>;
   const keys = Object.keys(map);
-  if (keys.length === 0) return [];
+  if (keys.length === 0) return NO_MATCH;
 
   // Sugar: conditions (or a single target) for "." only.
   if (!keys.every((k) => k === "." || k.startsWith("./"))) {
-    return key === "." ? conditionTargets(map) : [];
+    return key === "." ? conditionTargets(map) : NO_MATCH;
   }
   return subpathTargets(map, keys, key);
 }
 
 /** Candidate targets for a `#`-prefixed subpath import. */
-function importsTargets(importsField: unknown, key: string): string[] {
-  if (!importsField || typeof importsField !== "object" || Array.isArray(importsField)) return [];
+function importsTargets(importsField: unknown, key: string): SubpathMatch {
+  if (!importsField || typeof importsField !== "object" || Array.isArray(importsField)) return NO_MATCH;
   const map = importsField as Record<string, unknown>;
   const keys = Object.keys(map);
-  if (keys.length === 0 || !keys.every((k) => k.startsWith("#"))) return [];
+  if (keys.length === 0 || !keys.every((k) => k.startsWith("#"))) return NO_MATCH;
   return subpathTargets(map, keys, key);
 }
 
 /** Exact key, then `*` patterns by longest prefix, then trailing-slash folders. */
-function subpathTargets(map: Record<string, unknown>, keys: string[], key: string): string[] {
+function subpathTargets(map: Record<string, unknown>, keys: string[], key: string): SubpathMatch {
   if (Object.prototype.hasOwnProperty.call(map, key)) return conditionTargets(map[key]);
 
   const patterns = keys
     .filter((k) => k.includes("*") && wildcardStar(k, key) !== null)
-    .sort((a, b) => starPrefix(b).length - starPrefix(a).length || (a < b ? -1 : a > b ? 1 : 0));
+    .sort((a, b) => starPrefix(b).length - starPrefix(a).length || compareStrings(a, b));
   for (const pattern of patterns) {
     const star = wildcardStar(pattern, key) ?? "";
-    const targets = conditionTargets(map[pattern]).map((t) => t.replaceAll("*", star));
-    if (targets.length > 0) return targets;
+    const match = conditionTargets(map[pattern]);
+    if (match.blocked) return BLOCKED;
+    if (match.targets.length > 0) return matched(match.targets.map((t) => t.replaceAll("*", star)));
   }
 
   // Deprecated trailing-slash folder mappings ("./lib/": "./src/lib/").
   const folders = keys
     .filter((k) => k.endsWith("/") && key.startsWith(k))
-    .sort((a, b) => b.length - a.length || (a < b ? -1 : a > b ? 1 : 0));
+    .sort((a, b) => b.length - a.length || compareStrings(a, b));
   for (const folder of folders) {
     const rest = key.slice(folder.length);
-    const targets = conditionTargets(map[folder]).map((t) => (t.endsWith("/") ? t + rest : t));
-    if (targets.length > 0) return targets;
+    const match = conditionTargets(map[folder]);
+    if (match.blocked) return BLOCKED;
+    if (match.targets.length > 0) {
+      return matched(match.targets.map((t) => (t.endsWith("/") ? t + rest : t)));
+    }
   }
-  return [];
+  return NO_MATCH;
 }
 
-/** Flatten a target: string, array, or a (possibly nested) conditions object. */
-function conditionTargets(value: unknown): string[] {
-  if (typeof value === "string") return [value];
-  if (value === null || value === undefined) return [];
-  if (Array.isArray(value)) return value.flatMap((entry) => conditionTargets(entry));
-  if (typeof value !== "object") return [];
-  const map = value as Record<string, unknown>;
-  const out: string[] = [];
-  for (const condition of EXPORT_CONDITIONS) {
-    if (Object.prototype.hasOwnProperty.call(map, condition)) out.push(...conditionTargets(map[condition]));
+/**
+ * Flatten a target: string, array, or a (possibly nested) conditions object.
+ * An explicit `null` with nothing else to offer is a block, not a miss.
+ */
+function conditionTargets(value: unknown): SubpathMatch {
+  if (typeof value === "string") return matched([value]);
+  if (value === null) return BLOCKED;
+  if (value === undefined) return NO_MATCH;
+  if (Array.isArray(value)) {
+    const targets: string[] = [];
+    let blocked = false;
+    for (const entry of value) {
+      const match = conditionTargets(entry);
+      targets.push(...match.targets);
+      blocked ||= match.blocked;
+    }
+    // An array is a list of alternatives: a null entry is skipped while any
+    // sibling still resolves, and only blocks when it is all there is.
+    return targets.length > 0 ? matched(targets) : { targets, blocked };
   }
-  return out;
+  if (typeof value !== "object") return NO_MATCH;
+  const map = value as Record<string, unknown>;
+  const targets: string[] = [];
+  let blocked = false;
+  for (const condition of EXPORT_CONDITIONS) {
+    if (!Object.prototype.hasOwnProperty.call(map, condition)) continue;
+    const match = conditionTargets(map[condition]);
+    targets.push(...match.targets);
+    blocked ||= match.blocked;
+  }
+  return targets.length > 0 ? matched(targets) : { targets, blocked };
 }
 
 // ---------------------------------------------------------------------------
