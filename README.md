@@ -102,13 +102,156 @@ Everything below is measured by `bun run bench:*` and written to [bench/RESULTS.
 ## Head-to-head
 
 <!-- headtohead:start (generated from bench/RESULTS.md by `bun run bench:report`; do not edit) -->
-Not yet generated. Run `bun run bench:headtohead --tier S` then `bun run bench:report`.
+greplost against Graphify, Understand-Anything and code-review-graph (tech spec 3.1, 10.0). The `vs` columns are greplost's verdict against that tool: `win` means greplost came out ahead by the metric's margin, `tie` inside it, `loss` behind it, `n/a` when the tool could not be run at all. Every loss and every `n/a` carries its reason.
+
+- X1, X4, X5, X6: Measured 2026-09-02 at dfb733a on anyq, tier S (148 files).
+- X2, X3: Measured 2026-09-02 at b42bcb6 on hono, tier M (248 files, 100 commits).
+
+| ID | Target | Measured | vs graphify | vs ua | vs crg | Reason on loss |
+|---|---|---|---|---|---|---|
+| X1 | >= +10pt calls, >= +3pt imports | calls 1 P / 0.468 R, imports 1 P / 1 R | win (calls 0.877 P / 0.096 R, imports 1 P / 0.088 R) | n/a | win (calls 0.361 P / 0.28 R, imports 1 P / 0.684 R) | greplost: gap over the best competitor is 0.123 on calls and 0 on imports; the target is +0.10 and +0.03 |
+| X2 | greplost F1 >= 0.99 after 100 commits | 1 | win (0.125) | n/a | win (0.897) |  |
+| X3 | <= 1% of ua, <= 20% of graphify over 100 commits | $0, 0.289 min | win ($0, 2.283 min) | n/a | win ($0, 0.804 min) | greplost: evaluated on the graphify arm of the target only: 12.6% of graphify's wall-clock (target <= 20%). The ua arm cannot be evaluated — Understand-Anything has no headless entry point here, so no cost exists to take 1% of. |
+| X4 | 0 bytes differ | 0 bytes | tie (0 bytes) | n/a | win (5160286 bytes) |  |
+| X5 | <= 10 artifact lines | 54 of 10511 lines | loss (24 of 99031 lines) | n/a | win (60 of 88119 lines) | greplost: 54 artifact lines of 10511 changed across 12 files for a one-line source change; the target is 10 lines. Where: `manifest.json` 20 lines, `packages/anyq__kafka/MAP.md` 8 lines, `packages/anyq__example-retry-strategies/MAP.md` 7 lines, `packages/anyq__example-retry-strategies/modules/src/adapters/kafka.ts.md` 4 lines, and 8 more files |
+| X6 | <= 5s and $0 (measured on anyq, tier S, not tier M) | 0.266 s ($0) | win (2.062 s) | n/a | win (1.125 s) |  |
+| X7 | accuracy >= best, tool calls <= 50% of best | n/a | n/a | n/a | n/a |  |
+| X8 | <= 50% of best competitor tokens | n/a | n/a | n/a | n/a |  |
+| X9 | fastest, highest hit rate | n/a | n/a | n/a | n/a |  |
+| X10 | works (capability, not a score) | n/a | n/a | n/a | n/a |  |
+
+- **X1** Structural precision vs compiler truth: greplost calls 1 P / 0.468 R, imports 1 P / 1 R, graphify calls 0.877 P / 0.096 R, imports 1 P / 0.088 R, ua n/a, crg calls 0.361 P / 0.28 R, imports 1 P / 0.684 R
+- **X2** Staleness after 100 replayed commits: greplost 1, graphify 0.125, ua n/a, crg 0.897
+- **X3** Cost to stay fresh over 100 replayed commits: greplost $0, 0.289 min, graphify $0, 2.283 min, ua n/a, crg $0, 0.804 min
+- **X4** Reproducibility: two builds of one commit: greplost 0 bytes, graphify 0 bytes, ua n/a, crg 5160286 bytes
+- **X5** Diff signal after a one-line change: greplost 54 of 10511 lines, graphify 24 of 99031 lines, ua n/a, crg 60 of 88119 lines
+- **X6** Cold start to first usable map: greplost 0.266 s ($0), graphify 2.062 s, ua n/a, crg 1.125 s
+- **X7** Agent structural tasks: greplost n/a, graphify n/a, ua n/a, crg n/a
+- **X8** Orientation cost: greplost n/a, graphify n/a, ua n/a, crg n/a
+- **X9** Reviewer task: spot the new cross-package dependency: greplost n/a, graphify n/a, ua n/a, crg n/a
+- **X10** Cross-repo blast radius in workspace mode: greplost n/a, graphify n/a, ua n/a, crg n/a
+
+**Why a cell is n/a**
+
+- X1, X2, X3, X4, X5, X6 (ua): distributed only as a Claude Code plugin, and `/understand` is a multi-agent LLM pipeline: there is no headless CLI, so the only way to drive it is `claude --plugin-dir <clone>/understand-anything-plugin -p "/understand"` against a clone pinned at v2.9.0, inside the scratch HOME. That spends model tokens on every commit of every metric, so this harness does not run it and never installs the plugin into the machine’s real Claude Code configuration
+- X7, X8, X9, X10 (greplost, graphify, ua, crg): not selected by --metrics
+
+> graphify: run through `graphify update .` (the documented no-LLM rebuild) rather than the `/graphify .` slash command, which needs a model; graph.html is excluded from the byte comparison because it is a viewer, not the graph. `graphify hook install` is run in X2's documented-sync arm, where the hooks it writes go into the repo copy's own .git/hooks; `graphify install`, which writes a global CLAUDE.md section and a Claude Code PreToolUse hook, is not run.
+> graphify: every command ran with HOME=bench/.competitors/home (XDG and CLAUDE_CONFIG_DIR pointed inside it), so nothing it writes outside the repo copy reaches the machine's real configuration.
+> ua: N/A — distributed only as a Claude Code plugin, and `/understand` is a multi-agent LLM pipeline: there is no headless CLI, so the only way to drive it is `claude --plugin-dir <clone>/understand-anything-plugin -p "/understand"` against a clone pinned at v2.9.0, inside the scratch HOME. That spends model tokens on every commit of every metric, so this harness does not run it and never installs the plugin into the machine’s real Claude Code configuration.
+> crg: `build` + `visualize --format json` produce the artifact; `graph.db` is excluded from the byte comparison because a SQLite page layout is not the tool's output contract. `code-review-graph install` runs only in X2's documented-sync arm and only with HOME, XDG_* and CLAUDE_CONFIG_DIR pointed inside bench/.competitors/home.
+> crg: every command ran with HOME=bench/.competitors/home (XDG and CLAUDE_CONFIG_DIR pointed inside it), so nothing it writes outside the repo copy reaches the machine's real configuration.
+> X2: the walk is 100 synthetic commits over hono, each adding one resolvable import line, scored every 12 commits against compiler truth at that commit.
+> X2: the plotted number is import edge F1 against compiler truth at that commit. Imports are the one relationship all four tools model the same way and the one a fresh greplost build already scores 1.0 on, so a fall in the line is drift and not a modelling difference; call F1 is in each cell's detail.
+> X2 arm `documented-sync` (`syncF1@<commit>` in each cell's detail): each tool's own sync mechanism was installed exactly as its README describes and then left alone: the harness commits, and nothing else.
+> X2 arm `staleF1@<commit>`: each tool's commit-0 artifact scored against truth at that commit — the curve a reader gets when a sync mechanism is absent or does not fire. greplost is the only one of the four whose `verify` reports that state at all; the others refresh without ever checking.
+> X2 sync (greplost): installed with `greplost init`; hook at `.git/hooks/post-commit`; observed to run on 100 of 100 commits (17.31 s of child-process wall-clock in total). the hook resolves `greplost` through PATH and backgrounds `greplost update --incremental --quiet`; a PATH shim in front of it writes a start and an end line per invocation, so a commit's rebuild is waited for rather than slept on, and its wall-clock is the child process's own.
+> X2 sync (graphify): installed with `graphify update .` + `graphify hook install`; hook at `.git/hooks/post-commit`; observed to run on 100 of 100 commits (136.99 s of child-process wall-clock in total). `graphify hook install` writes a post-commit hook that launches a detached python rebuild without going through the `graphify` launcher, so a PATH shim cannot see it: the rebuild is observed instead through the hook's own log under the sandbox HOME (`.cache/graphify-rebuild.log`, one line per rebuild) and waited for until the detached process is gone, which is what its wall-clock is measured over. That window starts when the commit returns rather than when the hook launched the child, so graphify's number is a slight under-count — the direction that flatters graphify, not greplost.
+> X2 sync (crg): installed with `code-review-graph install` + `code-review-graph build` + `code-review-graph visualize --format json`; hook at `.git/hooks/pre-commit`; observed to run on 100 of 100 commits (48.24 s of child-process wall-clock in total). `code-review-graph install` writes a pre-commit hook that runs `code-review-graph update` synchronously and resolves the binary through PATH, so a PATH shim in front of it records a start and an end line per commit; the hook runs `update` and then `detect-changes --brief`, and both are counted because both are what a commit costs a crg user; it does not run `visualize`, so no export is inside its timing.
+> X3: every tool's wall-clock is the run time of the child processes its own commit-time mechanism started, interpreter startup included, measured the same way for greplost as for the competitors. crg's `visualize --format json` export is outside that number: its hook does not run it, and it is invoked by this suite only at scoring checkpoints, because greplost has no export step to charge against it.
+> X3: every tool that ran here ran its no-LLM path, so USD is 0 for all of them and the verdict falls to wall-clock. That is not the tech spec's comparison, which costs each tool's *documented* refresh: graphify's `/graphify` first pass and Understand-Anything's `/understand` are LLM pipelines whose USD this harness cannot measure without model credentials. The zero is what was measured, not a claim that their documented path is free.
+> graphify sync mechanism (X2, from bench/competitors.json): git hooks.
+> ua sync mechanism (X2, from bench/competitors.json): git post-commit hook, opt-in.
+> crg sync mechanism (X2, from bench/competitors.json): platform hooks plus a watcher.
+> Mechanical staleness check (tech spec 10.0 X2): greplost has `verify` (byte comparison against a rebuild, exit 1 on drift). None of the three competitors ships an equivalent: their artifacts are refreshed, never checked.
+> X1: both sides restricted to the 148 files the TypeScript compiler loaded, and both scored over every edge each tool emits at any confidence. The confidence=high arm (greplost's S3 gate, graphify's and crg's `EXTRACTED` tier) is reported beside it in each cell's detail; scoring greplost at high while scoring a competitor at every confidence would flatter greplost on precision by construction.
+> X4: every tool is built twice on the same tree, each build in its own process, and the differing bytes of its documented artifact files are counted after trimming the common prefix and suffix (an upper bound on the edit distance, exact for a single contiguous change). greplost is compared over the structure artifacts `listStructurePaths` enumerates; viewer and database files are excluded per competitor, and each cell's `caveat` says which.
+> X5: the one-line change is `import "./kafka.js";` appended to `apps/examples/retry-strategies/src/adapters/nats.ts`, adding the edge apps/examples/retry-strategies/src/adapters/nats.ts -> apps/examples/retry-strategies/src/adapters/kafka.ts.
+> X5: lines changed is added plus removed lines from a line-level longest-common-subsequence per artifact file (multiset difference above 4000 lines).
+> X5 readability (tech spec 10.0's "can a human read the architectural change from the diff alone"): greplost added a line naming both the importer and the imported module; graphify, crg did not, so the new edge is not legible in the diff at any length.
+> X6: timed from a fresh copy of the repo (no cache, no artifact) to the tool's own first usable output, 3 runs each, median reported and the spread in each cell's detail, every tool in its own child process so interpreter startup is counted for all of them. greplost's command is `greplost init --no-hooks` and its USD is 0; a competitor's documented first pass may cost model tokens, and where the no-LLM path was used instead the cell's caveat says so.
+> X2 sync (greplost): installed with `greplost init`; hook at `.git/hooks/post-commit`; observed to run on 100 of 100 commits (17.62 s of child-process wall-clock in total). the hook resolves `greplost` through PATH and backgrounds `greplost update --incremental --quiet`; a PATH shim in front of it writes a start and an end line per invocation, so a commit's rebuild is waited for rather than slept on, and its wall-clock is the child process's own.
+> X2 sync (graphify): installed with `graphify update .` + `graphify hook install`; hook at `.git/hooks/post-commit`; observed to run on 100 of 100 commits (141.03 s of child-process wall-clock in total). `graphify hook install` writes a post-commit hook that launches a detached python rebuild without going through the `graphify` launcher, so a PATH shim cannot see it: the rebuild is observed instead through the hook's own log under the sandbox HOME (`.cache/graphify-rebuild.log`, one line per rebuild) and waited for until the detached process is gone, which is what its wall-clock is measured over. That window starts when the commit returns rather than when the hook launched the child, so graphify's number is a slight under-count — the direction that flatters graphify, not greplost.
+> X2 sync (crg): installed with `code-review-graph install` + `code-review-graph build` + `code-review-graph visualize --format json`; hook at `.git/hooks/pre-commit`; observed to run on 100 of 100 commits (50.76 s of child-process wall-clock in total). `code-review-graph install` writes a pre-commit hook that runs `code-review-graph update` synchronously and resolves the binary through PATH, so a PATH shim in front of it records a start and an end line per commit; the hook runs `update` and then `detect-changes --brief`, and both are counted because both are what a commit costs a crg user; it does not run `visualize`, so no export is inside its timing.
+
+**X2 (hero chart): each tool's own documented sync mechanism, installed and left to fire**
+
+```mermaid
+xychart-beta
+    title "X2 staleness under each tool's own documented sync"
+    x-axis "commit index" ["12", "24", "36", "48", "60", "72", "84", "96", "100"]
+    y-axis "F1 vs compiler truth" 0 --> 1
+    line [1, 1, 1, 1, 1, 1, 1, 1, 1]
+    line [0.131, 0.129, 0.126, 0.124, 0.127, 0.128, 0.126, 0.126, 0.125]
+    line [0.896, 0.898, 0.9, 0.902, 0.904, 0.906, 0.908, 0.9, 0.897]
+    %% series, in order: greplost, graphify, crg
+    %% Arm: documented-sync — each tool's sync mechanism was installed exactly as its README describes and then left alone; the harness only commits. This is the arm tech spec 10.0 X2 words. Omitted (not run here): ua. Measured on corpus hono, tier M (248 files); 100 replayed commits.
+```
+
+
+**X2 companion: the same artifacts, never updated**
+
+```mermaid
+xychart-beta
+    title "X2 staleness with no refresh"
+    x-axis "commit index" ["12", "24", "36", "48", "60", "72", "84", "96", "100"]
+    y-axis "F1 vs compiler truth" 0 --> 1
+    line [0.99, 0.979, 0.969, 0.96, 0.95, 0.941, 0.931, 0.922, 0.919]
+    line [0.128, 0.126, 0.123, 0.121, 0.119, 0.117, 0.115, 0.113, 0.112]
+    line [0.884, 0.874, 0.864, 0.855, 0.845, 0.836, 0.827, 0.818, 0.816]
+    %% series, in order: greplost, graphify, crg
+    %% Arm: no-refresh — each tool's commit-0 artifact scored against truth at that commit, which is what a reader gets when a sync mechanism is absent or silently does not fire. greplost is the only one of the four that can report this state mechanically, through `verify`. Omitted (not run here): ua. Measured on corpus hono, tier M (248 files); 100 replayed commits.
+```
+
+
+**X1 precision per tool per edge kind**
+
+```mermaid
+xychart-beta
+    title "X1 structural precision vs compiler truth"
+    x-axis ["greplost", "graphify", "crg"]
+    y-axis "precision" 0 --> 1
+    bar [1, 1, 1]
+    bar [1, 0.877, 0.361]
+    %% series, in order: imports, calls
+    %% not measured, omitted from the x axis: ua
+    %% A dashed stub is a tool that could not be run; see the reason column. Measured on corpus anyq, tier S (148 files).
+```
+
+
+**X3 cost per tool**
+
+```mermaid
+xychart-beta
+    title "X3 cost to stay fresh"
+    x-axis ["greplost", "graphify", "crg"]
+    y-axis "USD over 100 commits" 0 --> 1
+    bar [0, 0, 0]
+    %% series, in order: USD
+    %% not measured, omitted from the x axis: ua
+    %% Every tool that ran here ran its no-LLM path, so USD is 0 for all of them; the wall-clock that separates them is in the table. Measured on corpus hono, tier M (248 files); 100 replayed commits.
+```
 <!-- headtohead:end -->
 
 ### Single-tool numbers
 
 <!-- singletool:start (generated from bench/RESULTS.md; do not edit) -->
-Not yet generated.
+greplost measured against its own section 3 targets, one row per metric id. The measured column is filled from `bench/results/*.json` by the harness and is never typed by hand (tech spec 10.10); a metric whose suite has not run says `not run` rather than carrying a placeholder.
+
+| ID | Metric | Target | Measured | Source |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | Eval 1, `structural` (hono (248 files)) |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 0.999 | Eval 1, `structural` (hono (248 files)) |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | Eval 1, `structural` (hono (248 files)) |
+| S4 | import cycle Jaccard | = 1.00 | 1 | Eval 1, `structural` (hono (248 files)) |
+| unparsable | files whose tree-sitter parse root is ERROR (excluded from S1 and S2) | 0 | n/a | not measured: the structural payload reports no unparsable count and carries no per-file truth totals to derive one from |
+| F1 | `verify` catch rate on stale maps | 100% | 100% | Eval 2, `replay` |
+| F2 | `verify` false positives after `update` | 0% (byte-identical) | 0% | Eval 2, `replay` |
+| P1 | full build, 1k / 10k files | <= 1s / <= 10s | 203 ms (p50) | Bench 3, `perf` |
+| P2 | incremental update p95, 1k / 10k files | <= 500ms / <= 1s | 145 ms | Bench 3, `perf` |
+| P3 | peak RSS at 10k files | <= 500MB (reported) | 229.9 MB | Bench 3, `perf` |
+| M1 | INDEX.md token budget | <= 3000 tokens | 776 tokens | Map quality, `mapquality` |
+| M2 | diagrams exceeding the node cap after auto-split | 0 | 0 | Map quality, `mapquality` |
+| A1 | agent tokens per task vs baseline (median) | <= 50% | not run | Eval 4, `agent` |
+| A2 | agent tool calls per task vs baseline | <= 40% | not run | Eval 4, `agent` |
+| A3 | agent answer accuracy vs baseline | non-inferior; +10pt on blast radius | not run | Eval 4, `agent` |
+| A4 | agent wall-clock per task vs baseline | <= 60% | not run | Eval 4, `agent` |
+
+> F2 compares the structure artifacts that `listStructurePaths` enumerates — `INDEX.md`, `manifest.json`, `graph/*.jsonl`, `repo/*.md`, `packages/*/{MAP,API}.md` and `packages/*/modules/**` — and not the whole `.greplost/` directory: `config.json`, `cache/` and the runtime files (`.dirty`, `.lock`, `.state.json`) are excluded, because they are not the map and are not committed (ruling 2026-09-02).
+
+> `unparsable` counts files whose tree-sitter parse returns an ERROR root node, which the extractor cannot read at all. They are not scored in S1 or S2, so they cost recall silently unless they are counted here. The count is read from the structural payload when it reports one, and otherwise derived from it — a file every one of whose truth items was missed is a file nothing was extracted from — and it is `n/a` with `not measured` when the payload carries neither. Nothing about it is asserted here. Upstream: https://github.com/tree-sitter/tree-sitter-typescript/issues/335.
+
+> Rows reading `not run` have no result file behind them, not a value of zero; the section below each metric names the command that would produce one.
 <!-- singletool:end -->
 
 Suites: structural precision and recall against the TypeScript compiler and a Go call-graph program (S1 to S4), commit replay freshness (F1, F2), build and update latency (P1, P2), map quality (M1), and agent task cost with and without the map (A1 to A4). The corpus is pinned in `bench/corpus.json`.

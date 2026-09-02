@@ -17,25 +17,25 @@ Scope: measured numbers, head-to-head results, README, dogfood, CI parity
   EXPECT: mapquality: GATE PASS
   EVIDENCE: mapquality: GATE PASS | $ bun bench/src/cli.ts mapquality --dir "/var/folders/dz/22spknj561x295jgnbx3x7s80000gn/T/tmp.lOLwOvZt3i/.greplost" --gate
 
-- [ ] R4: head-to-head X1, X4, X5, X6 measured on tier S with results written
+- [x] R4: head-to-head X1, X4, X5, X6 measured on tier S with results written
   CHECK: bun run bench:headtohead --tier S --metrics X1,X4,X5,X6
   EXPECT: /headtohead: wrote bench\/results\/headtohead-/
-  EVIDENCE: pending
+  EVIDENCE: $ bun bench/src/cli.ts headtohead --tier S --metrics "X1,X4,X5,X6" | truth-ts: 148 files, 0 tsconfig errors (semantic diagnostics off: --diagnostics or GREPLOST_BENCH_DIAGNOSTICS=1 to check them)
 
-- [ ] R5: X2 and X3 measured on a 100-commit hono replay per tool
+- [x] R5: X2 and X3 measured on a 100-commit hono replay per tool
   CHECK: bun run bench:headtohead --repo hono --metrics X2,X3 --commits 100
   EXPECT: /headtohead: wrote bench\/results\/headtohead-/
-  EVIDENCE: pending
+  EVIDENCE: truth-ts: 248 files, 0 tsconfig errors (semantic diagnostics off: --diagnostics or GREPLOST_BENCH_DIAGNOSTICS=1 to check them) | truth-ts: 248 files, 0 tsconfig errors (semantic diagnostics off: --dia
 
-- [ ] R6: RESULTS.md regenerated with measured values on the S1, S3, F1, F2, P1, P2, M1, X4, X5 rows
+- [x] R6: RESULTS.md regenerated with measured values on the S1, S3, F1, F2, P1, P2, M1, X4, X5 rows
   CHECK: bun run bench:report >/dev/null && bun run readme:sync >/dev/null && bun -e "const t=require('fs').readFileSync('bench/RESULTS.md','utf8'); const miss=['S1','S3','F1','F2','P1','P2','M1','X4','X5'].filter(id=>{const m=t.match(new RegExp('^\\\\| '+id+' \\\\|([^|]*)\\\\|([^|]*)\\\\|','m')); return !m||!m[2].trim()||/not run/.test(m[2])}); console.log(miss.length?'missing: '+miss.join(','):'measured ok')"
   EXPECT: measured ok
-  EVIDENCE: pending
+  EVIDENCE: $ bun bench/src/cli.ts report | $ bun scripts/sync-readme.ts
 
-- [ ] R7: hero chart exists and the README links it and the head-to-head table
+- [x] R7: hero chart exists and the README links it and the head-to-head table
   CHECK: test -s docs/assets/x2-staleness.png && grep -c -E 'docs/assets/x2-staleness.png|## Head-to-head' README.md
   EXPECT: 2
-  EVIDENCE: pending
+  EVIDENCE: 2
 
 - [x] R8: greplost's own map is committed and verifies
   CHECK: bun packages/cli/src/main.ts verify --diff >/dev/null && git ls-files .greplost/INDEX.md
