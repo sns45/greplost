@@ -11,10 +11,10 @@ Scope: harness complete: every suite runs, RESULTS.md generated end to end
   CHECK: bunx tsc -p bench/tsconfig.json --noEmit
   EVIDENCE: (no output)
 
-- [ ] N3: bench tests green
-  CHECK: NO_COLOR=1 bun test bench
+- [x] N3: bench tests green
+  CHECK: bun test bench 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: pending
+  EVIDENCE: 2173 expect() calls | Ran 337 tests across 10 files. [40.97s]
 
 - [x] N4: bench all --dry-run runs every suite and regenerates RESULTS.md
   CHECK: bun run bench:all --dry-run
