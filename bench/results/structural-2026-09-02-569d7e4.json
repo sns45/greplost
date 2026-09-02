@@ -1,0 +1,116 @@
+{
+  "corpus": [
+    {
+      "name": "anyq",
+      "sha": "657f41c2cbe06039c0d82cf81c17759d1149eda2"
+    }
+  ],
+  "date": "2026-09-02",
+  "gate": {
+    "missed": [],
+    "passed": true
+  },
+  "greplostSha": "569d7e4",
+  "machine": {
+    "arch": "arm64",
+    "bun": "1.2.21",
+    "cores": 16,
+    "cpu": "Apple M4 Max",
+    "go": "go version go1.25.3 darwin/arm64",
+    "greplostSha": "569d7e4",
+    "greplostVersion": "0.0.1",
+    "memoryGB": 128,
+    "node": "24.3.0",
+    "os": "Darwin 25.5.0"
+  },
+  "repos": {
+    "anyq": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 339
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 762
+      },
+      "S3": {
+        "f1": 0.46473029045643155,
+        "fn": 516,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.3027027027027027,
+        "tp": 224
+      },
+      "S4": 1,
+      "callsAllConfidences": {
+        "f1": 0.5095669687814703,
+        "fn": 487,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.3418918918918919,
+        "tp": 253
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [
+          "apps/examples/retry-strategies/src/adapters/kafka.ts:28 (apps/examples/retry-strategies/src/adapters/kafka.ts#createKafkaAdapter -> packages/kafka/src/consumer.ts#KafkaConsumer)",
+          "apps/examples/retry-strategies/src/adapters/kafka.ts:28 (apps/examples/retry-strategies/src/adapters/kafka.ts#createKafkaAdapter -> packages/kafka/src/producer.ts#KafkaProducer)",
+          "apps/examples/retry-strategies/src/adapters/nats.ts:28 (apps/examples/retry-strategies/src/adapters/nats.ts#createNatsAdapter -> packages/nats/src/consumer.ts#NATSConsumer)",
+          "apps/examples/retry-strategies/src/adapters/nats.ts:28 (apps/examples/retry-strategies/src/adapters/nats.ts#createNatsAdapter -> packages/nats/src/producer.ts#NATSProducer)",
+          "apps/examples/retry-strategies/src/adapters/rabbitmq.ts:30 (apps/examples/retry-strategies/src/adapters/rabbitmq.ts#createRabbitMQAdapter -> packages/rabbitmq/src/consumer.ts#RabbitMQConsumer)",
+          "apps/examples/retry-strategies/src/adapters/rabbitmq.ts:30 (apps/examples/retry-strategies/src/adapters/rabbitmq.ts#createRabbitMQAdapter -> packages/rabbitmq/src/producer.ts#RabbitMQProducer)",
+          "apps/examples/retry-strategies/src/adapters/redis-streams.ts:33 (apps/examples/retry-strategies/src/adapters/redis-streams.ts#createRedisStreamsAdapter -> packages/redis-streams/src/consumer.ts#RedisStreamsConsumer)",
+          "apps/examples/retry-strategies/src/adapters/redis-streams.ts:33 (apps/examples/retry-strategies/src/adapters/redis-streams.ts#createRedisStreamsAdapter -> packages/redis-streams/src/producer.ts#RedisStreamsProducer)",
+          "apps/examples/retry-strategies/src/examples/backpressure-pause.ts:1 (apps/examples/retry-strategies/src/examples/backpressure-pause.ts -> packages/core/src/strategies/built-ins.ts#backpressurePause)",
+          "apps/examples/retry-strategies/src/examples/custom.ts:1 (apps/examples/retry-strategies/src/examples/custom.ts -> packages/core/src/strategies/built-ins.ts#custom)",
+          "apps/examples/retry-strategies/src/examples/dead-letter-immediate.ts:1 (apps/examples/retry-strategies/src/examples/dead-letter-immediate.ts -> packages/core/src/strategies/built-ins.ts#deadLetterImmediate)",
+          "apps/examples/retry-strategies/src/examples/log-and-fail.ts:1 (apps/examples/retry-strategies/src/examples/log-and-fail.ts -> packages/core/src/strategies/built-ins.ts#logAndFail)",
+          "apps/examples/retry-strategies/src/examples/log-and-skip.ts:1 (apps/examples/retry-strategies/src/examples/log-and-skip.ts -> packages/core/src/strategies/built-ins.ts#logAndSkip)",
+          "apps/examples/retry-strategies/src/examples/retry-then-dead-letter.ts:1 (apps/examples/retry-strategies/src/examples/retry-then-dead-letter.ts -> packages/core/src/strategies/built-ins.ts#retryThenDeadLetter)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/consumer.ts#MemoryConsumer)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/consumer.ts#MemoryConsumer.getDLQ)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/consumer.ts#MemoryConsumer.getQueue)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/producer.ts#MemoryProducer)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/queue.ts#MemoryQueue.size)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/registry.ts#clearAllQueues)"
+        ],
+        "S4": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": []
+      },
+      "files": 148,
+      "truthEmpty": false
+    }
+  },
+  "suite": "structural",
+  "targets": {
+    "S1": [
+      0.99,
+      0.97
+    ],
+    "S2": [
+      0.99,
+      0.99
+    ],
+    "S3": 0.95,
+    "S4": 1
+  },
+  "truth": {
+    "notes": [
+      "workspace-entry-mapping"
+    ]
+  }
+}
