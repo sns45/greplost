@@ -2,19 +2,19 @@
 
 Scope: children merged; freshness and performance targets hold
 
-- [ ] N1: every child gates file is fully met
+- [x] N1: every child gates file is fully met
   CHECK: node ~/.claude/skills/unlazy/scripts/gate-check.mjs --status gates/leaf-1.3.1.md gates/leaf-1.3.2.md
   EXPECT: ALL MET
-  EVIDENCE: pending
+  EVIDENCE: gates/leaf-1.3.2.md: 11 gates | ALL MET (19 met)
 
-- [ ] N2: sync typechecks
+- [x] N2: sync typechecks
   CHECK: bunx tsc -p packages/sync/tsconfig.json --noEmit
-  EVIDENCE: pending
+  EVIDENCE: (no output)
 
-- [ ] N3: sync tests green
+- [x] N3: sync tests green
   CHECK: bun test packages/sync
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: pending
+  EVIDENCE: 690 expect() calls | Ran 137 tests across 5 files. [4.30s]
 
 - [ ] N4: F1 = 100 percent and F2 = 0 over a 100-commit replay of hono
   CHECK: bun run bench:replay --repo hono --commits 100 --gate
