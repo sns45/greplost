@@ -117,11 +117,13 @@ describe("init", () => {
     expect(result["written"]).toBe(0);
   });
 
-  test("--workspace reports the missing layer instead of a usage error", async () => {
+  test("--workspace outside a workspace names the missing greplost.workspace.json", async () => {
+    // The workspace package is part of this build, so the flag is understood;
+    // what is missing is the workspace file, and the message says exactly that.
     const run = await cli("init", "--workspace", "--root", ts);
-    expect(run.code).toBe(1);
+    expect(run.code).not.toBe(0);
     expect(run.stdout).toBe("");
-    expect(run.stderr).toBe("greplost: workspace layer not available in this build");
+    expect(run.stderr).toBe("greplost: --workspace needs a greplost.workspace.json in the root; there is none here");
   });
 
   test("reports a missing map rather than crashing", async () => {

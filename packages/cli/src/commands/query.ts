@@ -30,6 +30,7 @@ import {
   resolveFile,
   toRepoRelative,
 } from "./structure.ts";
+import { dispatchWorkspace } from "./workspace.ts";
 
 /** One declaration and everything the map knows about it. */
 export interface QueryMatch {
@@ -75,6 +76,9 @@ export interface QueryResult {
 }
 
 export async function run(ctx: CommandContext): Promise<number> {
+  const handled = await dispatchWorkspace("query", ctx);
+  if (handled !== undefined) return handled;
+
   const needle = ctx.operands[0] as string;
   const structure = loadStructure(ctx.root);
   const result = queryStructure(structure, ctx.root, needle);

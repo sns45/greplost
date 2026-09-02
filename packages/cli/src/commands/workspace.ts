@@ -17,9 +17,11 @@
  * package that does not have one (today's stub) simply registers nothing.
  */
 
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import type { CommandContext } from "../args.ts";
 
-export type WorkspaceHookName = "update" | "verify" | "impact";
+export type WorkspaceHookName = "update" | "verify" | "impact" | "query";
 
 /** Returns an exit code when it handled the command, `undefined` to fall through. */
 export type WorkspaceHook = (ctx: CommandContext) => Promise<number | undefined>;
@@ -94,4 +96,9 @@ export async function dispatchWorkspace(
   await loadWorkspaceHooks();
   const hook = workspaceHook(name);
   return hook === undefined ? undefined : hook(ctx);
+}
+
+/** True when `root` itself holds a `greplost.workspace.json` (the workspace root, never a member repo). */
+export function isWorkspaceRoot(root: string): boolean {
+  return existsSync(join(root, "greplost.workspace.json"));
 }

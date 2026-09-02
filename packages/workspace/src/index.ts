@@ -2,11 +2,13 @@
  * Public surface of `@greplost/workspace`, and the CLI seam.
  *
  * Two audiences. Anything embedding the workspace layer gets
- * `findWorkspaceRoot`, `loadWorkspace`, `buildWorkspace`, `verifyWorkspace` and
- * `impactAcross`. The `greplost` CLI gets `registerWorkspaceHooks`, which is the
- * only thing it looks for: it lazily imports this package once and hands over a
- * setter, and `update`, `verify` and `impact` then offer this layer first
- * refusal before running their ordinary single-repo path.
+ * `findWorkspaceRoot`, `loadWorkspace`, `buildWorkspace`, `verifyWorkspace`,
+ * `impactAcross` and `queryAcross`. The `greplost` CLI gets three exports it
+ * looks for by name after one lazy import: `registerWorkspaceHooks`, which
+ * hands `update`, `verify`, `impact` and `query` first refusal before their
+ * ordinary single-repo path; `initWorkspace`, which `init --workspace` calls
+ * directly; and `findWorkspaceRoot`, which `init` uses to refuse a plain run at
+ * a workspace root.
  *
  * The hooks decline unless the root the command resolved *is* a workspace root.
  * That keeps tech spec 4.4's promise in both directions: run from the workspace
@@ -22,7 +24,8 @@ import { stableStringify } from "@greplost/core/schema";
 
 import { findWorkspaceRoot } from "./config.ts";
 import { buildWorkspace, verifyWorkspace } from "./build.ts";
-import { impactAcross } from "./impact.ts";
+import { impactAcross, readWorkspaceRepos, resolveWorkspaceTarget } from "./impact.ts";
+import { queryAcross } from "./query.ts";
 
 export {
   ID_SEPARATOR,
@@ -45,14 +48,17 @@ export type { RepoSummary, WorkspaceRender } from "./render.ts";
 export { buildWorkspace, renderArtifacts, verifyWorkspace } from "./build.ts";
 export type { BuildWorkspaceOptions, WorkspaceBuild } from "./build.ts";
 
-export { impactAcross, readWorkspaceRepos, workspacePairs } from "./impact.ts";
+export { impactAcross, readWorkspaceRepos, resolveWorkspaceTarget, workspacePairs } from "./impact.ts";
 export type { ImpactedFile } from "./impact.ts";
+
+export { queryAcross } from "./query.ts";
+export type { WorkspaceQueryFile, WorkspaceQueryMatch, WorkspaceQueryResult } from "./query.ts";
 
 // ---------------------------------------------------------------------------
 // CLI seam
 // ---------------------------------------------------------------------------
 
-export type WorkspaceHookName = "update" | "verify" | "impact";
+export type WorkspaceHookName = "update" | "verify" | "impact" | "query";
 
 /**
  * What a hook is handed. A structural subset of the CLI's `CommandContext`:
@@ -69,6 +75,16 @@ export interface WorkspaceCommandContext {
     mode?: "incremental" | "full";
     diff?: boolean;
     quiet?: boolean;
+    /**
+     * `update --semantic`. Not a flag the CLI parses today (the semantic layer
+     * is leaf 1.6's), but the workspace answer to it is decided: refuse, rather
+     * than accept it and refresh nothing.
+     */
+    semantic?: boolean;
+    /** `init --workspace`; read by `initWorkspace`, not by a hook. */
+    workspace?: boolean;
+    /** `init --no-hooks` sets this to `false`. */
+    hooks?: boolean;
   };
 }
 
@@ -95,11 +111,48 @@ export interface WorkspaceImpactResult {
   files: Array<{ path: string; depth: number }>;
 }
 
-/** Called by the CLI with its hook setter. Registers the three workspace-aware commands. */
+/** Called by the CLI with its hook setter. Registers the workspace-aware commands. */
 export function registerWorkspaceHooks(set: SetWorkspaceHook): void {
   set("update", updateHook);
   set("verify", verifyHook);
   set("impact", impactHook);
+  set("query", queryHook);
+}
+
+/**
+ * `greplost init --workspace` (tech spec 9).
+ *
+ * Called directly by the CLI's `init`, not through a hook: `init` is the one
+ * command where the workspace layer must run *because the user asked for it*,
+ * not because of where they are standing. Every member repo gets its own map,
+ * its `config.json` and its `.gitignore`, and its git hooks unless `--no-hooks`
+ * said otherwise — which is exactly what `greplost init` does per repo, done
+ * once for all of them.
+ */
+export async function initWorkspace(
+  root: string,
+  opts: { hooks?: boolean; json?: boolean } = {},
+): Promise<number> {
+  const build = await buildWorkspace(root, { mode: "full", hooks: opts.hooks !== false });
+  const result: WorkspaceUpdateResult = {
+    name: build.name,
+    repos: build.repos,
+    cross: build.cross.length,
+    written: build.written,
+  };
+
+  if (opts.json === true) {
+    printJson(result);
+    return 0;
+  }
+  console.log(
+    `greplost: initialised workspace "${build.name}" ` +
+      `(${count(build.repos.length, "repo")}, ${count(build.cross.length, "cross-repo import")})`,
+  );
+  for (const repo of build.repos) {
+    console.log(`  ${repo.dir}  ${repo.name}  ${count(repo.files, "file")}`);
+  }
+  return 0;
 }
 
 /**
@@ -118,6 +171,17 @@ function workspaceRootFor(ctx: WorkspaceCommandContext): string | null {
 const updateHook: WorkspaceHook = async (ctx) => {
   const root = workspaceRootFor(ctx);
   if (root === null) return undefined;
+
+  // The semantic layer is per repo: it holds a summary cache under each repo's
+  // `.greplost/cache/`, and there is no workspace-level thing to refresh.
+  // Accepting the flag here and refreshing nothing is the failure mode worth
+  // ruling out, so it is refused rather than ignored.
+  // Exit 2, not a thrown error: the command line was wrong and nothing ran,
+  // which is exactly what the CLI's usage code means.
+  if (ctx.options.semantic === true) {
+    console.error("greplost: --semantic is not supported at a workspace root; run greplost refresh inside each repo");
+    return 2;
+  }
 
   const build = await buildWorkspace(root, ctx.options.mode === undefined ? {} : { mode: ctx.options.mode });
   const result: WorkspaceUpdateResult = {
@@ -179,9 +243,14 @@ const impactHook: WorkspaceHook = async (ctx) => {
   const root = workspaceRootFor(ctx);
   if (root === null) return undefined;
 
-  const target = ctx.operands[0];
-  if (target === undefined) return undefined;
+  const argument = ctx.operands[0];
+  if (argument === undefined) return undefined;
 
+  // Report the canonical id, not the argument as typed: an agent may well have
+  // passed the absolute path it just read, and echoing that back would put a
+  // machine-specific path in a `--json` answer. The single-repo command
+  // normalises its `path` field the same way.
+  const target = resolveWorkspaceTarget(root, argument, readWorkspaceRepos(root)) ?? argument;
   const reached = impactAcross(root, target);
   const depth = ctx.options.depth;
   const shown = depth === undefined ? reached : reached.filter((file) => file.depth <= depth);
@@ -206,6 +275,60 @@ const impactHook: WorkspaceHook = async (ctx) => {
   console.log("");
   for (const line of table(["DEPTH", "FILE"], result.files.map((file) => [String(file.depth), file.path]))) {
     console.log(line);
+  }
+  return 0;
+};
+
+const queryHook: WorkspaceHook = async (ctx) => {
+  const root = workspaceRootFor(ctx);
+  if (root === null) return undefined;
+
+  const needle = ctx.operands[0];
+  if (needle === undefined) return undefined;
+
+  const result = await queryAcross(root, needle);
+  const empty = result.file === undefined && result.matches.length === 0;
+
+  if (ctx.json) {
+    printJson(result);
+    return empty ? 1 : 0;
+  }
+  if (empty) {
+    console.error(`greplost: no match for "${needle}" in this workspace`);
+    return 1;
+  }
+
+  if (result.file !== undefined) {
+    const file = result.file;
+    console.log(file.path);
+    for (const line of fields([
+      ["package", file.package],
+      ["card", file.card],
+      ["loc", String(file.loc)],
+      ["fan-in", String(file.fanIn)],
+      ["fan-out", String(file.fanOut)],
+      ["blast", String(file.blast)],
+      ["exports", summarise(file.exports, 8)],
+      ["imports", summarise(file.imports)],
+      ["importers", summarise(file.importers)],
+    ])) {
+      console.log(line);
+    }
+  }
+
+  if (result.matches.length > 0) {
+    if (result.file !== undefined) console.log("");
+    for (const line of table(
+      ["NAME", "KIND", "LOCATION", "PACKAGE"],
+      result.matches.map((match) => [
+        match.name,
+        match.kind,
+        `${match.file}:${match.span[0]}-${match.span[1]}`,
+        match.package,
+      ]),
+    )) {
+      console.log(line);
+    }
   }
   return 0;
 };
@@ -240,4 +363,17 @@ function table(headers: readonly string[] | undefined, rows: readonly string[][]
 
 function count(value: number, noun: string): string {
   return `${value} ${noun}${value === 1 ? "" : "s"}`;
+}
+
+/** `key: value` lines, keys padded into one column. */
+function fields(rows: ReadonlyArray<readonly [string, string]>): string[] {
+  const width = rows.reduce((max, [key]) => Math.max(max, key.length), 0);
+  return rows.map(([key, value]) => `  ${`${key}:`.padEnd(width + 1)} ${value}`.trimEnd());
+}
+
+/** A short list, with a count when it was cut. `limit` 0 means no limit. */
+function summarise(values: readonly string[], limit = 5): string {
+  if (values.length === 0) return "none";
+  if (limit === 0 || values.length <= limit) return values.join(", ");
+  return `${values.slice(0, limit).join(", ")} … and ${values.length - limit} more`;
 }

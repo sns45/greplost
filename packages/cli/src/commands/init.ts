@@ -14,10 +14,21 @@ import { init } from "@greplost/sync";
 
 import type { CommandContext } from "../args.ts";
 import { printError, printJson, printLine } from "../output.ts";
-import { WORKSPACE_UNAVAILABLE, loadWorkspaceInit } from "./workspace.ts";
+import { WORKSPACE_UNAVAILABLE, isWorkspaceRoot, loadWorkspaceInit } from "./workspace.ts";
 
 export async function run(ctx: CommandContext): Promise<number> {
+  const workspace = isWorkspaceRoot(ctx.root);
+
+  // `--workspace` is the one place the workspace layer runs because the user
+  // asked for it rather than because of where they are standing, so both halves
+  // of the mismatch are refused: the flag without a workspace file, and a
+  // workspace file without the flag. The second matters most: a plain `init`
+  // here would write a repo map into the directory that owns the workspace's
+  // own `.greplost/graph/`, and the two cannot share it.
   if (ctx.options.workspace === true) {
+    if (!workspace) {
+      throw new Error("--workspace needs a greplost.workspace.json in the root; there is none here");
+    }
     const initWorkspace = await loadWorkspaceInit();
     if (initWorkspace === undefined) {
       printError(WORKSPACE_UNAVAILABLE);
@@ -27,6 +38,9 @@ export async function run(ctx: CommandContext): Promise<number> {
       ...(ctx.options.hooks === false ? { hooks: false } : {}),
       ...(ctx.json ? { json: true } : {}),
     });
+  }
+  if (workspace) {
+    throw new Error("this is a greplost workspace root; run `greplost init --workspace`");
   }
 
   const result = await init(ctx.root, {

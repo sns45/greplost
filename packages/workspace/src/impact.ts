@@ -13,7 +13,11 @@
  * directory is expanded to that directory's files here.
  */
 
+import { realpathSync } from "node:fs";
+import path from "node:path";
+
 import { expandDirectoryTargets, impactOf } from "@greplost/core/graph";
+import { compareStrings } from "@greplost/core/schema";
 
 import { loadWorkspace, repoDirId, splitWorkspaceId, workspaceId } from "./config.ts";
 import type { RepoView } from "./cross.ts";
@@ -35,21 +39,102 @@ export interface ImpactedFile {
  */
 export function impactAcross(root: string, target: string, depth?: number): ImpactedFile[] {
   const repos = readWorkspaceRepos(root);
-  const split = splitWorkspaceId(target);
-  if (split === null) {
-    throw new Error(`greplost: "${target}" is not a workspace id; use <repo>::<file>, e.g. ${exampleId(repos)}`);
-  }
-
-  const repo = repos.find((candidate) => candidate.dir === split.repo);
-  if (repo === undefined) {
-    throw new Error(`greplost: "${split.repo}" is not a repo in this workspace`);
-  }
-  if (!repo.fileSet.has(split.local)) {
+  const id = resolveWorkspaceTarget(root, target, repos);
+  if (id === undefined) {
+    const split = splitWorkspaceId(target);
+    if (split !== null && !repos.some((candidate) => candidate.dir === split.repo)) {
+      throw new Error(`greplost: "${split.repo}" is not a repo in this workspace`);
+    }
+    if (split === null) {
+      throw new Error(`greplost: "${target}" is not a workspace id; use <repo>::<file>, e.g. ${exampleId(repos)}`);
+    }
     throw new Error(`greplost: ${target} is not in the map; run \`greplost update\` or check the path`);
   }
 
-  const reached = impactOf(workspacePairs(repos), target).map((file) => ({ id: file.path, depth: file.depth }));
+  const reached = impactOf(workspacePairs(repos), id).map((file) => ({ id: file.path, depth: file.depth }));
   return depth === undefined ? reached : reached.filter((file) => file.depth <= depth);
+}
+
+/**
+ * A command-line argument as a workspace id, or `undefined`.
+ *
+ * Three spellings all mean the same file, and all three arrive in practice: the
+ * workspace id `repo-a::src/index.ts`, the path the workspace sees
+ * (`repo-a/src/index.ts`), and the path a shell or an editor produced — the
+ * absolute one, or one relative to wherever the command was run. An agent that
+ * has just read a file has its path, not its id, and refusing that is refusing
+ * the common case for no reason.
+ *
+ * Only an indexed file resolves. Nothing is guessed: an argument that names no
+ * file in any repo comes back `undefined` rather than a nearest match.
+ */
+export function resolveWorkspaceTarget(
+  root: string,
+  argument: string,
+  repos: readonly RepoView[],
+): string | undefined {
+  const split = splitWorkspaceId(argument);
+  if (split !== null) {
+    const repo = repos.find((candidate) => candidate.dir === split.repo);
+    return repo !== undefined && repo.fileSet.has(split.local) ? argument : undefined;
+  }
+
+  for (const relative of workspaceRelatives(root, argument)) {
+    for (const repo of repos) {
+      const prefix = `${repo.dir}/`;
+      if (!relative.startsWith(prefix)) continue;
+      const local = relative.slice(prefix.length);
+      if (repo.fileSet.has(local)) return workspaceId(repo.dir, local);
+    }
+  }
+  return undefined;
+}
+
+/**
+ * The workspace-relative spellings an argument could have, most likely first.
+ *
+ * Both ends are also tried through `realpath`, because the two sides reach us
+ * by different routes: `--root` is whatever the user typed, while
+ * `process.cwd()` is always fully resolved. On macOS that difference is not
+ * hypothetical — every path under `/var` and `/tmp` is a symlink into
+ * `/private`, so a workspace named one way and a cwd named the other would
+ * never line up without this.
+ */
+function workspaceRelatives(root: string, argument: string): string[] {
+  const posix = (value: string): string => value.split(path.sep).join("/").replace(/^\.\//, "").replace(/\/+$/, "");
+  const absolute = path.resolve(root);
+
+  const bases = unique([absolute, realPath(absolute)]);
+  const targets = path.isAbsolute(argument)
+    ? unique([path.resolve(argument), realPath(path.resolve(argument))])
+    : unique([
+        path.resolve(absolute, argument),
+        path.resolve(process.cwd(), argument),
+        realPath(path.resolve(process.cwd(), argument)),
+      ]);
+
+  const out = path.isAbsolute(argument) ? [] : [posix(argument)];
+  for (const base of bases) {
+    for (const target of targets) {
+      const relative = path.relative(base, target);
+      if (relative === "" || relative.startsWith("..") || path.isAbsolute(relative)) continue;
+      out.push(posix(relative));
+    }
+  }
+  return unique(out).filter((value) => value !== "");
+}
+
+/** `realpath`, or the path unchanged when it does not exist. */
+function realPath(candidate: string): string {
+  try {
+    return realpathSync(candidate);
+  } catch {
+    return candidate;
+  }
+}
+
+function unique(values: readonly string[]): string[] {
+  return values.filter((value, index, all) => all.indexOf(value) === index);
 }
 
 /** Every repo of the workspace at `root`, in sorted directory order. */
@@ -61,7 +146,7 @@ export function readWorkspaceRepos(root: string): RepoView[] {
     if (dir === null) continue;
     repos.push(readRepo(root, dir));
   }
-  return repos.sort((a, b) => (a.dir < b.dir ? -1 : a.dir > b.dir ? 1 : 0));
+  return repos.sort((a, b) => compareStrings(a.dir, b.dir));
 }
 
 /**

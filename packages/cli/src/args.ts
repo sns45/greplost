@@ -116,6 +116,9 @@ const COMMAND_USAGE: ReadonlyArray<readonly [CommandName, string, string]> = [
 ];
 
 const USAGE_FOOTER = `Every command accepts --root <dir> and --json.
+In a workspace (a directory holding greplost.workspace.json), update, verify,
+query and impact act on every listed repo when run from that root; init there
+needs --workspace; update --files is ignored and --semantic is refused.
 Exit codes: 0 success, 1 drift or not found, 2 usage error.`;
 
 /** Column width: the longest synopsis that is not itself an outlier. */
