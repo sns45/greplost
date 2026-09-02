@@ -102,8 +102,16 @@ describe("parser", () => {
     expect(parser.parse("const c = 1;\n", "ts").rootNode.hasError).toBe(false);
   });
 
+  test("extractFile dispatches go to the go extractor (leaf 1.8)", () => {
+    const record = extract("package main\n\nfunc main() {}\n", "go", "main.go");
+    expect(record.lang).toBe("go");
+    expect(record.decls.map((d) => d.name)).toEqual(["main"]);
+  });
+
   test("extractFile refuses a language with no extractor", () => {
-    expect(() => extract("package main\n", "go", "main.go")).toThrow(/greplost: no extractor for language "go"/);
+    expect(() => extract("x\n", "python" as Lang, "main.py")).toThrow(
+      /greplost: no extractor for language "python"/,
+    );
   });
 
   test("extractFile counts lines and copies the file identity", () => {

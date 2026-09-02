@@ -8,6 +8,7 @@
 import type { FileRecord, Lang } from "../schema.ts";
 import type { ParserHandle } from "../parser.ts";
 import { countLoc } from "../hash.ts";
+import { extractGo } from "./go.ts";
 import { extractTs } from "./ts.ts";
 
 export interface ExtractInput {
@@ -19,6 +20,7 @@ export interface ExtractInput {
   sha256: string;
 }
 
+export { extractGo } from "./go.ts";
 export { extractTs } from "./ts.ts";
 
 export function extractFile(input: ExtractInput, parser: ParserHandle): FileRecord {
@@ -35,6 +37,15 @@ export function extractFile(input: ExtractInput, parser: ParserHandle): FileReco
       } finally {
         // The record copies every string it needs, so the WASM tree can go now
         // instead of waiting for a finalizer: a whole-repo build holds one tree.
+        tree.delete();
+      }
+    }
+    case "go": {
+      const tree = parser.parse(source, lang);
+      try {
+        const parts = extractGo(path, lang, source, tree);
+        return { path, lang, sha256, loc: countLoc(source), ...parts };
+      } finally {
         tree.delete();
       }
     }

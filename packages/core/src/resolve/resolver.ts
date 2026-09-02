@@ -25,6 +25,7 @@
  */
 
 import { builtinModules } from "node:module";
+import { createGoResolver } from "./go.ts";
 import { loadTsconfigPaths } from "./tsconfig.ts";
 import type { TsPaths } from "./tsconfig.ts";
 import { compareStrings } from "../schema.ts";
@@ -85,6 +86,10 @@ export function createResolver(ctx: RepoContext): Resolver {
     if (!workspaceByName.has(pkg.name)) workspaceByName.set(pkg.name, pkg);
   }
   seedRootPackageName();
+
+  // Go import paths are module paths, not file paths: leaf 1.8's rules live in
+  // `resolve/go.ts` and share this context's indexed file set and reader.
+  const resolveGo = createGoResolver(ctx);
 
   /**
    * A repo whose root package.json has a name may import itself by that name
@@ -269,8 +274,7 @@ export function createResolver(ctx: RepoContext): Resolver {
   function resolveUncached(fromDir: string, specifier: string, lang: Lang): ResolvedTarget {
     if (specifier === "") return UNRESOLVED;
 
-    // Go import paths are module paths: leaf 1.8 adds the go.mod rules here.
-    if (lang === "go") return { type: "external", pkg: specifier };
+    if (lang === "go") return resolveGo(fromDir, specifier);
 
     // Rule 1: relative and root-absolute specifiers.
     if (/^\.\.?(\/|$)/.test(specifier)) {
