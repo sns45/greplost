@@ -390,9 +390,9 @@
       "fanIn": 1,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 339,
+      "loc": 345,
       "pkg": "@greplost/bench",
-      "sha256": "49767e4953e169a75cbd154a4a652b250daaeb58b1c1c048896c82875562b7fb",
+      "sha256": "15d4ed67104cfbc11b341e6b142d2f18afd867d1c314ebea435acda41cf0765c",
       "staleSummary": false
     },
     "bench/src/report-evals.ts": {
@@ -2405,7 +2405,7 @@
         "@greplost/sync"
       ],
       "files": 33,
-      "loc": 16171,
+      "loc": 16177,
       "path": "bench",
       "rdeps": []
     },

@@ -229,8 +229,8 @@
 - `function scaleNote(target: RunTarget | undefined, commits: number | null): string` L72-86
 - `function headToHeadCharts( rows: readonly MetricRow[], replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]` L89-145
 - `function stalenessCharts( x2: MetricRow | undefined, replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]` L185-260
-- `function freshnessNote( x2: MetricRow | undefined, curve: { categories: string[]; series: { name: string; values: (number | null)[] }[] }, ): string` L270-292
-- `function chartRef( caption: string, spec: ChartSpec, name: string, assetsRel: string, svg: string, kind: "line" | "bar" = "line", ): ChartRef` L330-339
+- `function freshnessNote( x2: MetricRow | undefined, curve: { categories: string[]; series: { name: string; values: (number | null)[] }[] }, ): string` L270-298
+- `function chartRef( caption: string, spec: ChartSpec, name: string, assetsRel: string, svg: string, kind: "line" | "bar" = "line", ): ChartRef` L336-345
 
 ## bench/src/report-evals.ts
 

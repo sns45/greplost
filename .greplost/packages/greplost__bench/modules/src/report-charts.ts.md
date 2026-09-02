@@ -20,8 +20,8 @@
 - `function headToHeadCharts( rows: readonly MetricRow[], replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]`  L89-145
 - `function walkLength(x2: MetricRow | undefined): number | null`  L148-162
 - `function stalenessCharts( x2: MetricRow | undefined, replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]`  L185-260
-- `function freshnessNote( x2: MetricRow | undefined, curve: { categories: string[]; series: { name: string; values: (number | null)[] }[] }, ): string`  L270-292
-- `function curveFrom( x2: MetricRow | undefined, prefix: string, ): { categories: string[]; series: { name: string; values: (number | null)[] }[] } | null`  L298-328
-- `function chartRef( caption: string, spec: ChartSpec, name: string, assetsRel: string, svg: string, kind: "line" | "bar" = "line", ): ChartRef`  L330-339
+- `function freshnessNote( x2: MetricRow | undefined, curve: { categories: string[]; series: { name: string; values: (number | null)[] }[] }, ): string`  L270-298
+- `function curveFrom( x2: MetricRow | undefined, prefix: string, ): { categories: string[]; series: { name: string; values: (number | null)[] }[] } | null`  L304-334
+- `function chartRef( caption: string, spec: ChartSpec, name: string, assetsRel: string, svg: string, kind: "line" | "bar" = "line", ): ChartRef`  L336-345
 
 **Calls:** `groupedBarChart` → [`bench/src/charts.ts#groupedBarChart`](charts.ts.md) (high), `lineChart` → [`bench/src/charts.ts#lineChart`](charts.ts.md) (high), `mermaidXy` → [`bench/src/charts.ts#mermaidXy`](charts.ts.md) (high), `chartRef` → [`bench/src/report-charts.ts#chartRef`](report-charts.ts.md) (high), `curveFrom` → [`bench/src/report-charts.ts#curveFrom`](report-charts.ts.md) (high), `freshnessNote` → [`bench/src/report-charts.ts#freshnessNote`](report-charts.ts.md) (high), `scaleNote` → [`bench/src/report-charts.ts#scaleNote`](report-charts.ts.md) (high), `stalenessCharts` → [`bench/src/report-charts.ts#stalenessCharts`](report-charts.ts.md) (high), `walkLength` → [`bench/src/report-charts.ts#walkLength`](report-charts.ts.md) (high), `firstNum` → [`bench/src/report-payload.ts#firstNum`](report-payload.ts.md) (high), `num` → [`bench/src/report-payload.ts#num`](report-payload.ts.md) (high), `replayF1` → [`bench/src/report-payload.ts#replayF1`](report-payload.ts.md) (high)
