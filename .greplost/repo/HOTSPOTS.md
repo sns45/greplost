@@ -6,7 +6,7 @@
 
 | File | Fan-in | Fan-out | Blast |
 |---|---|---|---|
-| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 76 | 0 | 97 |
+| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 77 | 0 | 101 |
 | [`packages/cli/src/args.ts`](../packages/greplost/modules/src/args.ts.md) | 14 | 1 | 14 |
 | [`packages/cli/src/output.ts`](../packages/greplost/modules/src/output.ts.md) | 11 | 1 | 13 |
 | [`packages/core/src/graph/index.ts`](../packages/greplost__core/modules/src/graph/index.ts.md) | 10 | 5 | 41 |
@@ -24,14 +24,14 @@
 | [`packages/workspace/src/cross.ts`](../packages/greplost__workspace/modules/src/cross.ts.md) | 5 | 5 | 13 |
 | [`bench/src/corpus.ts`](../packages/greplost__bench/modules/src/corpus.ts.md) | 4 | 1 | 5 |
 | [`bench/src/machine.ts`](../packages/greplost__bench/modules/src/machine.ts.md) | 4 | 1 | 4 |
-| [`bench/src/report-payload.ts`](../packages/greplost__bench/modules/src/report-payload.ts.md) | 4 | 1 | 4 |
+| [`bench/src/report-payload.ts`](../packages/greplost__bench/modules/src/report-payload.ts.md) | 4 | 2 | 4 |
 | [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 4 | 0 | 35 |
 
 ## Largest blast radius
 
 | File | Fan-in | Fan-out | Blast |
 |---|---|---|---|
-| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 76 | 0 | 97 |
+| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 77 | 0 | 101 |
 | [`packages/core/src/resolve/go.ts`](../packages/greplost__core/modules/src/resolve/go.ts.md) | 2 | 1 | 46 |
 | [`packages/core/src/graph/tarjan.ts`](../packages/greplost__core/modules/src/graph/tarjan.ts.md) | 4 | 1 | 45 |
 | [`packages/core/src/resolve/tsconfig.ts`](../packages/greplost__core/modules/src/resolve/tsconfig.ts.md) | 2 | 0 | 45 |

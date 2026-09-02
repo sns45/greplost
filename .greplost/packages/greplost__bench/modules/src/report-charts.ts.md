@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/bench` ([map](../../MAP.md))
 
-**Exports:** `chartRef( caption: string, spec: ChartSpec, name: string, assetsRel: string, svg: string, kind: "line" | "bar" = "line", ): ChartRef`, `headToHeadCharts( rows: readonly MetricRow[], replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]`, `scaleNote(target: RunTarget | undefined, commits: number | null): string`, `stalenessCharts( x2: MetricRow | undefined, replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]`
+**Exports:** `chartRef( caption: string, spec: ChartSpec, name: string, assetsRel: string, svg: string, kind: "line" | "bar" = "line", ): ChartRef`, `freshnessNote( x2: MetricRow | undefined, curve: { categories: string[]; series: { name: string; values: (number | null)[] }[] }, ): string`, `headToHeadCharts( rows: readonly MetricRow[], replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]`, `scaleNote(target: RunTarget | undefined, commits: number | null): string`, `stalenessCharts( x2: MetricRow | undefined, replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]`
 
 **Imports:** [`./charts.ts`](charts.ts.md) (ChartSpec, groupedBarChart, lineChart, mermaidXy), [`./results-md.ts`](results-md.ts.md) (ChartRef, MetricRow, RunTarget), [`./report-payload.ts`](report-payload.ts.md) (Payload, firstNum, num, replayF1)
 
@@ -15,12 +15,13 @@
 **Blast radius:** 2 files (`greplost impact bench/src/report-charts.ts`)
 
 **Key symbols:**
-- `const ARMS: readonly { prefix: string; slug: string; title: string; caption: string; note: string }[] = [ { prefix: "syncF1", slug: "x2-staleness", title: "X2 staleness under each tool's own document…`  L23-62
-- `function scaleNote(target: RunTarget | undefined, commits: number | null): string`  L70-84
-- `function headToHeadCharts( rows: readonly MetricRow[], replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]`  L87-143
-- `function walkLength(x2: MetricRow | undefined): number | null`  L146-160
-- `function stalenessCharts( x2: MetricRow | undefined, replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]`  L183-254
-- `function curveFrom( x2: MetricRow | undefined, prefix: string, ): { categories: string[]; series: { name: string; values: (number | null)[] }[] } | null`  L260-290
-- `function chartRef( caption: string, spec: ChartSpec, name: string, assetsRel: string, svg: string, kind: "line" | "bar" = "line", ): ChartRef`  L292-301
+- `const ARMS: readonly { prefix: string; slug: string; title: string; caption: string; note: string }[] = [ { prefix: "syncF1", slug: "x2-staleness", title: "Freshness under each tool's own sync mechan…`  L23-64
+- `function scaleNote(target: RunTarget | undefined, commits: number | null): string`  L72-86
+- `function headToHeadCharts( rows: readonly MetricRow[], replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]`  L89-145
+- `function walkLength(x2: MetricRow | undefined): number | null`  L148-162
+- `function stalenessCharts( x2: MetricRow | undefined, replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]`  L185-260
+- `function freshnessNote( x2: MetricRow | undefined, curve: { categories: string[]; series: { name: string; values: (number | null)[] }[] }, ): string`  L270-292
+- `function curveFrom( x2: MetricRow | undefined, prefix: string, ): { categories: string[]; series: { name: string; values: (number | null)[] }[] } | null`  L298-328
+- `function chartRef( caption: string, spec: ChartSpec, name: string, assetsRel: string, svg: string, kind: "line" | "bar" = "line", ): ChartRef`  L330-339
 
-**Calls:** `groupedBarChart` → [`bench/src/charts.ts#groupedBarChart`](charts.ts.md) (high), `lineChart` → [`bench/src/charts.ts#lineChart`](charts.ts.md) (high), `mermaidXy` → [`bench/src/charts.ts#mermaidXy`](charts.ts.md) (high), `chartRef` → [`bench/src/report-charts.ts#chartRef`](report-charts.ts.md) (high), `curveFrom` → [`bench/src/report-charts.ts#curveFrom`](report-charts.ts.md) (high), `scaleNote` → [`bench/src/report-charts.ts#scaleNote`](report-charts.ts.md) (high), `stalenessCharts` → [`bench/src/report-charts.ts#stalenessCharts`](report-charts.ts.md) (high), `walkLength` → [`bench/src/report-charts.ts#walkLength`](report-charts.ts.md) (high), `firstNum` → [`bench/src/report-payload.ts#firstNum`](report-payload.ts.md) (high), `num` → [`bench/src/report-payload.ts#num`](report-payload.ts.md) (high), `replayF1` → [`bench/src/report-payload.ts#replayF1`](report-payload.ts.md) (high)
+**Calls:** `groupedBarChart` → [`bench/src/charts.ts#groupedBarChart`](charts.ts.md) (high), `lineChart` → [`bench/src/charts.ts#lineChart`](charts.ts.md) (high), `mermaidXy` → [`bench/src/charts.ts#mermaidXy`](charts.ts.md) (high), `chartRef` → [`bench/src/report-charts.ts#chartRef`](report-charts.ts.md) (high), `curveFrom` → [`bench/src/report-charts.ts#curveFrom`](report-charts.ts.md) (high), `freshnessNote` → [`bench/src/report-charts.ts#freshnessNote`](report-charts.ts.md) (high), `scaleNote` → [`bench/src/report-charts.ts#scaleNote`](report-charts.ts.md) (high), `stalenessCharts` → [`bench/src/report-charts.ts#stalenessCharts`](report-charts.ts.md) (high), `walkLength` → [`bench/src/report-charts.ts#walkLength`](report-charts.ts.md) (high), `firstNum` → [`bench/src/report-payload.ts#firstNum`](report-payload.ts.md) (high), `num` → [`bench/src/report-payload.ts#num`](report-payload.ts.md) (high), `replayF1` → [`bench/src/report-payload.ts#replayF1`](report-payload.ts.md) (high)

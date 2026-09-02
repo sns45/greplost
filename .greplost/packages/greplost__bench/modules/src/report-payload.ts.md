@@ -6,40 +6,43 @@
 
 **Package:** `@greplost/bench` ([map](../../MAP.md))
 
-**Exports:** `ConditionStats (interface)`, `Payload (interface)`, `Scenario (interface)`, `agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>`, `arr(value: unknown): unknown[]`, `assumptions (let)`, `competitors(): CompetitorEntry[]`, `firstMachine(payloads: readonly (Payload | null)[]): Record<string, unknown> | null`, `firstNum(root: unknown, paths: readonly string[]): number | null`, `firstStr(root: unknown, paths: readonly string[]): string | null`, `fmt(value: number | null): string`, `mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel["corpus"]`, `num(value: unknown): number | null`, `provenanceOf(payload: Payload | null): string | null`, `rec(value: unknown): Record<string, unknown> | null`, `replayF1(payload: Payload): number | null`, `replayF2(payload: Payload): number | null`, `resetAssumptions(): void`, `scenariosOf(payload: Payload): Scenario[]`, `str(value: unknown): string | null`, `targetOf(payload: Payload | null): RunTarget | undefined`, `versionRows(agent: Payload | null, headtohead: Payload | null): { name: string; value: string }[]`
+**Exports:** `ConditionStats (interface)`, `CorpusEntry (interface)`, `Payload (interface)`, `Scenario (interface)`, `agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>`, `arr(value: unknown): unknown[]`, `assumptions (let)`, `competitors(): CompetitorEntry[]`, `corpusIndex(): Map<string, CorpusEntry>`, `firstMachine(payloads: readonly (Payload | null)[]): Record<string, unknown> | null`, `firstNum(root: unknown, paths: readonly string[]): number | null`, `firstStr(root: unknown, paths: readonly string[]): string | null`, `fmt(value: number | null): string`, `mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel["corpus"]`, `num(value: unknown): number | null`, `provenanceOf(payload: Payload | null): string | null`, `rec(value: unknown): Record<string, unknown> | null`, `replayF1(payload: Payload): number | null`, `replayF2(payload: Payload): number | null`, `resetAssumptions(): void`, `runFor(repo: string | null, files: number | null): RunTarget | undefined`, `scenariosOf(payload: Payload): Scenario[]`, `str(value: unknown): string | null`, `targetOf(payload: Payload | null): RunTarget | undefined`, `versionRows(agent: Payload | null, headtohead: Payload | null): { name: string; value: string }[]`
 
-**Imports:** `node:fs` (existsSync, readFileSync), `node:path` (default), [`./results-md.ts`](results-md.ts.md) (ReportModel, RunTarget, provenanceLine)
+**Imports:** `node:fs` (existsSync, readFileSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (compareStrings), [`./results-md.ts`](results-md.ts.md) (ReportModel, RunTarget, provenanceLine)
 
 **Imported by:** [`bench/src/report-charts.ts`](report-charts.ts.md), [`bench/src/report-evals.ts`](report-evals.ts.md), [`bench/src/report-sections.ts`](report-sections.ts.md), [`bench/src/report.ts`](report.ts.md)
 
 **Blast radius:** 4 files (`greplost impact bench/src/report-payload.ts`)
 
 **Key symbols:**
-- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L22-22
-- `interface Payload`  L25-28
-- `function rec(value: unknown): Record<string, unknown> | null`  L31-33
-- `function arr(value: unknown): unknown[]`  L35-37
-- `function num(value: unknown): number | null`  L39-41
-- `function str(value: unknown): string | null`  L43-45
-- `function at(root: unknown, dotted: string): unknown`  L48-56
-- `let assumptions: string[] = []`  L64-64
-- `function resetAssumptions(): void`  L67-69
-- `function firstNum(root: unknown, paths: readonly string[]): number | null`  L78-94
-- `function firstStr(root: unknown, paths: readonly string[]): string | null`  L96-102
-- `function deepFind(root: unknown, key: string, maxDepth: number): unknown`  L105-119
-- `function fmt(value: number | null): string`  L122-128
-- `function provenanceOf(payload: Payload | null): string | null`  L141-147
-- `function firstMachine(payloads: readonly (Payload | null)[]): Record<string, unknown> | null`  L149-156
-- `function mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel["corpus"]`  L158-175
-- `function versionRows(agent: Payload | null, headtohead: Payload | null): { name: string; value: string }[]`  L182-198
-- `interface CompetitorEntry`  L200-205
-- `function competitors(): CompetitorEntry[]`  L208-227
-- `function targetOf(payload: Payload | null): RunTarget | undefined`  L234-249
-- `function replayF1(payload: Payload): number | null`  L252-259
-- `function replayF2(payload: Payload): number | null`  L261-268
-- `interface Scenario`  L271-282
-- `function scenariosOf(payload: Payload): Scenario[]`  L297-364
-- `interface ConditionStats`  L367-373
-- `function agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>`  L376-413
+- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L24-24
+- `interface Payload`  L27-30
+- `function rec(value: unknown): Record<string, unknown> | null`  L33-35
+- `function arr(value: unknown): unknown[]`  L37-39
+- `function num(value: unknown): number | null`  L41-43
+- `function str(value: unknown): string | null`  L45-47
+- `function at(root: unknown, dotted: string): unknown`  L50-58
+- `let assumptions: string[] = []`  L66-66
+- `function resetAssumptions(): void`  L69-71
+- `function firstNum(root: unknown, paths: readonly string[]): number | null`  L80-96
+- `function firstStr(root: unknown, paths: readonly string[]): string | null`  L98-104
+- `function deepFind(root: unknown, key: string, maxDepth: number): unknown`  L107-121
+- `function fmt(value: number | null): string`  L124-130
+- `function provenanceOf(payload: Payload | null): string | null`  L143-149
+- `function firstMachine(payloads: readonly (Payload | null)[]): Record<string, unknown> | null`  L151-158
+- `function mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel["corpus"]`  L169-191
+- `function versionRows(agent: Payload | null, headtohead: Payload | null): { name: string; value: string }[]`  L198-214
+- `interface CompetitorEntry`  L216-221
+- `function competitors(): CompetitorEntry[]`  L224-243
+- `interface CorpusEntry`  L245-250
+- `function corpusIndex(): Map<string, CorpusEntry>`  L260-281
+- `function runFor(repo: string | null, files: number | null): RunTarget | undefined`  L290-297
+- `function targetOf(payload: Payload | null): RunTarget | undefined`  L304-319
+- `function replayF1(payload: Payload): number | null`  L322-329
+- `function replayF2(payload: Payload): number | null`  L331-338
+- `interface Scenario`  L341-352
+- `function scenariosOf(payload: Payload): Scenario[]`  L367-434
+- `interface ConditionStats`  L437-443
+- `function agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>`  L446-483
 
-**Calls:** `arr` → [`bench/src/report-payload.ts#arr`](report-payload.ts.md) (high), `at` → [`bench/src/report-payload.ts#at`](report-payload.ts.md) (high), `competitors` → [`bench/src/report-payload.ts#competitors`](report-payload.ts.md) (high), `deepFind` → [`bench/src/report-payload.ts#deepFind`](report-payload.ts.md) (high), `firstMachine` → [`bench/src/report-payload.ts#firstMachine`](report-payload.ts.md) (high), `firstNum` → [`bench/src/report-payload.ts#firstNum`](report-payload.ts.md) (high), `firstStr` → [`bench/src/report-payload.ts#firstStr`](report-payload.ts.md) (high), `num` → [`bench/src/report-payload.ts#num`](report-payload.ts.md) (high), `rec` → [`bench/src/report-payload.ts#rec`](report-payload.ts.md) (high), `str` → [`bench/src/report-payload.ts#str`](report-payload.ts.md) (high), `targetOf` → [`bench/src/report-payload.ts#targetOf`](report-payload.ts.md) (high), `provenanceLine` → [`bench/src/results-md.ts#provenanceLine`](results-md.ts.md) (high)
+**Calls:** `arr` → [`bench/src/report-payload.ts#arr`](report-payload.ts.md) (high), `at` → [`bench/src/report-payload.ts#at`](report-payload.ts.md) (high), `competitors` → [`bench/src/report-payload.ts#competitors`](report-payload.ts.md) (high), `corpusIndex` → [`bench/src/report-payload.ts#corpusIndex`](report-payload.ts.md) (high), `deepFind` → [`bench/src/report-payload.ts#deepFind`](report-payload.ts.md) (high), `firstMachine` → [`bench/src/report-payload.ts#firstMachine`](report-payload.ts.md) (high), `firstNum` → [`bench/src/report-payload.ts#firstNum`](report-payload.ts.md) (high), `firstStr` → [`bench/src/report-payload.ts#firstStr`](report-payload.ts.md) (high), `num` → [`bench/src/report-payload.ts#num`](report-payload.ts.md) (high), `rec` → [`bench/src/report-payload.ts#rec`](report-payload.ts.md) (high), `str` → [`bench/src/report-payload.ts#str`](report-payload.ts.md) (high), `targetOf` → [`bench/src/report-payload.ts#targetOf`](report-payload.ts.md) (high), `provenanceLine` → [`bench/src/results-md.ts#provenanceLine`](results-md.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high)

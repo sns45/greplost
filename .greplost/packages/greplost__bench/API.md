@@ -123,31 +123,39 @@
 - `const METRIC_PLAN: readonly MetricDef[] = [ { id: "X1", title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports", higherIsBetter: true, margin: 0.1, unit: "ca…` L140-155
 - `function verdictFor(opts: { ours: number | null; theirs: number | null; higherIsBetter: boolean; margin: number; }): Verdict` L169-181
 - `function scaleTitles(metrics: Record<XId, MetricRow>, commits: number): void` L207-221
-- `function emptyMetrics(reason: string): Record<XId, MetricRow>` L224-232
-- `function competitorSpecs(): Map<string, CompetitorSpec>` L337-344
-- `function findBinary(name: string): string | null` L451-457
-- `function sandboxEnv(): NodeJS.ProcessEnv` L500-513
-- `function writeShim(name: string, real: string): string` L525-547
-- `function writeGreplostShim(): string` L557-564
-- `function readHookLog(file: string): HookCall[]` L573-584
-- `function shimTime(calls: readonly HookCall[], tool: string): { ms: number; runs: number; pending: number }` L591-608
-- `function shimRuns(calls: readonly HookCall[], tool: string): number[]` L616-631
-- `function byteDelta(a: Map<string, string>, b: Map<string, string>): { bytes: number; files: number }` L724-736
-- `function byteDistance(a: string, b: string): number` L753-770
-- `function describeDifference(a: Map<string, string>, b: Map<string, string>): string` L783-802
-- `function describeLineChange(a: Map<string, string>, b: Map<string, string>, limit = 4): string` L843-861
-- `function lineDelta(a: Map<string, string>, b: Map<string, string>): { lines: number; files: number; total: number }` L864-878
-- `function diffLineCount(a: readonly string[], b: readonly string[]): number` L888-915
-- `function readGreplostArtifact(dir: string): { imports: Edge[]; calls: Edge[] } | null` L964-982
-- `async function run(args: string[]): Promise<number>` L988-1013
-- `type Arm = "documented-sync" | "refresh-every-commit"` L1399-1399
-- `const ARM_PREFIX: Record<Arm, string> = { "documented-sync": "syncF1", "refresh-every-commit": "refreshF1", }` L1402-1405
-- `const ARM_DESCRIPTION: Record<Arm, string> = { "documented-sync": "each tool's own sync mechanism was installed exactly as its README describes and then left alone: the " + "harness commits, a…` L1408-1415
-- `function x3GreplostVerdict( ourMinutes: number | null, graphifyMinutes: number | null, ): { verdict: MetricCell["verdict"]; reason: string }` L2135-2158
-- `function planImportEdit(snapshot: Snapshot): ImportEdit | null` L2381-2383
-- `interface ImportEdit` L2386-2390
-- `function planImportEdits(snapshot: Snapshot, limit: number): ImportEdit[]` L2401-2434
-- `function median(values: readonly number[]): number | null` L2572-2578
+- `function fillMissingReasons(metrics: Record<XId, MetricRow>): void` L232-243
+- `function emptyMetrics(reason: string): Record<XId, MetricRow>` L246-254
+- `function competitorSpecs(): Map<string, CompetitorSpec>` L359-366
+- `function findBinary(name: string): string | null` L473-479
+- `function sandboxEnv(): NodeJS.ProcessEnv` L522-535
+- `function writeShim(name: string, real: string): string` L547-569
+- `function writeGreplostShim(): string` L579-586
+- `function readHookLog(file: string): HookCall[]` L595-606
+- `function shimTime(calls: readonly HookCall[], tool: string): { ms: number; runs: number; pending: number }` L613-630
+- `function shimRuns(calls: readonly HookCall[], tool: string): number[]` L638-653
+- `function byteDelta(a: Map<string, string>, b: Map<string, string>): { bytes: number; files: number }` L746-758
+- `function byteDistance(a: string, b: string): number` L775-792
+- `function describeDifference(a: Map<string, string>, b: Map<string, string>): string` L805-824
+- `function describeLineChange(a: Map<string, string>, b: Map<string, string>, limit = 4): string` L865-883
+- `function lineDelta(a: Map<string, string>, b: Map<string, string>): { lines: number; files: number; total: number }` L886-900
+- `function diffLineCount(a: readonly string[], b: readonly string[]): number` L910-937
+- `function readGreplostArtifact(dir: string): { imports: Edge[]; calls: Edge[] } | null` L986-1004
+- `async function run(args: string[]): Promise<number>` L1010-1035
+- `type Arm = "documented-sync" | "refresh-every-commit"` L1443-1443
+- `const ARM_PREFIX: Record<Arm, string> = { "documented-sync": "syncF1", "refresh-every-commit": "refreshF1", }` L1446-1449
+- `const ARM_DESCRIPTION: Record<Arm, string> = { "documented-sync": "each tool's own sync mechanism was installed exactly as its README describes and then left alone: the " + "harness commits, a…` L1452-1459
+- `interface SyncEvidence` L1501-1517
+- `function syncEvidence(mechanisms: ReadonlyMap<string, SyncMechanism>): SyncEvidence[]` L1520-1539
+- `interface Freshness` L2291-2295
+- `function signed(value: number): string` L2298-2301
+- `function decayVerdict(ourDecay: number | null, theirDecay: number | null): Verdict` L2314-2320
+- `function describeFreshness(tool: string, freshness: Freshness): string` L2323-2338
+- `function coverageVersusDecay( ours: Freshness, ...others: readonly Freshness[] ): string | null` L2353-2374
+- `function x3GreplostVerdict( ourMinutes: number | null, graphifyMinutes: number | null, ): { verdict: MetricCell["verdict"]; reason: string }` L2386-2409
+- `function planImportEdit(snapshot: Snapshot): ImportEdit | null` L2632-2634
+- `interface ImportEdit` L2637-2641
+- `function planImportEdits(snapshot: Snapshot, limit: number): ImportEdit[]` L2652-2685
+- `function median(values: readonly number[]): number | null` L2826-2832
 
 ## bench/src/machine.ts
 
@@ -218,56 +226,60 @@
 
 ## bench/src/report-charts.ts
 
-- `function scaleNote(target: RunTarget | undefined, commits: number | null): string` L70-84
-- `function headToHeadCharts( rows: readonly MetricRow[], replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]` L87-143
-- `function stalenessCharts( x2: MetricRow | undefined, replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]` L183-254
-- `function chartRef( caption: string, spec: ChartSpec, name: string, assetsRel: string, svg: string, kind: "line" | "bar" = "line", ): ChartRef` L292-301
+- `function scaleNote(target: RunTarget | undefined, commits: number | null): string` L72-86
+- `function headToHeadCharts( rows: readonly MetricRow[], replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]` L89-145
+- `function stalenessCharts( x2: MetricRow | undefined, replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]` L185-260
+- `function freshnessNote( x2: MetricRow | undefined, curve: { categories: string[]; series: { name: string; values: (number | null)[] }[] }, ): string` L270-292
+- `function chartRef( caption: string, spec: ChartSpec, name: string, assetsRel: string, svg: string, kind: "line" | "bar" = "line", ): ChartRef` L330-339
 
 ## bench/src/report-evals.ts
 
-- `function eval1Section(payload: Payload | null): EvalSection` L43-100
-- `function eval2Section(payload: Payload | null): EvalSection` L158-213
-- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection` L219-315
-- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection` L321-408
-- `function eval5Section(payload: Payload | null): EvalSection` L432-460
-- `function mapqualitySection(payload: Payload | null): EvalSection` L462-506
+- `function eval1Section(payload: Payload | null): EvalSection` L45-104
+- `function eval2Section(payload: Payload | null): EvalSection` L162-217
+- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection` L230-335
+- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection` L341-428
+- `function eval5Section(payload: Payload | null): EvalSection` L452-480
+- `function mapqualitySection(payload: Payload | null): EvalSection` L482-526
 
 ## bench/src/report-payload.ts
 
-- `interface Payload` L25-28
-- `function rec(value: unknown): Record<string, unknown> | null` L31-33
-- `function arr(value: unknown): unknown[]` L35-37
-- `function num(value: unknown): number | null` L39-41
-- `function str(value: unknown): string | null` L43-45
-- `let assumptions: string[] = []` L64-64
-- `function resetAssumptions(): void` L67-69
-- `function firstNum(root: unknown, paths: readonly string[]): number | null` L78-94
-- `function firstStr(root: unknown, paths: readonly string[]): string | null` L96-102
-- `function fmt(value: number | null): string` L122-128
-- `function provenanceOf(payload: Payload | null): string | null` L141-147
-- `function firstMachine(payloads: readonly (Payload | null)[]): Record<string, unknown> | null` L149-156
-- `function mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel["corpus"]` L158-175
-- `function versionRows(agent: Payload | null, headtohead: Payload | null): { name: string; value: string }[]` L182-198
-- `function competitors(): CompetitorEntry[]` L208-227
-- `function targetOf(payload: Payload | null): RunTarget | undefined` L234-249
-- `function replayF1(payload: Payload): number | null` L252-259
-- `function replayF2(payload: Payload): number | null` L261-268
-- `interface Scenario` L271-282
-- `function scenariosOf(payload: Payload): Scenario[]` L297-364
-- `interface ConditionStats` L367-373
-- `function agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>` L376-413
+- `interface Payload` L27-30
+- `function rec(value: unknown): Record<string, unknown> | null` L33-35
+- `function arr(value: unknown): unknown[]` L37-39
+- `function num(value: unknown): number | null` L41-43
+- `function str(value: unknown): string | null` L45-47
+- `let assumptions: string[] = []` L66-66
+- `function resetAssumptions(): void` L69-71
+- `function firstNum(root: unknown, paths: readonly string[]): number | null` L80-96
+- `function firstStr(root: unknown, paths: readonly string[]): string | null` L98-104
+- `function fmt(value: number | null): string` L124-130
+- `function provenanceOf(payload: Payload | null): string | null` L143-149
+- `function firstMachine(payloads: readonly (Payload | null)[]): Record<string, unknown> | null` L151-158
+- `function mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel["corpus"]` L169-191
+- `function versionRows(agent: Payload | null, headtohead: Payload | null): { name: string; value: string }[]` L198-214
+- `function competitors(): CompetitorEntry[]` L224-243
+- `interface CorpusEntry` L245-250
+- `function corpusIndex(): Map<string, CorpusEntry>` L260-281
+- `function runFor(repo: string | null, files: number | null): RunTarget | undefined` L290-297
+- `function targetOf(payload: Payload | null): RunTarget | undefined` L304-319
+- `function replayF1(payload: Payload): number | null` L322-329
+- `function replayF2(payload: Payload): number | null` L331-338
+- `interface Scenario` L341-352
+- `function scenariosOf(payload: Payload): Scenario[]` L367-434
+- `interface ConditionStats` L437-443
+- `function agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>` L446-483
 
 ## bench/src/report-sections.ts
 
-- `function singleTool( sections: ReportModel["sections"], structural: Payload | null, replay: Payload | null, perf: Payload | null, agent: Payload | null, mapquality: Payload | null, ): ReportMo…` L45-101
-- `function headToHeadFrom( payloads: readonly Payload[], replay: Payload | null, assetsRel: string, ): ReportModel["headToHead"]` L224-281
-- `function headToHead(payload: Payload | null, replay: Payload | null, assetsRel: string): ReportModel["headToHead"]` L307-371
+- `function singleTool( sections: ReportModel["sections"], structural: Payload | null, replay: Payload | null, perf: Payload | null, agent: Payload | null, mapquality: Payload | null, ): ReportMo…` L45-110
+- `function headToHeadFrom( payloads: readonly Payload[], replay: Payload | null, assetsRel: string, ): ReportModel["headToHead"]` L233-290
+- `function headToHead(payload: Payload | null, replay: Payload | null, assetsRel: string): ReportModel["headToHead"]` L316-380
 
 ## bench/src/report.ts
 
 - `interface BuildOptions` L64-69
 - `async function run(args: string[]): Promise<number>` L83-107
-- `function buildModel(options: BuildOptions = {}): ReportModel` L154-274
+- `function buildModel(options: BuildOptions = {}): ReportModel` L154-267
 
 ## bench/src/results-io.ts
 
@@ -288,19 +300,19 @@
 - `type Verdict = "win" | "loss" | "tie" | "na"` L52-52
 - `interface MetricCell` L55-69
 - `interface MetricRow` L71-90
-- `interface EvalRow` L93-101
-- `interface EvalSection` L103-114
-- `interface ChartRef` L116-129
-- `interface SummaryRow` L132-140
-- `interface RunTarget` L146-154
-- `function provenanceLine( date: string | null, sha: string | null, target: RunTarget | undefined, ): string` L165-190
-- `function scopeTarget(target: string, run: RunTarget | undefined): string` L202-213
-- `interface ReportModel` L215-240
-- `function emptySection(): EvalSection` L243-245
-- `function renderResultsMd(model: ReportModel): string` L252-281
-- `function cell(text: string): string` L485-487
-- `function formatNumber(value: number): string` L503-509
-- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L553-564
+- `interface EvalRow` L93-103
+- `interface EvalSection` L105-116
+- `interface ChartRef` L118-131
+- `interface SummaryRow` L134-144
+- `interface RunTarget` L150-158
+- `function provenanceLine( date: string | null, sha: string | null, target: RunTarget | undefined, ): string` L169-194
+- `function scopeTarget(target: string, run: RunTarget | undefined, scaleText?: string): string` L206-229
+- `interface ReportModel` L241-266
+- `function emptySection(): EvalSection` L269-271
+- `function renderResultsMd(model: ReportModel): string` L278-307
+- `function cell(text: string): string` L516-518
+- `function formatNumber(value: number): string` L534-540
+- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L584-595
 
 ## bench/src/score.ts
 

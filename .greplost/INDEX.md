@@ -20,7 +20,7 @@
 | Package | Path | Files | LOC | Deps | Fan-in | Fan-out | Map |
 |---|---|---|---|---|---|---|---|
 | greplost-monorepo | . | 2 | 96 | 2 | 0 | 0 | [MAP](packages/greplost-monorepo/MAP.md) |
-| @greplost/bench | bench | 33 | 15756 | 28 | 0 | 2 | [MAP](packages/greplost__bench/MAP.md) |
+| @greplost/bench | bench | 33 | 16171 | 28 | 0 | 2 | [MAP](packages/greplost__bench/MAP.md) |
 | greplost | packages/cli | 18 | 1898 | 4 | 0 | 5 | [MAP](packages/greplost/MAP.md) |
 | @greplost/core | packages/core | 29 | 5996 | 10 | 6 | 0 | [MAP](packages/greplost__core/MAP.md) |
 | @greplost/render | packages/render | 13 | 1768 | 1 | 4 | 1 | [MAP](packages/greplost__render/MAP.md) |
@@ -30,8 +30,8 @@
 
 ## Hotspots
 
-- Most imported: `packages/core/src/schema.ts` (fan-in 76), `packages/cli/src/args.ts` (fan-in 14), `packages/cli/src/output.ts` (fan-in 11), `packages/core/src/graph/index.ts` (fan-in 10), `packages/core/src/index.ts` (fan-in 9)
-- Largest blast radius: `packages/core/src/schema.ts` (97 files), `packages/core/src/resolve/go.ts` (46 files), `packages/core/src/graph/tarjan.ts` (45 files), `packages/core/src/resolve/tsconfig.ts` (45 files), `packages/core/src/graph/directories.ts` (44 files)
+- Most imported: `packages/core/src/schema.ts` (fan-in 77), `packages/cli/src/args.ts` (fan-in 14), `packages/cli/src/output.ts` (fan-in 11), `packages/core/src/graph/index.ts` (fan-in 10), `packages/core/src/index.ts` (fan-in 9)
+- Largest blast radius: `packages/core/src/schema.ts` (101 files), `packages/core/src/resolve/go.ts` (46 files), `packages/core/src/graph/tarjan.ts` (45 files), `packages/core/src/resolve/tsconfig.ts` (45 files), `packages/core/src/graph/directories.ts` (44 files)
 - Import cycles: 2, see [repo/HOTSPOTS.md](repo/HOTSPOTS.md)
 
 ## Navigation

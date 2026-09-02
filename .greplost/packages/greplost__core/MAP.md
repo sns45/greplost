@@ -71,7 +71,7 @@ Path: `packages/core` · 29 files · 5996 LOC · depends on: none · depended on
 | [`src/resolve/packages.ts`](modules/src/resolve/packages.ts.md) | 389 | 2 | 1 | 1 | 44 |
 | [`src/resolve/resolver.ts`](modules/src/resolve/resolver.ts.md) | 525 | 4 | 1 | 3 | 44 |
 | [`src/resolve/tsconfig.ts`](modules/src/resolve/tsconfig.ts.md) | 316 | 3 | 2 | 0 | 45 |
-| [`src/schema.ts`](modules/src/schema.ts.md) | 361 | 39 | 76 | 0 | 97 |
+| [`src/schema.ts`](modules/src/schema.ts.md) | 361 | 39 | 77 | 0 | 101 |
 | [`src/serialize/index.ts`](modules/src/serialize/index.ts.md) | 4 | 6 | 1 | 3 | 29 |
 | [`src/serialize/json.ts`](modules/src/serialize/json.ts.md) | 35 | 3 | 3 | 1 | 32 |
 | [`src/serialize/read.ts`](modules/src/serialize/read.ts.md) | 65 | 2 | 1 | 2 | 30 |
