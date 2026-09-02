@@ -23,7 +23,6 @@ import {
   readdirSync,
   rmSync,
   rmdirSync,
-  statSync,
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
@@ -177,12 +176,15 @@ function replaceIfNotDirectory(target: string): void {
   discard(target);
 }
 
-/** Remove whatever is at `target`, ignoring the case where nothing is. */
+/**
+ * Remove whatever is at `target`. Failure is left to the caller's own write or
+ * `mkdir` to report, which can name the artifact the user actually cares about.
+ */
 function discard(target: string): void {
   try {
     rmSync(target, { recursive: true, force: true });
   } catch {
-    // Left for the write to fail on, with a message that names the artifact.
+    // Reported by the operation this was clearing the way for.
   }
 }
 
@@ -200,9 +202,16 @@ function prune(artifactRoot: string, files: Map<string, string>): string[] {
 
   for (const rel of listStructurePaths(artifactRoot)) {
     if (files.has(rel)) continue;
-    // A directory squatting on a structure path is as stale as a file: whatever
-    // it holds, the structure layer no longer produces this path.
-    rmSync(path.join(artifactRoot, rel), { recursive: true, force: true });
+    try {
+      // A directory squatting on a structure path is as stale as a file:
+      // whatever it holds, the structure layer no longer produces this path.
+      rmSync(path.join(artifactRoot, rel), { recursive: true, force: true });
+    } catch (cause) {
+      // Swallowing this would leave `verify` reporting the path as extra
+      // forever with nothing to explain why.
+      const reason = cause instanceof Error ? cause.message : String(cause);
+      throw new Error(`greplost: cannot delete ${ARTIFACT_DIR}/${rel}: ${reason}`);
+    }
     deleted.push(rel);
     const slash = rel.lastIndexOf("/");
     if (slash !== -1) emptied.add(rel.slice(0, slash));
@@ -214,7 +223,9 @@ function prune(artifactRoot: string, files: Map<string, string>): string[] {
   for (const rel of candidates) {
     const dir = path.join(artifactRoot, rel);
     try {
-      if (!statSync(dir).isDirectory()) continue;
+      // lstat, not stat: a symlink to a directory is a link, and removing it
+      // because whatever it points at happens to be empty would be wrong.
+      if (!lstatSync(dir).isDirectory()) continue;
       if (readdirSync(dir).length > 0) continue;
       rmdirSync(dir);
     } catch {
