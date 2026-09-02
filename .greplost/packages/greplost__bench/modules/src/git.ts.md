@@ -10,9 +10,9 @@
 
 **Imports:** `node:child_process` (spawnSync), `node:fs` (cpSync, mkdirSync, rmSync), `node:path` (default)
 
-**Imported by:** [`bench/src/perf.ts`](perf.ts.md), [`bench/src/replay.ts`](replay.ts.md)
+**Imported by:** [`bench/src/corpus.ts`](corpus.ts.md), [`bench/src/perf.ts`](perf.ts.md), [`bench/src/replay.ts`](replay.ts.md)
 
-**Blast radius:** 2 files (`greplost impact bench/src/git.ts`)
+**Blast radius:** 5 files (`greplost impact bench/src/git.ts`)
 
 **Key symbols:**
 - `const GIT_TIMEOUT_MS = 300_000`  L25-25

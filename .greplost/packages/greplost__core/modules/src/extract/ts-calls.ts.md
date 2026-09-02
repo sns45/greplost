@@ -6,17 +6,18 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `calleeText(target: Node, prefix: string): string | null`, `recordCall(ctx: TsContext, node: Node, caller: string): void`
+**Exports:** `Callee (interface)`, `calleeOf(target: Node, prefix: string): Callee | null`, `recordCall( ctx: TsContext, node: Node, caller: string, locals: ReadonlySet<string> | null, ): void`
 
-**Imports:** `web-tree-sitter` (Node), [`./ts.ts`](ts.ts.md) (TsContext), [`./ts-signature.ts`](ts-signature.ts.md) (field, lineOf), [`./ts-imports.ts`](ts-imports.ts.md) (recordModuleCall)
+**Imports:** `web-tree-sitter` (Node), [`./ts.ts`](ts.ts.md) (TsContext), [`./ts-signature.ts`](ts-signature.ts.md) (field)
 
 **Imported by:** [`packages/core/src/extract/ts.ts`](ts.ts.md)
 
 **Blast radius:** 32 files (`greplost impact packages/core/src/extract/ts-calls.ts`)
 
 **Key symbols:**
-- `function unwrapAssertion(node: Node): Node`  L17-25
-- `function recordCall(ctx: TsContext, node: Node, caller: string): void`  L27-48
-- `function calleeText(target: Node, prefix: string): string | null`  L55-68
+- `interface Callee`  L12-15
+- `function unwrapAssertion(node: Node): Node`  L22-30
+- `function recordCall( ctx: TsContext, node: Node, caller: string, locals: ReadonlySet<string> | null, ): void`  L32-62
+- `function calleeOf(target: Node, prefix: string): Callee | null`  L69-84
 
-**Calls:** `calleeText` → [`packages/core/src/extract/ts-calls.ts#calleeText`](ts-calls.ts.md) (high), `unwrapAssertion` → [`packages/core/src/extract/ts-calls.ts#unwrapAssertion`](ts-calls.ts.md) (high), `recordModuleCall` → [`packages/core/src/extract/ts-imports.ts#recordModuleCall`](ts-imports.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](ts-signature.ts.md) (high), `lineOf` → [`packages/core/src/extract/ts-signature.ts#lineOf`](ts-signature.ts.md) (high)
+**Calls:** `calleeOf` → [`packages/core/src/extract/ts-calls.ts#calleeOf`](ts-calls.ts.md) (high), `unwrapAssertion` → [`packages/core/src/extract/ts-calls.ts#unwrapAssertion`](ts-calls.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](ts-signature.ts.md) (high)

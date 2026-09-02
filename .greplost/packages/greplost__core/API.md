@@ -32,8 +32,9 @@
 
 ## packages/core/src/extract/ts-calls.ts
 
-- `function recordCall(ctx: TsContext, node: Node, caller: string): void` L27-48
-- `function calleeText(target: Node, prefix: string): string | null` L55-68
+- `interface Callee` L12-15
+- `function recordCall( ctx: TsContext, node: Node, caller: string, locals: ReadonlySet<string> | null, ): void` L32-62
+- `function calleeOf(target: Node, prefix: string): Callee | null` L69-84
 
 ## packages/core/src/extract/ts-imports.ts
 
@@ -58,14 +59,16 @@
 - `function sliceExcluding( source: string, start: number, end: number, cuts: ReadonlyArray<readonly [number, number]>, ): string` L71-89
 - `function decoratorCuts(...owners: ReadonlyArray<Node | null>): Array<[number, number]>` L95-105
 - `function signatureText(source: string, node: Node, outer: Node): string` L113-118
-- `function bodyCut(node: Node): number` L121-128
-- `function initialiserSignature(source: string, node: Node, prefix: string): string` L135-138
-- `function variableSignature(source: string, outer: Node, list: Node, declarator: Node): string` L144-149
+- `function unwrapValue(node: Node): Node` L134-145
+- `function functionValue(node: Node): Node | null` L148-153
+- `function bodyCut(node: Node): number` L156-166
+- `function initialiserSignature(source: string, node: Node, prefix: string): string` L173-176
+- `function variableSignature(source: string, outer: Node, list: Node, declarator: Node): string` L182-187
 
 ## packages/core/src/extract/ts.ts
 
-- `interface TsContext` L46-57
-- `function extractTs( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L76-421
+- `interface TsContext` L59-77
+- `function extractTs( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L170-689
 
 ## packages/core/src/graph/blast.ts
 
@@ -145,6 +148,7 @@
 - `interface ParserHandle` L15-17
 - `function grammarDir(): string` L32-36
 - `async function createParser(opts?: { grammarDir?: string }): Promise<ParserHandle>` L79-106
+- `function reparse(language: Language, source: string): Tree | null` L118-122
 
 ## packages/core/src/resolve/go.ts
 

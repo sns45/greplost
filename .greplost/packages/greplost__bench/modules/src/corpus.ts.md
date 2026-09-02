@@ -8,7 +8,7 @@
 
 **Exports:** `Corpus (interface)`, `CorpusLang (type)`, `CorpusRepoEntry (interface)`, `Tier (type)`, `corpusRoot(): string`, `deepenHistory(entry: CorpusRepoEntry): void`, `fetchAndCheckout(entry: CorpusRepoEntry, depth: number = HISTORY_DEPTH): void`, `loadCorpus(): Corpus`, `repoDir(name: string): string`, `run(args: string[]): Promise<number>`, `selectRepos(args: string[]): CorpusRepoEntry[]`, `setupRepo(entry: CorpusRepoEntry, opts: { depth?: number } = {}): void`
 
-**Imports:** `node:fs` (existsSync, mkdirSync, readFileSync, rmSync), `node:child_process` (spawnSync), `node:path` (dirname, join)
+**Imports:** [`./git.ts`](git.ts.md) (BACKFILL_TIMEOUT_MS, GIT_TIMEOUT_MS, GitResult, git), `node:fs` (existsSync, mkdirSync, readFileSync, rmSync), `node:path` (dirname, join)
 
 **Imported by:** [`bench/src/machine.ts`](machine.ts.md), [`bench/src/mapquality.ts`](mapquality.ts.md), [`bench/src/perf.ts`](perf.ts.md), [`bench/src/replay.ts`](replay.ts.md)
 
@@ -26,17 +26,16 @@
 - `function loadCorpus(): Corpus`  L66-70
 - `function repoDir(name: string): string`  L72-74
 - `function selectRepos(args: string[]): CorpusRepoEntry[]`  L84-116
-- `interface GitResult`  L120-124
-- `function git(args: string[], cwd: string): GitResult`  L126-135
-- `function isGitRepo(dir: string): boolean`  L137-142
-- `function commitAvailableLocally(dir: string, sha: string): boolean`  L144-147
-- `function isShallow(dir: string): boolean`  L149-152
-- `function hasEnoughHistory(dir: string, sha: string): boolean`  L154-160
-- `function ensureRepoInitialized(entry: CorpusRepoEntry): string`  L169-190
-- `function fetchAndCheckout(entry: CorpusRepoEntry, depth: number = HISTORY_DEPTH): void`  L204-218
-- `function deepenHistory(entry: CorpusRepoEntry): void`  L226-234
-- `function setupRepo(entry: CorpusRepoEntry, opts: { depth?: number } = {}): void`  L242-245
-- `function printList(repos: CorpusRepoEntry[]): void`  L249-254
-- `async function run(args: string[]): Promise<number>`  L256-279
+- `function git(args: string[], cwd: string, timeout: number = GIT_TIMEOUT_MS): GitResult`  L126-128
+- `function isGitRepo(dir: string): boolean`  L130-135
+- `function commitAvailableLocally(dir: string, sha: string): boolean`  L137-140
+- `function isShallow(dir: string): boolean`  L142-145
+- `function hasEnoughHistory(dir: string, sha: string): boolean`  L147-153
+- `function ensureRepoInitialized(entry: CorpusRepoEntry): string`  L162-183
+- `function fetchAndCheckout(entry: CorpusRepoEntry, depth: number = HISTORY_DEPTH): void`  L197-211
+- `function deepenHistory(entry: CorpusRepoEntry): void`  L219-227
+- `function setupRepo(entry: CorpusRepoEntry, opts: { depth?: number } = {}): void`  L235-238
+- `function printList(repos: CorpusRepoEntry[]): void`  L242-247
+- `async function run(args: string[]): Promise<number>`  L249-272
 
-**Calls:** `commitAvailableLocally` → [`bench/src/corpus.ts#commitAvailableLocally`](corpus.ts.md) (high), `corpusRoot` → [`bench/src/corpus.ts#corpusRoot`](corpus.ts.md) (high), `deepenHistory` → [`bench/src/corpus.ts#deepenHistory`](corpus.ts.md) (high), `ensureRepoInitialized` → [`bench/src/corpus.ts#ensureRepoInitialized`](corpus.ts.md) (high), `fetchAndCheckout` → [`bench/src/corpus.ts#fetchAndCheckout`](corpus.ts.md) (high), `git` → [`bench/src/corpus.ts#git`](corpus.ts.md) (high), `hasEnoughHistory` → [`bench/src/corpus.ts#hasEnoughHistory`](corpus.ts.md) (high), `isGitRepo` → [`bench/src/corpus.ts#isGitRepo`](corpus.ts.md) (high), `isShallow` → [`bench/src/corpus.ts#isShallow`](corpus.ts.md) (high), `loadCorpus` → [`bench/src/corpus.ts#loadCorpus`](corpus.ts.md) (high), `printList` → [`bench/src/corpus.ts#printList`](corpus.ts.md) (high), `repoDir` → [`bench/src/corpus.ts#repoDir`](corpus.ts.md) (high), `selectRepos` → [`bench/src/corpus.ts#selectRepos`](corpus.ts.md) (high), `setupRepo` → [`bench/src/corpus.ts#setupRepo`](corpus.ts.md) (high)
+**Calls:** `commitAvailableLocally` → [`bench/src/corpus.ts#commitAvailableLocally`](corpus.ts.md) (high), `corpusRoot` → [`bench/src/corpus.ts#corpusRoot`](corpus.ts.md) (high), `deepenHistory` → [`bench/src/corpus.ts#deepenHistory`](corpus.ts.md) (high), `ensureRepoInitialized` → [`bench/src/corpus.ts#ensureRepoInitialized`](corpus.ts.md) (high), `fetchAndCheckout` → [`bench/src/corpus.ts#fetchAndCheckout`](corpus.ts.md) (high), `git` → [`bench/src/corpus.ts#git`](corpus.ts.md) (high), `hasEnoughHistory` → [`bench/src/corpus.ts#hasEnoughHistory`](corpus.ts.md) (high), `isGitRepo` → [`bench/src/corpus.ts#isGitRepo`](corpus.ts.md) (high), `isShallow` → [`bench/src/corpus.ts#isShallow`](corpus.ts.md) (high), `loadCorpus` → [`bench/src/corpus.ts#loadCorpus`](corpus.ts.md) (high), `printList` → [`bench/src/corpus.ts#printList`](corpus.ts.md) (high), `repoDir` → [`bench/src/corpus.ts#repoDir`](corpus.ts.md) (high), `selectRepos` → [`bench/src/corpus.ts#selectRepos`](corpus.ts.md) (high), `setupRepo` → [`bench/src/corpus.ts#setupRepo`](corpus.ts.md) (high), `git` → [`bench/src/git.ts#git`](git.ts.md) (high)

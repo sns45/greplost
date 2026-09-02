@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `BODY_VALUES (const)`, `FUNCTION_VALUES (const)`, `MAX_SIGNATURE (const)`, `bodyCut(node: Node): number`, `childOfType(node: Node, type: string): Node | null`, `clip(text: string): string`, `decoratorCuts(...owners: ReadonlyArray<Node | null>): Array<[number, number]>`, `field(node: Node, name: string): Node | null`, `initialiserSignature(source: string, node: Node, prefix: string): string`, `lineOf(node: Node): number`, `nameOf(node: Node): string | null`, `signatureText(source: string, node: Node, outer: Node): string`, `sliceExcluding( source: string, start: number, end: number, cuts: ReadonlyArray<readonly [number, number]>, ): string`, `spanOf(node: Node): [number, number]`, `specifierName(node: Node): string`, `stringOf(node: Node): string`, `variableSignature(source: string, outer: Node, list: Node, declarator: Node): string`
+**Exports:** `BODY_VALUES (const)`, `FUNCTION_VALUES (const)`, `MAX_SIGNATURE (const)`, `bodyCut(node: Node): number`, `childOfType(node: Node, type: string): Node | null`, `clip(text: string): string`, `decoratorCuts(...owners: ReadonlyArray<Node | null>): Array<[number, number]>`, `field(node: Node, name: string): Node | null`, `functionValue(node: Node): Node | null`, `initialiserSignature(source: string, node: Node, prefix: string): string`, `lineOf(node: Node): number`, `nameOf(node: Node): string | null`, `signatureText(source: string, node: Node, outer: Node): string`, `sliceExcluding( source: string, start: number, end: number, cuts: ReadonlyArray<readonly [number, number]>, ): string`, `spanOf(node: Node): [number, number]`, `specifierName(node: Node): string`, `stringOf(node: Node): string`, `unwrapValue(node: Node): Node`, `variableSignature(source: string, outer: Node, list: Node, declarator: Node): string`
 
 **Imports:** `web-tree-sitter` (Node)
 
@@ -29,8 +29,11 @@
 - `function sliceExcluding( source: string, start: number, end: number, cuts: ReadonlyArray<readonly [number, number]>, ): string`  L71-89
 - `function decoratorCuts(...owners: ReadonlyArray<Node | null>): Array<[number, number]>`  L95-105
 - `function signatureText(source: string, node: Node, outer: Node): string`  L113-118
-- `function bodyCut(node: Node): number`  L121-128
-- `function initialiserSignature(source: string, node: Node, prefix: string): string`  L135-138
-- `function variableSignature(source: string, outer: Node, list: Node, declarator: Node): string`  L144-149
+- `const INITIALISER_WRAPPERS: ReadonlySet<string> = new Set([ "type_assertion", "as_expression", "satisfies_expression", "parenthesized_expression", "non_null_expression", ])`  L125-131
+- `function unwrapValue(node: Node): Node`  L134-145
+- `function functionValue(node: Node): Node | null`  L148-153
+- `function bodyCut(node: Node): number`  L156-166
+- `function initialiserSignature(source: string, node: Node, prefix: string): string`  L173-176
+- `function variableSignature(source: string, outer: Node, list: Node, declarator: Node): string`  L182-187
 
-**Calls:** `bodyCut` → [`packages/core/src/extract/ts-signature.ts#bodyCut`](ts-signature.ts.md) (high), `childOfType` → [`packages/core/src/extract/ts-signature.ts#childOfType`](ts-signature.ts.md) (high), `clip` → [`packages/core/src/extract/ts-signature.ts#clip`](ts-signature.ts.md) (high), `decoratorCuts` → [`packages/core/src/extract/ts-signature.ts#decoratorCuts`](ts-signature.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](ts-signature.ts.md) (high), `initialiserSignature` → [`packages/core/src/extract/ts-signature.ts#initialiserSignature`](ts-signature.ts.md) (high), `sliceExcluding` → [`packages/core/src/extract/ts-signature.ts#sliceExcluding`](ts-signature.ts.md) (high), `stringOf` → [`packages/core/src/extract/ts-signature.ts#stringOf`](ts-signature.ts.md) (high)
+**Calls:** `bodyCut` → [`packages/core/src/extract/ts-signature.ts#bodyCut`](ts-signature.ts.md) (high), `childOfType` → [`packages/core/src/extract/ts-signature.ts#childOfType`](ts-signature.ts.md) (high), `clip` → [`packages/core/src/extract/ts-signature.ts#clip`](ts-signature.ts.md) (high), `decoratorCuts` → [`packages/core/src/extract/ts-signature.ts#decoratorCuts`](ts-signature.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](ts-signature.ts.md) (high), `initialiserSignature` → [`packages/core/src/extract/ts-signature.ts#initialiserSignature`](ts-signature.ts.md) (high), `sliceExcluding` → [`packages/core/src/extract/ts-signature.ts#sliceExcluding`](ts-signature.ts.md) (high), `stringOf` → [`packages/core/src/extract/ts-signature.ts#stringOf`](ts-signature.ts.md) (high), `unwrapValue` → [`packages/core/src/extract/ts-signature.ts#unwrapValue`](ts-signature.ts.md) (high)

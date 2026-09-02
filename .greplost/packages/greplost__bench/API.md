@@ -70,10 +70,10 @@
 - `function loadCorpus(): Corpus` L66-70
 - `function repoDir(name: string): string` L72-74
 - `function selectRepos(args: string[]): CorpusRepoEntry[]` L84-116
-- `function fetchAndCheckout(entry: CorpusRepoEntry, depth: number = HISTORY_DEPTH): void` L204-218
-- `function deepenHistory(entry: CorpusRepoEntry): void` L226-234
-- `function setupRepo(entry: CorpusRepoEntry, opts: { depth?: number } = {}): void` L242-245
-- `async function run(args: string[]): Promise<number>` L256-279
+- `function fetchAndCheckout(entry: CorpusRepoEntry, depth: number = HISTORY_DEPTH): void` L197-211
+- `function deepenHistory(entry: CorpusRepoEntry): void` L219-227
+- `function setupRepo(entry: CorpusRepoEntry, opts: { depth?: number } = {}): void` L235-238
+- `async function run(args: string[]): Promise<number>` L249-272
 
 ## bench/src/git.ts
 

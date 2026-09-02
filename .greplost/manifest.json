@@ -141,15 +141,15 @@
         "setupRepo"
       ],
       "fanIn": 4,
-      "fanOut": 0,
+      "fanOut": 1,
       "lang": "ts",
-      "loc": 279,
+      "loc": 272,
       "pkg": "@greplost/bench",
-      "sha256": "34331c53d6afe53eb9d232002760f6673761b210e35adbb68d6925566ab6dfe7",
+      "sha256": "dcc9e40c57501d5007a4285b979952946b95e29a44f3f8d1531b74a9b5138c92",
       "staleSummary": false
     },
     "bench/src/git.ts": {
-      "blast": 2,
+      "blast": 5,
       "exports": [
         "BACKFILL_TIMEOUT_MS",
         "CloneOptions",
@@ -164,7 +164,7 @@
         "isPartialClone",
         "percentile"
       ],
-      "fanIn": 2,
+      "fanIn": 3,
       "fanOut": 0,
       "lang": "ts",
       "loc": 202,
@@ -825,15 +825,16 @@
     "packages/core/src/extract/ts-calls.ts": {
       "blast": 32,
       "exports": [
-        "calleeText",
+        "Callee",
+        "calleeOf",
         "recordCall"
       ],
       "fanIn": 1,
-      "fanOut": 3,
+      "fanOut": 2,
       "lang": "ts",
-      "loc": 68,
+      "loc": 84,
       "pkg": "@greplost/core",
-      "sha256": "55517a14c760bbad53de77d76b3d76fd8bbef29849bd6bccfb0c3c1fa74ba09e",
+      "sha256": "9cea1c84effaa2f05c1cfbbbecbddd43f0f96c745cc1842b45449b5d5a53f16e",
       "staleSummary": false
     },
     "packages/core/src/extract/ts-imports.ts": {
@@ -844,12 +845,12 @@
         "collectImportStatement",
         "recordModuleCall"
       ],
-      "fanIn": 2,
+      "fanIn": 1,
       "fanOut": 3,
       "lang": "ts",
       "loc": 335,
       "pkg": "@greplost/core",
-      "sha256": "1d6f8d1baab48f4ce6ba56cca7e369fa3c40f4cb9971f6bc4a5dd4ad1a7d21e7",
+      "sha256": "856b52fb7ad61e92ad32d020b6b5b2f6b18b0df392d1a10081ee1e59f7baece8",
       "staleSummary": false
     },
     "packages/core/src/extract/ts-signature.ts": {
@@ -863,6 +864,7 @@
         "clip",
         "decoratorCuts",
         "field",
+        "functionValue",
         "initialiserSignature",
         "lineOf",
         "nameOf",
@@ -871,14 +873,15 @@
         "spanOf",
         "specifierName",
         "stringOf",
+        "unwrapValue",
         "variableSignature"
       ],
       "fanIn": 4,
       "fanOut": 0,
       "lang": "ts",
-      "loc": 149,
+      "loc": 187,
       "pkg": "@greplost/core",
-      "sha256": "290774790f11723c2c302098258e71ec3fd04670df898b0904f9613a0412e7cf",
+      "sha256": "e346409b6ba709c9a02d79b587f3f85f55c81212ea2e26bf48277856426a6bba",
       "staleSummary": false
     },
     "packages/core/src/extract/ts.ts": {
@@ -888,11 +891,11 @@
         "extractTs"
       ],
       "fanIn": 3,
-      "fanOut": 4,
+      "fanOut": 5,
       "lang": "ts",
-      "loc": 448,
+      "loc": 814,
       "pkg": "@greplost/core",
-      "sha256": "ff64a49c290ea0fb25f3b3ae94b021047efc0ce64bea6f29d7c34ad9aa47f1a7",
+      "sha256": "ddbfefe52745854dad273c338746ddb585c50acd7774e7195a7f9a4765d8a4e2",
       "staleSummary": false
     },
     "packages/core/src/graph/blast.ts": {
@@ -1119,6 +1122,7 @@
         "packageSlug",
         "parseJsonl",
         "readStructure",
+        "reparse",
         "resolvedImportTargets",
         "serializeSnapshot",
         "sha256Hex",
@@ -1139,18 +1143,19 @@
       "staleSummary": false
     },
     "packages/core/src/parser.ts": {
-      "blast": 30,
+      "blast": 33,
       "exports": [
         "ParserHandle",
         "createParser",
-        "grammarDir"
+        "grammarDir",
+        "reparse"
       ],
-      "fanIn": 3,
+      "fanIn": 4,
       "fanOut": 1,
       "lang": "ts",
-      "loc": 106,
+      "loc": 122,
       "pkg": "@greplost/core",
-      "sha256": "96de65d71916094a0a5a97e4976de89c80b9001b4a9b4f43dda6f930643ce9b6",
+      "sha256": "38b475e9ac7b21a6210aca7375571b13ab14d8f91c613b1e7534e8a16e2cd6b5",
       "staleSummary": false
     },
     "packages/core/src/resolve/go.ts": {
@@ -2104,14 +2109,14 @@
         "@greplost/sync"
       ],
       "files": 24,
-      "loc": 8352,
+      "loc": 8345,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 29,
-      "loc": 5492,
+      "loc": 5928,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
