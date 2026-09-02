@@ -1,0 +1,68 @@
+{
+  "pinnedAt": "2026-09-02",
+  "repos": [
+    {
+      "name": "anyq",
+      "url": "https://github.com/sns45/anyq",
+      "sha": "657f41c2cbe06039c0d82cf81c17759d1149eda2",
+      "tier": "S",
+      "lang": "ts",
+      "defaultBranch": "main",
+      "notes": ""
+    },
+    {
+      "name": "gin",
+      "url": "https://github.com/gin-gonic/gin",
+      "sha": "dcaa4296d111981ffb31ac3eba90bb63e1eb5ab9",
+      "tier": "S",
+      "lang": "go",
+      "defaultBranch": "master",
+      "notes": ""
+    },
+    {
+      "name": "hono",
+      "url": "https://github.com/honojs/hono",
+      "sha": "e2740d5a1bd0b4254e517e3af8b60789284bc7bd",
+      "tier": "M",
+      "lang": "ts",
+      "defaultBranch": "main",
+      "notes": ""
+    },
+    {
+      "name": "bubbletea",
+      "url": "https://github.com/charmbracelet/bubbletea",
+      "sha": "73b6d91ac1c3854dd4af046ab5f9e51d3b3b4290",
+      "tier": "M",
+      "lang": "go",
+      "defaultBranch": "main",
+      "notes": ""
+    },
+    {
+      "name": "vite",
+      "url": "https://github.com/vitejs/vite",
+      "sha": "b120589f052fe8e0d5ea75bade1a0278c0bdfa7f",
+      "tier": "L",
+      "lang": "ts",
+      "defaultBranch": "main",
+      "notes": ""
+    },
+    {
+      "name": "grafana",
+      "url": "https://github.com/grafana/grafana",
+      "sha": "a152335c7991588e66a1083f27d43746e39e9c8a",
+      "tier": "L",
+      "lang": "go",
+      "defaultBranch": "main",
+      "notes": "subset: pkg/"
+    },
+    {
+      "name": "TypeScript",
+      "url": "https://github.com/microsoft/TypeScript",
+      "sha": "43a90f4c105bc9db7cb7aa299beddafbabe1d23e",
+      "tier": "XL",
+      "lang": "ts",
+      "defaultBranch": "main",
+      "notes": "perf only"
+    }
+  ]
+}
