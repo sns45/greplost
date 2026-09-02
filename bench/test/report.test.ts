@@ -505,6 +505,10 @@ describe("results-md", () => {
     expect(provenanceLine("2026-09-02", "ac3bcd1", { repo: "anyq", fixture: false, tier: "S", files: 148 })).toBe(
       "Measured 2026-09-02 at ac3bcd1 on anyq, tier S (148 files).",
     );
+    // `commits: 0` means no walk was asked for, not a walk of length zero.
+    expect(provenanceLine("2026-09-02", "ac3bcd1", { repo: "anyq", fixture: false, tier: "S", files: 148, commits: 0 })).toBe(
+      "Measured 2026-09-02 at ac3bcd1 on anyq, tier S (148 files).",
+    );
     expect(provenanceLine("2026-09-02", "ac3bcd1", undefined)).toBe("Measured 2026-09-02 at ac3bcd1.");
   });
 
@@ -680,6 +684,67 @@ describe("results-md", () => {
     expect(row).toContain("100 commits");
     expect(row).not.toContain("500");
     expect(text).toContain("100 commits");
+  });
+
+  test("two head-to-head runs fill one table, each row keeping its own corpus", () => {
+    const dir = tempDir("h2h-two-runs");
+    const na = (reason: string) => ({ value: null, target: "", verdict: "na", reason });
+    // The corpus run: X1 measured on anyq, X2 not selected.
+    writeFileSync(
+      path.join(dir, "headtohead-2026-09-02-aaa1111.json"),
+      JSON.stringify({
+        suite: "headtohead", date: "2026-09-02", greplostSha: "aaa1111",
+        tools: ["greplost", "graphify"],
+        target: { repo: "anyq", fixture: false, tier: "S", files: 148, commits: 0 },
+        metrics: {
+          X1: {
+            id: "X1", title: "Structural precision", target: ">= +10pt calls",
+            tools: { greplost: { value: "calls 1 P", target: ">= +10pt calls", verdict: "tie", reason: "" } },
+          },
+          X2: { id: "X2", title: "Staleness after no replayed commits", target: "greplost F1 >= 0.99 (not walked)", tools: { greplost: na("not selected by --metrics") } },
+          X6: {
+            id: "X6", title: "Cold start", target: "<= 5s and $0 (tier M)",
+            tools: { greplost: { value: "0.27 s", target: "<= 5s and $0 (tier M)", verdict: "win", reason: "" } },
+          },
+        },
+        method: ["X1: scored over every emitted edge."],
+      }),
+    );
+    // The walk run: X2 measured on hono over 100 commits, X1 not selected.
+    writeFileSync(
+      path.join(dir, "headtohead-2026-09-02-bbb2222.json"),
+      JSON.stringify({
+        suite: "headtohead", date: "2026-09-02", greplostSha: "bbb2222",
+        tools: ["greplost", "graphify"],
+        target: { repo: "hono", fixture: false, tier: "M", files: 248, commits: 100 },
+        metrics: {
+          X1: { id: "X1", title: "Structural precision", target: ">= +10pt calls", tools: { greplost: na("not selected by --metrics") } },
+          X2: {
+            id: "X2", title: "Staleness after 100 replayed commits", target: "greplost F1 >= 0.99 after 100 commits",
+            tools: { greplost: { value: 1, target: "greplost F1 >= 0.99 after 100 commits", verdict: "win", reason: "", detail: { "syncF1@50": 1, "syncF1@100": 1 } } },
+          },
+          X6: { id: "X6", title: "Cold start", target: "<= 5s and $0 (tier M)", tools: { greplost: na("not selected by --metrics") } },
+        },
+        method: ["X2: the walk is 100 synthetic commits over hono."],
+      }),
+    );
+
+    const text = renderResultsMd(buildModel({ resultsDir: dir }));
+    const x1 = text.split("\n").find((line) => line.startsWith("| X1 "));
+    const x2 = text.split("\n").find((line) => line.startsWith("| X2 "));
+    // Neither run is dropped: each id keeps the number the run that measured it produced.
+    expect(x1).toContain("calls 1 P");
+    expect(x2).toContain("100 commits");
+    // Each row's corpus travels with it, so the tier-M target is not printed
+    // against the tier-S run and vice versa.
+    const head = text.slice(text.indexOf("## Head-to-head"), text.indexOf("| ID |"));
+    expect(head).toContain("on anyq, tier S (148 files)");
+    expect(head).toContain("on hono, tier M (248 files, 100 commits)");
+    const x6 = text.split("\n").find((line) => line.startsWith("| X6 "));
+    expect(x6).toContain("not tier M");
+    // Both runs' method lines survive the merge.
+    expect(text).toContain("scored over every emitted edge");
+    expect(text).toContain("100 synthetic commits over hono");
   });
 
   test("shape differences in a neighbour payload degrade to `not run`, never to a throw", () => {

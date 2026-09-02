@@ -73,6 +73,20 @@ export interface MetricRow {
   title: string;
   target: string;
   tools: Record<string, MetricCell>;
+  /**
+   * The run this row's numbers came from, when the table was assembled from
+   * more than one.
+   *
+   * X1 and X5 want a whole corpus repo and X2 wants a commit walk, which are
+   * different runs with different costs, so the head-to-head table is often
+   * filled from two payloads. A single provenance line above such a table would
+   * put one run's corpus under the other run's numbers, which is the same
+   * defect as printing a tier-M target against a fixture — so the scale travels
+   * on the row.
+   */
+  run?: RunTarget;
+  /** `Measured … on …` for that run, already rendered. */
+  runLabel?: string;
 }
 
 /** One `ID | Metric | Target | Measured` row in a single-tool eval section. */
@@ -166,7 +180,11 @@ export function provenanceLine(
 
   const scale: string[] = [];
   if (typeof target.files === "number") scale.push(`${target.files} file${target.files === 1 ? "" : "s"}`);
-  if (typeof target.commits === "number") scale.push(`${target.commits} commit${target.commits === 1 ? "" : "s"}`);
+  // A zero is "no walk was asked for", not "a walk of length zero": printing
+  // `0 commits` beside a corpus reads as a measurement that was taken.
+  if (typeof target.commits === "number" && target.commits > 0) {
+    scale.push(`${target.commits} commit${target.commits === 1 ? "" : "s"}`);
+  }
 
   return `${when}${where === null ? "" : ` on ${where}`}${scale.length === 0 ? "" : ` (${scale.join(", ")})`}.`;
 }
@@ -315,8 +333,22 @@ function headToHeadSection(model: ReportModel): string[] {
   out.push("");
   if (!ran) {
     out.push(`The head-to-head suite has not been run: \`bun bench/src/cli.ts headtohead --fixture\`.`, "");
-  } else if (provenance !== null) {
-    out.push(provenance, "");
+  } else {
+    // One line per run that supplied a row, each naming the ids it supplied.
+    // With a single run this is the one provenance sentence; with two it is the
+    // only way the reader can tell which corpus each number was taken on.
+    const byRun = new Map<string, string[]>();
+    for (const row of rows) {
+      const label = row.runLabel;
+      if (label === undefined) continue;
+      byRun.set(label, [...(byRun.get(label) ?? []), row.id]);
+    }
+    if (byRun.size > 1) {
+      for (const [label, ids] of byRun) out.push(`- ${ids.join(", ")}: ${label}`);
+      out.push("");
+    } else if (provenance !== null) {
+      out.push(provenance, "");
+    }
   }
 
   const header = ["ID", "Target", "Measured", ...competitors.map((tool) => `vs ${tool}`), "Reason on loss"];
@@ -327,7 +359,7 @@ function headToHeadSection(model: ReportModel): string[] {
   for (const id of X_IDS) {
     const row = byId.get(id);
     const meta = METRIC_TITLES[id];
-    const target = scopeTarget(row?.target ?? meta.target, model.headToHead.target);
+    const target = scopeTarget(row?.target ?? meta.target, row?.run ?? model.headToHead.target);
     const measured = row === undefined ? NOT_RUN : formatCell(row.tools["greplost"]);
     const verdicts = competitors.map((tool) => (row === undefined ? NOT_RUN : verdictCell(row.tools[tool])));
     const reason = row === undefined ? "the head-to-head suite has not been run" : lossReasonsOf(row, competitors);

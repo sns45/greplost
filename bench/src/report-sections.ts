@@ -219,6 +219,95 @@ const TARGETS: Record<string, string> = {
 // head-to-head
 // ---------------------------------------------------------------------------
 
+/**
+ * The head-to-head section, assembled from every head-to-head payload on disk.
+ *
+ * One run rarely fills the table. X1, X4, X5 and X6 want a whole corpus repo;
+ * X2 and X3 want a commit walk, which is a different repo and an order of
+ * magnitude more time. `--metrics` exists so the two can be run apart, and a
+ * cell a run did not select records that as its reason. This reader therefore
+ * takes each id from the newest payload that actually measured it, and carries
+ * that payload's corpus and scale on the row, so the table can never print one
+ * run's numbers under another run's denominator.
+ */
+export function headToHeadFrom(
+  payloads: readonly Payload[],
+  replay: Payload | null,
+  assetsRel: string,
+): ReportModel["headToHead"] {
+  if (payloads.length === 0) return headToHead(null, replay, assetsRel);
+  // Newest last on disk (`latestResult` orders by name); newest first here.
+  const ordered = [...payloads].reverse();
+  const primary = ordered[0] as Payload;
+  const base = headToHead(primary, replay, assetsRel);
+  if (ordered.length === 1) return base;
+
+  // Seeded empty rather than from the primary: every row has to carry the run
+  // it came from, the primary's included, or a two-run table shows one
+  // provenance line and silently attributes half its numbers to the wrong repo.
+  const byId = new Map<string, MetricRow>();
+  for (const payload of ordered) {
+    const contributed = headToHead(payload, replay, assetsRel);
+    const target = targetOf(payload);
+    const label = provenanceOf(payload);
+    for (const row of contributed.rows) {
+      const held = byId.get(row.id);
+      // The newest payload that measured this id wins; a payload that skipped
+      // it (`--metrics`) or could not read it never displaces a real number.
+      if (held !== undefined && measuredAtAll(held)) continue;
+      if (!measuredAtAll(row) && held !== undefined) continue;
+      byId.set(row.id, {
+        ...row,
+        ...(target === undefined ? {} : { run: target }),
+        ...(label === null ? {} : { runLabel: label }),
+      });
+    }
+  }
+  const rows = X_IDS.map((id) => byId.get(id)).filter((row): row is MetricRow => row !== undefined);
+
+  // Notes and charts follow the rows, not the primary payload: the hero chart
+  // is X2's, wherever X2 came from.
+  const x2Payload = ordered.find((payload) => {
+    const metrics = rec(payload.data["metrics"]);
+    const entry = metrics === null ? null : rec(metrics["X2"]);
+    return entry !== null && measuredAtAll(rowOf("X2", entry, base.tools));
+  });
+  const notes = new Set<string>(base.notes);
+  for (const payload of ordered) {
+    for (const line of arr(payload.data["method"]).filter((n): n is string => typeof n === "string")) notes.add(line);
+  }
+  return {
+    ...base,
+    rows,
+    notes: [...notes],
+    charts: headToHeadCharts(rows, replay, assetsRel, targetOf(x2Payload ?? primary)),
+  };
+}
+
+/** Did any tool get a real number on this row, or is every cell an n/a? */
+function measuredAtAll(row: MetricRow): boolean {
+  return Object.values(row.tools).some((cell) => cell.verdict !== "na" || cell.value !== null);
+}
+
+/** One row out of a payload's `metrics` entry, for the X2 lookup above. */
+function rowOf(id: string, entry: Record<string, unknown>, tools: readonly string[]): MetricRow {
+  const cells: Record<string, MetricCell> = {};
+  const toolCells = rec(entry["tools"]) ?? {};
+  for (const tool of tools) {
+    const cellRecord = rec(toolCells[tool]);
+    if (cellRecord === null) continue;
+    cells[tool] = {
+      value: (typeof cellRecord["value"] === "number" || typeof cellRecord["value"] === "string")
+        ? (cellRecord["value"] as number | string)
+        : null,
+      target: str(cellRecord["target"]) ?? "",
+      verdict: asVerdict(cellRecord["verdict"]),
+      reason: str(cellRecord["reason"]) ?? "",
+    };
+  }
+  return { id, title: "", target: "", tools: cells };
+}
+
 export function headToHead(payload: Payload | null, replay: Payload | null, assetsRel: string): ReportModel["headToHead"] {
   const tools = payload === null
     ? ["greplost", "graphify", "ua", "crg"]
