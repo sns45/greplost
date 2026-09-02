@@ -115,10 +115,38 @@ export function reexportBullet(record: ImportRecord): string {
   return `- re-exports ${listed} from \`${record.specifier}\``;
 }
 
+/**
+ * Exported name -> the local declaration name behind it, for the exports that
+ * rename (`export { helper as pub }`) or default (`export default function
+ * main`). `manifest.files[f].exports` carries the *exported* name, so without
+ * this the local declaration would never be matched.
+ */
+export function localNames(ctx: DocContext, file: string): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const record of ctx.recordOf.get(file)?.exports ?? []) {
+    if (record.local !== undefined) out.set(record.name, record.local);
+  }
+  return out;
+}
+
 /** Top-level declarations of `file` that the manifest reports as exported. */
 export function exportedDeclarations(ctx: DocContext, file: string): Declaration[] {
-  const exported = new Set(ctx.fileEntry(file)?.exports ?? []);
+  const locals = localNames(ctx, file);
+  const exported = new Set<string>();
+  for (const name of ctx.fileEntry(file)?.exports ?? []) exported.add(locals.get(name) ?? name);
   return (ctx.declsOf.get(file) ?? []).filter((d) => d.parent === undefined && exported.has(shortName(d.name)));
+}
+
+/**
+ * True when the file's `default` export is an anonymous expression
+ * (`export default 42`): the export record carries no `local`, so there is no
+ * declaration to describe (render spec ruling 2026-09-02).
+ */
+function hasAnonymousDefault(ctx: DocContext, file: string): boolean {
+  if (!(ctx.fileEntry(file)?.exports ?? []).includes("default")) return false;
+  return (ctx.recordOf.get(file)?.exports ?? []).some(
+    (record) => record.name === "default" && record.local === undefined,
+  );
 }
 
 export function buildApi(ctx: DocContext, pkg: PackageInfo): string {
@@ -136,6 +164,7 @@ export function buildApi(ctx: DocContext, pkg: PackageInfo): string {
     for (const imported of ctx.recordOf.get(file)?.imports ?? []) {
       if (imported.reexport) bullets.push(reexportBullet(imported));
     }
+    if (hasAnonymousDefault(ctx, file)) bullets.push("- `default` (expression)");
     if (bullets.length === 0) continue;
     sections.push(`## ${file}`, bullets.join("\n"));
   }

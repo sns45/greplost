@@ -5,10 +5,15 @@
 > No summary yet; run `greplost refresh`.
 
 **Package:** `@tiny/core` ([map](../../MAP.md))
+
 **Exports:** `Ack (type)`, `Msg (interface)`, `Queue (interface)`
+
 **Imports:** [`./types`](types.ts.md) (Priority)
+
 **Imported by:** [`packages/core/src/index.ts`](index.ts.md), [`packages/core/src/registry.ts`](registry.ts.md)
+
 **Blast radius:** 6 files (`greplost impact packages/core/src/queue.ts`)
+
 **Key symbols:**
 - `interface Msg`  L3-7
 - `type Ack = { ok: true; id: string } | { ok: false; reason: string }`  L9-9

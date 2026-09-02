@@ -5,8 +5,13 @@
 > No summary yet; run `greplost refresh`.
 
 **Package:** `@tiny/core` ([map](../../MAP.md))
+
 **Exports:** `Ack`, `DEFAULT_ATTEMPTS`, `Msg`, `Priority`, `Queue`, `Registry`, `createRegistry`, `retry`
+
 **Imports:** [`./registry`](registry.ts.md) (*), [`./retry`](retry.ts.md) (DEFAULT_ATTEMPTS, retry), [`./queue`](queue.ts.md) (Ack, Msg, Queue), [`./types`](types.ts.md) (Priority)
+
 **Imported by:** [`apps/worker/src/main.ts`](../../../worker/modules/src/main.ts.md), [`packages/adapters/src/memory.ts`](../../../tiny__adapters/modules/src/memory.ts.md), [`packages/adapters/src/sqs.ts`](../../../tiny__adapters/modules/src/sqs.ts.md)
+
 **Blast radius:** 4 files (`greplost impact packages/core/src/index.ts`)
+
 **Key symbols:** None.

@@ -31,8 +31,6 @@ Path: `packages/core` · 7 files · 99 LOC · depends on: none · depended on by
 
 ## Components
 
-### packages/core
-
 ```mermaid
 graph LR
   packages_core_src_bus_ts["bus.ts"]

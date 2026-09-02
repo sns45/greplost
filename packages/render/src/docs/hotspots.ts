@@ -8,7 +8,7 @@
 
 import type { FileEntry } from "@greplost/core/schema";
 import { compareStrings } from "@greplost/core/schema";
-import { stronglyConnected } from "@greplost/core";
+import { stronglyConnected } from "@greplost/core/graph";
 
 import type { DocContext } from "../render.ts";
 import { relLink } from "../slug.ts";

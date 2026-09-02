@@ -1,0 +1,114 @@
+{
+  "corpus": [
+    {
+      "name": "anyq",
+      "sha": "657f41c2cbe06039c0d82cf81c17759d1149eda2"
+    }
+  ],
+  "date": "2026-09-02",
+  "gate": {
+    "missed": [
+      "S1"
+    ],
+    "passed": false
+  },
+  "greplostSha": "1b7f1fa",
+  "machine": {
+    "arch": "arm64",
+    "bun": "1.2.21",
+    "cores": 16,
+    "cpu": "Apple M4 Max",
+    "go": "go version go1.25.3 darwin/arm64",
+    "greplostSha": "1b7f1fa",
+    "greplostVersion": "0.0.1",
+    "memoryGB": 128,
+    "node": "24.3.0",
+    "os": "Darwin 25.5.0"
+  },
+  "repos": {
+    "anyq": {
+      "S1": {
+        "f1": 0.892156862745098,
+        "fn": 0,
+        "fp": 66,
+        "precision": 0.8053097345132744,
+        "recall": 1,
+        "tp": 273
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 762
+      },
+      "S3": {
+        "f1": 0.8879837067209776,
+        "fn": 49,
+        "fp": 6,
+        "precision": 0.9732142857142857,
+        "recall": 0.8164794007490637,
+        "tp": 218
+      },
+      "S4": 1,
+      "callsAllConfidences": {
+        "f1": 0.8576923076923078,
+        "fn": 44,
+        "fp": 30,
+        "precision": 0.8814229249011858,
+        "recall": 0.8352059925093633,
+        "tp": 223
+      },
+      "falsePositives": {
+        "S1": [
+          "apps/examples/retry-strategies/src/adapters/kafka.ts:9 (apps/examples/retry-strategies/src/adapters/kafka.ts -> packages/kafka/src/index.ts)",
+          "apps/examples/retry-strategies/src/adapters/nats.ts:9 (apps/examples/retry-strategies/src/adapters/nats.ts -> packages/nats/src/index.ts)",
+          "apps/examples/retry-strategies/src/adapters/rabbitmq.ts:9 (apps/examples/retry-strategies/src/adapters/rabbitmq.ts -> packages/rabbitmq/src/index.ts)",
+          "apps/examples/retry-strategies/src/adapters/redis-streams.ts:11 (apps/examples/retry-strategies/src/adapters/redis-streams.ts -> packages/redis-streams/src/index.ts)",
+          "apps/examples/retry-strategies/src/examples/backpressure-pause.ts:12 (apps/examples/retry-strategies/src/examples/backpressure-pause.ts -> packages/core/src/index.ts)",
+          "apps/examples/retry-strategies/src/examples/custom.ts:9 (apps/examples/retry-strategies/src/examples/custom.ts -> packages/core/src/index.ts)",
+          "apps/examples/retry-strategies/src/examples/dead-letter-immediate.ts:9 (apps/examples/retry-strategies/src/examples/dead-letter-immediate.ts -> packages/core/src/index.ts)",
+          "apps/examples/retry-strategies/src/examples/log-and-fail.ts:13 (apps/examples/retry-strategies/src/examples/log-and-fail.ts -> packages/core/src/index.ts)",
+          "apps/examples/retry-strategies/src/examples/log-and-skip.ts:9 (apps/examples/retry-strategies/src/examples/log-and-skip.ts -> packages/core/src/index.ts)",
+          "apps/examples/retry-strategies/src/examples/retry-then-dead-letter.ts:10 (apps/examples/retry-strategies/src/examples/retry-then-dead-letter.ts -> packages/core/src/index.ts)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:17 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/core/src/index.ts)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:22 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/index.ts)",
+          "apps/testers/azure-servicebus/src/consumer.ts:5 (apps/testers/azure-servicebus/src/consumer.ts -> packages/azure-servicebus/src/index.ts)",
+          "apps/testers/azure-servicebus/src/producer.ts:5 (apps/testers/azure-servicebus/src/producer.ts -> packages/azure-servicebus/src/index.ts)",
+          "apps/testers/google-pubsub/src/consumer.ts:5 (apps/testers/google-pubsub/src/consumer.ts -> packages/google-pubsub/src/index.ts)",
+          "apps/testers/google-pubsub/src/producer.ts:5 (apps/testers/google-pubsub/src/producer.ts -> packages/google-pubsub/src/index.ts)",
+          "apps/testers/kafka/src/consumer.ts:5 (apps/testers/kafka/src/consumer.ts -> packages/kafka/src/index.ts)",
+          "apps/testers/kafka/src/producer.ts:5 (apps/testers/kafka/src/producer.ts -> packages/kafka/src/index.ts)",
+          "apps/testers/memory/src/config.ts:5 (apps/testers/memory/src/config.ts -> packages/memory/src/index.ts)",
+          "apps/testers/memory/src/consumer.ts:5 (apps/testers/memory/src/consumer.ts -> packages/memory/src/index.ts)"
+        ],
+        "S2": [],
+        "S3": [
+          "apps/testers/kafka/src/consumer.ts:1 (apps/testers/kafka/src/consumer.ts -> packages/kafka/src/index.ts#createKafkaConsumer)",
+          "apps/testers/kafka/src/producer.ts:1 (apps/testers/kafka/src/producer.ts -> packages/kafka/src/index.ts#createKafkaProducer)",
+          "apps/testers/sns/src/consumer.ts:1 (apps/testers/sns/src/consumer.ts -> packages/sqs/src/index.ts#createSQSConsumer)",
+          "apps/testers/sns/src/producer.ts:1 (apps/testers/sns/src/producer.ts -> packages/sns/src/index.ts#createSNSProducer)",
+          "apps/testers/sqs/src/consumer.ts:1 (apps/testers/sqs/src/consumer.ts -> packages/sqs/src/index.ts#createSQSConsumer)",
+          "apps/testers/sqs/src/producer.ts:1 (apps/testers/sqs/src/producer.ts -> packages/sqs/src/index.ts#createSQSProducer)"
+        ],
+        "S4": []
+      },
+      "files": 148,
+      "truthEmpty": false
+    }
+  },
+  "suite": "structural",
+  "targets": {
+    "S1": [
+      0.99,
+      0.97
+    ],
+    "S2": [
+      0.99,
+      0.99
+    ],
+    "S3": 0.95,
+    "S4": 1
+  }
+}

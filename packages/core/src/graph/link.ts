@@ -47,9 +47,9 @@ export interface ExportTarget {
    * The name is exported but this leaf cannot say which declaration it names:
    * the chain leaves the repo, ends at a namespace object or an expression,
    * dead-ends on a missing name, runs into a cycle, or two `export *` sources
-   * supply the name. Such an entry exists only so `exportNames` reports the
-   * name; it is never a call target, whatever happens to be declared under
-   * `file`/`symbol`.
+   * supply two different declarations. Such an entry exists only so
+   * `exportNames` reports the name; it is never a call target, whatever happens
+   * to be declared under `file`/`symbol`.
    */
   unpinned?: true;
 }
@@ -166,6 +166,7 @@ function topLevelDeclarations(file: FileRecord): Map<string, DeclKind> {
 type Sourcing =
   | { kind: "declared"; symbol: string }
   | { kind: "chain"; module: string; name: string }
+  | { kind: "stars"; modules: string[] }
   | { kind: "unpinnable" };
 
 /**
@@ -180,8 +181,8 @@ type Sourcing =
  *    of re-export hops it took to get there. A chain is followed to any depth
  *    but must be exact: it stops, and the name is marked `unpinned`, when a hop
  *    leaves the repo, names something that is not a single symbol, dead-ends on
- *    a missing name, runs into a cycle, or when two `export *` sources supply
- *    the same name with no local export shadowing them.
+ *    a missing name, runs into a cycle, or when the paths into it disagree
+ *    about which declaration the name means.
  */
 export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex {
   const specifiersByFile = resolvedSpecifiers(files, imports);
@@ -283,8 +284,11 @@ export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): Ex
     }
   }
 
-  // Pass 3: one node per (file, exported name), each with at most one source,
-  // so resolving a name is walking a chain rather than searching a graph.
+  // Pass 3: one node per (file, exported name), carrying where the name can
+  // come from: a declaration here, nothing pinnable, or one or more
+  // (module, name) pairs to follow. Several `export *` sources for one name are
+  // fine as long as they all land on the same declaration; two different
+  // declarations are the ambiguity a compiler would reject.
   const nodeIds = new Map<string, Map<string, number>>();
   const nodeFile: string[] = [];
   const nodeName: string[] = [];
@@ -294,13 +298,10 @@ export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): Ex
     nodeIds.set(file.path, ids);
     const own = explicit.get(file.path);
     for (const name of [...(closure.get(file.path) ?? [])].sort(compareStrings)) {
-      let sourcing = own?.get(name);
-      if (sourcing === undefined) {
-        // Star-derived: exactly one starred module may supply the name.
-        const suppliers = (starTargets.get(file.path) ?? []).filter((m) => closure.get(m)?.has(name) === true);
-        const supplier = suppliers.length === 1 ? suppliers[0] : undefined;
-        sourcing = supplier === undefined ? { kind: "unpinnable" } : { kind: "chain", module: supplier, name };
-      }
+      const sourcing: Sourcing = own?.get(name) ?? {
+        kind: "stars",
+        modules: (starTargets.get(file.path) ?? []).filter((m) => closure.get(m)?.has(name) === true),
+      };
       ids.set(name, nodeFile.length);
       nodeFile.push(file.path);
       nodeName.push(name);
@@ -309,8 +310,6 @@ export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): Ex
   }
 
   const count = nodeFile.length;
-  const values: Array<ExportTarget | undefined> = new Array<ExportTarget | undefined>(count);
-  const onPath = new Uint8Array(count);
   const unpinnedAt = (node: number): ExportTarget => ({
     file: nodeFile[node] ?? "",
     symbol: nodeName[node] ?? "",
@@ -318,59 +317,84 @@ export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): Ex
     unpinned: true,
   });
 
-  for (let start = 0; start < count; start++) {
-    if (values[start] !== undefined) continue;
-    const path: number[] = [];
-    let current = start;
-    let result: ExportTarget | undefined;
-    for (;;) {
-      const known = values[current];
-      if (known !== undefined) {
-        result = known;
-        break;
+  // The source nodes to follow, and whether the name already dead-ends here:
+  // the module it names does not export it, or nothing supplies it at all.
+  const nodeSources: number[][] = [];
+  const deadEnd = new Uint8Array(count);
+  for (let node = 0; node < count; node++) {
+    const sourcing = nodeSourcing[node] ?? { kind: "unpinnable" };
+    const sources: number[] = [];
+    if (sourcing.kind === "chain") {
+      const id = nodeIds.get(sourcing.module)?.get(sourcing.name);
+      if (id === undefined) deadEnd[node] = 1;
+      else sources.push(id);
+    } else if (sourcing.kind === "stars") {
+      if (sourcing.modules.length === 0) deadEnd[node] = 1;
+      for (const module of sourcing.modules) {
+        const id = nodeIds.get(module)?.get(nodeName[node] ?? "");
+        if (id === undefined) deadEnd[node] = 1;
+        else sources.push(id);
       }
-      if (onPath[current] === 1) {
-        // A re-export cycle reaches no declaration, and everything that walked
-        // into it fails with it.
-        result = unpinnedAt(current);
-        break;
-      }
-      onPath[current] = 1;
-      path.push(current);
-      const sourcing = nodeSourcing[current] ?? { kind: "unpinnable" };
-      if (sourcing.kind === "declared") {
-        result = { file: nodeFile[current] ?? "", symbol: sourcing.symbol, hops: 0 };
-        values[current] = result;
-        break;
-      }
-      if (sourcing.kind === "unpinnable") {
-        result = unpinnedAt(current);
-        values[current] = result;
-        break;
-      }
-      const next = nodeIds.get(sourcing.module)?.get(sourcing.name);
-      if (next === undefined) {
-        // The chain names something the target module does not export.
-        result = unpinnedAt(current);
-        values[current] = result;
-        break;
-      }
-      current = next;
     }
-    for (let i = path.length - 1; i >= 0; i--) {
-      const node = path[i] ?? 0;
-      onPath[node] = 0;
-      const settled = values[node];
-      if (settled !== undefined) {
-        result = settled;
+    nodeSources.push(sources);
+  }
+
+  const values: Array<ExportTarget | undefined> = new Array<ExportTarget | undefined>(count);
+
+  /**
+   * One node's target, once its sources are resolved. Every source has to agree
+   * on the declaration; a source that is itself unpinned, a dead end, or a
+   * cycle leaves the name exported but unpinnable.
+   */
+  const resolveNode = (node: number, blocked: boolean): ExportTarget => {
+    const sourcing = nodeSourcing[node];
+    if (sourcing !== undefined && sourcing.kind === "declared") {
+      return { file: nodeFile[node] ?? "", symbol: sourcing.symbol, hops: 0 };
+    }
+    if (blocked || deadEnd[node] === 1) return unpinnedAt(node);
+    const sources = nodeSources[node] ?? [];
+    if (sources.length === 0) return unpinnedAt(node);
+    let best: ExportTarget | undefined;
+    for (const source of sources) {
+      const value = values[source];
+      if (value === undefined || value.unpinned === true) return unpinnedAt(node);
+      if (best === undefined) {
+        best = { file: value.file, symbol: value.symbol, hops: value.hops + 1 };
         continue;
       }
-      const lifted: ExportTarget =
-        result === undefined || result.unpinned === true
-          ? unpinnedAt(node)
-          : { file: result.file, symbol: result.symbol, hops: result.hops + 1 };
-      values[node] = lifted;
-      result = lifted;
+      if (best.file !== value.file || best.symbol !== value.symbol) return unpinnedAt(node);
+      // The same declaration down two paths: keep the shorter one.
+      if (value.hops + 1 < best.hops) best = { file: value.file, symbol: value.symbol, hops: value.hops + 1 };
+    }
+    return best ?? unpinnedAt(node);
+  };
+
+  // Depth first, iteratively: a node is resolved after its sources, and a node
+  // still on the stack when it is reached again is a re-export cycle.
+  const state = new Uint8Array(count);
+  const stack: Array<{ node: number; index: number; blocked: boolean }> = [];
+  for (let start = 0; start < count; start++) {
+    if (state[start] === 2) continue;
+    state[start] = 1;
+    stack.push({ node: start, index: 0, blocked: false });
+    while (stack.length > 0) {
+      const frame = stack[stack.length - 1];
+      if (frame === undefined) break;
+      const sources = nodeSources[frame.node] ?? [];
+      if (frame.index < sources.length) {
+        const child = sources[frame.index] ?? 0;
+        frame.index += 1;
+        if (state[child] === 0) {
+          state[child] = 1;
+          stack.push({ node: child, index: 0, blocked: false });
+        } else if (state[child] === 1) {
+          frame.blocked = true;
+        }
+        continue;
+      }
+      stack.pop();
+      state[frame.node] = 2;
+      values[frame.node] = resolveNode(frame.node, frame.blocked);
     }
   }
 

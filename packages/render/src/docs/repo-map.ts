@@ -32,7 +32,11 @@ export function packageNodeIds(packages: readonly PackageInfo[]): Map<string, st
   return ids;
 }
 
-/** ASCII tree of package directories, each annotated with its package name. */
+/**
+ * ASCII tree of package directories, each annotated with its package name.
+ * Callers pass `ctx.indexedPackages`: a package with no indexed files would be
+ * a dead branch here (render spec, GitHub rendering rule).
+ */
 export function packageTree(packages: readonly PackageInfo[], depth = Number.POSITIVE_INFINITY): string {
   const nameByPath = new Map<string, string>();
   for (const pkg of packages) nameByPath.set(pkg.path, pkg.name);
@@ -47,7 +51,7 @@ export function packageTree(packages: readonly PackageInfo[], depth = Number.POS
 export function buildRepoMap(ctx: DocContext): string {
   const blocks: string[] = [`# ${ctx.rootName}: package map`, ctx.generatedLine];
 
-  blocks.push("## Package tree", fence(packageTree(ctx.packages)));
+  blocks.push("## Package tree", fence(packageTree(ctx.indexedPackages)));
 
   blocks.push("## Package dependencies", ...dependencyDiagrams(ctx));
 
@@ -61,10 +65,13 @@ function fence(body: string): string {
 }
 
 function dependencyDiagrams(ctx: DocContext): string[] {
-  if (ctx.packages.length === 0) return ["None."];
+  // Packages with no indexed files are omitted: they can carry no edge, so they
+  // would only ever be isolated nodes (render spec, GitHub rendering rule).
+  const shown = ctx.indexedPackages;
+  if (shown.length === 0) return ["None."];
 
-  const ids = packageNodeIds(ctx.packages);
-  const nodes: SplitNode[] = ctx.packages.map((pkg) => ({
+  const ids = packageNodeIds(shown);
+  const nodes: SplitNode[] = shown.map((pkg) => ({
     id: ids.get(pkg.name) ?? pkg.name,
     label: pkg.name,
     dir: pkg.path,
