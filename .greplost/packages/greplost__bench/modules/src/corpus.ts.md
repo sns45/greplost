@@ -12,7 +12,7 @@
 
 **Imported by:** [`bench/src/machine.ts`](machine.ts.md), [`bench/src/mapquality.ts`](mapquality.ts.md), [`bench/src/perf.ts`](perf.ts.md), [`bench/src/replay.ts`](replay.ts.md)
 
-**Blast radius:** 4 files (`greplost impact bench/src/corpus.ts`)
+**Blast radius:** 5 files (`greplost impact bench/src/corpus.ts`)
 
 **Key symbols:**
 - `type Tier = "S" | "M" | "L" | "XL"`  L13-13

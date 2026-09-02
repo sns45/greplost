@@ -56,6 +56,26 @@
 - `function resolveClaude(): string` L434-446
 - `async function run(args: string[]): Promise<number>` L911-928
 
+## bench/src/charts.ts
+
+- `interface Series` L37-41
+- `interface ChartSpec` L43-56
+- `interface BoxDatum` L59-66
+- `interface BoxSpec` L68-76
+- `const PALETTE: readonly string[] = ["#1d4ed8", "#ea580c", "#0f766e", "#a21caf", "#4d7c0f", "#b91c1c"]` L87-87
+- `function wrapText(text: string, columns: number): string[]` L118-132
+- `function coord(value: number): string` L143-147
+- `function label(value: number): string` L150-155
+- `function esc(text: string): string` L162-168
+- `function axisMax(raw: number): number` L175-183
+- `function barChart(spec: ChartSpec): string` L314-316
+- `function groupedBarChart(spec: ChartSpec): string` L319-321
+- `function lineChart(spec: ChartSpec): string` L388-440
+- `function boxChart(spec: BoxSpec): string` L447-497
+- `function mermaidXy(spec: ChartSpec, kind: "line" | "bar" = "line"): string` L520-559
+- `function toPng(svg: string): Buffer` L577-581
+- `function writeChart(dir: string, name: string, svg: string): { svg: string; png: string }` L610-617
+
 ## bench/src/cli.ts
 
 - `async function main(argv: string[]): Promise<number>` L19-46
@@ -89,6 +109,30 @@
 - `function backfillBlobs(dir: string): { backfilled: boolean; reason?: string }` L157-170
 - `function copySourceTree(from: string, to: string): void` L182-187
 - `function percentile(samples: readonly number[], p: number): number` L196-202
+
+## bench/src/headtohead.ts
+
+- `const TOOLS = ["greplost", "graphify", "ua", "crg"] as const` L77-77
+- `type Tool = (typeof TOOLS)[number]` L78-78
+- `type CompetitorName = "graphify" | "ua" | "crg"` L79-79
+- `interface MetricDef` L86-101
+- `const METRIC_PLAN: readonly MetricDef[] = [ { id: "X1", title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports", higherIsBetter: true, margin: 0.1, unit: "ca…` L104-115
+- `function verdictFor(opts: { ours: number | null; theirs: number | null; higherIsBetter: boolean; margin: number; }): Verdict` L129-141
+- `function emptyMetrics(reason: string): Record<XId, MetricRow>` L161-169
+- `function competitorSpecs(): Map<string, CompetitorSpec>` L255-262
+- `function findBinary(name: string): string | null` L335-341
+- `function sandboxEnv(): NodeJS.ProcessEnv` L388-401
+- `function byteDelta(a: Map<string, string>, b: Map<string, string>): { bytes: number; files: number }` L494-506
+- `function byteDistance(a: string, b: string): number` L523-540
+- `function describeDifference(a: Map<string, string>, b: Map<string, string>): string` L553-572
+- `function lineDelta(a: Map<string, string>, b: Map<string, string>): { lines: number; files: number; total: number }` L604-618
+- `function diffLineCount(a: readonly string[], b: readonly string[]): number` L628-655
+- `function readGreplostArtifact(dir: string): { imports: Edge[]; calls: Edge[] } | null` L704-722
+- `async function run(args: string[]): Promise<number>` L728-748
+- `function planImportEdit(snapshot: Snapshot): ImportEdit | null` L1661-1663
+- `interface ImportEdit` L1666-1670
+- `function planImportEdits(snapshot: Snapshot, limit: number): ImportEdit[]` L1681-1714
+- `function median(values: readonly number[]): number | null` L1850-1856
 
 ## bench/src/machine.ts
 
@@ -157,6 +201,15 @@
 - `function aggregate(summaries: ReplaySummary[]): ReplaySummary` L690-712
 - `async function run(args: string[]): Promise<number>` L837-910
 
+## bench/src/report.ts
+
+- `interface BuildOptions` L52-57
+- `async function run(args: string[]): Promise<number>` L72-96
+- `function buildModel(options: BuildOptions = {}): ReportModel` L144-206
+- `function competitors(): CompetitorEntry[]` L407-426
+- `function scenariosOf(payload: Payload): Scenario[]` L922-958
+- `function agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>` L1071-1108
+
 ## bench/src/results-io.ts
 
 - `const RESULTS_DIR = "bench/results"` L27-27
@@ -166,6 +219,27 @@
 - `function writeResult(suite: string, payload: object, dir?: string): string` L64-75
 - `function latestResult( suite: string, dir?: string, ): { file: string; payload: Record<string, unknown> } | undefined` L78-92
 
+## bench/src/results-md.ts
+
+- `const X_IDS = ["X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9", "X10"] as const` L29-29
+- `type XId = (typeof X_IDS)[number]` L30-30
+- `const SECTION_HEADERS = [ "Machine", "Corpus", "Versions", "Head-to-head", "Eval 1", "Eval 2", "Bench 3", "Eval 4", "Eval 5", "Map quality", ] as const` L33-44
+- `const NOT_RUN = "not run"` L47-47
+- `const NOT_APPLICABLE = "n/a"` L50-50
+- `type Verdict = "win" | "loss" | "tie" | "na"` L52-52
+- `interface MetricCell` L55-69
+- `interface MetricRow` L71-76
+- `interface EvalRow` L79-87
+- `interface EvalSection` L89-100
+- `interface ChartRef` L102-115
+- `interface SummaryRow` L118-126
+- `interface ReportModel` L128-150
+- `function emptySection(): EvalSection` L153-155
+- `function renderResultsMd(model: ReportModel): string` L162-191
+- `function cell(text: string): string` L381-383
+- `function formatNumber(value: number): string` L399-405
+- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L445-456
+
 ## bench/src/score.ts
 
 - `interface Score` L24-35
@@ -174,6 +248,15 @@
 - `function scoreEdges(pred: Edge[], truth: Edge[]): Score` L75-77
 - `function exportKeys(exports: Record<string, string[]>): string[]` L80-84
 - `function jaccardCycles(pred: string[][], truth: string[][]): number` L91-100
+
+## bench/src/screenshots.ts
+
+- `type ToolId = "vhs" | "freeze" | "playwright"` L42-42
+- `interface ToolStatus` L44-55
+- `function checkTools(): ToolStatus[]` L104-126
+- `interface Capture` L146-156
+- `const CAPTURES: Capture[] = [ { id: 1, name: "init", description: "`greplost init` on hono with timing output (GIF plus final-frame PNG)", needs: ["vhs"], paid: false, perform: (ctx) => { if (…` L234-358
+- `async function run(args: string[]): Promise<number>` L425-491
 
 ## bench/src/structural.ts
 

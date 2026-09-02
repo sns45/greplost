@@ -10,9 +10,9 @@
 
 **Imports:** `node:fs` (existsSync, readFileSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, DEFAULT_CONFIG, GreplostConfig, Snapshot, compareStrings, isFileId), [`./score.ts`](score.ts.md) (Score, exportKeys, jaccardCycles, scoreEdges, scoreSet), [`./results-io.ts`](results-io.ts.md) (writeResult), [`./truth/ts.ts`](truth/ts.ts.md) (Truth, generateTsTruth)
 
-**Imported by:** None.
+**Imported by:** [`bench/src/headtohead.ts`](headtohead.ts.md)
 
-**Blast radius:** 0 files (`greplost impact bench/src/structural.ts`)
+**Blast radius:** 1 file (`greplost impact bench/src/structural.ts`)
 
 **Key symbols:**
 - `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L36-36

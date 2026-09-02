@@ -10,9 +10,9 @@
 
 **Imports:** `node:fs` (existsSync, readFileSync, statSync), `node:path` (default), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Confidence, Edge, compareEdges, compareStrings, symbolId)
 
-**Imported by:** [`bench/src/adapters/crg.ts`](crg.ts.md), [`bench/src/adapters/graphify.ts`](graphify.ts.md), [`bench/src/adapters/index.ts`](index.ts.md), [`bench/src/adapters/ua.ts`](ua.ts.md)
+**Imported by:** [`bench/src/adapters/crg.ts`](crg.ts.md), [`bench/src/adapters/graphify.ts`](graphify.ts.md), [`bench/src/adapters/index.ts`](index.ts.md), [`bench/src/adapters/ua.ts`](ua.ts.md), [`bench/src/headtohead.ts`](../headtohead.ts.md)
 
-**Blast radius:** 4 files (`greplost impact bench/src/adapters/types.ts`)
+**Blast radius:** 5 files (`greplost impact bench/src/adapters/types.ts`)
 
 **Key symbols:**
 - `interface CompetitorArtifact`  L21-55

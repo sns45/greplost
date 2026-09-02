@@ -1,7 +1,7 @@
 {
   "files": {
     "bench/src/adapters/crg.ts": {
-      "blast": 1,
+      "blast": 2,
       "exports": [
         "crgAdapter"
       ],
@@ -14,7 +14,7 @@
       "staleSummary": false
     },
     "bench/src/adapters/graphify.ts": {
-      "blast": 1,
+      "blast": 2,
       "exports": [
         "graphifyAdapter"
       ],
@@ -27,7 +27,7 @@
       "staleSummary": false
     },
     "bench/src/adapters/index.ts": {
-      "blast": 0,
+      "blast": 1,
       "exports": [
         "Adapter",
         "CompetitorArtifact",
@@ -42,7 +42,7 @@
         "toSymbolId",
         "uaAdapter"
       ],
-      "fanIn": 0,
+      "fanIn": 1,
       "fanOut": 4,
       "lang": "ts",
       "loc": 97,
@@ -51,7 +51,7 @@
       "staleSummary": false
     },
     "bench/src/adapters/types.ts": {
-      "blast": 4,
+      "blast": 5,
       "exports": [
         "Adapter",
         "CompetitorArtifact",
@@ -66,7 +66,7 @@
         "toRepoRelative",
         "toSymbolId"
       ],
-      "fanIn": 4,
+      "fanIn": 5,
       "fanOut": 1,
       "lang": "ts",
       "loc": 276,
@@ -75,7 +75,7 @@
       "staleSummary": false
     },
     "bench/src/adapters/ua.ts": {
-      "blast": 1,
+      "blast": 2,
       "exports": [
         "uaAdapter"
       ],
@@ -111,6 +111,35 @@
       "sha256": "21c3d44bab81dab3b994f0d2376f96dbf53bee65d3d14a4ac8fcea162c401a6a",
       "staleSummary": false
     },
+    "bench/src/charts.ts": {
+      "blast": 1,
+      "exports": [
+        "BoxDatum",
+        "BoxSpec",
+        "ChartSpec",
+        "PALETTE",
+        "Series",
+        "axisMax",
+        "barChart",
+        "boxChart",
+        "coord",
+        "esc",
+        "groupedBarChart",
+        "label",
+        "lineChart",
+        "mermaidXy",
+        "toPng",
+        "wrapText",
+        "writeChart"
+      ],
+      "fanIn": 1,
+      "fanOut": 0,
+      "lang": "ts",
+      "loc": 617,
+      "pkg": "@greplost/bench",
+      "sha256": "2b79dc64cf72a9d74753d8a2c74436a1a69fa47a01663a51295f3926aa8a9a93",
+      "staleSummary": false
+    },
     "bench/src/cli.ts": {
       "blast": 0,
       "exports": [
@@ -125,7 +154,7 @@
       "staleSummary": false
     },
     "bench/src/corpus.ts": {
-      "blast": 4,
+      "blast": 5,
       "exports": [
         "Corpus",
         "CorpusLang",
@@ -149,7 +178,7 @@
       "staleSummary": false
     },
     "bench/src/git.ts": {
-      "blast": 5,
+      "blast": 6,
       "exports": [
         "BACKFILL_TIMEOUT_MS",
         "CloneOptions",
@@ -172,13 +201,46 @@
       "sha256": "cbcdadb9ab7107e0f4673e48e93c30ef359a66694332bf0a23fc77e7b80a57ac",
       "staleSummary": false
     },
+    "bench/src/headtohead.ts": {
+      "blast": 0,
+      "exports": [
+        "CompetitorName",
+        "ImportEdit",
+        "METRIC_PLAN",
+        "MetricDef",
+        "TOOLS",
+        "Tool",
+        "byteDelta",
+        "byteDistance",
+        "competitorSpecs",
+        "describeDifference",
+        "diffLineCount",
+        "emptyMetrics",
+        "findBinary",
+        "lineDelta",
+        "median",
+        "planImportEdit",
+        "planImportEdits",
+        "readGreplostArtifact",
+        "run",
+        "sandboxEnv",
+        "verdictFor"
+      ],
+      "fanIn": 0,
+      "fanOut": 9,
+      "lang": "ts",
+      "loc": 2207,
+      "pkg": "@greplost/bench",
+      "sha256": "0abaf5dae48edbc78679e2e53337950784ed012f0ee756621e7bec6d55b4639a",
+      "staleSummary": false
+    },
     "bench/src/machine.ts": {
-      "blast": 3,
+      "blast": 4,
       "exports": [
         "MachineProfile",
         "machineProfile"
       ],
-      "fanIn": 3,
+      "fanIn": 4,
       "fanOut": 1,
       "lang": "ts",
       "loc": 63,
@@ -293,8 +355,30 @@
       "sha256": "fe5342431ddf0834b312c8605b82009cfa50f24938c42961c4ba55a2150bf9bf",
       "staleSummary": false
     },
+    "bench/src/report.ts": {
+      "blast": 0,
+      "exports": [
+        "BuildOptions",
+        "NOT_APPLICABLE",
+        "SECTION_HEADERS",
+        "XId",
+        "X_IDS",
+        "agentCategories",
+        "buildModel",
+        "competitors",
+        "run",
+        "scenariosOf"
+      ],
+      "fanIn": 0,
+      "fanOut": 3,
+      "lang": "ts",
+      "loc": 1396,
+      "pkg": "@greplost/bench",
+      "sha256": "9ca61710d5d10b00deb983981e316bf258a1f66776f9ca02590acdf28506d91e",
+      "staleSummary": false
+    },
     "bench/src/results-io.ts": {
-      "blast": 5,
+      "blast": 7,
       "exports": [
         "RESULTS_DIR",
         "gitSha7",
@@ -303,7 +387,7 @@
         "todayIso",
         "writeResult"
       ],
-      "fanIn": 5,
+      "fanIn": 7,
       "fanOut": 1,
       "lang": "ts",
       "loc": 96,
@@ -311,8 +395,38 @@
       "sha256": "314b08fe4e8585d077e95d2efcd04e5f566299cf22f605a952271d6e49526fa4",
       "staleSummary": false
     },
-    "bench/src/score.ts": {
+    "bench/src/results-md.ts": {
       "blast": 2,
+      "exports": [
+        "ChartRef",
+        "EvalRow",
+        "EvalSection",
+        "METRIC_TITLES",
+        "MetricCell",
+        "MetricRow",
+        "NOT_APPLICABLE",
+        "NOT_RUN",
+        "ReportModel",
+        "SECTION_HEADERS",
+        "SummaryRow",
+        "Verdict",
+        "XId",
+        "X_IDS",
+        "cell",
+        "emptySection",
+        "formatNumber",
+        "renderResultsMd"
+      ],
+      "fanIn": 2,
+      "fanOut": 0,
+      "lang": "ts",
+      "loc": 456,
+      "pkg": "@greplost/bench",
+      "sha256": "3e9b8c770d1cac8b6ce779c4ed17b0b69ecdbc520ace3fbbf8d43eb1e9125c6c",
+      "staleSummary": false
+    },
+    "bench/src/score.ts": {
+      "blast": 3,
       "exports": [
         "Score",
         "edgeKey",
@@ -321,7 +435,7 @@
         "scoreEdges",
         "scoreSet"
       ],
-      "fanIn": 2,
+      "fanIn": 3,
       "fanOut": 1,
       "lang": "ts",
       "loc": 100,
@@ -329,8 +443,26 @@
       "sha256": "f295511e6d5047961e77c29f0dec66c3a982c62fe3e8fccafb65e7b461f8de53",
       "staleSummary": false
     },
-    "bench/src/structural.ts": {
+    "bench/src/screenshots.ts": {
       "blast": 0,
+      "exports": [
+        "CAPTURES",
+        "Capture",
+        "ToolId",
+        "ToolStatus",
+        "checkTools",
+        "run"
+      ],
+      "fanIn": 0,
+      "fanOut": 0,
+      "lang": "ts",
+      "loc": 491,
+      "pkg": "@greplost/bench",
+      "sha256": "f62e135a4a255a8305f8ec9474de200d8fc7b506dc4b9d6dea607502f2c5a7d9",
+      "staleSummary": false
+    },
+    "bench/src/structural.ts": {
+      "blast": 1,
       "exports": [
         "RepoScores",
         "TARGETS",
@@ -341,7 +473,7 @@
         "scoreAgainstTruth",
         "scoredFiles"
       ],
-      "fanIn": 0,
+      "fanIn": 1,
       "fanOut": 4,
       "lang": "ts",
       "loc": 622,
@@ -387,7 +519,7 @@
       "staleSummary": false
     },
     "bench/src/truth/ts-calls.ts": {
-      "blast": 5,
+      "blast": 6,
       "exports": [
         "CallEndpoints",
         "calleeIdentifier",
@@ -406,7 +538,7 @@
       "staleSummary": false
     },
     "bench/src/truth/ts-workspace.ts": {
-      "blast": 5,
+      "blast": 6,
       "exports": [
         "WorkspaceEntryMapper"
       ],
@@ -419,14 +551,14 @@
       "staleSummary": false
     },
     "bench/src/truth/ts.ts": {
-      "blast": 4,
+      "blast": 5,
       "exports": [
         "Truth",
         "TruthOptions",
         "generateTsTruth",
         "listTypeScriptFiles"
       ],
-      "fanIn": 4,
+      "fanIn": 5,
       "fanOut": 3,
       "lang": "ts",
       "loc": 600,
@@ -1245,7 +1377,7 @@
       "staleSummary": false
     },
     "packages/core/src/schema.ts": {
-      "blast": 94,
+      "blast": 96,
       "exports": [
         "ARTIFACT_DIR",
         "ARTIFACT_PATHS",
@@ -1287,7 +1419,7 @@
         "symbolId",
         "unresolvedId"
       ],
-      "fanIn": 73,
+      "fanIn": 74,
       "fanOut": 0,
       "lang": "ts",
       "loc": 361,
@@ -2150,8 +2282,8 @@
         "@greplost/core",
         "@greplost/sync"
       ],
-      "files": 24,
-      "loc": 8345,
+      "files": 29,
+      "loc": 13512,
       "path": "bench",
       "rdeps": []
     },

@@ -10,9 +10,9 @@
 
 **Imports:** `node:os` (arch, cpus, release, totalmem, type), `node:child_process` (spawnSync), `node:fs` (readFileSync), `node:path` (join), [`./corpus.ts`](corpus.ts.md) (corpusRoot)
 
-**Imported by:** [`bench/src/mapquality.ts`](mapquality.ts.md), [`bench/src/perf.ts`](perf.ts.md), [`bench/src/replay.ts`](replay.ts.md)
+**Imported by:** [`bench/src/headtohead.ts`](headtohead.ts.md), [`bench/src/mapquality.ts`](mapquality.ts.md), [`bench/src/perf.ts`](perf.ts.md), [`bench/src/replay.ts`](replay.ts.md)
 
-**Blast radius:** 3 files (`greplost impact bench/src/machine.ts`)
+**Blast radius:** 4 files (`greplost impact bench/src/machine.ts`)
 
 **Key symbols:**
 - `interface MachineProfile`  L15-26

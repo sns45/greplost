@@ -12,7 +12,7 @@
 
 **Imported by:** [`bench/src/adapters/index.ts`](index.ts.md)
 
-**Blast radius:** 1 file (`greplost impact bench/src/adapters/ua.ts`)
+**Blast radius:** 2 files (`greplost impact bench/src/adapters/ua.ts`)
 
 **Key symbols:**
 - `const PINNED_VERSION = "v2.9.0"`  L39-39

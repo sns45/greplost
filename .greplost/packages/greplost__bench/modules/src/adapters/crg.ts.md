@@ -12,7 +12,7 @@
 
 **Imported by:** [`bench/src/adapters/index.ts`](index.ts.md)
 
-**Blast radius:** 1 file (`greplost impact bench/src/adapters/crg.ts`)
+**Blast radius:** 2 files (`greplost impact bench/src/adapters/crg.ts`)
 
 **Key symbols:**
 - `const PINNED_VERSION = "v2.3.8"`  L56-56

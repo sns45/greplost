@@ -10,9 +10,9 @@
 
 **Imports:** `node:path` (default), `node:url` (fileURLToPath), [`./types.ts`](types.ts.md) (Adapter, CompetitorArtifact, EdgeSet, toRepoRelative, toSymbolId), [`./crg.ts`](crg.ts.md) (crgAdapter), [`./graphify.ts`](graphify.ts.md) (graphifyAdapter), [`./ua.ts`](ua.ts.md) (uaAdapter)
 
-**Imported by:** None.
+**Imported by:** [`bench/src/headtohead.ts`](../headtohead.ts.md)
 
-**Blast radius:** 0 files (`greplost impact bench/src/adapters/index.ts`)
+**Blast radius:** 1 file (`greplost impact bench/src/adapters/index.ts`)
 
 **Key symbols:**
 - `const adapters: Adapter[] = [graphifyAdapter, uaAdapter, crgAdapter]`  L27-27
