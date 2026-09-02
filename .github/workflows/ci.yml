@@ -20,6 +20,8 @@ jobs:
       - run: bun test
       - name: verify the committed map of this repo
         run: bun packages/cli/src/main.ts verify --diff
+      - name: README tables match bench/RESULTS.md
+        run: bun run readme:check
       - name: structural accuracy gate (tier S)
         run: bun run bench:structural --tier S --gate
       - name: map quality gate

@@ -28,7 +28,7 @@ Scope: measured numbers, head-to-head results, README, dogfood, CI parity
   EVIDENCE: pending
 
 - [ ] R6: RESULTS.md regenerated with measured values on the S1, S3, F1, F2, P1, P2, M1, X4, X5 rows
-  CHECK: bun run bench:report >/dev/null && bun -e "const t=require('fs').readFileSync('bench/RESULTS.md','utf8'); const miss=['S1','S3','F1','F2','P1','P2','M1','X4','X5'].filter(id=>{const m=t.match(new RegExp('^\\\\| '+id+' \\\\|([^|]*)\\\\|([^|]*)\\\\|','m')); return !m||!m[2].trim()||/not run/.test(m[2])}); console.log(miss.length?'missing: '+miss.join(','):'measured ok')"
+  CHECK: bun run bench:report >/dev/null && bun run readme:sync >/dev/null && bun -e "const t=require('fs').readFileSync('bench/RESULTS.md','utf8'); const miss=['S1','S3','F1','F2','P1','P2','M1','X4','X5'].filter(id=>{const m=t.match(new RegExp('^\\\\| '+id+' \\\\|([^|]*)\\\\|([^|]*)\\\\|','m')); return !m||!m[2].trim()||/not run/.test(m[2])}); console.log(miss.length?'missing: '+miss.join(','):'measured ok')"
   EXPECT: measured ok
   EVIDENCE: pending
 
@@ -52,7 +52,7 @@ Scope: measured numbers, head-to-head results, README, dogfood, CI parity
   EVIDENCE: 12397 expect() calls | Ran 992 tests across 28 files. [25.97s]
 
 - [ ] R11: CI workflow steps run locally in order
-  CHECK: bun install --frozen-lockfile >/dev/null && bun run typecheck >/dev/null && bun test >/dev/null 2>&1 && bun packages/cli/src/main.ts verify --diff >/dev/null && bun run bench:structural --tier S --gate | tail -1 && bun run bench:mapquality --gate | tail -1
+  CHECK: bun install --frozen-lockfile >/dev/null && bun run typecheck >/dev/null && bun test >/dev/null 2>&1 && bun packages/cli/src/main.ts verify --diff >/dev/null && bun run readme:check >/dev/null && bun run bench:structural --tier S --gate | tail -1 && bun run bench:mapquality --gate | tail -1
   EXPECT: mapquality: GATE PASS
   EVIDENCE: pending
 

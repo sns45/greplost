@@ -2,10 +2,13 @@
   "name": "greplost-monorepo",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*", "bench"],
+  "workspaces": [
+    "packages/*",
+    "bench"
+  ],
   "scripts": {
     "test": "bun test",
-    "typecheck": "for p in packages/core packages/render packages/sync packages/cli packages/semantic packages/workspace bench; do echo \"== $p\"; bunx tsc -p $p/tsconfig.json --noEmit || exit 1; done",
+    "typecheck": "for p in packages/core packages/render packages/sync packages/cli packages/semantic packages/workspace bench scripts; do echo \"== $p\"; bunx tsc -p $p/tsconfig.json --noEmit || exit 1; done",
     "greplost": "bun packages/cli/src/main.ts",
     "build": "bun run --cwd packages/cli build",
     "bench:structural": "bun bench/src/cli.ts structural",
@@ -16,7 +19,9 @@
     "bench:headtohead": "bun bench/src/cli.ts headtohead",
     "bench:report": "bun bench/src/cli.ts report",
     "bench:all": "bun bench/src/cli.ts all",
-    "gates": "node ~/.claude/skills/unlazy/scripts/gate-check.mjs --status"
+    "gates": "node ~/.claude/skills/unlazy/scripts/gate-check.mjs --status",
+    "readme:sync": "bun scripts/sync-readme.ts",
+    "readme:check": "bun scripts/sync-readme.ts --check"
   },
   "devDependencies": {
     "@types/bun": "^1.2.21",
