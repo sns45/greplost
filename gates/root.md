@@ -17,6 +17,6 @@ Scope: the complete deliverable: tool, plugin, benchmark harness with measured r
   EXPECT: /^[1-9]/
   EVIDENCE: 4
 
-- [ ] T4: final report re-measures every number it states and pastes this ledger with N of N
-  EVIDENCE: pending
+- [x] T4: final report re-measures every number it states and pastes this ledger with N of N
+  EVIDENCE: final report written 2026-09-04 at HEAD 0d7b22b (scratchpad reports/final-report-2026-09-04.md and the closing chat message): re-measured tests 1296 pass  0 fail; typecheck errors 0; own map in sync; ledger 216 of  boxes checked with this one
 
