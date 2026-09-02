@@ -84,6 +84,19 @@ describe("query", () => {
     expect(findSymbols(symbols, "nothing-here")).toEqual([]);
   });
 
+  test("findSymbols anchors the suffix tier on the symbol name, never on the id", () => {
+    // The id ends in "...src/retry.ts#retry", so a needle that is a suffix of
+    // the *path* must not match: only `name` is searched.
+    const set = [decl("packages/core/src/retry.ts", "retry", [7, 18])];
+    expect(findSymbols(set, "retry.ts#retry")).toEqual([]);
+    expect(findSymbols(set, "src/retry.ts#retry")).toEqual([]);
+    expect(findSymbols(symbols, "core/src/retry.ts#retry")).toEqual([]);
+    // A member still matches through its name.
+    expect(findSymbols(symbols, "publishAll").map((d) => d.id)).toEqual([
+      `${REGISTRY}#Registry.publishAll`,
+    ]);
+  });
+
   test("findSymbols prefers an exact id, then an exact path, then a suffix", () => {
     const set = [
       decl("a.ts", "foo", [10, 12]),

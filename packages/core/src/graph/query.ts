@@ -15,9 +15,10 @@ import { compareDeclarations, compareStrings } from "../schema.ts";
  *
  *  1. an exact node id (`packages/core/src/retry.ts#retry`);
  *  2. an exact symbol path (`retry`, `Registry.publishAll`);
- *  3. a name-suffix match on a symbol-path boundary, i.e. an id ending in
- *     `#<needle>` or `.<needle>`, so `publish` finds `SqsAdapter.publish`
- *     but never `republish`.
+ *  3. a name-suffix match on a symbol-path boundary: a `name` ending in
+ *     `.<needle>`, so `publish` finds `SqsAdapter.publish` but never
+ *     `republish`. It anchors on `name`, never on `id`, so a repo-relative path
+ *     ending in the needle can never masquerade as a symbol match.
  *
  * Tiers, rather than a union, keep a precise needle precise: asking for `foo`
  * when a top-level `foo` exists does not also drag in every `Thing.foo`.
@@ -32,7 +33,7 @@ export function findSymbols(symbols: Declaration[], needle: string): Declaration
   const byName = symbols.filter((decl) => decl.name === needle);
   if (byName.length > 0) return sortDeclarations(byName);
 
-  const suffix = symbols.filter((decl) => decl.id.endsWith(`#${needle}`) || decl.id.endsWith(`.${needle}`));
+  const suffix = symbols.filter((decl) => decl.name.endsWith(`.${needle}`));
   return sortDeclarations(suffix);
 }
 

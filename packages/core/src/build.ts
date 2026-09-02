@@ -21,6 +21,7 @@ import type {
   FileEntry,
   FileRecord,
   GreplostConfig,
+  Lang,
   Manifest,
   Snapshot,
   SummaryCache,
@@ -37,13 +38,22 @@ import { createResolver, detectPackages } from "./resolve/index.ts";
 import { buildExportIndex, computeMetrics, exportNames, linkCalls, linkImports } from "./graph/index.ts";
 
 /**
- * Content-addressed extraction cache (tech spec 8). Keyed by the sha256 of the
- * raw bytes, so a file that moves or that duplicates another file's content is
- * never re-parsed; `buildSnapshot` re-stamps the path onto the hit, and ignores
- * a hit that was extracted as a different language.
+ * Content-addressed extraction cache (tech spec 8), keyed by `(lang, sha256)`.
+ *
+ * The hash alone does not identify an extraction result: `ts`/`js` are read with
+ * the TypeScript grammar and `tsx`/`jsx` with the TSX one, so two files with the
+ * same bytes and different extensions (two empty files, say) are two records.
+ * A file that merely moves, or that duplicates another file of the same
+ * language, is never re-parsed; `buildSnapshot` re-stamps the path onto the hit.
+ *
+ * Records crossing this boundary are immutable: `buildSnapshot` shallow-freezes
+ * every record and its `decls`/`imports`/`exports`/`calls` arrays before handing
+ * it to `set` and before putting it in the snapshot, so an implementation may
+ * store and hand back the same object without any defensive copying. Nothing
+ * downstream may mutate a `FileRecord`.
  */
 export interface ParseCache {
-  get(sha256: string): FileRecord | undefined;
+  get(sha256: string, lang: Lang): FileRecord | undefined;
   set(record: FileRecord): void;
 }
 
@@ -93,7 +103,10 @@ export async function buildSnapshot(opts: BuildOptions): Promise<Snapshot> {
   const manifestEntries: Record<string, FileEntry> = {};
   for (const filePath of Object.keys(manifestFiles).sort(compareStrings)) {
     const computed = manifestFiles[filePath];
-    if (computed === undefined) continue;
+    // The key came from `manifestFiles` itself; a hole would mean a broken Map.
+    if (computed === undefined) {
+      throw new Error(`greplost: internal error: no computed metrics for ${filePath}`);
+    }
     const summary = summaryFor(filePath, computed.sha256, summaries);
     manifestEntries[filePath] = {
       ...computed,
@@ -160,10 +173,12 @@ async function readOne(file: DiscoveredFile): Promise<SourceFile> {
  * bytes are parsed once and the record is re-stamped for the second, whether
  * the twin arrived from the cache or from this very build.
  *
- * Content alone is not enough to identify a record, though. `ParseCache` is
- * keyed by hash (tech spec 8), but extraction also depends on the language:
- * two empty files, one `.ts` and one `.jsx`, share a hash and must not share a
- * record. A hit whose language differs is therefore ignored and re-parsed.
+ * Content alone is not enough to identify a record, though: extraction also
+ * depends on the language, so both the cache and the in-build twin map are
+ * keyed by `(lang, sha256)`. Two empty files, one `.ts` and one `.jsx`, share a
+ * hash and must not share a record.
+ *
+ * Every record leaving this function is frozen (see `freezeRecord`).
  */
 async function extractAll(sources: SourceFile[], opts: BuildOptions): Promise<FileRecord[]> {
   const cache = opts.cache;
@@ -177,8 +192,8 @@ async function extractAll(sources: SourceFile[], opts: BuildOptions): Promise<Fi
   for (let i = 0; i < sources.length; i++) {
     const source = sources[i] as SourceFile;
     const key = recordKey(source);
-    const hit = cache?.get(source.sha256);
-    if (hit !== undefined && hit.lang === source.lang) {
+    const hit = cache?.get(source.sha256, source.lang);
+    if (hit !== undefined) {
       files[i] = restamp(hit, source.path);
       continue;
     }
@@ -196,10 +211,7 @@ async function extractAll(sources: SourceFile[], opts: BuildOptions): Promise<Fi
     const parser = opts.parser ?? (await createParser());
     for (const i of misses) {
       const source = sources[i] as SourceFile;
-      const record = extractFile(
-        { path: source.path, lang: source.lang, source: source.source, sha256: source.sha256 },
-        parser,
-      );
+      const record = freezeRecord(extract(source, parser));
       cache?.set(record);
       files[i] = record;
       for (const twin of twins.get(recordKey(source)) ?? []) {
@@ -223,17 +235,50 @@ function recordKey(source: SourceFile): string {
 }
 
 /**
+ * One file's extraction. A grammar failure names the file it happened on: the
+ * raw parser error says only what went wrong, never where.
+ */
+function extract(source: SourceFile, parser: ParserHandle): FileRecord {
+  try {
+    return extractFile(
+      { path: source.path, lang: source.lang, source: source.source, sha256: source.sha256 },
+      parser,
+    );
+  } catch (cause) {
+    const reason = cause instanceof Error ? cause.message : String(cause);
+    throw new Error(`greplost: cannot parse ${source.path}: ${reason}`);
+  }
+}
+
+/**
+ * Records are immutable at the cache boundary and in the snapshot: a cache may
+ * hand the same object to two builds, so a consumer that mutated one would
+ * corrupt every later build. Shallow-frozen (the record and its four arrays);
+ * the `Declaration` objects inside are shared, never rewritten in place.
+ */
+function freezeRecord(record: FileRecord): FileRecord {
+  Object.freeze(record.decls);
+  Object.freeze(record.imports);
+  Object.freeze(record.exports);
+  Object.freeze(record.calls);
+  return Object.freeze(record);
+}
+
+/**
  * Re-address a cached record onto the path that asked for it. Identical bytes
  * can live at two paths, and a `Declaration` carries the file it came from in
  * both `file` and `id`, so those move with the record.
+ *
+ * The result is frozen either way: a foreign cache may hand back a record this
+ * build never froze.
  */
 function restamp(record: FileRecord, filePath: string): FileRecord {
-  if (record.path === filePath) return record;
-  return {
+  if (record.path === filePath) return freezeRecord(record);
+  return freezeRecord({
     ...record,
     path: filePath,
     decls: record.decls.map((decl) => ({ ...decl, file: filePath, id: symbolId(filePath, decl.name) })),
-  };
+  });
 }
 
 /**
