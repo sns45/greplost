@@ -1,0 +1,195 @@
+{
+  "corpus": [
+    {
+      "name": "anyq",
+      "sha": "657f41c2cbe06039c0d82cf81c17759d1149eda2"
+    },
+    {
+      "name": "gin",
+      "sha": "dcaa4296d111981ffb31ac3eba90bb63e1eb5ab9"
+    }
+  ],
+  "date": "2026-09-02",
+  "gate": {
+    "missed": [],
+    "passed": true
+  },
+  "greplostSha": "3f41fbd",
+  "machine": {
+    "arch": "arm64",
+    "bun": "1.2.21",
+    "cores": 16,
+    "cpu": "Apple M4 Max",
+    "go": "go version go1.25.3 darwin/arm64",
+    "greplostSha": "3f41fbd",
+    "greplostVersion": "0.0.1",
+    "memoryGB": 128,
+    "node": "24.3.0",
+    "os": "Darwin 25.5.0"
+  },
+  "repos": {
+    "anyq": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 339
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 762
+      },
+      "S3": {
+        "f1": 0.46473029045643155,
+        "fn": 516,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.3027027027027027,
+        "tp": 224
+      },
+      "S4": 1,
+      "callsAllConfidences": {
+        "f1": 0.6372007366482505,
+        "fn": 394,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.46756756756756757,
+        "tp": 346
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [
+          "apps/examples/retry-strategies/src/adapters/kafka.ts:28 (apps/examples/retry-strategies/src/adapters/kafka.ts#createKafkaAdapter -> packages/kafka/src/consumer.ts#KafkaConsumer)",
+          "apps/examples/retry-strategies/src/adapters/kafka.ts:28 (apps/examples/retry-strategies/src/adapters/kafka.ts#createKafkaAdapter -> packages/kafka/src/producer.ts#KafkaProducer)",
+          "apps/examples/retry-strategies/src/adapters/nats.ts:28 (apps/examples/retry-strategies/src/adapters/nats.ts#createNatsAdapter -> packages/nats/src/consumer.ts#NATSConsumer)",
+          "apps/examples/retry-strategies/src/adapters/nats.ts:28 (apps/examples/retry-strategies/src/adapters/nats.ts#createNatsAdapter -> packages/nats/src/producer.ts#NATSProducer)",
+          "apps/examples/retry-strategies/src/adapters/rabbitmq.ts:30 (apps/examples/retry-strategies/src/adapters/rabbitmq.ts#createRabbitMQAdapter -> packages/rabbitmq/src/consumer.ts#RabbitMQConsumer)",
+          "apps/examples/retry-strategies/src/adapters/rabbitmq.ts:30 (apps/examples/retry-strategies/src/adapters/rabbitmq.ts#createRabbitMQAdapter -> packages/rabbitmq/src/producer.ts#RabbitMQProducer)",
+          "apps/examples/retry-strategies/src/adapters/redis-streams.ts:33 (apps/examples/retry-strategies/src/adapters/redis-streams.ts#createRedisStreamsAdapter -> packages/redis-streams/src/consumer.ts#RedisStreamsConsumer)",
+          "apps/examples/retry-strategies/src/adapters/redis-streams.ts:33 (apps/examples/retry-strategies/src/adapters/redis-streams.ts#createRedisStreamsAdapter -> packages/redis-streams/src/producer.ts#RedisStreamsProducer)",
+          "apps/examples/retry-strategies/src/examples/backpressure-pause.ts:1 (apps/examples/retry-strategies/src/examples/backpressure-pause.ts -> packages/core/src/strategies/built-ins.ts#backpressurePause)",
+          "apps/examples/retry-strategies/src/examples/custom.ts:1 (apps/examples/retry-strategies/src/examples/custom.ts -> packages/core/src/strategies/built-ins.ts#custom)",
+          "apps/examples/retry-strategies/src/examples/dead-letter-immediate.ts:1 (apps/examples/retry-strategies/src/examples/dead-letter-immediate.ts -> packages/core/src/strategies/built-ins.ts#deadLetterImmediate)",
+          "apps/examples/retry-strategies/src/examples/log-and-fail.ts:1 (apps/examples/retry-strategies/src/examples/log-and-fail.ts -> packages/core/src/strategies/built-ins.ts#logAndFail)",
+          "apps/examples/retry-strategies/src/examples/log-and-skip.ts:1 (apps/examples/retry-strategies/src/examples/log-and-skip.ts -> packages/core/src/strategies/built-ins.ts#logAndSkip)",
+          "apps/examples/retry-strategies/src/examples/retry-then-dead-letter.ts:1 (apps/examples/retry-strategies/src/examples/retry-then-dead-letter.ts -> packages/core/src/strategies/built-ins.ts#retryThenDeadLetter)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/consumer.ts#MemoryConsumer)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/consumer.ts#MemoryConsumer.getDLQ)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/consumer.ts#MemoryConsumer.getQueue)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/producer.ts#MemoryProducer)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/queue.ts#MemoryQueue.size)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/registry.ts#clearAllQueues)"
+        ],
+        "S4": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": []
+      },
+      "files": 148,
+      "noFiles": false,
+      "truthEmpty": false
+    },
+    "gin": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 20
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 191
+      },
+      "S3": {
+        "f1": 0.7613526570048309,
+        "fn": 247,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.6146645865834633,
+        "tp": 394
+      },
+      "S4": 1,
+      "callsAllConfidences": {
+        "f1": 0.7613526570048309,
+        "fn": 247,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.6146645865834633,
+        "tp": 394
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [
+          "auth.go:98 (auth.go#BasicAuthForProxy -> auth.go#authPairs.searchCredential)",
+          "auth.go:98 (auth.go#BasicAuthForProxy -> context.go#Context.AbortWithStatus)",
+          "auth.go:98 (auth.go#BasicAuthForProxy -> context.go#Context.Header)",
+          "auth.go:98 (auth.go#BasicAuthForProxy -> context.go#Context.Set)",
+          "auth.go:98 (auth.go#BasicAuthForProxy -> context.go#Context.requestHeader)",
+          "auth.go:48 (auth.go#BasicAuthForRealm -> auth.go#authPairs.searchCredential)",
+          "auth.go:48 (auth.go#BasicAuthForRealm -> context.go#Context.AbortWithStatus)",
+          "auth.go:48 (auth.go#BasicAuthForRealm -> context.go#Context.Header)",
+          "auth.go:48 (auth.go#BasicAuthForRealm -> context.go#Context.Set)",
+          "auth.go:48 (auth.go#BasicAuthForRealm -> context.go#Context.requestHeader)",
+          "binding/binding.go:122 (binding/binding.go#validate -> binding/default_validator.go#defaultValidator.ValidateStruct)",
+          "binding/default_validator.go:24 (binding/default_validator.go#SliceValidationError.Error -> binding/default_validator.go#SliceValidationError.Error)",
+          "binding/default_validator.go:24 (binding/default_validator.go#SliceValidationError.Error -> errors.go#Error.Error)",
+          "binding/form.go:24 (binding/form.go#formBinding.Bind -> binding/binding.go#validate)",
+          "binding/form.go:55 (binding/form.go#formMultipartBinding.Bind -> binding/binding.go#validate)",
+          "binding/form.go:41 (binding/form.go#formPostBinding.Bind -> binding/binding.go#validate)",
+          "binding/form_mapping.go:323 (binding/form_mapping.go#setWithProperType -> codec/json/json.go#jsonApi.Unmarshal)",
+          "binding/form_mapping.go:145 (binding/form_mapping.go#tryToSetValue -> binding/form_mapping.go#formSource.TrySet)",
+          "binding/form_mapping.go:145 (binding/form_mapping.go#tryToSetValue -> binding/header.go#headerSource.TrySet)",
+          "binding/form_mapping.go:145 (binding/form_mapping.go#tryToSetValue -> binding/multipart_form_mapping.go#multipartRequest.TrySet)"
+        ],
+        "S4": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": []
+      },
+      "files": 53,
+      "noFiles": false,
+      "truthEmpty": false
+    }
+  },
+  "suite": "structural",
+  "targets": {
+    "S1": [
+      0.99,
+      0.97
+    ],
+    "S2": [
+      0.99,
+      0.99
+    ],
+    "S3": 0.95,
+    "S4": 1
+  },
+  "truth": {
+    "notes": [
+      "cha-callgraph",
+      "cha-over-approximation",
+      "go-packages-per-file-imports",
+      "workspace-entry-mapping"
+    ]
+  }
+}

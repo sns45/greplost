@@ -1,0 +1,133 @@
+{
+  "checker": "mermaid",
+  "corpus": [],
+  "date": "2026-09-02",
+  "diagrams": {
+    "byFence": [
+      {
+        "checker": "mermaid",
+        "file": "packages/greplost-monorepo/MAP.md",
+        "index": 1,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/greplost/MAP.md",
+        "index": 1,
+        "nodeCount": 18,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/greplost__bench/MAP.md",
+        "index": 1,
+        "nodeCount": 20,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/greplost__core/MAP.md",
+        "index": 1,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/greplost__core/MAP.md",
+        "index": 2,
+        "nodeCount": 11,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/greplost__core/MAP.md",
+        "index": 3,
+        "nodeCount": 6,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/greplost__core/MAP.md",
+        "index": 4,
+        "nodeCount": 7,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/greplost__core/MAP.md",
+        "index": 5,
+        "nodeCount": 5,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/greplost__core/MAP.md",
+        "index": 6,
+        "nodeCount": 4,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/greplost__render/MAP.md",
+        "index": 1,
+        "nodeCount": 13,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/greplost__semantic/MAP.md",
+        "index": 1,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/greplost__sync/MAP.md",
+        "index": 1,
+        "nodeCount": 12,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/greplost__workspace/MAP.md",
+        "index": 1,
+        "nodeCount": 6,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "repo/MAP.md",
+        "index": 1,
+        "nodeCount": 8,
+        "ok": true
+      }
+    ],
+    "fences": 14,
+    "maxNodeCount": 20,
+    "maxNodes": 25
+  },
+  "gate": null,
+  "greplostSha": "f3cd260",
+  "machine": {
+    "arch": "arm64",
+    "bun": "1.2.21",
+    "cores": 16,
+    "cpu": "Apple M4 Max",
+    "go": "go version go1.25.3 darwin/arm64",
+    "greplostSha": "f3cd260",
+    "greplostVersion": "0.0.1",
+    "memoryGB": 128,
+    "node": "24.3.0",
+    "os": "Darwin 25.5.0"
+  },
+  "suite": "mapquality",
+  "target": {
+    "dir": ".greplost"
+  },
+  "tokens": {
+    "budget": 3000,
+    "encoding": "cl100k_base",
+    "indexMd": 776
+  }
+}
