@@ -85,10 +85,14 @@ describe("parser", () => {
     expect(go.rootNode.hasError).toBe(false);
   });
 
-  test("a second handle reuses the cached grammars and parses independently", async () => {
+  test("a second handle reuses the compiled grammars", async () => {
     const other = await createParser();
-    expect(other.parse("export const x = 1;\n", "ts").rootNode.hasError).toBe(false);
-    expect(parser.parse("export const x = 1;\n", "ts").rootNode.hasError).toBe(false);
+    const mine = parser.parse("export const x = 1;\n", "ts");
+    const theirs = other.parse("export const x = 1;\n", "ts");
+    // Identical Language object: the wasm was compiled once and cached for the process.
+    expect(theirs.language).toBe(mine.language);
+    expect(theirs.rootNode.hasError).toBe(false);
+    expect(other.parse("const el = <p />;\n", "tsx").language).not.toBe(mine.language);
   });
 
   test("switching languages on one handle keeps working", () => {
@@ -165,12 +169,41 @@ describe("declarations", () => {
     expect(decl(r, "C.g").span).toEqual([5, 5]);
   });
 
-  test("abstract classes are classes and abstract members are not methods", () => {
-    const r = extract("export abstract class A {\n  abstract m(): void;\n  n() {}\n}\n");
+  test("abstract and ambient method signatures are methods", () => {
+    const r = extract("export abstract class A {\n  abstract m(): void;\n  n() {}\n}\ndeclare class D {\n  q(): void;\n}\n");
     expect(shape(r)).toEqual([
       ["A", "class", true],
+      ["A.m", "method", true],
       ["A.n", "method", true],
+      ["D", "class", false],
+      ["D.q", "method", false],
     ]);
+    expect(decl(r, "A.m").signature).toBe("abstract m(): void");
+    expect(decl(r, "A.m").parent).toBe("A");
+    expect(decl(r, "D.q").signature).toBe("q(): void");
+  });
+
+  test("class fields holding a function are methods, data fields are not", () => {
+    const r = extract(
+      [
+        "export class C {",
+        "  handle = () => {};",
+        "  static ready = function () {};",
+        "  #priv = async () => {};",
+        "  data = 1;",
+        "}",
+      ].join("\n"),
+    );
+    expect(shape(r)).toEqual([
+      ["C", "class", true],
+      ["C.handle", "method", true],
+      ["C.ready", "method", true],
+      ["C.#priv", "method", true],
+    ]);
+    expect(decl(r, "C.handle").signature).toBe("handle = () =>");
+    expect(decl(r, "C.ready").signature).toBe("static ready = function ()");
+    expect(decl(r, "C.handle").parent).toBe("C");
+    expect(decl(r, "C.handle").span).toEqual([2, 2]);
   });
 
   test("methods with computed or literal names are skipped", () => {
@@ -200,13 +233,47 @@ describe("declarations", () => {
     ]);
   });
 
-  test("namespaces are tracked, their members are not", () => {
-    const r = extract("namespace N {\n  export const x = 1;\n}\nexport namespace M {}\n");
+  test("namespace members are tracked at any depth", () => {
+    const r = extract(
+      [
+        "export namespace N {",
+        "  export function f() {}",
+        "  const hidden = 1;",
+        "  export class K {",
+        "    m() {}",
+        "  }",
+        "  export namespace M {",
+        "    export const q = 2;",
+        "  }",
+        "}",
+        "namespace P {",
+        "  export function g() {}",
+        "}",
+      ].join("\n"),
+    );
     expect(shape(r)).toEqual([
-      ["N", "namespace", false],
-      ["M", "namespace", true],
+      ["N", "namespace", true],
+      ["N.f", "function", true],
+      ["N.hidden", "const", false],
+      ["N.K", "class", true],
+      ["N.K.m", "method", true],
+      ["N.M", "namespace", true],
+      ["N.M.q", "const", true],
+      ["P", "namespace", false],
+      ["P.g", "function", false],
     ]);
-    expect(decl(r, "N").span).toEqual([1, 3]);
+    expect(decl(r, "N.f").parent).toBe("N");
+    expect(decl(r, "N.K.m").parent).toBe("N.K");
+    expect(decl(r, "N.M.q").parent).toBe("N.M");
+    expect(decl(r, "N").span).toEqual([1, 10]);
+    // The namespace is the only file-level export; its members are not.
+    expect(r.exports).toEqual([{ name: "N", kind: "named" }]);
+  });
+
+  test("export destructuring declares nothing in v1", () => {
+    const r = extract("export const { a } = obj;\n");
+    expect(r.decls).toEqual([]);
+    expect(r.exports).toEqual([]);
   });
 
   test("export default keeps a written name and invents one for anonymous forms", () => {
@@ -281,9 +348,18 @@ describe("declarations", () => {
     expect(decl(r, "Svc").span).toEqual([1, 5]);
   });
 
-  test("a source with a syntax error extracts what it can", () => {
-    const r = extract("export function ( {\nexport const ok = 1;\n");
-    expect(r.decls.every((d) => typeof d.name === "string")).toBe(true);
+  test("a source with a syntax error extracts what the parser recovers", () => {
+    const r = extract("export const ok = 1;\nrun();\nfunction broken( {\n");
+    // The broken function lands in an ERROR node and declares nothing; the
+    // statements the parser did recover are extracted normally.
+    expect(shape(r)).toEqual([["ok", "const", true]]);
+    expect(r.calls).toEqual([{ caller: "", callee: "run", line: 2 }]);
+  });
+
+  test("a shebang line shifts nothing", () => {
+    const r = extract("#!/usr/bin/env node\nexport function main() {}\n");
+    expect(shape(r)).toEqual([["main", "function", true]]);
+    expect(decl(r, "main").span).toEqual([2, 2]);
   });
 
   test("declarations appear in document order", () => {
@@ -414,10 +490,35 @@ describe("imports", () => {
     ]);
   });
 
-  test("a dynamic import in a type position is still a module reference", () => {
-    const r = extract('type X = import("./mod").Foo;\n');
+  test("a type-position import is a type import of the property it reaches", () => {
+    const r = extract(
+      [
+        'type X = import("./mod").Foo;',
+        'const p: import("pkg").Bar = q;',
+        'let t: typeof import("m");',
+        'const real = await import("r");',
+      ].join("\n"),
+    );
     expect(r.imports).toEqual([
-      { specifier: "./mod", kind: "dynamic", symbols: [{ name: "*", local: "*" }], reexport: false, line: 1 },
+      { specifier: "./mod", kind: "type", symbols: [{ name: "Foo", local: "Foo" }], reexport: false, line: 1 },
+      { specifier: "pkg", kind: "type", symbols: [{ name: "Bar", local: "Bar" }], reexport: false, line: 2 },
+      { specifier: "m", kind: "type", symbols: [{ name: "*", local: "*" }], reexport: false, line: 3 },
+      { specifier: "r", kind: "dynamic", symbols: [{ name: "*", local: "real" }], reexport: false, line: 4 },
+    ]);
+    // A type reference loads no module, so it is never a call site either.
+    expect(r.calls).toEqual([]);
+  });
+
+  test("non-literal import specifiers are ignored", () => {
+    const r = extract("await import(`m${x}`);\nawait import(name);\n");
+    expect(r.imports).toEqual([]);
+    expect(r.calls).toEqual([]);
+  });
+
+  test("require inside a function is still an import record", () => {
+    const r = extract('function f() {\n  const m = require("m1");\n}\n', "js", "src/a.js");
+    expect(r.imports).toEqual([
+      { specifier: "m1", kind: "static", symbols: [{ name: "*", local: "m" }], reexport: false, line: 2 },
     ]);
   });
 
@@ -574,6 +675,77 @@ describe("call sites", () => {
     ]);
   });
 
+  test("a shadowing local binding does not hijack caller attribution", () => {
+    const r = extract(
+      [
+        "export const helper = () => {};",
+        "export function f() {",
+        "  const helper = () => { inner(); };",
+        "  helper();",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.calls.map((c) => [c.caller, c.callee])).toEqual([
+      ["f", "inner"],
+      ["f", "helper"],
+    ]);
+  });
+
+  test("a nested function shadowing a top-level name keeps the outer caller", () => {
+    const r = extract(
+      ["export function g() {}", "export function f() {", "  function g() { inner(); }", "  g();", "}"].join("\n"),
+    );
+    expect(r.calls.map((c) => [c.caller, c.callee])).toEqual([
+      ["f", "inner"],
+      ["f", "g"],
+    ]);
+  });
+
+  test("non-null assertions are erased from callees, casts are not", () => {
+    const r = extract("a!.b();\nfoo!();\nthis!.z();\n(x as any).y();\n");
+    expect(r.calls.map((c) => c.callee)).toEqual(["a.b", "foo", "this.z"]);
+  });
+
+  test("function-valued fields, data fields and static blocks", () => {
+    const r = extract(
+      [
+        "export class C {",
+        "  handle = () => { go(); };",
+        "  data = compute();",
+        "  static { boot(); }",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.calls.map((c) => [c.caller, c.callee])).toEqual([
+      ["C.handle", "go"],
+      ["C", "compute"],
+      ["C", "boot"],
+    ]);
+  });
+
+  test("namespace members attribute calls to their symbol path", () => {
+    const r = extract(
+      [
+        "export namespace N {",
+        "  export function f() { deep(); }",
+        "  export class K {",
+        "    m() { inner(); }",
+        "  }",
+        "  top();",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.calls.map((c) => [c.caller, c.callee])).toEqual([
+      ["N.f", "deep"],
+      ["N.K.m", "inner"],
+      ["", "top"],
+    ]);
+  });
+
+  test("new without arguments is still a constructor call", () => {
+    expect(extract("const x = new Foo;\n").calls).toEqual([{ caller: "", callee: "new Foo", line: 1 }]);
+  });
+
   test("callbacks keep the enclosing declaration as caller", () => {
     const r = extract("export function f() {\n  wrap(() => inner());\n}\n");
     expect(r.calls.map((c) => [c.caller, c.callee])).toEqual([
@@ -674,6 +846,13 @@ describe("signature", () => {
     expect(signature.length).toBe(200);
     expect(signature.endsWith("…")).toBe(true);
     expect(signature.slice(0, 199)).toBe(`export function wide(${params}): void`.slice(0, 199));
+  });
+
+  test("CRLF sources collapse like LF sources", () => {
+    const r = extract("export function f(\r\n  a: number,\r\n): void {\r\n  g();\r\n}\r\n");
+    expect(decl(r, "f").signature).toBe("export function f( a: number, ): void");
+    expect(r.calls).toEqual([{ caller: "f", callee: "g", line: 4 }]);
+    expect(r.loc).toBe(5);
   });
 
   test("decorators are left out of signatures", () => {
