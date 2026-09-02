@@ -9,19 +9,21 @@
  * committed result *on the same CPU* fails the gate, whatever the absolute
  * numbers say.
  *
- * **Everything is measured in a child `bun` process.** Peak RSS is a
- * high-water mark for the whole process, so ten builds in one process report
- * one number that belongs to none of them; and a warm JIT, a warm module graph
- * and a warm WASM grammar make the second build in a process a different
- * measurement from the first. One process per iteration costs a few hundred
- * milliseconds of startup, reported separately as `processMs`, and buys a
- * peak RSS per run and a build time that is not a function of what ran before
- * it. The child reports its own numbers as a marked JSON line; the parent times
- * the process around it.
+ * **Everything is measured in a child `bun` process** (`perf-child.ts`, which
+ * explains why). The parent prepares the checkout, times the process around the
+ * child, and reads the child's marked JSON line.
+ *
+ * **Every timed iteration has to do the work it claims to.** That is the thing
+ * this suite is easiest to get wrong: a full rebuild against a `.greplost/`
+ * that already holds the right bytes writes nothing, and a rename repeated
+ * against a map that still describes the renamed tree changes nothing. So the
+ * `full` scenario deletes the structure artifacts before each iteration, and
+ * the rename re-baselines the map after each one, and the fixture test asserts
+ * that both actually wrote something.
  *
  * Scenarios, in order (tech spec 10.5's list, plus one diagnostic):
  *
- *   full               `update --full` on an untouched checkout.
+ *   full               `update --full` over a deleted `.greplost/` artifact set.
  *   incremental-1      append a comment to one seeded-random source file.
  *   incremental-10     the same for ten files.
  *   package-rename     rename a package directory (every id under it moves).
@@ -46,22 +48,17 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 
-import {
-  ARTIFACT_DIR,
-  ARTIFACT_PATHS,
-  DEFAULT_CONFIG,
-  compareStrings,
-  stableStringify,
-  type GreplostConfig,
-  type Manifest,
-} from "@greplost/core/schema";
-import { FileParseCache, init, update } from "@greplost/sync";
+import { ARTIFACT_DIR, ARTIFACT_PATHS, compareStrings, type GreplostConfig, type Manifest } from "@greplost/core/schema";
+import { init, listStructurePaths } from "@greplost/sync";
 
-import { repoDir, selectRepos, type CorpusRepoEntry } from "./corpus.ts";
+import { repoDir, selectRepos } from "./corpus.ts";
+import { cloneWorkingCopy, copySourceTree, gitOrThrow, percentile } from "./git.ts";
 import { machineProfile, type MachineProfile } from "./machine.ts";
-// `replay.ts` owns the git plumbing and the percentile both suites report on;
-// one implementation of "the N commits ending here" and of "p95" is the point.
-import { cloneWorkingCopy, copySourceTree, gitOrThrow, percentile } from "./replay.ts";
+import { MARKER, type ChildOp, type ChildReport } from "./perf-child.ts";
+// The Go config override and the config writer are `replay.ts`'s; both suites
+// have to build a corpus repo the same way or their numbers are not about the
+// same map.
+import { configFor, writeConfig } from "./replay.ts";
 import { latestResult, writeResult } from "./results-io.ts";
 
 const SUITE = "perf";
@@ -82,8 +79,8 @@ function resultSuite(fixture: boolean): string {
 /** Repo root, from `bench/src/perf.ts`. */
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
 
-/** This file, re-entered as the child process that performs one timed operation. */
-const SELF = path.join(import.meta.dir, "perf.ts");
+/** The child entry point spawned once per timed iteration. */
+const CHILD = path.join(import.meta.dir, "perf-child.ts");
 
 /** Scenarios, in report order. */
 export const SCENARIOS = [
@@ -108,9 +105,6 @@ const FILE_SEED = 0x9e3779b9;
 
 /** A child that has not answered in this long is hung, not slow. */
 const CHILD_TIMEOUT_MS = 600_000;
-
-/** How the child hands its measurement back, on stdout, as the only marked line. */
-const MARKER = "#greplost-perf#";
 
 /** Regression tolerance on p50 against the last result from the same CPU (tech spec 10.5). */
 const REGRESSION_TOLERANCE = 0.15;
@@ -143,7 +137,14 @@ export interface ScenarioResult {
   processMs: Stats;
   /** Highest `maxRSS` across the measured iterations, in bytes. */
   peakRssBytes: number;
-  /** Whatever the operation reported about itself (files written, cache hits, ...). */
+  /**
+   * What the operation reported about itself on the **last measured iteration**
+   * only: files written and deleted, files reparsed and answered from the cache,
+   * the dirty set size, and the raw RSS readings. Every iteration is set up
+   * identically, so one is representative; it is kept because it is the evidence
+   * that the iteration did the work its name claims (a `full` with `written: 0`
+   * measured a build whose write half was skipped).
+   */
   detail: Record<string, number>;
   /** What the scenario edited or renamed, so a number can be traced to a change. */
   subject?: string[];
@@ -153,6 +154,8 @@ export interface ScenarioResult {
 
 export interface RepoPerf {
   name: string;
+  /** Corpus tier: `"S"` and `"M"` are gated on the absolute targets, the rest are not. */
+  tier: string;
   files: number;
   scenarios: ScenarioResult[];
 }
@@ -207,10 +210,23 @@ export function targetsFor(files: number): { p1Ms: number; p2Ms: number } {
   return files > 2000 ? { p1Ms: 10_000, p2Ms: 1000 } : { p1Ms: 1000, p2Ms: 500 };
 }
 
-/** The absolute gate ids missed, in id order. */
+/** Tiers whose absolute P1/P2 targets are gated (bench spec 1.5.5, tech spec 10.5). */
+export const GATED_TIERS: ReadonlySet<string> = new Set(["S", "M"]);
+
+/**
+ * The absolute gate ids missed, in id order.
+ *
+ * Only tiers S and M are held to P1 and P2. The spec gates them there and
+ * nowhere else, and the reason shows up in the numbers: the targets are written
+ * for ~1k and ~10k files, so an L or XL repo measured on whatever hardware
+ * happens to run the suite would fail a bound nobody agreed to. The regression
+ * rule still applies to every tier, which is what actually catches a slowdown
+ * on the large repos.
+ */
 export function missedTargets(repos: readonly RepoPerf[]): string[] {
   const missed = new Set<string>();
   for (const repo of repos) {
+    if (!GATED_TIERS.has(repo.tier)) continue;
     const { p1Ms, p2Ms } = targetsFor(repo.files);
     for (const scenario of repo.scenarios) {
       if (scenario.iterations === 0) continue;
@@ -291,80 +307,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 // the child process
 // ---------------------------------------------------------------------------
 
-interface ChildReport {
-  ms: number;
-  peakRssBytes: number;
-  detail: Record<string, number>;
-}
-
-/**
- * One timed operation, in its own process, reporting on stdout.
- *
- * `maxRSS` units are not portable: `getrusage` reports bytes on macOS and
- * kilobytes on Linux, and the runtimes do not agree on normalising it (Bun
- * hands back what the kernel said; Node divides). The two readings are three
- * orders of magnitude apart, so which one this is can be read off the ratio
- * against the resident set right now: within a factor of eight of it, it is
- * bytes; a thousand times smaller, it is kilobytes. That needs no platform
- * table and stays right if a runtime changes its mind. Both raw numbers are
- * reported alongside so the call can be audited from the results file.
- */
-async function runChild(op: string, root: string): Promise<void> {
-  const started = performance.now();
-  const detail: Record<string, number> = {};
-  let ms: number;
-
-  switch (op) {
-    case "full":
-    case "incremental": {
-      const result = await update(root, { mode: op === "full" ? "full" : "incremental", quiet: true });
-      // A skipped update did no work, and timing it would report a number for a
-      // build that never happened. `locked` means a previous child died holding
-      // the lock, `clean` means the checkout was already indexed; either way the
-      // iteration is not a measurement, and a benchmark that reports one anyway
-      // is worse than one that stops.
-      if (result.skipped !== undefined) {
-        throw new Error(`${SUITE}: ${op} update was skipped (${result.skipped}); nothing was measured`);
-      }
-      ms = result.ms;
-      detail["written"] = result.written;
-      detail["deleted"] = result.deleted;
-      detail["reparsed"] = result.reparsed;
-      detail["cached"] = result.cached;
-      detail["dirty"] = result.dirty;
-      break;
-    }
-    case "cache-save": {
-      const cache = new FileParseCache(root);
-      cache.load();
-      detail["entries"] = cache.size;
-      const at = performance.now();
-      cache.save();
-      ms = performance.now() - at;
-      break;
-    }
-    default:
-      throw new Error(`${SUITE}: unknown child operation "${op}"`);
-  }
-
-  const raw = process.resourceUsage().maxRSS;
-  const resident = process.memoryUsage().rss;
-  const report: ChildReport = {
-    ms: Math.round(ms * 1000) / 1000,
-    peakRssBytes: raw >= resident / 8 ? raw : raw * 1024,
-    detail: { ...detail, childMs: Math.round(performance.now() - started), maxRssRaw: raw, rssBytes: resident },
-  };
-  process.stdout.write(`${MARKER}${JSON.stringify(report)}\n`);
-}
-
 /** Spawn one child, and return its report plus the wall clock the parent saw. */
-function measure(op: string, root: string): { report: ChildReport; processMs: number } {
+function measure(op: ChildOp, root: string): { report: ChildReport; processMs: number } {
   const started = performance.now();
-  const res = spawnSync(process.execPath, [SELF, op, root], {
+  const res = spawnSync(process.execPath, [CHILD, op, root], {
     cwd: REPO_ROOT,
     encoding: "utf8",
     timeout: CHILD_TIMEOUT_MS,
-    env: { ...process.env, GREPLOST_PERF_CHILD: "1" },
   });
   const processMs = performance.now() - started;
 
@@ -389,13 +338,8 @@ interface Target {
   origin: string;
   sha: string | null;
   config: GreplostConfig | undefined;
-}
-
-function configFor(entry: CorpusRepoEntry): GreplostConfig | undefined {
-  // Same one override `structural.ts` and `replay.ts` make: Go is opt-in per
-  // repo, so a Go checkout with no committed config would index nothing at all.
-  if (entry.lang !== "go") return undefined;
-  return { ...DEFAULT_CONFIG, languages: ["go"] };
+  /** Corpus tier, which decides whether the absolute targets are gated. */
+  tier: string;
 }
 
 /**
@@ -427,14 +371,6 @@ function prepareWorkingCopy(target: Target, dest: string): void {
     );
   }
   cloneWorkingCopy(target.origin, dest, target.sha as string);
-}
-
-function writeConfig(root: string, config: GreplostConfig | undefined): void {
-  if (config === undefined) return;
-  const file = path.join(root, ARTIFACT_DIR, ARTIFACT_PATHS.config);
-  if (existsSync(file)) return;
-  mkdirSync(path.dirname(file), { recursive: true });
-  writeFileSync(file, `${stableStringify(config, 2)}\n`);
 }
 
 function readManifest(root: string): Manifest {
@@ -529,11 +465,24 @@ function runScenario(name: ScenarioName, ctx: ScenarioContext): ScenarioResult {
 
   let mutate: ((iteration: number) => void) | undefined;
   let restore: (() => void) | undefined;
-  let op = "incremental";
+  let op: ChildOp = "incremental";
   let subject: string[] = [];
+  // Whether the map has to be rebuilt after each iteration's restore before the
+  // next mutation is a real change again. See the rename branch below.
+  let rebaseline = false;
 
   if (name === "full") {
     op = "full";
+    // Delete the structure artifacts first, or the timed build has nothing to
+    // write: `writeArtifacts` compares bytes and skips what already matches, so
+    // a full rebuild over a correct `.greplost/` measures the build and skips
+    // the write, and P1 comes out too fast for the wrong reason. `config.json`
+    // and the caches are left alone: they are not structure artifacts, and the
+    // build must run against the same configuration every time.
+    mutate = () => {
+      const artifacts = path.join(ctx.root, ARTIFACT_DIR);
+      for (const rel of listStructurePaths(artifacts)) rmSync(path.join(artifacts, rel), { force: true });
+    };
   } else if (name === "parse-cache-save") {
     op = "cache-save";
   } else if (editSize !== undefined) {
@@ -561,6 +510,14 @@ function runScenario(name: ScenarioName, ctx: ScenarioContext): ScenarioResult {
     restore = () => {
       if (existsSync(to)) renameSync(to, from);
     };
+    // The edit scenarios carry a new marker each iteration, so the tree always
+    // differs from the map by exactly the files they touched. A rename does not:
+    // once iteration 0 has been measured the map describes the renamed tree, and
+    // renaming again reproduces the state the map is already in, so every later
+    // iteration finds nothing changed and times an update that writes nothing.
+    // Rebuilding after each restore puts the map back on the original layout, so
+    // every iteration renames something the map has not seen.
+    rebaseline = true;
   }
 
   const ms: number[] = [];
@@ -576,6 +533,9 @@ function runScenario(name: ScenarioName, ctx: ScenarioContext): ScenarioResult {
       measured = measure(op, ctx.root);
     } finally {
       restore?.();
+      // Untimed, and after the restore: the next iteration needs a map that
+      // describes the tree as it stands, not as the last measurement left it.
+      if (rebaseline) measure("full", ctx.root);
     }
     if (iteration < ctx.warmups) continue;
     ms.push(measured.report.ms);
@@ -586,16 +546,17 @@ function runScenario(name: ScenarioName, ctx: ScenarioContext): ScenarioResult {
 
   // The tree is back to its committed bytes but the map still describes the last
   // mutation; put the two back in step before the next scenario measures anything,
-  // or its first iteration would be timing two edits instead of one.
+  // or its first iteration would be timing two edits instead of one. The rename
+  // has already done this after every iteration.
   //
-  // `full`, not `incremental`, and not for tidiness: an incremental update
-  // *cannot* do this today. `update` takes its clean fast path when nothing is
-  // dirty and HEAD is the commit the map was built from, but the map was built
-  // from HEAD plus an uncommitted edit, and reverting that edit leaves no git
-  // evidence, so the run reports `skipped: "clean"` over a map that is genuinely
-  // stale (`verify` disagrees; reproduced on `fixtures/tiny-ts`, reported to the
-  // sync owner, leaf 1.5.5). A full rebuild has no fast path to be wrong about.
-  if (restore !== undefined) measure("full", ctx.root);
+  // `full` rather than `incremental` because it has no fast path to be wrong
+  // about. This is also where leaf 1.5.5 found the false-clean bug: an
+  // incremental update used to report `skipped: "clean"` here, over a map that
+  // `verify` called stale, because reverting an uncommitted edit leaves no git
+  // evidence and `.state.json` recorded only the commit. That is fixed on main
+  // (`state.treeClean` joins the clean fast path); the full rebuild stays because
+  // it does not depend on the fix being present.
+  if (restore !== undefined && !rebaseline) measure("full", ctx.root);
 
   return {
     scenario: name,
@@ -649,7 +610,7 @@ export async function perf(options: PerfOptions = {}): Promise<PerfRun> {
         if (!quiet) printScenario(result);
         return result;
       });
-      repos.push({ name: target.name, files, scenarios });
+      repos.push({ name: target.name, tier: target.tier, files, scenarios });
     }
   } finally {
     if (options.keep !== true) {
@@ -661,13 +622,16 @@ export async function perf(options: PerfOptions = {}): Promise<PerfRun> {
 }
 
 function resolveTargets(options: PerfOptions): Target[] {
-  if (options.fixture === true) return [{ name: "tiny-ts", origin: "", sha: null, config: undefined }];
+  // The fixture is tier S: it stands in for a small repo, and gate G6 requires
+  // the absolute targets to hold on it.
+  if (options.fixture === true) return [{ name: "tiny-ts", origin: "", sha: null, config: undefined, tier: "S" }];
   const args = options.repo === undefined ? ["--tier", options.tier ?? "S"] : ["--repo", options.repo];
   return selectRepos(args).map((entry) => ({
     name: entry.name,
     origin: repoDir(entry.name),
     sha: entry.sha,
     config: configFor(entry),
+    tier: entry.tier,
   }));
 }
 
@@ -820,7 +784,7 @@ export async function run(args: string[]): Promise<number> {
 
   if (options.dryRun) {
     for (const target of targets) console.log(`${SUITE}: ${target.name} (not run)`);
-    printTable(targets.map((target) => ({ name: target.name, files: 0, scenarios: [] })));
+    printTable(targets.map((target) => ({ name: target.name, tier: target.tier, files: 0, scenarios: [] })));
     console.log(`${SUITE}: dry-run ok`);
     return 0;
   }
@@ -898,9 +862,5 @@ export async function run(args: string[]): Promise<number> {
 // ---------------------------------------------------------------------------
 
 if (import.meta.main) {
-  if (process.env["GREPLOST_PERF_CHILD"] === "1") {
-    await runChild(process.argv[2] ?? "", process.argv[3] ?? "");
-  } else {
-    process.exit(await run(process.argv.slice(2)));
-  }
+  process.exit(await run(process.argv.slice(2)));
 }

@@ -12,6 +12,7 @@ import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { peakRssBytes } from "../src/perf-child.ts";
 import {
   SCENARIOS,
   missedTargets,
@@ -39,9 +40,10 @@ afterEach(() => {
 });
 
 /** A one-scenario repo result, so a test can vary exactly one number. */
-function repoWith(name: string, scenario: string, p50: number, p95 = p50): RepoPerf {
+function repoWith(name: string, scenario: string, p50: number, p95 = p50, tier = "S"): RepoPerf {
   return {
     name,
+    tier,
     files: 12,
     scenarios: [
       {
@@ -86,6 +88,41 @@ describe("perf report", () => {
     expect(missedTargets([repoWith("tiny-ts", "incremental-1", 100, 200)])).toEqual([]);
   });
 
+  test("the absolute targets are gated for tiers S and M only", () => {
+    // The same miss, tier by tier: gated in S and M, ignored in L and XL, where
+    // the bench spec does not apply the absolute bounds.
+    expect(missedTargets([repoWith("anyq", "full", 5000, 5000, "S")])).toEqual(["P1"]);
+    expect(missedTargets([repoWith("hono", "full", 5000, 5000, "M")])).toEqual(["P1"]);
+    expect(missedTargets([repoWith("vite", "full", 5000, 5000, "L")])).toEqual([]);
+    expect(missedTargets([repoWith("TypeScript", "full", 5000, 5000, "XL")])).toEqual([]);
+    expect(missedTargets([repoWith("vite", "incremental-1", 100, 9000, "L")])).toEqual([]);
+    // A gated repo in the same run still reports its own miss.
+    expect(
+      missedTargets([repoWith("vite", "full", 5000, 5000, "L"), repoWith("anyq", "incremental-1", 100, 900, "S")]),
+    ).toEqual(["P2"]);
+  });
+
+  test("the regression rule still applies outside the gated tiers", () => {
+    const machine = { cpu: "Apple M3 Pro" };
+    const prior = {
+      machine: { cpu: "Apple M3 Pro" },
+      repos: [{ name: "vite", tier: "L", files: 1136, scenarios: [{ scenario: "full", ms: { p50: 800 } }] }],
+    };
+    expect(regressedScenarios([repoWith("vite", "full", 1000, 1000, "L")], prior, machine)).toEqual(["vite/full"]);
+  });
+
+  test("peak RSS units are inferred from the platform and the resident set together", () => {
+    const mb = 1024 * 1024;
+    // macOS: getrusage reports bytes, and the raw value is close to the resident set.
+    expect(peakRssBytes(120 * mb, 118 * mb, "darwin")).toBe(120 * mb);
+    // Linux: kilobytes, a thousand times smaller than the resident set in bytes.
+    expect(peakRssBytes(120 * 1024, 118 * mb, "linux")).toBe(120 * mb);
+    // A darwin reading that looks like kilobytes is still scaled: both signals must agree.
+    expect(peakRssBytes(120 * 1024, 118 * mb, "darwin")).toBe(120 * mb);
+    // A non-darwin platform is never treated as bytes, whatever the ratio says.
+    expect(peakRssBytes(120 * 1024, 100 * 1024, "linux")).toBe(120 * mb);
+  });
+
   test("regression comparison flags a p50 more than 15 % worse on the same CPU", () => {
     const machine = { cpu: "Apple M3 Pro" };
     const prior = {
@@ -118,6 +155,7 @@ describe("perf report", () => {
     expect(repos).toHaveLength(1);
     const repo = repos[0] as RepoPerf;
     expect(repo.name).toBe("tiny-ts");
+    expect(repo.tier).toBe("S");
     expect(repo.files).toBeGreaterThan(0);
     expect(repo.scenarios.map((s) => s.scenario)).toEqual([...SCENARIOS]);
     for (const scenario of repo.scenarios) {
@@ -133,6 +171,31 @@ describe("perf report", () => {
     expect(edits?.subject).toHaveLength(10);
     expect(repo.scenarios.find((s) => s.scenario === "package-rename")?.subject).toHaveLength(1);
     expect(repo.scenarios.find((s) => s.scenario === "full")?.subject).toBeUndefined();
+  }, 300_000);
+
+  test("every timed iteration does the work its scenario claims", async () => {
+    const { repos } = await perf({ fixture: true, iterations: 2, warmups: 0 });
+    const scenarios = new Map((repos[0] as RepoPerf).scenarios.map((s) => [s.scenario, s]));
+    const detailOf = (name: string): Record<string, number> => scenarios.get(name)?.detail ?? {};
+
+    // P1: a full rebuild over a `.greplost/` that already holds the right bytes
+    // writes nothing, and would time the build without the write half.
+    expect(detailOf("full")["written"]).toBeGreaterThan(0);
+    expect(detailOf("full")["reparsed"]).toBeGreaterThan(0);
+
+    // The rename is the one scenario that reproduces its own end state, so
+    // without a re-baseline every iteration after the first changes nothing.
+    // `reparsed` stays 0 by design: the parse cache is content-addressed, so a
+    // renamed file is a cache hit. What has to move is the artifacts.
+    expect(detailOf("package-rename")["written"]).toBeGreaterThan(0);
+    expect(detailOf("package-rename")["dirty"]).toBeGreaterThan(0);
+
+    // The edit scenarios carry a fresh marker each iteration, so they reparse
+    // exactly what they touched.
+    expect(detailOf("incremental-1")["reparsed"]).toBe(1);
+    expect(detailOf("incremental-1")["written"]).toBeGreaterThan(0);
+    expect(detailOf("incremental-10")["reparsed"]).toBe(10);
+    expect(detailOf("incremental-10")["written"]).toBeGreaterThan(0);
   }, 300_000);
 });
 
@@ -159,6 +222,7 @@ describe("perf run", () => {
     expect(payload["machine"]).toBeDefined();
     const repos = payload["repos"] as Array<Record<string, unknown>>;
     expect(repos).toHaveLength(1);
+    expect(repos[0]?.["tier"]).toBe("S");
     const scenarios = repos[0]?.["scenarios"] as Array<Record<string, unknown>>;
     expect(scenarios.map((s) => s["scenario"])).toEqual([...SCENARIOS]);
     for (const scenario of scenarios) {

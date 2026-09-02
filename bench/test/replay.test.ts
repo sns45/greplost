@@ -12,11 +12,11 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { backfillBlobs, git, isPartialClone, percentile } from "../src/git.ts";
 import {
   compareArtifactTrees,
   createSyntheticHistory,
   missedGates,
-  percentile,
   replay,
   run,
   type ReplaySummary,
@@ -172,6 +172,32 @@ describe("synthetic history", () => {
         .map((name) => readFileSync(path.join(root, "packages", "core", "src", name), "utf8"))
         .join("\n");
     expect(read(one)).toBe(read(two));
+  });
+});
+
+describe("git plumbing", () => {
+  test("a call that overruns its timeout is killed and says so", () => {
+    // A `!` alias runs a shell command, which is the only way to make git itself
+    // take a known amount of time without a network or a huge repository.
+    const started = Date.now();
+    const result = git(process.cwd(), ["-c", "alias.benchsleep=!sleep 5", "benchsleep"], { timeout: 300 });
+    const elapsed = Date.now() - started;
+
+    expect(result.status).toBe(124);
+    expect(elapsed).toBeLessThan(4000);
+    // The message has to name the command, or a timeout in a 500-commit replay
+    // is a number with no subject.
+    expect(result.stderr).toContain("benchsleep");
+    expect(result.stderr).toContain("exceeded 300ms");
+  }, 30_000);
+
+  test("a repository with every object present needs no backfill", () => {
+    const dir = scratch("plain-repo");
+    git(dir, ["init", "--quiet", "-b", "main"]);
+    expect(isPartialClone(dir)).toBe(false);
+    // Never a throw and never a fetch: a repo that is not partial has nothing to
+    // download, and a suite must be able to ask without a network.
+    expect(backfillBlobs(dir)).toEqual({ backfilled: false, reason: "not a partial clone" });
   });
 });
 
