@@ -364,6 +364,73 @@ describe("declarations", () => {
     expect(r.calls).toEqual([{ caller: "", callee: "run", line: 2 }]);
   });
 
+  test("declarations are recovered from a region the grammar cannot parse", () => {
+    // tree-sitter-typescript 0.23 cannot read a call signature with defaulted type
+    // parameters (hono's `CreateHandlersInterface`): the interface and everything
+    // after it collapse into one top-level ERROR node. Recovery re-reads the region.
+    const source = [
+      "export interface CreateHandlersInterface<E extends Env, P extends string> {",
+      "  <I extends Input = {}, R extends HandlerResponse<any> = any, E2 extends Env = E>(",
+      "    handler1: H<E2, P, I, R>",
+      "  ): [H<E2, P, I, R>]",
+      "",
+      "  // handler x2",
+      "  <",
+      "    I extends Input = {},",
+      "    I2 extends Input = I,",
+      "    R extends HandlerResponse<any> = any,",
+      "    R2 extends HandlerResponse<any> = any,",
+      "    E2 extends Env = E,",
+      "    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,",
+      "  >(",
+      "    handler1: H<E2, P, I, R>,",
+      "    handler2: H<E3, P, I2, R2>",
+      "  ): [H<E2, P, I, R>, H<E3, P, I2, R2>]",
+      "}",
+      "export class Late {",
+      "  m() {",
+      "    go();",
+      "  }",
+      "}",
+      "export const after = () => new Late();",
+      "export type Tail = string;",
+      "",
+    ].join("\n");
+    const tree = parser.parse(source, "ts");
+    expect(tree.rootNode.hasError).toBe(true);
+
+    const r = extract(source);
+    expect(r.decls.map((d) => [d.name, d.kind, d.span])).toEqual([
+      ["CreateHandlersInterface", "interface", [1, 6]],
+      ["Late", "class", [19, 23]],
+      ["Late.m", "method", [20, 22]],
+      ["after", "const", [24, 24]],
+      ["Tail", "type", [25, 25]],
+    ]);
+    expect(r.exports.map((e) => e.name)).toEqual(["CreateHandlersInterface", "Late", "after", "Tail"]);
+    // Recovered declarations are ordinary declarations: their calls are attributed too.
+    expect(r.calls).toEqual([
+      { caller: "Late.m", callee: "go", line: 21 },
+      { caller: "after", callee: "new Late", line: 24 },
+    ]);
+  });
+
+  test("recovery never emits a declaration twice", () => {
+    const source = [
+      "export interface I {",
+      "  <T = 1>(a: T): T",
+      "  <T = 2>(): T",
+      "}",
+      "export type Kept = string;",
+      "",
+    ].join("\n");
+    const r = extract(source);
+    const ids = r.decls.map((d) => d.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toContain("src/a.ts#Kept");
+    expect(r.exports.filter((e) => e.name === "Kept")).toHaveLength(1);
+  });
+
   test("a shebang line shifts nothing", () => {
     const r = extract("#!/usr/bin/env node\nexport function main() {}\n");
     expect(shape(r)).toEqual([["main", "function", true]]);
@@ -693,19 +760,112 @@ describe("call sites", () => {
         "}",
       ].join("\n"),
     );
-    expect(r.calls.map((c) => [c.caller, c.callee])).toEqual([
-      ["f", "inner"],
-      ["f", "helper"],
-    ]);
+    // `inner` keeps `f` as its caller, and the call to the local `helper` is not
+    // emitted at all: it resolves to no exported symbol.
+    expect(r.calls.map((c) => [c.caller, c.callee])).toEqual([["f", "inner"]]);
   });
 
   test("a nested function shadowing a top-level name keeps the outer caller", () => {
     const r = extract(
       ["export function g() {}", "export function f() {", "  function g() { inner(); }", "  g();", "}"].join("\n"),
     );
-    expect(r.calls.map((c) => [c.caller, c.callee])).toEqual([
-      ["f", "inner"],
-      ["f", "g"],
+    expect(r.calls.map((c) => [c.caller, c.callee])).toEqual([["f", "inner"]]);
+  });
+
+  test("a call to a name bound in the enclosing function is dropped", () => {
+    const r = extract(
+      [
+        'import { raw } from "./raw";',
+        "export const createCssContext = ({ id }: { id: string }) => {",
+        "  const css = (strings: string[]) => raw(strings, id);",
+        "  const cssed = css([]);",
+        "  return { css, cssed };",
+        "};",
+      ].join("\n"),
+    );
+    // `raw` is imported and resolves; `css` is a local binding and cannot.
+    expect(r.calls.map((c) => [c.caller, c.callee])).toEqual([["createCssContext", "raw"]]);
+  });
+
+  test("a parameter shadowing an import drops the call, an unshadowed one keeps it", () => {
+    const r = extract(
+      [
+        'import { render } from "./render";',
+        "export function draw(render: () => void) {",
+        "  render();",
+        "}",
+        "export function control() {",
+        "  render();",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.calls).toEqual([{ caller: "control", callee: "render", line: 6 }]);
+  });
+
+  test("a local shadowing a top-level function drops the call", () => {
+    const r = extract(
+      [
+        "export function match(method: string): number {",
+        "  const match = (m: string) => m.length;",
+        "  return match(method);",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.calls).toEqual([]);
+  });
+
+  test("locals are flattened over the whole enclosing function", () => {
+    const r = extract(
+      [
+        "export function outer() {",
+        "  return () => {",
+        "    helper();",
+        "  };",
+        "  function helper() {}",
+        "}",
+        "export function other() {",
+        "  helper();",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.calls).toEqual([{ caller: "other", callee: "helper", line: 8 }]);
+  });
+
+  test("a locally bound object drops its member calls, `this` never does", () => {
+    const r = extract(
+      [
+        "export class C {",
+        "  run(items: string[]) {",
+        "    const helper = make();",
+        "    helper.go();",
+        "    this.go();",
+        "    for (const item of items) item.trim();",
+        "  }",
+        "  go() {}",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.calls.map((c) => c.callee)).toEqual(["make", "this.go"]);
+  });
+
+  test("a generic arrow initialiser is a caller scope", () => {
+    const r = extract(
+      [
+        "type UseStateType = {",
+        "  <T>(initialState: T | (() => T)): [T, U<T>]",
+        "  <T = undefined>(): [T | undefined, U<T | undefined>]",
+        "}",
+        "export const useState: UseStateType = <T>(",
+        "  initialState?: T",
+        "): [T, U<T>] => {",
+        "  update()",
+        "  return build(initialState)",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.calls).toEqual([
+      { caller: "useState", callee: "update", line: 8 },
+      { caller: "useState", callee: "build", line: 9 },
     ]);
   });
 
@@ -910,16 +1070,16 @@ describe("tiny-ts", () => {
     });
     expect(counts).toEqual([
       ["apps/worker/src/config.ts", 2, 0, 2, 0],
-      ["apps/worker/src/main.ts", 1, 3, 1, 9],
+      ["apps/worker/src/main.ts", 1, 3, 1, 6],
       ["packages/adapters/src/index.ts", 0, 3, 4, 0],
       ["packages/adapters/src/memory.ts", 3, 2, 1, 1],
       ["packages/adapters/src/sqs.ts", 6, 3, 3, 5],
-      ["packages/core/src/bus.ts", 3, 2, 1, 2],
+      ["packages/core/src/bus.ts", 3, 2, 1, 1],
       ["packages/core/src/events.ts", 2, 1, 2, 1],
       ["packages/core/src/index.ts", 0, 4, 7, 0],
       ["packages/core/src/queue.ts", 3, 1, 3, 0],
-      ["packages/core/src/registry.ts", 5, 3, 2, 5],
-      ["packages/core/src/retry.ts", 3, 0, 3, 1],
+      ["packages/core/src/registry.ts", 5, 3, 2, 4],
+      ["packages/core/src/retry.ts", 3, 0, 3, 0],
       ["packages/core/src/types.ts", 3, 0, 3, 0],
     ]);
   });
@@ -976,7 +1136,6 @@ describe("tiny-ts", () => {
       { caller: "Registry", callee: "new Map", line: 6 },
       { caller: "Registry", callee: "new Bus", line: 7 },
       { caller: "Registry.publishAll", callee: "retry", line: 17 },
-      { caller: "Registry.publishAll", callee: "q.publish", line: 17 },
       { caller: "createRegistry", callee: "new Registry", line: 29 },
     ]);
     expect(r.decls.map((d) => d.name)).toEqual([
