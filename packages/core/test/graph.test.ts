@@ -547,7 +547,51 @@ describe("export index", () => {
     expect(index.get("src/four.ts")?.get("renamed")).toEqual({ file: "src/leaf.ts", symbol: "work", hops: 4 });
   });
 
-  test("two stars supplying the same name are ambiguous unless a local export shadows them", () => {
+  test("a diamond of stars over one declaration pins to it, by the shorter chain", () => {
+    // top stars a and b, both of which lead to base; b takes the long way round.
+    const base = file("src/base.ts", { decls: [decl("src/base.ts", "x", "function")], exports: [exp("x")] });
+    const a = file("src/a.ts", {
+      imports: [imp("./base", [["*", "*"]], { reexport: true })],
+      exports: [exp("*", "star", { from: "./base" })],
+    });
+    const mid = file("src/mid.ts", {
+      imports: [imp("./base", [["*", "*"]], { reexport: true })],
+      exports: [exp("*", "star", { from: "./base" })],
+    });
+    const b = file("src/b.ts", {
+      imports: [imp("./mid", [["*", "*"]], { reexport: true })],
+      exports: [exp("*", "star", { from: "./mid" })],
+    });
+    const top = file("src/top.ts", {
+      imports: [
+        imp("./a", [["*", "*"]], { reexport: true }),
+        imp("./b", [["*", "*"]], { reexport: true, line: 2 }),
+      ],
+      exports: [exp("*", "star", { from: "./a" }), exp("*", "star", { from: "./b" })],
+    });
+    const user = file("src/user.ts", {
+      imports: [imp("./top", ["x"])],
+      decls: [decl("src/user.ts", "go", "function")],
+      calls: [call("go", "x")],
+    });
+    const files = [base, a, mid, b, top, user];
+    const imports = linkImports(files, resolver(files.map((f) => f.path)));
+    const index = buildExportIndex(files, imports);
+    // Both arms are the same declaration, so the name resolves; a is the short arm.
+    expect(index.get("src/top.ts")?.get("x")).toEqual({ file: "src/base.ts", symbol: "x", hops: 2 });
+    expect(index.get("src/b.ts")?.get("x")).toEqual({ file: "src/base.ts", symbol: "x", hops: 2 });
+    expect(linkCalls(files, imports, index).map(edgeKey)).toEqual([
+      "src/user.ts#go -> src/base.ts#x (med)",
+    ]);
+
+    const reversed = [...files].reverse();
+    const other = buildExportIndex(reversed, linkImports(reversed, resolver(reversed.map((f) => f.path))));
+    for (const path of files.map((f) => f.path)) {
+      expect([...(other.get(path) ?? [])]).toEqual([...(index.get(path) ?? [])]);
+    }
+  });
+
+  test("two stars supplying different declarations stay ambiguous unless a local export shadows them", () => {
     const a = file("src/a.ts", { decls: [decl("src/a.ts", "dup", "function")], exports: [exp("dup")] });
     const b = file("src/b.ts", { decls: [decl("src/b.ts", "dup", "function")], exports: [exp("dup")] });
     const ambiguous = file("src/ambiguous.ts", {
