@@ -15,31 +15,49 @@
  * acquiring and releasing (a power cut, a `kill -9`, a laptop lid) leaves a
  * file behind, and a lock file that outlives its owner would silently freeze
  * every future update. Hence two independent staleness tests — a dead pid and
- * an old timestamp — either of which reclaims the lock. The pid test catches
- * the crash straight away; the timestamp catches the cases the pid test cannot
- * (a recycled pid, a container where pids mean nothing, a lock copied in from
- * somewhere else).
+ * a timestamp that has stopped moving — either of which reclaims the lock. The
+ * pid test catches the crash straight away; the timestamp catches the cases the
+ * pid test cannot (a recycled pid, a container where pids mean nothing, a lock
+ * copied in from somewhere else).
+ *
+ * The timestamp only means "not abandoned" because the holder keeps rewriting
+ * it. A fixed acquisition time would make the staleness rule fire on exactly
+ * the run that most needs protecting — an update of a repository big enough to
+ * take longer than the window — so the holder heartbeats, and the rule becomes
+ * "no refresh for a minute" rather than "started over a minute ago".
  */
 
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import { ARTIFACT_DIR, ARTIFACT_PATHS, stableStringify } from "@greplost/core/schema";
 
-/** A lock older than this is reclaimed even if its pid is still alive. */
+/** A lock that has not been refreshed within this window is reclaimed. */
 export const LOCK_STALE_MS = 60_000;
+
+/**
+ * How often a holder rewrites its timestamp.
+ *
+ * A quarter of the stale window, so three consecutive refreshes can be lost —
+ * to a stopped-world GC pause, a suspended laptop, a loaded CI box — before
+ * anyone else considers the lock abandoned. Without a heartbeat the staleness
+ * rule punishes exactly the run that most needs the lock: an update of a large
+ * repository that legitimately takes longer than a minute would be declared
+ * dead by the next hook and have its artifact directory written underneath it.
+ */
+export const LOCK_HEARTBEAT_MS = 15_000;
 
 /** What `.greplost/.lock` holds. */
 export interface LockInfo {
   pid: number;
-  /** Epoch milliseconds at acquisition. */
+  /** Epoch milliseconds of the acquisition or the last heartbeat. */
   ts: number;
 }
 
 /** True when a live, non-stale holder owns the lock (the current process counts). */
 export function isLocked(root: string): boolean {
   const held = readLock(lockPath(root));
-  return held !== undefined && !isStale(held);
+  return held !== undefined && !isStaleLock(held);
 }
 
 /**
@@ -56,16 +74,40 @@ export function isLocked(root: string): boolean {
  * someone else while `fn` ran belongs to that someone else now, and deleting
  * it would hand a third process a lock the second one thinks it holds.
  */
-export async function withLock<T>(root: string, fn: () => Promise<T>): Promise<T | undefined> {
+export async function withLock<T>(
+  root: string,
+  fn: () => Promise<T>,
+  opts: WithLockOptions = {},
+): Promise<T | undefined> {
   const file = lockPath(root);
-  const token = acquire(file);
-  if (token === undefined) return undefined;
+  const holder = acquire(file);
+  if (holder === undefined) return undefined;
+
+  // `unref` so a held lock cannot keep a CLI process alive past its work, and
+  // an interval rather than a timer chain so a long `fn` that never yields to
+  // the loop is no worse off than one that does.
+  const beat = setInterval(() => refresh(file, holder), opts.heartbeatMs ?? LOCK_HEARTBEAT_MS);
+  beat.unref?.();
 
   try {
     return await fn();
   } finally {
-    release(file, token);
+    clearInterval(beat);
+    release(file, holder.token);
   }
+}
+
+export interface WithLockOptions {
+  /**
+   * Heartbeat period in milliseconds. Defaults to `LOCK_HEARTBEAT_MS`; the
+   * tests use a short one to watch a refresh actually land.
+   */
+  heartbeatMs?: number;
+}
+
+/** The lock this process holds: the bytes it wrote, so it can prove they are still its own. */
+interface Holder {
+  token: string;
 }
 
 function lockPath(root: string): string {
@@ -82,7 +124,7 @@ function lockPath(root: string): string {
  * reclaim path — after unlinking a stale lock, a third process may have
  * created a fresh one in the gap, and that one wins.
  */
-function acquire(file: string): string | undefined {
+function acquire(file: string): Holder | undefined {
   const token = stableStringify({ pid: process.pid, ts: Date.now() });
 
   try {
@@ -94,7 +136,7 @@ function acquire(file: string): string | undefined {
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       writeFileSync(file, token, { flag: "wx" });
-      return token;
+      return { token };
     } catch (cause) {
       if ((cause as NodeJS.ErrnoException).code !== "EEXIST") {
         throw new Error(`greplost: cannot create ${ARTIFACT_DIR}/${ARTIFACT_PATHS.lock}: ${reasonOf(cause)}`);
@@ -102,7 +144,7 @@ function acquire(file: string): string | undefined {
     }
 
     const held = readLock(file);
-    if (held !== undefined && !isStale(held)) return undefined;
+    if (held !== undefined && !isStaleLock(held)) return undefined;
 
     // Stale, or unreadable rubbish where a lock should be: either way nothing
     // alive is relying on it.
@@ -114,6 +156,43 @@ function acquire(file: string): string | undefined {
   }
 
   return undefined;
+}
+
+/**
+ * Rewrite the timestamp, proving the holder is still alive.
+ *
+ * Through a temporary and a `rename`, never a truncating write: a reader that
+ * caught a half-written lock file would parse nothing, conclude the lock is
+ * rubbish and reclaim it — turning the mechanism that protects a long update
+ * into the one that breaks it. `rename` swaps the directory entry in one step,
+ * so a reader sees either the old timestamp or the new one.
+ *
+ * A lock that is no longer ours is left alone and the heartbeat gives up: it
+ * belongs to whoever reclaimed it, and stamping our own timestamp on it would
+ * hand two processes the same lock.
+ */
+function refresh(file: string, holder: Holder): void {
+  let current: string;
+  try {
+    current = readFileSync(file, "utf8");
+  } catch {
+    return;
+  }
+  if (current !== holder.token) return;
+
+  const token = stableStringify({ pid: process.pid, ts: Date.now() });
+  const temporary = `${path.join(path.dirname(file), `.${path.basename(file)}`)}.${process.pid}.0.tmp`;
+  try {
+    writeFileSync(temporary, token);
+    renameSync(temporary, file);
+    holder.token = token;
+  } catch {
+    try {
+      rmSync(temporary, { force: true });
+    } catch {
+      // Swept by the next update; nothing reads a `.tmp`.
+    }
+  }
 }
 
 /** Release the lock, but only while the file still holds our own token. */
@@ -163,8 +242,21 @@ function readLock(file: string): LockInfo | undefined {
   return { pid, ts };
 }
 
-function isStale(held: LockInfo): boolean {
-  return Date.now() - held.ts > LOCK_STALE_MS || !isAlive(held.pid);
+/**
+ * Is this lock reclaimable?
+ *
+ * Three ways to be. Its holder is gone (a dead pid). It has not been refreshed
+ * within the stale window, which after the heartbeat means the holder is
+ * wedged rather than merely slow. Or its timestamp is more than a window in the
+ * *future*, which no live holder can produce: that is a clock that has been
+ * moved (a VM resumed from a snapshot, a container with a skewed host, an NTP
+ * step) and, left alone, would pin the lock until the wall clock caught up.
+ *
+ * `now` is a parameter so the predicate can be tested without waiting a minute.
+ */
+export function isStaleLock(held: LockInfo, now: number = Date.now()): boolean {
+  const age = now - held.ts;
+  return age > LOCK_STALE_MS || age < -LOCK_STALE_MS || !isAlive(held.pid);
 }
 
 /**

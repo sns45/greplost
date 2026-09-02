@@ -21,6 +21,18 @@ import { ARTIFACT_DIR, ARTIFACT_PATHS, stableStringify } from "@greplost/core/sc
 export interface SyncState {
   /** Commit the artifacts on disk were built from, when the repo is a git repo. */
   lastIndexedCommit?: string;
+  /**
+   * Was the working tree clean when that build ran?
+   *
+   * Without this, `lastIndexedCommit` alone is a lie by omission. A map built
+   * from a dirty tree describes bytes that are not in any commit, so when the
+   * tree is reverted (`git checkout -- .`, a dropped stash, a discarded change
+   * in an editor) HEAD is unchanged and `git status` is empty again — and a
+   * fast path that trusted the commit alone would call that map current when
+   * it describes code that no longer exists. Absent (an older state file, or a
+   * build outside git) reads as `false`: one extra rebuild, never a stale map.
+   */
+  treeClean?: boolean;
 }
 
 /** Read `.greplost/.state.json`. `{}` when it is absent, empty or unreadable. */
@@ -40,11 +52,13 @@ export function readState(root: string): SyncState {
   }
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return {};
 
-  const { lastIndexedCommit } = parsed as { lastIndexedCommit?: unknown };
+  const { lastIndexedCommit, treeClean } = parsed as { lastIndexedCommit?: unknown; treeClean?: unknown };
   // A non-string commit would be handed straight to `git rev-parse`; the type
   // check is the boundary between a hint file and an argument list.
   if (typeof lastIndexedCommit !== "string" || lastIndexedCommit === "") return {};
-  return { lastIndexedCommit };
+  // Anything but an explicit `true` — missing, null, a string, a state file
+  // written before this field existed — is not a claim that the tree was clean.
+  return { lastIndexedCommit, treeClean: treeClean === true };
 }
 
 /**

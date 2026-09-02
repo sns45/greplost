@@ -31,6 +31,17 @@
  *
  * A cache is never a source of truth: corrupt, truncated or half-written JSON
  * reads as an empty cache, because the only cost of a miss is time.
+ *
+ * The same reasoning covers version skew, which is the one way a *valid* cache
+ * can be wrong. Records are the extractor's output, so a greplost that has
+ * learned to record something the previous one did not would inherit
+ * yesterday's answers for every file whose bytes have not changed, and produce
+ * a map that is neither the old version's nor the new one's. The stamp under
+ * `#version` (a key no `lang:sha256` can collide with) makes that impossible: a
+ * cache written by a different extractor generation is discarded, not merged.
+ * `PARSE_CACHE_VERSION` is bumped by hand whenever a change to extraction would
+ * alter the `FileRecord` for unchanged bytes; `SCHEMA_VERSION` covers changes
+ * to the record's shape.
  */
 
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
@@ -38,10 +49,23 @@ import path from "node:path";
 
 import type { ParseCache } from "@greplost/core";
 import type { FileRecord, Lang } from "@greplost/core/schema";
-import { ARTIFACT_DIR, LANG_BY_EXTENSION, stableStringify } from "@greplost/core/schema";
+import { ARTIFACT_DIR, LANG_BY_EXTENSION, SCHEMA_VERSION, stableStringify } from "@greplost/core/schema";
 
 /** `.greplost/cache/parse.json`, relative to the artifact directory. */
 export const PARSE_CACHE_PATH = "cache/parse.json";
+
+/**
+ * Extractor generation. Bump by hand when a greplost change would give
+ * unchanged bytes a different `FileRecord`; every existing cache is then
+ * discarded on load rather than mixed with fresh records.
+ */
+export const PARSE_CACHE_VERSION = "1";
+
+/** Sentinel key. No real key can collide with it: `lang:sha256` has no `#`. */
+export const PARSE_CACHE_VERSION_KEY = "#version";
+
+/** What the sentinel must hold for a cache file to be usable. */
+export const PARSE_CACHE_STAMP = `${SCHEMA_VERSION}/${PARSE_CACHE_VERSION}`;
 
 /** The cache key for one extraction: language first, so a prefix scan groups by grammar. */
 export function parseCacheKey(sha256: string, lang: Lang): string {
@@ -99,7 +123,12 @@ export class FileParseCache implements ParseCache {
     }
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return;
 
+    // Written by a different extractor generation (or by something that is not
+    // a parse cache at all): every record in it is suspect, so none are read.
+    if ((parsed as Record<string, unknown>)[PARSE_CACHE_VERSION_KEY] !== PARSE_CACHE_STAMP) return;
+
     for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+      if (key === PARSE_CACHE_VERSION_KEY) continue;
       if (this.entries.has(key)) continue;
       if (!isFileRecord(value)) continue;
       // The filing must match the contents, or a hit answers with another
@@ -141,10 +170,12 @@ export class FileParseCache implements ParseCache {
       }
     }
 
-    const out: Record<string, FileRecord> = {};
+    const out: Record<string, FileRecord | string> = { [PARSE_CACHE_VERSION_KEY]: PARSE_CACHE_STAMP };
     for (const [key, value] of this.entries) out[key] = value;
 
-    const temporary = `${this.file}.${process.pid}.tmp`;
+    // The sibling-temporary naming `writeArtifacts` uses, so a crash between
+    // the write and the rename leaves something `update` knows how to sweep.
+    const temporary = path.join(path.dirname(this.file), `.${path.basename(this.file)}.${process.pid}.0.tmp`);
     try {
       mkdirSync(path.dirname(this.file), { recursive: true });
       // Write then rename: a reader (or a crash) never sees half a cache.

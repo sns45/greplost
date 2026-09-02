@@ -14,7 +14,7 @@ import path from "node:path";
 
 import { ARTIFACT_DIR, ARTIFACT_PATHS } from "@greplost/core/schema";
 
-import { LOCK_STALE_MS, isLocked, withLock } from "../src/lock.ts";
+import { LOCK_HEARTBEAT_MS, LOCK_STALE_MS, isLocked, isStaleLock, withLock } from "../src/lock.ts";
 
 const temporaries: string[] = [];
 
@@ -195,6 +195,73 @@ describe("lock", () => {
     expect(result).toBe("done");
     expect(existsSync(lockFile(root))).toBe(true);
     expect(isLocked(root)).toBe(true);
+  });
+
+  test("keeps its timestamp moving while the callback runs", async () => {
+    const root = repo("heartbeat");
+    const stamp = (): number => (JSON.parse(readFileSync(lockFile(root), "utf8")) as { ts: number }).ts;
+
+    let first = 0;
+    let last = 0;
+    const result = await withLock(
+      root,
+      async () => {
+        first = stamp();
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        last = stamp();
+        return "worked for a while";
+      },
+      { heartbeatMs: 20 },
+    );
+
+    expect(result).toBe("worked for a while");
+    // A long update must not be declared abandoned by the hook behind it.
+    expect(last).toBeGreaterThan(first);
+    // The refreshed lock is still ours, so it is still ours to release.
+    expect(existsSync(lockFile(root))).toBe(false);
+  });
+
+  test("the heartbeat leaves a lock that was reclaimed from under it alone", async () => {
+    const root = repo("heartbeat-stolen");
+    const foreign = JSON.stringify({ pid: process.pid, ts: Date.now() + 5_000 });
+
+    await withLock(
+      root,
+      async () => {
+        writeLock(root, foreign);
+        await new Promise((resolve) => setTimeout(resolve, 150));
+      },
+      { heartbeatMs: 20 },
+    );
+
+    expect(readFileSync(lockFile(root), "utf8")).toBe(foreign);
+  });
+
+  test("isStaleLock: a dead holder, a holder that stopped refreshing, a moved clock", () => {
+    const now = 1_700_000_000_000;
+    const alive = process.pid;
+
+    expect(isStaleLock({ pid: alive, ts: now }, now)).toBe(false);
+    // Refreshed a heartbeat ago: exactly what a healthy long update looks like.
+    expect(isStaleLock({ pid: alive, ts: now - LOCK_HEARTBEAT_MS }, now)).toBe(false);
+    expect(isStaleLock({ pid: alive, ts: now - LOCK_STALE_MS + 1 }, now)).toBe(false);
+    // Stopped refreshing: wedged, not slow.
+    expect(isStaleLock({ pid: alive, ts: now - LOCK_STALE_MS - 1 }, now)).toBe(true);
+    // A clock that jumped (a resumed VM, a skewed container) must not pin the
+    // lock until the wall clock catches up.
+    expect(isStaleLock({ pid: alive, ts: now + LOCK_STALE_MS - 1 }, now)).toBe(false);
+    expect(isStaleLock({ pid: alive, ts: now + LOCK_STALE_MS + 1 }, now)).toBe(true);
+    // A dead holder is stale however fresh its timestamp.
+    expect(isStaleLock({ pid: deadPid(), ts: now }, now)).toBe(true);
+  });
+
+  test("reclaims a lock stamped far in the future", async () => {
+    const root = repo("skew");
+    writeLock(root, JSON.stringify({ pid: process.pid, ts: Date.now() + LOCK_STALE_MS + 5_000 }));
+
+    expect(isLocked(root)).toBe(false);
+    expect(await withLock(root, async () => "reclaimed")).toBe("reclaimed");
+    expect(existsSync(lockFile(root))).toBe(false);
   });
 
   test("isLocked reports false when there is no lock at all", () => {

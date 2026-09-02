@@ -27,7 +27,16 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { appendFileSync, chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  appendFileSync,
+  chmodSync,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 
 /** The line that makes a re-install a no-op. Never change it: old hooks carry it. */
@@ -55,7 +64,11 @@ const SHEBANG = "#!/bin/sh\n";
 const HOOK_BLOCK = [
   HOOK_MARKER,
   'if command -v greplost >/dev/null 2>&1; then GL="greplost"; elif command -v bunx >/dev/null 2>&1; then GL="bunx greplost"; else GL=""; fi',
-  '[ -n "$GL" ] && ( $GL update --incremental --quiet >/dev/null 2>&1 & )',
+  // The trailing `|| :` is what makes "greplost is not installed here" a
+  // no-op rather than a failed hook: without it the guard's own false is the
+  // script's exit status, and husky (which runs hooks under `sh -e`) reports a
+  // hook failure on every commit in a checkout that has no greplost.
+  '[ -n "$GL" ] && ( $GL update --incremental --quiet >/dev/null 2>&1 & ) || :',
   HOOK_END_MARKER,
   "",
 ].join("\n");
@@ -80,8 +93,14 @@ export function installGitHooks(root: string): HookInstallResult {
   const absoluteRoot = path.resolve(root);
   const notes: string[] = [];
 
-  if (!isGitRepo(absoluteRoot)) {
-    notes.push("not a git repository: no hooks installed");
+  // The same test `update` applies before it trusts git: `root` must *be* the
+  // top level of the work tree. A hook installed from a subdirectory would run
+  // `greplost update` in a directory that has no `.greplost/` — and if it did
+  // have one, it would be a second, wrong map. The two must agree about what a
+  // repository root is, or `init` in a subdirectory installs hooks for a map it
+  // then refuses to keep fresh.
+  if (!isRepoRoot(absoluteRoot)) {
+    notes.push("not a git repository root: no hooks installed");
     return { installed: [], mode: "none", notes };
   }
 
@@ -115,7 +134,7 @@ export function installGitHooks(root: string): HookInstallResult {
       continue;
     }
 
-    write(file, existing, husky);
+    write(file, existing);
     makeExecutable(file);
     installed.push(hook);
   }
@@ -131,10 +150,14 @@ export function installGitHooks(root: string): HookInstallResult {
  * existing file is appended to, with a newline first if it lacks one — running
  * the previous last line and the marker together would comment out a command.
  */
-function write(file: string, existing: string | undefined, husky: boolean): void {
+function write(file: string, existing: string | undefined): void {
   try {
     if (existing === undefined) {
-      writeFileSync(file, husky ? HOOK_BLOCK : SHEBANG + HOOK_BLOCK);
+      // Both kinds get the shebang. Husky runs its files itself and does not
+      // need one, but a `.husky/post-commit` is also just a script someone may
+      // run by hand, and a file that is executable without saying what should
+      // execute it is a trap.
+      writeFileSync(file, SHEBANG + HOOK_BLOCK);
       return;
     }
     const separator = existing.length === 0 || existing.endsWith("\n") ? "" : "\n";
@@ -172,8 +195,22 @@ function gitHooksDir(root: string): string {
   return path.resolve(root, answer.trim());
 }
 
-function isGitRepo(root: string): boolean {
-  return git(root, ["rev-parse", "--git-dir"]) !== undefined;
+/** Is `root` the top level of a git work tree (not merely inside one)? */
+function isRepoRoot(root: string): boolean {
+  const toplevel = git(root, ["rev-parse", "--show-toplevel"]);
+  if (toplevel === undefined || toplevel.trim() === "") return false;
+  if (path.resolve(root) === path.resolve(toplevel.trim())) return true;
+  // `--show-toplevel` always answers with symlinks resolved; `root` often is
+  // not (every macOS temp directory, for one).
+  return realpath(root) === realpath(toplevel.trim());
+}
+
+function realpath(target: string): string {
+  try {
+    return realpathSync(path.resolve(target));
+  } catch {
+    return path.resolve(target);
+  }
 }
 
 function isDirectory(target: string): boolean {
