@@ -421,6 +421,41 @@ describe("resolution edge cases", () => {
     expect(edgeKeys(local.calls)).toEqual(["src/a.ts -> src/b.ts#b"]);
   });
 
+  test("reports semantic diagnostics only when asked, and says so when it has not", () => {
+    // A full semantic check costs more than the truth set itself, so it is opt-in
+    // (`structural --diagnostics` / GREPLOST_BENCH_DIAGNOSTICS=1). The stderr line must
+    // never let a reader mistake "not checked" for "clean".
+    const dir = project({
+      "src/a.ts": "import { b } from './b.js';\nexport const a = b();\n",
+      "src/b.ts": "export function b(): number { return 1; }\n",
+    });
+    const lines: string[] = [];
+    const realError = console.error;
+    console.error = (...args: unknown[]): void => {
+      lines.push(args.map((arg) => String(arg)).join(" "));
+    };
+    try {
+      generateTsTruth(dir, ["src/a.ts", "src/b.ts"]);
+      generateTsTruth(dir, ["src/a.ts", "src/b.ts"], { diagnostics: true });
+    } finally {
+      console.error = realError;
+    }
+    expect(lines[0]).toBe(
+      "truth-ts: 2 files, 0 tsconfig errors (semantic diagnostics off: --diagnostics or GREPLOST_BENCH_DIAGNOSTICS=1 to check them)",
+    );
+    expect(lines[1]).toMatch(/^truth-ts: 2 files, 0 tsconfig errors, \d+ semantic diagnostics$/);
+  });
+
+  test("the diagnostics flag never changes the truth set", () => {
+    const dir = project({
+      "src/a.ts": "import { b } from './b.js';\nexport const a = b();\n",
+      "src/b.ts": "export function b(): number { return 1; }\n",
+    });
+    const off = generateTsTruth(dir, ["src/a.ts", "src/b.ts"], { diagnostics: false });
+    const on = generateTsTruth(dir, ["src/a.ts", "src/b.ts"], { diagnostics: true });
+    expect(stableStringify(on, 2)).toBe(stableStringify(off, 2));
+  });
+
   test("ignores program files that are not in the given list", () => {
     const dir = project({
       "src/a.ts": "import { b } from './b.js';\nexport const a = b;\n",

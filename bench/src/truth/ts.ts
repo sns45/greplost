@@ -77,24 +77,45 @@ export function listTypeScriptFiles(root: string): string[] {
   return out.sort(compareStrings);
 }
 
+/** Options for `generateTsTruth`. */
+export interface TruthOptions {
+  /**
+   * Run a full semantic check and report the diagnostic count on stderr.
+   *
+   * Off by default: `getSemanticDiagnostics()` type-checks the whole program, including
+   * every `@types` package the config pulls in, which costs far more than building the
+   * truth set itself. Turn it on with `structural --diagnostics` or
+   * `GREPLOST_BENCH_DIAGNOSTICS=1` when a truth set looks wrong and you need to know
+   * whether the compiler understood the repo at all.
+   */
+  diagnostics?: boolean;
+}
+
+/** Whether semantic diagnostics are on: the explicit option, else the environment. */
+function diagnosticsEnabled(options: TruthOptions): boolean {
+  if (options.diagnostics !== undefined) return options.diagnostics;
+  return process.env["GREPLOST_BENCH_DIAGNOSTICS"] === "1";
+}
+
 /**
  * Compiler truth for `files` (repo-relative posix paths) under `root`.
  *
  * Compiler options come from `<root>/tsconfig.json` via `ts.parseJsonConfigFileContent`,
- * falling back to bundler resolution when there is no config. Config errors and the
- * semantic diagnostic count are reported on stderr: a truth set built from a program that
- * could not understand the repo is not trustworthy, and silence would hide that.
+ * falling back to bundler resolution when there is no config. Config errors are always
+ * reported on stderr: a truth set built from a program that could not understand the repo
+ * is not trustworthy, and silence would hide that. The far more expensive semantic
+ * diagnostic count is opt-in (see `TruthOptions.diagnostics`).
  */
-export function generateTsTruth(root: string, files: string[]): Truth {
+export function generateTsTruth(root: string, files: string[], options: TruthOptions = {}): Truth {
   const absRoot = path.resolve(root);
   // Sorted, unique, normalised: the root file order reaches the program, and the program's
   // declaration order reaches the output, so this is part of the determinism contract.
   const requested = [...new Set(files.map((file) => normalizeId(absRoot, file)))].sort(compareStrings);
 
-  const { options, configErrors } = readCompilerOptions(absRoot);
+  const { options: compilerOptions, configErrors } = readCompilerOptions(absRoot);
   const program = ts.createProgram(
     requested.map((id) => path.join(absRoot, id)),
-    options,
+    compilerOptions,
   );
   const checker = program.getTypeChecker();
 
@@ -108,7 +129,7 @@ export function generateTsTruth(root: string, files: string[]): Truth {
     if (sourceFile) covered.push({ id, absolute, sourceFile });
     else missing.push(id);
   }
-  reportDiagnostics(program, configErrors, covered.length, missing);
+  reportDiagnostics(program, configErrors, covered.length, missing, diagnosticsEnabled(options));
 
   const canonical = ts.sys.useCaseSensitiveFileNames ? (p: string) => p : (p: string) => p.toLowerCase();
   const idByPath = new Map<string, string>();
@@ -126,7 +147,7 @@ export function generateTsTruth(root: string, files: string[]): Truth {
     }
   }
 
-  const resolutionCache = ts.createModuleResolutionCache(absRoot, canonical, options);
+  const resolutionCache = ts.createModuleResolutionCache(absRoot, canonical, compilerOptions);
 
   /** Absolute file name -> covered file id, following `.js`/`.d.ts` specifiers back to source. */
   const toId = (fileName: string): string | undefined => {
@@ -149,7 +170,13 @@ export function generateTsTruth(root: string, files: string[]): Truth {
 
     /** Resolve a module specifier to a covered file id, or undefined. */
     const resolveTarget = (specifier: string, specifierNode: ts.Expression): string | undefined => {
-      const resolved = ts.resolveModuleName(specifier, sourceFile.fileName, options, ts.sys, resolutionCache);
+      const resolved = ts.resolveModuleName(
+        specifier,
+        sourceFile.fileName,
+        compilerOptions,
+        ts.sys,
+        resolutionCache,
+      );
       const byResolver = resolved.resolvedModule ? toId(resolved.resolvedModule.resolvedFileName) : undefined;
       if (byResolver !== undefined) return byResolver;
       // Fallback: ask the checker which module the specifier bound to. This catches
@@ -252,19 +279,24 @@ function readCompilerOptions(absRoot: string): { options: ts.CompilerOptions; co
  *
  * A high semantic diagnostic count usually means unresolved imports, which means missing
  * truth edges, which means greplost gets scored against a truth set that is quietly wrong.
- * This is the cheapest possible early warning; it is never written to stdout, so it cannot
- * disturb the suite's last-line output convention.
+ * It is the best early warning there is, but it is also a full type-check of the program,
+ * so it is opt-in; when it is off, the line says so rather than leaving the reader to
+ * assume a clean bill of health. Nothing here is written to stdout, so it cannot disturb
+ * the suite's last-line output convention.
  */
 function reportDiagnostics(
   program: ts.Program,
   configErrors: ts.Diagnostic[],
   coveredCount: number,
   missing: string[],
+  diagnostics: boolean,
 ): void {
-  const semantic = program.getSemanticDiagnostics().length;
-  console.error(
-    `truth-ts: ${coveredCount} files, ${configErrors.length} tsconfig errors, ${semantic} semantic diagnostics`,
-  );
+  const head = `truth-ts: ${coveredCount} files, ${configErrors.length} tsconfig errors`;
+  if (diagnostics) {
+    console.error(`${head}, ${program.getSemanticDiagnostics().length} semantic diagnostics`);
+  } else {
+    console.error(`${head} (semantic diagnostics off: --diagnostics or GREPLOST_BENCH_DIAGNOSTICS=1 to check them)`);
+  }
   for (const error of configErrors) {
     console.error(`truth-ts: tsconfig: ${ts.flattenDiagnosticMessageText(error.messageText, " ")}`);
   }

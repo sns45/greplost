@@ -43,6 +43,8 @@ interface Options {
   tier: string;
   gate: boolean;
   dryRun: boolean;
+  /** Run a full semantic check in the truth generator and report the count (expensive). */
+  diagnostics: boolean;
 }
 
 interface Target {
@@ -103,7 +105,7 @@ async function execute(options: Options): Promise<number> {
 
   const scores: RepoScores[] = [];
   try {
-    for (const target of targets) scores.push(await scoreTarget(target));
+    for (const target of targets) scores.push(await scoreTarget(target, options));
   } catch (err) {
     console.error(`${SUITE}: ${(err as Error).message}`);
     console.log(`${SUITE}: GATE FAIL (build)`);
@@ -135,7 +137,15 @@ async function execute(options: Options): Promise<number> {
 // ---------------------------------------------------------------------------
 
 function parseArgs(args: string[]): Options {
-  const options: Options = { fixture: false, fixtureGo: false, repo: undefined, tier: "S", gate: false, dryRun: false };
+  const options: Options = {
+    fixture: false,
+    fixtureGo: false,
+    repo: undefined,
+    tier: "S",
+    gate: false,
+    dryRun: false,
+    diagnostics: process.env["GREPLOST_BENCH_DIAGNOSTICS"] === "1",
+  };
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     // Unknown flags are ignored on purpose: `bench all` forwards one argument list to
@@ -144,6 +154,7 @@ function parseArgs(args: string[]): Options {
     else if (arg === "--fixture-go") options.fixtureGo = true;
     else if (arg === "--gate") options.gate = true;
     else if (arg === "--dry-run") options.dryRun = true;
+    else if (arg === "--diagnostics") options.diagnostics = true;
     else if (arg === "--repo") options.repo = args[++i];
     else if (arg === "--tier") options.tier = args[++i] ?? "S";
   }
@@ -257,12 +268,14 @@ async function loadMachine(): Promise<unknown> {
 // scoring
 // ---------------------------------------------------------------------------
 
-async function scoreTarget(target: Target): Promise<RepoScores> {
+async function scoreTarget(target: Target, options: Options): Promise<RepoScores> {
   const buildSnapshot = await loadBuildSnapshot();
   const snapshot = await buildSnapshot({ root: target.root });
   const files = scoredFiles(snapshot, target.lang);
   const truth =
-    target.lang === "go" ? (await loadGoTruth())(target.root, files) : generateTsTruth(target.root, files);
+    target.lang === "go"
+      ? (await loadGoTruth())(target.root, files)
+      : generateTsTruth(target.root, files, { diagnostics: options.diagnostics });
   return scoreAgainstTruth(target.name, snapshot, truth, target.lang);
 }
 
