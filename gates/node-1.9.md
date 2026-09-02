@@ -2,20 +2,20 @@
 
 Scope: measured numbers, head-to-head results, README, dogfood, CI parity
 
-- [ ] R1: corpus tiers S and M are set up
+- [x] R1: corpus tiers S and M are set up
   CHECK: bun bench/src/cli.ts corpus setup --tier S && bun bench/src/cli.ts corpus setup --tier M
   EXPECT: /hono: ready at [0-9a-f]{40}/
-  EVIDENCE: pending
+  EVIDENCE: hono: ready at e2740d5a1bd0b4254e517e3af8b60789284bc7bd | bubbletea: ready at 73b6d91ac1c3854dd4af046ab5f9e51d3b3b4290
 
 - [ ] R2: structural gate on tier M (hono)
   CHECK: bun run bench:structural --repo hono --gate
   EXPECT: structural: GATE PASS
   EVIDENCE: pending
 
-- [ ] R3: map quality gate on hono's generated map
+- [x] R3: map quality gate on hono's generated map
   CHECK: d=$(mktemp -d) && cp -R bench/.corpus/hono/. "$d" && bun packages/cli/src/main.ts init --no-hooks --root "$d" >/dev/null && bun run bench:mapquality --dir "$d/.greplost" --gate
   EXPECT: mapquality: GATE PASS
-  EVIDENCE: pending
+  EVIDENCE: mapquality: GATE PASS | $ bun bench/src/cli.ts mapquality --dir "/var/folders/dz/22spknj561x295jgnbx3x7s80000gn/T/tmp.lOLwOvZt3i/.greplost" --gate
 
 - [ ] R4: head-to-head X1, X4, X5, X6 measured on tier S with results written
   CHECK: bun run bench:headtohead --tier S --metrics X1,X4,X5,X6
@@ -42,14 +42,14 @@ Scope: measured numbers, head-to-head results, README, dogfood, CI parity
   EXPECT: .greplost/INDEX.md
   EVIDENCE: pending
 
-- [ ] R9: whole repo typechecks
+- [x] R9: whole repo typechecks
   CHECK: bun run typecheck
-  EVIDENCE: pending
+  EVIDENCE: == bench | $ for p in packages/core packages/render packages/sync packages/cli packages/semantic packages/workspace bench; do echo "== $p"; bunx tsc -p $p/tsconfig.json --noEmit || exit 1; done
 
-- [ ] R10: whole test suite green
+- [x] R10: whole test suite green
   CHECK: bun test
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: pending
+  EVIDENCE: 12397 expect() calls | Ran 992 tests across 28 files. [25.97s]
 
 - [ ] R11: CI workflow steps run locally in order
   CHECK: bun install --frozen-lockfile >/dev/null && bun run typecheck >/dev/null && bun test >/dev/null 2>&1 && bun packages/cli/src/main.ts verify --diff >/dev/null && bun run bench:structural --tier S --gate | tail -1 && bun run bench:mapquality --gate | tail -1

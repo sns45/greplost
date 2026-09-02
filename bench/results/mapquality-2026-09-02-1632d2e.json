@@ -1,0 +1,479 @@
+{
+  "checker": "mermaid",
+  "corpus": [],
+  "date": "2026-09-02",
+  "diagrams": {
+    "byFence": [
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 1,
+        "nodeCount": 6,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 2,
+        "nodeCount": 7,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 3,
+        "nodeCount": 3,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 4,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 5,
+        "nodeCount": 16,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 6,
+        "nodeCount": 4,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 7,
+        "nodeCount": 13,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 8,
+        "nodeCount": 8,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 9,
+        "nodeCount": 2,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 10,
+        "nodeCount": 4,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 11,
+        "nodeCount": 8,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 12,
+        "nodeCount": 19,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 13,
+        "nodeCount": 9,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 14,
+        "nodeCount": 4,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 15,
+        "nodeCount": 6,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 16,
+        "nodeCount": 3,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 17,
+        "nodeCount": 6,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 18,
+        "nodeCount": 5,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 19,
+        "nodeCount": 3,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 20,
+        "nodeCount": 4,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 21,
+        "nodeCount": 3,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 22,
+        "nodeCount": 3,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 23,
+        "nodeCount": 5,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 24,
+        "nodeCount": 25,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 25,
+        "nodeCount": 15,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 26,
+        "nodeCount": 12,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 27,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 28,
+        "nodeCount": 2,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 29,
+        "nodeCount": 25,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 30,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 31,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 32,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 33,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 34,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 35,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 36,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 37,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 38,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 39,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 40,
+        "nodeCount": 2,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 41,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 42,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 43,
+        "nodeCount": 2,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 44,
+        "nodeCount": 2,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 45,
+        "nodeCount": 2,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 46,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 47,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 48,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 49,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 50,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 51,
+        "nodeCount": 2,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 52,
+        "nodeCount": 3,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 53,
+        "nodeCount": 2,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 54,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 55,
+        "nodeCount": 2,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 56,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 57,
+        "nodeCount": 2,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 58,
+        "nodeCount": 1,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 59,
+        "nodeCount": 16,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 60,
+        "nodeCount": 22,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 61,
+        "nodeCount": 6,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/hono/MAP.md",
+        "index": 62,
+        "nodeCount": 3,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "repo/MAP.md",
+        "index": 1,
+        "nodeCount": 1,
+        "ok": true
+      }
+    ],
+    "fences": 63,
+    "maxNodeCount": 25,
+    "maxNodes": 25
+  },
+  "gate": {
+    "missed": [],
+    "passed": true
+  },
+  "greplostSha": "1632d2e",
+  "machine": {
+    "arch": "arm64",
+    "bun": "1.2.21",
+    "cores": 16,
+    "cpu": "Apple M4 Max",
+    "go": "go version go1.25.3 darwin/arm64",
+    "greplostSha": "1632d2e",
+    "greplostVersion": "0.0.1",
+    "memoryGB": 128,
+    "node": "24.3.0",
+    "os": "Darwin 25.5.0"
+  },
+  "suite": "mapquality",
+  "target": {
+    "dir": "../../../../var/folders/dz/22spknj561x295jgnbx3x7s80000gn/T/tmp.lOLwOvZt3i/.greplost"
+  },
+  "tokens": {
+    "budget": 3000,
+    "encoding": "cl100k_base",
+    "indexMd": 389
+  }
+}
