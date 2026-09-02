@@ -30,7 +30,13 @@ export interface Corpus {
   repos: CorpusRepoEntry[];
 }
 
-const MIN_HISTORY = 600;
+// Default fetch depth (also the deepen target and the "has enough history"
+// threshold): 600 commits behind the pinned sha is enough for the replay
+// suite (leaf 1.5.5) to walk 500 commits backward. Overridable per call
+// (test-only: real callers never need a different depth) so a small local
+// fixture repo can be driven into a genuinely shallow state without needing
+// 600 real commits.
+const HISTORY_DEPTH = 600;
 
 // --- location -----------------------------------------------------------
 
@@ -119,6 +125,12 @@ interface GitResult {
 
 function git(args: string[], cwd: string): GitResult {
   const res = spawnSync("git", args, { cwd, encoding: "utf8" });
+  if (res.error) {
+    // spawnSync couldn't even launch the process (e.g. git isn't on PATH) —
+    // res.status is null in that case, so surface a message that says so
+    // instead of the generic "exit code 1" every caller would otherwise print.
+    return { status: 127, stdout: "", stderr: `could not run "git ${args.join(" ")}": ${res.error.message}` };
+  }
   return { status: res.status ?? 1, stdout: res.stdout ?? "", stderr: res.stderr ?? "" };
 }
 
@@ -144,43 +156,56 @@ function hasEnoughHistory(dir: string, sha: string): boolean {
   const res = git(["rev-list", "--count", sha], dir);
   if (res.status !== 0) return false;
   const count = Number.parseInt(res.stdout.trim(), 10);
-  return Number.isFinite(count) && count >= MIN_HISTORY;
+  return Number.isFinite(count) && count >= HISTORY_DEPTH;
 }
 
 /**
- * Clones (or reuses) `entry` into `repoDir(entry.name)` and checks out
- * `entry.sha`, fetching only what's missing:
- *   1. clone `--filter=blob:none --no-checkout` if the directory is absent
- *      (or present but not a git repo, which is repaired by re-cloning).
- *   2. `git checkout --quiet <sha>`, fetching the sha first if it isn't
- *      reachable locally yet.
- *   3. deepen to MIN_HISTORY commits behind the sha if the repo ended up
- *      shallow (only the fallback fetch in step 2 makes it shallow; a plain
- *      clone carries full history).
- * Steps that only touch local state (checkout, the local-availability and
- * shallow checks) never reach the network, so re-running against a repo
- * that is already at the right sha does no network I/O.
+ * Makes sure `repoDir(entry.name)` is a git repo with `origin` pointed at
+ * `entry.url`: `git init -q <dir>` + `git remote add origin <url>` if the
+ * directory is absent, or present but not a git repo (a leftover non-git
+ * directory — an interrupted clone, stray files, ... — can't be reused, so
+ * it's removed first and rebuilt clean).
  */
-export function setupRepo(entry: CorpusRepoEntry): void {
+function ensureRepoInitialized(entry: CorpusRepoEntry): string {
   const dir = repoDir(entry.name);
   const parent = dirname(dir);
   mkdirSync(parent, { recursive: true });
 
   if (existsSync(dir) && !isGitRepo(dir)) {
-    // A leftover non-git directory (partial clone that got interrupted,
-    // stray files, ...) can't be reused; start clean.
     rmSync(dir, { recursive: true, force: true });
   }
 
-  if (!existsSync(dir)) {
-    const res = git(["clone", "--filter=blob:none", "--no-checkout", entry.url, dir], parent);
-    if (res.status !== 0) {
-      throw new Error(`clone of ${entry.name} (${entry.url}) failed: ${res.stderr.trim()}`);
+  if (!isGitRepo(dir)) {
+    const init = git(["init", "-q", dir], parent);
+    if (init.status !== 0) {
+      throw new Error(`git init failed for ${entry.name} at ${dir}: ${init.stderr.trim()}`);
+    }
+    const remote = git(["remote", "add", "origin", entry.url], dir);
+    if (remote.status !== 0) {
+      throw new Error(`git remote add failed for ${entry.name}: ${remote.stderr.trim()}`);
     }
   }
 
+  return dir;
+}
+
+/**
+ * Fetches `entry.sha` directly (bounded to `depth` commits behind it) and
+ * checks it out. Never clones full history: GitHub (and any host with
+ * `uploadpack.allowReachableSHA1InWant`) serves an arbitrary reachable
+ * commit by id, so `git fetch --depth=<depth> --filter=blob:none origin
+ * <sha>` bounds the fetch the same way whether this is the first fetch for
+ * a fresh repo or a later fetch for a sha that has changed — an L/XL repo
+ * (grafana, TypeScript) never pulls its full 100k+-commit history. Skips
+ * the fetch (no network) when `entry.sha` is already present locally, so
+ * re-running at the same sha is idempotent; a checkout of a different sha
+ * always fetches (bounded) and re-checks out.
+ */
+export function fetchAndCheckout(entry: CorpusRepoEntry, depth: number = HISTORY_DEPTH): void {
+  const dir = ensureRepoInitialized(entry);
+
   if (!commitAvailableLocally(dir, entry.sha)) {
-    const res = git(["fetch", "--depth=600", "origin", entry.sha], dir);
+    const res = git(["fetch", "--quiet", `--depth=${depth}`, "--filter=blob:none", "origin", entry.sha], dir);
     if (res.status !== 0) {
       throw new Error(`fetch of ${entry.name}@${entry.sha} failed: ${res.stderr.trim()}`);
     }
@@ -190,13 +215,33 @@ export function setupRepo(entry: CorpusRepoEntry): void {
   if (checkout.status !== 0) {
     throw new Error(`checkout of ${entry.name}@${entry.sha} failed: ${checkout.stderr.trim()}`);
   }
+}
 
+/**
+ * Widens a shallow clone to HISTORY_DEPTH (600) commits behind `entry.sha`
+ * via `git fetch --deepen=600` — a no-op (no network) when the repo isn't
+ * shallow, and harmlessly saturates at the repo's actual root commit when
+ * it has fewer than 600 commits in total (e.g. anyq).
+ */
+export function deepenHistory(entry: CorpusRepoEntry): void {
+  const dir = repoDir(entry.name);
   if (!hasEnoughHistory(dir, entry.sha)) {
-    const res = git(["fetch", `--deepen=${MIN_HISTORY}`], dir);
+    const res = git(["fetch", `--deepen=${HISTORY_DEPTH}`], dir);
     if (res.status !== 0) {
       throw new Error(`deepen of ${entry.name} failed: ${res.stderr.trim()}`);
     }
   }
+}
+
+/**
+ * Clones (or reuses) `entry` into `repoDir(entry.name)`, checks out
+ * `entry.sha`, and ensures HISTORY_DEPTH commits of history behind it — see
+ * `fetchAndCheckout` and `deepenHistory`. `depth` is a test-only override of
+ * the initial fetch's `--depth`; real callers should omit it.
+ */
+export function setupRepo(entry: CorpusRepoEntry, opts: { depth?: number } = {}): void {
+  fetchAndCheckout(entry, opts.depth ?? HISTORY_DEPTH);
+  deepenHistory(entry);
 }
 
 // --- CLI --------------------------------------------------------------

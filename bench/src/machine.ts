@@ -5,7 +5,7 @@
 // Deliberately excludes anything that identifies the machine or its user
 // (hostname, username, home directory): profiles are committed to the repo.
 
-import { arch, cpus, release, totalmem, type } from "node:os";
+import { arch, cpus, release, totalmem, type as osType } from "node:os";
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -52,7 +52,7 @@ export function machineProfile(): MachineProfile {
     cpu,
     cores,
     memoryGB,
-    os: `${type()} ${release()}`,
+    os: `${osType()} ${release()}`,
     arch: arch(),
     bun: runCommand("bun", ["--version"]) ?? "absent",
     node: process.versions.node,

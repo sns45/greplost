@@ -5,7 +5,7 @@ Scope: pinned corpus definition and setup, machine profile (spec: bench 1.5.3)
 - [x] G1: corpus test file passes
   CHECK: bun test bench/test/corpus.test.ts
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 104 expect() calls | Ran 22 tests across 1 file. [296.00ms]
+  EVIDENCE: 114 expect() calls | Ran 26 tests across 1 file. [1239.00ms]
 
 - [x] G2: corpus.json pins 7 repos with 40-hex SHAs, tiers and languages
   CHECK: node -e "const c=JSON.parse(require('fs').readFileSync('bench/corpus.json','utf8')); const n=c.repos.filter(r=>/^[0-9a-f]{40}$/.test(r.sha)&&r.tier&&r.lang&&r.url&&r.name).length; console.log(n+' ok')"
@@ -25,9 +25,8 @@ Scope: pinned corpus definition and setup, machine profile (spec: bench 1.5.3)
 - [x] G5: machine profile has cpu, cores, memoryGB, os, arch, bun, node, go and no hostname or username; describe('machine')
   CHECK: bun test bench/test/corpus.test.ts -t machine
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 16 expect() calls | Ran 2 tests across 1 file. [123.00ms]
+  EVIDENCE: 16 expect() calls | Ran 2 tests across 1 file. [300.00ms]
 
 - [x] G6: leaf files typecheck
   CHECK: bunx tsc -p bench/tsconfig.json --noEmit
   EVIDENCE: (no output)
-

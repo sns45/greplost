@@ -1,4 +1,4 @@
-import { describe, test, expect, afterAll } from "bun:test";
+import { describe, test, expect, beforeEach, afterAll } from "bun:test";
 import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir, hostname, userInfo, homedir } from "node:os";
@@ -10,6 +10,8 @@ import {
   repoDir,
   selectRepos,
   setupRepo,
+  fetchAndCheckout,
+  deepenHistory,
   type CorpusRepoEntry,
 } from "../src/corpus.ts";
 import { machineProfile } from "../src/machine.ts";
@@ -145,28 +147,38 @@ describe("machine", () => {
   });
 });
 
-describe("setupRepo against a local fixture repo (no network)", () => {
+describe("setup against a local fixture repo (no network)", () => {
+  // 8 real commits so a small --depth override (below) can produce a
+  // genuinely shallow clone and a deepen with headroom to saturate against.
   const workDir = mkdtempSync(join(tmpdir(), "greplost-corpus-fixture-"));
   const testRepoName = "test-local-fixture-repo";
-  const shas: string[] = [];
+  const shas: string[] = []; // shas[0] = root commit ... shas[7] = tip commit
 
-  function git(args: string[]): { status: number; stdout: string } {
-    const res = spawnSync("git", args, { cwd: workDir, encoding: "utf8" });
+  function gitIn(cwd: string, args: string[]): string {
+    const res = spawnSync("git", args, { cwd, encoding: "utf8" });
     if (res.status !== 0) {
-      throw new Error(`git ${args.join(" ")} failed: ${res.stderr}`);
+      throw new Error(`git ${args.join(" ")} (in ${cwd}) failed: ${res.stderr}`);
     }
-    return { status: res.status ?? 0, stdout: res.stdout ?? "" };
+    return res.stdout ?? "";
   }
 
-  git(["init", "-q"]);
-  git(["config", "user.email", "bench@example.com"]);
-  git(["config", "user.name", "bench"]);
-  for (let i = 1; i <= 3; i++) {
+  gitIn(workDir, ["init", "-q"]);
+  gitIn(workDir, ["config", "user.email", "bench@example.com"]);
+  gitIn(workDir, ["config", "user.name", "bench"]);
+  for (let i = 1; i <= 8; i++) {
     writeFileSync(join(workDir, "file.txt"), `line ${i}\n`);
-    git(["add", "file.txt"]);
-    git(["commit", "-q", "-m", `commit ${i}`]);
-    shas.push(git(["rev-parse", "HEAD"]).stdout.trim());
+    gitIn(workDir, ["add", "file.txt"]);
+    gitIn(workDir, ["commit", "-q", "-m", `commit ${i}`]);
+    shas.push(gitIn(workDir, ["rev-parse", "HEAD"]).trim());
   }
+
+  // Every test starts from a clean bench/.corpus/<testRepoName>: several
+  // tests need a fresh (not-yet-fetched) repo to observe a real fetch fire,
+  // and reusing a dir left shallow or deepened by a previous test would
+  // change what each test can actually demonstrate.
+  beforeEach(() => {
+    rmSync(repoDir(testRepoName), { recursive: true, force: true });
+  });
 
   afterAll(() => {
     rmSync(workDir, { recursive: true, force: true });
@@ -185,34 +197,67 @@ describe("setupRepo against a local fixture repo (no network)", () => {
     };
   }
 
+  function headOf(dir: string): string {
+    return spawnSync("git", ["-C", dir, "rev-parse", "HEAD"], { encoding: "utf8" }).stdout.trim();
+  }
+
   test("clones and checks out the pinned sha", () => {
-    setupRepo(entry(shas[1]!));
-    const dir = repoDir(testRepoName);
-    const head = spawnSync("git", ["-C", dir, "rev-parse", "HEAD"], { encoding: "utf8" }).stdout.trim();
-    expect(head).toBe(shas[1]!);
+    setupRepo(entry(shas[7]!));
+    expect(headOf(repoDir(testRepoName))).toBe(shas[7]!);
   });
 
   test("is idempotent: re-running at the same sha stays checked out", () => {
-    setupRepo(entry(shas[1]!));
-    const dir = repoDir(testRepoName);
-    const head = spawnSync("git", ["-C", dir, "rev-parse", "HEAD"], { encoding: "utf8" }).stdout.trim();
-    expect(head).toBe(shas[1]!);
+    setupRepo(entry(shas[7]!));
+    setupRepo(entry(shas[7]!));
+    expect(headOf(repoDir(testRepoName))).toBe(shas[7]!);
   });
 
   test("re-checks out when the pinned sha changes", () => {
-    setupRepo(entry(shas[2]!));
-    const dir = repoDir(testRepoName);
-    const head = spawnSync("git", ["-C", dir, "rev-parse", "HEAD"], { encoding: "utf8" }).stdout.trim();
-    expect(head).toBe(shas[2]!);
+    setupRepo(entry(shas[7]!));
+    setupRepo(entry(shas[3]!));
+    expect(headOf(repoDir(testRepoName))).toBe(shas[3]!);
   });
 
   test("recovers when the target directory exists but is not a git repo", () => {
     const dir = repoDir(testRepoName);
-    rmSync(dir, { recursive: true, force: true });
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "not-a-repo.txt"), "junk\n");
     setupRepo(entry(shas[0]!));
-    const head = spawnSync("git", ["-C", dir, "rev-parse", "HEAD"], { encoding: "utf8" }).stdout.trim();
-    expect(head).toBe(shas[0]!);
+    expect(headOf(dir)).toBe(shas[0]!);
+  });
+
+  test("fetchAndCheckout with a bounded depth produces a genuinely shallow clone", () => {
+    fetchAndCheckout(entry(shas[7]!), 3);
+    const dir = repoDir(testRepoName);
+    expect(headOf(dir)).toBe(shas[7]!);
+    expect(gitIn(dir, ["rev-parse", "--is-shallow-repository"]).trim()).toBe("true");
+    expect(gitIn(dir, ["rev-list", "--count", shas[7]!]).trim()).toBe("3");
+  });
+
+  test("deepenHistory widens a shallow clone until it saturates at the fixture's full history", () => {
+    fetchAndCheckout(entry(shas[7]!), 3);
+    const dir = repoDir(testRepoName);
+    expect(gitIn(dir, ["rev-parse", "--is-shallow-repository"]).trim()).toBe("true");
+
+    deepenHistory(entry(shas[7]!));
+
+    expect(gitIn(dir, ["rev-list", "--count", shas[7]!]).trim()).toBe("8");
+    expect(gitIn(dir, ["rev-parse", "--is-shallow-repository"]).trim()).toBe("false");
+  });
+
+  test("setupRepo composes fetchAndCheckout and deepenHistory: a bounded-depth setup still ends up saturated", () => {
+    setupRepo(entry(shas[7]!), { depth: 3 });
+    const dir = repoDir(testRepoName);
+    expect(headOf(dir)).toBe(shas[7]!);
+    expect(gitIn(dir, ["rev-list", "--count", shas[7]!]).trim()).toBe("8");
+    expect(gitIn(dir, ["rev-parse", "--is-shallow-repository"]).trim()).toBe("false");
+  });
+
+  test("recovers when the pinned sha changes to a commit outside the fetched depth window", () => {
+    // Fetch only the last 3 commits behind the tip (shas[5..7]); shas[0]
+    // (the root commit) is well outside that window and was never fetched.
+    fetchAndCheckout(entry(shas[7]!), 3);
+    fetchAndCheckout(entry(shas[0]!), 3);
+    expect(headOf(repoDir(testRepoName))).toBe(shas[0]!);
   });
 });
