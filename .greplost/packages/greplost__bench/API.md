@@ -75,6 +75,21 @@
 - `function setupRepo(entry: CorpusRepoEntry, opts: { depth?: number } = {}): void` L242-245
 - `async function run(args: string[]): Promise<number>` L256-279
 
+## bench/src/git.ts
+
+- `const GIT_TIMEOUT_MS = 300_000` L25-25
+- `const BACKFILL_TIMEOUT_MS = 900_000` L28-28
+- `interface GitResult` L30-34
+- `interface GitOptions` L36-41
+- `function git(cwd: string, args: string[], opts: GitOptions = {}): GitResult` L51-75
+- `function gitOrThrow(cwd: string, args: string[], opts: GitOptions = {}): string` L78-84
+- `function isPartialClone(dir: string): boolean` L91-96
+- `interface CloneOptions` L98-104
+- `function cloneWorkingCopy(source: string, dest: string, sha: string, opts: CloneOptions = {}): void` L125-138
+- `function backfillBlobs(dir: string): { backfilled: boolean; reason?: string }` L157-170
+- `function copySourceTree(from: string, to: string): void` L182-187
+- `function percentile(samples: readonly number[], p: number): number` L196-202
+
 ## bench/src/machine.ts
 
 - `interface MachineProfile` L15-26
@@ -99,44 +114,48 @@
 - `function mermaidUnavailableReason(): string | undefined` L106-108
 - `function checkSubset(text: string): CheckResult` L133-156
 
+## bench/src/perf-child.ts
+
+- `const MARKER = "#greplost-perf#"` L21-21
+- `type ChildOp = "full" | "incremental" | "cache-save"` L24-24
+- `interface ChildReport` L26-33
+- `function peakRssBytes(raw: number, resident: number, platform: string = process.platform): number` L48-52
+- `async function runChild(op: string, root: string): Promise<void>` L55-103
+
 ## bench/src/perf.ts
 
-- `const SCENARIOS = [ "full", "incremental-1", "incremental-10", "package-rename", "parse-cache-save", ] as const` L89-95
-- `type ScenarioName = (typeof SCENARIOS)[number]` L97-97
-- `const PEAK_RSS_TARGET_BYTES = 500 * 1024 * 1024` L122-122
-- `interface Stats` L128-135
-- `interface ScenarioResult` L137-152
-- `interface RepoPerf` L154-158
-- `interface PerfOptions` L160-172
-- `interface PerfRun` L174-177
-- `function summarize(samples: readonly number[]): Stats` L184-196
-- `function targetsFor(files: number): { p1Ms: number; p2Ms: number }` L206-208
-- `function missedTargets(repos: readonly RepoPerf[]): string[]` L211-222
-- `function regressedScenarios( current: readonly RepoPerf[], prior: unknown, machine: { cpu: string }, tolerance: number = REGRESSION_TOLERANCE, ): string[]` L233-259
-- `async function perf(options: PerfOptions = {}): Promise<PerfRun>` L627-661
-- `async function run(args: string[]): Promise<number>` L793-894
+- `const SCENARIOS = [ "full", "incremental-1", "incremental-10", "package-rename", "parse-cache-save", ] as const` L86-92
+- `type ScenarioName = (typeof SCENARIOS)[number]` L94-94
+- `const PEAK_RSS_TARGET_BYTES = 500 * 1024 * 1024` L116-116
+- `interface Stats` L122-129
+- `interface ScenarioResult` L131-153
+- `interface RepoPerf` L155-161
+- `interface PerfOptions` L163-175
+- `interface PerfRun` L177-180
+- `function summarize(samples: readonly number[]): Stats` L187-199
+- `function targetsFor(files: number): { p1Ms: number; p2Ms: number }` L209-211
+- `const GATED_TIERS: ReadonlySet<string> = new Set(["S", "M"])` L214-214
+- `function missedTargets(repos: readonly RepoPerf[]): string[]` L226-238
+- `function regressedScenarios( current: readonly RepoPerf[], prior: unknown, machine: { cpu: string }, tolerance: number = REGRESSION_TOLERANCE, ): string[]` L249-275
+- `async function perf(options: PerfOptions = {}): Promise<PerfRun>` L588-622
+- `async function run(args: string[]): Promise<number>` L757-858
 
 ## bench/src/replay.ts
 
-- `const TARGETS = { F1: 1, F2: 0 } as const` L85-85
-- `type Drift = /** The map went stale and `verify` said so. */ | "caught" /** The map went stale and `verify` passed anyway: an F1 miss. */ | "missed" /** The commit touched no file greplost ind…` L126-134
-- `interface ReplayStep` L136-158
-- `interface ReplaySummary` L160-184
-- `interface ReplayOptions` L186-206
-- `interface ReplayRun` L208-211
-- `interface GitResult` L217-221
-- `function git(cwd: string, args: string[], env?: Record<string, string>): GitResult` L224-232
-- `function gitOrThrow(cwd: string, args: string[], env?: Record<string, string>): string` L235-241
-- `function isPartialClone(dir: string): boolean` L248-253
-- `function cloneWorkingCopy(source: string, dest: string, sha: string): void` L274-286
-- `function copySourceTree(from: string, to: string): void` L309-314
-- `function percentile(samples: readonly number[], p: number): number` L334-340
-- `function compareArtifactTrees(a: string, b: string): string[]` L354-368
-- `function createSyntheticHistory( dest: string, commits: number, opts: { docsEvery?: number } = {}, ): string[]` L397-433
-- `async function replay(options: ReplayOptions = {}): Promise<ReplayRun>` L493-539
-- `function missedGates(summary: ReplaySummary): string[]` L773-784
-- `function aggregate(summaries: ReplaySummary[]): ReplaySummary` L787-809
-- `async function run(args: string[]): Promise<number>` L934-1007
+- `const TARGETS = { F1: 1, F2: 0 } as const` L86-86
+- `type Drift = /** The map went stale and `verify` said so. */ | "caught" /** The map went stale and `verify` passed anyway: an F1 miss. */ | "missed" /** The commit touched no file greplost ind…` L127-135
+- `interface ReplayStep` L137-159
+- `interface ReplaySummary` L161-185
+- `interface ReplayOptions` L187-207
+- `interface ReplayRun` L209-212
+- `function compareArtifactTrees(a: string, b: string): string[]` L248-262
+- `function createSyntheticHistory( dest: string, commits: number, opts: { docsEvery?: number } = {}, ): string[]` L291-327
+- `function configFor(entry: CorpusRepoEntry): GreplostConfig | undefined` L384-387
+- `async function replay(options: ReplayOptions = {}): Promise<ReplayRun>` L393-442
+- `function writeConfig(root: string, config: GreplostConfig | undefined): void` L608-614
+- `function missedGates(summary: ReplaySummary): string[]` L676-687
+- `function aggregate(summaries: ReplaySummary[]): ReplaySummary` L690-712
+- `async function run(args: string[]): Promise<number>` L837-910
 
 ## bench/src/results-io.ts
 

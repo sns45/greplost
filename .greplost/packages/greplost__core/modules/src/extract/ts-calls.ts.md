@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/ts.ts`](ts.ts.md)
 
-**Blast radius:** 31 files (`greplost impact packages/core/src/extract/ts-calls.ts`)
+**Blast radius:** 32 files (`greplost impact packages/core/src/extract/ts-calls.ts`)
 
 **Key symbols:**
 - `function unwrapAssertion(node: Node): Node`  L17-25

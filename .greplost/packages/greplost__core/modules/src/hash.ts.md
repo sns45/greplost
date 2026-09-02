@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/build.ts`](build.ts.md), [`packages/core/src/extract/index.ts`](extract/index.ts.md), [`packages/core/src/index.ts`](index.ts.md)
 
-**Blast radius:** 29 files (`greplost impact packages/core/src/hash.ts`)
+**Blast radius:** 30 files (`greplost impact packages/core/src/hash.ts`)
 
 **Key symbols:**
 - `function sha256Hex(bytes: Uint8Array | string): string`  L11-13

@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/sync/src/index.ts`](index.ts.md)
 
-**Blast radius:** 16 files (`greplost impact packages/sync/src/verify.ts`)
+**Blast radius:** 17 files (`greplost impact packages/sync/src/verify.ts`)
 
 **Key symbols:**
 - `interface VerifyResult`  L25-35

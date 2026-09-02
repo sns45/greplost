@@ -6,65 +6,59 @@
 
 **Package:** `@greplost/bench` ([map](../../MAP.md))
 
-**Exports:** `Drift (type)`, `GitResult (interface)`, `ReplayOptions (interface)`, `ReplayRun (interface)`, `ReplayStep (interface)`, `ReplaySummary (interface)`, `TARGETS (const)`, `aggregate(summaries: ReplaySummary[]): ReplaySummary`, `cloneWorkingCopy(source: string, dest: string, sha: string): void`, `compareArtifactTrees(a: string, b: string): string[]`, `copySourceTree(from: string, to: string): void`, `createSyntheticHistory( dest: string, commits: number, opts: { docsEvery?: number } = {}, ): string[]`, `git(cwd: string, args: string[], env?: Record<string, string>): GitResult`, `gitOrThrow(cwd: string, args: string[], env?: Record<string, string>): string`, `isPartialClone(dir: string): boolean`, `missedGates(summary: ReplaySummary): string[]`, `percentile(samples: readonly number[], p: number): number`, `replay(options: ReplayOptions = {}): Promise<ReplayRun>`, `run(args: string[]): Promise<number>`
+**Exports:** `Drift (type)`, `ReplayOptions (interface)`, `ReplayRun (interface)`, `ReplayStep (interface)`, `ReplaySummary (interface)`, `TARGETS (const)`, `aggregate(summaries: ReplaySummary[]): ReplaySummary`, `compareArtifactTrees(a: string, b: string): string[]`, `configFor(entry: CorpusRepoEntry): GreplostConfig | undefined`, `createSyntheticHistory( dest: string, commits: number, opts: { docsEvery?: number } = {}, ): string[]`, `missedGates(summary: ReplaySummary): string[]`, `replay(options: ReplayOptions = {}): Promise<ReplayRun>`, `run(args: string[]): Promise<number>`, `writeConfig(root: string, config: GreplostConfig | undefined): void`
 
-**Imports:** `node:child_process` (spawnSync), `node:fs` (cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync), `node:os` (tmpdir), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, DEFAULT_CONFIG, GreplostConfig, LANG_BY_EXTENSION, Lang, compareStrings, stableStringify), [`@greplost/sync`](../../../greplost__sync/modules/src/index.ts.md) (init, listStructurePaths, update, verify), [`./corpus.ts`](corpus.ts.md) (CorpusRepoEntry, repoDir, selectRepos), [`./machine.ts`](machine.ts.md) (machineProfile), [`./results-io.ts`](results-io.ts.md) (writeResult)
+**Imports:** `node:fs` (existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync), `node:os` (tmpdir), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, DEFAULT_CONFIG, GreplostConfig, LANG_BY_EXTENSION, Lang, compareStrings, stableStringify), [`@greplost/sync`](../../../greplost__sync/modules/src/index.ts.md) (init, listStructurePaths, update, verify), [`./git.ts`](git.ts.md) (cloneWorkingCopy, copySourceTree, git, gitOrThrow, percentile), [`./corpus.ts`](corpus.ts.md) (CorpusRepoEntry, repoDir, selectRepos), [`./machine.ts`](machine.ts.md) (machineProfile), [`./results-io.ts`](results-io.ts.md) (writeResult)
 
 **Imported by:** [`bench/src/perf.ts`](perf.ts.md)
 
 **Blast radius:** 1 file (`greplost impact bench/src/replay.ts`)
 
 **Key symbols:**
-- `const SUITE = "replay"`  L67-67
-- `function resultSuite(fixture: boolean): string`  L77-79
-- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L82-82
-- `const TARGETS = { F1: 1, F2: 0 } as const`  L85-85
-- `const DEFAULT_CORPUS_COMMITS = 500`  L88-88
-- `const DEFAULT_FIXTURE_COMMITS = 5`  L91-91
-- `const DEFAULT_F2_EVERY = 50`  L94-94
-- `const FIXTURE_F2_EVERY = 2`  L100-100
-- `const MAX_ROWS = 20`  L103-103
-- `const PROGRESS_EVERY = 10`  L106-106
-- `const MAX_REPORTED_MISMATCHES = 20`  L109-109
-- `const SYNTHETIC_GIT_ENV: Readonly<Record<string, string>> = { GIT_AUTHOR_NAME: "greplost bench", GIT_AUTHOR_EMAIL: "bench@greplost.invalid", GIT_COMMITTER_NAME: "greplost bench", GIT_COMMITTER_EMAIL:…`  L112-119
-- `type Drift = /** The map went stale and `verify` said so. */ | "caught" /** The map went stale and `verify` passed anyway: an F1 miss. */ | "missed" /** The commit touched no file greplost ind…`  L126-134
-- `interface ReplayStep`  L136-158
-- `interface ReplaySummary`  L160-184
-- `interface ReplayOptions`  L186-206
-- `interface ReplayRun`  L208-211
-- `interface GitResult`  L217-221
-- `function git(cwd: string, args: string[], env?: Record<string, string>): GitResult`  L224-232
-- `function gitOrThrow(cwd: string, args: string[], env?: Record<string, string>): string`  L235-241
-- `function isPartialClone(dir: string): boolean`  L248-253
-- `function cloneWorkingCopy(source: string, dest: string, sha: string): void`  L274-286
-- `function checkout(root: string, sha: string): void`  L295-297
-- `const COPY_SKIP: ReadonlySet<string> = new Set([".git", "node_modules", ".greplost"])`  L300-300
-- `function copySourceTree(from: string, to: string): void`  L309-314
-- `function changedPaths(root: string, from: string, to: string): string[]`  L317-321
-- `function percentile(samples: readonly number[], p: number): number`  L334-340
-- `function compareArtifactTrees(a: string, b: string): string[]`  L354-368
-- `function readBytes(file: string): Buffer`  L370-376
-- `function createSyntheticHistory( dest: string, commits: number, opts: { docsEvery?: number } = {}, ): string[]`  L397-433
-- `function appendLine(file: string, line: string): void`  L435-438
-- `function listSourceFiles(root: string): string[]`  L441-453
-- `function langOf(file: string): Lang | undefined`  L456-460
-- `interface Target`  L466-474
-- `function configFor(entry: CorpusRepoEntry): GreplostConfig | undefined`  L484-487
-- `async function replay(options: ReplayOptions = {}): Promise<ReplayRun>`  L493-539
-- `function corpusEntry(repo: string | undefined): CorpusRepoEntry`  L541-546
-- `async function replayTarget( target: Target, ctx: { commits: number; f2Every: number; options: ReplayOptions; scratch: (prefix: string) => string }, ): Promise<ReplayRun>`  L548-678
-- `function readIndexedFiles(root: string): Set<string>`  L685-694
-- `function listCommits(root: string, sha: string, commits: number): string[]`  L697-702
-- `function writeConfig(root: string, config: GreplostConfig | undefined): void`  L705-711
-- `function copyConfig(from: string, to: string): void`  L720-726
-- `function summarize(target: string, commits: number, steps: ReplayStep[], anomalies: string[]): ReplaySummary`  L728-761
-- `function missedGates(summary: ReplaySummary): string[]`  L773-784
-- `function aggregate(summaries: ReplaySummary[]): ReplaySummary`  L787-809
-- `function sum(summaries: ReplaySummary[], read: (summary: ReplaySummary) => number): number`  L811-813
-- `function printStep(step: ReplayStep, total: number, rows: boolean): void`  L819-839
-- `function printSummary(summary: ReplaySummary): void`  L841-865
-- `interface Options`  L871-883
-- `function parseArgs(args: string[]): Options`  L885-919
-- … 3 more
+- `const SUITE = "replay"`  L68-68
+- `function resultSuite(fixture: boolean): string`  L78-80
+- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L83-83
+- `const TARGETS = { F1: 1, F2: 0 } as const`  L86-86
+- `const DEFAULT_CORPUS_COMMITS = 500`  L89-89
+- `const DEFAULT_FIXTURE_COMMITS = 5`  L92-92
+- `const DEFAULT_F2_EVERY = 50`  L95-95
+- `const FIXTURE_F2_EVERY = 2`  L101-101
+- `const MAX_ROWS = 20`  L104-104
+- `const PROGRESS_EVERY = 10`  L107-107
+- `const MAX_REPORTED_MISMATCHES = 20`  L110-110
+- `const SYNTHETIC_GIT_ENV: Readonly<Record<string, string>> = { GIT_AUTHOR_NAME: "greplost bench", GIT_AUTHOR_EMAIL: "bench@greplost.invalid", GIT_COMMITTER_NAME: "greplost bench", GIT_COMMITTER_EMAIL:…`  L113-120
+- `type Drift = /** The map went stale and `verify` said so. */ | "caught" /** The map went stale and `verify` passed anyway: an F1 miss. */ | "missed" /** The commit touched no file greplost ind…`  L127-135
+- `interface ReplayStep`  L137-159
+- `interface ReplaySummary`  L161-185
+- `interface ReplayOptions`  L187-207
+- `interface ReplayRun`  L209-212
+- `function checkout(root: string, sha: string): void`  L225-227
+- `function changedPaths(root: string, from: string, to: string): string[]`  L230-234
+- `function compareArtifactTrees(a: string, b: string): string[]`  L248-262
+- `function readBytes(file: string): Buffer`  L264-270
+- `function createSyntheticHistory( dest: string, commits: number, opts: { docsEvery?: number } = {}, ): string[]`  L291-327
+- `function appendLine(file: string, line: string): void`  L329-332
+- `function listSourceFiles(root: string): string[]`  L335-347
+- `function langOf(file: string): Lang | undefined`  L350-354
+- `interface Target`  L360-374
+- `function configFor(entry: CorpusRepoEntry): GreplostConfig | undefined`  L384-387
+- `async function replay(options: ReplayOptions = {}): Promise<ReplayRun>`  L393-442
+- `function corpusEntry(repo: string | undefined): CorpusRepoEntry`  L444-449
+- `async function replayTarget( target: Target, ctx: { commits: number; f2Every: number; options: ReplayOptions; scratch: (prefix: string) => string }, ): Promise<ReplayRun>`  L451-581
+- `function readIndexedFiles(root: string): Set<string>`  L588-597
+- `function listCommits(root: string, sha: string, commits: number): string[]`  L600-605
+- `function writeConfig(root: string, config: GreplostConfig | undefined): void`  L608-614
+- `function copyConfig(from: string, to: string): void`  L623-629
+- `function summarize(target: string, commits: number, steps: ReplayStep[], anomalies: string[]): ReplaySummary`  L631-664
+- `function missedGates(summary: ReplaySummary): string[]`  L676-687
+- `function aggregate(summaries: ReplaySummary[]): ReplaySummary`  L690-712
+- `function sum(summaries: ReplaySummary[], read: (summary: ReplaySummary) => number): number`  L714-716
+- `function printStep(step: ReplayStep, total: number, rows: boolean): void`  L722-742
+- `function printSummary(summary: ReplaySummary): void`  L744-768
+- `interface Options`  L774-786
+- `function parseArgs(args: string[]): Options`  L788-822
+- `function warnOnRedirectedResults(): void`  L828-835
+- `async function run(args: string[]): Promise<number>`  L837-910
+- `function argsForSelection(options: Options): string[]`  L913-915
 
-**Calls:** `repoDir` → [`bench/src/corpus.ts#repoDir`](corpus.ts.md) (high), `selectRepos` → [`bench/src/corpus.ts#selectRepos`](corpus.ts.md) (high), `machineProfile` → [`bench/src/machine.ts#machineProfile`](machine.ts.md) (high), `aggregate` → [`bench/src/replay.ts#aggregate`](replay.ts.md) (high), `appendLine` → [`bench/src/replay.ts#appendLine`](replay.ts.md) (high), `argsForSelection` → [`bench/src/replay.ts#argsForSelection`](replay.ts.md) (high), `changedPaths` → [`bench/src/replay.ts#changedPaths`](replay.ts.md) (high), `checkout` → [`bench/src/replay.ts#checkout`](replay.ts.md) (high), `cloneWorkingCopy` → [`bench/src/replay.ts#cloneWorkingCopy`](replay.ts.md) (high), `compareArtifactTrees` → [`bench/src/replay.ts#compareArtifactTrees`](replay.ts.md) (high), `configFor` → [`bench/src/replay.ts#configFor`](replay.ts.md) (high), `copyConfig` → [`bench/src/replay.ts#copyConfig`](replay.ts.md) (high), `copySourceTree` → [`bench/src/replay.ts#copySourceTree`](replay.ts.md) (high), `corpusEntry` → [`bench/src/replay.ts#corpusEntry`](replay.ts.md) (high), `createSyntheticHistory` → [`bench/src/replay.ts#createSyntheticHistory`](replay.ts.md) (high), `git` → [`bench/src/replay.ts#git`](replay.ts.md) (high), `gitOrThrow` → [`bench/src/replay.ts#gitOrThrow`](replay.ts.md) (high), `isPartialClone` → [`bench/src/replay.ts#isPartialClone`](replay.ts.md) (high), `langOf` → [`bench/src/replay.ts#langOf`](replay.ts.md) (high), `listCommits` → [`bench/src/replay.ts#listCommits`](replay.ts.md) (high), `listSourceFiles` → [`bench/src/replay.ts#listSourceFiles`](replay.ts.md) (high), `missedGates` → [`bench/src/replay.ts#missedGates`](replay.ts.md) (high), `parseArgs` → [`bench/src/replay.ts#parseArgs`](replay.ts.md) (high), `percentile` → [`bench/src/replay.ts#percentile`](replay.ts.md) (high), `printStep` → [`bench/src/replay.ts#printStep`](replay.ts.md) (high), `printSummary` → [`bench/src/replay.ts#printSummary`](replay.ts.md) (high), `readBytes` → [`bench/src/replay.ts#readBytes`](replay.ts.md) (high), `readIndexedFiles` → [`bench/src/replay.ts#readIndexedFiles`](replay.ts.md) (high), `replay` → [`bench/src/replay.ts#replay`](replay.ts.md) (high), `replayTarget` → [`bench/src/replay.ts#replayTarget`](replay.ts.md) (high), `resultSuite` → [`bench/src/replay.ts#resultSuite`](replay.ts.md) (high), `sum` → [`bench/src/replay.ts#sum`](replay.ts.md) (high), `summarize` → [`bench/src/replay.ts#summarize`](replay.ts.md) (high), `warnOnRedirectedResults` → [`bench/src/replay.ts#warnOnRedirectedResults`](replay.ts.md) (high), `writeConfig` → [`bench/src/replay.ts#writeConfig`](replay.ts.md) (high), `writeResult` → [`bench/src/results-io.ts#writeResult`](results-io.ts.md) (high), `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high), `listStructurePaths` → [`packages/sync/src/artifacts.ts#listStructurePaths`](../../../greplost__sync/modules/src/artifacts.ts.md) (med), `update` → [`packages/sync/src/incremental.ts#update`](../../../greplost__sync/modules/src/incremental.ts.md) (med), `init` → [`packages/sync/src/init.ts#init`](../../../greplost__sync/modules/src/init.ts.md) (med), `verify` → [`packages/sync/src/verify.ts#verify`](../../../greplost__sync/modules/src/verify.ts.md) (med)
+**Calls:** `repoDir` → [`bench/src/corpus.ts#repoDir`](corpus.ts.md) (high), `selectRepos` → [`bench/src/corpus.ts#selectRepos`](corpus.ts.md) (high), `cloneWorkingCopy` → [`bench/src/git.ts#cloneWorkingCopy`](git.ts.md) (high), `copySourceTree` → [`bench/src/git.ts#copySourceTree`](git.ts.md) (high), `git` → [`bench/src/git.ts#git`](git.ts.md) (high), `gitOrThrow` → [`bench/src/git.ts#gitOrThrow`](git.ts.md) (high), `percentile` → [`bench/src/git.ts#percentile`](git.ts.md) (high), `machineProfile` → [`bench/src/machine.ts#machineProfile`](machine.ts.md) (high), `aggregate` → [`bench/src/replay.ts#aggregate`](replay.ts.md) (high), `appendLine` → [`bench/src/replay.ts#appendLine`](replay.ts.md) (high), `argsForSelection` → [`bench/src/replay.ts#argsForSelection`](replay.ts.md) (high), `changedPaths` → [`bench/src/replay.ts#changedPaths`](replay.ts.md) (high), `checkout` → [`bench/src/replay.ts#checkout`](replay.ts.md) (high), `compareArtifactTrees` → [`bench/src/replay.ts#compareArtifactTrees`](replay.ts.md) (high), `configFor` → [`bench/src/replay.ts#configFor`](replay.ts.md) (high), `copyConfig` → [`bench/src/replay.ts#copyConfig`](replay.ts.md) (high), `corpusEntry` → [`bench/src/replay.ts#corpusEntry`](replay.ts.md) (high), `createSyntheticHistory` → [`bench/src/replay.ts#createSyntheticHistory`](replay.ts.md) (high), `langOf` → [`bench/src/replay.ts#langOf`](replay.ts.md) (high), `listCommits` → [`bench/src/replay.ts#listCommits`](replay.ts.md) (high), `listSourceFiles` → [`bench/src/replay.ts#listSourceFiles`](replay.ts.md) (high), `missedGates` → [`bench/src/replay.ts#missedGates`](replay.ts.md) (high), `parseArgs` → [`bench/src/replay.ts#parseArgs`](replay.ts.md) (high), `printStep` → [`bench/src/replay.ts#printStep`](replay.ts.md) (high), `printSummary` → [`bench/src/replay.ts#printSummary`](replay.ts.md) (high), `readBytes` → [`bench/src/replay.ts#readBytes`](replay.ts.md) (high), `readIndexedFiles` → [`bench/src/replay.ts#readIndexedFiles`](replay.ts.md) (high), `replay` → [`bench/src/replay.ts#replay`](replay.ts.md) (high), `replayTarget` → [`bench/src/replay.ts#replayTarget`](replay.ts.md) (high), `resultSuite` → [`bench/src/replay.ts#resultSuite`](replay.ts.md) (high), `sum` → [`bench/src/replay.ts#sum`](replay.ts.md) (high), `summarize` → [`bench/src/replay.ts#summarize`](replay.ts.md) (high), `warnOnRedirectedResults` → [`bench/src/replay.ts#warnOnRedirectedResults`](replay.ts.md) (high), `writeConfig` → [`bench/src/replay.ts#writeConfig`](replay.ts.md) (high), `writeResult` → [`bench/src/results-io.ts#writeResult`](results-io.ts.md) (high), `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high), `listStructurePaths` → [`packages/sync/src/artifacts.ts#listStructurePaths`](../../../greplost__sync/modules/src/artifacts.ts.md) (med), `update` → [`packages/sync/src/incremental.ts#update`](../../../greplost__sync/modules/src/incremental.ts.md) (med), `init` → [`packages/sync/src/init.ts#init`](../../../greplost__sync/modules/src/init.ts.md) (med), `verify` → [`packages/sync/src/verify.ts#verify`](../../../greplost__sync/modules/src/verify.ts.md) (med)

@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/ts-calls.ts`](ts-calls.ts.md), [`packages/core/src/extract/ts.ts`](ts.ts.md)
 
-**Blast radius:** 31 files (`greplost impact packages/core/src/extract/ts-imports.ts`)
+**Blast radius:** 32 files (`greplost impact packages/core/src/extract/ts-imports.ts`)
 
 **Key symbols:**
 - `const VALUE_WRAPPERS: ReadonlySet<string> = new Set([ "await_expression", "parenthesized_expression", "as_expression", "non_null_expression", "satisfies_expression", ])`  L15-21

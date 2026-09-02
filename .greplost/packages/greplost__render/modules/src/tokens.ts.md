@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/render/src/docs/index-doc.ts`](docs/index-doc.ts.md), [`packages/render/src/index.ts`](index.ts.md)
 
-**Blast radius:** 32 files (`greplost impact packages/render/src/tokens.ts`)
+**Blast radius:** 33 files (`greplost impact packages/render/src/tokens.ts`)
 
 **Key symbols:**
 - `const INDEX_TOKEN_BUDGET = 3000`  L9-9

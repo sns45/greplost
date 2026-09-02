@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/sync/src/incremental.ts`](incremental.ts.md), [`packages/sync/src/index.ts`](index.ts.md)
 
-**Blast radius:** 18 files (`greplost impact packages/sync/src/dirty.ts`)
+**Blast radius:** 19 files (`greplost impact packages/sync/src/dirty.ts`)
 
 **Key symbols:**
 - `function appendDirty(root: string, paths: string[]): void`  L36-60
