@@ -12,7 +12,7 @@ Scope: harness complete: every suite runs, RESULTS.md generated end to end
   EVIDENCE: (no output)
 
 - [ ] N3: bench tests green
-  CHECK: bun test bench
+  CHECK: NO_COLOR=1 bun test bench
   EXPECT: / [1-9]\d* pass\n 0 fail/
   EVIDENCE: pending
 
