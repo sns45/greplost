@@ -91,6 +91,8 @@ export interface MetricRow {
 
 /** One `ID | Metric | Target | Measured` row in a single-tool eval section. */
 export interface EvalRow {
+  /** The run this row was measured on, when the section knows it. */
+  run?: RunTarget;
   id: string;
   metric: string;
   target: string;
@@ -130,6 +132,8 @@ export interface ChartRef {
 
 /** One row of the `## Single-tool` summary: an id, its target, its measurement. */
 export interface SummaryRow {
+  /** The run this row was measured on, so a scale-bearing target can be checked. */
+  run?: RunTarget;
   id: string;
   metric: string;
   target: string;
@@ -199,17 +203,39 @@ export function provenanceLine(
  * neither number supports. The tier clause is dropped and replaced with what was
  * actually run.
  */
-export function scopeTarget(target: string, run: RunTarget | undefined): string {
-  const match = /\s*\(tier ([A-Z]+)\)/.exec(target);
-  if (match === null) return target;
-  const wanted = match[1];
-  if (run !== undefined && run.fixture !== true && run.tier === wanted) return target;
-  const ran = run === undefined
-    ? "not measured at that tier"
+export function scopeTarget(target: string, run: RunTarget | undefined, scaleText?: string): string {
+  const tier = /\s*\(tier ([A-Z]+)\)/.exec(target);
+  if (tier !== null) {
+    const wanted = tier[1];
+    if (run !== undefined && run.fixture !== true && run.tier === wanted) return target;
+    const ran = run === undefined
+      ? "not measured at that tier"
+      : run.fixture === true
+        ? `measured on fixtures/${run.repo ?? "the fixture"}, not tier ${wanted}`
+        : `measured on ${run.repo ?? "another repo"}${run.tier === undefined ? "" : `, tier ${run.tier}`}, not tier ${wanted}`;
+    return `${target.replace(tier[0], "")} (${ran})`;
+  }
+
+  // A target written against a file count is the same claim in another shape.
+  // Bench 3's P1 is "full build, 1k / 10k files" and P3 is "peak RSS at 10k
+  // files"; printing either beside a 148-file run invites the reader to take a
+  // 10k-file result from a number nobody measured at 10k (review round 2).
+  const named = [...(scaleText ?? target).matchAll(/(\d+)k\s+files/g)].map((hit) => Number(hit[1]) * 1000);
+  if (named.length === 0 || run === undefined || run.files === undefined) return target;
+  // The *largest* scale the text names, not the smallest: "1k / 10k files" is
+  // two claims, and a run that reached only the first has not earned the second.
+  if (run.files >= Math.max(...named)) return target;
+  return `${target} (${describeRun(run)})`;
+}
+
+/** `measured on anyq, tier S, 148 files` — the scale a row was actually taken at. */
+function describeRun(run: RunTarget): string {
+  const where = run.repo === undefined
+    ? "measured on an unnamed corpus"
     : run.fixture === true
-      ? `measured on fixtures/${run.repo ?? "the fixture"}, not tier ${wanted}`
-      : `measured on ${run.repo ?? "another repo"}${run.tier === undefined ? "" : `, tier ${run.tier}`}, not tier ${wanted}`;
-  return `${target.replace(match[0], "")} (${ran})`;
+      ? `measured on fixtures/${run.repo}`
+      : `measured on ${run.repo}${run.tier === undefined ? "" : `, tier ${run.tier}`}`;
+  return run.files === undefined ? where : `${where}, ${run.files} file${run.files === 1 ? "" : "s"}`;
 }
 
 export interface ReportModel {
@@ -421,8 +447,13 @@ function singleToolSection(model: ReportModel): string[] {
   out.push("");
   out.push("| ID | Metric | Target | Measured | Source |", "|---|---|---|---|---|");
   for (const row of model.singleTool.rows) {
+    // The scale claim can sit in either column — P1's "1k / 10k files" is in the
+    // metric, X6's "(tier M)" is in the target — so both are offered to
+    // `scopeTarget`, and the qualifier lands in the target the reader compares
+    // the measurement against.
+    const target = scopeTarget(row.target, row.run, `${row.metric} ${row.target}`);
     out.push(
-      `| ${row.id} | ${cell(row.metric)} | ${cell(row.target)} | ${cell(row.measured ?? NOT_RUN)} | ${cell(row.source)} |`,
+      `| ${row.id} | ${cell(row.metric)} | ${cell(target)} | ${cell(row.measured ?? NOT_RUN)} | ${cell(row.source)} |`,
     );
   }
   out.push("");

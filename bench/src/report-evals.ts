@@ -18,6 +18,7 @@ import {
   emptySection,
   type EvalRow,
   type EvalSection,
+  type RunTarget,
 } from "./results-md.ts";
 import {
   agentCategories,
@@ -30,6 +31,7 @@ import {
   rec,
   replayF1,
   replayF2,
+  runFor,
   scenariosOf,
   str,
   type ConditionStats,
@@ -54,6 +56,8 @@ export function eval1Section(payload: Payload | null): EvalSection {
     const repo = rec(repos[name]);
     if (repo === null) continue;
     const files = num(repo["files"]);
+    const run = runFor(name, files);
+    const withRun = (row: EvalRow): EvalRow => (run === undefined ? row : { ...row, run });
     const rows: EvalRow[] = [
       scoreRow("S1", "import edge precision / recall", ">= 0.99 / >= 0.97", rec(repo["S1"])),
       scoreRow("S2", "export precision / recall", ">= 0.99 / >= 0.99", rec(repo["S2"])),
@@ -65,7 +69,7 @@ export function eval1Section(payload: Payload | null): EvalSection {
         measured: fmt(num(repo["S4"])),
         detail: "",
       },
-    ];
+    ].map(withRun);
     // The two integrity flags from `structural.ts`. They are misses in their own
     // right, so they belong in the table, not in a footnote nobody reads.
     if (repo["truthEmpty"] === true) {
@@ -216,6 +220,13 @@ export function eval2Section(payload: Payload | null): EvalSection {
 // Bench 3: perf
 // ---------------------------------------------------------------------------
 
+/** The `run` field for a perf row, from the scenario it was read out of. */
+function runOfScenario(scenario: { repo: string | null; files: number | null } | undefined): { run?: RunTarget } {
+  if (scenario === undefined) return {};
+  const run = runFor(scenario.repo, scenario.files);
+  return run === undefined ? {} : { run };
+}
+
 export function bench3Section(payload: Payload | null, assetsRel: string): EvalSection {
   const section = emptySection();
   if (payload === null) {
@@ -229,6 +240,10 @@ export function bench3Section(payload: Payload | null, assetsRel: string): EvalS
   const full = scenarios.find((s) => /full|build|cold/i.test(s.name)) ?? scenarios[0];
   const incremental = scenarios.find((s) => /incremental|single|edit/i.test(s.name)) ?? scenarios[1] ?? full;
   const peakRss = scenarios.reduce<number | null>((max, s) => (s.rss === null ? max : Math.max(max ?? 0, s.rss)), null);
+  const largest = scenarios.reduce<(typeof scenarios)[number] | undefined>(
+    (best, s) => ((s.files ?? 0) > (best?.files ?? 0) ? s : best),
+    undefined,
+  ) ?? full;
 
   section.groups.push({
     name: null,
@@ -239,6 +254,7 @@ export function bench3Section(payload: Payload | null, assetsRel: string): EvalS
         target: "<= 1s / <= 10s",
         measured: full?.p50 == null ? null : `${fmt(full.p50)} ms (p50)`,
         detail: full === undefined ? "" : `scenario \`${full.name}\`${full.files === null ? "" : `, ${fmt(full.files)} files`}`,
+        ...runOfScenario(full),
       },
       {
         id: "P2",
@@ -246,6 +262,7 @@ export function bench3Section(payload: Payload | null, assetsRel: string): EvalS
         target: "<= 500ms / <= 1s",
         measured: incremental?.p95 == null ? null : `${fmt(incremental.p95)} ms`,
         detail: incremental === undefined ? "" : `scenario \`${incremental.name}\`${incremental.p50 === null ? "" : `, p50 ${fmt(incremental.p50)} ms`}`,
+        ...runOfScenario(incremental),
       },
       {
         id: "P3",
@@ -253,6 +270,9 @@ export function bench3Section(payload: Payload | null, assetsRel: string): EvalS
         target: "<= 500MB (reported)",
         measured: peakRss === null ? null : `${fmt(peakRss / 1024 / 1024)} MB`,
         detail: peakRss === null ? "" : "highest `maxRSS` across the scenarios below",
+        // The largest scenario is the one the peak came from, and it is the
+        // scale the 10k-file target has to be checked against.
+        ...runOfScenario(largest),
       },
     ],
   });

@@ -67,7 +67,16 @@ export function singleTool(
       rows.push(
         found === undefined
           ? { id, metric: METRIC_NAMES[id] ?? id, target: TARGETS[id] ?? "-", measured: null, source }
-          : { id, metric: found.metric, target: found.target, measured: found.measured, source: where },
+          : {
+              id,
+              metric: found.metric,
+              target: found.target,
+              measured: found.measured,
+              source: where,
+              // Carried through so the summary can qualify a scale-bearing
+              // target with the scale it was actually measured at.
+              ...(found.run === undefined ? {} : { run: found.run }),
+            },
       );
     }
   };

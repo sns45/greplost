@@ -24,11 +24,13 @@ const ARMS: readonly { prefix: string; slug: string; title: string; caption: str
   {
     prefix: "syncF1",
     slug: "x2-staleness",
-    title: "X2 staleness under each tool's own documented sync",
-    caption: "X2 (hero chart): each tool's own documented sync mechanism, installed and left to fire",
+    title: "Freshness under each tool's own sync mechanism: F1 vs commit",
+    caption: "X2 (hero chart): freshness under each tool's own sync mechanism, F1 vs commit",
     note:
       "Arm: documented-sync — each tool's sync mechanism was installed exactly as its README describes and " +
-      "then left alone; the harness only commits. This is the arm tech spec 10.0 X2 words.",
+      "then left alone; the harness only commits. This is the arm tech spec 10.0 X2 words. Read the FALL of " +
+      "each line, not its height: the height is that tool's import coverage (X1's subject) and only the fall " +
+      "is staleness.",
   },
   {
     prefix: "refreshF1",
@@ -197,6 +199,10 @@ export function stalenessCharts(
     if (curve === null || curve.series.length === 0) continue;
     drawn.add(arm.slug);
     const absent = ["graphify", "ua", "crg"].filter((tool) => !curve.series.some((s) => s.name === tool));
+    // Only the hero carries the coverage-versus-decay sentence: it is the chart
+    // a README reader meets first, and without it a line at 0.13 reads as eight
+    // times staler than one at 1.0 when the two started that far apart.
+    const freshness = arm.slug === "x2-staleness" ? freshnessNote(x2, curve) : "";
     const spec: ChartSpec = {
       title: arm.title,
       xLabel: "commit index",
@@ -204,7 +210,7 @@ export function stalenessCharts(
       yMax: 1,
       categories: curve.categories,
       series: curve.series,
-      note: `${arm.note}${absent.length === 0 ? "" : ` Omitted (not run here): ${absent.join(", ")}.`}${scale}`,
+      note: `${arm.note}${freshness}${absent.length === 0 ? "" : ` Omitted (not run here): ${absent.join(", ")}.`}${scale}`,
     };
     charts.push(chartRef(arm.caption, spec, arm.slug, assetsRel, lineChart(spec)));
   }
@@ -251,6 +257,38 @@ export function stalenessCharts(
     );
   }
   return charts;
+}
+
+/**
+ * ` At commit 0: greplost 1.000, graphify 0.131, crg 0.896. Over the walk they
+ * lost 0.000, 0.006 and -0.001 …`
+ *
+ * The numbers a reader needs to separate the two things the chart shows: where
+ * each tool starts (coverage) and how far it falls (staleness). Built from the
+ * X2 row's own detail, so it cannot disagree with the plotted points.
+ */
+export function freshnessNote(
+  x2: MetricRow | undefined,
+  curve: { categories: string[]; series: { name: string; values: (number | null)[] }[] },
+): string {
+  if (x2 === undefined) return "";
+  const zero = curve.categories.indexOf("0");
+  const starts: string[] = [];
+  const falls: string[] = [];
+  for (const series of curve.series) {
+    const at0 = zero === -1 ? (x2.tools[series.name]?.detail?.["freshF1"] ?? null) : (series.values[zero] ?? null);
+    const decay = x2.tools[series.name]?.detail?.["decay"] ?? null;
+    if (at0 === null) continue;
+    starts.push(`${series.name} ${at0.toFixed(3)}`);
+    if (decay !== null) falls.push(`${series.name} ${decay > 0 ? "-" : "+"}${Math.abs(decay).toFixed(3)}`);
+  }
+  if (starts.length === 0) return "";
+  return (
+    ` At commit 0 the freshly built artifacts scored ${starts.join(", ")}` +
+    (falls.length === 0 ? "." : `; over the walk they moved ${falls.join(", ")}.`) +
+    " The distance between the lines is mostly that starting difference, which is coverage and belongs to X1;" +
+    " the staleness X2 measures is the movement."
+  );
 }
 
 /**
