@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/graph/index.ts`](index.ts.md), [`packages/core/src/graph/metrics.ts`](metrics.ts.md), [`packages/core/src/graph/query.ts`](query.ts.md)
 
-**Blast radius:** 37 files (`greplost impact packages/core/src/graph/directories.ts`)
+**Blast radius:** 42 files (`greplost impact packages/core/src/graph/directories.ts`)
 
 **Key symbols:**
 - `function directoryOf(path: string): string`  L23-26

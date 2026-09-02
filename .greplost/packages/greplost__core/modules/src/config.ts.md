@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/build.ts`](build.ts.md), [`packages/core/src/index.ts`](index.ts.md)
 
-**Blast radius:** 25 files (`greplost impact packages/core/src/config.ts`)
+**Blast radius:** 28 files (`greplost impact packages/core/src/config.ts`)
 
 **Key symbols:**
 - `const KNOWN_LANGS: ReadonlySet<string> = new Set<Lang>(["ts", "tsx", "js", "jsx", "go"])`  L17-17

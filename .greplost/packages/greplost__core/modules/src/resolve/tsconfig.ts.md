@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/resolver.ts`](resolver.ts.md)
 
-**Blast radius:** 38 files (`greplost impact packages/core/src/resolve/tsconfig.ts`)
+**Blast radius:** 43 files (`greplost impact packages/core/src/resolve/tsconfig.ts`)
 
 **Key symbols:**
 - `interface TsPaths`  L16-36

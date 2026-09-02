@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/build.ts`](build.ts.md), [`packages/core/src/extract/index.ts`](extract/index.ts.md), [`packages/core/src/index.ts`](index.ts.md)
 
-**Blast radius:** 26 files (`greplost impact packages/core/src/parser.ts`)
+**Blast radius:** 29 files (`greplost impact packages/core/src/parser.ts`)
 
 **Key symbols:**
 - `interface ParserHandle`  L15-17

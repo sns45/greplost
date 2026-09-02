@@ -53,11 +53,12 @@
 
 ## packages/cli/src/commands/refresh.ts
 
-- `interface SemanticRefreshOptions` L19-24
-- `type SemanticRefresh = (root: string, opts: SemanticRefreshOptions) => Promise<number>` L26-26
-- `const SEMANTIC_UNAVAILABLE = "semantic layer not available in this build"` L29-29
-- `async function run(ctx: CommandContext): Promise<number>` L31-45
-- `async function loadRefresh(): Promise<SemanticRefresh | undefined>` L48-56
+- `interface SemanticRefreshOptions` L25-30
+- `type SemanticRefresh = (root: string, opts: SemanticRefreshOptions) => Promise<number>` L32-32
+- `const SEMANTIC_UNAVAILABLE = "semantic layer not available in this build"` L35-35
+- `const SEMANTIC_ENTRY = "refreshCommand"` L38-38
+- `async function run(ctx: CommandContext): Promise<number>` L40-54
+- `async function loadRefresh(): Promise<SemanticRefresh | undefined>` L57-65
 
 ## packages/cli/src/commands/screenshots.ts
 

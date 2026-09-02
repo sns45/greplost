@@ -6,7 +6,7 @@
 
 **Package:** `greplost` ([map](../../../MAP.md))
 
-**Exports:** `SEMANTIC_UNAVAILABLE (const)`, `SemanticRefresh (type)`, `SemanticRefreshOptions (interface)`, `loadRefresh(): Promise<SemanticRefresh | undefined>`, `run(ctx: CommandContext): Promise<number>`
+**Exports:** `SEMANTIC_ENTRY (const)`, `SEMANTIC_UNAVAILABLE (const)`, `SemanticRefresh (type)`, `SemanticRefreshOptions (interface)`, `loadRefresh(): Promise<SemanticRefresh | undefined>`, `run(ctx: CommandContext): Promise<number>`
 
 **Imports:** [`../args.ts`](../args.ts.md) (CommandContext), [`../output.ts`](../output.ts.md) (printError), [`@greplost/semantic`](../../../../greplost__semantic/modules/src/index.ts.md) (*)
 
@@ -15,10 +15,11 @@
 **Blast radius:** 3 files (`greplost impact packages/cli/src/commands/refresh.ts`)
 
 **Key symbols:**
-- `interface SemanticRefreshOptions`  L19-24
-- `type SemanticRefresh = (root: string, opts: SemanticRefreshOptions) => Promise<number>`  L26-26
-- `const SEMANTIC_UNAVAILABLE = "semantic layer not available in this build"`  L29-29
-- `async function run(ctx: CommandContext): Promise<number>`  L31-45
-- `async function loadRefresh(): Promise<SemanticRefresh | undefined>`  L48-56
+- `interface SemanticRefreshOptions`  L25-30
+- `type SemanticRefresh = (root: string, opts: SemanticRefreshOptions) => Promise<number>`  L32-32
+- `const SEMANTIC_UNAVAILABLE = "semantic layer not available in this build"`  L35-35
+- `const SEMANTIC_ENTRY = "refreshCommand"`  L38-38
+- `async function run(ctx: CommandContext): Promise<number>`  L40-54
+- `async function loadRefresh(): Promise<SemanticRefresh | undefined>`  L57-65
 
 **Calls:** `loadRefresh` → [`packages/cli/src/commands/refresh.ts#loadRefresh`](refresh.ts.md) (high), `printError` → [`packages/cli/src/output.ts#printError`](../output.ts.md) (high)

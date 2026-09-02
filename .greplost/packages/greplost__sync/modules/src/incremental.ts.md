@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/sync/src/index.ts`](index.ts.md), [`packages/sync/src/init.ts`](init.ts.md)
 
-**Blast radius:** 14 files (`greplost impact packages/sync/src/incremental.ts`)
+**Blast radius:** 17 files (`greplost impact packages/sync/src/incremental.ts`)
 
 **Key symbols:**
 - `interface UpdateOptions`  L59-66
