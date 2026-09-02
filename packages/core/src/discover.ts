@@ -87,12 +87,17 @@ function gitCandidates(root: string): string[] {
 }
 
 async function globCandidates(root: string, config: GreplostConfig): Promise<string[]> {
-  // Only `config.include` drives the walk itself; `config.exclude` is applied
-  // uniformly afterward with picomatch (same as the git-mode candidates), so
-  // behaviour does not depend on fast-glob's own ignore-matching semantics.
+  // `dot: true` here (not the fast-glob default `false`): candidate generation
+  // must not silently drop hidden files/directories before the picomatch pass
+  // below gets a chance to apply `config.include`/`config.exclude`. picomatch
+  // is the sole include/exclude authority in both modes (git mode's
+  // `git ls-files` has no such restriction either), so dotfile handling stays
+  // symmetric regardless of whether `root` happens to be a git work tree.
+  // `.git/` and `.greplost/` are still excluded: by DEFAULT_CONFIG's exclude
+  // globs and, for `.greplost/`, the unconditional drop below.
   const entries = await fg(config.include, {
     cwd: root,
-    dot: false,
+    dot: true,
     onlyFiles: true,
     followSymbolicLinks: false,
   });
