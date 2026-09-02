@@ -1,0 +1,1 @@
+{ "name": "two-repo", "repos": ["./repo-a", "./repo-b"] }

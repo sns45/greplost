@@ -4,5 +4,6 @@
   "private": true,
   "type": "module",
   "exports": { ".": "./src/index.ts" },
-  "dependencies": { "@greplost/core": "workspace:*", "@greplost/sync": "workspace:*" }
+  "dependencies": { "@greplost/core": "workspace:*", "@greplost/render": "workspace:*", "@greplost/sync": "workspace:*" },
+  "devDependencies": { "greplost": "workspace:*" }
 }
