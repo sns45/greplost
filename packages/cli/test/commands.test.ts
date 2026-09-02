@@ -427,13 +427,22 @@ describe("update", () => {
     expect(quiet.stdout).toBe("");
   });
 
-  test("--semantic reports the missing layer and changes nothing", async () => {
-    const before = readFileSync(path.join(ts, ".greplost", "manifest.json"), "utf8");
-    const run = await cli("update", "--semantic", "--root", ts);
+  test("--semantic updates the map, then hands off to the semantic layer", async () => {
+    // A copy with the semantic layer switched off: the seam is exercised
+    // (update first, then delegate to @greplost/semantic and pass its exit
+    // code back) without the refresh ever reaching a model.
+    const off = copyFixture(ts, "semantic-off");
+    const configPath = path.join(off, ".greplost", "config.json");
+    const config = JSON.parse(readFileSync(configPath, "utf8")) as { semantic: { enabled: boolean } };
+    config.semantic.enabled = false;
+    writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
+    const before = readFileSync(path.join(off, ".greplost", "manifest.json"), "utf8");
+
+    const run = await cli("update", "--semantic", "--quiet", "--root", off);
     expect(run.code).toBe(1);
     expect(run.stdout).toBe("");
-    expect(run.stderr).toBe("greplost: semantic layer not available in this build");
-    expect(readFileSync(path.join(ts, ".greplost", "manifest.json"), "utf8")).toBe(before);
+    expect(run.stderr).toContain("semantic layer is disabled");
+    expect(readFileSync(path.join(off, ".greplost", "manifest.json"), "utf8")).toBe(before);
   });
 });
 
