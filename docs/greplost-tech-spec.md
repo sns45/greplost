@@ -602,3 +602,20 @@ Dogfood target throughout: `sns45/anyq` (TS monorepo) plus its Go port in worksp
   "semantic": { "enabled": true, "model": "pinned-model-string" }
 }
 ```
+
+## Appendix C: Rulings made during implementation (2026-09-02)
+
+Amendments to the body above, each recorded in `PLAN.md`'s status log with its reason. The body text is left as written; where the two disagree, this appendix wins.
+
+| Section | Ruling | Why |
+|---|---|---|
+| 5.1 exports | `export *` chains are followed transitively when computing a file's export name set (fixpoint over the star graph, cycle-safe, order-independent). A local export shadows a star export; when two stars supply the same name the first in source order wins and the name is never a call target. | S2 recall is measured against `getExportsOfModule`, which is transitive; the "followed one level" wording lost recall on nested barrels. |
+| 5.1 call edges | A call whose callee resolves through re-export chains of any depth to exactly one declaration is emitted at `med`; same-file or directly imported declarations stay `high`; ambiguous star names, external or unresolved hops, and cycles are dropped. | One-hop-only left S3 recall at 0.30 on anyq, where every cross-package call goes through two barrels; deeper exact resolution is not guessing. |
+| 5.1 declarations | Class fields whose initializer is an arrow or function expression, abstract method signatures, and method signatures in `declare class` are `method` declarations; namespace members are tracked at any depth with dotted paths; calls in `static {}` blocks attribute to the class; type-position `import("x").T` is a type import with no call site; caller attribution is by node identity, so shadowing locals cannot hijack it. | Parity with the compiler oracle on the same constructs; each was a systematic FP+FN pair. |
+| 5.1 imports | Import edges are deduplicated on (from, to, kind, symbols, importKind), so a static and a dynamic import of the same symbols stay distinct. | The dedupe would otherwise relabel an import's kind. |
+| 5.1 resolution | A repo importing its own root package name resolves to that package; a `null` exports target blocks resolution; the tsconfig baseUrl probe runs only when baseUrl is declared; only the best-matching `paths` pattern is tried. | tsc parity; each was a precision leak. |
+| 5.4, 8 | `ParseCache.get(sha256, lang)`; cached records are frozen and immutable. Incremental update renders the whole map in memory and writes only changed bytes, so full and incremental are byte-identical by construction; the parse cache lives at `.greplost/cache/parse.json`, gitignored. | Byte equality by construction beats selective regeneration. |
+| 4.2 | Module cards mirror the source path: `packages/<slug>/modules/<path within package>.md`; package slugs strip `@` and replace `/` with `__`. | Browsable on GitHub for large packages. |
+| 5.1 Go | Go import edges target directory ids (a Go import names a package, not a file). | Matches `go list` truth. |
+| 10.3 | The TypeScript truth generator emulates the installed-and-built state for workspace packages (package manifests plus tsconfig `outDir`/`rootDir`), installed on the compiler host so calls resolve too; semantic diagnostics are opt-in. Recorded in `RESULTS.md` under the truth notes. | Corpus checkouts are neither installed nor built; without this the oracle scored 66 correct workspace imports on anyq as false positives. |
+| 12.2 | The per-spec approval stops of the kickoff prompt were waived by the owner ("start coding without my assistance"); rulings are logged instead of asked. | Owner instruction on 2026-09-02. |
