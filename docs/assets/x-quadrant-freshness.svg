@@ -41,11 +41,11 @@
 <text x="32" y="623" fill="#8A8983" font-size="10">subject; X2 is the fall, and it is in the hero chart. The shaded corner is a reading aid, not a threshold: it covers the cheapest 40% of the x axis and the best 40% of the y axis, and no measurement decides where it</text>
 <text x="32" y="636" fill="#8A8983" font-size="10">sits. The dotted line is the Pareto front — a tool is on it when nothing else is at least as good on both axes and better on one. Measured on corpus hono, tier M (248 files); 100 replayed commits. The walk is</text>
 <text x="32" y="649" fill="#8A8983" font-size="10">synthetic: each commit appends exactly one resolvable import line to one file, so truth moves by exactly one edge per commit, and the walk contains no deletions, no renames and no new files.</text>
-<polyline points="212.56,126 212.56,126 1160,126" fill="none" stroke="#C3C2B7" stroke-width="2" stroke-dasharray="2 6"/>
-<circle cx="212.56" cy="126" r="5" fill="#0fa976" stroke="#FFFFFF" stroke-width="2"/>
-<circle cx="1101.81" cy="467.13" r="5" fill="#e0561c" stroke="#000000" stroke-width="2"/>
-<circle cx="453.07" cy="166.05" r="5" fill="#2f86ef" stroke="#000000" stroke-width="2"/>
-<text x="200.56" y="130" fill="#FFFFFF" font-size="12" text-anchor="end">greplost</text>
-<text x="1113.81" y="471.13" fill="#FFFFFF" font-size="12" text-anchor="start">Graphify</text>
-<text x="465.07" y="170.05" fill="#FFFFFF" font-size="12" text-anchor="start">code-review-graph</text>
+<polyline points="205.33,126 205.33,126 1160,126" fill="none" stroke="#C3C2B7" stroke-width="2" stroke-dasharray="2 6"/>
+<circle cx="205.33" cy="126" r="5" fill="#0fa976" stroke="#FFFFFF" stroke-width="2"/>
+<circle cx="1048.4" cy="467.13" r="5" fill="#e0561c" stroke="#000000" stroke-width="2"/>
+<circle cx="421.91" cy="166.05" r="5" fill="#2f86ef" stroke="#000000" stroke-width="2"/>
+<text x="193.33" y="130" fill="#FFFFFF" font-size="12" text-anchor="end">greplost</text>
+<text x="1060.4" y="471.13" fill="#FFFFFF" font-size="12" text-anchor="start">Graphify</text>
+<text x="433.91" y="170.05" fill="#FFFFFF" font-size="12" text-anchor="start">code-review-graph</text>
 </svg>
