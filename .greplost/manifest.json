@@ -87,6 +87,30 @@
       "sha256": "a40cb51ed337cc78365e1f9b5491ac689c93e68635357e488f73c94da751bd66",
       "staleSummary": false
     },
+    "bench/src/agent.ts": {
+      "blast": 0,
+      "exports": [
+        "Answer",
+        "CONDITIONS",
+        "DEFAULT_MODEL",
+        "Stats",
+        "TaskScore",
+        "extractAnswer",
+        "lcsRatio",
+        "normalizeAnswerPath",
+        "resolveClaude",
+        "run",
+        "scoreAnswer",
+        "summarize"
+      ],
+      "fanIn": 0,
+      "fanOut": 5,
+      "lang": "ts",
+      "loc": 1149,
+      "pkg": "@greplost/bench",
+      "sha256": "21c3d44bab81dab3b994f0d2376f96dbf53bee65d3d14a4ac8fcea162c401a6a",
+      "staleSummary": false
+    },
     "bench/src/cli.ts": {
       "blast": 0,
       "exports": [
@@ -233,7 +257,7 @@
       "staleSummary": false
     },
     "bench/src/results-io.ts": {
-      "blast": 4,
+      "blast": 5,
       "exports": [
         "RESULTS_DIR",
         "gitSha7",
@@ -242,7 +266,7 @@
         "todayIso",
         "writeResult"
       ],
-      "fanIn": 4,
+      "fanIn": 5,
       "fanOut": 1,
       "lang": "ts",
       "loc": 96,
@@ -251,7 +275,7 @@
       "staleSummary": false
     },
     "bench/src/score.ts": {
-      "blast": 1,
+      "blast": 2,
       "exports": [
         "Score",
         "edgeKey",
@@ -260,7 +284,7 @@
         "scoreEdges",
         "scoreSet"
       ],
-      "fanIn": 1,
+      "fanIn": 2,
       "fanOut": 1,
       "lang": "ts",
       "loc": 100,
@@ -288,6 +312,28 @@
       "sha256": "e8ab97307b6fcf0df37920b285c8616930bddb4e964fcd285441302e932a8d63",
       "staleSummary": false
     },
+    "bench/src/tasks.ts": {
+      "blast": 1,
+      "exports": [
+        "ANSWER_FILES",
+        "ANSWER_FILES_AND_SYMBOLS",
+        "Task",
+        "TaskCategory",
+        "TaskTruth",
+        "flowTasksFile",
+        "generateStructuralTasks",
+        "loadFlowTasks",
+        "loadTasks",
+        "reverseClosure"
+      ],
+      "fanIn": 1,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 438,
+      "pkg": "@greplost/bench",
+      "sha256": "6587917ef50a6e745d33dd23cdbd7018d06af749b68c957f063da9e4b91c0761",
+      "staleSummary": false
+    },
     "bench/src/truth/go.ts": {
       "blast": 0,
       "exports": [
@@ -304,7 +350,7 @@
       "staleSummary": false
     },
     "bench/src/truth/ts-calls.ts": {
-      "blast": 3,
+      "blast": 5,
       "exports": [
         "CallEndpoints",
         "calleeIdentifier",
@@ -323,7 +369,7 @@
       "staleSummary": false
     },
     "bench/src/truth/ts-workspace.ts": {
-      "blast": 3,
+      "blast": 5,
       "exports": [
         "WorkspaceEntryMapper"
       ],
@@ -336,14 +382,14 @@
       "staleSummary": false
     },
     "bench/src/truth/ts.ts": {
-      "blast": 2,
+      "blast": 4,
       "exports": [
         "Truth",
         "TruthOptions",
         "generateTsTruth",
         "listTypeScriptFiles"
       ],
-      "fanIn": 2,
+      "fanIn": 4,
       "fanOut": 3,
       "lang": "ts",
       "loc": 600,
@@ -1156,7 +1202,7 @@
       "staleSummary": false
     },
     "packages/core/src/schema.ts": {
-      "blast": 89,
+      "blast": 91,
       "exports": [
         "ARTIFACT_DIR",
         "ARTIFACT_PATHS",
@@ -1198,7 +1244,7 @@
         "symbolId",
         "unresolvedId"
       ],
-      "fanIn": 68,
+      "fanIn": 70,
       "fanOut": 0,
       "lang": "ts",
       "loc": 361,
@@ -2020,8 +2066,8 @@
         "@greplost/core",
         "@greplost/sync"
       ],
-      "files": 20,
-      "loc": 6593,
+      "files": 22,
+      "loc": 8180,
       "path": "bench",
       "rdeps": []
     },

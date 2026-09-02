@@ -10,9 +10,9 @@
 
 **Imports:** [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (Edge, compareStrings)
 
-**Imported by:** [`bench/src/structural.ts`](structural.ts.md)
+**Imported by:** [`bench/src/agent.ts`](agent.ts.md), [`bench/src/structural.ts`](structural.ts.md)
 
-**Blast radius:** 1 file (`greplost impact bench/src/score.ts`)
+**Blast radius:** 2 files (`greplost impact bench/src/score.ts`)
 
 **Key symbols:**
 - `interface Score`  L24-35

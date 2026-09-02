@@ -10,9 +10,9 @@
 
 **Imports:** `node:fs` (existsSync, readdirSync, realpathSync), `node:path` (default), `typescript` (default), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Edge, compareEdges, compareStrings), [`./ts-calls.ts`](ts-calls.ts.md) (resolveCallEdge), [`./ts-workspace.ts`](ts-workspace.ts.md) (WorkspaceEntryMapper)
 
-**Imported by:** [`bench/src/structural.ts`](../structural.ts.md), [`bench/src/truth/go.ts`](go.ts.md)
+**Imported by:** [`bench/src/agent.ts`](../agent.ts.md), [`bench/src/structural.ts`](../structural.ts.md), [`bench/src/tasks.ts`](../tasks.ts.md), [`bench/src/truth/go.ts`](go.ts.md)
 
-**Blast radius:** 2 files (`greplost impact bench/src/truth/ts.ts`)
+**Blast radius:** 4 files (`greplost impact bench/src/truth/ts.ts`)
 
 **Key symbols:**
 - `interface Truth`  L45-66

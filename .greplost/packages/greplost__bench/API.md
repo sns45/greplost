@@ -41,6 +41,21 @@
 
 - `const uaAdapter: Adapter = { tool: "ua", detect(dir: string): boolean { return hasAny(dir, ARTIFACTS); }, load(dir: string, repoRoot: string): CompetitorArtifact { const read = readFirstJson(d…` L139-263
 
+## bench/src/agent.ts
+
+- `const DEFAULT_MODEL = "claude-opus-5"` L50-50
+- `const CONDITIONS: Readonly<Record<string, Condition>> = { base: { allowed: ["Read", "Grep", "Glob"], disallowed: [], artifacts: { kind: "none" }, note: "stock Claude Code" }, gl: { allowed: ["…` L79-111
+- `interface Answer` L120-123
+- `interface TaskScore` L126-139
+- `function normalizeAnswerPath(value: string, root?: string): string` L142-151
+- `function extractAnswer(text: string, root?: string): Answer | null` L180-206
+- `function lcsRatio(a: string[], b: string[]): number` L242-254
+- `function scoreAnswer(task: Task, answer: Answer | null): TaskScore` L274-294
+- `interface Stats` L301-308
+- `function summarize(values: number[]): Stats` L310-319
+- `function resolveClaude(): string` L434-446
+- `async function run(args: string[]): Promise<number>` L911-928
+
 ## bench/src/cli.ts
 
 - `async function main(argv: string[]): Promise<number>` L19-46
@@ -151,6 +166,19 @@
 - `function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang): RepoScores` L361-455
 - `function missedMetrics(scores: RepoScores): string[]` L464-475
 - `function locate(snapshot: Snapshot, key: string, kind: "import" | "call" | "export"): string` L525-537
+
+## bench/src/tasks.ts
+
+- `const ANSWER_FILES = 'Answer with a JSON block {"files": [...]}'` L36-36
+- `const ANSWER_FILES_AND_SYMBOLS = 'Answer with a JSON block {"files": [...], "symbols": [...]}'` L38-38
+- `type TaskCategory = "definition" | "importers" | "callers" | "blast_radius" | "flow"` L41-41
+- `interface TaskTruth` L44-49
+- `interface Task` L52-61
+- `function reverseClosure(imports: Edge[], file: string): string[]` L272-290
+- `function generateStructuralTasks(repo: string, truth: Truth, n: number, seed: number = 1): Task[]` L319-397
+- `function flowTasksFile(repo: string): string` L400-402
+- `function loadFlowTasks(repo: string): Task[]` L411-433
+- `function loadTasks(repo: string, truth: Truth, n: number, seed: number = 1): Task[]` L436-438
 
 ## bench/src/truth/go.ts
 

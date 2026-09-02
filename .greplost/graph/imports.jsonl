@@ -23,6 +23,15 @@
 {"confidence":"high","from":"bench/src/adapters/ua.ts","importKind":"type","kind":"import","specifier":"./types.ts","symbols":["Adapter","CompetitorArtifact"],"to":"bench/src/adapters/types.ts"}
 {"confidence":"high","from":"bench/src/adapters/ua.ts","importKind":"static","kind":"import","specifier":"./types.ts","symbols":["EdgeSet","asArray","asRecord","asString","hasAny","readFirstJson","sortedIds","toRepoRelative","toSymbolId"],"to":"bench/src/adapters/types.ts"}
 {"confidence":"high","from":"bench/src/adapters/ua.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["Confidence","Edge"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"bench/src/agent.ts","importKind":"static","kind":"import","specifier":"./results-io.ts","symbols":["writeResult"],"to":"bench/src/results-io.ts"}
+{"confidence":"high","from":"bench/src/agent.ts","importKind":"static","kind":"import","specifier":"./score.ts","symbols":["scoreSet"],"to":"bench/src/score.ts"}
+{"confidence":"high","from":"bench/src/agent.ts","importKind":"static","kind":"import","specifier":"./tasks.ts","symbols":["Task","TaskCategory","loadTasks"],"to":"bench/src/tasks.ts"}
+{"confidence":"high","from":"bench/src/agent.ts","importKind":"static","kind":"import","specifier":"./truth/ts.ts","symbols":["generateTsTruth","listTypeScriptFiles"],"to":"bench/src/truth/ts.ts"}
+{"confidence":"high","from":"bench/src/agent.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["spawnSync"],"to":"ext:node:child_process"}
+{"confidence":"high","from":"bench/src/agent.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["accessSync","constants","cpSync","existsSync","mkdirSync","mkdtempSync","readFileSync","rmSync"],"to":"ext:node:fs"}
+{"confidence":"high","from":"bench/src/agent.ts","importKind":"static","kind":"import","specifier":"node:os","symbols":["tmpdir"],"to":"ext:node:os"}
+{"confidence":"high","from":"bench/src/agent.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
+{"confidence":"high","from":"bench/src/agent.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/corpus.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["spawnSync"],"to":"ext:node:child_process"}
 {"confidence":"high","from":"bench/src/corpus.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","mkdirSync","readFileSync","rmSync"],"to":"ext:node:fs"}
 {"confidence":"high","from":"bench/src/corpus.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["dirname","join"],"to":"ext:node:path"}
@@ -72,6 +81,10 @@
 {"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","readFileSync"],"to":"ext:node:fs"}
 {"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
 {"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["ARTIFACT_DIR","ARTIFACT_PATHS","DEFAULT_CONFIG","GreplostConfig","Snapshot","compareStrings","isFileId"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"bench/src/tasks.ts","importKind":"type","kind":"import","specifier":"./truth/ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
+{"confidence":"high","from":"bench/src/tasks.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","readFileSync"],"to":"ext:node:fs"}
+{"confidence":"high","from":"bench/src/tasks.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
+{"confidence":"high","from":"bench/src/tasks.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["Edge","compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/truth/go.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
 {"confidence":"high","from":"bench/src/truth/go.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["execFileSync"],"to":"ext:node:child_process"}
 {"confidence":"high","from":"bench/src/truth/go.ts","importKind":"static","kind":"import","specifier":"node:crypto","symbols":["createHash"],"to":"ext:node:crypto"}

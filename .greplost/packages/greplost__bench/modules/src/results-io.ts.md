@@ -10,9 +10,9 @@
 
 **Imports:** `node:child_process` (execFileSync), `node:fs` (existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (compareStrings, stableStringify)
 
-**Imported by:** [`bench/src/mapquality.ts`](mapquality.ts.md), [`bench/src/perf.ts`](perf.ts.md), [`bench/src/replay.ts`](replay.ts.md), [`bench/src/structural.ts`](structural.ts.md)
+**Imported by:** [`bench/src/agent.ts`](agent.ts.md), [`bench/src/mapquality.ts`](mapquality.ts.md), [`bench/src/perf.ts`](perf.ts.md), [`bench/src/replay.ts`](replay.ts.md), [`bench/src/structural.ts`](structural.ts.md)
 
-**Blast radius:** 4 files (`greplost impact bench/src/results-io.ts`)
+**Blast radius:** 5 files (`greplost impact bench/src/results-io.ts`)
 
 **Key symbols:**
 - `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L24-24
