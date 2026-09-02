@@ -22,13 +22,15 @@
  * whose contents are reported to the user as a count.
  */
 
-import { appendFileSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync } from "node:fs";
+import { lstatSync, readFileSync, realpathSync, renameSync, rmSync } from "node:fs";
+
+import { safeWrite } from "./write.ts";
 import path from "node:path";
 
 import { ARTIFACT_DIR, ARTIFACT_PATHS, compareStrings } from "@greplost/core/schema";
 
 /**
- * Record `paths` as dirty. Cheap by contract: one append, no read.
+ * Record `paths` as dirty. Cheap: one small read and one contained replace.
  *
  * Paths that cannot be expressed as a repo-relative path inside `root` are
  * dropped rather than recorded, so a caller may pass whatever it has.
@@ -48,8 +50,18 @@ export function appendDirty(root: string, paths: string[]): void {
     // A repo that has never been indexed still has edits worth remembering:
     // the first `greplost update` should not start from a blank slate just
     // because `.greplost/` did not exist when the editor hook fired.
-    mkdirSync(path.dirname(file), { recursive: true });
-    appendFileSync(file, `${lines.join("\n")}\n`);
+    // Read-then-replace through the contained writer rather than a raw append:
+    // `appendFileSync` follows a symlink, and this file is written by the
+    // unattended PostToolUse hook, so a committed link at `.greplost/.dirty`
+    // must be replaced in place, never followed (same rule as write.ts).
+    let existing = "";
+    try {
+      if (lstatSync(file).isFile()) existing = readFileSync(file, "utf8");
+    } catch {
+      // absent: start empty
+    }
+    if (existing.length > 0 && !existing.endsWith("\n")) existing += "\n";
+    safeWrite(root, ARTIFACT_PATHS.dirty, `${existing}${lines.join("\n")}\n`);
   } catch (cause) {
     throw new Error(
       `greplost: cannot append to ${ARTIFACT_DIR}/${ARTIFACT_PATHS.dirty}: ${

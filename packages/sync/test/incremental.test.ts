@@ -988,3 +988,26 @@ describe("containment of the runtime files", () => {
     expect(Object.keys(storedRecords(root))).toHaveLength(FIXTURE_SOURCES);
   });
 });
+
+describe("dirty set containment", () => {
+  test("a symlinked .dirty is replaced in place and never followed", async () => {
+    const { mkdtempSync, mkdirSync, symlinkSync, lstatSync, readFileSync, writeFileSync, existsSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const path = (await import("node:path")).default;
+    const { appendDirty } = await import("../src/dirty.ts");
+    const base = mkdtempSync(path.join(tmpdir(), "greplost-dirty-link-"));
+    const root = path.join(base, "repo");
+    const outside = path.join(base, "outside");
+    mkdirSync(path.join(root, ".greplost"), { recursive: true });
+    mkdirSync(outside, { recursive: true });
+    const victim = path.join(outside, "victim.txt");
+    writeFileSync(victim, "ORIGINAL\n");
+    symlinkSync(victim, path.join(root, ".greplost", ".dirty"));
+    writeFileSync(path.join(root, "a.ts"), "export const a = 1;\n");
+    appendDirty(root, [path.join(root, "a.ts")]);
+    expect(readFileSync(victim, "utf8")).toBe("ORIGINAL\n");
+    expect(lstatSync(path.join(root, ".greplost", ".dirty")).isSymbolicLink()).toBe(false);
+    expect(readFileSync(path.join(root, ".greplost", ".dirty"), "utf8")).toContain("a.ts");
+    expect(existsSync(victim)).toBe(true);
+  });
+});
