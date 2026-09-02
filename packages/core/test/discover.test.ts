@@ -129,6 +129,47 @@ describe("exclude", () => {
 
     expect(paths(found)).toEqual(["src/keep.ts"]);
   });
+
+  test("hidden directories are subject to config.include/config.exclude, not dropped outright, outside a git repo", async () => {
+    const dir = tempDir("greplost-exclude-dotdir-");
+    write(dir, "src/keep.ts", "export const a = 1;\n");
+    write(dir, ".hidden/x.ts", "export const b = 2;\n");
+
+    // Default config.include ("**") already reaches hidden paths (picomatch
+    // matches "**" against dotfiles when { dot: true }, and fast-glob now
+    // walks into dot-directories too): discovered.
+    const included = await discoverFiles(dir, config({ exclude: [], languages: ["ts"] }));
+    expect(paths(included)).toEqual([".hidden/x.ts", "src/keep.ts"]);
+
+    // config.exclude names it: excluded, same as any other directory.
+    const excluded = await discoverFiles(dir, config({ exclude: ["**/.hidden/**"], languages: ["ts"] }));
+    expect(paths(excluded)).toEqual(["src/keep.ts"]);
+  });
+
+  test("hidden directories are matched consistently between git mode and the fast-glob fallback", async () => {
+    const dir = tempDir("greplost-exclude-dotdir-git-");
+    git(dir, "init", "-q");
+    write(dir, "src/keep.ts", "export const a = 1;\n");
+    write(dir, ".hidden/x.ts", "export const b = 2;\n");
+    gitCommit(dir, "initial");
+
+    const found = await discoverFiles(dir, config({ exclude: [], languages: ["ts"] }));
+    expect(paths(found)).toEqual([".hidden/x.ts", "src/keep.ts"]);
+  });
+
+  test("never returns .git/ content in a git repo", async () => {
+    const dir = tempDir("greplost-exclude-dotgit-");
+    git(dir, "init", "-q");
+    write(dir, "src/keep.ts", "export const a = 1;\n");
+    gitCommit(dir, "initial");
+
+    const found = await discoverFiles(dir, config());
+    for (const f of found) {
+      expect(f.path.startsWith(".git/")).toBe(false);
+      expect(f.path).not.toBe(".git");
+    }
+    expect(paths(found)).toEqual(["src/keep.ts"]);
+  });
 });
 
 describe("languages", () => {
