@@ -20,7 +20,7 @@ import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, wri
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { buildSnapshot } from "@greplost/core";
+import { buildSnapshot, sha256Hex } from "@greplost/core";
 import type { Manifest, PackageInfo, SummaryCache } from "@greplost/core/schema";
 import { ARTIFACT_DIR, ARTIFACT_PATHS, compareStrings } from "@greplost/core/schema";
 import { init, isStructurePath, update, withLock } from "@greplost/sync";
@@ -248,6 +248,7 @@ describe("zero calls", () => {
       expect(one.skipped).toBe(0);
       expect(one.calls).toBeGreaterThan(0);
       expect(one.update).toBe("rebuilt");
+      expect(one.lockHeld).toBe(true);
       expect(first.asked()).toContain(RETRY_SOURCE);
 
       const cache = cacheOf(root);
@@ -406,6 +407,81 @@ describe("stale", () => {
       const stale = artifact(root, RETRY_CARD);
       expect(stale).toContain(`> summary may lag code, last refreshed ${TODAY}`);
       expect(stale).toContain("Cycle 3 intent.");
+    },
+    120_000,
+  );
+
+  test(
+    "an edit refreshed with no update in between keeps the summary it just paid for",
+    async () => {
+      // The plain flow, and the one the round-1 tie-break got wrong: edit a
+      // file, run `greplost refresh`. Nothing rebuilds the map in between, so
+      // `manifest.json` still describes the *previous* bytes — and a survivor
+      // chosen from it is the old summary, which then renders under the stale
+      // banner while the one just paid for is thrown away.
+      const root = await initialised("no-update");
+      await refresh(root, { runner: recorder({ text: () => "First intent." }).runner, model: MODEL, today: TODAY });
+
+      const source = path.join(root, RETRY_SOURCE);
+      writeFileSync(source, `${readFileSync(source, "utf8")}\n// edited, never indexed\n`);
+
+      const result = await refresh(root, {
+        runner: recorder({ text: () => "Second intent." }).runner,
+        model: MODEL,
+        today: TODAY,
+      });
+      expect(result.refreshed).toBe(1);
+      expect(result.calls).toBe(1);
+      expect(result.update).toBe("rebuilt");
+
+      const kept = Object.values(cacheOf(root)).filter((entry) => entry.path === RETRY_SOURCE);
+      expect(kept.length).toBe(1);
+      expect(kept[0]?.text).toBe("Second intent.");
+
+      const card = artifact(root, RETRY_CARD);
+      expect(card).toContain("Second intent.");
+      expect(card).not.toContain("First intent.");
+      expect(card).not.toContain("summary may lag code");
+    },
+    120_000,
+  );
+
+  test(
+    "a summary written for the bytes on disk now beats the one this run was asked about",
+    async () => {
+      // The other order: the file moves on while the model is thinking, and
+      // another process summarises what it became. This run's answer describes
+      // content that no longer exists, so it loses.
+      const root = await initialised("overtaken");
+      await refresh(root, { runner: recorder({ text: () => "First intent." }).runner, model: MODEL, today: TODAY });
+
+      const source = path.join(root, RETRY_SOURCE);
+      writeFileSync(source, `${readFileSync(source, "utf8")}\n// the edit this run sees\n`);
+
+      const overtaking: PromptRunner = (prompt) => {
+        if (prompt.includes(FLOWS_TASK)) return Promise.resolve(JSON.stringify(CANNED_FLOWS));
+        // Someone else edits again and commits a summary for the new bytes.
+        writeFileSync(source, `${readFileSync(source, "utf8")}\n// and the edit that overtakes it\n`);
+        const hash = sha256Hex(readFileSync(source));
+        const cache = { ...cacheOf(root) };
+        cache[hash] = { path: RETRY_SOURCE, text: "Overtaking intent.", refreshedAt: TODAY, model: "other-model" };
+        writeFileSync(
+          path.join(root, ARTIFACT_DIR, ARTIFACT_PATHS.summaries),
+          `${JSON.stringify(cache, null, 2)}\n`,
+        );
+
+        const answer: Record<string, string> = {};
+        for (const file of promptFiles(prompt)) answer[file] = "Overtaken intent.";
+        return Promise.resolve(JSON.stringify(answer));
+      };
+
+      await refresh(root, { runner: overtaking, model: MODEL, today: TODAY });
+
+      const kept = Object.values(cacheOf(root)).filter((entry) => entry.path === RETRY_SOURCE);
+      expect(kept.length).toBe(1);
+      expect(kept[0]?.text).toBe("Overtaking intent.");
+      expect(kept[0]?.model).toBe("other-model");
+      expect(artifact(root, RETRY_CARD)).toContain("Overtaking intent.");
     },
     120_000,
   );
@@ -627,6 +703,11 @@ describe("FLOWS", () => {
           path.join(dir, "apps/worker/src/task.ts"),
           "export const handler = async (): Promise<void> => {};\n",
         );
+        // A function expression is as much a front door as an arrow is.
+        writeFileSync(
+          path.join(dir, "apps/worker/src/legacy.ts"),
+          "export const fetch = function (): number {\n  return 1;\n};\n",
+        );
       });
       const snapshot = await buildSnapshot({ root });
       const worker = snapshot.packages.find((pkg) => pkg.name === "worker") as PackageInfo;
@@ -634,6 +715,7 @@ describe("FLOWS", () => {
       const points = selectEntryPoints(snapshot, worker);
       expect(points).toContain(WORKER_ENTRY);
       expect(points).toContain("apps/worker/src/task.ts");
+      expect(points).toContain("apps/worker/src/legacy.ts");
       expect(points).not.toContain("apps/worker/src/limits.ts");
     },
     120_000,
@@ -861,8 +943,12 @@ describe("safety", () => {
       expect(Object.keys(cacheOf(root)).length).toBe(FIXTURE_SOURCES);
       // The rebuild could not run either, and says so rather than pretending.
       expect(result.update).toBe("locked");
-      // `--json` stdout stays one parseable document; the warning is on stderr.
+      // And the merge itself went ahead unlocked, which the caller is told.
+      expect(result.lockHeld).toBe(false);
+      // `--json` stdout stays one parseable document; the warnings are on stderr.
       expect(run.out().trimStart().startsWith("{")).toBe(true);
+      expect(run.err()).toContain("merged the summary cache without the lock");
+      expect(run.err()).toContain("may be shadowed");
       expect(run.err()).toContain("another update held the lock");
     },
     120_000,

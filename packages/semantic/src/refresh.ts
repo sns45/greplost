@@ -46,7 +46,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import { buildSnapshot, loadConfig } from "@greplost/core";
+import { buildSnapshot, loadConfig, sha256Hex } from "@greplost/core";
 import type { Manifest, PackageInfo, Snapshot, SummaryCache, SummaryEntry } from "@greplost/core/schema";
 import { ARTIFACT_DIR, ARTIFACT_PATHS, compareStrings, packageSlug, stableStringify } from "@greplost/core/schema";
 import { packageDir } from "@greplost/render";
@@ -119,6 +119,16 @@ export interface RefreshResult {
    */
   flowsFailed: Array<{ pkg: string; reason: string }>;
   /**
+   * Whether the cache merge held `@greplost/sync`'s advisory lock.
+   *
+   * `false` means another process held it for longer than this run was willing
+   * to wait, and the merge went ahead anyway rather than discarding summaries
+   * that were already paid for; an entry another process wrote in that window
+   * can be shadowed. `true` when there was no merge to make, because then there
+   * was nothing to shadow.
+   */
+  lockHeld: boolean;
+  /**
    * What happened to the map after the cache was written.
    *
    * Reported rather than assumed: writing prose nobody can see is the one way
@@ -182,7 +192,16 @@ export async function refresh(root: string, opts: RefreshOptions = {}): Promise<
     // exercise the one part of a refresh that can fail before a model is
     // involved (an unreadable source file, a package that does not exist).
     for (const batch of batches) buildSummaryPrompt(batch.map((file) => summaryRequest(absoluteRoot, snapshot, symbols, file)));
-    return { refreshed: stale.length, skipped, calls: 0, unanswered: [], flows: [], flowsFailed: [], update: "unnecessary" };
+    return {
+      refreshed: stale.length,
+      skipped,
+      calls: 0,
+      unanswered: [],
+      flows: [],
+      flowsFailed: [],
+      lockHeld: true,
+      update: "unnecessary",
+    };
   }
 
   let calls = 0;
@@ -217,6 +236,8 @@ export async function refresh(root: string, opts: RefreshOptions = {}): Promise<
   unanswered.sort(compareStrings);
 
   let updated: RefreshResult["update"] = "unnecessary";
+  // Nothing merged means nothing shadowed, so an untried lock counts as held.
+  let lockHeld = true;
   if (written.size > 0) {
     const entries = new Map<string, CacheWrite>();
     for (const [file, text] of written) {
@@ -226,7 +247,7 @@ export async function refresh(root: string, opts: RefreshOptions = {}): Promise<
       if (sha256 === undefined) continue;
       entries.set(file, { hash: sha256, entry: { path: file, text, refreshedAt: today, model } });
     }
-    await commitCache(absoluteRoot, entries, snapshot.manifest);
+    lockHeld = await commitCache(absoluteRoot, entries, snapshot.manifest);
 
     // `files` is not a hint here, it is the guarantee: an incremental update on
     // a clean git tree takes the fast path and skips, and the whole point of
@@ -267,7 +288,7 @@ export async function refresh(root: string, opts: RefreshOptions = {}): Promise<
     }
   }
 
-  return { refreshed: written.size, skipped, calls, unanswered, flows, flowsFailed, update: updated };
+  return { refreshed: written.size, skipped, calls, unanswered, flows, flowsFailed, lockHeld, update: updated };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -337,6 +358,11 @@ function warn(result: RefreshResult, dryRun: boolean): void {
   }
   for (const failure of result.flowsFailed) {
     console.error(`greplost: could not write FLOWS.md for ${failure.pkg}: ${failure.reason}`);
+  }
+  if (!result.lockHeld) {
+    console.error(
+      "greplost: merged the summary cache without the lock (another update held it); entries written concurrently may be shadowed",
+    );
   }
   if (result.update === "locked") {
     console.error("greplost: another update held the lock; run `greplost update` to render the new summaries");
@@ -492,7 +518,7 @@ async function commitCache(
   fallback: Manifest,
 ): Promise<boolean> {
   const merge = (): void => {
-    writeCache(root, nextCache(readSummaries(root), currentManifest(root, fallback), written));
+    writeCache(root, nextCache(root, readSummaries(root), currentManifest(root, fallback), written));
   };
 
   for (let attempt = 0; attempt < LOCK_ATTEMPTS; attempt++) {
@@ -528,6 +554,25 @@ function currentManifest(root: string, fallback: Manifest): Manifest {
     // the best answer available, and the update that follows rewrites the file
     // anyway.
     return fallback;
+  }
+}
+
+/**
+ * sha256 of a repo file as it is on disk right now, or `undefined` when it
+ * cannot be read.
+ *
+ * The raw bytes, hashed with the same function the core build uses, so the key
+ * this produces is the same key `buildSnapshot` would file the file under. Read
+ * as a buffer rather than a string for exactly that reason: core hashes bytes,
+ * and a utf8 round trip is not guaranteed to be byte-identical.
+ */
+function workingTreeHash(root: string, file: string): string | undefined {
+  try {
+    return sha256Hex(readFileSync(path.join(root, file)));
+  } catch {
+    // Deleted, or unreadable, since the snapshot was taken. This run's own
+    // answer is then the only candidate, and the next build prunes the path.
+    return undefined;
   }
 }
 
@@ -567,12 +612,22 @@ function delay(ms: number): Promise<void> {
  * tie-break is the smallest hash, which is arbitrary. Six edit-and-refresh
  * cycles in one afternoon therefore left the *first* summary of the day
  * standing as "newest", and the next edit rendered it under the banner. So a
- * rewritten path keeps exactly one entry and the tie becomes unreachable: the
- * entry for the manifest's current hash when there is one — which is the
- * concurrent case, where another process resummarised the file this run was
- * still thinking about — and otherwise the one this run just wrote.
+ * rewritten path keeps exactly one entry and the tie becomes unreachable.
+ *
+ * Which one is decided by the bytes in the working tree, not by the manifest.
+ * That distinction is the whole of it: `manifest.json` describes the last
+ * *build*, and the ordinary way to run this command is to edit a file and type
+ * `greplost refresh` — no rebuild in between — so the manifest still carries
+ * the previous content's hash. Trusting it there keeps the summary of code that
+ * no longer exists, prunes the one this run just paid for, renders the old text
+ * under the stale banner, and charges again next time. Hashing the file as it
+ * is now gets both orders right: in the ordinary flow the current hash *is* the
+ * one this run was asked about, and in the concurrent one — the file moved on
+ * while the model was thinking, and someone else summarised what it became —
+ * the current hash belongs to their entry, which is the one worth keeping.
  */
 function nextCache(
+  root: string,
   cache: SummaryCache,
   manifest: Manifest,
   written: ReadonlyMap<string, CacheWrite>,
@@ -582,10 +637,29 @@ function nextCache(
 
   const current = new Set(Object.values(manifest.files).map((entry) => entry.sha256));
 
-  // The single hash each rewritten path is allowed to keep.
+  // The single hash each rewritten path is allowed to keep: whatever describes
+  // the bytes on disk if anything does, and otherwise this run's own answer.
+  //
+  // The file is only read when there is actually a choice to make. A path whose
+  // sole entry is the one this run just wrote has no rival to lose to, and that
+  // is every path on a first refresh — which is also the run with the most of
+  // them, and the one whose merge is holding the lock the longest.
+  const hashesByPath = new Map<string, string[]>();
+  for (const [hash, entry] of Object.entries(merged)) {
+    if (entry === undefined) continue;
+    const bucket = hashesByPath.get(entry.path);
+    if (bucket === undefined) hashesByPath.set(entry.path, [hash]);
+    else bucket.push(hash);
+  }
+
   const rewritten = new Map<string, string>();
   for (const [file, { hash }] of written) {
-    const live = manifest.files[file]?.sha256;
+    const rivals = (hashesByPath.get(file) ?? []).filter((candidate) => candidate !== hash);
+    if (rivals.length === 0) {
+      rewritten.set(file, hash);
+      continue;
+    }
+    const live = workingTreeHash(root, file);
     rewritten.set(file, live !== undefined && merged[live] !== undefined ? live : hash);
   }
 
