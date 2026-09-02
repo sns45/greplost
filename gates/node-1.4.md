@@ -16,8 +16,8 @@ Scope: CLI and plugin merged
   EXPECT: / [1-9]\d* pass\n 0 fail/
   EVIDENCE: 353 expect() calls | Ran 72 tests across 3 files. [597.00ms]
 
-- [ ] N4: greplost verifies its own committed map (dogfood)
+- [x] N4: greplost verifies its own committed map (dogfood)
   CHECK: bun packages/cli/src/main.ts verify --diff
-  EXPECT: /verify: ok/
-  EVIDENCE: pending
+  EXPECT: map is in sync
+  EVIDENCE: greplost: map is in sync
 

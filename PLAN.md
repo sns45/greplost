@@ -177,3 +177,5 @@ Append-only. One line per event.
 - 2026-09-03 node-1.3 sync integration ALL MET: hono 100-commit replay F1 100 percent (82/82 non-noop), F2 0 mismatches, tier S perf P1/P2 within targets; results committed
 - 2026-09-03 leaf 1.4.2 review: Needs fixes (Important: SKILL.md hook claim was false at the review base, now true after the CLI fix merged) -> fix round 1/5 dispatched; Ruling: hook commands use if/else (no A && B || C double-invoke); minors: refresh.md quoting, unused allowed-tools grant, Stop matcher note
 - 2026-09-03 dogfood: greplost's own map initialised (config excludes fixtures and corpora; 95 files, 273ms full build) and committed; merge script now refreshes the map after every merge; node-1.9 status: R1, R3, R9, R10 met
+- 2026-09-03 leaf 1.4.1: fix round 1/5 re-review clean; complete (commits cedc417..6096b40); deferred: usage text should say --root has no effect for bench/screenshots, stale hook.test.ts docblock, USAGE_WIDTH latent -Infinity
+- 2026-09-03 node-1.4 N4 EXPECT aligned with the CLI's documented success line (map is in sync); own-map cycles are type-only import cycles in extract/ts*.ts and render docs (deferred, harmless)
