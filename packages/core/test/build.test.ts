@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import type {
   CallEdge,
+  Declaration,
   FileRecord,
   GreplostConfig,
   ImportEdge,
@@ -88,15 +89,17 @@ function callEdge(from: string, to: string): CallEdge | undefined {
   return snapshot.calls.find((e) => e.from === from && e.to === to);
 }
 
-/** A `Map`-backed `ParseCache` that also counts how often the parser ran. */
-function memoryCache(): ParseCache & { size(): number } {
+/** A `Map`-backed `ParseCache`, keyed by (lang, sha256) exactly as the contract says. */
+function memoryCache(): ParseCache & { size(): number; stored(): FileRecord[] } {
   const records = new Map<string, FileRecord>();
+  const key = (sha256: string, lang: Lang): string => `${lang}:${sha256}`;
   return {
-    get: (sha256) => records.get(sha256),
+    get: (sha256, lang) => records.get(key(sha256, lang)),
     set: (record) => {
-      records.set(record.sha256, record);
+      records.set(key(record.sha256, record.lang), record);
     },
     size: () => records.size,
+    stored: () => [...records.values()],
   };
 }
 
@@ -348,18 +351,81 @@ describe("parse cache", () => {
       "empty.jsx": "",
     });
     const cache = memoryCache();
-    const counting = countingParser(parser);
-    const built = await buildSnapshot({ root, parser: counting.handle, cache });
-    expect(counting.parses()).toBe(4);
+    const cold = countingParser(parser);
+    const built = await buildSnapshot({ root, parser: cold.handle, cache });
+    expect(cold.parses()).toBe(4);
+    expect(cache.size()).toBe(4);
     expect(built.manifest.files["a.ts"]?.lang).toBe("ts");
     expect(built.manifest.files["b.jsx"]?.lang).toBe("jsx");
     expect(built.manifest.files["empty.ts"]?.lang).toBe("ts");
     expect(built.manifest.files["empty.jsx"]?.lang).toBe("jsx");
     expect(built.manifest.files["a.ts"]?.sha256).toBe(built.manifest.files["b.jsx"]?.sha256 ?? "");
 
-    // A warm cache must not hand a `.ts` record to the `.jsx` file, so the
-    // second build says exactly the same thing.
-    sameBytes(bytesOf(built), bytesOf(await buildSnapshot({ root, parser, cache })));
+    // The cache is keyed by (lang, sha256), so the colliding hashes each keep
+    // their own record and the warm build parses nothing at all.
+    const warm = countingParser(parser);
+    const again = await buildSnapshot({ root, parser: warm.handle, cache });
+    expect(warm.parses()).toBe(0);
+    sameBytes(bytesOf(built), bytesOf(again));
+  });
+
+  test("get is asked for the discovered language, and set stores the record's own", async () => {
+    const root = tempRepo({ "one.ts": "export const one = 1;\n", "two.jsx": "export const two = 2;\n" });
+    const asked: Array<[string, Lang]> = [];
+    const records = new Map<string, FileRecord>();
+    const cache: ParseCache = {
+      get: (sha256, lang) => {
+        asked.push([sha256, lang]);
+        return records.get(`${lang}:${sha256}`);
+      },
+      set: (record) => {
+        records.set(`${record.lang}:${record.sha256}`, record);
+      },
+    };
+    const built = await buildSnapshot({ root, parser, cache });
+    // Path-sorted, so "one.ts" is asked for before "two.jsx".
+    expect(asked.map(([, lang]) => lang)).toEqual(["ts", "jsx"]);
+    expect(asked.map(([sha]) => sha)).toEqual([
+      built.manifest.files["one.ts"]?.sha256 ?? "",
+      built.manifest.files["two.jsx"]?.sha256 ?? "",
+    ]);
+    expect([...records.keys()].sort(compareStrings)).toEqual(
+      [
+        `jsx:${built.manifest.files["two.jsx"]?.sha256 ?? ""}`,
+        `ts:${built.manifest.files["one.ts"]?.sha256 ?? ""}`,
+      ].sort(compareStrings),
+    );
+  });
+
+  test("records handed to the cache and to the snapshot are frozen", async () => {
+    const cache = memoryCache();
+    const built = await buildSnapshot({ root: TINY_TS, parser, cache });
+
+    for (const record of [...built.files, ...cache.stored()]) {
+      expect(Object.isFrozen(record)).toBe(true);
+      expect(Object.isFrozen(record.decls)).toBe(true);
+      expect(Object.isFrozen(record.imports)).toBe(true);
+      expect(Object.isFrozen(record.exports)).toBe(true);
+      expect(Object.isFrozen(record.calls)).toBe(true);
+    }
+
+    // ESM test modules are strict, so a write to a frozen record throws.
+    const record = built.files[0] as FileRecord;
+    expect(() => {
+      (record as { loc: number }).loc = -1;
+    }).toThrow();
+    expect(() => record.decls.push(record.decls[0] as Declaration)).toThrow();
+    expect(record.loc).toBeGreaterThan(0);
+
+    // A twin re-stamped from a cached record is frozen too, not just the original.
+    const shared = "export const twin = 1;\n";
+    const twinRoot = tempRepo({ "a.ts": shared, "b.ts": shared });
+    const twins = await buildSnapshot({ root: twinRoot, parser, cache: memoryCache() });
+    expect(twins.files.map((f) => Object.isFrozen(f))).toEqual([true, true]);
+    expect(twins.files.map((f) => Object.isFrozen(f.decls))).toEqual([true, true]);
+
+    // And freezing changes not one byte of the output.
+    sameBytes(artifacts, bytesOf(built));
   });
 
   test("a build without an injected parser still works", async () => {
