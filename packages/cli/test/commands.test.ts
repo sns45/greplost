@@ -469,11 +469,38 @@ describe("flows", () => {
 });
 
 describe("refresh", () => {
-  test("says the semantic layer is not in this build and exits 1", async () => {
-    const run = await cli("refresh", "--root", ts);
+  // `--dry-run` throughout: a real refresh spawns `claude -p`, and a test suite
+  // that reaches a model is neither hermetic nor free. The seam itself is what
+  // is being checked here — that the command finds `@greplost/semantic`, hands
+  // it the operands, and passes its exit code back — and the semantic package's
+  // own tests drive the model path through an injected runner.
+  test("delegates to the semantic layer and reports what a refresh would do", async () => {
+    const run = await cli("refresh", "--dry-run", "--root", ts);
+    expect(run.code).toBe(0);
+    expect(run.stderr).toBe("");
+    expect(run.stdout).toContain("would be refreshed");
+    expect(run.stdout).toContain("dry run");
+    // A dry run writes nothing, so the shared map is untouched.
+    expect(existsSync(path.join(ts, ".greplost", "cache", "summaries.json"))).toBe(false);
+  });
+
+  test("passes an unknown package through as the semantic layer's own error", async () => {
+    const run = await cli("refresh", "@tiny/nope", "--dry-run", "--root", ts);
     expect(run.code).toBe(1);
     expect(run.stdout).toBe("");
-    expect(run.stderr).toBe("greplost: semantic layer not available in this build");
+    expect(run.stderr).toContain("greplost: no package @tiny/nope");
+  });
+
+  test("--json is the refresh result and nothing else", async () => {
+    const result = onlyJson(await cli("refresh", "--dry-run", "--json", "--root", ts)) as {
+      refreshed: number;
+      skipped: number;
+      calls: number;
+      flows: string[];
+    };
+    expect(result.calls).toBe(0);
+    expect(result.flows).toEqual([]);
+    expect(result.refreshed + result.skipped).toBe(12);
   });
 });
 
