@@ -1,7 +1,7 @@
 ---
 description: Report the blast radius of a file — everything that transitively imports it — from the greplost map.
 argument-hint: <path>
-allowed-tools: Bash(greplost impact:*), Bash(bunx greplost impact:*), Bash(command -v greplost:*)
+allowed-tools: Bash(greplost impact:*), Bash(bunx greplost impact:*)
 ---
 
 Run `greplost impact "$ARGUMENTS" --json` in the project root (if `greplost`

@@ -1,6 +1,6 @@
 ---
 description: Build the greplost structure map for this repo, install its git hooks, and write config.
-allowed-tools: Bash(greplost init:*), Bash(bunx greplost init:*), Bash(command -v greplost:*)
+allowed-tools: Bash(greplost init:*), Bash(bunx greplost init:*)
 ---
 
 Run `greplost init` in the project root (if `greplost` is not on PATH, run

@@ -1,7 +1,7 @@
 ---
 description: Refresh the greplost map incrementally (or fully with $ARGUMENTS = --full) so it matches the current working tree.
 argument-hint: [--full]
-allowed-tools: Bash(greplost update:*), Bash(bunx greplost update:*), Bash(command -v greplost:*)
+allowed-tools: Bash(greplost update:*), Bash(bunx greplost update:*)
 ---
 
 Run `greplost update --json $ARGUMENTS` in the project root (if `greplost` is

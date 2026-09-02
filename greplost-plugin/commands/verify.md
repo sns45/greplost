@@ -1,6 +1,6 @@
 ---
 description: Check whether the committed greplost map still matches the source (the CI gate), and show a diff if not.
-allowed-tools: Bash(greplost verify:*), Bash(bunx greplost verify:*), Bash(command -v greplost:*)
+allowed-tools: Bash(greplost verify:*), Bash(bunx greplost verify:*)
 ---
 
 Run `greplost verify --diff --json` in the project root (if `greplost` is not
