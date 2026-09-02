@@ -23,12 +23,12 @@ import path from "node:path";
 import { buildSnapshot } from "@greplost/core";
 import type { Manifest, PackageInfo, SummaryCache } from "@greplost/core/schema";
 import { ARTIFACT_DIR, ARTIFACT_PATHS, compareStrings } from "@greplost/core/schema";
-import { init, isStructurePath, update } from "@greplost/sync";
+import { init, isStructurePath, update, withLock } from "@greplost/sync";
 
 import { renderFlows, selectEntryPoints } from "../src/flows.ts";
 import { ENTRY_PREFIX, FILE_PREFIX, FLOWS_TASK } from "../src/prompts.ts";
 import { refresh, refreshCommand } from "../src/refresh.ts";
-import type { Flow, PromptRunner } from "../src/index.ts";
+import type { Flow, PromptRunner, RefreshResult } from "../src/index.ts";
 
 const FIXTURE = path.resolve(import.meta.dir, "../../../fixtures/tiny-ts");
 
@@ -67,11 +67,16 @@ afterAll(() => {
   for (const dir of temporaries) rmSync(dir, { recursive: true, force: true });
 });
 
-/** A temp copy of the fixture with a built map and no summaries yet. */
-async function initialised(label: string): Promise<string> {
+/**
+ * A temp copy of the fixture with a built map and no summaries yet. `seed` runs
+ * against the copy before the first build, for tests that need a source file
+ * the committed fixture does not carry.
+ */
+async function initialised(label: string, seed?: (dir: string) => void): Promise<string> {
   const dir = mkdtempSync(path.join(tmpdir(), `greplost-semantic-${label}-`));
   cpSync(FIXTURE, dir, { recursive: true });
   temporaries.push(dir);
+  if (seed !== undefined) seed(dir);
   await init(dir, { hooks: false, quiet: true });
   return dir;
 }
@@ -182,6 +187,36 @@ async function packageOf(root: string, name: string): Promise<PackageInfo> {
   const pkg = snapshot.packages.find((candidate) => candidate.name === name);
   if (pkg === undefined) throw new Error(`no package ${name}`);
   return pkg;
+}
+
+/** Both streams of one `refreshCommand` call, plus the exit code it answered with. */
+interface Captured {
+  code: Promise<number>;
+  out(): string;
+  err(): string;
+}
+
+/**
+ * Run a command function with `console.log`/`console.error` captured. The
+ * streams are restored when the returned promise settles, so a caller reads
+ * `out()` and `err()` after awaiting `code`.
+ */
+function capture(fn: () => Promise<number>): Captured {
+  const out: string[] = [];
+  const err: string[] = [];
+  const log = console.log;
+  const error = console.error;
+  console.log = (...args: unknown[]): void => {
+    out.push(args.map((a) => String(a)).join(" "));
+  };
+  console.error = (...args: unknown[]): void => {
+    err.push(args.map((a) => String(a)).join(" "));
+  };
+  const code = fn().finally(() => {
+    console.log = log;
+    console.error = error;
+  });
+  return { code, out: () => out.join("\n"), err: () => err.join("\n") };
 }
 
 function git(root: string, ...args: string[]): void {
@@ -339,6 +374,114 @@ describe("stale", () => {
   );
 
   test(
+    "repeated edit and refresh cycles inside one day leave one entry per path",
+    async () => {
+      // `refreshedAt` is day-granular, so every refresh in a day ties on it.
+      // Before the fix the tie broke on the smallest hash and a card that went
+      // stale six edits later rendered the *first* summary of the day.
+      const root = await initialised("same-day");
+      const source = path.join(root, RETRY_SOURCE);
+      await refresh(root, { runner: recorder().runner, model: MODEL, today: TODAY });
+
+      for (let cycle = 0; cycle < 4; cycle++) {
+        writeFileSync(source, `${readFileSync(source, "utf8")}\n// cycle ${cycle}\n`);
+        await update(root, { mode: "full", quiet: true });
+        const rec = recorder({ text: () => `Cycle ${cycle} intent.` });
+        await refresh(root, { runner: rec.runner, model: MODEL, today: TODAY });
+      }
+
+      const kept = Object.values(cacheOf(root)).filter((entry) => entry.path === RETRY_SOURCE);
+      expect(kept.length).toBe(1);
+      expect(kept[0]?.text).toBe("Cycle 3 intent.");
+      expect(Object.keys(cacheOf(root)).length).toBe(FIXTURE_SOURCES);
+
+      const card = artifact(root, RETRY_CARD);
+      expect(card).toContain("Cycle 3 intent.");
+      expect(card).not.toContain("summary may lag code");
+
+      // And the card that a *later* edit makes stale shows the last summary,
+      // not the first one of the day.
+      writeFileSync(source, `${readFileSync(source, "utf8")}\n// and later still\n`);
+      await update(root, { mode: "full", quiet: true });
+      const stale = artifact(root, RETRY_CARD);
+      expect(stale).toContain(`> summary may lag code, last refreshed ${TODAY}`);
+      expect(stale).toContain("Cycle 3 intent.");
+    },
+    120_000,
+  );
+
+  test(
+    "a batch that fails once is retried with the same prompt, and the run still commits every batch",
+    async () => {
+      const root = await initialised("retry");
+      const prompts: string[] = [];
+      let summaryCalls = 0;
+      let failedOnce = false;
+
+      const flaky: PromptRunner = (prompt) => {
+        if (prompt.includes(FLOWS_TASK)) return Promise.resolve(JSON.stringify(CANNED_FLOWS));
+        summaryCalls++;
+        prompts.push(prompt);
+        if (summaryCalls === 2 && !failedOnce) {
+          failedOnce = true;
+          return Promise.resolve("I could not read those files, sorry.");
+        }
+        const answer: Record<string, string> = {};
+        for (const file of promptFiles(prompt)) answer[file] = canned(file);
+        return Promise.resolve(JSON.stringify(answer));
+      };
+
+      const result = await refresh(root, { runner: flaky, model: MODEL, today: TODAY, batchSize: 5 });
+
+      expect(result.refreshed).toBe(FIXTURE_SOURCES);
+      expect(result.unanswered).toEqual([]);
+      // Three batches, one retry, one flows document.
+      expect(summaryCalls).toBe(4);
+      expect(result.calls).toBe(5);
+      // The retry is the same request, not a different one.
+      expect(prompts[2]).toBe(prompts[1] as string);
+      expect(Object.keys(cacheOf(root)).length).toBe(FIXTURE_SOURCES);
+    },
+    120_000,
+  );
+
+  test(
+    "a runner that fails outright, rather than answering badly, is retried too",
+    async () => {
+      const root = await initialised("retry-runner");
+      let first = true;
+      const flaky: PromptRunner = (prompt) => {
+        if (prompt.includes(FLOWS_TASK)) return Promise.resolve(JSON.stringify(CANNED_FLOWS));
+        if (first) {
+          first = false;
+          return Promise.reject(new Error("greplost: `claude` exited 1: rate limited"));
+        }
+        const answer: Record<string, string> = {};
+        for (const file of promptFiles(prompt)) answer[file] = canned(file);
+        return Promise.resolve(JSON.stringify(answer));
+      };
+
+      const result = await refresh(root, { runner: flaky, model: MODEL, today: TODAY });
+      expect(result.refreshed).toBe(FIXTURE_SOURCES);
+      // The rejected attempt, the one that worked, and the flows document.
+      expect(result.calls).toBe(3);
+    },
+    120_000,
+  );
+
+  test(
+    "a batch that fails twice fails the run, and writes nothing",
+    async () => {
+      const root = await initialised("retry-exhausted");
+      const before = tree(root);
+      const broken: PromptRunner = () => Promise.resolve("still not JSON");
+      await expect(refresh(root, { runner: broken, model: MODEL, today: TODAY })).rejects.toThrow(/JSON/);
+      expect(changed(before, tree(root))).toEqual([]);
+    },
+    120_000,
+  );
+
+  test(
     "pkg restricts the refresh to one package",
     async () => {
       const root = await initialised("pkg");
@@ -454,11 +597,44 @@ describe("FLOWS", () => {
   );
 
   test(
-    "a model that answers with fewer than two flows is refused",
+    "a flows failure is recorded, not thrown: the summaries that were paid for still land",
     async () => {
-      const root = await initialised("too-few-flows");
+      const root = await initialised("flows-failed");
       const rec = recorder({ flows: [CANNED_FLOWS[0] as Flow] });
-      await expect(refresh(root, { runner: rec.runner, model: MODEL, today: TODAY })).rejects.toThrow(/2 to 5/);
+      const result = await refresh(root, { runner: rec.runner, model: MODEL, today: TODAY });
+
+      expect(result.flows).toEqual([]);
+      expect(result.flowsFailed.map((failure) => failure.pkg)).toEqual(["worker"]);
+      expect(result.flowsFailed[0]?.reason).toMatch(/2 to 5/);
+      expect(existsSync(path.join(root, ARTIFACT_DIR, WORKER_FLOWS))).toBe(false);
+
+      // Everything the summary batches bought is on disk and on the cards.
+      expect(result.refreshed).toBe(FIXTURE_SOURCES);
+      expect(Object.keys(cacheOf(root)).length).toBe(FIXTURE_SOURCES);
+      expect(artifact(root, RETRY_CARD)).toContain(canned(RETRY_SOURCE));
+    },
+    120_000,
+  );
+
+  test(
+    "an entry point has to export a function, not merely a name",
+    async () => {
+      const root = await initialised("entry-kinds", (dir) => {
+        // Neither basename matches the front-door pattern, so the export is the
+        // only thing that could make either of these an entry point.
+        writeFileSync(path.join(dir, "apps/worker/src/limits.ts"), "export const fetch = 5;\n");
+        writeFileSync(
+          path.join(dir, "apps/worker/src/task.ts"),
+          "export const handler = async (): Promise<void> => {};\n",
+        );
+      });
+      const snapshot = await buildSnapshot({ root });
+      const worker = snapshot.packages.find((pkg) => pkg.name === "worker") as PackageInfo;
+
+      const points = selectEntryPoints(snapshot, worker);
+      expect(points).toContain(WORKER_ENTRY);
+      expect(points).toContain("apps/worker/src/task.ts");
+      expect(points).not.toContain("apps/worker/src/limits.ts");
     },
     120_000,
   );
@@ -595,29 +771,138 @@ describe("safety", () => {
   );
 
   test(
+    "a batch answer that names only some of its files is reported, never swallowed",
+    async () => {
+      const root = await initialised("partial");
+      const partial: PromptRunner = (prompt) => {
+        if (prompt.includes(FLOWS_TASK)) return Promise.resolve(JSON.stringify(CANNED_FLOWS));
+        const only = promptFiles(prompt)[0] as string;
+        return Promise.resolve(JSON.stringify({ [only]: canned(only) }));
+      };
+
+      const result = await refresh(root, { runner: partial, model: MODEL, today: TODAY });
+      expect(result.refreshed).toBe(1);
+      expect(result.unanswered.length).toBe(FIXTURE_SOURCES - 1);
+      expect(result.unanswered).toEqual([...result.unanswered].sort(compareStrings));
+      expect(result.unanswered).toContain(RETRY_SOURCE);
+      // The one file it did answer for is committed; the rest stay stale and
+      // cost nothing to ask about again.
+      expect(Object.keys(cacheOf(root)).length).toBe(1);
+
+      const run = capture(() => refreshCommand(root, { runner: partial, today: LATER }));
+      expect(await run.code).toBe(0);
+      expect(run.err()).toContain("greplost: the model did not answer for");
+    },
+    120_000,
+  );
+
+  test(
+    "a summary that lands while the model is thinking is neither pruned nor overwritten",
+    async () => {
+      const root = await initialised("concurrent");
+      const extra = "packages/core/src/extra.ts";
+
+      // The runner stands in for another process finishing a refresh while this
+      // one waits on the model: it indexes a new file and commits a summary for
+      // it. This run's snapshot predates all of that.
+      const racing: PromptRunner = async (prompt) => {
+        writeFileSync(path.join(root, extra), "export function extra(): number {\n  return 1;\n}\n");
+        await update(root, { mode: "full", quiet: true });
+        const hash = manifestOf(root).files[extra]?.sha256 as string;
+        const cache = { ...cacheOf(root) };
+        cache[hash] = { path: extra, text: "Concurrent prose.", refreshedAt: TODAY, model: "other-model" };
+        writeFileSync(
+          path.join(root, ARTIFACT_DIR, ARTIFACT_PATHS.summaries),
+          `${JSON.stringify(cache, null, 2)}\n`,
+        );
+
+        const answer: Record<string, string> = {};
+        for (const file of promptFiles(prompt)) answer[file] = canned(file);
+        return JSON.stringify(answer);
+      };
+
+      // The stand-in reads the cache, so it has to exist before it runs.
+      writeFileSync(path.join(root, ARTIFACT_DIR, ARTIFACT_PATHS.summaries), "{}\n");
+
+      const result = await refresh(root, { pkg: "@tiny/core", runner: racing, model: MODEL, today: TODAY });
+      expect(result.refreshed).toBe(CORE_SOURCES);
+
+      // Pruning ran against the manifest as it is now, not as this run first
+      // read it, so the newcomer is still there and still says what it said.
+      const survived = Object.values(cacheOf(root)).find((entry) => entry.path === extra);
+      expect(survived?.text).toBe("Concurrent prose.");
+      expect(survived?.model).toBe("other-model");
+      expect(artifact(root, "packages/tiny__core/modules/src/extra.ts.md")).toContain("Concurrent prose.");
+    },
+    120_000,
+  );
+
+  test(
+    "a lock held throughout still commits the summaries that were paid for, and says so",
+    async () => {
+      const root = await initialised("locked-merge");
+      let release = (): void => {};
+      const holding = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      // Acquired synchronously inside `withLock`, so it is held before the
+      // refresh reaches its merge.
+      const lock = withLock(root, () => holding);
+      const run = capture(() => refreshCommand(root, { runner: recorder().runner, today: TODAY, json: true }));
+      try {
+        expect(await run.code).toBe(0);
+      } finally {
+        release();
+        await lock;
+      }
+
+      const result = JSON.parse(run.out()) as RefreshResult;
+      expect(result.refreshed).toBe(FIXTURE_SOURCES);
+      expect(Object.keys(cacheOf(root)).length).toBe(FIXTURE_SOURCES);
+      // The rebuild could not run either, and says so rather than pretending.
+      expect(result.update).toBe("locked");
+      // `--json` stdout stays one parseable document; the warning is on stderr.
+      expect(run.out().trimStart().startsWith("{")).toBe(true);
+      expect(run.err()).toContain("another update held the lock");
+    },
+    120_000,
+  );
+
+  test(
+    "a flows failure is a warning on stderr, never a non-zero exit, in either output mode",
+    async () => {
+      const root = await initialised("warnings");
+      const run = capture(() => refreshCommand(root, { runner: recorder({ flows: [] }).runner, today: TODAY }));
+      expect(await run.code).toBe(0);
+      expect(run.err()).toContain("greplost: could not write FLOWS.md for worker");
+
+      const second = await initialised("warnings-json");
+      const json = capture(() =>
+        refreshCommand(second, { runner: recorder({ flows: [] }).runner, today: TODAY, json: true }),
+      );
+      expect(await json.code).toBe(0);
+      expect(json.out().trimStart().startsWith("{")).toBe(true);
+      expect(json.err()).toContain("could not write FLOWS.md for worker");
+    },
+    120_000,
+  );
+
+  test(
     "refreshCommand is the CLI's contract: an exit code, its own output, and no throw",
     async () => {
       const root = await initialised("command");
-      const lines: string[] = [];
-      const log = console.log;
-      const error = console.error;
-      const capture = (...args: unknown[]): void => {
-        lines.push(args.map((a) => String(a)).join(" "));
-      };
-      console.log = capture;
-      console.error = capture;
-      let ok: number;
-      let bad: number;
-      try {
-        ok = await refreshCommand(root, { dryRun: true, runner: forbiddenRunner, today: TODAY });
-        bad = await refreshCommand(root, { package: "@tiny/nope", runner: forbiddenRunner, today: TODAY });
-      } finally {
-        console.log = log;
-        console.error = error;
-      }
-      expect(ok).toBe(0);
-      expect(bad).toBe(1);
-      expect(lines.join("\n")).toContain("greplost: no package @tiny/nope");
+
+      const ok = capture(() => refreshCommand(root, { dryRun: true, runner: forbiddenRunner, today: TODAY }));
+      expect(await ok.code).toBe(0);
+      expect(ok.out()).toContain("would be refreshed");
+      expect(ok.err()).toBe("");
+
+      const bad = capture(() =>
+        refreshCommand(root, { package: "@tiny/nope", runner: forbiddenRunner, today: TODAY }),
+      );
+      expect(await bad.code).toBe(1);
+      expect(bad.out()).toBe("");
+      expect(bad.err()).toContain("greplost: no package @tiny/nope");
       expect(existsSync(path.join(root, ARTIFACT_DIR, ARTIFACT_PATHS.summaries))).toBe(false);
     },
     120_000,

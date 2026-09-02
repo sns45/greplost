@@ -12,7 +12,7 @@
  * seam expects: an exit code, its own output, and no exceptions.
  */
 
-export { DEFAULT_BATCH_SIZE, refresh, refreshCommand } from "./refresh.ts";
+export { DEFAULT_BATCH_SIZE, RETRIES_PER_BATCH, refresh, refreshCommand } from "./refresh.ts";
 export type { RefreshCommandOptions, RefreshOptions, RefreshResult } from "./refresh.ts";
 
 export {

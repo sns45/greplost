@@ -18,22 +18,39 @@
  * side: it is regenerated when the package it describes was actually
  * resummarised, or when it does not exist yet, and skipped otherwise.
  *
- * Ordering is chosen for what survives a failure. The cache is written as soon
- * as every summary batch has come back cleanly, then the map is rebuilt, then
- * the flows are asked for; a model that fumbles the flows call therefore costs
- * a document, never twelve paragraphs that were already paid for. And nothing
- * is written at all until every batch has parsed, so a bad answer leaves the
- * committed cache byte-identical.
+ * Ordering is chosen for what survives a failure, because every failure here
+ * happens after money has been spent. Nothing is written until every batch has
+ * parsed — each batch gets one retry first, since a model that fumbles its
+ * output format once usually does not fumble it twice — so a genuinely bad
+ * answer leaves the committed cache byte-identical. Once the cache is written
+ * the map is rebuilt and only then are the flows asked for, so a fumbled flows
+ * call costs a document rather than twelve paragraphs; it is recorded in the
+ * result and warned about, never thrown. A batch that answers for only some of
+ * the files it was given is the same shape of problem: the files it did answer
+ * for are committed, the rest stay stale, and the caller is told the count
+ * rather than left to notice.
+ *
+ * Concurrency: the read-merge-write of the cache runs inside `@greplost/sync`'s
+ * advisory lock, and the manifest is re-read inside it too, so an entry another
+ * process committed while this one was waiting on a model is neither pruned as
+ * unknown nor overwritten from a stale view of the repository. The lock is
+ * never held across a model call — a hook that waits on a language model is a
+ * hook that makes the shell feel broken — and it is never held across the
+ * rebuild either, because `update` takes it itself. Residual window: if the
+ * lock cannot be taken within `LOCK_ATTEMPTS` tries the merge proceeds without
+ * it rather than discarding summaries that have already been paid for, so two
+ * refreshes whose merges interleave in that window can still lose one entry
+ * each. The alternative — dropping the work — is worse.
  */
 
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import { buildSnapshot, loadConfig } from "@greplost/core";
-import type { Manifest, PackageInfo, Snapshot, SummaryCache } from "@greplost/core/schema";
+import type { Manifest, PackageInfo, Snapshot, SummaryCache, SummaryEntry } from "@greplost/core/schema";
 import { ARTIFACT_DIR, ARTIFACT_PATHS, compareStrings, packageSlug, stableStringify } from "@greplost/core/schema";
 import { packageDir } from "@greplost/render";
-import { FileParseCache, readSummaries, update } from "@greplost/sync";
+import { FileParseCache, readSummaries, update, withLock } from "@greplost/sync";
 
 import { REACH_DEPTH, callLines, importGraph, isoDate, reachableFrom, renderFlows, selectEntryPoints } from "./flows.ts";
 import type { FlowRequest, SummaryRequest } from "./prompts.ts";
@@ -43,6 +60,22 @@ import type { PromptRunner } from "./runner.ts";
 
 /** Files per prompt (semantic spec "Contract"). */
 export const DEFAULT_BATCH_SIZE = 12;
+
+/**
+ * Retries one summary batch gets before the run gives up.
+ *
+ * One, not three: an answer that is not the JSON it was asked for is usually a
+ * formatting slip a second attempt does not repeat, and a model that has
+ * genuinely misunderstood the request will keep misunderstanding it at full
+ * price. The retry sends the same prompt, so it is the same request.
+ */
+export const RETRIES_PER_BATCH = 1;
+
+/** Tries at the advisory lock before the merge goes ahead without it. */
+const LOCK_ATTEMPTS = 5;
+
+/** Wait between those tries; an `update` holds the lock for well under this. */
+const LOCK_RETRY_MS = 200;
 
 export interface RefreshOptions {
   /** Restrict to one package, by name (`@tiny/core`) or artifact slug (`tiny__core`). */
@@ -64,10 +97,27 @@ export interface RefreshResult {
   refreshed: number;
   /** Files in scope whose summary was already current. */
   skipped: number;
-  /** Runner calls made: summary batches plus flow documents. */
+  /** Runner calls made: summary batches, their retries, and flow documents. */
   calls: number;
+  /**
+   * Files that were asked about and did not come back, sorted.
+   *
+   * Not an error: they stay stale, the next refresh asks again, and the files
+   * the same batch did answer for are committed. Reported because a silently
+   * short answer is otherwise invisible until someone notices a card with no
+   * prose on it.
+   */
+  unanswered: string[];
   /** `.greplost`-relative paths of the `FLOWS.md` documents this run wrote. */
   flows: string[];
+  /**
+   * Packages whose `FLOWS.md` could not be written, and why.
+   *
+   * A flows call happens after the summaries are committed, so failing the
+   * whole run for one would throw away work that is already paid for and
+   * already on disk. The caller warns; the exit code stays 0.
+   */
+  flowsFailed: Array<{ pkg: string; reason: string }>;
   /**
    * What happened to the map after the cache was written.
    *
@@ -132,25 +182,52 @@ export async function refresh(root: string, opts: RefreshOptions = {}): Promise<
     // exercise the one part of a refresh that can fail before a model is
     // involved (an unreadable source file, a package that does not exist).
     for (const batch of batches) buildSummaryPrompt(batch.map((file) => summaryRequest(absoluteRoot, snapshot, symbols, file)));
-    return { refreshed: stale.length, skipped, calls: 0, flows: [], update: "unnecessary" };
+    return { refreshed: stale.length, skipped, calls: 0, unanswered: [], flows: [], flowsFailed: [], update: "unnecessary" };
   }
 
   let calls = 0;
   const written = new Map<string, string>();
+  const unanswered: string[] = [];
   for (const batch of batches) {
     const prompt = buildSummaryPrompt(batch.map((file) => summaryRequest(absoluteRoot, snapshot, symbols, file)));
-    const answer = await runner(prompt, { model });
-    calls++;
-    for (const [file, text] of parseSummaryResponse(answer, batch)) written.set(file, text);
+    // One retry, with the same prompt. A batch that cannot be parsed is usually
+    // a formatting slip rather than a disagreement about the request, and
+    // failing the run would discard every batch already paid for. Two failures
+    // is a real disagreement, and then the run fails with nothing written.
+    //
+    // The retry covers the call as well as the answer: a rate limit or a
+    // dropped connection is the same kind of accident as a fenced JSON block,
+    // and losing eleven good batches to either is the outcome worth avoiding.
+    // `calls` counts attempts, including one the runner rejected, because an
+    // attempt that failed was still an attempt someone paid for.
+    let answers: Map<string, string> | undefined;
+    for (let attempt = 0; attempt < 1 + RETRIES_PER_BATCH; attempt++) {
+      calls++;
+      try {
+        answers = parseSummaryResponse(await runner(prompt, { model }), batch);
+        break;
+      } catch (cause) {
+        if (attempt === RETRIES_PER_BATCH) throw cause;
+      }
+    }
+    const parsed = answers ?? new Map<string, string>();
+    for (const [file, text] of parsed) written.set(file, text);
+    for (const file of batch) if (!parsed.has(file)) unanswered.push(file);
   }
+  unanswered.sort(compareStrings);
 
   let updated: RefreshResult["update"] = "unnecessary";
   if (written.size > 0) {
-    // Re-read rather than reuse: model calls take minutes, and another refresh
-    // (or a teammate's `git pull`) may have landed entries in the meantime.
-    // Merging onto what is on disk now loses at most one entry per hash instead
-    // of every entry the other run wrote.
-    writeCache(absoluteRoot, nextCache(readSummaries(absoluteRoot), snapshot.manifest, written, today, model));
+    const entries = new Map<string, CacheWrite>();
+    for (const [file, text] of written) {
+      // The hash the summary was written *for*: the content the model was shown,
+      // not whatever the file may have become while it was thinking.
+      const sha256 = snapshot.manifest.files[file]?.sha256;
+      if (sha256 === undefined) continue;
+      entries.set(file, { hash: sha256, entry: { path: file, text, refreshedAt: today, model } });
+    }
+    await commitCache(absoluteRoot, entries, snapshot.manifest);
+
     // `files` is not a hint here, it is the guarantee: an incremental update on
     // a clean git tree takes the fast path and skips, and the whole point of
     // this call is that the cards pick up prose the checkout cannot explain.
@@ -159,10 +236,13 @@ export async function refresh(root: string, opts: RefreshOptions = {}): Promise<
       files: [...written.keys()].sort(compareStrings),
       quiet: true,
     });
-    updated = result.skipped === undefined ? "rebuilt" : "locked";
+    // "clean" cannot happen while `files` is non-empty, but calling it "locked"
+    // if it ever did would send a reader hunting for a process that is not there.
+    updated = result.skipped === undefined ? "rebuilt" : result.skipped === "locked" ? "locked" : "unnecessary";
   }
 
   const flows: string[] = [];
+  const flowsFailed: RefreshResult["flowsFailed"] = [];
   for (const pkg of flowPackages(snapshot, target)) {
     const entryPoints = selectEntryPoints(snapshot, pkg);
     if (entryPoints.length === 0) continue;
@@ -175,13 +255,19 @@ export async function refresh(root: string, opts: RefreshOptions = {}): Promise<
     const resummarised = [...written.keys()].some((done) => snapshot.manifest.files[done]?.pkg === pkg.name);
     if (!resummarised && existsSync(file)) continue;
 
-    const answer = await runner(buildFlowsPrompt(pkg.name, flowRequests(snapshot, entryPoints)), { model });
-    calls++;
-    writeFile(file, relative, renderFlows(pkg, parseFlowsResponse(answer), today));
-    flows.push(relative);
+    // Per package, and never fatal: the summaries are already committed, and a
+    // second package's document is not the first one's business either.
+    try {
+      calls++;
+      const answer = await runner(buildFlowsPrompt(pkg.name, flowRequests(snapshot, entryPoints)), { model });
+      writeFile(file, relative, renderFlows(pkg, parseFlowsResponse(answer), today));
+      flows.push(relative);
+    } catch (cause) {
+      flowsFailed.push({ pkg: pkg.name, reason: cause instanceof Error ? cause.message : String(cause) });
+    }
   }
 
-  return { refreshed: written.size, skipped, calls, flows, update: updated };
+  return { refreshed: written.size, skipped, calls, unanswered, flows, flowsFailed, update: updated };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -220,20 +306,40 @@ export async function refreshCommand(root: string, opts: RefreshCommandOptions =
     });
 
     if (opts.json === true) console.log(stableStringify(result, 2));
-    else {
-      console.log(humanSummary(result, opts.dryRun === true));
-      // The cache is written and committed either way, but the cards do not
-      // show it yet, and a person who does not hear this will read a stale map
-      // and believe it.
-      if (result.update === "locked") {
-        console.error("greplost: another update held the lock; run `greplost update` to render the new summaries");
-      }
-    }
+    else console.log(humanSummary(result, opts.dryRun === true));
+    warn(result, opts.dryRun === true);
     return 0;
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : String(cause);
     console.error(message.startsWith("greplost: ") ? message : `greplost: ${message}`);
     return 1;
+  }
+}
+
+/**
+ * Everything a *successful* refresh still has to say out loud.
+ *
+ * All of it on stderr, including in `--json` mode, for two reasons that point
+ * the same way: `--json` stdout has to stay one parseable document, and none of
+ * these are failures. A partial answer, a flows document that could not be
+ * written and a rebuild that lost a race all leave the repository better than
+ * it was; they just leave it short of what was asked for, and a person who is
+ * not told will read a map that is quietly incomplete and believe it.
+ */
+function warn(result: RefreshResult, dryRun: boolean): void {
+  if (dryRun) return;
+
+  if (result.unanswered.length > 0) {
+    const asked = result.refreshed + result.unanswered.length;
+    console.error(
+      `greplost: the model did not answer for ${result.unanswered.length} of ${asked} files; they stay stale`,
+    );
+  }
+  for (const failure of result.flowsFailed) {
+    console.error(`greplost: could not write FLOWS.md for ${failure.pkg}: ${failure.reason}`);
+  }
+  if (result.update === "locked") {
+    console.error("greplost: another update held the lock; run `greplost update` to render the new summaries");
   }
 }
 
@@ -359,37 +465,142 @@ function flowRequests(snapshot: Snapshot, entryPoints: readonly string[]): FlowR
 /* The cache                                                                   */
 /* -------------------------------------------------------------------------- */
 
+/** One summary this run is committing: the content hash it describes, and the entry. */
+interface CacheWrite {
+  hash: string;
+  entry: SummaryEntry;
+}
+
+/**
+ * Read the cache, re-read the manifest, merge, write — under the update lock.
+ *
+ * Both reads happen inside the lock and as late as possible. Model calls take
+ * minutes, and in that time another refresh can commit entries, a teammate's
+ * `git pull` can land a new file and an `update` can reindex the tree; merging
+ * onto a view of the world from before all that would prune entries as unknown
+ * and overwrite hashes that are now the current ones.
+ *
+ * When the lock cannot be taken the merge goes ahead anyway. That is a real
+ * (small) window in which two interleaved merges lose an entry each, and it is
+ * still the right trade: the alternative is throwing away summaries that have
+ * already been paid for because a git hook happened to be rebuilding the map.
+ * Returns whether the lock was held, for callers that want to say so.
+ */
+async function commitCache(
+  root: string,
+  written: ReadonlyMap<string, CacheWrite>,
+  fallback: Manifest,
+): Promise<boolean> {
+  const merge = (): void => {
+    writeCache(root, nextCache(readSummaries(root), currentManifest(root, fallback), written));
+  };
+
+  for (let attempt = 0; attempt < LOCK_ATTEMPTS; attempt++) {
+    const held = await withLock(root, () => {
+      merge();
+      return Promise.resolve(true);
+    });
+    if (held === true) return true;
+    if (attempt + 1 < LOCK_ATTEMPTS) await delay(LOCK_RETRY_MS);
+  }
+
+  merge();
+  return false;
+}
+
+/**
+ * The manifest as it is on disk right now, or the one this run built when there
+ * is nothing readable there.
+ *
+ * `manifest.json` alone, rather than `readStructure`: the only question here is
+ * which paths and hashes the map currently describes, and the three graph files
+ * `readStructure` also parses can run to megabytes on a real repository — which
+ * is not something to do while holding the lock every git hook is waiting on.
+ * Same reasoning, and the same shape check, as `@greplost/sync`'s own
+ * manifest-only read.
+ */
+function currentManifest(root: string, fallback: Manifest): Manifest {
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(path.join(root, ARTIFACT_DIR, ARTIFACT_PATHS.manifest), "utf8"));
+    return isManifest(parsed) ? parsed : fallback;
+  } catch {
+    // Absent, unreadable, or not a manifest at all. The snapshot's own view is
+    // the best answer available, and the update that follows rewrites the file
+    // anyway.
+    return fallback;
+  }
+}
+
+/** Shape check only: enough to refuse a file that is not our manifest. */
+function isManifest(value: unknown): value is Manifest {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const candidate = value as { version?: unknown; files?: unknown; packages?: unknown };
+  return (
+    typeof candidate.version === "string" &&
+    typeof candidate.files === "object" &&
+    candidate.files !== null &&
+    !Array.isArray(candidate.files) &&
+    typeof candidate.packages === "object" &&
+    candidate.packages !== null
+  );
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 /**
  * The cache this run commits: what was there, plus one entry per summary
  * written, minus what neither describes current content nor is the last thing
- * anyone wrote about its path.
+ * anyone wrote about a path the map still holds.
  *
  * That second survivor is the banner's evidence. A stale card renders the
  * newest summary its path ever had, so pruning "everything that is not
  * current" would silently turn every stale card back into a placeholder the
  * moment its file changed (tech spec 6, render spec).
+ *
+ * A path this run rewrote is the exception, and it is why the rule is here at
+ * all. `refreshedAt` is a date, because a date is what the banner renders, so
+ * every refresh on a given day ties with every other refresh that day; the
+ * tie-break is the smallest hash, which is arbitrary. Six edit-and-refresh
+ * cycles in one afternoon therefore left the *first* summary of the day
+ * standing as "newest", and the next edit rendered it under the banner. So a
+ * rewritten path keeps exactly one entry and the tie becomes unreachable: the
+ * entry for the manifest's current hash when there is one — which is the
+ * concurrent case, where another process resummarised the file this run was
+ * still thinking about — and otherwise the one this run just wrote.
  */
 function nextCache(
   cache: SummaryCache,
   manifest: Manifest,
-  written: ReadonlyMap<string, string>,
-  today: string,
-  model: string,
+  written: ReadonlyMap<string, CacheWrite>,
 ): SummaryCache {
   const merged: SummaryCache = { ...cache };
-  for (const [file, text] of written) {
-    const sha256 = manifest.files[file]?.sha256;
-    if (sha256 === undefined) continue;
-    merged[sha256] = { path: file, text, refreshedAt: today, model };
-  }
+  for (const { hash, entry } of written.values()) merged[hash] = entry;
 
   const current = new Set(Object.values(manifest.files).map((entry) => entry.sha256));
-  const newest = newestByPath(merged);
 
+  // The single hash each rewritten path is allowed to keep.
+  const rewritten = new Map<string, string>();
+  for (const [file, { hash }] of written) {
+    const live = manifest.files[file]?.sha256;
+    rewritten.set(file, live !== undefined && merged[live] !== undefined ? live : hash);
+  }
+
+  const newest = newestByPath(merged);
   const pruned: SummaryCache = {};
   for (const hash of Object.keys(merged).sort(compareStrings)) {
     const entry = merged[hash];
     if (entry === undefined) continue;
+
+    const only = rewritten.get(entry.path);
+    if (only !== undefined) {
+      if (only === hash) pruned[hash] = entry;
+      continue;
+    }
+
     // Current content, or the last thing anyone wrote about a file the map
     // still describes. A path the manifest no longer holds has no card and so
     // no banner to feed: keeping its prose would make the committed cache grow
