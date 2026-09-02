@@ -8,20 +8,20 @@
 
 **Exports:** `appendDirty(root: string, paths: string[]): void`, `readAndClearDirty(root: string): string[]`, `toRepoRelative(root: string, candidate: string): string | undefined`
 
-**Imports:** `node:fs` (appendFileSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, compareStrings)
+**Imports:** `node:fs` (lstatSync, readFileSync, realpathSync, renameSync, rmSync), [`./write.ts`](write.ts.md) (safeWrite), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, compareStrings)
 
 **Imported by:** [`packages/sync/src/incremental.ts`](incremental.ts.md), [`packages/sync/src/index.ts`](index.ts.md)
 
 **Blast radius:** 20 files (`greplost impact packages/sync/src/dirty.ts`)
 
 **Key symbols:**
-- `function appendDirty(root: string, paths: string[]): void`  L36-60
-- `function readAndClearDirty(root: string): string[]`  L79-111
-- `function toRepoRelative(root: string, candidate: string): string | undefined`  L123-151
-- `function escapes(relative: string): boolean`  L159-167
-- `function readIfPresent(file: string): string`  L169-175
-- `function realpath(target: string): string`  L178-184
-- `const TAKEN_SUFFIX = ".taken"`  L187-187
-- `function dirtyPath(root: string): string`  L189-191
+- `function appendDirty(root: string, paths: string[]): void`  L38-72
+- `function readAndClearDirty(root: string): string[]`  L91-123
+- `function toRepoRelative(root: string, candidate: string): string | undefined`  L135-163
+- `function escapes(relative: string): boolean`  L171-179
+- `function readIfPresent(file: string): string`  L181-187
+- `function realpath(target: string): string`  L190-196
+- `const TAKEN_SUFFIX = ".taken"`  L199-199
+- `function dirtyPath(root: string): string`  L201-203
 
-**Calls:** `dirtyPath` → [`packages/sync/src/dirty.ts#dirtyPath`](dirty.ts.md) (high), `escapes` → [`packages/sync/src/dirty.ts#escapes`](dirty.ts.md) (high), `readIfPresent` → [`packages/sync/src/dirty.ts#readIfPresent`](dirty.ts.md) (high), `realpath` → [`packages/sync/src/dirty.ts#realpath`](dirty.ts.md) (high), `toRepoRelative` → [`packages/sync/src/dirty.ts#toRepoRelative`](dirty.ts.md) (high)
+**Calls:** `dirtyPath` → [`packages/sync/src/dirty.ts#dirtyPath`](dirty.ts.md) (high), `escapes` → [`packages/sync/src/dirty.ts#escapes`](dirty.ts.md) (high), `readIfPresent` → [`packages/sync/src/dirty.ts#readIfPresent`](dirty.ts.md) (high), `realpath` → [`packages/sync/src/dirty.ts#realpath`](dirty.ts.md) (high), `toRepoRelative` → [`packages/sync/src/dirty.ts#toRepoRelative`](dirty.ts.md) (high), `safeWrite` → [`packages/sync/src/write.ts#safeWrite`](write.ts.md) (high)

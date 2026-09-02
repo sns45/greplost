@@ -18,9 +18,9 @@
 | [`packages/render/src/slug.ts`](../packages/greplost__render/modules/src/slug.ts.md) | 7 | 1 | 38 |
 | [`bench/src/results-md.ts`](../packages/greplost__bench/modules/src/results-md.ts.md) | 6 | 0 | 6 |
 | [`packages/cli/src/commands/workspace.ts`](../packages/greplost/modules/src/commands/workspace.ts.md) | 6 | 2 | 7 |
+| [`packages/sync/src/write.ts`](../packages/greplost__sync/modules/src/write.ts.md) | 6 | 2 | 23 |
 | [`bench/src/adapters/types.ts`](../packages/greplost__bench/modules/src/adapters/types.ts.md) | 5 | 1 | 5 |
 | [`bench/src/truth/ts.ts`](../packages/greplost__bench/modules/src/truth/ts.ts.md) | 5 | 3 | 5 |
-| [`packages/sync/src/write.ts`](../packages/greplost__sync/modules/src/write.ts.md) | 5 | 2 | 22 |
 | [`packages/workspace/src/config.ts`](../packages/greplost__workspace/modules/src/config.ts.md) | 5 | 1 | 14 |
 | [`packages/workspace/src/cross.ts`](../packages/greplost__workspace/modules/src/cross.ts.md) | 5 | 5 | 13 |
 | [`bench/src/corpus.ts`](../packages/greplost__bench/modules/src/corpus.ts.md) | 4 | 1 | 5 |

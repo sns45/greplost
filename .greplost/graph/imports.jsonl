@@ -500,9 +500,10 @@
 {"confidence":"high","from":"packages/sync/src/build.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["GreplostConfig","Snapshot","SummaryCache","SummaryEntry"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/sync/src/build.ts","importKind":"static","kind":"import","specifier":"@greplost/render","symbols":["renderArtifacts"],"to":"packages/render/src/index.ts"}
 {"confidence":"high","from":"packages/sync/src/build.ts","importKind":"static","kind":"import","specifier":"./artifacts.ts","symbols":["isStructurePath"],"to":"packages/sync/src/artifacts.ts"}
-{"confidence":"high","from":"packages/sync/src/dirty.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["appendFileSync","mkdirSync","readFileSync","realpathSync","renameSync","rmSync"],"to":"ext:node:fs"}
+{"confidence":"high","from":"packages/sync/src/dirty.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["lstatSync","readFileSync","realpathSync","renameSync","rmSync"],"to":"ext:node:fs"}
 {"confidence":"high","from":"packages/sync/src/dirty.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
 {"confidence":"high","from":"packages/sync/src/dirty.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["ARTIFACT_DIR","ARTIFACT_PATHS","compareStrings"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/sync/src/dirty.ts","importKind":"static","kind":"import","specifier":"./write.ts","symbols":["safeWrite"],"to":"packages/sync/src/write.ts"}
 {"confidence":"high","from":"packages/sync/src/githooks.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["spawnSync"],"to":"ext:node:child_process"}
 {"confidence":"high","from":"packages/sync/src/githooks.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["appendFileSync","chmodSync","existsSync","lstatSync","mkdirSync","readFileSync","realpathSync","writeFileSync"],"to":"ext:node:fs"}
 {"confidence":"high","from":"packages/sync/src/githooks.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}

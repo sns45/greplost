@@ -17,9 +17,9 @@
 
 ## packages/sync/src/dirty.ts
 
-- `function appendDirty(root: string, paths: string[]): void` L36-60
-- `function readAndClearDirty(root: string): string[]` L79-111
-- `function toRepoRelative(root: string, candidate: string): string | undefined` L123-151
+- `function appendDirty(root: string, paths: string[]): void` L38-72
+- `function readAndClearDirty(root: string): string[]` L91-123
+- `function toRepoRelative(root: string, candidate: string): string | undefined` L135-163
 
 ## packages/sync/src/githooks.ts
 

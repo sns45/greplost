@@ -10,9 +10,9 @@
 
 **Imports:** `node:fs` (Dirent, Stats, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, compareStrings), [`./artifacts.ts`](artifacts.ts.md) (isStructurePath, listStructurePaths)
 
-**Imported by:** [`packages/sync/src/incremental.ts`](incremental.ts.md), [`packages/sync/src/index.ts`](index.ts.md), [`packages/sync/src/init.ts`](init.ts.md), [`packages/sync/src/parse-cache.ts`](parse-cache.ts.md), [`packages/sync/src/state.ts`](state.ts.md)
+**Imported by:** [`packages/sync/src/dirty.ts`](dirty.ts.md), [`packages/sync/src/incremental.ts`](incremental.ts.md), [`packages/sync/src/index.ts`](index.ts.md), [`packages/sync/src/init.ts`](init.ts.md), [`packages/sync/src/parse-cache.ts`](parse-cache.ts.md), [`packages/sync/src/state.ts`](state.ts.md)
 
-**Blast radius:** 22 files (`greplost impact packages/sync/src/write.ts`)
+**Blast radius:** 23 files (`greplost impact packages/sync/src/write.ts`)
 
 **Key symbols:**
 - `interface WriteResult`  L66-73

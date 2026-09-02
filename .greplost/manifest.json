@@ -1996,7 +1996,7 @@
       "staleSummary": false
     },
     "packages/sync/src/artifacts.ts": {
-      "blast": 25,
+      "blast": 26,
       "exports": [
         "STRUCTURE_GLOBS",
         "isStructurePath",
@@ -2034,11 +2034,11 @@
         "toRepoRelative"
       ],
       "fanIn": 2,
-      "fanOut": 1,
+      "fanOut": 2,
       "lang": "ts",
-      "loc": 191,
+      "loc": 203,
       "pkg": "@greplost/sync",
-      "sha256": "0c25c80d25bec86242bb785407caa0946180ef6bae2a76d09228834f3b192566",
+      "sha256": "06cac911df5c5938e7c6be627be2341c9c459d817f8a080668f98c40ed1e2cac",
       "staleSummary": false
     },
     "packages/sync/src/githooks.ts": {
@@ -2212,7 +2212,7 @@
       "staleSummary": false
     },
     "packages/sync/src/write.ts": {
-      "blast": 22,
+      "blast": 23,
       "exports": [
         "WriteResult",
         "containedPath",
@@ -2220,7 +2220,7 @@
         "writeArtifacts",
         "writeSeam"
       ],
-      "fanIn": 5,
+      "fanIn": 6,
       "fanOut": 2,
       "lang": "ts",
       "loc": 538,
@@ -2492,7 +2492,7 @@
         "@greplost/render"
       ],
       "files": 12,
-      "loc": 3068,
+      "loc": 3080,
       "path": "packages/sync",
       "rdeps": [
         "@greplost/bench",

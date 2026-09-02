@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/sync/src/build.ts`](build.ts.md), [`packages/sync/src/index.ts`](index.ts.md), [`packages/sync/src/verify.ts`](verify.ts.md), [`packages/sync/src/write.ts`](write.ts.md)
 
-**Blast radius:** 25 files (`greplost impact packages/sync/src/artifacts.ts`)
+**Blast radius:** 26 files (`greplost impact packages/sync/src/artifacts.ts`)
 
 **Key symbols:**
 - `const STRUCTURE_GLOBS: readonly string[] = [ "INDEX.md", "manifest.json", "graph/*.jsonl", "repo/*.md", "packages/*/MAP.md", "packages/*/API.md", "packages/*/modules/**/*.md", ]`  L31-39
