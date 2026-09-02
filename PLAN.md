@@ -104,3 +104,4 @@ Append-only. One line per event.
 - 2026-09-02 wave 2 dispatched: 1.1.5 core build (1.2.2 render docs waits for 1.1.5 and the 1.2.1 fix round)
 - 2026-09-02 leaf 1.1.4: fix round 1/5 (1 addressed, 0 open; commits 705a4fa..795b558)
 - 2026-09-02 leaf 1.1.4: complete (commits f941b3d..795b558, review clean); minor (deferred): unconditional .git/ prefix drop in fallback mode (currently relies on DEFAULT_CONFIG exclude), commit prefix fix(<leaf>) added to the convention
+- 2026-09-02 leaf 1.1.2 review: Approved; Important x3: baseUrl fallback without declared baseUrl, null exports target not blocking, root self-name imports external -> fix round 1/5 dispatched; Ruling: root package name is resolvable (no schema change); minors folded: # fallthrough to paths, best-pattern-only paths matching, imports map escape guard, compareStrings; deferred: symlink literal-vs-glob stat inconsistency, nearest-tsconfig shadowing (spec rule), double manifest read
