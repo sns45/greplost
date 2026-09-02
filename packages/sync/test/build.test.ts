@@ -12,6 +12,7 @@ import {
   chmodSync,
   cpSync,
   existsSync,
+  linkSync,
   lstatSync,
   mkdirSync,
   mkdtempSync,
@@ -594,6 +595,28 @@ describe("write", () => {
     // The artifact that was there is still there: a full disk says nothing
     // about the file, so destroying it before failing anyway would be worse.
     expect(readFileSync(target, "utf8")).toBe("committed but stale\n");
+  });
+
+  test("replaces a hard-linked artifact instead of writing through it", () => {
+    const root = emptyRepo("write-hardlink");
+    writeArtifacts(root, artifacts);
+    const outside = path.join(root, "outside.md");
+    writeFileSync(outside, "outside bytes\n");
+    const target = path.join(artifactDir(root), "INDEX.md");
+    // One inode, two names: `lstat` cannot tell this from an ordinary artifact.
+    rmSync(target);
+    linkSync(outside, target);
+    expect(statSync(target).nlink).toBe(2);
+
+    const result = writeArtifacts(root, artifacts);
+
+    expect(result.written).toContain("INDEX.md");
+    expect(readFileSync(target, "utf8")).toBe(artifacts.get("INDEX.md") as string);
+    // The other name still holds the original bytes: the write went to a new inode.
+    expect(readFileSync(outside, "utf8")).toBe("outside bytes\n");
+    expect(statSync(outside).nlink).toBe(1);
+    // And the temporary the replacement went through left nothing behind.
+    expect(listFiles(artifactDir(root))).toEqual([...artifacts.keys()].sort(compareStrings));
   });
 
   test("writes nothing through a symlinked intermediate directory", () => {
