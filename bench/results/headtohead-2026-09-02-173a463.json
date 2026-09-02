@@ -43,14 +43,14 @@
     }
   ],
   "date": "2026-09-02",
-  "greplostSha": "dfb733a",
+  "greplostSha": "173a463",
   "machine": {
     "arch": "arm64",
     "bun": "1.2.21",
     "cores": 16,
     "cpu": "Apple M4 Max",
     "go": "go version go1.25.3 darwin/arm64",
-    "greplostSha": "dfb733a",
+    "greplostSha": "173a463",
     "greplostVersion": "0.0.1",
     "memoryGB": 128,
     "node": "24.3.0",
@@ -289,7 +289,7 @@
             "lines": 60,
             "namesBothEndpoints": 0
           },
-          "reason": "60 lines of 88119 in the committed artifact changed for a one-line source change. Where: `.code-review-graph/graph.json` 60 lines",
+          "reason": "60 of 88119 artifact lines changed against greplost's 54 of 10511. Where: `.code-review-graph/graph.json` 60 lines",
           "target": "<= 10 artifact lines",
           "value": "60 of 88119 lines",
           "verdict": "win"
@@ -302,7 +302,7 @@
             "lines": 24,
             "namesBothEndpoints": 0
           },
-          "reason": "",
+          "reason": "24 of 99031 artifact lines changed against greplost's 54 of 10511, a quieter diff than greplost's. Where: `graphify-out/graph.json` 12 lines, `graphify-out/GRAPH_REPORT.md` 6 lines, `graphify-out/manifest.json` 6 lines",
           "target": "<= 10 artifact lines",
           "value": "24 of 99031 lines",
           "verdict": "loss"
@@ -330,50 +330,50 @@
     },
     "X6": {
       "id": "X6",
-      "target": "<= 5s and $0 (tier M)",
+      "target": "<= 5s and $0 (measured on anyq, tier S, not tier M)",
       "title": "Cold start to first usable map",
       "tools": {
         "crg": {
           "detail": {
-            "fastest": 1.121,
+            "fastest": 1.207,
             "runs": 3,
-            "seconds": 1.125,
-            "slowest": 1.131
+            "seconds": 1.207,
+            "slowest": 1.237
           },
           "reason": "",
-          "target": "<= 5s and $0 (tier M)",
-          "value": "1.125 s",
+          "target": "<= 5s and $0 (measured on anyq, tier S, not tier M)",
+          "value": "1.207 s",
           "verdict": "win"
         },
         "graphify": {
           "detail": {
-            "fastest": 2.056,
+            "fastest": 2.139,
             "runs": 3,
-            "seconds": 2.062,
-            "slowest": 2.068
+            "seconds": 2.159,
+            "slowest": 2.182
           },
           "reason": "",
-          "target": "<= 5s and $0 (tier M)",
-          "value": "2.062 s",
+          "target": "<= 5s and $0 (measured on anyq, tier S, not tier M)",
+          "value": "2.159 s",
           "verdict": "win"
         },
         "greplost": {
           "detail": {
             "artifacts": 203,
-            "fastest": 0.257,
+            "fastest": 0.273,
             "runs": 3,
-            "seconds": 0.266,
-            "slowest": 0.267,
+            "seconds": 0.283,
+            "slowest": 0.285,
             "usd": 0
           },
           "reason": "",
-          "target": "<= 5s and $0 (tier M)",
-          "value": "0.266 s ($0)",
+          "target": "<= 5s and $0 (measured on anyq, tier S, not tier M)",
+          "value": "0.283 s ($0)",
           "verdict": "win"
         },
         "ua": {
           "reason": "distributed only as a Claude Code plugin, and `/understand` is a multi-agent LLM pipeline: there is no headless CLI, so the only way to drive it is `claude --plugin-dir <clone>/understand-anything-plugin -p \"/understand\"` against a clone pinned at v2.9.0, inside the scratch HOME. That spends model tokens on every commit of every metric, so this harness does not run it and never installs the plugin into the machine’s real Claude Code configuration",
-          "target": "<= 5s and $0 (tier M)",
+          "target": "<= 5s and $0 (measured on anyq, tier S, not tier M)",
           "value": null,
           "verdict": "na"
         }
@@ -474,6 +474,7 @@
     }
   },
   "suite": "headtohead",
+  "sync": [],
   "target": {
     "commits": 0,
     "files": 148,

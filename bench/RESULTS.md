@@ -13,7 +13,7 @@ Suites with no result file in `bench/results/`, rendered as `not run`: agent.
 | cores | 16 |
 | cpu | Apple M4 Max |
 | go | go version go1.25.3 darwin/arm64 |
-| greplostSha | dfb733a |
+| greplostSha | b908e0f |
 | greplostVersion | 0.0.1 |
 | memoryGB | 128 |
 | node | 24.3.0 |
@@ -32,7 +32,7 @@ Suites with no result file in `bench/results/`, rendered as `not run`: agent.
 | Component | Version |
 |---|---|
 | greplostVersion | 0.0.1 |
-| greplostSha | dfb733a |
+| greplostSha | b908e0f |
 | bun | 1.2.21 |
 | node | 24.3.0 |
 | go | go version go1.25.3 darwin/arm64 |
@@ -44,7 +44,7 @@ Suites with no result file in `bench/results/`, rendered as `not run`: agent.
 
 greplost against Graphify, Understand-Anything and code-review-graph (tech spec 3.1, 10.0). The `vs` columns are greplost's verdict against that tool: `win` means greplost came out ahead by the metric's margin, `tie` inside it, `loss` behind it, `n/a` when the tool could not be run at all. Every loss and every `n/a` carries its reason.
 
-- X1, X4, X5, X6: Measured 2026-09-02 at dfb733a on anyq, tier S (148 files).
+- X1, X4, X5, X6: Measured 2026-09-02 at 173a463 on anyq, tier S (148 files).
 - X2, X3: Measured 2026-09-02 at b908e0f on hono, tier M (248 files, 100 commits).
 
 | ID | Target | Measured | vs graphify | vs ua | vs crg | Reason on loss |
@@ -53,8 +53,8 @@ greplost against Graphify, Understand-Anything and code-review-graph (tech spec 
 | X2 | greplost F1 >= 0.99 after 100 commits | 1 | tie (decay +0.0052 (0.131 to 0.125)) | n/a | tie (decay -0.0028 (0.894 to 0.897)) | greplost: greplost started the walk at 1 import F1 and ended at 1, a fall of 0.000. The level is coverage (X1's subject); only the fall is staleness |
 | X3 | <= 1% of ua, <= 20% of graphify over 100 commits | $0, 0.299 min | win ($0, 2.365 min) | n/a | win ($0, 0.858 min) | greplost: evaluated on the graphify arm of the target only: 12.6% of graphify's wall-clock (target <= 20%). The ua arm cannot be evaluated — Understand-Anything has no headless entry point here, so no cost exists to take 1% of. |
 | X4 | 0 bytes differ | 0 bytes | tie (0 bytes) | n/a | win (5160286 bytes) |  |
-| X5 | <= 10 artifact lines | 54 of 10511 lines | loss (24 of 99031 lines) | n/a | win (60 of 88119 lines) | greplost: 54 artifact lines of 10511 changed across 12 files for a one-line source change; the target is 10 lines. Where: `manifest.json` 20 lines, `packages/anyq__kafka/MAP.md` 8 lines, `packages/anyq__example-retry-strategies/MAP.md` 7 lines, `packages/anyq__example-retry-strategies/modules/src/adapters/kafka.ts.md` 4 lines, and 8 more files |
-| X6 | <= 5s and $0 (measured on anyq, tier S, not tier M) | 0.266 s ($0) | win (2.062 s) | n/a | win (1.125 s) |  |
+| X5 | <= 10 artifact lines | 54 of 10511 lines | loss (24 of 99031 lines) | n/a | win (60 of 88119 lines) | greplost: 54 artifact lines of 10511 changed across 12 files for a one-line source change; the target is 10 lines. Where: `manifest.json` 20 lines, `packages/anyq__kafka/MAP.md` 8 lines, `packages/anyq__example-retry-strategies/MAP.md` 7 lines, `packages/anyq__example-retry-strategies/modules/src/adapters/kafka.ts.md` 4 lines, and 8 more files; graphify: 24 of 99031 artifact lines changed against greplost's 54 of 10511, a quieter diff than greplost's. Where: `graphify-out/graph.json` 12 lines, `graphify-out/GRAPH_REPORT.md` 6 lines, `graphify-out/manifest.json` 6 lines |
+| X6 | <= 5s and $0 (measured on anyq, tier S, not tier M) | 0.283 s ($0) | win (2.159 s) | n/a | win (1.207 s) |  |
 | X7 | accuracy >= best, tool calls <= 50% of best | n/a | n/a | n/a | n/a |  |
 | X8 | <= 50% of best competitor tokens | n/a | n/a | n/a | n/a |  |
 | X9 | fastest, highest hit rate | n/a | n/a | n/a | n/a |  |
@@ -65,7 +65,7 @@ greplost against Graphify, Understand-Anything and code-review-graph (tech spec 
 - **X3** Cost to stay fresh over 100 replayed commits: greplost $0, 0.299 min, graphify $0, 2.365 min, ua n/a, crg $0, 0.858 min
 - **X4** Reproducibility: two builds of one commit: greplost 0 bytes, graphify 0 bytes, ua n/a, crg 5160286 bytes
 - **X5** Diff signal after a one-line change: greplost 54 of 10511 lines, graphify 24 of 99031 lines, ua n/a, crg 60 of 88119 lines
-- **X6** Cold start to first usable map: greplost 0.266 s ($0), graphify 2.062 s, ua n/a, crg 1.125 s
+- **X6** Cold start to first usable map: greplost 0.283 s ($0), graphify 2.159 s, ua n/a, crg 1.207 s
 - **X7** Agent structural tasks: greplost n/a, graphify n/a, ua n/a, crg n/a
 - **X8** Orientation cost: greplost n/a, graphify n/a, ua n/a, crg n/a
 - **X9** Reviewer task: spot the new cross-package dependency: greplost n/a, graphify n/a, ua n/a, crg n/a
@@ -81,16 +81,6 @@ greplost against Graphify, Understand-Anything and code-review-graph (tech spec 
 > ua: N/A — distributed only as a Claude Code plugin, and `/understand` is a multi-agent LLM pipeline: there is no headless CLI, so the only way to drive it is `claude --plugin-dir <clone>/understand-anything-plugin -p "/understand"` against a clone pinned at v2.9.0, inside the scratch HOME. That spends model tokens on every commit of every metric, so this harness does not run it and never installs the plugin into the machine’s real Claude Code configuration.
 > crg: `build` + `visualize --format json` produce the artifact; `graph.db` is excluded from the byte comparison because a SQLite page layout is not the tool's output contract. `code-review-graph install` runs only in X2's documented-sync arm and only with HOME, XDG_* and CLAUDE_CONFIG_DIR pointed inside bench/.competitors/home.
 > crg: every command ran with HOME=bench/.competitors/home (XDG and CLAUDE_CONFIG_DIR pointed inside it), so nothing it writes outside the repo copy reaches the machine's real configuration.
-> X1: both sides restricted to the 148 files the TypeScript compiler loaded, and both scored over every edge each tool emits at any confidence. The confidence=high arm (greplost's S3 gate, graphify's and crg's `EXTRACTED` tier) is reported beside it in each cell's detail; scoring greplost at high while scoring a competitor at every confidence would flatter greplost on precision by construction.
-> X4: every tool is built twice on the same tree, each build in its own process, and the differing bytes of its documented artifact files are counted after trimming the common prefix and suffix (an upper bound on the edit distance, exact for a single contiguous change). greplost is compared over the structure artifacts `listStructurePaths` enumerates; viewer and database files are excluded per competitor, and each cell's `caveat` says which.
-> X5: the one-line change is `import "./kafka.js";` appended to `apps/examples/retry-strategies/src/adapters/nats.ts`, adding the edge apps/examples/retry-strategies/src/adapters/nats.ts -> apps/examples/retry-strategies/src/adapters/kafka.ts.
-> X5: lines changed is added plus removed lines from a line-level longest-common-subsequence per artifact file (multiset difference above 4000 lines).
-> X5 readability (tech spec 10.0's "can a human read the architectural change from the diff alone"): greplost added a line naming both the importer and the imported module; graphify, crg did not, so the new edge is not legible in the diff at any length.
-> X6: timed from a fresh copy of the repo (no cache, no artifact) to the tool's own first usable output, 3 runs each, median reported and the spread in each cell's detail, every tool in its own child process so interpreter startup is counted for all of them. greplost's command is `greplost init --no-hooks` and its USD is 0; a competitor's documented first pass may cost model tokens, and where the no-LLM path was used instead the cell's caveat says so.
-> graphify sync mechanism (X2, from bench/competitors.json): git hooks.
-> ua sync mechanism (X2, from bench/competitors.json): git post-commit hook, opt-in.
-> crg sync mechanism (X2, from bench/competitors.json): platform hooks plus a watcher.
-> Mechanical staleness check (tech spec 10.0 X2): greplost has `verify` (byte comparison against a rebuild, exit 1 on drift). None of the three competitors ships an equivalent: their artifacts are refreshed, never checked.
 > X2: the walk is 100 synthetic commits over hono, each adding one resolvable import line, scored every 12 commits against compiler truth at that commit.
 > X2: the plotted number is import edge F1 against compiler truth at that commit, and the curve starts at commit 0 with each tool's freshly built artifact. The **level** of a line is that tool's import coverage, not its freshness: the four tools do not model imports alike, and X1 measures how far apart they start (on this corpus graphify recalls a small fraction of the import edges the compiler sees). The **fall** of a line between commit 0 and the last commit is the staleness this metric is about, and it is reported as `decay` in every cell. A reader comparing two end-points is comparing coverage plus decay; only the decay belongs to X2. Call F1 is in each cell's detail.
 > X2 arm `documented-sync` (`syncF1@<commit>` in each cell's detail): each tool's own sync mechanism was installed exactly as its README describes and then left alone: the harness commits, and nothing else.
@@ -101,6 +91,16 @@ greplost against Graphify, Understand-Anything and code-review-graph (tech spec 
 > X2: how much of the gap is coverage and how much is staleness — graphify: end-point gap 0.875, of which 0.869 was already there at commit 0 (coverage) and 0.005 is the difference in decay; crg: end-point gap 0.103, of which 0.106 was already there at commit 0 (coverage) and -0.003 is the difference in decay. X1 is where a coverage difference belongs; X2 is only the fall.
 > X3: every tool's wall-clock is the run time of the child processes its own commit-time mechanism started, interpreter startup included, measured the same way for greplost as for the competitors. crg's `visualize --format json` export is outside that number: its hook does not run it, and it is invoked by this suite only at scoring checkpoints, because greplost has no export step to charge against it.
 > X3: every tool that ran here ran its no-LLM path, so USD is 0 for all of them and the verdict falls to wall-clock. That is not the tech spec's comparison, which costs each tool's *documented* refresh: graphify's `/graphify` first pass and Understand-Anything's `/understand` are LLM pipelines whose USD this harness cannot measure without model credentials. The zero is what was measured, not a claim that their documented path is free.
+> graphify sync mechanism (X2, from bench/competitors.json): git hooks.
+> ua sync mechanism (X2, from bench/competitors.json): git post-commit hook, opt-in.
+> crg sync mechanism (X2, from bench/competitors.json): platform hooks plus a watcher.
+> Mechanical staleness check (tech spec 10.0 X2): greplost has `verify` (byte comparison against a rebuild, exit 1 on drift). None of the three competitors ships an equivalent: their artifacts are refreshed, never checked.
+> X1: both sides restricted to the 148 files the TypeScript compiler loaded, and both scored over every edge each tool emits at any confidence. The confidence=high arm (greplost's S3 gate, graphify's and crg's `EXTRACTED` tier) is reported beside it in each cell's detail; scoring greplost at high while scoring a competitor at every confidence would flatter greplost on precision by construction.
+> X4: every tool is built twice on the same tree, each build in its own process, and the differing bytes of its documented artifact files are counted after trimming the common prefix and suffix (an upper bound on the edit distance, exact for a single contiguous change). greplost is compared over the structure artifacts `listStructurePaths` enumerates; viewer and database files are excluded per competitor, and each cell's `caveat` says which.
+> X5: the one-line change is `import "./kafka.js";` appended to `apps/examples/retry-strategies/src/adapters/nats.ts`, adding the edge apps/examples/retry-strategies/src/adapters/nats.ts -> apps/examples/retry-strategies/src/adapters/kafka.ts.
+> X5: lines changed is added plus removed lines from a line-level longest-common-subsequence per artifact file (multiset difference above 4000 lines).
+> X5 readability (tech spec 10.0's "can a human read the architectural change from the diff alone"): greplost added a line naming both the importer and the imported module; graphify, crg did not, so the new edge is not legible in the diff at any length.
+> X6: timed from a fresh copy of the repo (no cache, no artifact) to the tool's own first usable output, 3 runs each, median reported and the spread in each cell's detail, every tool in its own child process so interpreter startup is counted for all of them. greplost's command is `greplost init --no-hooks` and its USD is 0; a competitor's documented first pass may cost model tokens, and where the no-LLM path was used instead the cell's caveat says so.
 
 **X2 (hero chart): freshness under each tool's own sync mechanism, F1 vs commit**
 
@@ -113,7 +113,7 @@ xychart-beta
     line [0.131, 0.131, 0.129, 0.126, 0.124, 0.127, 0.128, 0.126, 0.126, 0.125]
     line [0.894, 0.896, 0.898, 0.9, 0.902, 0.904, 0.906, 0.908, 0.9, 0.897]
     %% series, in order: greplost, graphify, crg
-    %% Arm: documented-sync — each tool's sync mechanism was installed exactly as its README describes and then left alone; the harness only commits. This is the arm tech spec 10.0 X2 words. Read the FALL of each line, not its height: the height is that tool's import coverage (X1's subject) and only the fall is staleness. At commit 0 the freshly built artifacts scored greplost 1.000, graphify 0.131, crg 0.894; over the walk they moved greplost +0.000, graphify -0.005, crg +0.003. The distance between the lines is mostly that starting difference, which is coverage and belongs to X1; the staleness X2 measures is the movement. Omitted (not run here): ua. Measured on corpus hono, tier M (248 files); 100 replayed commits.
+    %% Arm: documented-sync — each tool's sync mechanism was installed exactly as its README describes and then left alone; the harness only commits. This is the arm tech spec 10.0 X2 words. Read the FALL of each line, not its height: the height is that tool's import coverage (X1's subject) and only the fall is staleness. At commit 0 the freshly built artifacts scored greplost 1.000, graphify 0.131, crg 0.894; over the walk their decay (F1 at commit 0 minus F1 at the last commit) was greplost 0.000, graphify +0.005, crg -0.003, a negative decay being ground gained. The distance between the lines is mostly that starting difference, which is coverage and belongs to X1; the staleness X2 measures is the movement. Omitted (not run here): ua. Measured on corpus hono, tier M (248 files); 100 replayed commits.
 ```
 
 ![X2 (hero chart): freshness under each tool's own sync mechanism, F1 vs commit](../docs/assets/x2-staleness.png)

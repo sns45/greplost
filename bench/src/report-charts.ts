@@ -280,12 +280,18 @@ export function freshnessNote(
     const decay = x2.tools[series.name]?.detail?.["decay"] ?? null;
     if (at0 === null) continue;
     starts.push(`${series.name} ${at0.toFixed(3)}`);
-    if (decay !== null) falls.push(`${series.name} ${decay > 0 ? "-" : "+"}${Math.abs(decay).toFixed(3)}`);
+    // Signed the way the table's `decay` column is signed — F1 at commit 0
+    // minus F1 at the last commit — so the chart and the row cannot appear to
+    // disagree about which way a tool moved.
+    if (decay !== null) falls.push(`${series.name} ${decay > 0 ? "+" : ""}${decay.toFixed(3)}`);
   }
   if (starts.length === 0) return "";
   return (
     ` At commit 0 the freshly built artifacts scored ${starts.join(", ")}` +
-    (falls.length === 0 ? "." : `; over the walk they moved ${falls.join(", ")}.`) +
+    (falls.length === 0
+      ? "."
+      : `; over the walk their decay (F1 at commit 0 minus F1 at the last commit) was ${falls.join(", ")}, ` +
+        "a negative decay being ground gained.") +
     " The distance between the lines is mostly that starting difference, which is coverage and belongs to X1;" +
     " the staleness X2 measures is the movement."
   );
