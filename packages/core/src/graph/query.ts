@@ -9,6 +9,7 @@
 
 import type { CallEdge, Declaration, ImportEdge } from "../schema.ts";
 import { compareDeclarations, compareStrings } from "../schema.ts";
+import { importTargetsOf } from "./directories.ts";
 
 /**
  * Declarations matching `needle`, in three tiers, the first non-empty one wins:
@@ -41,12 +42,20 @@ export function findSymbols(symbols: Declaration[], needle: string): Declaration
  * Repo files that import `file`, over `import` and `reexport` edges. Sorted,
  * unique: a file that imports another twice (a value import and a type import,
  * say) is listed once.
+ *
+ * An edge that targets the *directory* `file` lives in counts too: a Go import
+ * names a package, so importing `internal/store` imports every `.go` file in it
+ * (tech spec Appendix C). `importTargetsOf` is the shared expansion rule; a
+ * target id is either an indexed file path or a directory path, never both, so
+ * this can never fold two different modules together.
  */
 export function importersOf(imports: ImportEdge[], file: string): string[] {
+  const targets = new Set(importTargetsOf(file));
   const importers = new Set<string>();
   for (const edge of imports) {
     if (edge.kind !== "import" && edge.kind !== "reexport") continue;
-    if (edge.to !== file) continue;
+    if (!targets.has(edge.to)) continue;
+    if (edge.from === file) continue;
     importers.add(edge.from);
   }
   return [...importers].sort(compareStrings);

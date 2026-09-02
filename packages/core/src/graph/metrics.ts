@@ -13,9 +13,10 @@ import type {
   PackageEntry,
   PackageInfo,
 } from "../schema.ts";
-import { compareStrings, isFileId } from "../schema.ts";
+import { compareStrings } from "../schema.ts";
 import { packageOf } from "../resolve/index.ts";
 import { blastRadius } from "./blast.ts";
+import { expandDirectoryTargets } from "./directories.ts";
 import { stronglyConnected } from "./tarjan.ts";
 
 /** The parts of a `FileEntry` this leaf can compute; the rest comes from the build. */
@@ -40,18 +41,15 @@ export function computeMetrics(
   imports: ImportEdge[],
 ): ComputedMetrics {
   const paths = [...new Set(files.map((f) => f.path))].sort(compareStrings);
-  const known = new Set(paths);
 
   // File-to-file edges, duplicates kept: the package edge count is the number of
   // file-level edges behind it. Self-imports carry no structure at all.
-  const edges: Array<[string, string]> = [];
-  for (const edge of imports) {
-    if (edge.kind !== "import" && edge.kind !== "reexport") continue;
-    if (!isFileId(edge.to)) continue;
-    if (!known.has(edge.from) || !known.has(edge.to)) continue;
-    if (edge.from === edge.to) continue;
-    edges.push([edge.from, edge.to]);
-  }
+  //
+  // A Go import target is a package *directory* (tech spec Appendix C), so it is
+  // expanded to the indexed files of that directory before anything is measured;
+  // a file target passes through unchanged, which leaves every TypeScript number
+  // byte-identical.
+  const edges = expandDirectoryTargets(imports, paths);
 
   const fanIn = new Map<string, Set<string>>();
   const fanOut = new Map<string, Set<string>>();

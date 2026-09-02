@@ -30,6 +30,17 @@
  * Cycles are always empty: Go forbids import cycles between packages, and these
  * edges run from a file to a directory, so the graph has no cycle to find.
  *
+ * Residual, disclosed as the `cha-over-approximation` note: CHA resolves a
+ * dynamic call to *every* function whose signature or interface method matches,
+ * so the call truth is an over-approximation of the real call graph. S3 recall
+ * is therefore a floor rather than a measurement, and S3 *precision* cannot see
+ * a predicted edge that happens to be one of CHA's extra candidates. That is
+ * why the extractor withholds a call whose callee is a locally bound name
+ * instead of leaving it for the oracle to catch (leaf 1.8 fix round 1).
+ *
+ * An empty result is an error, never a score: a run where the toolchain loaded
+ * nothing would otherwise report four vacuous 1.000s and pass the gate.
+ *
  * The helper is compiled once into `bench/.corpus/.tools/`, named by a hash of
  * its own sources and `go.sum`, so a pinned dependency change rebuilds it and
  * nothing else does.
@@ -55,6 +66,7 @@ const MAX_BUFFER = 512 * 1024 * 1024;
 export const GO_TRUTH_NOTES = [
   "go-packages-per-file-imports",
   "cha-callgraph",
+  "cha-over-approximation",
 ] as const;
 
 /** The document `gocallgraph` prints. */
@@ -172,6 +184,23 @@ export function generateGoTruth(root: string, files: string[]): Truth {
 
   const covered = tool.files.filter((file) => requested.has(file)).sort(compareStrings);
   const coveredSet = new Set(covered);
+
+  // Integrity guard (tech spec 10.1, principle 2). An empty truth set scores an
+  // empty prediction as a perfect 1.000 across the board, so a repo the Go
+  // toolchain could not load must fail the run rather than rubber-stamp it.
+  // `packages` is decoded from the helper for exactly this question.
+  if (tool.packages === 0) {
+    throw new Error(
+      `greplost: go truth is empty for ${absRoot} (go list matched no packages` +
+        `${tool.errors[0] === undefined ? "" : `; first error: ${tool.errors[0]}`})`,
+    );
+  }
+  if (files.length > 0 && covered.length === 0) {
+    throw new Error(
+      `greplost: go truth is empty for ${absRoot} (the Go toolchain loaded none of the ` +
+        `${files.length} requested files; ${tool.files.length} file(s) were loaded from elsewhere)`,
+    );
+  }
 
   const imports = tool.imports
     .filter((e) => coveredSet.has(e.from))
