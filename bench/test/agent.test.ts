@@ -1,0 +1,672 @@
+/**
+ * Leaf 1.5.6: Eval 4, the agent navigation benchmark (tech spec 10.6, A1 to A4).
+ *
+ * Three things are tested and nothing else is: task generation from compiler
+ * truth, the deterministic scorers, and the runner's envelope handling driven by
+ * a fake `claude` binary. The real `claude` is never invoked from a test.
+ */
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+import { generateTsTruth, listTypeScriptFiles, type Truth } from "../src/truth/ts.ts";
+import {
+  ANSWER_FILES,
+  ANSWER_FILES_AND_SYMBOLS,
+  generateStructuralTasks,
+  loadFlowTasks,
+  type Task,
+  type TaskCategory,
+} from "../src/tasks.ts";
+import { extractAnswer, lcsRatio, resolveClaude, run, scoreAnswer, summarize } from "../src/agent.ts";
+
+const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
+const FIXTURE = path.join(REPO_ROOT, "fixtures", "tiny-ts");
+
+/** Compiler truth for `fixtures/tiny-ts`, built once for every describe below. */
+let fixtureTruth: Truth;
+
+beforeAll(() => {
+  fixtureTruth = generateTsTruth(FIXTURE, listTypeScriptFiles(FIXTURE));
+});
+
+/** The one task of `category` whose prompt mentions `needle`. */
+function about(tasks: Task[], category: string, needle: string): Task {
+  const found = tasks.filter((task) => task.category === category && task.prompt.includes(needle));
+  if (found.length !== 1) {
+    throw new Error(`expected 1 ${category} task about ${needle}, got ${found.length}`);
+  }
+  return found[0] as Task;
+}
+
+describe("tasks", () => {
+  test("splits n across the four structural categories with stable ids", () => {
+    const tasks = generateStructuralTasks("tiny-ts", fixtureTruth, 8);
+    expect(tasks).toHaveLength(8);
+    expect(tasks.map((task) => task.id)).toEqual([
+      "tiny-ts-def-01",
+      "tiny-ts-def-02",
+      "tiny-ts-imp-01",
+      "tiny-ts-imp-02",
+      "tiny-ts-call-01",
+      "tiny-ts-call-02",
+      "tiny-ts-blast-01",
+      "tiny-ts-blast-02",
+    ]);
+    expect(tasks.map((task) => task.category)).toEqual([
+      "definition",
+      "definition",
+      "importers",
+      "importers",
+      "callers",
+      "callers",
+      "blast_radius",
+      "blast_radius",
+    ]);
+  });
+
+  test("is deterministic for a seed and moves with the seed", () => {
+    const a = generateStructuralTasks("tiny-ts", fixtureTruth, 8);
+    const b = generateStructuralTasks("tiny-ts", fixtureTruth, 8);
+    expect(b).toEqual(a);
+
+    const other = generateStructuralTasks("tiny-ts", fixtureTruth, 8, 7);
+    expect(other.map((task) => task.id)).toEqual(a.map((task) => task.id));
+    // Same ids, different subjects: the ids are positions, the seed picks the subjects.
+    expect(other.map((task) => task.prompt)).not.toEqual(a.map((task) => task.prompt));
+  });
+
+  test("every prompt ends with the exact answer instruction", () => {
+    const tasks = generateStructuralTasks("tiny-ts", fixtureTruth, 200);
+    expect(tasks.length).toBeGreaterThan(8);
+    for (const task of tasks) {
+      const expected = task.category === "callers" ? ANSWER_FILES_AND_SYMBOLS : ANSWER_FILES;
+      expect(task.prompt.endsWith(expected)).toBe(true);
+    }
+    expect(ANSWER_FILES).toBe('Answer with a JSON block {"files": [...]}');
+    expect(ANSWER_FILES_AND_SYMBOLS).toBe('Answer with a JSON block {"files": [...], "symbols": [...]}');
+  });
+
+  test("definition truth is the declaring file", () => {
+    const tasks = generateStructuralTasks("tiny-ts", fixtureTruth, 200);
+    expect(about(tasks, "definition", "`retry`").truth.files).toEqual(["packages/core/src/retry.ts"]);
+    expect(about(tasks, "definition", "`Registry`").truth.files).toEqual(["packages/core/src/registry.ts"]);
+    expect(about(tasks, "definition", "`formatEvent`").truth.files).toEqual(["packages/core/src/events.ts"]);
+  });
+
+  test("importers truth is the direct importers from the truth graph", () => {
+    const tasks = generateStructuralTasks("tiny-ts", fixtureTruth, 200);
+    expect(about(tasks, "importers", "packages/core/src/types.ts").truth.files).toEqual([
+      "packages/core/src/bus.ts",
+      "packages/core/src/index.ts",
+      "packages/core/src/queue.ts",
+    ]);
+    expect(about(tasks, "importers", "packages/core/src/retry.ts").truth.files).toEqual([
+      "packages/core/src/index.ts",
+      "packages/core/src/registry.ts",
+    ]);
+  });
+
+  test("callers truth is the calling files and their enclosing symbols", () => {
+    const tasks = generateStructuralTasks("tiny-ts", fixtureTruth, 200);
+    const task = about(tasks, "callers", "`retry`");
+    expect(task.truth.files).toEqual(["packages/adapters/src/sqs.ts", "packages/core/src/registry.ts"]);
+    expect(task.truth.symbols).toEqual(["Registry.publishAll", "SqsAdapter.publish"]);
+    expect(task.prompt).toContain("packages/core/src/retry.ts");
+  });
+
+  test("blast_radius truth is the cycle-safe reverse import closure", () => {
+    const tasks = generateStructuralTasks("tiny-ts", fixtureTruth, 200);
+    expect(about(tasks, "blast_radius", "packages/core/src/retry.ts").truth.files).toEqual([
+      "apps/worker/src/main.ts",
+      "packages/adapters/src/index.ts",
+      "packages/adapters/src/memory.ts",
+      "packages/adapters/src/sqs.ts",
+      "packages/core/src/index.ts",
+      "packages/core/src/registry.ts",
+    ]);
+    // bus <-> events is a cycle in the fixture: the closure must terminate and
+    // must not contain the subject itself.
+    const bus = about(tasks, "blast_radius", "packages/core/src/bus.ts");
+    expect(bus.truth.files).toEqual([
+      "apps/worker/src/main.ts",
+      "packages/adapters/src/index.ts",
+      "packages/adapters/src/memory.ts",
+      "packages/adapters/src/sqs.ts",
+      "packages/core/src/events.ts",
+      "packages/core/src/index.ts",
+      "packages/core/src/registry.ts",
+    ]);
+  });
+
+  test("every truth file is inside the truth universe and never the subject", () => {
+    const universe = new Set(fixtureTruth.files);
+    for (const task of generateStructuralTasks("tiny-ts", fixtureTruth, 200)) {
+      expect(task.truth.files.length).toBeGreaterThan(0);
+      for (const file of task.truth.files) expect(universe.has(file)).toBe(true);
+      expect(task.truth_source).toContain("tsc");
+      // A callers prompt asks for symbols, so a callers task must have some: the
+      // fixture's top-level call into `main` is not a task.
+      if (task.category === "callers") expect((task.truth.symbols ?? []).length).toBeGreaterThan(0);
+      else expect(task.truth.symbols).toBeUndefined();
+    }
+    // `main` is only ever called from its own file's top level, so it is a
+    // definition subject but never a callers subject.
+    const tasks = generateStructuralTasks("tiny-ts", fixtureTruth, 200);
+    expect(tasks.some((task) => task.category === "definition" && task.prompt.includes("`main`"))).toBe(true);
+    expect(tasks.some((task) => task.category === "callers" && task.prompt.includes("`main`"))).toBe(false);
+  });
+
+  test("asks for at most the number of candidates the truth can supply", () => {
+    const empty: Truth = { files: [], imports: [], exports: {}, calls: [], cycles: [], notes: [] };
+    expect(generateStructuralTasks("void", empty, 12)).toEqual([]);
+  });
+
+  test("loads the curated flow tasks for hono and anyq", () => {
+    for (const repo of ["hono", "anyq"]) {
+      const tasks = loadFlowTasks(repo);
+      expect(tasks.length).toBeGreaterThanOrEqual(3);
+      for (const task of tasks) {
+        expect(task.category).toBe("flow");
+        expect(task.id.startsWith(`${repo}-flow-`)).toBe(true);
+        expect(task.truth.files.length).toBeGreaterThanOrEqual(2);
+        expect(task.truth_source).toContain("hand-curated");
+        expect(task.prompt.endsWith(ANSWER_FILES)).toBe(true);
+      }
+      expect(new Set(tasks.map((t) => t.id)).size).toBe(tasks.length);
+    }
+    expect(loadFlowTasks("no-such-repo")).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// scoring
+// ---------------------------------------------------------------------------
+
+function handBuilt(category: TaskCategory, files: string[], symbols?: string[]): Task {
+  return {
+    id: `t-${category}`,
+    category,
+    prompt: "irrelevant",
+    truth: symbols === undefined ? { files } : { files, symbols },
+    truth_source: "hand-built",
+  };
+}
+
+describe("scoring", () => {
+  test("takes the last fenced JSON block out of an answer", () => {
+    const text = [
+      "I first guessed wrong:",
+      "```json",
+      '{"files": ["a.ts"]}',
+      "```",
+      "then checked the map and the real answer is:",
+      "```json",
+      '{"files": ["src/b.ts", "src/c.ts"], "symbols": ["B.run"]}',
+      "```",
+    ].join("\n");
+    expect(extractAnswer(text)).toEqual({ files: ["src/b.ts", "src/c.ts"], symbols: ["B.run"] });
+  });
+
+  test("reads a bare object with a nested one inside it", () => {
+    // A lazy `\{.*?\}` would stop at the first closing brace and lose the files.
+    expect(extractAnswer('{"meta": {"why": "traced it"}, "files": ["a.ts", "b.ts"]}')).toEqual({
+      files: ["a.ts", "b.ts"],
+      symbols: [],
+    });
+    // A brace inside a string must not open a level.
+    expect(extractAnswer('{"note": "a } brace", "files": ["a.ts"]}')).toEqual({ files: ["a.ts"], symbols: [] });
+  });
+
+  test("accepts an unlabelled fence and a bare object, and rejects prose", () => {
+    expect(extractAnswer('```\n{"files": ["a.ts"]}\n```')).toEqual({ files: ["a.ts"], symbols: [] });
+    expect(extractAnswer('The answer is {"files": ["a.ts", "b.ts"]} and that is all.')).toEqual({
+      files: ["a.ts", "b.ts"],
+      symbols: [],
+    });
+    expect(extractAnswer("I could not find it.")).toBeNull();
+    expect(extractAnswer("```json\nnot json at all\n```")).toBeNull();
+  });
+
+  test("normalises the paths an agent is likely to write", () => {
+    const answer = extractAnswer('```json\n{"files": ["./src/a.ts", "/src/b.ts", "src\\\\c.ts", "src/a.ts"]}\n```');
+    expect(answer?.files).toEqual(["src/a.ts", "src/b.ts", "src/c.ts"]);
+  });
+
+  test("definition is an exact match, not an F1", () => {
+    const definition = handBuilt("definition", ["src/retry.ts"]);
+    expect(scoreAnswer(definition, { files: ["src/retry.ts"], symbols: [] }).score).toBe(1);
+    expect(scoreAnswer(definition, { files: ["./src/retry.ts"], symbols: [] }).score).toBe(1);
+    // A right answer with a spurious extra file is not a right answer.
+    expect(scoreAnswer(definition, { files: ["src/retry.ts", "src/index.ts"], symbols: [] }).score).toBe(0);
+    expect(scoreAnswer(definition, { files: ["src/index.ts"], symbols: [] }).score).toBe(0);
+  });
+
+  test("importers, callers and blast_radius are set F1 over files", () => {
+    const importers = handBuilt("importers", ["a.ts", "b.ts", "c.ts", "d.ts"]);
+    expect(scoreAnswer(importers, { files: ["a.ts", "b.ts", "c.ts", "d.ts"], symbols: [] }).score).toBe(1);
+    // 2 of 4 right, 2 wrong: precision 0.5, recall 0.5, F1 0.5.
+    expect(scoreAnswer(importers, { files: ["a.ts", "b.ts", "x.ts", "y.ts"], symbols: [] }).score).toBeCloseTo(0.5, 9);
+    expect(scoreAnswer(importers, { files: [], symbols: [] }).score).toBe(0);
+
+    const blast = handBuilt("blast_radius", ["a.ts", "b.ts"]);
+    // precision 2/3, recall 1 -> F1 0.8
+    expect(scoreAnswer(blast, { files: ["a.ts", "b.ts", "z.ts"], symbols: [] }).score).toBeCloseTo(0.8, 9);
+  });
+
+  test("callers scores files and reports a separate symbols F1", () => {
+    const callers = handBuilt("callers", ["a.ts", "b.ts"], ["A.run", "B.run"]);
+    const perfect = scoreAnswer(callers, { files: ["a.ts", "b.ts"], symbols: ["A.run", "B.run"] });
+    expect(perfect.score).toBe(1);
+    expect(perfect.symbolsF1).toBe(1);
+
+    // Files right, symbols half right: the category score stays the file score.
+    const half = scoreAnswer(callers, { files: ["a.ts", "b.ts"], symbols: ["A.run", "C.run"] });
+    expect(half.score).toBe(1);
+    expect(half.symbolsF1).toBeCloseTo(0.5, 9);
+
+    // A `file#Symbol` id counts as the symbol: the prompt asks for a name and the
+    // greplost id form carries one, so an agent quoting an id is not punished.
+    const ids = scoreAnswer(callers, { files: ["a.ts", "b.ts"], symbols: ["a.ts#A.run", "b.ts#B.run"] });
+    expect(ids.symbolsF1).toBe(1);
+  });
+
+  test("flow is an order-sensitive LCS ratio", () => {
+    const flow = handBuilt("flow", ["a.ts", "b.ts", "c.ts", "d.ts"]);
+    expect(scoreAnswer(flow, { files: ["a.ts", "b.ts", "c.ts", "d.ts"], symbols: [] }).score).toBe(1);
+    // Same set, reversed: LCS is 1 of 4 -> 2*1/(4+4) = 0.25.
+    expect(scoreAnswer(flow, { files: ["d.ts", "c.ts", "b.ts", "a.ts"], symbols: [] }).score).toBeCloseTo(0.25, 9);
+    // A correct prefix: LCS 2 -> 2*2/(2+4) = 0.666...
+    expect(scoreAnswer(flow, { files: ["a.ts", "b.ts"], symbols: [] }).score).toBeCloseTo(2 / 3, 9);
+    expect(scoreAnswer(flow, { files: [], symbols: [] }).score).toBe(0);
+    expect(lcsRatio(["a", "b", "c"], ["a", "x", "b", "y", "c"])).toBeCloseTo(0.75, 9);
+  });
+
+  test("an unparseable answer scores zero in every category", () => {
+    for (const category of ["definition", "importers", "callers", "blast_radius", "flow"] as const) {
+      const scored = scoreAnswer(handBuilt(category, ["a.ts"], ["A"]), null);
+      expect(scored.score).toBe(0);
+      expect(scored.parsed).toBe(false);
+    }
+  });
+
+  test("summarises a sample with mean, median, std, min and max", () => {
+    const stats = summarize([1, 2, 3, 4]);
+    expect(stats.mean).toBeCloseTo(2.5, 9);
+    expect(stats.median).toBeCloseTo(2.5, 9);
+    expect(stats.min).toBe(1);
+    expect(stats.max).toBe(4);
+    expect(stats.std).toBeCloseTo(Math.sqrt(1.25), 9);
+    expect(stats.n).toBe(4);
+    expect(summarize([]).n).toBe(0);
+    expect(summarize([5]).median).toBe(5);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// the runner, driven by a fake `claude` on PATH
+// ---------------------------------------------------------------------------
+
+/**
+ * A stand-in for the Claude Code CLI.
+ *
+ * It logs every invocation (cwd, argv, and whether the condition's artifacts are
+ * present), answers from a prompt -> answer table the test builds, and emits the
+ * envelope shape measured from `claude` 2.1.258 - including the fact that the
+ * `--output-format json` envelope carries *no* tool-call count, which is what
+ * makes the runner fall back to `stream-json`.
+ */
+const FAKE_CLAUDE = `#!/usr/bin/env bun
+import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+
+const argv = process.argv.slice(2);
+if (argv.includes("--version")) {
+  console.log("2.0.0-fake (Claude Code)");
+  process.exit(0);
+}
+if (argv.includes("--help")) {
+  // The flags the runner confirms before it spends anything.
+  console.log("-p, --print\\n--model <model>\\n--output-format <format>\\n--allowedTools <tools...>\\n--disallowedTools <tools...>\\n--verbose");
+  process.exit(0);
+}
+
+const cwd = process.cwd();
+const log = process.env.FAKE_CLAUDE_LOG;
+if (log) {
+  appendFileSync(
+    log,
+    JSON.stringify({
+      cwd,
+      argv,
+      greplost: existsSync(path.join(cwd, ".greplost", "INDEX.md")),
+    }) + "\\n",
+  );
+}
+
+const promptIndex = argv.indexOf("-p");
+const prompt = promptIndex === -1 ? "" : (argv[promptIndex + 1] ?? "");
+const answers = JSON.parse(readFileSync(process.env.FAKE_CLAUDE_ANSWERS ?? "", "utf8"));
+const answer = answers[prompt];
+const text = answer
+  ? "I read the map.\\n\\n\\u0060\\u0060\\u0060json\\n" + JSON.stringify(answer) + "\\n\\u0060\\u0060\\u0060\\n"
+  : "I could not work that out.";
+
+const envelope = {
+  type: "result",
+  subtype: "success",
+  is_error: false,
+  duration_ms: 1234,
+  duration_api_ms: 1000,
+  num_turns: 3,
+  result: text,
+  session_id: "fake-session",
+  total_cost_usd: 0.0125,
+  usage: {
+    input_tokens: 18,
+    cache_creation_input_tokens: 1200,
+    cache_read_input_tokens: 4000,
+    output_tokens: 302,
+  },
+  permission_denials: [],
+};
+
+const format = argv[argv.indexOf("--output-format") + 1];
+if (format === "stream-json") {
+  const say = (o) => process.stdout.write(JSON.stringify(o) + "\\n");
+  say({ type: "system", subtype: "init", model: "fake" });
+  say({ type: "assistant", message: { content: [{ type: "thinking", thinking: "" }] } });
+  say({ type: "assistant", message: { content: [{ type: "tool_use", id: "t1", name: "Read", input: {} }] } });
+  say({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "t1" }] } });
+  say({ type: "assistant", message: { content: [{ type: "tool_use", id: "t2", name: "Glob", input: {} }] } });
+  say({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "t2" }] } });
+  say({ type: "assistant", message: { content: [{ type: "text", text }] } });
+  say(envelope);
+} else {
+  process.stdout.write(JSON.stringify(envelope) + "\\n");
+}
+`;
+
+interface FakeInvocation {
+  cwd: string;
+  argv: string[];
+  greplost: boolean;
+}
+
+interface Harness {
+  dir: string;
+  resultsDir: string;
+  logFile: string;
+}
+
+let harness: Harness;
+let savedPath: string | undefined;
+let savedResultsDir: string | undefined;
+
+/** Every logged invocation that actually carried a prompt. */
+function invocations(): FakeInvocation[] {
+  if (!existsSync(harness.logFile)) return [];
+  return readFileSync(harness.logFile, "utf8")
+    .split("\n")
+    .filter((line) => line !== "")
+    .map((line) => JSON.parse(line) as FakeInvocation)
+    .filter((entry) => entry.argv.includes("-p"));
+}
+
+/** The single result file the runner wrote, parsed. */
+function writtenResult(): Record<string, unknown> {
+  const files = readdirSync(harness.resultsDir).filter((name) => name.endsWith(".json"));
+  expect(files).toHaveLength(1);
+  return JSON.parse(readFileSync(path.join(harness.resultsDir, files[0] as string), "utf8")) as Record<string, unknown>;
+}
+
+/** Answers keyed by prompt, so the fake can reply correctly to whatever it is asked. */
+function writeAnswerKey(tasks: Task[]): void {
+  const answers: Record<string, { files: string[]; symbols?: string[] }> = {};
+  for (const t of tasks) {
+    answers[t.prompt] =
+      t.truth.symbols === undefined ? { files: t.truth.files } : { files: t.truth.files, symbols: t.truth.symbols };
+  }
+  writeFileSync(path.join(harness.dir, "answers.json"), JSON.stringify(answers));
+}
+
+/** Reset the log and results between runner invocations. */
+function resetHarness(): void {
+  rmSync(harness.logFile, { force: true });
+  rmSync(harness.resultsDir, { recursive: true, force: true });
+  mkdirSync(harness.resultsDir, { recursive: true });
+}
+
+beforeAll(() => {
+  const dir = mkdtempSync(path.join(tmpdir(), "greplost-agent-test-"));
+  const bin = path.join(dir, "bin");
+  mkdirSync(bin, { recursive: true });
+  const fake = path.join(bin, "claude");
+  writeFileSync(fake, FAKE_CLAUDE);
+  chmodSync(fake, 0o755);
+
+  harness = { dir, resultsDir: path.join(dir, "results"), logFile: path.join(dir, "calls.jsonl") };
+  mkdirSync(harness.resultsDir, { recursive: true });
+
+  savedPath = process.env["PATH"];
+  savedResultsDir = process.env["GREPLOST_BENCH_RESULTS_DIR"];
+  process.env["PATH"] = `${bin}${path.delimiter}${savedPath ?? ""}`;
+  process.env["GREPLOST_BENCH_RESULTS_DIR"] = harness.resultsDir;
+  process.env["FAKE_CLAUDE_LOG"] = harness.logFile;
+  process.env["FAKE_CLAUDE_ANSWERS"] = path.join(dir, "answers.json");
+
+  // Hard stop before any test body runs: a throwing beforeAll fails the file
+  // rather than letting the runner reach the real `claude` and spend money.
+  if (resolveClaude() !== fake) {
+    throw new Error(`greplost: the fake claude is not first on PATH (resolved ${resolveClaude()})`);
+  }
+});
+
+afterAll(() => {
+  if (savedPath === undefined) delete process.env["PATH"];
+  else process.env["PATH"] = savedPath;
+  if (savedResultsDir === undefined) delete process.env["GREPLOST_BENCH_RESULTS_DIR"];
+  else process.env["GREPLOST_BENCH_RESULTS_DIR"] = savedResultsDir;
+  delete process.env["FAKE_CLAUDE_LOG"];
+  delete process.env["FAKE_CLAUDE_ANSWERS"];
+  rmSync(harness.dir, { recursive: true, force: true });
+});
+
+describe("fake claude", () => {
+  test("resolves the fake and never the real CLI", () => {
+    // The guard that matters most in this file: if PATH resolution ever regressed,
+    // every test below would spend real money against the real Claude Code.
+    expect(resolveClaude()).toBe(path.join(harness.dir, "bin", "claude"));
+  });
+
+  test("runs the fixture end to end in the gl condition and scores the canned answer 1.0", async () => {
+    resetHarness();
+    const tasks = generateStructuralTasks("tiny-ts", fixtureTruth, 4);
+    expect(tasks).toHaveLength(4);
+    writeAnswerKey(tasks);
+
+    const code = await run(["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "4"]);
+    expect(code).toBe(0);
+
+    const payload = writtenResult();
+    expect(payload["suite"]).toBe("agent");
+    expect(payload["claudeVersion"]).toBe("2.0.0-fake (Claude Code)");
+    expect(payload["runsPerTask"]).toBe(1);
+    expect(payload["conditions"]).toEqual(["gl"]);
+    expect((payload["tasks"] as Task[]).map((t) => t.id)).toEqual(tasks.map((t) => t.id));
+
+    const runs = payload["runs"] as Record<string, unknown>[];
+    expect(runs).toHaveLength(4);
+    for (const record of runs) {
+      expect(record["condition"]).toBe("gl");
+      expect(record["score"]).toBe(1);
+      expect(record["parsed"]).toBe(true);
+      expect(record["toolCalls"]).toBe(2);
+      expect(record["numTurns"]).toBe(3);
+      expect(record["costUsd"]).toBe(0.0125);
+      expect(record["tokens"]).toEqual({ input: 18, output: 302, cacheRead: 4000, cacheWrite: 1200, total: 5520 });
+      expect(record["wallMs"]).toBeGreaterThanOrEqual(0);
+    }
+
+    const aggregate = payload["aggregate"] as Record<string, Record<string, Record<string, { mean: number }>>>;
+    expect(aggregate["gl"]?.["overall"]?.["accuracy"]?.mean).toBe(1);
+    expect(aggregate["gl"]?.["overall"]?.["toolCalls"]?.mean).toBe(2);
+  });
+
+  test("prepares a real .greplost/ copy and passes the condition's flags", () => {
+    const calls = invocations();
+    expect(calls.length).toBeGreaterThanOrEqual(4);
+    for (const call of calls) {
+      // `greplost init --no-hooks` really ran in the copy the agent was pointed at.
+      expect(call.greplost).toBe(true);
+      expect(call.cwd).not.toBe(FIXTURE);
+      expect(call.argv).toContain("--model");
+      expect(call.argv).toContain("--allowedTools");
+      expect(call.argv[call.argv.indexOf("--allowedTools") + 1]).toBe("Read,Grep,Glob");
+      expect(call.argv).not.toContain("--disallowedTools");
+      // The prompt is passed verbatim: the fake answered by looking it up.
+      expect(call.argv[call.argv.indexOf("-p") + 1]).toContain("Answer with a JSON block");
+    }
+  });
+
+  test("falls back to stream-json once, then stays there, because the envelope has no tool-call count", () => {
+    const calls = invocations();
+    const format = (call: FakeInvocation): string => call.argv[call.argv.indexOf("--output-format") + 1] ?? "";
+    // 4 tasks, 1 run each: one json probe, one stream-json re-run of that same
+    // prompt for its tool-call count, then stream-json only.
+    expect(calls).toHaveLength(5);
+    expect(format(calls[0] as FakeInvocation)).toBe("json");
+    expect(format(calls[1] as FakeInvocation)).toBe("stream-json");
+    // Exactly one record is allowed to carry a count from a different session.
+    const probed = (writtenResult()["runs"] as Record<string, unknown>[]).filter((r) => r["toolCallsFromProbe"]);
+    expect(probed).toHaveLength(1);
+    expect((calls[1] as FakeInvocation).argv).toContain("--verbose");
+    expect((calls[1] as FakeInvocation).argv[(calls[1] as FakeInvocation).argv.indexOf("-p") + 1]).toBe(
+      (calls[0] as FakeInvocation).argv[(calls[0] as FakeInvocation).argv.indexOf("-p") + 1],
+    );
+    for (const call of calls.slice(2)) expect(format(call)).toBe("stream-json");
+  });
+
+  test("gl-strict disallows Grep and Glob", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 2));
+    const code = await run(["--fixture", "--condition", "gl-strict", "--runs", "1", "--tasks", "2"]);
+    expect(code).toBe(0);
+
+    for (const call of invocations()) {
+      expect(call.greplost).toBe(true);
+      expect(call.argv[call.argv.indexOf("--allowedTools") + 1]).toBe("Read");
+      expect(call.argv[call.argv.indexOf("--disallowedTools") + 1]).toBe("Grep,Glob");
+    }
+    const runs = writtenResult()["runs"] as Record<string, unknown>[];
+    expect(runs.length).toBeGreaterThan(0);
+    for (const record of runs) expect(record["score"]).toBe(1);
+  });
+
+  test("records a competitor with no installed artifacts as N/A instead of zero", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 2));
+    const code = await run(["--fixture", "--condition", "gl,graphify", "--runs", "1", "--tasks", "2"]);
+    expect(code).toBe(0);
+
+    const payload = writtenResult();
+    const unavailable = payload["unavailable"] as Record<string, string>;
+    expect(Object.keys(unavailable)).toEqual(["graphify"]);
+    expect(unavailable["graphify"]).toContain("bench/.competitors/graphify");
+    // Nothing was scored for it: N/A, not 0 (tech spec 10.0).
+    expect((payload["aggregate"] as Record<string, unknown>)["graphify"]).toBeUndefined();
+    for (const record of payload["runs"] as Record<string, unknown>[]) expect(record["condition"]).toBe("gl");
+    for (const call of invocations()) expect(call.argv).not.toContain("graphify");
+  });
+
+  test("records what the tool-call probe cost on top of the measured runs", () => {
+    // Written by the gl-strict run above: 2 tasks, one probe session.
+    const probe = writtenResult()["toolCallProbe"] as Record<string, number>;
+    expect(probe["sessions"]).toBe(1);
+    expect(probe["costUsd"]).toBe(0.0125);
+    expect(probe["tokens"]).toBe(5520);
+  });
+
+  test("an answer with no JSON block scores zero and is counted as unparsed", async () => {
+    resetHarness();
+    writeFileSync(path.join(harness.dir, "answers.json"), "{}");
+    const code = await run(["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "2"]);
+    expect(code).toBe(0);
+
+    const payload = writtenResult();
+    for (const record of payload["runs"] as Record<string, unknown>[]) {
+      expect(record["score"]).toBe(0);
+      expect(record["parsed"]).toBe(false);
+      expect(record["error"]).toBeNull();
+    }
+    const overall = (payload["aggregate"] as Record<string, Record<string, Record<string, number>>>)["gl"]?.["overall"];
+    expect(overall?.["unparsed"]).toBe(2);
+    // The CLI worked: an unreadable answer is not a broken session.
+    expect(overall?.["errors"]).toBe(0);
+  });
+
+  test("a run where every condition is N/A writes nothing and fails", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 2));
+    const code = await run(["--fixture", "--condition", "graphify,ua", "--runs", "1", "--tasks", "2"]);
+    expect(code).toBe(1);
+    expect(readdirSync(harness.resultsDir)).toEqual([]);
+    expect(invocations()).toEqual([]);
+  });
+
+  test("--gate reports A3 non-inferiority against base", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 2));
+    const lines: string[] = [];
+    const log = console.log;
+    console.log = (...args: unknown[]) => void lines.push(args.map(String).join(" "));
+    let code: number;
+    try {
+      code = await run(["--fixture", "--condition", "base,gl", "--runs", "1", "--tasks", "2", "--gate"]);
+    } finally {
+      console.log = log;
+    }
+    expect(code).toBe(0);
+    expect(lines[lines.length - 1]).toBe("agent: GATE PASS");
+    expect(writtenResult()["gate"]).toEqual({ passed: true, missed: [] });
+  });
+
+  test("wins, losses and ties are counted per task against base", async () => {
+    resetHarness();
+    // The fake answers from the prompt alone, so both conditions get the same
+    // answer and every task must come out a tie.
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 4));
+
+    const code = await run(["--fixture", "--condition", "base", "--condition", "gl", "--runs", "1", "--tasks", "4"]);
+    expect(code).toBe(0);
+
+    const payload = writtenResult();
+    expect(payload["conditions"]).toEqual(["base", "gl"]);
+    const table = payload["winLossTie"] as Record<string, { wins: number; losses: number; ties: number }>;
+    // Both conditions get the same canned answer, so every task is a tie.
+    expect(table["gl"]).toEqual({ wins: 0, losses: 0, ties: 4 });
+    expect(table["base"]).toBeUndefined();
+  });
+});
+
+describe("dry-run", () => {
+  test("prints the suite line, describes the payload shape, and writes nothing", async () => {
+    resetHarness();
+    const lines: string[] = [];
+    const log = console.log;
+    console.log = (...args: unknown[]) => void lines.push(args.map(String).join(" "));
+    let code: number;
+    try {
+      code = await run(["--fixture", "--dry-run"]);
+    } finally {
+      console.log = log;
+    }
+    expect(code).toBe(0);
+    expect(lines[lines.length - 1]).toBe("agent: dry-run ok");
+    expect(lines.join("\n")).toContain("runs");
+    expect(readdirSync(harness.resultsDir)).toEqual([]);
+    // Nothing was executed: a dry run must not need a `claude` on PATH at all.
+    expect(invocations()).toEqual([]);
+  });
+});

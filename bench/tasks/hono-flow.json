@@ -1,0 +1,52 @@
+[
+  {
+    "id": "hono-flow-01",
+    "category": "flow",
+    "prompt": "An HTTP GET request reaches `app.fetch(request)` on a default `new Hono()` app and a registered route handler runs. Trace, in order, the source files this request passes through, from the entry point to the point where the matched handler is invoked. List each file once, at the position where it is first involved, as repository-relative paths; skip barrel files that only re-export. Answer with a JSON block {\"files\": [...]}",
+    "truth": {
+      "files": [
+        "src/hono-base.ts",
+        "src/utils/url.ts",
+        "src/router/smart-router/router.ts",
+        "src/router/reg-exp-router/router.ts",
+        "src/context.ts",
+        "src/compose.ts"
+      ]
+    },
+    "truth_source": "hand-curated by the leaf 1.5.6 bench agent, verified against source at e2740d5a1bd0b4254e517e3af8b60789284bc7bd: src/hono-base.ts `fetch` -> `#dispatch` (l.469, l.406); `this.getPath(request)` is `getPath` from src/utils/url.ts (l.29 import, url.ts l.106); `this.router.match` is the default SmartRouter (src/hono.ts l.28) whose `match` replays deferred routes into RegExpRouter and delegates (src/router/smart-router/router.ts l.22); src/router/reg-exp-router/router.ts `add`/`match`; `new Context(request, {...})` (src/context.ts); `compose(matchResult[0], ...)` (src/compose.ts l.14) whose `dispatch` calls the matched handler"
+  },
+  {
+    "id": "hono-flow-02",
+    "category": "flow",
+    "prompt": "A route handler that runs behind a middleware throws an `HTTPException`. Trace, in order, the source files involved from that throw to the `Response` object the caller receives, assuming the app uses the default error handler. List each file once, at the position where it is first involved, as repository-relative paths; skip barrel files that only re-export. Answer with a JSON block {\"files\": [...]}",
+    "truth": {
+      "files": ["src/compose.ts", "src/hono-base.ts", "src/http-exception.ts", "src/context.ts"]
+    },
+    "truth_source": "hand-curated by the leaf 1.5.6 bench agent, verified against source at e2740d5a1bd0b4254e517e3af8b60789284bc7bd: src/compose.ts `dispatch` catches the throw and calls `onError(err, context)` (l.51-56); `onError` is the module-level `errorHandler` in src/hono-base.ts (l.34) which branches on `'getResponse' in err`; `HTTPException.getResponse()` builds the Response (src/http-exception.ts l.66); `c.newResponse(res.body, res)` returns it (src/context.ts)"
+  },
+  {
+    "id": "hono-flow-03",
+    "category": "flow",
+    "prompt": "A POST route uses `validator('json', fn)` and the client sends a `Content-Type: application/json` body that is not valid JSON, so the request ends as a 400. Trace, in order, the source files involved from the validator middleware running to the 400 `Response` being produced. List each file once, at the position where it is first involved, as repository-relative paths; skip barrel files that only re-export. Answer with a JSON block {\"files\": [...]}",
+    "truth": {
+      "files": [
+        "src/validator/validator.ts",
+        "src/request.ts",
+        "src/http-exception.ts",
+        "src/compose.ts",
+        "src/hono-base.ts",
+        "src/context.ts"
+      ]
+    },
+    "truth_source": "hand-curated by the leaf 1.5.6 bench agent, verified against source at e2740d5a1bd0b4254e517e3af8b60789284bc7bd: src/validator/validator.ts reads `c.req.header('Content-Type')` then `await c.req.json()` inside a try (l.89-99); both live in src/request.ts (`header` l.185, `json` l.250 via `#cachedBody('text').then(JSON.parse)`), and the JSON.parse rejection is what the validator catches; it throws `new HTTPException(400, ...)` (src/http-exception.ts); src/compose.ts `dispatch` catches it and calls `onError`; src/hono-base.ts `errorHandler` calls `err.getResponse()` and then `c.newResponse` (src/context.ts)"
+  },
+  {
+    "id": "hono-flow-04",
+    "category": "flow",
+    "prompt": "`app.get('/users/:id', handler)` is called on a default `new Hono()` app. Trace, in order, the source files involved in registering that route, up to and including the file that stores it in the router. List each file once, at the position where it is first involved, as repository-relative paths; skip barrel files that only re-export. Answer with a JSON block {\"files\": [...]}",
+    "truth": {
+      "files": ["src/hono-base.ts", "src/utils/url.ts", "src/router/smart-router/router.ts"]
+    },
+    "truth_source": "hand-curated by the leaf 1.5.6 bench agent, verified against source at e2740d5a1bd0b4254e517e3af8b60789284bc7bd: src/hono-base.ts defines `get` in the constructor's `allMethods.forEach` (l.129-138) which calls `#addRoute` (l.386); `#addRoute` calls `mergePath(this._basePath, path)` from src/utils/url.ts (l.29 import, url.ts l.171) and then `this.router.add(...)`; the default router is SmartRouter (src/hono.ts l.28), whose `add` pushes onto its deferred `#routes` list (src/router/smart-router/router.ts l.11)"
+  }
+]
