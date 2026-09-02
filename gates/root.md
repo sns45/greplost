@@ -7,10 +7,10 @@ Scope: the complete deliverable: tool, plugin, benchmark harness with measured r
   EXPECT: ALL MET
   EVIDENCE: gates/node-1.9.md: 13 gates | ALL MET (55 met)
 
-- [ ] T2: full suite green from a clean install
+- [x] T2: full suite green from a clean install
   CHECK: bun install --frozen-lockfile >/dev/null && bun test 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: pending
+  EVIDENCE: 14058 expect() calls | Ran 1238 tests across 36 files. [56.99s]
 
 - [x] T3: README shows numbers only with a link to RESULTS.md
   CHECK: grep -c 'bench/RESULTS.md' README.md
