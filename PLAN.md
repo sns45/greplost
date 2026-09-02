@@ -92,3 +92,4 @@ Append-only. One line per event.
 - 2026-09-02 wave 1 dispatched: 1.1.1, 1.1.2, 1.1.3, 1.1.4, 1.2.1, 1.5.1, 1.5.2, 1.5.3 (worktree subagents)
 - 2026-09-02 leaf 1.1.4 discover merged (5215fd8), driver re-verified 9/9 gates PASS; Ruling (leaf): fast-glob ignore option dropped so picomatch is the sole exclude mechanism in both discovery modes; task review dispatched
 - 2026-09-02 leaf 1.5.3 corpus merged (8a8a232), driver re-verified 6/6 gates PASS; corpus anyq+gin cloned; Rulings (leaf): --repo > --all > --tier precedence, unknown names throw; task review dispatched
+- 2026-09-02 leaf 1.2.1 render-primitives merged (935c067), driver re-verified 9/9 gates PASS; Rulings (leaf): split direction LR, flat-group pagination, overview pagination, edge-count summing, self-edge dropping (see report); task review dispatched
