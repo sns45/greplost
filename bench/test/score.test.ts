@@ -299,6 +299,7 @@ describe("structural gate", () => {
   };
 
   const truthOf = (overrides: Partial<Truth> = {}): Truth => ({
+    files: overrides.files ?? ["a.ts", "b.ts"],
     imports: overrides.imports ?? [{ from: "a.ts", to: "b.ts", kind: "import", symbols: [], confidence: "high" }],
     exports: overrides.exports ?? { "a.ts": ["run"], "b.ts": ["helper"] },
     calls: overrides.calls ?? [{ from: "a.ts#run", to: "b.ts#helper", kind: "call", symbols: [], confidence: "high" }],
@@ -454,6 +455,76 @@ describe("structural gate", () => {
       "ts",
     );
     expect(missedMetrics(scores)).toEqual(["S1", "S3"]);
+  });
+
+  test("an empty compiler truth is a gate miss, not four perfect scores", () => {
+    // The dangerous shape: greplost produced nothing *and* the compiler produced nothing,
+    // so every set comparison is vacuously perfect.
+    const blank = { sha256: "0", pkg: ".", lang: "ts" as const, loc: 10, fanIn: 0, fanOut: 0, blast: 0, staleSummary: false };
+    const scores = scoreAgainstTruth(
+      "tiny",
+      snapshotOf({
+        imports: [],
+        calls: [],
+        metrics: { cycles: [], packageEdges: [] },
+        manifest: {
+          version: "1",
+          packages: {},
+          files: { "a.ts": { ...blank, exports: [] }, "b.ts": { ...blank, exports: [] } },
+        },
+      }),
+      truthOf({ imports: [], exports: { "a.ts": [], "b.ts": [] }, calls: [] }),
+      "ts",
+    );
+    // Every metric is vacuously perfect, which is exactly why this must still fail.
+    expect(scores.S1.f1).toBe(1);
+    expect(scores.S3.f1).toBe(1);
+    expect(scores.S4).toBe(1);
+    expect(scores.truthEmpty).toBe(true);
+    expect(missedMetrics(scores)).toEqual(["truth-empty"]);
+  });
+
+  test("a repo the compiler genuinely sees as empty of files is not a truth-empty miss", () => {
+    const scores = scoreAgainstTruth(
+      "tiny",
+      snapshotOf({ files: [], imports: [], calls: [], metrics: { cycles: [], packageEdges: [] } }),
+      truthOf({ files: [], imports: [], exports: {}, calls: [] }),
+      "ts",
+    );
+    expect(scores.files).toBe(0);
+    expect(scores.truthEmpty).toBe(false);
+    expect(missedMetrics(scores)).toEqual([]);
+  });
+
+  test("files the truth generator could not cover leave the scored universe on both sides", () => {
+    // b.ts is in the snapshot but the compiler never loaded it, so its exports must not be
+    // scored as false positives.
+    const scores = scoreAgainstTruth(
+      "tiny",
+      snapshotOf(),
+      truthOf({
+        files: ["a.ts"],
+        imports: [],
+        exports: { "a.ts": ["run"] },
+        calls: [],
+      }),
+      "ts",
+    );
+    expect(scores.files).toBe(1);
+    expect(scores.S2.fp).toBe(0);
+    expect(scores.S2.fn).toBe(0);
+    // The a.ts -> b.ts import and the a.ts#run -> b.ts#helper call both leave the universe.
+    expect(scores.S1.fp).toBe(0);
+    expect(scores.S3.fp).toBe(0);
+    expect(missedMetrics(scores)).toEqual([]);
+  });
+
+  test("a truth generator with no `files` field falls back to the snapshot's own list", () => {
+    const legacy = truthOf();
+    delete (legacy as Partial<Truth>).files;
+    const scores = scoreAgainstTruth("tiny", snapshotOf(), legacy, "ts");
+    expect(scores.files).toBe(2);
+    expect(missedMetrics(scores)).toEqual([]);
   });
 
   test("locate falls back to line 1 when the snapshot has nothing more precise", () => {

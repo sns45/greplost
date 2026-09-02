@@ -11,6 +11,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { stableStringify } from "@greplost/core/schema";
 import { generateTsTruth, listTypeScriptFiles, type Truth } from "../src/truth/ts.ts";
+import { run } from "../src/structural.ts";
 
 const repoRoot = path.resolve(import.meta.dir, "..", "..");
 const fixtureRoot = path.join(repoRoot, "fixtures", "tiny-ts");
@@ -258,7 +259,80 @@ describe("resolution edge cases", () => {
     });
     const local = generateTsTruth(dir, ["src/a.ts", "src/b.ts"]);
     expect(edgeKeys(local.imports)).toEqual(["src/a.ts -> src/b.ts"]);
-    expect(edgeKeys(local.calls)).toEqual(["src/a.ts#a -> src/b.ts#b"]);
+    // Core's rule: a variable_declarator owns its calls only when its value is a function,
+    // so `export const a = b();` attributes to the file, not to `a`.
+    expect(edgeKeys(local.calls)).toEqual(["src/a.ts -> src/b.ts#b"]);
+  });
+
+  test("attributes a call inside a function-valued const to that const", () => {
+    const dir = project({
+      "src/g.ts": "export function g(): void {}\n",
+      "src/a.ts":
+        "import { g } from './g.js';\nexport const f = () => g();\nexport const h = function (): void { g(); };\n",
+    });
+    const local = generateTsTruth(dir, ["src/a.ts", "src/g.ts"]);
+    expect(edgeKeys(local.calls)).toEqual(["src/a.ts#f -> src/g.ts#g", "src/a.ts#h -> src/g.ts#g"]);
+  });
+
+  test("attributes a call in a namespace function to the dotted path, and one in the body to the file", () => {
+    const dir = project({
+      "src/g.ts": "export function g(): void {}\n",
+      "src/n.ts": "import { g } from './g.js';\nexport namespace N {\n  export function f(): void { g(); }\n  g();\n}\n",
+    });
+    const local = generateTsTruth(dir, ["src/g.ts", "src/n.ts"]);
+    // The namespace itself never owns calls: a call directly in its body is file-level.
+    expect(edgeKeys(local.calls)).toEqual(["src/n.ts -> src/g.ts#g", "src/n.ts#N.f -> src/g.ts#g"]);
+  });
+
+  test("treats a function-valued class field as a method, and a plain field initializer as the class", () => {
+    const dir = project({
+      "src/g.ts": "export function g(): void {}\nexport class Dep {}\n",
+      "src/c.ts":
+        "import { g, Dep } from './g.js';\nexport class C {\n" +
+        "  dep = new Dep();\n" +
+        "  handle = (): void => { g(); };\n" +
+        "  run(): void { this.handle(); }\n" +
+        "}\n",
+    });
+    const local = generateTsTruth(dir, ["src/c.ts", "src/g.ts"]);
+    expect(edgeKeys(local.calls)).toEqual([
+      // `dep = new Dep()` is not a function value, so the class owns it.
+      "src/c.ts#C -> src/g.ts#Dep",
+      // `handle = () => …` is a method in core, so it owns its own body.
+      "src/c.ts#C.handle -> src/g.ts#g",
+      // and `this.handle()` resolves to that field as a method.
+      "src/c.ts#C.run -> src/c.ts#C.handle",
+    ]);
+  });
+
+  test("attributes a call in a class static block to the class", () => {
+    const dir = project({
+      "src/g.ts": "export function g(): void {}\n",
+      "src/c.ts": "import { g } from './g.js';\nexport class C {\n  static {\n    g();\n  }\n}\n",
+    });
+    const local = generateTsTruth(dir, ["src/c.ts", "src/g.ts"]);
+    expect(edgeKeys(local.calls)).toEqual(["src/c.ts#C -> src/g.ts#g"]);
+  });
+
+  test("resolves a call to an abstract method declared on the class", () => {
+    const dir = project({
+      "src/base.ts": "export abstract class Base {\n  abstract m(): void;\n}\n",
+      "src/use.ts": "import type { Base } from './base.js';\nexport function use(b: Base): void { b.m(); }\n",
+    });
+    const local = generateTsTruth(dir, ["src/base.ts", "src/use.ts"]);
+    expect(edgeKeys(local.calls)).toEqual(["src/use.ts#use -> src/base.ts#Base.m"]);
+  });
+
+  test("records `type X = import('./mod').Foo` as an import edge", () => {
+    const dir = project({
+      "src/mod.ts": "export interface Foo {\n  a: number;\n}\n",
+      "src/use.ts": "export type X = import('./mod.js').Foo;\nexport type W = typeof import('./mod.js');\n",
+    });
+    const local = generateTsTruth(dir, ["src/mod.ts", "src/use.ts"]);
+    expect(edgeKeys(local.imports)).toEqual(["src/use.ts -> src/mod.ts"]);
+    const edge = local.imports[0];
+    expect(edge?.kind).toBe("import");
+    expect(edge?.symbols).toEqual(["*", "Foo"]);
   });
 
   test("records `import x = require(...)` and a namespaced declaration path", () => {
@@ -344,7 +418,42 @@ describe("resolution edge cases", () => {
     dirs.push(link);
     const local = generateTsTruth(link, ["src/a.ts", "src/b.ts"]);
     expect(edgeKeys(local.imports)).toEqual(["src/a.ts -> src/b.ts"]);
-    expect(edgeKeys(local.calls)).toEqual(["src/a.ts#a -> src/b.ts#b"]);
+    expect(edgeKeys(local.calls)).toEqual(["src/a.ts -> src/b.ts#b"]);
+  });
+
+  test("reports semantic diagnostics only when asked, and says so when it has not", () => {
+    // A full semantic check costs more than the truth set itself, so it is opt-in
+    // (`structural --diagnostics` / GREPLOST_BENCH_DIAGNOSTICS=1). The stderr line must
+    // never let a reader mistake "not checked" for "clean".
+    const dir = project({
+      "src/a.ts": "import { b } from './b.js';\nexport const a = b();\n",
+      "src/b.ts": "export function b(): number { return 1; }\n",
+    });
+    const lines: string[] = [];
+    const realError = console.error;
+    console.error = (...args: unknown[]): void => {
+      lines.push(args.map((arg) => String(arg)).join(" "));
+    };
+    try {
+      generateTsTruth(dir, ["src/a.ts", "src/b.ts"]);
+      generateTsTruth(dir, ["src/a.ts", "src/b.ts"], { diagnostics: true });
+    } finally {
+      console.error = realError;
+    }
+    expect(lines[0]).toBe(
+      "truth-ts: 2 files, 0 tsconfig errors (semantic diagnostics off: --diagnostics or GREPLOST_BENCH_DIAGNOSTICS=1 to check them)",
+    );
+    expect(lines[1]).toMatch(/^truth-ts: 2 files, 0 tsconfig errors, \d+ semantic diagnostics$/);
+  });
+
+  test("the diagnostics flag never changes the truth set", () => {
+    const dir = project({
+      "src/a.ts": "import { b } from './b.js';\nexport const a = b();\n",
+      "src/b.ts": "export function b(): number { return 1; }\n",
+    });
+    const off = generateTsTruth(dir, ["src/a.ts", "src/b.ts"], { diagnostics: false });
+    const on = generateTsTruth(dir, ["src/a.ts", "src/b.ts"], { diagnostics: true });
+    expect(stableStringify(on, 2)).toBe(stableStringify(off, 2));
   });
 
   test("ignores program files that are not in the given list", () => {
@@ -357,5 +466,37 @@ describe("resolution edge cases", () => {
     const local = generateTsTruth(dir, ["src/a.ts", "src/b.ts"]);
     expect(Object.keys(local.exports)).toEqual(["src/a.ts", "src/b.ts"]);
     expect(local.imports.every((e) => !e.from.includes("c.ts") && !e.to.includes("c.ts"))).toBe(true);
+  });
+});
+
+/**
+ * The end-to-end Eval 1 assertion the bench spec calls for: `structural --fixture --gate`
+ * exits 0. This runs the suite in process, so it needs `buildSnapshot` from
+ * `@greplost/core` (leaf 1.1.5) and is red until that leaf lands.
+ */
+describe("structural gate", () => {
+  test("structural --fixture --gate passes on fixtures/tiny-ts", async () => {
+    const results = mkdtempSync(path.join(tmpdir(), "greplost-gate-"));
+    const previous = process.env["GREPLOST_BENCH_RESULTS_DIR"];
+    process.env["GREPLOST_BENCH_RESULTS_DIR"] = results;
+
+    const stdout: string[] = [];
+    const realLog = console.log;
+    console.log = (...args: unknown[]): void => {
+      stdout.push(args.map((arg) => String(arg)).join(" "));
+    };
+
+    let code: number;
+    try {
+      code = await run(["--fixture", "--gate"]);
+    } finally {
+      console.log = realLog;
+      if (previous === undefined) delete process.env["GREPLOST_BENCH_RESULTS_DIR"];
+      else process.env["GREPLOST_BENCH_RESULTS_DIR"] = previous;
+      rmSync(results, { recursive: true, force: true });
+    }
+
+    expect(stdout[stdout.length - 1]).toBe("structural: GATE PASS");
+    expect(code).toBe(0);
   });
 });

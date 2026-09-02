@@ -20,9 +20,17 @@ const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
 /** Where committed results live, relative to the repo root. */
 export const RESULTS_DIR = "bench/results";
 
-/** Absolute results directory: `dir` when given (tests use a temp dir), else `bench/results`. */
+/**
+ * Absolute results directory: `dir` when given (tests use a temp dir), else
+ * `$GREPLOST_BENCH_RESULTS_DIR`, else `bench/results`.
+ *
+ * The environment override exists so a test can drive a whole suite's `run()` without
+ * leaving a result file in the working tree; nothing in normal operation sets it.
+ */
 export function resultsDir(dir?: string): string {
-  return dir === undefined ? path.join(REPO_ROOT, RESULTS_DIR) : path.resolve(dir);
+  if (dir !== undefined) return path.resolve(dir);
+  const override = process.env["GREPLOST_BENCH_RESULTS_DIR"];
+  return override ? path.resolve(override) : path.join(REPO_ROOT, RESULTS_DIR);
 }
 
 /** Today as `YYYY-MM-DD` (UTC, so a result file does not depend on the runner's timezone). */
