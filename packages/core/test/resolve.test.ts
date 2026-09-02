@@ -267,6 +267,7 @@ describe("tsconfig paths", () => {
     const tp = loadTsconfigPaths("/repo", "src/x.ts", ctx.readFile);
     expect(tp).toEqual({
       baseUrl: "node_modules/@tsconfig/node20",
+      baseUrlDeclared: true,
       paths: { "@app/*": ["src/app/*"] },
     });
   });
@@ -325,6 +326,48 @@ describe("tsconfig paths", () => {
       }),
     });
     expect(createResolver(ctx).resolve("src/x.ts", "@other/thing", "ts")).toEqual(external("@other/thing"));
+  });
+
+  test("without a declared baseUrl no bare specifier is probed against one", () => {
+    const ctx = ctxOf({
+      ...sources("src/x.ts", "src/app/util.ts", "components/Button.ts"),
+      "tsconfig.json": JSON.stringify({ compilerOptions: { paths: { "@app/*": ["./src/app/*"] } } }),
+    });
+    const resolver = createResolver(ctx);
+    // The mapping still resolves relative to the declaring config's directory...
+    expect(resolver.resolve("src/x.ts", "@app/util", "ts")).toEqual(file("src/app/util.ts"));
+    // ...but tsc does no baseUrl resolution when baseUrl is absent, so this is external.
+    expect(resolver.resolve("src/x.ts", "components/Button", "ts")).toEqual(external("components"));
+    expect(loadTsconfigPaths("/repo", "src/x.ts", ctx.readFile)).toEqual({
+      baseUrl: "",
+      baseUrlDeclared: false,
+      paths: { "@app/*": ["./src/app/*"] },
+    });
+  });
+
+  test("only the best-matching key contributes its substitutions", () => {
+    const ctx = ctxOf({
+      ...sources("src/x.ts", "src/general/b/c.ts"),
+      "tsconfig.json": JSON.stringify({
+        compilerOptions: {
+          baseUrl: ".",
+          // tsc picks "alias/b/*" and stops there: it never falls back to "alias/*".
+          paths: { "alias/*": ["src/general/*"], "alias/b/*": ["src/specific/*"] },
+        },
+      }),
+    });
+    expect(createResolver(ctx).resolve("src/x.ts", "alias/b/c", "ts")).toEqual(external("alias"));
+  });
+
+  test("a '#' specifier falls through to tsconfig paths when the imports map misses", () => {
+    const ctx = ctxOf({
+      ...sources("src/x.ts", "src/lib/thing.ts"),
+      "package.json": JSON.stringify({ name: "root-pkg", imports: { "#other/*": "./nope/*.ts" } }),
+      "tsconfig.json": JSON.stringify({
+        compilerOptions: { baseUrl: ".", paths: { "#alias/*": ["src/lib/*"] } },
+      }),
+    });
+    expect(createResolver(ctx).resolve("src/x.ts", "#alias/thing", "ts")).toEqual(file("src/lib/thing.ts"));
   });
 
   test("baseUrl alone resolves a bare specifier the way tsc does", () => {
@@ -606,10 +649,16 @@ describe("workspace package", () => {
     expect(createResolver(ctx).resolve("app/main.ts", "@w/core", "ts")).toEqual(UNRESOLVED);
   });
 
-  test("a blocked (null) exports subpath does not resolve", () => {
+  test("a blocked (null) exports subpath does not resolve, even to an indexed file", () => {
     const ctx = ctxOf(
       {
-        ...sources("app/main.ts", "packages/core/src/index.ts"),
+        // Both legacy probe targets exist and are indexed: only the null blocks them.
+        ...sources(
+          "app/main.ts",
+          "packages/core/src/index.ts",
+          "packages/core/blocked.ts",
+          "packages/core/src/blocked.ts",
+        ),
         "packages/core/package.json": JSON.stringify({
           name: "@w/core",
           exports: { ".": "./src/index.ts", "./blocked": null },
@@ -618,6 +667,65 @@ describe("workspace package", () => {
       { packages: pkgs(["@w/core", "packages/core"]) },
     );
     expect(createResolver(ctx).resolve("app/main.ts", "@w/core/blocked", "ts")).toEqual(UNRESOLVED);
+  });
+
+  test("a blocked condition still resolves through a sibling condition", () => {
+    const ctx = ctxOf(
+      {
+        ...sources("app/main.ts", "packages/core/src/index.ts"),
+        "packages/core/package.json": JSON.stringify({
+          name: "@w/core",
+          exports: { ".": { import: null, default: "./src/index.ts" } },
+        }),
+      },
+      { packages: pkgs(["@w/core", "packages/core"]) },
+    );
+    expect(createResolver(ctx).resolve("app/main.ts", "@w/core", "ts")).toEqual(
+      file("packages/core/src/index.ts"),
+    );
+  });
+
+  test("a blocked package root is not rescued by main or src/index", () => {
+    const ctx = ctxOf(
+      {
+        ...sources("app/main.ts", "packages/core/src/index.ts"),
+        "packages/core/package.json": JSON.stringify({
+          name: "@w/core",
+          main: "./src/index.ts",
+          exports: { ".": null },
+        }),
+      },
+      { packages: pkgs(["@w/core", "packages/core"]) },
+    );
+    expect(createResolver(ctx).resolve("app/main.ts", "@w/core", "ts")).toEqual(UNRESOLVED);
+  });
+
+  test("a repo importing its own root package name resolves to a file", () => {
+    const ctx = ctxOf({
+      ...sources("src/app.ts", "src/index.ts", "src/sub.ts"),
+      "package.json": JSON.stringify({
+        name: "my-lib",
+        exports: { ".": "./src/index.ts", "./sub": "./src/sub.ts" },
+      }),
+    });
+    const resolver = createResolver(ctx);
+    expect(resolver.resolve("src/app.ts", "my-lib/sub", "ts")).toEqual(file("src/sub.ts"));
+    expect(resolver.resolve("src/app.ts", "my-lib", "ts")).toEqual(file("src/index.ts"));
+    expect(resolver.resolve("src/app.ts", "other-lib", "ts")).toEqual(external("other-lib"));
+  });
+
+  test("a workspace package keeps a name the root package also claims", () => {
+    const ctx = ctxOf(
+      {
+        ...sources("src/app.ts", "packages/dup/src/index.ts", "root-src/index.ts"),
+        "package.json": JSON.stringify({ name: "dup", main: "./root-src/index.ts" }),
+        "packages/dup/package.json": JSON.stringify({ name: "dup", main: "./src/index.ts" }),
+      },
+      { packages: pkgs(["dup", "packages/dup"]) },
+    );
+    expect(createResolver(ctx).resolve("src/app.ts", "dup", "ts")).toEqual(
+      file("packages/dup/src/index.ts"),
+    );
   });
 
   test("a package-internal '#' import resolves through the imports map", () => {
@@ -636,6 +744,20 @@ describe("workspace package", () => {
       file("packages/core/src/internal/thing.ts"),
     );
     expect(resolver.resolve("packages/core/src/a.ts", "#dep", "ts")).toEqual(external("lodash"));
+  });
+
+  test("an imports target may not escape the package directory", () => {
+    const ctx = ctxOf(
+      {
+        ...sources("packages/core/src/a.ts", "packages/other/secret.ts"),
+        "packages/core/package.json": JSON.stringify({
+          name: "@w/core",
+          imports: { "#escape": "../other/secret.ts" },
+        }),
+      },
+      { packages: pkgs(["@w/core", "packages/core"]) },
+    );
+    expect(createResolver(ctx).resolve("packages/core/src/a.ts", "#escape", "ts")).toEqual(UNRESOLVED);
   });
 
   test("a '#' import with no imports map is unresolved, never external", () => {
@@ -1029,7 +1151,7 @@ describe("tiny-ts", () => {
     expect(actual).toEqual(imports.map(([from, spec, target]) => [from, spec, target]));
   });
 
-  test("the two files with no imports exist and hold none of the fixture specifiers", () => {
+  test("the fixture files without imports contribute no specifiers", () => {
     for (const quiet of ["packages/core/src/retry.ts", "packages/core/src/types.ts", "apps/worker/src/config.ts"]) {
       expect(readFile(quiet)).not.toBeNull();
       expect(readFile(quiet)).not.toContain("import ");

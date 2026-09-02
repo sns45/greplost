@@ -14,8 +14,19 @@
  */
 
 export interface TsPaths {
-  /** Repo-relative directory the `paths` mappings are resolved against ("" = repo root). */
+  /**
+   * Repo-relative directory the `paths` mappings are resolved against ("" = repo root).
+   * When `baseUrlDeclared` is false this is only the directory of the config that
+   * declared `paths` (tsc resolves the mappings against it), never a resolution root
+   * for bare specifiers.
+   */
   baseUrl: string;
+  /**
+   * True only when some config in the chain set `compilerOptions.baseUrl`. tsc resolves
+   * a non-relative specifier against `baseUrl` only then, so the resolver must not
+   * probe against an inferred one.
+   */
+  baseUrlDeclared: boolean;
   /**
    * `paths` as written, except that a `${configDir}` mapping is already substituted
    * and rewritten to a repo-root-relative form (a leading "/"), since such a mapping
@@ -76,7 +87,7 @@ function compile(configPath: string, readFile: ReadFile): TsPaths | null {
       return substituted === null ? mapping : `/${substituted}`;
     });
   }
-  return { baseUrl, paths };
+  return { baseUrl, baseUrlDeclared: options.baseUrl !== undefined, paths };
 }
 
 /** A declared directory option, resolved against its declaring file or `${configDir}`. */
