@@ -6,7 +6,18 @@
  * a fake `claude` binary. The real `claude` is never invoked from a test.
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -16,10 +27,21 @@ import {
   ANSWER_FILES_AND_SYMBOLS,
   generateStructuralTasks,
   loadFlowTasks,
+  loadOrientationTasks,
+  loadTasks,
   type Task,
   type TaskCategory,
 } from "../src/tasks.ts";
-import { extractAnswer, lcsRatio, resolveClaude, run, scoreAnswer, summarize } from "../src/agent.ts";
+import {
+  extractAnswer,
+  lcsRatio,
+  normalizeAnswerPath,
+  resolveClaude,
+  run,
+  runTask,
+  scoreAnswer,
+  summarize,
+} from "../src/agent.ts";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
 const FIXTURE = path.join(REPO_ROOT, "fixtures", "tiny-ts");
@@ -178,6 +200,54 @@ describe("tasks", () => {
     }
     expect(loadFlowTasks("no-such-repo")).toEqual([]);
   });
+
+  test("loads the curated orientation task for hono and anyq", () => {
+    for (const repo of ["hono", "anyq"]) {
+      const tasks = loadOrientationTasks(repo);
+      expect(tasks.length).toBeGreaterThanOrEqual(1);
+      for (const task of tasks) {
+        expect(task.category).toBe("orientation");
+        expect(task.id.startsWith(`${repo}-orientation-`)).toBe(true);
+        // X8's prompt is fixed wording; the answer shape must still be in it.
+        expect(task.prompt).toContain('{"files": [...]}');
+        expect(task.truth.files.length).toBeGreaterThanOrEqual(5);
+        expect(task.truth_source).toContain("hand-curated");
+        expect(task.truth_source).toContain("Curation rule:");
+      }
+    }
+    expect(loadOrientationTasks("no-such-repo")).toEqual([]);
+  });
+
+  test("a curated file with a duplicate id or a foreign id is rejected", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "greplost-curated-"));
+    const write = (name: string, body: unknown): void =>
+      writeFileSync(path.join(dir, name), JSON.stringify(body));
+    const ok = {
+      id: "demo-flow-01",
+      category: "flow",
+      prompt: `Trace it. ${ANSWER_FILES}`,
+      truth: { files: ["a.ts", "b.ts"] },
+      truth_source: "hand-curated by a test",
+    };
+
+    write("demo-flow.json", [ok, ok]);
+    expect(() => loadFlowTasks("demo", dir)).toThrow(/duplicate/i);
+
+    write("demo-flow.json", [{ ...ok, id: "other-flow-01" }]);
+    expect(() => loadFlowTasks("demo", dir)).toThrow(/demo-flow-/);
+
+    write("demo-flow.json", [ok]);
+    expect(loadFlowTasks("demo", dir)).toHaveLength(1);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test("loadTasks filters by category when asked", () => {
+    const all = loadTasks("tiny-ts", fixtureTruth, 8);
+    expect(new Set(all.map((t) => t.category)).size).toBe(4);
+    const only = loadTasks("tiny-ts", fixtureTruth, 8, 1, ["definition", "importers"]);
+    expect(only.length).toBeGreaterThan(0);
+    for (const task of only) expect(["definition", "importers"]).toContain(task.category);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -229,9 +299,33 @@ describe("scoring", () => {
     expect(extractAnswer("```json\nnot json at all\n```")).toBeNull();
   });
 
+  test("strips the working copy's real path out of an absolute answer", () => {
+    // The child reports its resolved cwd (/private/var on macOS), so the runner
+    // strips the resolved root, not the string it handed the child.
+    const root = realpathSync(tmpdir());
+    expect(normalizeAnswerPath(`${root}/copy/src/a.ts`, `${root}/copy`)).toBe("src/a.ts");
+    expect(normalizeAnswerPath(`${root}/copy/`, `${root}/copy`)).toBe("");
+  });
+
   test("normalises the paths an agent is likely to write", () => {
     const answer = extractAnswer('```json\n{"files": ["./src/a.ts", "/src/b.ts", "src\\\\c.ts", "src/a.ts"]}\n```');
     expect(answer?.files).toEqual(["src/a.ts", "src/b.ts", "src/c.ts"]);
+  });
+
+  test("a trailing slash is stripped but case is not touched", () => {
+    expect(normalizeAnswerPath("src/router/")).toBe("src/router");
+    expect(normalizeAnswerPath("./src/router//")).toBe("src/router");
+    // Case is meaningful: hono ships src/jsx/base.ts and greplost ids are
+    // case-sensitive, so two files can differ only in case and must not merge.
+    expect(normalizeAnswerPath("src/Router.ts")).toBe("src/Router.ts");
+    expect(normalizeAnswerPath("SRC/A.TS")).toBe("SRC/A.TS");
+  });
+
+  test("orientation is set F1 over files, like the other set categories", () => {
+    const orientation = handBuilt("orientation", ["a.ts", "b.ts", "c.ts", "d.ts"]);
+    expect(scoreAnswer(orientation, { files: ["a.ts", "b.ts", "c.ts", "d.ts"], symbols: [] }).score).toBe(1);
+    expect(scoreAnswer(orientation, { files: ["a.ts", "b.ts", "x.ts", "y.ts"], symbols: [] }).score).toBeCloseTo(0.5, 9);
+    expect(scoreAnswer(orientation, { files: [], symbols: [] }).score).toBe(0);
   });
 
   test("definition is an exact match, not an F1", () => {
@@ -319,6 +413,7 @@ describe("scoring", () => {
  */
 const FAKE_CLAUDE = `#!/usr/bin/env bun
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 
 const argv = process.argv.slice(2);
@@ -328,21 +423,48 @@ if (argv.includes("--version")) {
 }
 if (argv.includes("--help")) {
   // The flags the runner confirms before it spends anything.
-  console.log("-p, --print\\n--model <model>\\n--output-format <format>\\n--allowedTools <tools...>\\n--disallowedTools <tools...>\\n--verbose");
+  console.log("-p, --print\\n--model <model>\\n--output-format <format>\\n--allowedTools <tools...>\\n--disallowedTools <tools...>\\n--verbose\\n--plugin-dir <path>\\n--max-budget-usd <amount>");
   process.exit(0);
 }
 
 const cwd = process.cwd();
 const log = process.env.FAKE_CLAUDE_LOG;
+const mode = process.env.FAKE_CLAUDE_MODE ?? "normal";
 if (log) {
   appendFileSync(
     log,
     JSON.stringify({
       cwd,
       argv,
+      mode,
+      // The PATH the runner handed the child, so a test can prove the shim is first.
+      pathEnv: process.env.PATH ?? "",
       greplost: existsSync(path.join(cwd, ".greplost", "INDEX.md")),
+      // Proof the shim on PATH really runs the greplost CLI, from inside the child.
+      shimVersion: (() => {
+        try {
+          return spawnSync("greplost", ["--version"], { encoding: "utf8", env: process.env }).stdout?.trim() ?? "";
+        } catch {
+          return "";
+        }
+      })(),
     }) + "\\n",
   );
+}
+
+if (mode === "sleep") {
+  // Outlive any sane --timeout so the runner has to kill this process.
+  Bun.sleepSync(30000);
+  process.exit(0);
+}
+if (mode === "bad-envelope") {
+  // A result line with neither an answer nor usage: shape the runner must reject.
+  process.stdout.write(JSON.stringify({ type: "result", subtype: "success", session_id: "fake" }) + "\\n");
+  process.exit(0);
+}
+if (mode === "exit3") {
+  process.stdout.write(JSON.stringify({ type: "result", subtype: "success", result: "", usage: {} }) + "\\n");
+  process.exit(3);
 }
 
 const promptIndex = argv.indexOf("-p");
@@ -391,7 +513,27 @@ if (format === "stream-json") {
 interface FakeInvocation {
   cwd: string;
   argv: string[];
+  mode: string;
+  pathEnv: string;
   greplost: boolean;
+  shimVersion: string;
+}
+
+/** Run the suite with the fake in `mode`, restoring the mode afterwards. */
+async function runInMode(mode: string, args: string[]): Promise<number> {
+  process.env["FAKE_CLAUDE_MODE"] = mode;
+  try {
+    return await run(args);
+  } finally {
+    delete process.env["FAKE_CLAUDE_MODE"];
+  }
+}
+
+/** The one results file the runner wrote, with its name. */
+function writtenResultFile(): string {
+  const files = readdirSync(harness.resultsDir).filter((name) => name.endsWith(".json"));
+  expect(files).toHaveLength(1);
+  return files[0] as string;
 }
 
 interface Harness {
@@ -490,7 +632,7 @@ describe("fake claude", () => {
     expect(code).toBe(0);
 
     const payload = writtenResult();
-    expect(payload["suite"]).toBe("agent");
+    expect(payload["suite"]).toBe("agent-fixture");
     expect(payload["claudeVersion"]).toBe("2.0.0-fake (Claude Code)");
     expect(payload["runsPerTask"]).toBe(1);
     expect(payload["conditions"]).toEqual(["gl"]);
@@ -514,9 +656,13 @@ describe("fake claude", () => {
     expect(aggregate["gl"]?.["overall"]?.["toolCalls"]?.mean).toBe(2);
   });
 
-  test("prepares a real .greplost/ copy and passes the condition's flags", () => {
+  test("prepares a real .greplost/ copy and passes the condition's flags", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 2));
+    expect(await run(["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "2"])).toBe(0);
+
     const calls = invocations();
-    expect(calls.length).toBeGreaterThanOrEqual(4);
+    expect(calls.length).toBeGreaterThanOrEqual(2);
     for (const call of calls) {
       // `greplost init --no-hooks` really ran in the copy the agent was pointed at.
       expect(call.greplost).toBe(true);
@@ -530,7 +676,44 @@ describe("fake claude", () => {
     }
   });
 
-  test("falls back to stream-json once, then stays there, because the envelope has no tool-call count", () => {
+  test("gl passes --plugin-dir and puts a working greplost shim first on the child's PATH", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 1));
+    expect(await run(["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "1"])).toBe(0);
+
+    const calls = invocations();
+    expect(calls.length).toBeGreaterThanOrEqual(1);
+    for (const call of calls) {
+      // Tech spec 10.6: the `gl` condition is the map *and* the plugin hooks.
+      const pluginDir = call.argv[call.argv.indexOf("--plugin-dir") + 1] ?? "";
+      expect(pluginDir).toBe(path.join(REPO_ROOT, "greplost-plugin"));
+      // The plugin's hooks shell out to `greplost`, which only exists on PATH
+      // inside a throwaway copy because the runner puts a shim there first.
+      const first = call.pathEnv.split(path.delimiter)[0] ?? "";
+      expect(first).toMatch(/greplost-agent-[^/]*\/shim$/);
+      // Run from inside the child, so this proves the shim on that PATH really
+      // executes this checkout's CLI. (The shim itself is gone by now: the
+      // runner deletes its whole working directory when the run ends.)
+      expect(call.shimVersion).toMatch(/^greplost \d+\.\d+\.\d+/);
+    }
+  });
+
+  test("base gets no plugin dir and no greplost shim", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 1));
+    expect(await run(["--fixture", "--condition", "base", "--runs", "1", "--tasks", "1"])).toBe(0);
+    for (const call of invocations()) {
+      expect(call.argv).not.toContain("--plugin-dir");
+      expect(call.greplost).toBe(false);
+      expect(call.shimVersion).toBe("");
+    }
+  });
+
+  test("falls back to stream-json once, then stays there, because the envelope has no tool-call count", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 4));
+    expect(await run(["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "4"])).toBe(0);
+
     const calls = invocations();
     const format = (call: FakeInvocation): string => call.argv[call.argv.indexOf("--output-format") + 1] ?? "";
     // 4 tasks, 1 run each: one json probe, one stream-json re-run of that same
@@ -546,6 +729,12 @@ describe("fake claude", () => {
       (calls[0] as FakeInvocation).argv[(calls[0] as FakeInvocation).argv.indexOf("-p") + 1],
     );
     for (const call of calls.slice(2)) expect(format(call)).toBe("stream-json");
+
+    // The probe's own cost is recorded rather than absorbed.
+    const probe = writtenResult()["toolCallProbe"] as Record<string, number>;
+    expect(probe["sessions"]).toBe(1);
+    expect(probe["costUsd"]).toBe(0.0125);
+    expect(probe["tokens"]).toBe(5520);
   });
 
   test("gl-strict disallows Grep and Glob", async () => {
@@ -578,14 +767,6 @@ describe("fake claude", () => {
     expect((payload["aggregate"] as Record<string, unknown>)["graphify"]).toBeUndefined();
     for (const record of payload["runs"] as Record<string, unknown>[]) expect(record["condition"]).toBe("gl");
     for (const call of invocations()) expect(call.argv).not.toContain("graphify");
-  });
-
-  test("records what the tool-call probe cost on top of the measured runs", () => {
-    // Written by the gl-strict run above: 2 tasks, one probe session.
-    const probe = writtenResult()["toolCallProbe"] as Record<string, number>;
-    expect(probe["sessions"]).toBe(1);
-    expect(probe["costUsd"]).toBe(0.0125);
-    expect(probe["tokens"]).toBe(5520);
   });
 
   test("an answer with no JSON block scores zero and is counted as unparsed", async () => {
@@ -647,6 +828,185 @@ describe("fake claude", () => {
     // Both conditions get the same canned answer, so every task is a tie.
     expect(table["gl"]).toEqual({ wins: 0, losses: 0, ties: 4 });
     expect(table["base"]).toBeUndefined();
+  });
+});
+
+describe("fake claude timeouts and budget", () => {
+  test("a session that outlives --timeout is killed and recorded as a timeout error", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 1));
+    const started = Date.now();
+    const code = await runInMode("sleep", [
+      "--fixture",
+      "--condition",
+      "gl",
+      "--runs",
+      "1",
+      "--tasks",
+      "1",
+      "--timeout",
+      "400",
+    ]);
+    // The whole point: the suite comes back instead of hanging on a wedged CLI.
+    expect(Date.now() - started).toBeLessThan(30000);
+    expect(code).toBe(0);
+
+    const payload = writtenResult();
+    const runs = payload["runs"] as Record<string, unknown>[];
+    expect(runs.length).toBeGreaterThan(0);
+    for (const record of runs) {
+      expect(record["error"]).toBe("timeout after 400ms");
+      expect(record["score"]).toBe(0);
+      expect(record["parsed"]).toBe(false);
+    }
+    const overall = (payload["aggregate"] as Record<string, Record<string, Record<string, number>>>)["gl"]?.["overall"];
+    // A killed session is an error, never a silently empty answer.
+    expect(overall?.["errors"]).toBe(runs.length);
+  }, 60000);
+
+  test("an envelope with no answer and no usage is an unrecognised envelope, not an unreadable answer", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 1));
+    expect(
+      await runInMode("bad-envelope", ["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "1"]),
+    ).toBe(0);
+    const payload = writtenResult();
+    for (const record of payload["runs"] as Record<string, unknown>[]) {
+      expect(record["error"]).toBe("unrecognised envelope");
+      expect(record["score"]).toBe(0);
+    }
+    const overall = (payload["aggregate"] as Record<string, Record<string, Record<string, number>>>)["gl"]?.["overall"];
+    expect(overall?.["errors"]).toBe(1);
+  });
+
+  test("a non-zero exit is folded into the record's error", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 1));
+    expect(await runInMode("exit3", ["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "1"])).toBe(0);
+    for (const record of writtenResult()["runs"] as Record<string, unknown>[]) {
+      expect(String(record["error"])).toContain("exit 3");
+    }
+  });
+
+  test("--max-usd caps the run: the flag is passed and the loop aborts with partial results", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 8));
+    // Each fake session bills 0.0125, so a 0.03 cap stops after a couple of them.
+    const code = await run([
+      "--fixture",
+      "--condition",
+      "gl",
+      "--runs",
+      "1",
+      "--tasks",
+      "8",
+      "--max-usd",
+      "0.03",
+    ]);
+    expect(code).toBe(0);
+
+    const payload = writtenResult();
+    const runs = payload["runs"] as Record<string, unknown>[];
+    expect(runs.length).toBeGreaterThan(0);
+    expect(runs.length).toBeLessThan(8);
+    const budget = payload["budget"] as Record<string, unknown>;
+    expect(budget["maxUsd"]).toBe(0.03);
+    expect(budget["stopped"]).toBe(true);
+    expect(budget["spentUsd"] as number).toBeGreaterThanOrEqual(0.03);
+    for (const call of invocations()) {
+      expect(call.argv[call.argv.indexOf("--max-budget-usd") + 1]).toBe("0.03");
+    }
+  });
+
+  test("a fixture run has no budget cap and passes no budget flag", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 1));
+    expect(await run(["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "1"])).toBe(0);
+    expect((writtenResult()["budget"] as Record<string, unknown>)["maxUsd"]).toBeNull();
+    for (const call of invocations()) expect(call.argv).not.toContain("--max-budget-usd");
+  });
+
+  test("--tasks 0 and --runs 0 are rejected rather than silently defaulted", async () => {
+    resetHarness();
+    expect(await run(["--fixture", "--tasks", "0"])).toBe(2);
+    expect(await run(["--fixture", "--runs", "0"])).toBe(2);
+    expect(await run(["--fixture", "--tasks", "-3"])).toBe(2);
+    expect(readdirSync(harness.resultsDir)).toEqual([]);
+    expect(invocations()).toEqual([]);
+  });
+});
+
+describe("fake claude results, metrics and seams", () => {
+  test("a fixture run writes agent-fixture-… so it never shadows a corpus run", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 1));
+    expect(await run(["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "1"])).toBe(0);
+    expect(writtenResultFile()).toMatch(/^agent-fixture-\d{4}-\d{2}-\d{2}-[^/]*\.json$/);
+    expect(writtenResult()["suite"]).toBe("agent-fixture");
+  });
+
+  test("--categories keeps only the categories asked for", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 8));
+    expect(
+      await run(["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "8", "--categories", "definition"]),
+    ).toBe(0);
+    const tasks = writtenResult()["tasks"] as Task[];
+    expect(tasks.length).toBeGreaterThan(0);
+    for (const task of tasks) expect(task.category).toBe("definition");
+    expect(await run(["--fixture", "--categories", "nonsense"])).toBe(2);
+  });
+
+  test("the payload carries A1 to A4 keyed by their tech spec ids", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 8));
+    expect(
+      await run(["--fixture", "--condition", "base,gl", "--runs", "1", "--tasks", "8"]),
+    ).toBe(0);
+
+    const metrics = writtenResult()["metrics"] as Record<string, Record<string, unknown>>;
+    expect(Object.keys(metrics).sort()).toEqual(["A1", "A2", "A3", "A3blast", "A4"]);
+    // Same canned answer in both conditions: ratios are 1, accuracy delta is 0.
+    expect(metrics["A1"]?.["ratio"]).toBe(1);
+    expect(metrics["A2"]?.["ratio"]).toBe(1);
+    expect(metrics["A3"]?.["delta"]).toBe(0);
+    expect(metrics["A3"]?.["met"]).toBe(true);
+    expect(metrics["A3blast"]?.["delta"]).toBe(0);
+    // A1's target is 0.50, so a ratio of 1 misses it: the field must say so.
+    expect(metrics["A1"]?.["target"]).toBe(0.5);
+    expect(metrics["A1"]?.["met"]).toBe(false);
+    expect(metrics["A4"]?.["id"]).toBe("A4");
+  });
+
+  test("metrics are null when the run cannot compare gl against base", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 1));
+    expect(await run(["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "1"])).toBe(0);
+    expect(writtenResult()["metrics"]).toBeNull();
+  });
+
+  test("runTask is a programmatic entry that scores one task in a prepared copy", async () => {
+    resetHarness();
+    const task = generateStructuralTasks("tiny-ts", fixtureTruth, 1)[0] as Task;
+    writeAnswerKey([task]);
+
+    const copy = path.join(harness.dir, "copy");
+    rmSync(copy, { recursive: true, force: true });
+    mkdirSync(copy, { recursive: true });
+    cpSync(FIXTURE, copy, { recursive: true });
+
+    const record = runTask(task, "base", { cwd: copy, model: "fake-model", stream: true });
+    expect(record.taskId).toBe(task.id);
+    expect(record.condition).toBe("base");
+    expect(record.score).toBe(1);
+    expect(record.toolCalls).toBe(2);
+    expect(record.error).toBeNull();
+    // It really went through the fake, in the copy it was handed.
+    const calls = invocations();
+    expect(calls).toHaveLength(1);
+    // macOS resolves /var to /private/var, and the child reports its resolved cwd.
+    expect((calls[0] as FakeInvocation).cwd).toBe(realpathSync(copy));
+    expect((calls[0] as FakeInvocation).argv[1]).toBe(task.prompt);
   });
 });
 

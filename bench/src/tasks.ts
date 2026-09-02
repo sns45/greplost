@@ -36,9 +36,25 @@ const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
 export const ANSWER_FILES = 'Answer with a JSON block {"files": [...]}';
 /** The `callers` variant: the same instruction plus the enclosing symbols. */
 export const ANSWER_FILES_AND_SYMBOLS = 'Answer with a JSON block {"files": [...], "symbols": [...]}';
+/** The answer shape every prompt has to state, wherever it states it. */
+export const ANSWER_SHAPE = '{"files": [...]}';
 
-/** The five task categories of tech spec 10.6. */
-export type TaskCategory = "definition" | "importers" | "callers" | "blast_radius" | "flow";
+/**
+ * The task categories: the five of tech spec 10.6 plus `orientation`, which is
+ * X8's one-per-repo "what are the main components of this repo?" (10.0).
+ */
+export type TaskCategory = "definition" | "importers" | "callers" | "blast_radius" | "flow" | "orientation";
+
+/** The four categories generated from compiler truth: X7's restriction (10.0). */
+export const STRUCTURAL_CATEGORIES: readonly TaskCategory[] = [
+  "definition",
+  "importers",
+  "callers",
+  "blast_radius",
+];
+
+/** Every category name, for validating `--categories`. */
+export const ALL_CATEGORIES: readonly TaskCategory[] = [...STRUCTURAL_CATEGORIES, "flow", "orientation"];
 
 /** Ground truth for one task. `symbols` is present only for `callers`. */
 export interface TaskTruth {
@@ -396,29 +412,57 @@ export function generateStructuralTasks(repo: string, truth: Truth, n: number, s
   return tasks;
 }
 
+/** The two categories curated by hand rather than derived from compiler truth. */
+export type CuratedCategory = "flow" | "orientation";
+
+/** Where a repo's curated tasks for `category` live. `dir` is a test-only override. */
+export function curatedTasksFile(repo: string, category: CuratedCategory, dir?: string): string {
+  return path.join(dir ?? path.join(REPO_ROOT, "bench", "tasks"), `${repo}-${category}.json`);
+}
+
 /** Where a repo's curated flow tasks live. */
-export function flowTasksFile(repo: string): string {
-  return path.join(REPO_ROOT, "bench", "tasks", `${repo}-flow.json`);
+export function flowTasksFile(repo: string, dir?: string): string {
+  return curatedTasksFile(repo, "flow", dir);
 }
 
 /**
- * The curated `flow` tasks for `repo`, or `[]` when the repo has none.
+ * Load and validate one category of curated tasks for `repo`, or `[]` when the
+ * repo has no file for it.
  *
- * These are the one category no oracle can produce: an ordered walk from an
- * entry point to an effect. Each file records who traced it and against which
- * commit (`truth_source`), because an answer key nobody can audit is not truth.
+ * Validation is strict and total, because these are the only answer keys in the
+ * suite a human wrote: a typo has to stop the run rather than quietly change
+ * what is being measured. Ids must carry the `<repo>-<category>-` prefix (an id
+ * copied from another repo would collide in the results table) and be unique
+ * inside the file (a duplicate id silently overwrites its twin in every
+ * per-task aggregation, including the win/loss/tie count).
  */
-export function loadFlowTasks(repo: string): Task[] {
-  const file = flowTasksFile(repo);
+function loadCuratedTasks(repo: string, category: CuratedCategory, dir?: string): Task[] {
+  const file = curatedTasksFile(repo, category, dir);
   if (!existsSync(file)) return [];
   const parsed: unknown = JSON.parse(readFileSync(file, "utf8"));
   if (!Array.isArray(parsed)) throw new Error(`greplost: ${file} must contain a JSON array of tasks`);
+
+  const prefix = `${repo}-${category}-`;
+  const seen = new Set<string>();
   return parsed.map((entry, index) => {
     const task = entry as Partial<Task>;
     const where = `${file}[${index}]`;
     if (typeof task.id !== "string" || task.id === "") throw new Error(`greplost: ${where} has no id`);
-    if (task.category !== "flow") throw new Error(`greplost: ${where} (${task.id}) is not category "flow"`);
-    if (typeof task.prompt !== "string" || !task.prompt.endsWith(ANSWER_FILES)) {
+    if (!task.id.startsWith(prefix)) {
+      throw new Error(`greplost: ${where} id "${task.id}" must start with "${prefix}"`);
+    }
+    if (seen.has(task.id)) throw new Error(`greplost: ${where} has the duplicate id "${task.id}"`);
+    seen.add(task.id);
+    if (task.category !== category) {
+      throw new Error(`greplost: ${where} (${task.id}) is not category "${category}"`);
+    }
+    if (typeof task.prompt !== "string" || !task.prompt.includes(ANSWER_SHAPE)) {
+      throw new Error(`greplost: ${where} (${task.id}) prompt must state the answer shape ${ANSWER_SHAPE}`);
+    }
+    // A flow prompt is shaped like a generated one and must end with the
+    // instruction; the orientation prompt is fixed wording for X8 that carries
+    // the shape mid-sentence, so it only has to contain it.
+    if (category === "flow" && !task.prompt.endsWith(ANSWER_FILES)) {
       throw new Error(`greplost: ${where} (${task.id}) prompt must end with: ${ANSWER_FILES}`);
     }
     const files = task.truth?.files;
@@ -428,11 +472,52 @@ export function loadFlowTasks(repo: string): Task[] {
     if (typeof task.truth_source !== "string" || task.truth_source === "") {
       throw new Error(`greplost: ${where} (${task.id}) has no truth_source`);
     }
-    return { id: task.id, category: "flow", prompt: task.prompt, truth: { files }, truth_source: task.truth_source };
+    return { id: task.id, category, prompt: task.prompt, truth: { files }, truth_source: task.truth_source };
   });
 }
 
-/** The full suite for a repo: generated structural tasks then curated flows. */
-export function loadTasks(repo: string, truth: Truth, n: number, seed: number = 1): Task[] {
-  return [...generateStructuralTasks(repo, truth, n, seed), ...loadFlowTasks(repo)];
+/**
+ * The curated `flow` tasks for `repo`, or `[]` when the repo has none.
+ *
+ * These are the one category no oracle can produce: an ordered walk from an
+ * entry point to an effect. Each file records who traced it and against which
+ * commit (`truth_source`), because an answer key nobody can audit is not truth.
+ */
+export function loadFlowTasks(repo: string, dir?: string): Task[] {
+  return loadCuratedTasks(repo, "flow", dir);
+}
+
+/**
+ * The curated `orientation` task for `repo`: X8's "what are the main components
+ * of this repo?" (tech spec 10.0), scored as set overlap against a curated answer.
+ *
+ * Curated for the same reason flows are - no compiler knows what a *component*
+ * is - and held to the same bar: the `truth_source` states the rule that picked
+ * every file and the rule that excluded the rest, so the key can be argued with.
+ */
+export function loadOrientationTasks(repo: string, dir?: string): Task[] {
+  return loadCuratedTasks(repo, "orientation", dir);
+}
+
+/**
+ * The full suite for a repo: generated structural tasks, then the curated flow
+ * and orientation tasks, optionally narrowed to `categories`.
+ *
+ * Narrowing is what X7 needs (Eval 4 restricted to the four structural
+ * categories) and what X8 needs (the orientation task alone).
+ */
+export function loadTasks(
+  repo: string,
+  truth: Truth,
+  n: number,
+  seed: number = 1,
+  categories?: readonly TaskCategory[],
+): Task[] {
+  const wanted = categories === undefined ? null : new Set<TaskCategory>(categories);
+  const all = [
+    ...generateStructuralTasks(repo, truth, n, seed),
+    ...loadFlowTasks(repo),
+    ...loadOrientationTasks(repo),
+  ];
+  return wanted === null ? all : all.filter((task) => wanted.has(task.category));
 }

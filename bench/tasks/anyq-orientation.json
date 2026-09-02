@@ -1,0 +1,23 @@
+[
+  {
+    "id": "anyq-orientation-01",
+    "category": "orientation",
+    "prompt": "List the main components of this repository as JSON {\"files\": [...]} naming one representative file per component",
+    "truth": {
+      "files": [
+        "packages/core/src/index.ts",
+        "packages/memory/src/index.ts",
+        "packages/sqs/src/index.ts",
+        "packages/sns/src/index.ts",
+        "packages/kafka/src/index.ts",
+        "packages/nats/src/index.ts",
+        "packages/rabbitmq/src/index.ts",
+        "packages/redis-streams/src/index.ts",
+        "packages/google-pubsub/src/index.ts",
+        "packages/azure-servicebus/src/index.ts",
+        "packages/cloudflare-queues/src/index.ts"
+      ]
+    },
+    "truth_source": "hand-curated by the leaf 1.5.6 bench agent, verified against source at 657f41c2cbe06039c0d82cf81c17759d1149eda2. Curation rule: anyq is a workspace whose components are its published packages, so the answer is one file per entry in the root package.json `workspaces` glob `packages/*` - eleven of them, each named in its own package.json (@anyq/core plus the ten driver packages azure-servicebus, cloudflare-queues, google-pubsub, kafka, memory, nats, rabbitmq, redis-streams, sns, sqs) - and the representative file is that package's `src/index.ts` entry, which exists for all eleven (checked). apps/testers/* and apps/examples/* are also workspaces but are consumers of the library rather than components of it, so they are excluded; the rule is stated here so the exclusion is auditable rather than a matter of taste."
+  }
+]
