@@ -28,16 +28,15 @@ import { compareStrings } from "@greplost/core/schema";
 import { boxChart, groupedBarChart, lineChart, mermaidXy, writeChart, type BoxDatum, type ChartSpec } from "./charts.ts";
 import { latestResult, resultsDir } from "./results-io.ts";
 import { assumptions, firstMachine, mergeCorpus, resetAssumptions, versionRows, type Payload } from "./report-payload.ts";
+import { headToHeadFrom, singleTool } from "./report-sections.ts";
 import {
   bench3Section,
   eval1Section,
   eval2Section,
   eval4Section,
   eval5Section,
-  headToHeadFrom,
   mapqualitySection,
-  singleTool,
-} from "./report-sections.ts";
+} from "./report-evals.ts";
 import {
   METRIC_TITLES,
   NOT_APPLICABLE,
