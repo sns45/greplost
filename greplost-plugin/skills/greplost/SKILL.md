@@ -92,7 +92,8 @@ update --json / init --json: { mode: "incremental" | "full", dirty: number, repa
 
 This plugin's `SessionStart`, `PreToolUse` (on Glob/Grep) and `Stop` hooks
 inject the same pointer automatically as `additionalContext` when a map
-exists — they are informational reminders only, not a permission gate, so do
-not expect a tool call to be blocked or auto-approved because of them. If you
-see that context, it is this same guidance surfacing without being asked;
-follow it rather than waiting for a hook to act on your behalf.
+exists. greplost's hooks never emit a permission decision; `PreToolUse` only
+adds context, so tool calls are neither blocked nor auto-approved by them —
+your own permission prompt for Glob/Grep is untouched. If you see that
+context, it is this same guidance surfacing without being asked; follow it
+rather than waiting for a hook to act on your behalf.

@@ -20,6 +20,11 @@ itself for the CLI (`packages/cli`).
 | `commands/*.md` | `/greplost:init`, `/greplost:update`, `/greplost:query <needle>`, `/greplost:impact <path>`, `/greplost:refresh [pkg]`, `/greplost:verify` — each runs the matching CLI command and reports the result. |
 | `agents/greplost-navigator.md` | A read-only subagent (`Read`, `Grep`, `Glob`, `Bash`) scoped to answering structural questions from the map and citing card paths; it has no `Write`/`Edit`/`MultiEdit` tool. |
 
+`SessionStart` and `Stop` use `matcher: "*"` even though Claude Code ignores
+the matcher field for those two events (only `PreToolUse`/`PostToolUse` match
+against a tool name) — kept for symmetry with the tech spec's hook table and
+because a stray `matcher` there is harmless, not because it does anything.
+
 ## Requirements
 
 The `greplost` binary on `PATH` (`bunx greplost` also works and is the

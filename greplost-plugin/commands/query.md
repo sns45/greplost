@@ -1,7 +1,7 @@
 ---
 description: Look up a symbol or file in the greplost map — definition, importers, callers, package, card path.
 argument-hint: <symbol|path>
-allowed-tools: Bash(greplost query:*), Bash(bunx greplost query:*), Bash(command -v greplost:*)
+allowed-tools: Bash(greplost query:*), Bash(bunx greplost query:*)
 ---
 
 Run `greplost query "$ARGUMENTS" --json` in the project root (if `greplost` is
