@@ -102,3 +102,5 @@ Append-only. One line per event.
 - 2026-09-02 leaf 1.2.1 review: Needs fixes; Critical: literal NUL bytes in split.ts (binary to git); Important: mermaid label escaping misses # ; < >; Minor: deep relLink/cardPath tests -> fix round 1/5 dispatched; Ruling: two-level Map instead of delimiter, escape set widened
 - 2026-09-02 leaf 1.1.1 ts-extract merged (2634c09), driver re-verified 10/10 gates PASS; core suite 256 pass, typecheck OK; concerns: countLines duplicates countLoc (1.1.5 to unify), type-position import() labelled dynamic (to 1.1.1 fix round after review), destructured export const unsupported (v1); task review dispatched
 - 2026-09-02 wave 2 dispatched: 1.1.5 core build (1.2.2 render docs waits for 1.1.5 and the 1.2.1 fix round)
+- 2026-09-02 leaf 1.1.4: fix round 1/5 (1 addressed, 0 open; commits 705a4fa..795b558)
+- 2026-09-02 leaf 1.1.4: complete (commits f941b3d..795b558, review clean); minor (deferred): unconditional .git/ prefix drop in fallback mode (currently relies on DEFAULT_CONFIG exclude), commit prefix fix(<leaf>) added to the convention
