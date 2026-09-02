@@ -59,6 +59,6 @@ Scope: measured numbers, head-to-head results, README, dogfood, CI parity
 - [x] R12: every loss in the head-to-head table carries a one-line reason (quote the rows)
   EVIDENCE: | X5 | <= 10 artifact lines | 54 of 10511 lines | loss (24 of 99031 lines) | n/a | win (60 of 88119 lines) | greplost: 54 artifact lines of 10511 changed across 12 files for a one-line source change; the target is 10 lines. Where: `manifest.json` 20 lines, `packages/anyq__kafka/MAP.md` 8 lines, `packages/anyq__example-retry-strategies/MAP.md` 7 lines, `packages/anyq__example-re
 
-- [ ] R13: user notified through TicketTok with the results summary and asked whether to create github.com/sns45/greplost and publish 0.0.1 (quote the notification and the answer, or note that no answer arrived)
-  EVIDENCE: pending
+- [x] R13: user notified through TicketTok with the results summary and asked whether to create github.com/sns45/greplost and publish 0.0.1 (quote the notification and the answer, or note that no answer arrived)
+  EVIDENCE: 2026-09-04 `tickettok notify --actions yes-no "greplost: all leaves merged, 1230+ tests green, bench measured on real corpora (X1/X4/X6 wins, X5 loss published, X2 decay ties). Final reviews running. Create github.com/sns45/greplost and publish 0.0.1 after they pass?"` -> "Notified 1 device(s)" (sent without buttons: no TicketTok agent id in this session; the same question was asked in chat). No answer had arrived when this was recorded; nothing outward-facing is done until the user says yes
 
