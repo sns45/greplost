@@ -16,12 +16,20 @@
 
 import { callersOf, findSymbols, importersOf } from "@greplost/core";
 import type { Structure } from "@greplost/core";
+import { importTargetsOf } from "@greplost/core/graph";
 import type { DeclKind, Declaration, ImportEdge, Manifest } from "@greplost/core/schema";
 import { compareDeclarations, compareStrings } from "@greplost/core/schema";
 
 import type { CommandContext } from "../args.ts";
 import { fields, printError, printJson, printLine, summarise, table } from "../output.ts";
-import { cardOf, importsOfFile, loadStructure, resolveFile, toRepoRelative } from "./structure.ts";
+import {
+  cardOf,
+  importsOfFile,
+  loadStructure,
+  looksLikePath,
+  resolveFile,
+  toRepoRelative,
+} from "./structure.ts";
 
 /** One declaration and everything the map knows about it. */
 export interface QueryMatch {
@@ -35,7 +43,12 @@ export interface QueryMatch {
   package: string;
   /** `.greplost`-relative module card path. */
   card: string;
-  /** Files importing the declaring file and naming this symbol (or importing `*`). */
+  /**
+   * Files importing the declaring file and naming this symbol (or importing
+   * `*`). Where imports target a package directory rather than a file (Go),
+   * every importer of the package is listed for every *exported* declaration
+   * in it, because a Go import names the package and cannot name a symbol.
+   */
   importers: string[];
   /** Symbol ids that call this declaration. */
   callers: string[];
@@ -72,7 +85,15 @@ export async function run(ctx: CommandContext): Promise<number> {
   }
 
   if (result.file === undefined && result.matches.length === 0) {
-    printError(`no match for "${needle}"`);
+    // An argument that reads like a path almost never means "look for a symbol
+    // spelled like this"; it means the file is not indexed, and the actionable
+    // answer is the one that says so.
+    const relative = toRepoRelative(ctx.root, needle);
+    printError(
+      looksLikePath(relative)
+        ? `${relative} is not in the map; run \`greplost update\` or check the path`
+        : `no match for "${needle}"`,
+    );
     return 1;
   }
 
@@ -104,9 +125,22 @@ export function queryStructure(structure: Structure, root: string, needle: strin
   return result;
 }
 
-/** Import and re-export edges into each declaring file, indexed once. */
+/**
+ * Import and re-export edges into each declaring file *or the package
+ * directory it sits in*, indexed once by the id the edge actually targets.
+ *
+ * Both ids are collected because a Go import names a package rather than a
+ * file, so the edge that makes `cmd/app/main.go` an importer of `Store` targets
+ * `internal/store`, not `internal/store/store.go` (tech spec Appendix C).
+ * `importTargetsOf` is core's shared expansion rule, and a target id is either
+ * a file path or a directory path but never both, so the two buckets can never
+ * fold two different modules together.
+ */
 function importEdgesByTarget(structure: Structure, declarations: Declaration[]): Map<string, ImportEdge[]> {
-  const wanted = new Set(declarations.map((decl) => decl.file));
+  const wanted = new Set<string>();
+  for (const decl of declarations) {
+    for (const target of importTargetsOf(decl.file)) wanted.add(target);
+  }
   const byTarget = new Map<string, ImportEdge[]>();
   if (wanted.size === 0) return byTarget;
 
@@ -137,7 +171,7 @@ function describe(
     exported: decl.exported,
     package: entry?.pkg ?? "",
     card: cardOf(manifest, decl.file),
-    importers: symbolImporters(byTarget.get(decl.file) ?? [], decl),
+    importers: symbolImporters(byTarget, decl),
     callers: callersOf(structure.calls, decl.id),
   };
 }
@@ -147,14 +181,30 @@ function describe(
  * the root of the symbol path, so a caller of `Registry.register` is found
  * through an import of `Registry`. A namespace import (`*`) names everything,
  * so it counts; a side-effect import names nothing, so it does not.
+ *
+ * Plus, for a language whose imports target a package directory rather than a
+ * file, every import of the package. A Go import statement names the package
+ * and nothing finer, so it cannot be filtered by symbol at all, and importing
+ * `internal/store` imports every exported declaration the package holds
+ * (ruling, fix round 1). Unexported declarations are excluded, because no
+ * importer can reach them however the package was imported.
  */
-function symbolImporters(edges: readonly ImportEdge[], decl: Declaration): string[] {
+function symbolImporters(byTarget: Map<string, ImportEdge[]>, decl: Declaration): string[] {
+  const [file, directory] = importTargetsOf(decl.file);
   const exportedName = decl.name.split(".")[0] as string;
   const importers = new Set<string>();
-  for (const edge of edges) {
+
+  for (const edge of byTarget.get(file) ?? []) {
     const symbols = edge.symbols ?? [];
     if (symbols.includes("*") || symbols.includes(exportedName)) importers.add(edge.from);
   }
+
+  if (decl.exported) {
+    for (const edge of byTarget.get(directory) ?? []) {
+      if (edge.from !== decl.file) importers.add(edge.from);
+    }
+  }
+
   return [...importers].sort(compareStrings);
 }
 

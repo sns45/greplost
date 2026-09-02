@@ -13,16 +13,28 @@ import { update } from "@greplost/sync";
 import type { UpdateOptions } from "@greplost/sync";
 
 import type { CommandContext } from "../args.ts";
-import { printJson } from "../output.ts";
+import { printError, printJson } from "../output.ts";
+import { SEMANTIC_UNAVAILABLE, loadRefresh } from "./refresh.ts";
 import { dispatchWorkspace } from "./workspace.ts";
 
 export async function run(ctx: CommandContext): Promise<number> {
   const handled = await dispatchWorkspace("update", ctx);
   if (handled !== undefined) return handled;
 
+  // Checked before any work: `--semantic` on a build without the semantic
+  // package should say so and change nothing, rather than rebuild the map and
+  // then fail, which reads like the update itself went wrong.
+  const refresh = ctx.options.semantic === true ? await loadRefresh() : undefined;
+  if (ctx.options.semantic === true && refresh === undefined) {
+    printError(SEMANTIC_UNAVAILABLE);
+    return 1;
+  }
+
   const result = await update(ctx.root, updateOptions(ctx));
   if (ctx.json) printJson(result);
-  return 0;
+  if (refresh === undefined) return 0;
+
+  return refresh(ctx.root, { ...(ctx.json ? { json: true } : {}) });
 }
 
 function updateOptions(ctx: CommandContext): UpdateOptions {

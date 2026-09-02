@@ -117,6 +117,13 @@ describe("init", () => {
     expect(result["written"]).toBe(0);
   });
 
+  test("--workspace reports the missing layer instead of a usage error", async () => {
+    const run = await cli("init", "--workspace", "--root", ts);
+    expect(run.code).toBe(1);
+    expect(run.stdout).toBe("");
+    expect(run.stderr).toBe("greplost: workspace layer not available in this build");
+  });
+
   test("reports a missing map rather than crashing", async () => {
     const bare = emptyDir("bare");
     const run = await cli("query", "Registry", "--root", bare);
@@ -225,6 +232,14 @@ describe("query", () => {
     expect(human.stderr).toBe('greplost: no match for "NoSuchSymbol"');
   });
 
+  test("an unindexed path is reported as missing from the map, not as no match", async () => {
+    const run = await cli("query", "packages/core/src/nope.ts", "--root", ts);
+    expect(run.code).toBe(1);
+    expect(run.stderr).toBe(
+      "greplost: packages/core/src/nope.ts is not in the map; run `greplost update` or check the path",
+    );
+  });
+
   test("human output is aligned columns plus the card path", async () => {
     const run = await cli("query", "Registry", "--root", ts);
     expect(run.code).toBe(0);
@@ -240,6 +255,32 @@ describe("query", () => {
     expect(run.code).toBe(0);
     const result = onlyJson(run) as { file?: { importers: string[]; package: string } };
     expect(result.file?.importers).toContain("cmd/app/main.go");
+  });
+
+  test("a Go symbol lists the importers of its package", async () => {
+    const run = await cli("query", "Store", "--json", "--root", go);
+    expect(run.code).toBe(0);
+    const result = onlyJson(run) as { matches: Array<{ id: string; exported: boolean; importers: string[] }> };
+    const store = result.matches.find((m) => m.id === "internal/store/store.go#Store");
+    expect(store?.exported).toBe(true);
+    expect(store?.importers).toEqual(["cmd/app/main.go"]);
+  });
+
+  test("an unexported Go symbol has no importers, however the package was imported", async () => {
+    const run = await cli("query", "errorString", "--json", "--root", go);
+    const result = onlyJson(run) as { matches: Array<{ exported: boolean; importers: string[] }> };
+    expect(result.matches).not.toHaveLength(0);
+    expect(result.matches[0]?.exported).toBe(false);
+    expect(result.matches[0]?.importers).toEqual([]);
+  });
+
+  test("the file block's imports list is the counting view, so it agrees with fanOut", async () => {
+    const run = await cli("query", "cmd/app/main.go", "--json", "--root", go);
+    const result = onlyJson(run) as { file?: { imports: string[]; fanOut: number } };
+    // A Go import names a package, so two import statements are two entries,
+    // named as the package directories they target, not the four files in them.
+    expect(result.file?.imports).toEqual(["internal/retry", "internal/store"]);
+    expect(result.file?.imports).toHaveLength(result.file?.fanOut as number);
   });
 });
 
@@ -385,6 +426,15 @@ describe("update", () => {
     expect(quiet.code).toBe(0);
     expect(quiet.stdout).toBe("");
   });
+
+  test("--semantic reports the missing layer and changes nothing", async () => {
+    const before = readFileSync(path.join(ts, ".greplost", "manifest.json"), "utf8");
+    const run = await cli("update", "--semantic", "--root", ts);
+    expect(run.code).toBe(1);
+    expect(run.stdout).toBe("");
+    expect(run.stderr).toBe("greplost: semantic layer not available in this build");
+    expect(readFileSync(path.join(ts, ".greplost", "manifest.json"), "utf8")).toBe(before);
+  });
 });
 
 describe("flows", () => {
@@ -433,6 +483,14 @@ describe("bench", () => {
     const run = await cli("bench", "no-such-suite", "--root", ts);
     expect(run.code).toBe(2);
   });
+
+  test("--root written after the suite is parsed, not swallowed", async () => {
+    // Reaches the dispatcher (exit 2 for an unknown suite) rather than failing
+    // as a usage error, which is what a swallowed --root used to produce.
+    const run = await cli("bench", "no-such-suite", "--root", ts, "--gate");
+    expect(run.code).toBe(2);
+    expect(run.stderr).toBe("");
+  });
 });
 
 describe("version", () => {
@@ -452,6 +510,22 @@ describe("version", () => {
     const run = await cli("--help");
     expect(run.code).toBe(0);
     expect(run.stdout).toContain("usage: greplost <command>");
+  });
+
+  test("help <cmd> narrows to that command, and --help --json wraps it", async () => {
+    const one = await cli("help", "impact");
+    expect(one.code).toBe(0);
+    expect(one.stdout).toContain("usage: greplost impact <path> [--depth <n>]");
+    expect(one.stdout).not.toContain("greplost query");
+
+    const viaFlag = await cli("impact", "x", "--help");
+    expect(viaFlag.stdout).toBe(one.stdout);
+
+    const json = await cli("--help", "--json");
+    expect(json.code).toBe(0);
+    const result = onlyJson(json) as { usage: string };
+    expect(Object.keys(result)).toEqual(["usage"]);
+    expect(result.usage).toContain("usage: greplost <command>");
   });
 });
 

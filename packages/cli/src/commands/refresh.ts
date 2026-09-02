@@ -25,10 +25,13 @@ export interface SemanticRefreshOptions {
 
 export type SemanticRefresh = (root: string, opts: SemanticRefreshOptions) => Promise<number>;
 
+/** What every command says when the optional semantic package is not present. */
+export const SEMANTIC_UNAVAILABLE = "semantic layer not available in this build";
+
 export async function run(ctx: CommandContext): Promise<number> {
   const refresh = await loadRefresh();
   if (refresh === undefined) {
-    printError("semantic layer not available in this build");
+    printError(SEMANTIC_UNAVAILABLE);
     return 1;
   }
 
@@ -41,7 +44,8 @@ export async function run(ctx: CommandContext): Promise<number> {
   });
 }
 
-async function loadRefresh(): Promise<SemanticRefresh | undefined> {
+/** The semantic package's `refresh`, or `undefined` when it is not in this build. */
+export async function loadRefresh(): Promise<SemanticRefresh | undefined> {
   try {
     const module = (await import("@greplost/semantic")) as Record<string, unknown>;
     const refresh = module["refresh"];

@@ -119,7 +119,7 @@ describe("hook session-start", () => {
 });
 
 describe("hook pre-tool-use", () => {
-  test("allows the tool and adds the reminder for Grep and Glob", async () => {
+  test("adds the reminder for Grep and Glob, with no permission decision", async () => {
     for (const tool of ["Grep", "Glob"]) {
       const run = await hook(
         "pre-tool-use",
@@ -128,11 +128,14 @@ describe("hook pre-tool-use", () => {
       );
       expect(run.code).toBe(0);
       const output = JSON.parse(run.stdout) as {
-        hookSpecificOutput: { hookEventName: string; permissionDecision: string; additionalContext: string };
+        hookSpecificOutput: Record<string, unknown>;
       };
-      expect(output.hookSpecificOutput.hookEventName).toBe("PreToolUse");
-      expect(output.hookSpecificOutput.permissionDecision).toBe("allow");
-      expect(output.hookSpecificOutput.additionalContext).toBe(
+      // Context only: emitting `permissionDecision: "allow"` would take the
+      // user's own permission prompt away for every Glob and Grep.
+      expect(Object.keys(output.hookSpecificOutput).sort()).toEqual(["additionalContext", "hookEventName"]);
+      expect(output.hookSpecificOutput["hookEventName"]).toBe("PreToolUse");
+      expect(output.hookSpecificOutput["permissionDecision"]).toBeUndefined();
+      expect(output.hookSpecificOutput["additionalContext"]).toBe(
         "greplost: consult .greplost/INDEX.md or `greplost query <symbol> --json` before grepping.",
       );
     }
