@@ -79,7 +79,8 @@ function moduleTable(ctx: DocContext, pkg: PackageInfo, files: readonly string[]
  * path is "." — a title of `.` says nothing, and every non-monorepo has exactly
  * one such package, so the root package titles its diagrams with its name. The
  * root only feeds titles and the synthetic overview node ids; grouping is
- * driven by each node's `dir`, so nothing else changes.
+ * driven by each node's `dir`, so nothing else changes. Titles are only
+ * rendered as headings once there is more than one diagram to tell apart.
  */
 function componentDiagrams(ctx: DocContext, pkg: PackageInfo, files: readonly string[]): string[] {
   if (files.length === 0) return ["None."];
@@ -120,9 +121,14 @@ function componentDiagrams(ctx: DocContext, pkg: PackageInfo, files: readonly st
   }
 
   const root = pkg.path === "." ? pkg.name : pkg.path;
+  const diagrams = splitDiagram(root, nodes, edges, ctx.config.diagram.maxNodes);
+  // Headings only once auto-split produced several diagrams, matching
+  // `## Package dependencies`: a sole title just restates the package path the
+  // header line already gives.
   const blocks: string[] = [];
-  for (const diagram of splitDiagram(root, nodes, edges, ctx.config.diagram.maxNodes)) {
-    blocks.push(`### ${diagram.title}`, renderGraph(diagram.spec));
+  for (const diagram of diagrams) {
+    if (diagrams.length > 1) blocks.push(`### ${diagram.title}`);
+    blocks.push(renderGraph(diagram.spec));
   }
   return blocks;
 }

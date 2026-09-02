@@ -21,8 +21,6 @@ Path: `apps/worker` · 2 files · 25 LOC · depends on: @tiny/adapters, @tiny/co
 
 ## Components
 
-### apps/worker
-
 ```mermaid
 graph LR
   apps_worker_src_config_ts["config.ts"]

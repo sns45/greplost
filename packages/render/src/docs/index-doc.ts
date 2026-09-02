@@ -5,15 +5,15 @@
  * The entry point an agent reads first, and the one artifact with a hard size
  * contract: `estimateTokens(text) <= INDEX_TOKEN_BUDGET` for *any* input.
  *
- * `buildIndex` renders the richest document that fits, trying candidates in the
- * spec's degradation order: (1) cut the package table to the top K packages by
- * LOC, K from all down to 10; (2) limit the tree; (3) drop the hotspot lists.
- * Step 2 is generalised past the spec's literal "depth 2", because a depth-2
- * tree still holds one line per package in the usual `packages/<name>` layout,
- * so a 500-package repo blows the budget with every documented step spent: the
- * tree is limited to depth 2, then depth 1, then truncated to a line count,
- * before the hotspot lists are touched. Two further backstops (a table floor
- * below 10, down to 0) make the postcondition hold for any input at all.
+ * `buildIndex` renders the richest document that fits. The degradation order is
+ * the spec's: (1) cut the package table to the top K packages by LOC, K from
+ * all down to 10; (2) limit the tree to depth 2, then depth 1, then drop it;
+ * (3) drop the hotspot lists. Each step re-maximises K against the smaller
+ * document, so the largest K that fits is always the one used (ruling
+ * 2026-09-02) — pinning K at the floor of 10 once the tree was cut left a
+ * 501-package INDEX using 652 of its 3000 tokens. A final backstop takes the
+ * table below its floor of 10, down to 0, so the postcondition holds for any
+ * input at all.
  */
 
 import type { PackageInfo } from "@greplost/core/schema";
@@ -33,56 +33,58 @@ const HOTSPOT_LIMIT = 5;
 /** The floor the spec gives for the package table: "K from all down to 10". */
 const TABLE_FLOOR = 10;
 
+/**
+ * Every path template is inside backticks: repository Markdown runs bare
+ * `<pkg>` through the HTML sanitizer, which strips it as an unknown tag
+ * (render spec, GitHub rendering rule).
+ */
 const AGENT_LINE =
   "> Read this file first. `greplost query <symbol|path> --json` and " +
   "`greplost impact <path> --json` answer structural questions in one call; " +
-  "module cards under packages/<pkg>/modules/ are one per source file.";
+  "module cards under `packages/<pkg>/modules/` are one per source file.";
 
 interface IndexOptions {
   /** Packages listed in the table (the top K by LOC), the rest summarised in one line. */
   topK: number;
-  /** Package-tree depth, in path segments. */
+  /** Package-tree depth in path segments; `NO_TREE` drops the tree entirely. */
   treeDepth: number;
-  /** Package-tree lines kept, the rest summarised in one line. */
-  treeMaxLines: number;
   /** Whether the two hotspot rankings are listed. */
   hotspots: boolean;
 }
 
 const UNLIMITED = Number.POSITIVE_INFINITY;
 
+/** `treeDepth` value that omits the package tree altogether. */
+const NO_TREE = 0;
+
+/** Degradation states, richest first. Within each, K is maximised separately. */
+const TREE_STEPS: readonly number[] = [UNLIMITED, 2, 1, NO_TREE];
+
 export function buildIndex(ctx: DocContext): string {
   const total = ctx.packages.length;
-  const full: IndexOptions = { topK: total, treeDepth: UNLIMITED, treeMaxLines: UNLIMITED, hotspots: true };
   const fits = (options: IndexOptions): boolean => estimateTokens(render(ctx, options)) <= INDEX_TOKEN_BUDGET;
-
-  if (fits(full)) return render(ctx, full);
-
-  // (1) Cut the package table to the top K packages by LOC, K from all down to
-  // 10. `fits` is monotone in K (fewer rows is never longer), so the largest
+  // `fits` is monotone in K (fewer rows is never longer text), so the largest
   // surviving K is a binary search rather than a linear walk down from `total`.
   const floor = Math.min(total, TABLE_FLOOR);
-  const byK = largestThatFits(floor, total - 1, (k) => fits({ ...full, topK: k }));
-  if (byK !== undefined) return render(ctx, { ...full, topK: byK });
+  const maximiseK = (state: Omit<IndexOptions, "topK">, low: number, high: number): IndexOptions | undefined => {
+    const topK = largestThatFits(low, high, (k) => fits({ ...state, topK: k }));
+    return topK === undefined ? undefined : { ...state, topK };
+  };
 
-  // (2) Limit the tree: depth 2 as the spec says, then depth 1, then a line
-  // count. Every one of these is still the tree step, so the hotspot lists are
-  // only reached once the tree has nothing left to give.
-  const cut: IndexOptions = { ...full, topK: floor };
-  for (const treeDepth of [2, 1]) {
-    if (fits({ ...cut, treeDepth })) return render(ctx, { ...cut, treeDepth });
+  // (1) and (2): the table down to its floor of 10, then the tree to depth 2,
+  // depth 1 and gone — re-maximising K against each smaller tree. (3) The
+  // hotspot lists go last, and K is re-maximised once more without them.
+  for (const hotspots of [true, false]) {
+    for (const treeDepth of TREE_STEPS) {
+      const options = maximiseK({ treeDepth, hotspots }, floor, total);
+      if (options !== undefined) return render(ctx, options);
+    }
   }
-  const flat: IndexOptions = { ...cut, treeDepth: 1 };
-  const byLines = largestThatFits(0, treeLineCount(ctx, flat), (l) => fits({ ...flat, treeMaxLines: l }));
-  if (byLines !== undefined) return render(ctx, { ...flat, treeMaxLines: byLines });
-
-  // (3) Drop the hotspot lists.
-  const bare: IndexOptions = { ...flat, treeMaxLines: 0, hotspots: false };
-  if (fits(bare)) return render(ctx, bare);
 
   // Backstop: the table below its documented floor of 10, down to nothing.
-  const byFloor = largestThatFits(0, Math.max(0, floor - 1), (k) => fits({ ...bare, topK: k }));
-  return render(ctx, { ...bare, topK: byFloor ?? 0 });
+  const bare = { treeDepth: NO_TREE, hotspots: false };
+  const options = maximiseK(bare, 0, Math.max(0, floor - 1));
+  return render(ctx, options ?? { ...bare, topK: 0 });
 }
 
 /** Largest value in [low, high] satisfying the monotone predicate, or undefined. */
@@ -103,15 +105,12 @@ function largestThatFits(low: number, high: number, ok: (value: number) => boole
   return best;
 }
 
-function treeLineCount(ctx: DocContext, options: IndexOptions): number {
-  const tree = packageTree(ctx.packages, options.treeDepth);
-  return tree === "" ? 0 : tree.split("\n").length;
-}
-
 function render(ctx: DocContext, options: IndexOptions): string {
   const blocks: string[] = [`# ${ctx.rootName} map`, `${ctx.generatedLine}\n${AGENT_LINE}`];
 
-  blocks.push(`## Packages (${ctx.packages.length})`, treeBlock(ctx, options));
+  blocks.push(`## Packages (${ctx.packages.length})`);
+  const tree = treeBlock(ctx, options);
+  if (tree !== undefined) blocks.push(tree);
   blocks.push(...tableBlocks(ctx, options));
   blocks.push("## Hotspots", hotspotList(ctx, options));
   blocks.push("## Navigation", navigation());
@@ -119,14 +118,11 @@ function render(ctx: DocContext, options: IndexOptions): string {
   return `${blocks.map((b) => b.replace(/\n+$/, "")).join("\n\n")}\n`;
 }
 
-function treeBlock(ctx: DocContext, options: IndexOptions): string {
-  const tree = packageTree(ctx.packages, options.treeDepth);
-  const lines = tree === "" ? [] : tree.split("\n");
-  const kept = lines.slice(0, Math.max(0, Math.min(lines.length, options.treeMaxLines)));
-  if (kept.length < lines.length) {
-    kept.push(`… ${lines.length - kept.length} more directories, see repo/MAP.md`);
-  }
-  return kept.length === 0 ? "```text\n```" : `\`\`\`text\n${kept.join("\n")}\n\`\`\``;
+/** The package tree, or undefined once the budget has spent the whole tree step. */
+function treeBlock(ctx: DocContext, options: IndexOptions): string | undefined {
+  if (options.treeDepth === NO_TREE) return undefined;
+  const tree = packageTree(ctx.indexedPackages, options.treeDepth);
+  return tree === "" ? undefined : `\`\`\`text\n${tree}\n\`\`\``;
 }
 
 function tableBlocks(ctx: DocContext, options: IndexOptions): string[] {
@@ -183,6 +179,7 @@ function navigation(): string {
   return [
     "- [repo/MAP.md](repo/MAP.md): package tree and dependency diagram",
     "- [repo/HOTSPOTS.md](repo/HOTSPOTS.md): god nodes, blast radii, cycles",
-    "- Package maps: packages/<pkg>/MAP.md, APIs: packages/<pkg>/API.md, cards: packages/<pkg>/modules/<file>.md",
+    "- Package maps: `packages/<pkg>/MAP.md`, APIs: `packages/<pkg>/API.md`, " +
+      "cards: `packages/<pkg>/modules/<file>.md`",
   ].join("\n");
 }

@@ -5,8 +5,13 @@
 > No summary yet; run `greplost refresh`.
 
 **Package:** `@tiny/adapters` ([map](../../MAP.md))
+
 **Exports:** `MemoryAdapter`, `SqsAdapter`, `SqsConfig`, `createSqsAdapter`
+
 **Imports:** [`./sqs`](sqs.ts.md) (SqsAdapter, SqsConfig, createSqsAdapter), [`./memory`](memory.ts.md) (MemoryAdapter)
+
 **Imported by:** [`apps/worker/src/main.ts`](../../../worker/modules/src/main.ts.md)
+
 **Blast radius:** 1 file (`greplost impact packages/adapters/src/index.ts`)
+
 **Key symbols:** None.

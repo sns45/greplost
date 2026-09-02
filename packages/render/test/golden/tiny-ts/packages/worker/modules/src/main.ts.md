@@ -5,10 +5,16 @@
 > No summary yet; run `greplost refresh`.
 
 **Package:** `worker` ([map](../../MAP.md))
+
 **Exports:** `main(): Promise<void>`
+
 **Imports:** [`@tiny/core`](../../../tiny__core/modules/src/index.ts.md) (createRegistry), [`@tiny/adapters`](../../../tiny__adapters/modules/src/index.ts.md) (MemoryAdapter, createSqsAdapter), [`./config`](config.ts.md) (loadConfig)
+
 **Imported by:** None.
+
 **Blast radius:** 0 files (`greplost impact apps/worker/src/main.ts`)
+
 **Key symbols:**
 - `async function main(): Promise<void>`  L5-12
+
 **Calls:** `loadConfig` → [`apps/worker/src/config.ts#loadConfig`](config.ts.md) (high), `main` → [`apps/worker/src/main.ts#main`](main.ts.md) (high), `MemoryAdapter` → [`packages/adapters/src/memory.ts#MemoryAdapter`](../../../tiny__adapters/modules/src/memory.ts.md) (med), `createSqsAdapter` → [`packages/adapters/src/sqs.ts#createSqsAdapter`](../../../tiny__adapters/modules/src/sqs.ts.md) (med), `createRegistry` → [`packages/core/src/registry.ts#createRegistry`](../../../tiny__core/modules/src/registry.ts.md) (med)

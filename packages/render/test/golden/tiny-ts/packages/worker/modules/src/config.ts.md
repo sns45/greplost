@@ -5,10 +5,15 @@
 > No summary yet; run `greplost refresh`.
 
 **Package:** `worker` ([map](../../MAP.md))
+
 **Exports:** `WorkerConfig (interface)`, `loadConfig(): WorkerConfig`
+
 **Imports:** None.
+
 **Imported by:** [`apps/worker/src/main.ts`](main.ts.md)
+
 **Blast radius:** 1 file (`greplost impact apps/worker/src/config.ts`)
+
 **Key symbols:**
 - `interface WorkerConfig`  L1-4
 - `function loadConfig(): WorkerConfig`  L6-11

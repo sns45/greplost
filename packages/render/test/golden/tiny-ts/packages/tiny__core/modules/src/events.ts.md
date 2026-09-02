@@ -5,11 +5,17 @@
 > No summary yet; run `greplost refresh`.
 
 **Package:** `@tiny/core` ([map](../../MAP.md))
+
 **Exports:** `createBus(): Bus`, `formatEvent(event: string, name: string): string`
+
 **Imports:** [`./bus`](bus.ts.md) (Bus)
+
 **Imported by:** [`packages/core/src/bus.ts`](bus.ts.md)
+
 **Blast radius:** 7 files (`greplost impact packages/core/src/events.ts`)
+
 **Key symbols:**
 - `function formatEvent(event: string, name: string): string`  L3-5
 - `function createBus(): Bus`  L7-9
+
 **Calls:** `Bus` → [`packages/core/src/bus.ts#Bus`](bus.ts.md) (high)
