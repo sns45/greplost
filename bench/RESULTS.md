@@ -184,7 +184,7 @@ greplost measured against its own section 3 targets, one row per metric id. The 
 | S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 0.999 | Eval 1, `structural` (hono (248 files)) |
 | S3 | call edge precision (confidence=high) | >= 0.95 | 1 | Eval 1, `structural` (hono (248 files)) |
 | S4 | import cycle Jaccard | = 1.00 | 1 | Eval 1, `structural` (hono (248 files)) |
-| unparsable | files whose tree-sitter parse is broken at the root level | 0 | n/a | not measured: the structural payload reports no unparsable count and carries no per-file truth totals to derive one from |
+| unparsable | files whose tree-sitter parse is broken at the root level | 0 | 5 | Eval 1, `structural` |
 | F1 | `verify` catch rate on stale maps | 100% | 100% | Eval 2, `replay` |
 | F2 | `verify` false positives after `update` | 0% (byte-identical) | 0% | Eval 2, `replay` |
 | P1 | full build, 1k / 10k files | <= 1s / <= 10s (measured on anyq, tier S, 148 files) | 203 ms (p50) | Bench 3, `perf` |
@@ -207,7 +207,7 @@ greplost measured against its own section 3 targets, one row per metric id. The 
 
 Structural accuracy vs compiler truth (S1 to S4)
 
-Measured 2026-09-02 at f235af3.
+Measured 2026-09-02 at b5fca0d.
 
 ### hono (248 files)
 

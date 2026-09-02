@@ -1,0 +1,148 @@
+{
+  "corpus": [
+    {
+      "name": "hono",
+      "sha": "e2740d5a1bd0b4254e517e3af8b60789284bc7bd"
+    }
+  ],
+  "date": "2026-09-02",
+  "gate": {
+    "missed": [],
+    "passed": true
+  },
+  "greplostSha": "b5fca0d",
+  "machine": {
+    "arch": "arm64",
+    "bun": "1.2.21",
+    "cores": 16,
+    "cpu": "Apple M4 Max",
+    "go": "go version go1.25.3 darwin/arm64",
+    "greplostSha": "b5fca0d",
+    "greplostVersion": "0.0.1",
+    "memoryGB": 128,
+    "node": "24.3.0",
+    "os": "Darwin 25.5.0"
+  },
+  "recordedAt": "2026-09-02T17:58:25.435Z",
+  "repos": {
+    "hono": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 571
+      },
+      "S2": {
+        "f1": 0.9995213020584012,
+        "fn": 1,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.999043062200957,
+        "tp": 1044
+      },
+      "S3": {
+        "f1": 0.8439086294416243,
+        "fn": 246,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.7299670691547749,
+        "tp": 665
+      },
+      "S4": 1,
+      "callsAllConfidences": {
+        "f1": 0.8753086419753086,
+        "fn": 202,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.7782656421514819,
+        "tp": 709
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [
+          "src/types.ts:1 (src/types.ts#ExtractHandlerResponse)"
+        ],
+        "S3": [
+          "benchmarks/routers-deno/src/bench.mts:1 (benchmarks/routers-deno/src/bench.mts -> benchmarks/routers-deno/src/tool.mts#RouterInterface.match)",
+          "benchmarks/routers-deno/src/hono.mts:1 (benchmarks/routers-deno/src/hono.mts -> src/router/pattern-router/router.ts#PatternRouter)",
+          "benchmarks/routers-deno/src/hono.mts:1 (benchmarks/routers-deno/src/hono.mts -> src/router/reg-exp-router/router.ts#RegExpRouter)",
+          "benchmarks/routers-deno/src/hono.mts:1 (benchmarks/routers-deno/src/hono.mts -> src/router/trie-router/router.ts#TrieRouter)",
+          "benchmarks/routers-deno/src/hono.mts:8 (benchmarks/routers-deno/src/hono.mts#createHonoRouter -> src/router.ts#Router.add)",
+          "benchmarks/routers-deno/src/hono.mts:8 (benchmarks/routers-deno/src/hono.mts#createHonoRouter -> src/router.ts#Router.match)",
+          "benchmarks/routers/src/bench-includes-init.mts:1 (benchmarks/routers/src/bench-includes-init.mts -> src/router/linear-router/router.ts#LinearRouter)",
+          "benchmarks/routers/src/bench-includes-init.mts:1 (benchmarks/routers/src/bench-includes-init.mts -> src/router/linear-router/router.ts#LinearRouter.add)",
+          "benchmarks/routers/src/bench-includes-init.mts:1 (benchmarks/routers/src/bench-includes-init.mts -> src/router/linear-router/router.ts#LinearRouter.match)",
+          "benchmarks/routers/src/bench-includes-init.mts:1 (benchmarks/routers/src/bench-includes-init.mts -> src/router/reg-exp-router/prepared-router.ts#PreparedRegExpRouter)",
+          "benchmarks/routers/src/bench-includes-init.mts:1 (benchmarks/routers/src/bench-includes-init.mts -> src/router/reg-exp-router/prepared-router.ts#PreparedRegExpRouter.add)",
+          "benchmarks/routers/src/bench-includes-init.mts:1 (benchmarks/routers/src/bench-includes-init.mts -> src/router/reg-exp-router/prepared-router.ts#PreparedRegExpRouter.match)",
+          "benchmarks/routers/src/bench-includes-init.mts:1 (benchmarks/routers/src/bench-includes-init.mts -> src/router/reg-exp-router/prepared-router.ts#buildInitParams)",
+          "benchmarks/routers/src/bench-includes-init.mts:1 (benchmarks/routers/src/bench-includes-init.mts -> src/router/reg-exp-router/router.ts#RegExpRouter)",
+          "benchmarks/routers/src/bench-includes-init.mts:1 (benchmarks/routers/src/bench-includes-init.mts -> src/router/reg-exp-router/router.ts#RegExpRouter.add)",
+          "benchmarks/routers/src/bench-includes-init.mts:1 (benchmarks/routers/src/bench-includes-init.mts -> src/router/reg-exp-router/router.ts#RegExpRouter.match)",
+          "benchmarks/routers/src/bench-includes-init.mts:1 (benchmarks/routers/src/bench-includes-init.mts -> src/router/trie-router/router.ts#TrieRouter)",
+          "benchmarks/routers/src/bench-includes-init.mts:1 (benchmarks/routers/src/bench-includes-init.mts -> src/router/trie-router/router.ts#TrieRouter.add)",
+          "benchmarks/routers/src/bench-includes-init.mts:1 (benchmarks/routers/src/bench-includes-init.mts -> src/router/trie-router/router.ts#TrieRouter.match)",
+          "benchmarks/routers/src/bench.mts:1 (benchmarks/routers/src/bench.mts -> benchmarks/routers/src/tool.mts#RouterInterface.match)"
+        ],
+        "S4": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": []
+      },
+      "files": 248,
+      "noFiles": false,
+      "truthEmpty": false
+    }
+  },
+  "suite": "structural",
+  "targets": {
+    "S1": [
+      0.99,
+      0.97
+    ],
+    "S2": [
+      0.99,
+      0.99
+    ],
+    "S3": 0.95,
+    "S4": 1
+  },
+  "truth": {
+    "notes": []
+  },
+  "unparsable": {
+    "count": 5,
+    "files": [
+      {
+        "path": "src/context.ts",
+        "reason": "error-child",
+        "repo": "hono"
+      },
+      {
+        "path": "src/helper/factory/index.ts",
+        "reason": "error-child",
+        "repo": "hono"
+      },
+      {
+        "path": "src/helper/ssg/middleware.ts",
+        "reason": "error-child",
+        "repo": "hono"
+      },
+      {
+        "path": "src/types.ts",
+        "reason": "error-root",
+        "repo": "hono"
+      },
+      {
+        "path": "src/utils/body.ts",
+        "reason": "error-child",
+        "repo": "hono"
+      }
+    ]
+  }
+}
