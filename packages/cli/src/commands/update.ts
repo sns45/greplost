@@ -1,5 +1,5 @@
 /**
- * `greplost update [--incremental|--full] [--files <p>...] [--quiet]`
+ * `greplost update [--incremental|--full] [--files <p>...] [--semantic] [--quiet]`
  * (tech spec 8, 9).
  *
  * A thin wrapper by design: `@greplost/sync` owns the lock, the dirty queue,
@@ -7,15 +7,33 @@
  * summary. The CLI adds only the two things a process boundary needs: the
  * mode default and the guarantee that `--json` puts the result object on stdout
  * and nothing else, which is why it forces the summary off.
+ *
+ * `--semantic` is the one place that costs a paragraph. Two results come out of
+ * one command, and `--json` output must stay a single parseable document, so
+ * this command does the printing for both:
+ *
+ *     { "update": <UpdateResult>, "refresh": <RefreshResult> }
+ *
+ * That is why it asks `@greplost/semantic` for `refreshOutcome` (the run, with
+ * the printing lifted out) rather than `refreshCommand` (the run, which prints
+ * its own document). A refresh that failed has no result, so the envelope is
+ * `{ "update": … }` alone and the reason is on stderr with the exit code.
  */
 
 import { update } from "@greplost/sync";
-import type { UpdateOptions } from "@greplost/sync";
+import type { UpdateOptions, UpdateResult } from "@greplost/sync";
 
 import type { CommandContext } from "../args.ts";
-import { printError, printJson } from "../output.ts";
-import { SEMANTIC_UNAVAILABLE, loadRefresh } from "./refresh.ts";
+import { printError, printJson, printLine } from "../output.ts";
+import { SEMANTIC_UNAVAILABLE, loadRefreshOutcome } from "./refresh.ts";
 import { dispatchWorkspace } from "./workspace.ts";
+
+/** The `--json` shape of `greplost update --semantic`. */
+export interface SemanticUpdateEnvelope {
+  update: UpdateResult;
+  /** The `RefreshResult`; absent when the refresh failed. */
+  refresh?: unknown;
+}
 
 export async function run(ctx: CommandContext): Promise<number> {
   const handled = await dispatchWorkspace("update", ctx);
@@ -24,17 +42,32 @@ export async function run(ctx: CommandContext): Promise<number> {
   // Checked before any work: `--semantic` on a build without the semantic
   // package should say so and change nothing, rather than rebuild the map and
   // then fail, which reads like the update itself went wrong.
-  const refresh = ctx.options.semantic === true ? await loadRefresh() : undefined;
+  const refresh = ctx.options.semantic === true ? await loadRefreshOutcome() : undefined;
   if (ctx.options.semantic === true && refresh === undefined) {
     printError(SEMANTIC_UNAVAILABLE);
     return 1;
   }
 
   const result = await update(ctx.root, updateOptions(ctx));
-  if (ctx.json) printJson(result);
-  if (refresh === undefined) return 0;
+  if (refresh === undefined) {
+    if (ctx.json) printJson(result);
+    return 0;
+  }
 
-  return refresh(ctx.root, { ...(ctx.json ? { json: true } : {}) });
+  const outcome = await refresh(ctx.root, {});
+  if (ctx.json) {
+    const envelope: SemanticUpdateEnvelope = {
+      update: result,
+      ...(outcome.result === undefined ? {} : { refresh: outcome.result }),
+    };
+    printJson(envelope);
+  } else if (outcome.result !== undefined && outcome.summary !== undefined) {
+    printLine(outcome.summary);
+  }
+
+  for (const line of outcome.warnings) printError(line);
+  if (outcome.error !== undefined) printError(outcome.error);
+  return outcome.code;
 }
 
 function updateOptions(ctx: CommandContext): UpdateOptions {

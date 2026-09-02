@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/render/src/docs/card.ts`](card.ts.md), [`packages/render/src/render.ts`](../render.ts.md)
 
-**Blast radius:** 33 files (`greplost impact packages/render/src/docs/api.ts`)
+**Blast radius:** 37 files (`greplost impact packages/render/src/docs/api.ts`)
 
 **Key symbols:**
 - `const DECLARATION_KEYWORDS: ReadonlySet<string> = new Set(["export", "default", "declare"])`  L23-23

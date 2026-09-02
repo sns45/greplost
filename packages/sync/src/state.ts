@@ -13,10 +13,12 @@
  * to trust) is the whole design.
  */
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { ARTIFACT_DIR, ARTIFACT_PATHS, stableStringify } from "@greplost/core/schema";
+
+import { safeWrite } from "./write.ts";
 
 export interface SyncState {
   /** Commit the artifacts on disk were built from, when the repo is a git repo. */
@@ -85,18 +87,19 @@ export function readState(root: string): SyncState {
  * Stable JSON with a trailing newline, like everything else greplost writes,
  * even though this file is gitignored: the day someone commits it by accident,
  * it should not be the thing that churns.
+ *
+ * Through `safeWrite`, not `writeFileSync`, for the reason `write.ts` gives:
+ * this file is gitignored but its *path* is not, and a repository carrying a
+ * committed `.greplost/.state.json -> somewhere` would otherwise have every
+ * unattended `update` write through the link.
  */
 export function writeState(root: string, state: SyncState): void {
-  const file = statePath(root);
   try {
-    mkdirSync(path.dirname(file), { recursive: true });
-    writeFileSync(file, `${stableStringify(state, 2)}\n`);
+    safeWrite(root, ARTIFACT_PATHS.state, `${stableStringify(state, 2)}\n`);
   } catch (cause) {
-    throw new Error(
-      `greplost: cannot write ${ARTIFACT_DIR}/${ARTIFACT_PATHS.state}: ${
-        cause instanceof Error ? cause.message : String(cause)
-      }`,
-    );
+    const message = cause instanceof Error ? cause.message : String(cause);
+    if (message.startsWith("greplost: ")) throw cause;
+    throw new Error(`greplost: cannot write ${ARTIFACT_DIR}/${ARTIFACT_PATHS.state}: ${message}`);
   }
 }
 

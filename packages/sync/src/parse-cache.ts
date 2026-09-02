@@ -44,12 +44,14 @@
  * to the record's shape.
  */
 
-import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import type { ParseCache } from "@greplost/core";
 import type { FileRecord, Lang } from "@greplost/core/schema";
 import { ARTIFACT_DIR, LANG_BY_EXTENSION, SCHEMA_VERSION, stableStringify } from "@greplost/core/schema";
+
+import { safeWrite } from "./write.ts";
 
 /** `.greplost/cache/parse.json`, relative to the artifact directory. */
 export const PARSE_CACHE_PATH = "cache/parse.json";
@@ -83,12 +85,14 @@ const LANGS: ReadonlySet<string> = new Set<string>(Object.values(LANG_BY_EXTENSI
  * touched inside the lock) should be able to ask for it.
  */
 export class FileParseCache implements ParseCache {
+  private readonly root: string;
   private readonly file: string;
   private readonly entries = new Map<string, FileRecord>();
   private loaded = false;
 
   constructor(root: string) {
-    this.file = path.join(path.resolve(root), ARTIFACT_DIR, PARSE_CACHE_PATH);
+    this.root = path.resolve(root);
+    this.file = path.join(this.root, ARTIFACT_DIR, PARSE_CACHE_PATH);
   }
 
   /** Number of records currently held. */
@@ -173,25 +177,17 @@ export class FileParseCache implements ParseCache {
     const out: Record<string, FileRecord | string> = { [PARSE_CACHE_VERSION_KEY]: PARSE_CACHE_STAMP };
     for (const [key, value] of this.entries) out[key] = value;
 
-    // The sibling-temporary naming `writeArtifacts` uses, so a crash between
-    // the write and the rename leaves something `update` knows how to sweep.
-    const temporary = path.join(path.dirname(this.file), `.${path.basename(this.file)}.${process.pid}.0.tmp`);
+    // `safeWrite`, not `mkdirSync` plus a write: it does the write-then-rename
+    // (a reader, or a crash, never sees half a cache) *and* the containment
+    // walk, so a repository carrying a committed `.greplost/cache -> anywhere`
+    // gets the link replaced rather than followed. The cache file is
+    // gitignored; the directory it lives in is not.
     try {
-      mkdirSync(path.dirname(this.file), { recursive: true });
-      // Write then rename: a reader (or a crash) never sees half a cache.
-      writeFileSync(temporary, `${stableStringify(out)}\n`);
-      renameSync(temporary, this.file);
+      safeWrite(this.root, PARSE_CACHE_PATH, `${stableStringify(out)}\n`);
     } catch (cause) {
-      try {
-        rmSync(temporary, { force: true });
-      } catch {
-        // Nothing reads a `.tmp`; leaving one behind is not worth an error.
-      }
-      throw new Error(
-        `greplost: cannot write ${ARTIFACT_DIR}/${PARSE_CACHE_PATH}: ${
-          cause instanceof Error ? cause.message : String(cause)
-        }`,
-      );
+      const message = cause instanceof Error ? cause.message : String(cause);
+      if (message.startsWith("greplost: ")) throw cause;
+      throw new Error(`greplost: cannot write ${ARTIFACT_DIR}/${PARSE_CACHE_PATH}: ${message}`);
     }
   }
 

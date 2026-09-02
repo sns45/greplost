@@ -45,7 +45,7 @@ interface Manifest {
  */
 export function detectPackages(root: string, files: string[], config: GreplostConfig): PackageInfo[] {
   const read = (rel: string): string | null => readTextFile(root, rel);
-  const packages: PackageInfo[] = [{ name: rootPackageName(root, read), path: ".", source: "root" }];
+  const packages: PackageInfo[] = [{ name: rootPackageName(read), path: ".", source: "root" }];
 
   const patterns = workspacePatterns(config, read);
   for (const dir of candidateDirectories(root, files, patterns)) {
@@ -82,7 +82,19 @@ export function packageOf(filePath: string, packages: PackageInfo[]): PackageInf
 // root package
 // ---------------------------------------------------------------------------
 
-function rootPackageName(root: string, read: (rel: string) => string | null): string {
+/**
+ * The name of the package at `.`: the root `package.json`'s, else the root
+ * `go.mod`'s module, else the literal `root`.
+ *
+ * Not the checkout directory's basename, which is the one candidate that is a
+ * property of the machine rather than of the repository. That name reaches
+ * `manifest.packages`, every `manifest.files[*].pkg`, the `packages/<slug>/`
+ * artifact directory and the INDEX/MAP titles, so deriving it from the
+ * directory would make two clones of one repository produce two different maps
+ * and `greplost verify` fail across machines — exactly what the determinism
+ * contract of tech spec 5.3 forbids.
+ */
+function rootPackageName(read: (rel: string) => string | null): string {
   const pkg = parseJson(read("package.json"));
   const name = pkg && typeof pkg["name"] === "string" ? pkg["name"].trim() : "";
   if (name) return name;
@@ -90,7 +102,7 @@ function rootPackageName(root: string, read: (rel: string) => string | null): st
   const goModule = goModuleName(read("go.mod"));
   if (goModule) return goModule;
 
-  return path.basename(path.resolve(root));
+  return "root";
 }
 
 // ---------------------------------------------------------------------------

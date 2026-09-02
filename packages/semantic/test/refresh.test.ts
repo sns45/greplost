@@ -16,7 +16,18 @@
 
 import { afterAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -27,7 +38,7 @@ import { init, isStructurePath, update, withLock } from "@greplost/sync";
 
 import { renderFlows, selectEntryPoints } from "../src/flows.ts";
 import { ENTRY_PREFIX, FILE_PREFIX, FLOWS_TASK } from "../src/prompts.ts";
-import { refresh, refreshCommand } from "../src/refresh.ts";
+import { refresh, refreshCommand, refreshOutcome } from "../src/refresh.ts";
 import type { Flow, PromptRunner, RefreshResult } from "../src/index.ts";
 
 const FIXTURE = path.resolve(import.meta.dir, "../../../fixtures/tiny-ts");
@@ -189,19 +200,21 @@ async function packageOf(root: string, name: string): Promise<PackageInfo> {
   return pkg;
 }
 
-/** Both streams of one `refreshCommand` call, plus the exit code it answered with. */
-interface Captured {
-  code: Promise<number>;
+/** Both streams of one call, plus whatever it answered with (usually an exit code). */
+interface Captured<T> {
+  value: Promise<T>;
+  /** `value` under the name the exit-code callers read it by. */
+  code: Promise<T>;
   out(): string;
   err(): string;
 }
 
 /**
- * Run a command function with `console.log`/`console.error` captured. The
- * streams are restored when the returned promise settles, so a caller reads
- * `out()` and `err()` after awaiting `code`.
+ * Run a function with `console.log`/`console.error` captured. The streams are
+ * restored when the returned promise settles, so a caller reads `out()` and
+ * `err()` after awaiting `value`.
  */
-function capture(fn: () => Promise<number>): Captured {
+function capture<T>(fn: () => Promise<T>): Captured<T> {
   const out: string[] = [];
   const err: string[] = [];
   const log = console.log;
@@ -212,11 +225,11 @@ function capture(fn: () => Promise<number>): Captured {
   console.error = (...args: unknown[]): void => {
     err.push(args.map((a) => String(a)).join(" "));
   };
-  const code = fn().finally(() => {
+  const value = fn().finally(() => {
     console.log = log;
     console.error = error;
   });
-  return { code, out: () => out.join("\n"), err: () => err.join("\n") };
+  return { value, code: value, out: () => out.join("\n"), err: () => err.join("\n") };
 }
 
 function git(root: string, ...args: string[]): void {
@@ -990,6 +1003,127 @@ describe("safety", () => {
       expect(bad.out()).toBe("");
       expect(bad.err()).toContain("greplost: no package @tiny/nope");
       expect(existsSync(path.join(root, ARTIFACT_DIR, ARTIFACT_PATHS.summaries))).toBe(false);
+    },
+    120_000,
+  );
+
+  /**
+   * `.greplost/` is committed and git stores symlinks, so `cache/summaries.json`
+   * is a path a repository can point anywhere — and `greplost update --semantic`
+   * runs unattended. The summary cache goes through `@greplost/sync`'s
+   * `safeWrite`, which replaces the link instead of writing through it.
+   */
+  test(
+    "a committed symlink at cache/summaries.json is replaced, not followed",
+    async () => {
+      const root = await initialised("symlinked-cache");
+      const outside = mkdtempSync(path.join(tmpdir(), "greplost-semantic-outside-"));
+      temporaries.push(outside);
+      // Valid JSON, because the *read* legitimately follows the link; what must
+      // never happen is a write landing here.
+      const victim = path.join(outside, "victim.json");
+      writeFileSync(victim, "{}\n");
+
+      const cacheFile = path.join(root, ARTIFACT_DIR, ARTIFACT_PATHS.summaries);
+      mkdirSync(path.dirname(cacheFile), { recursive: true });
+      symlinkSync(victim, cacheFile);
+
+      const result = await refresh(root, { runner: recorder().runner, model: MODEL, today: TODAY });
+      expect(result.refreshed).toBe(FIXTURE_SOURCES);
+
+      expect(lstatSync(cacheFile).isSymbolicLink()).toBe(false);
+      expect(readFileSync(victim, "utf8")).toBe("{}\n");
+      expect(readdirSync(outside)).toEqual(["victim.json"]);
+      expect(Object.keys(cacheOf(root)).length).toBe(FIXTURE_SOURCES);
+    },
+    120_000,
+  );
+
+  /**
+   * The same threat one directory up, and the one a `rename` alone never closed:
+   * `mkdirSync(dir, { recursive: true })` resolves every component, so a
+   * committed `.greplost/cache -> /anywhere` used to be walked into and both
+   * caches written on the other side of it.
+   */
+  test(
+    "a committed symlink at cache/ is replaced, not followed",
+    async () => {
+      const root = await initialised("symlinked-cache-dir");
+      const outside = mkdtempSync(path.join(tmpdir(), "greplost-semantic-outside-"));
+      temporaries.push(outside);
+
+      const cacheDir = path.join(root, ARTIFACT_DIR, "cache");
+      rmSync(cacheDir, { recursive: true, force: true });
+      symlinkSync(outside, cacheDir, "dir");
+
+      const result = await refresh(root, { runner: recorder().runner, model: MODEL, today: TODAY });
+      expect(result.refreshed).toBe(FIXTURE_SOURCES);
+
+      expect(lstatSync(cacheDir).isSymbolicLink()).toBe(false);
+      expect(readdirSync(outside)).toEqual([]);
+      expect(Object.keys(cacheOf(root)).length).toBe(FIXTURE_SOURCES);
+    },
+    120_000,
+  );
+});
+
+/**
+ * The seam `greplost update --semantic --json` needs (tech spec 9).
+ *
+ * `refreshCommand` owns its output, which is right for `greplost refresh` and
+ * wrong for a command that has a result of its own to print: two writers meant
+ * two JSON documents on one stdout, which no parser accepts. `refreshOutcome`
+ * is the same run with the printing lifted out, so the CLI can put both results
+ * in one envelope.
+ */
+describe("refreshOutcome", () => {
+  test(
+    "returns the result and the exit code and prints nothing",
+    async () => {
+      const root = await initialised("outcome");
+      const run = capture(() => refreshOutcome(root, { runner: recorder().runner, model: MODEL, today: TODAY }));
+      const outcome = await run.value;
+
+      expect(outcome.code).toBe(0);
+      expect(outcome.result?.refreshed).toBe(FIXTURE_SOURCES);
+      expect(outcome.error).toBeUndefined();
+      expect(outcome.summary).toContain("summaries refreshed");
+      expect(run.out()).toBe("");
+      expect(run.err()).toBe("");
+    },
+    120_000,
+  );
+
+  test(
+    "reports a failure as an exit code and a message rather than a throw",
+    async () => {
+      const root = await initialised("outcome-fail");
+      const run = capture(() =>
+        refreshOutcome(root, { package: "@tiny/nope", runner: forbiddenRunner, today: TODAY }),
+      );
+      const outcome = await run.value;
+
+      expect(outcome.code).toBe(1);
+      expect(outcome.result).toBeUndefined();
+      expect(outcome.error).toContain("greplost: no package @tiny/nope");
+      expect(run.out()).toBe("");
+      expect(run.err()).toBe("");
+    },
+    120_000,
+  );
+
+  test(
+    "hands the warnings back instead of printing them",
+    async () => {
+      const root = await initialised("outcome-warn");
+      const run = capture(() =>
+        refreshOutcome(root, { runner: recorder({ flows: [] }).runner, model: MODEL, today: TODAY }),
+      );
+      const outcome = await run.value;
+
+      expect(outcome.code).toBe(0);
+      expect(outcome.warnings.join("\n")).toContain("could not write FLOWS.md for worker");
+      expect(run.err()).toBe("");
     },
     120_000,
   );

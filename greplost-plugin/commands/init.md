@@ -6,7 +6,7 @@ allowed-tools: Bash(greplost init:*), Bash(bunx greplost init:*)
 Run `greplost init` in the project root (if `greplost` is not on PATH, run
 `bunx greplost init` instead). Then report, concisely:
 
-- what it created (`.greplost/` and its contents, `.greplost.json` config)
+- what it created (`.greplost/` and its contents, the `.greplost/config.json` config)
 - which git hooks it installed, if any
 - the exit code, and the stderr message verbatim if it failed
 

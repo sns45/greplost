@@ -43,14 +43,14 @@
  * each. The alternative — dropping the work — is worse.
  */
 
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { buildSnapshot, loadConfig, sha256Hex } from "@greplost/core";
 import type { Manifest, PackageInfo, Snapshot, SummaryCache, SummaryEntry } from "@greplost/core/schema";
 import { ARTIFACT_DIR, ARTIFACT_PATHS, compareStrings, packageSlug, stableStringify } from "@greplost/core/schema";
 import { packageDir } from "@greplost/render";
-import { FileParseCache, readSummaries, update, withLock } from "@greplost/sync";
+import { FileParseCache, readSummaries, safeWrite, update, withLock } from "@greplost/sync";
 
 import { REACH_DEPTH, callLines, importGraph, isoDate, reachableFrom, renderFlows, selectEntryPoints } from "./flows.ts";
 import type { FlowRequest, SummaryRequest } from "./prompts.ts";
@@ -281,7 +281,7 @@ export async function refresh(root: string, opts: RefreshOptions = {}): Promise<
     try {
       calls++;
       const answer = await runner(buildFlowsPrompt(pkg.name, flowRequests(snapshot, entryPoints)), { model });
-      writeFile(file, relative, renderFlows(pkg, parseFlowsResponse(answer), today));
+      writeFile(absoluteRoot, relative, renderFlows(pkg, parseFlowsResponse(answer), today));
       flows.push(relative);
     } catch (cause) {
       flowsFailed.push({ pkg: pkg.name, reason: cause instanceof Error ? cause.message : String(cause) });
@@ -308,14 +308,35 @@ export interface RefreshCommandOptions {
 }
 
 /**
- * `greplost refresh`, as an exit code.
+ * One refresh run, decided but not printed.
  *
- * The CLI leaf left this seam deliberately shaped: the semantic layer owns its
- * own output and its own failures, so the command surface never has to know
- * what a model call is. Anything thrown becomes one `greplost: ` line on
- * stderr and exit 1, which is the same failure shape every other command has.
+ * Everything `refreshCommand` would have written, handed back instead: the
+ * exit code, the result (absent when the run failed), the one line a human
+ * reads, and the stderr warnings. That separation exists for one caller —
+ * `greplost update --semantic --json`, which has an `UpdateResult` of its own
+ * to print. While the semantic layer printed its own document, that command
+ * emitted two JSON documents onto one stdout and no parser accepted either.
  */
-export async function refreshCommand(root: string, opts: RefreshCommandOptions = {}): Promise<number> {
+export interface RefreshOutcome {
+  /** The process exit code this run earns: 0, or 1 when it failed. */
+  code: number;
+  /** The run's result; absent exactly when `error` is present. */
+  result?: RefreshResult;
+  /** The one-line human summary, for a caller not printing JSON. */
+  summary?: string;
+  /** `greplost: ` lines for stderr. Warnings on success; never a failure. */
+  warnings: string[];
+  /** The `greplost: ` failure message, when the run failed. */
+  error?: string;
+}
+
+/**
+ * `greplost refresh`, as an outcome rather than as output.
+ *
+ * Nothing here writes to either stream, so an embedder decides what to print
+ * and when. `refreshCommand` is this function plus the printing.
+ */
+export async function refreshOutcome(root: string, opts: RefreshCommandOptions = {}): Promise<RefreshOutcome> {
   try {
     const result = await refresh(root, {
       ...(opts.package === undefined ? {} : { pkg: opts.package }),
@@ -326,47 +347,68 @@ export async function refreshCommand(root: string, opts: RefreshCommandOptions =
       ...(opts.today === undefined ? {} : { today: opts.today }),
     });
 
-    if (opts.json === true) console.log(stableStringify(result, 2));
-    else console.log(humanSummary(result, opts.dryRun === true));
-    warn(result, opts.dryRun === true);
-    return 0;
+    return {
+      code: 0,
+      result,
+      summary: humanSummary(result, opts.dryRun === true),
+      warnings: warnings(result, opts.dryRun === true),
+    };
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : String(cause);
-    console.error(message.startsWith("greplost: ") ? message : `greplost: ${message}`);
-    return 1;
+    return { code: 1, warnings: [], error: message.startsWith("greplost: ") ? message : `greplost: ${message}` };
   }
+}
+
+/**
+ * `greplost refresh`, as an exit code.
+ *
+ * The CLI leaf left this seam deliberately shaped: the semantic layer owns its
+ * own output and its own failures, so the command surface never has to know
+ * what a model call is. Anything thrown becomes one `greplost: ` line on
+ * stderr and exit 1, which is the same failure shape every other command has.
+ */
+export async function refreshCommand(root: string, opts: RefreshCommandOptions = {}): Promise<number> {
+  const outcome = await refreshOutcome(root, opts);
+
+  if (outcome.result !== undefined) {
+    if (opts.json === true) console.log(stableStringify(outcome.result, 2));
+    else if (outcome.summary !== undefined) console.log(outcome.summary);
+  }
+  for (const line of outcome.warnings) console.error(line);
+  if (outcome.error !== undefined) console.error(outcome.error);
+  return outcome.code;
 }
 
 /**
  * Everything a *successful* refresh still has to say out loud.
  *
- * All of it on stderr, including in `--json` mode, for two reasons that point
+ * Destined for stderr, including in `--json` mode, for two reasons that point
  * the same way: `--json` stdout has to stay one parseable document, and none of
  * these are failures. A partial answer, a flows document that could not be
  * written and a rebuild that lost a race all leave the repository better than
  * it was; they just leave it short of what was asked for, and a person who is
  * not told will read a map that is quietly incomplete and believe it.
  */
-function warn(result: RefreshResult, dryRun: boolean): void {
-  if (dryRun) return;
+function warnings(result: RefreshResult, dryRun: boolean): string[] {
+  if (dryRun) return [];
+  const lines: string[] = [];
 
   if (result.unanswered.length > 0) {
     const asked = result.refreshed + result.unanswered.length;
-    console.error(
-      `greplost: the model did not answer for ${result.unanswered.length} of ${asked} files; they stay stale`,
-    );
+    lines.push(`greplost: the model did not answer for ${result.unanswered.length} of ${asked} files; they stay stale`);
   }
   for (const failure of result.flowsFailed) {
-    console.error(`greplost: could not write FLOWS.md for ${failure.pkg}: ${failure.reason}`);
+    lines.push(`greplost: could not write FLOWS.md for ${failure.pkg}: ${failure.reason}`);
   }
   if (!result.lockHeld) {
-    console.error(
+    lines.push(
       "greplost: merged the summary cache without the lock (another update held it); entries written concurrently may be shadowed",
     );
   }
   if (result.update === "locked") {
-    console.error("greplost: another update held the lock; run `greplost update` to render the new summaries");
+    lines.push("greplost: another update held the lock; run `greplost update` to render the new summaries");
   }
+  return lines;
 }
 
 function humanSummary(result: RefreshResult, dryRun: boolean): string {
@@ -707,42 +749,29 @@ function newestByPath(cache: SummaryCache): Map<string, string> {
 }
 
 function writeCache(root: string, cache: SummaryCache): void {
-  writeFile(path.join(root, ARTIFACT_DIR, ARTIFACT_PATHS.summaries), ARTIFACT_PATHS.summaries, `${stableStringify(cache, 2)}\n`);
+  writeFile(root, ARTIFACT_PATHS.summaries, `${stableStringify(cache, 2)}\n`);
 }
 
-/** Serial number for temporary files, so one run cannot collide with itself. */
-let tempCounter = 0;
-
 /**
- * Put `contents` at `file` through a sibling temporary and a rename.
+ * Put `contents` at `<root>/.greplost/<label>`, through `@greplost/sync`'s
+ * `safeWrite`.
  *
- * Not `writeFileSync` on the target, for the two reasons `@greplost/sync`'s
- * writer gives and one of its own. A reader must never see half a file:
- * `readSummaries` throws on a cache it cannot parse, so a torn write would take
- * `greplost update` and `greplost verify` down for everyone until someone
- * deleted it by hand. An in-place write also rewrites a hard-linked inode under
- * its other name. And a rename fails or succeeds whole, so a failure leaves the
- * committed file exactly as it was.
+ * Not `writeFileSync` on the target, for the two reasons that writer gives and
+ * one of its own. A reader must never see half a file: `readSummaries` throws
+ * on a cache it cannot parse, so a torn write would take `greplost update` and
+ * `greplost verify` down for everyone until someone deleted it by hand. An
+ * in-place write also rewrites a hard-linked inode under its other name. And a
+ * rename fails or succeeds whole, so a failure leaves the committed file
+ * exactly as it was. `safeWrite` does all three through a sibling temporary
+ * named the way `writeArtifacts` names its own, so a process killed between the
+ * write and the rename leaves something `update` already knows how to sweep.
  *
- * The temporary uses the naming `writeArtifacts` uses (`.<name>.<pid>.<n>.tmp`)
- * so that a process killed between the write and the rename leaves something
- * `update` already knows how to sweep, and that neither `verify` nor the
- * pruner will act on.
+ * The third reason is why this is a shared helper rather than a local copy:
+ * `.greplost/` is committed and git stores symlinks, so `cache/summaries.json`
+ * (and a package's `FLOWS.md`) is a path a repository can point anywhere. Every
+ * directory on the way is walked with `lstat` and a link is replaced rather
+ * than followed, so a refresh cannot be made to write outside the repo.
  */
-function writeFile(file: string, label: string, contents: string): void {
-  const dir = path.dirname(file);
-  const temporary = path.join(dir, `.${path.basename(file)}.${process.pid}.${tempCounter++}.tmp`);
-  try {
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(temporary, contents);
-    renameSync(temporary, file);
-  } catch (cause) {
-    try {
-      rmSync(temporary, { force: true });
-    } catch {
-      // Nothing reads a `.tmp`; leaving one behind is not worth an error.
-    }
-    const reason = cause instanceof Error ? cause.message : String(cause);
-    throw new Error(`greplost: cannot write ${ARTIFACT_DIR}/${label}: ${reason}`);
-  }
+function writeFile(root: string, label: string, contents: string): void {
+  safeWrite(root, label, contents);
 }

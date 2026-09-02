@@ -9,12 +9,12 @@
   "keywords": ["codebase", "map", "architecture", "mermaid", "monorepo", "claude-code", "tree-sitter", "navigation"],
   "bin": { "greplost": "./bin/greplost.js" },
   "files": ["bin", "dist", "README.md"],
-  "exports": { ".": "./src/index.ts" },
+  "exports": { ".": "./dist/main.js" },
   "scripts": {
-    "build": "bun build src/main.ts --target node --outdir dist --minify-whitespace && cp -R ../core/grammars dist/grammars",
+    "build": "rm -rf dist/grammars && bun build src/main.ts --target node --outdir dist --minify-whitespace && cp -R ../core/grammars dist/grammars",
     "prepublishOnly": "bun run build"
   },
-  "dependencies": {
+  "devDependencies": {
     "@greplost/core": "workspace:*",
     "@greplost/render": "workspace:*",
     "@greplost/sync": "workspace:*",

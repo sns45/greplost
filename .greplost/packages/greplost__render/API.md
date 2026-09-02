@@ -52,6 +52,7 @@
 - re-exports * from `./split.ts`
 - re-exports * from `./tokens.ts`
 - re-exports * from `./slug.ts`
+- re-exports * from `./text.ts`
 - re-exports `GENERATED_LINE`, `createContext`, `renderApi`, `renderArtifacts`, `renderCard`, `renderHotspots`, `renderIndex`, `renderPackageMap`, `renderRepoMap` from `./render.ts`
 - re-exports `DocContext`, `RenderInput` from `./render.ts`
 
@@ -88,6 +89,12 @@
 - `interface SplitNode extends GraphNode` L17-20
 - `interface Diagram` L22-25
 - `function splitDiagram(root: string, nodes: SplitNode[], edges: GraphEdge[], maxNodes: number): Diagram[]` L50-63
+
+## packages/render/src/text.ts
+
+- `function table(headers: readonly string[] | undefined, rows: readonly (readonly string[])[]): string[]` L26-43
+- `function fields(pairs: readonly (readonly [string, string])[]): string[]` L52-56
+- `function summarise(items: readonly string[], cap = 5): string` L59-63
 
 ## packages/render/src/tokens.ts
 

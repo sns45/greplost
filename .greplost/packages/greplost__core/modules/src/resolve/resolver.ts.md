@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/resolve/index.ts`](index.ts.md)
 
-**Blast radius:** 44 files (`greplost impact packages/core/src/resolve/resolver.ts`)
+**Blast radius:** 48 files (`greplost impact packages/core/src/resolve/resolver.ts`)
 
 **Key symbols:**
 - `type ResolvedTarget = | { type: "file"; path: string } | { type: "external"; pkg: string } | { type: "unresolved" }`  L34-37

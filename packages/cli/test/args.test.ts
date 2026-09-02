@@ -224,6 +224,27 @@ describe("args", () => {
     expect(ok(["query", "--", "--weird"]).operands).toEqual(["--weird"]);
   });
 
+  /**
+   * `/greplost:update` and `/greplost:refresh` expand `"$ARGUMENTS"` even when
+   * the user typed no argument, so the CLI is handed a literal `""`. Counting
+   * it as an operand turned `/greplost:update` into `update ""` (exit 2) and
+   * `/greplost:refresh` into a lookup for a package with no name. An empty
+   * operand is not an argument in any command's vocabulary, so it is dropped
+   * everywhere rather than special-cased in two slash commands.
+   */
+  test("an empty operand is ignored, for every command", () => {
+    expect(ok(["update", ""]).operands).toEqual([]);
+    expect(ok(["update", "", "--full"]).options.mode).toBe("full");
+    expect(ok(["refresh", ""]).operands).toEqual([]);
+    expect(ok(["verify", ""]).operands).toEqual([]);
+    expect(ok(["init", ""]).operands).toEqual([]);
+    expect(ok(["query", "", "Registry"]).operands).toEqual(["Registry"]);
+    expect(ok(["verify", "--", ""]).operands).toEqual([]);
+    // And it is still not an argument: a command that needs one still says so.
+    expect(fail(["query", ""])).toContain("query needs an argument");
+    expect(fail(["impact", ""])).toContain("impact needs an argument");
+  });
+
   test("a command flag does not leak to another command", () => {
     expect(fail(["verify", "--full"])).toContain("--full");
     expect(fail(["query", "x", "--diff"])).toContain("--diff");

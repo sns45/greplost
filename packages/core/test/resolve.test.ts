@@ -845,7 +845,7 @@ describe("detectPackages", () => {
     ]);
   });
 
-  test("the root package falls back to go.mod then the directory basename", () => {
+  test("the root package falls back to go.mod, then to the literal `root`", () => {
     const goRoot = tempRepo({ "go.mod": "module example.com/tiny\n\ngo 1.22\n", "main.go": "" });
     expect(detectPackages(goRoot, ["main.go"], configWith([]))[0]).toEqual({
       name: "tiny",
@@ -853,12 +853,21 @@ describe("detectPackages", () => {
       source: "root",
     });
 
+    // Never the checkout directory's name: two clones of one repository under
+    // different directory names must produce the same map, and this name reaches
+    // `manifest.packages`, every `files[*].pkg`, the `packages/<slug>/` artifact
+    // directory and the INDEX/MAP titles (tech spec 5.3).
     const bare = tempRepo({ "a.ts": "" });
+    const elsewhere = tempRepo({ "a.ts": "" });
+    expect(path.basename(bare)).not.toBe(path.basename(elsewhere));
     expect(detectPackages(bare, ["a.ts"], configWith([]))[0]).toEqual({
-      name: path.basename(bare),
+      name: "root",
       path: ".",
       source: "root",
     });
+    expect(detectPackages(elsewhere, ["a.ts"], configWith([]))).toEqual(
+      detectPackages(bare, ["a.ts"], configWith([])),
+    );
   });
 
   test("config roots detect package.json directories", () => {
@@ -927,7 +936,7 @@ describe("detectPackages", () => {
       "svc/b/main.go": "",
     });
     expect(detectPackages(root, ["svc/a/main.go", "svc/b/main.go"], configWith([]))).toEqual([
-      { name: path.basename(root), path: ".", source: "root" },
+      { name: "root", path: ".", source: "root" },
       { name: "alpha", path: "svc/a", source: "go.mod" },
       { name: "beta", path: "svc/b", source: "go.mod" },
     ]);

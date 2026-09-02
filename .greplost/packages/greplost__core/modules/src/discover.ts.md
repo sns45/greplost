@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/core` ([map](../../MAP.md))
 
-**Exports:** `DiscoveredFile (interface)`, `discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]>`
+**Exports:** `DiscoveredFile (interface)`, `discoverCandidates(root: string, config: GreplostConfig): Promise<string[]>`, `discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]>`
 
 **Imports:** `node:child_process` (execFileSync), `node:fs` (existsSync, realpathSync), `node:path` (join, resolve, sep), `fast-glob` (default), `picomatch` (default), [`./schema.ts`](schema.ts.md) (ARTIFACT_DIR, GreplostConfig, LANG_BY_EXTENSION, Lang, compareStrings)
 
@@ -22,6 +22,7 @@
 - `function isGitRepo(root: string): boolean`  L43-69
 - `function gitCandidates(root: string): string[]`  L71-87
 - `async function globCandidates(root: string, config: GreplostConfig): Promise<string[]>`  L89-105
-- `async function discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]>`  L107-133
+- `async function discoverCandidates(root: string, config: GreplostConfig): Promise<string[]>`  L117-132
+- `async function discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]>`  L134-147
 
-**Calls:** `extensionOf` → [`packages/core/src/discover.ts#extensionOf`](discover.ts.md) (high), `gitCandidates` → [`packages/core/src/discover.ts#gitCandidates`](discover.ts.md) (high), `globCandidates` → [`packages/core/src/discover.ts#globCandidates`](discover.ts.md) (high), `isGitRepo` → [`packages/core/src/discover.ts#isGitRepo`](discover.ts.md) (high), `toPosix` → [`packages/core/src/discover.ts#toPosix`](discover.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high)
+**Calls:** `discoverCandidates` → [`packages/core/src/discover.ts#discoverCandidates`](discover.ts.md) (high), `extensionOf` → [`packages/core/src/discover.ts#extensionOf`](discover.ts.md) (high), `gitCandidates` → [`packages/core/src/discover.ts#gitCandidates`](discover.ts.md) (high), `globCandidates` → [`packages/core/src/discover.ts#globCandidates`](discover.ts.md) (high), `isGitRepo` → [`packages/core/src/discover.ts#isGitRepo`](discover.ts.md) (high), `toPosix` → [`packages/core/src/discover.ts#toPosix`](discover.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high)

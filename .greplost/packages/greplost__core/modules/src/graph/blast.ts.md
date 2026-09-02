@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/graph/index.ts`](index.ts.md), [`packages/core/src/graph/metrics.ts`](metrics.ts.md)
 
-**Blast radius:** 43 files (`greplost impact packages/core/src/graph/blast.ts`)
+**Blast radius:** 47 files (`greplost impact packages/core/src/graph/blast.ts`)
 
 **Key symbols:**
 - `function popcount32(value: number): number`  L16-20

@@ -251,6 +251,71 @@ describe("golden union", () => {
   });
 });
 
+/**
+ * The determinism contract (tech spec 5.3) across *checkouts*, not just across
+ * runs: `build(repo) == build(repo)` has to hold on a colleague's machine, who
+ * cloned the same repository into a directory with a different name.
+ *
+ * A repository with no root `package.json` and no root `go.mod` is where that
+ * used to break: the root package was named after the checkout directory, and
+ * that name is in `manifest.packages`, in every `manifest.files[*].pkg`, in the
+ * `packages/<slug>/` artifact directory and in the INDEX/MAP titles — so two
+ * clones produced two different maps and `greplost verify` failed on the second
+ * one for no reason a reader could see.
+ */
+describe("determinism across checkouts", () => {
+  /** A manifest-less repo (no package.json, no go.mod) under a chosen directory name. */
+  function manifestlessRepo(dirName: string): string {
+    const dir = mkdtempSync(path.join(tmpdir(), "greplost-sync-checkout-"));
+    temporaries.push(dir);
+    const root = path.join(dir, dirName);
+    mkdirSync(path.join(root, "src"), { recursive: true });
+    writeFileSync(path.join(root, "src/bus.ts"), "export function publish(m: string): string {\n  return m;\n}\n");
+    writeFileSync(
+      path.join(root, "src/main.ts"),
+      'import { publish } from "./bus.ts";\n\nexport function main(): string {\n  return publish("hello");\n}\n',
+    );
+    return root;
+  }
+
+  /** Everything under `.greplost/` except the machine-local runtime files. */
+  function committedTree(root: string): Map<string, string> {
+    const artifactRoot = path.join(root, ".greplost");
+    const out = new Map<string, string>();
+    for (const rel of listFiles(artifactRoot)) {
+      if (rel.startsWith("cache/") || rel === ".state.json" || rel === ".dirty" || rel === ".lock") continue;
+      out.set(rel, readFileSync(path.join(artifactRoot, rel), "utf8"));
+    }
+    return out;
+  }
+
+  test("two clones under different directory names write byte-identical trees", async () => {
+    const one = manifestlessRepo("alpha-checkout");
+    const two = manifestlessRepo("a-completely-different-name");
+    expect(path.basename(one)).not.toBe(path.basename(two));
+
+    for (const root of [one, two]) {
+      const built = await buildArtifacts(root, {});
+      writeArtifacts(root, built.files);
+    }
+
+    const first = committedTree(one);
+    const second = committedTree(two);
+    expect([...second.keys()]).toEqual([...first.keys()]);
+    expect(first.size).toBeGreaterThan(3);
+    for (const [rel, contents] of first) expect(`${rel}\n${second.get(rel)}`).toBe(`${rel}\n${contents}`);
+  });
+
+  test("the root package of a manifest-less repo is named `root`", async () => {
+    const root = manifestlessRepo("whatever-this-clone-is-called");
+    const built = await buildArtifacts(root, {});
+    const manifest = JSON.parse(built.files.get("manifest.json") as string) as Manifest;
+    expect(Object.keys(manifest.packages)).toEqual(["root"]);
+    for (const entry of Object.values(manifest.files)) expect(entry.pkg).toBe("root");
+    expect([...built.files.keys()].some((rel) => rel.startsWith("packages/root/"))).toBe(true);
+  });
+});
+
 describe("summary cache", () => {
   function repoWithSummaries(label: string, contents: string): string {
     const dir = mkdtempSync(path.join(tmpdir(), `greplost-sync-${label}-`));

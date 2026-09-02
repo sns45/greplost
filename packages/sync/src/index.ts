@@ -16,7 +16,7 @@ export { STRUCTURE_GLOBS, isStructurePath, listStructurePaths } from "./artifact
 export { buildArtifacts, readSummaries } from "./build.ts";
 export type { BuildArtifactsOptions, BuildResult } from "./build.ts";
 
-export { writeArtifacts } from "./write.ts";
+export { containedPath, safeWrite, writeArtifacts } from "./write.ts";
 export type { WriteResult } from "./write.ts";
 
 export { unifiedDiff, verify } from "./verify.ts";

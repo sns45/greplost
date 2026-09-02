@@ -230,6 +230,14 @@ function parseRest(name: CommandName, argv: string[]): ParseResult {
     cursor.index += 1;
 
     if (flagsEnded || arg === "-" || !arg.startsWith("-")) {
+      // An empty operand is not an argument in any command's vocabulary, and it
+      // is one a *template* produces rather than a person: the plugin's
+      // `/greplost:update` and `/greplost:refresh` expand `"$ARGUMENTS"` even
+      // when nothing was typed, so the CLI is handed a literal `""`. Counting
+      // it made `/greplost:update` a usage error and `/greplost:refresh` a
+      // lookup for a package with no name. Dropped for every command, because
+      // there is no command for which it means something.
+      if (arg === "") continue;
       operands.push(arg);
       // The bench dispatcher owns its own flags; this parser must not need a
       // release every time a suite grows one. The two flags the usage block

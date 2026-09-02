@@ -8,20 +8,21 @@
 
 **Exports:** `InitOptions (interface)`, `InitResult (interface)`, `init(root: string, opts: InitOptions = {}): Promise<InitResult>`
 
-**Imports:** `node:fs` (existsSync, mkdirSync, readFileSync, writeFileSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, DEFAULT_CONFIG, stableStringify), [`./githooks.ts`](githooks.ts.md) (installGitHooks), [`./incremental.ts`](incremental.ts.md) (UpdateResult, update), [`./parse-cache.ts`](parse-cache.ts.md) (PARSE_CACHE_PATH)
+**Imports:** `node:fs` (existsSync, mkdirSync, readFileSync), `node:path` (default), [`@greplost/core`](../../../greplost__core/modules/src/index.ts.md) (discoverCandidates), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, DEFAULT_CONFIG, GreplostConfig, stableStringify), [`./githooks.ts`](githooks.ts.md) (installGitHooks), [`./incremental.ts`](incremental.ts.md) (UpdateResult, update), [`./parse-cache.ts`](parse-cache.ts.md) (PARSE_CACHE_PATH), [`./write.ts`](write.ts.md) (safeWrite)
 
 **Imported by:** [`packages/sync/src/index.ts`](index.ts.md)
 
 **Blast radius:** 18 files (`greplost impact packages/sync/src/init.ts`)
 
 **Key symbols:**
-- `interface InitOptions`  L27-32
-- `interface InitResult`  L34-41
-- `const GITIGNORE_ENTRIES: readonly string[] = [ // A glob, not the bare name: the queue is consumed by renaming it aside, and // a run killed at that instant leaves `.dirty.taken` behind. It is swept …`  L49-61
-- `async function init(root: string, opts: InitOptions = {}): Promise<InitResult>`  L63-90
-- `function createConfig(artifactDir: string): boolean`  L93-98
-- `function ensureGitignore(artifactDir: string): boolean`  L109-131
-- `function write(file: string, contents: string): void`  L133-139
-- `function reasonOf(cause: unknown): string`  L141-143
+- `interface InitOptions`  L30-35
+- `interface InitResult`  L37-44
+- `const GITIGNORE_ENTRIES: readonly string[] = [ // A glob, not the bare name: the queue is consumed by renaming it aside, and // a run killed at that instant leaves `.dirty.taken` behind. It is swept …`  L52-64
+- `async function init(root: string, opts: InitOptions = {}): Promise<InitResult>`  L66-93
+- `async function createConfig(root: string, artifactDir: string): Promise<boolean>`  L96-101
+- `async function initialConfig(root: string): Promise<GreplostConfig>`  L115-128
+- `function ensureGitignore(root: string, artifactDir: string): boolean`  L139-161
+- `function write(root: string, rel: string, contents: string): void`  L168-176
+- `function reasonOf(cause: unknown): string`  L178-180
 
-**Calls:** `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high), `installGitHooks` → [`packages/sync/src/githooks.ts#installGitHooks`](githooks.ts.md) (high), `update` → [`packages/sync/src/incremental.ts#update`](incremental.ts.md) (high), `createConfig` → [`packages/sync/src/init.ts#createConfig`](init.ts.md) (high), `ensureGitignore` → [`packages/sync/src/init.ts#ensureGitignore`](init.ts.md) (high), `reasonOf` → [`packages/sync/src/init.ts#reasonOf`](init.ts.md) (high), `write` → [`packages/sync/src/init.ts#write`](init.ts.md) (high)
+**Calls:** `discoverCandidates` → [`packages/core/src/discover.ts#discoverCandidates`](../../../greplost__core/modules/src/discover.ts.md) (med), `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high), `installGitHooks` → [`packages/sync/src/githooks.ts#installGitHooks`](githooks.ts.md) (high), `update` → [`packages/sync/src/incremental.ts#update`](incremental.ts.md) (high), `createConfig` → [`packages/sync/src/init.ts#createConfig`](init.ts.md) (high), `ensureGitignore` → [`packages/sync/src/init.ts#ensureGitignore`](init.ts.md) (high), `initialConfig` → [`packages/sync/src/init.ts#initialConfig`](init.ts.md) (high), `reasonOf` → [`packages/sync/src/init.ts#reasonOf`](init.ts.md) (high), `write` → [`packages/sync/src/init.ts#write`](init.ts.md) (high), `safeWrite` → [`packages/sync/src/write.ts#safeWrite`](write.ts.md) (high)

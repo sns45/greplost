@@ -76,6 +76,27 @@ update --json / init --json: { mode: "incremental" | "full", dirty: number, repa
                                 cached: number, written: number, deleted: number, ms: number, skipped?: string }
 ```
 
+`update --semantic --json` returns both results in one envelope, never two
+documents: `{ "update": <the object above>, "refresh": <RefreshResult> }`. The
+`refresh` key is absent when the refresh itself failed (its reason is on stderr
+and the exit code is 1); the `update` half is always there, because the map was
+already rebuilt by then.
+
+### In a workspace (a directory holding `greplost.workspace.json`)
+
+`update`, `verify`, `query` and `impact` run across every listed repo when
+invoked at the workspace root. Ids are then `<repo>::<path>` — the repo's
+directory name, `::`, then the path inside that repo — everywhere a path or a
+symbol id appears: `impact --json`'s `path` and `files[*].path`, and `query
+--json`'s `file.path`, `file.card`, `matches[*].id`, `matches[*].file`,
+`matches[*].card`, `importers[*]` and `callers[*]`. So a `card` reads
+`repo-a::packages/tiny__core/modules/src/registry.ts.md`: the part after `::`
+is relative to *that repo's* `.greplost/`.
+
+As an argument, `query` and `impact` accept the id (`repo-a::src/index.ts`), the
+workspace-relative path (`repo-a/src/index.ts`) and an absolute path; only an
+indexed file resolves, and nothing is guessed.
+
 ## 3. When to fall back to grep instead
 
 - Searching for a literal string, comment, TODO, log message, or anything
@@ -90,10 +111,24 @@ update --json / init --json: { mode: "incremental" | "full", dirty: number, repa
 
 ## 4. About the hooks
 
-This plugin's `SessionStart`, `PreToolUse` (on Glob/Grep) and `Stop` hooks
-inject the same pointer automatically as `additionalContext` when a map
-exists. greplost's hooks never emit a permission decision; `PreToolUse` only
-adds context, so tool calls are neither blocked nor auto-approved by them —
-your own permission prompt for Glob/Grep is untouched. If you see that
-context, it is this same guidance surfacing without being asked; follow it
-rather than waiting for a hook to act on your behalf.
+Four hooks, and only two of them say anything:
+
+- `SessionStart` injects a one-line pointer to `.greplost/INDEX.md` as
+  `additionalContext`, when a map exists.
+- `PreToolUse` on Glob/Grep injects the same reminder, again as
+  `additionalContext`, when a map exists.
+- `PostToolUse` on Edit/Write/MultiEdit appends the edited path to
+  `.greplost/.dirty` and prints nothing. It needs only a `.greplost/` directory,
+  not a built map, so an edit is recorded even before the first build; that
+  queue is what makes the next update incremental rather than a rebuild.
+- `Stop` runs a silent incremental update (`greplost update --incremental
+  --quiet`) over that queue, when a map exists. It injects no context.
+
+So the map you read later in a session already includes the edits made earlier
+in it, without anyone running a command. greplost's hooks never emit a
+permission decision: `PreToolUse` only adds context, so tool calls are neither
+blocked nor auto-approved and your own permission prompt for Glob/Grep is
+untouched. A hook that fails logs to stderr and exits 0 — it can never break the
+session, and it can never be the reason a tool call did not run. If you see that
+injected context, it is this same guidance surfacing without being asked; follow
+it rather than waiting for a hook to act on your behalf.

@@ -266,12 +266,14 @@ describe("cli", () => {
     expect(existsSync(path.join(fresh, "repo-a", ".greplost", "manifest.json"))).toBe(true);
     expect((await cli("verify", "--root", fresh, "--json")).code).toBe(0);
 
+    // Both refusals are usage errors (exit 2): the command line and the
+    // checkout disagreed, and nothing ran.
     const plain = await cli("init", "--root", copyFixture("cliinitplain"));
-    expect(plain.code).toBe(1);
+    expect(plain.code).toBe(2);
     expect(plain.stderr).toContain("greplost init --workspace");
 
     const notAWorkspace = await cli("init", "--workspace", "--root", emptyDir("cliinitnone"));
-    expect(notAWorkspace.code).toBe(1);
+    expect(notAWorkspace.code).toBe(2);
     expect(notAWorkspace.stderr).toContain("--workspace needs a greplost.workspace.json");
   });
 

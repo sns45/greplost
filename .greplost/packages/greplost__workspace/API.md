@@ -52,14 +52,14 @@
 
 ## packages/workspace/src/index.ts
 
-- `type WorkspaceHookName = "update" | "verify" | "impact" | "query"` L61-61
-- `interface WorkspaceCommandContext` L68-89
-- `type WorkspaceHook = (ctx: WorkspaceCommandContext) => Promise<number | undefined>` L92-92
-- `type SetWorkspaceHook = (name: WorkspaceHookName, hook: WorkspaceHook) => void` L94-94
-- `interface WorkspaceUpdateResult` L97-104
-- `interface WorkspaceImpactResult` L107-112
-- `function registerWorkspaceHooks(set: SetWorkspaceHook): void` L115-120
-- `async function initWorkspace( root: string, opts: { hooks?: boolean; json?: boolean } = {}, ): Promise<number>` L132-156
+- `type WorkspaceHookName = "update" | "verify" | "impact" | "query"` L65-65
+- `interface WorkspaceCommandContext` L72-93
+- `type WorkspaceHook = (ctx: WorkspaceCommandContext) => Promise<number | undefined>` L96-96
+- `type SetWorkspaceHook = (name: WorkspaceHookName, hook: WorkspaceHook) => void` L98-98
+- `interface WorkspaceUpdateResult` L101-108
+- `interface WorkspaceImpactResult` L111-116
+- `function registerWorkspaceHooks(set: SetWorkspaceHook): void` L119-124
+- `async function initWorkspace( root: string, opts: { hooks?: boolean; json?: boolean } = {}, ): Promise<number>` L136-160
 - re-exports `ID_SEPARATOR`, `WORKSPACE_ARTIFACTS`, `WORKSPACE_FILE`, `findWorkspaceRoot`, `loadWorkspace`, `repoDirId`, `splitWorkspaceId`, `workspaceId` from `./config.ts`
 - re-exports `WorkspaceConfig` from `./config.ts`
 - re-exports `crossEdges`, `readRepo` from `./cross.ts`

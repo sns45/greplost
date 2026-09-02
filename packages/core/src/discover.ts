@@ -104,23 +104,37 @@ async function globCandidates(root: string, config: GreplostConfig): Promise<str
   return entries.map(toPosix);
 }
 
-export async function discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]> {
+/**
+ * Every repo-relative path `config.include`/`config.exclude` admit, sorted and
+ * deduplicated — before anything is asked about its language.
+ *
+ * This is `discoverFiles` with its last step left off, and it exists because
+ * the files that decide *which* languages to index are not themselves indexable
+ * ones: `greplost init` reads a repository's `go.mod` to know that `"go"`
+ * belongs in the config it is about to write, and `go.mod` has no extension
+ * this map would ever match.
+ */
+export async function discoverCandidates(root: string, config: GreplostConfig): Promise<string[]> {
   const candidates = isGitRepo(root) ? gitCandidates(root) : await globCandidates(root, config);
 
   const includeMatch = picomatch(config.include, { dot: true });
   const excludeMatch = picomatch(config.exclude, { dot: true });
 
-  const seen = new Set<string>();
-  const results: DiscoveredFile[] = [];
-
+  const kept = new Set<string>();
   for (const relPath of candidates) {
-    if (seen.has(relPath)) continue;
-    seen.add(relPath);
-
     if (relPath === ARTIFACT_DIR || relPath.startsWith(`${ARTIFACT_DIR}/`)) continue;
     if (!includeMatch(relPath)) continue;
     if (excludeMatch(relPath)) continue;
+    kept.add(relPath);
+  }
 
+  return [...kept].sort(compareStrings);
+}
+
+export async function discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]> {
+  const results: DiscoveredFile[] = [];
+
+  for (const relPath of await discoverCandidates(root, config)) {
     const lang = LANG_BY_EXTENSION[extensionOf(relPath)];
     if (!lang) continue;
     if (!config.languages.includes(lang)) continue;
