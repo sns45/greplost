@@ -28,7 +28,19 @@
  * and then stays on `stream-json`, which yields the count and the envelope from
  * a single call. That costs one extra session per suite run, not one per task.
  */
-import { accessSync, constants as fsConstants, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+  accessSync,
+  chmodSync,
+  constants as fsConstants,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -37,7 +49,7 @@ import { compareStrings } from "@greplost/core/schema";
 
 import { writeResult } from "./results-io.ts";
 import { scoreSet } from "./score.ts";
-import { loadTasks, type Task, type TaskCategory } from "./tasks.ts";
+import { ALL_CATEGORIES, loadTasks, type Task, type TaskCategory } from "./tasks.ts";
 import { generateTsTruth, listTypeScriptFiles } from "./truth/ts.ts";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
@@ -54,11 +66,56 @@ const DEFAULT_RUNS = 5;
 const DEFAULT_TASKS = 16;
 /** A3's non-inferiority margin: greplost may sit at most 2 points below base. */
 const A3_MARGIN = 0.02;
+/** A3's second half: greplost must beat the baseline by 10 points on blast radius. */
+const A3_BLAST_TARGET = 0.1;
+/** A1's target: median tokens per task at most half the baseline's. */
+const A1_TARGET = 0.5;
+/** A2's target: tool calls per task at most 40% of the baseline's. */
+const A2_TARGET = 0.4;
+/** A4's target: wall clock per task at most 60% of the baseline's. */
+const A4_TARGET = 0.6;
 /** Ties in the win/loss/tie table are decided with this much float slack. */
 const EPSILON = 1e-9;
 
+/**
+ * How long one headless session may run before it is killed.
+ *
+ * There is no such thing as a session that is worth waiting on forever: a wedged
+ * CLI with no timeout takes the whole suite with it, and a benchmark that can
+ * hang is a benchmark nobody will run in CI. Overridable with `--timeout <ms>`.
+ */
+const SESSION_TIMEOUT_MS = 300_000;
+/** Timeout for the cheap probes (`--version`, `--help`, `greplost init`). */
+const SETUP_TIMEOUT_MS = 120_000;
+/** Default spend ceiling for a corpus run. Fixture runs are hermetic and uncapped. */
+const DEFAULT_MAX_USD = 25;
+
 /** Flags the runner depends on, confirmed against `claude --help` before any run. */
-const REQUIRED_FLAGS = ["--print", "--model", "--output-format", "--allowedTools", "--disallowedTools", "--verbose"];
+const REQUIRED_FLAGS = [
+  "--print",
+  "--model",
+  "--output-format",
+  "--allowedTools",
+  "--disallowedTools",
+  "--verbose",
+  "--plugin-dir",
+  "--max-budget-usd",
+];
+
+/** The Claude Code plugin whose hooks are part of the `gl` condition (10.6). */
+const PLUGIN_DIR = path.join(REPO_ROOT, "greplost-plugin");
+
+/**
+ * Results file prefix. The hermetic fixture run writes under its own name:
+ * `bench/results/<suite>-<date>-<sha7>.json` carries no other discriminator, so
+ * a fixture run and a corpus run on the same day at the same commit would write
+ * the *same file*, and a one-task smoke test would silently replace a full
+ * corpus run. `latestResult("agent")`, which is what `report.ts` reads, must
+ * resolve to the corpus run. (Same convention as `replay.ts` and `perf.ts`.)
+ */
+function resultSuite(fixture: boolean): string {
+  return fixture ? `${SUITE}-fixture` : SUITE;
+}
 
 // ---------------------------------------------------------------------------
 // conditions (tech spec 10.6)
@@ -73,39 +130,56 @@ interface Condition {
   /** `--disallowedTools` value; empty means the flag is not passed at all. */
   disallowed: string[];
   artifacts: Artifacts;
+  /**
+   * Load the greplost Claude Code plugin (`--plugin-dir`) for this condition.
+   * Tech spec 10.6 lists "plugin hooks" as part of `gl`, so a `gl` run without
+   * them would be measuring a weaker condition than the one being claimed.
+   */
+  plugin: boolean;
   note: string;
 }
 
 export const CONDITIONS: Readonly<Record<string, Condition>> = {
-  base: { allowed: ["Read", "Grep", "Glob"], disallowed: [], artifacts: { kind: "none" }, note: "stock Claude Code" },
+  base: {
+    allowed: ["Read", "Grep", "Glob"],
+    disallowed: [],
+    artifacts: { kind: "none" },
+    plugin: false,
+    note: "stock Claude Code",
+  },
   gl: {
     allowed: ["Read", "Grep", "Glob"],
     disallowed: [],
     artifacts: { kind: "greplost" },
-    note: "greplost map present (greplost init --no-hooks)",
+    plugin: true,
+    note: "greplost map present (greplost init --no-hooks) plus the plugin hooks",
   },
   "gl-strict": {
     allowed: ["Read"],
     disallowed: ["Grep", "Glob"],
     artifacts: { kind: "greplost" },
-    note: "greplost map present, Grep/Glob disallowed: measures map sufficiency",
+    plugin: true,
+    note: "greplost map and plugin present, Grep/Glob disallowed: measures map sufficiency",
   },
   graphify: {
     allowed: ["Read", "Grep", "Glob"],
     disallowed: [],
     artifacts: { kind: "competitor", tool: "graphify" },
+    plugin: false,
     note: "Graphify artifacts per its README",
   },
   ua: {
     allowed: ["Read", "Grep", "Glob"],
     disallowed: [],
     artifacts: { kind: "competitor", tool: "ua" },
+    plugin: false,
     note: "Understand-Anything .ua/ artifacts; it has no query CLI, the agent reads them",
   },
   crg: {
     allowed: ["Read", "Grep", "Glob"],
     disallowed: [],
     artifacts: { kind: "competitor", tool: "crg" },
+    plugin: false,
     note: "code-review-graph artifacts per its README",
   },
 };
@@ -138,7 +212,16 @@ export interface TaskScore {
   parsed: boolean;
 }
 
-/** Repo-relative posix form of whatever the agent wrote. */
+/**
+ * Repo-relative posix form of whatever the agent wrote.
+ *
+ * Case is deliberately left alone. `foo.ts` and `Foo.ts` are two different files
+ * to the compiler, to git, and to greplost's node ids, and a corpus repo may
+ * hold both; case-folding here would merge them and hand out credit for naming
+ * the wrong one. Everything else that is pure notation - backslashes, a `./`
+ * lead, an absolute lead, a trailing slash on a path the agent thought was a
+ * directory - is normalised away, because none of it changes which file is meant.
+ */
 export function normalizeAnswerPath(value: string, root?: string): string {
   let out = value.trim().replace(/\\/g, "/");
   if (root !== undefined) {
@@ -146,7 +229,7 @@ export function normalizeAnswerPath(value: string, root?: string): string {
     if (out === prefix) return "";
     if (out.startsWith(`${prefix}/`)) out = out.slice(prefix.length + 1);
   }
-  out = out.replace(/^\.\//, "").replace(/^\/+/, "");
+  out = out.replace(/^\.\//, "").replace(/^\/+/, "").replace(/\/+$/, "");
   return out;
 }
 
@@ -355,7 +438,25 @@ function readEnvelope(envelope: Record<string, unknown>, wallMs: number, toolCal
   const cacheRead = numberAt(usage, "cache_read_input_tokens");
   const cacheWrite = numberAt(usage, "cache_creation_input_tokens");
   const result = envelope["result"];
-  const failed = envelope["is_error"] === true || (envelope["subtype"] !== undefined && envelope["subtype"] !== "success");
+  // An object that parses as JSON is not the same thing as an envelope. One with
+  // neither an answer string nor a usage object is a shape this runner does not
+  // understand - a CLI change, a truncated stream, an error payload - and must be
+  // filed as a broken session. Scoring it as "the agent answered nothing" would
+  // put a harness bug into the accuracy column with no way to see it.
+  const unrecognised = typeof result !== "string" && (typeof usage !== "object" || usage === null);
+  const failed =
+    envelope["is_error"] === true || (envelope["subtype"] !== undefined && envelope["subtype"] !== "success");
+  if (unrecognised) {
+    return {
+      answerText: "",
+      tokens: { input, output, cacheRead, cacheWrite, total: input + output + cacheRead + cacheWrite },
+      numTurns: numberAt(envelope, "num_turns"),
+      costUsd: numberAt(envelope, "total_cost_usd"),
+      toolCalls: toolCalls ?? toolCallsInEnvelope(envelope),
+      wallMs,
+      error: "unrecognised envelope",
+    };
+  }
   return {
     answerText: typeof result === "string" ? result : "",
     tokens: { input, output, cacheRead, cacheWrite, total: input + output + cacheRead + cacheWrite },
@@ -445,14 +546,38 @@ export function resolveClaude(): string {
   return "claude";
 }
 
-/** Spawn options shared by every child process: current PATH, generous buffer. */
-function spawnOptions(cwd: string): { cwd: string; encoding: "utf8"; env: NodeJS.ProcessEnv; maxBuffer: number } {
+interface SpawnConfig {
+  cwd: string;
+  encoding: "utf8";
+  env: NodeJS.ProcessEnv;
+  maxBuffer: number;
+  timeout: number;
+  killSignal: "SIGKILL";
+}
+
+/**
+ * Spawn options shared by every child: the *current* PATH (see `resolveClaude`),
+ * a buffer big enough for a stream-json transcript, and a hard timeout.
+ *
+ * `killSignal` is SIGKILL rather than the default SIGTERM on purpose. A headless
+ * Claude Code session traps SIGTERM to shut down cleanly, which is exactly the
+ * wrong behaviour for a session that has already stopped making progress: the
+ * point of the timeout is to get the harness back, not to ask politely.
+ *
+ * `extraPath` goes in front of PATH for the child only, which is how the plugin
+ * hooks find a `greplost` inside a throwaway working copy.
+ */
+function spawnOptions(cwd: string, timeout: number, extraPath?: string): SpawnConfig {
+  const env: NodeJS.ProcessEnv = { ...process.env };
+  if (extraPath !== undefined) env["PATH"] = `${extraPath}${path.delimiter}${env["PATH"] ?? ""}`;
   return {
     cwd,
     encoding: "utf8",
-    env: { ...process.env },
+    env,
     // A stream-json transcript of a long session is large; the 1MB default truncates it.
     maxBuffer: 128 * 1024 * 1024,
+    timeout,
+    killSignal: "SIGKILL",
   };
 }
 
@@ -462,6 +587,11 @@ interface Invocation {
   model: string;
   condition: Condition;
   stream: boolean;
+  timeoutMs: number;
+  /** Passed as `--max-budget-usd` when set; null leaves the flag off. */
+  maxUsd: number | null;
+  /** Directory holding the `greplost` shim, put first on the child's PATH. */
+  shimDir: string | undefined;
 }
 
 function claudeArgs(invocation: Invocation): string[] {
@@ -480,13 +610,22 @@ function claudeArgs(invocation: Invocation): string[] {
   if (invocation.condition.disallowed.length > 0) {
     args.push("--disallowedTools", invocation.condition.disallowed.join(","));
   }
+  // Tech spec 10.6: the `gl` conditions are the map *plus* the plugin hooks.
+  if (invocation.condition.plugin) args.push("--plugin-dir", PLUGIN_DIR);
+  // A per-session ceiling. The run-level accumulator in `execute` is what stops
+  // the suite; this stops any one runaway session from eating the whole budget.
+  if (invocation.maxUsd !== null) args.push("--max-budget-usd", String(invocation.maxUsd));
   return args;
 }
 
-/** One headless session. Never throws: a failed run is a recorded zero, not a crash. */
+/** One headless session. Never throws: a failed run is a recorded error, not a crash. */
 function invokeClaude(invocation: Invocation): Session {
   const started = Date.now();
-  const spawned = spawnSync(resolveClaude(), claudeArgs(invocation), spawnOptions(invocation.cwd));
+  const spawned = spawnSync(
+    resolveClaude(),
+    claudeArgs(invocation),
+    spawnOptions(invocation.cwd, invocation.timeoutMs, invocation.shimDir),
+  );
   const wallMs = Date.now() - started;
   const empty: Session = {
     answerText: "",
@@ -497,23 +636,71 @@ function invokeClaude(invocation: Invocation): Session {
     wallMs,
     error: null,
   };
-  if (spawned.error) return { ...empty, error: spawned.error.message };
-  const stdout = spawned.stdout ?? "";
-  if (invocation.stream) {
-    const { envelope, toolCalls } = parseStreamOutput(stdout);
-    if (envelope === null) return { ...empty, toolCalls, error: `no result envelope (exit ${spawned.status})` };
-    return readEnvelope(envelope, wallMs, toolCalls);
+  // A killed child comes back with a signal. Whatever partial stdout it left is
+  // not an answer, and filing it as one would put a hung CLI in the accuracy
+  // column as a wrong answer instead of in the error column as a broken session.
+  if (spawned.signal !== null && spawned.signal !== undefined) {
+    return { ...empty, error: `timeout after ${invocation.timeoutMs}ms` };
   }
+  if (spawned.error) return { ...empty, error: spawned.error.message };
+
+  const stdout = spawned.stdout ?? "";
+  const session = invocation.stream
+    ? fromStream(stdout, wallMs, empty, spawned.status)
+    : fromJson(stdout, wallMs, empty, spawned.status);
+  // A non-zero exit is a fact about the session even when an envelope parsed.
+  if (spawned.status !== 0 && spawned.status !== null && session.error === null) {
+    return { ...session, error: `exit ${spawned.status}` };
+  }
+  return session;
+}
+
+function fromStream(stdout: string, wallMs: number, empty: Session, status: number | null): Session {
+  const { envelope, toolCalls } = parseStreamOutput(stdout);
+  if (envelope === null) return { ...empty, toolCalls, error: `no result envelope (exit ${status})` };
+  return readEnvelope(envelope, wallMs, toolCalls);
+}
+
+function fromJson(stdout: string, wallMs: number, empty: Session, status: number | null): Session {
   const envelope = parseJsonOutput(stdout);
-  if (envelope === null) return { ...empty, error: `no result envelope (exit ${spawned.status})` };
+  if (envelope === null) return { ...empty, error: `no result envelope (exit ${status})` };
   return readEnvelope(envelope, wallMs, undefined);
 }
 
 /** `claude --version`, or null when the binary is not on PATH. */
 function claudeVersion(): string | null {
-  const spawned = spawnSync(resolveClaude(), ["--version"], spawnOptions(REPO_ROOT));
+  const spawned = spawnSync(resolveClaude(), ["--version"], spawnOptions(REPO_ROOT, SETUP_TIMEOUT_MS));
   if (spawned.error || spawned.status !== 0) return null;
   return (spawned.stdout ?? "").trim() || null;
+}
+
+/**
+ * A directory holding an executable `greplost` that runs this checkout's CLI,
+ * meant to go first on the child's PATH.
+ *
+ * The plugin's hooks shell out to `greplost` (falling back to `bunx greplost`).
+ * Inside a throwaway copy of a corpus repo there is no installed greplost and no
+ * `bunx` cache to find one, so without this the hooks would silently no-op and
+ * the `gl` condition would be the map without the hooks - which is not the
+ * condition tech spec 10.6 describes. The shim is the smallest honest way to
+ * make the hooks resolve to the code under test rather than to whatever happens
+ * to be installed on the machine.
+ */
+export function createGreplostShim(dir: string): string {
+  mkdirSync(dir, { recursive: true });
+  const main = path.join(REPO_ROOT, "packages", "cli", "src", "main.ts");
+  const shim = path.join(dir, "greplost");
+  writeFileSync(shim, `#!/bin/sh\nexec ${JSON.stringify(runtimeBinary())} ${JSON.stringify(main)} "$@"\n`);
+  chmodSync(shim, 0o755);
+  return dir;
+}
+
+/** Lazily made shim for `runTask` callers that did not supply one. */
+let sharedShimDir: string | undefined;
+
+function defaultShimDir(): string {
+  if (sharedShimDir === undefined) sharedShimDir = createGreplostShim(mkdtempSync(path.join(tmpdir(), "greplost-shim-")));
+  return sharedShimDir;
 }
 
 /**
@@ -523,7 +710,7 @@ function claudeVersion(): string | null {
  * mention; empty means every flag the runner uses exists.
  */
 function confirmFlags(): { missing: string[]; help: boolean } {
-  const spawned = spawnSync(resolveClaude(), ["--help"], spawnOptions(REPO_ROOT));
+  const spawned = spawnSync(resolveClaude(), ["--help"], spawnOptions(REPO_ROOT, SETUP_TIMEOUT_MS));
   if (spawned.error) return { missing: [...REQUIRED_FLAGS], help: false };
   const help = `${spawned.stdout ?? ""}${spawned.stderr ?? ""}`;
   return { missing: REQUIRED_FLAGS.filter((flag) => !help.includes(flag)), help: true };
@@ -553,7 +740,7 @@ function runtimeBinary(): string {
 
 function runGreplostInit(root: string): string | null {
   const main = path.join(REPO_ROOT, "packages", "cli", "src", "main.ts");
-  const spawned = spawnSync(runtimeBinary(), [main, "init", "--no-hooks", "--root", root], spawnOptions(REPO_ROOT));
+  const spawned = spawnSync(runtimeBinary(), [main, "init", "--no-hooks", "--root", root], spawnOptions(REPO_ROOT, SETUP_TIMEOUT_MS));
   if (spawned.error) return spawned.error.message;
   if (spawned.status !== 0) return `greplost init exited ${spawned.status}: ${(spawned.stderr ?? "").trim()}`;
   return null;
@@ -614,12 +801,41 @@ interface Options {
   model: string;
   tasks: number;
   seed: number;
+  timeoutMs: number;
+  /** Spend ceiling for the whole run; null means uncapped (the fixture default). */
+  maxUsd: number | null;
+  /** Categories to keep, or null for all of them. */
+  categories: TaskCategory[] | null;
   dryRun: boolean;
   gate: boolean;
   keep: boolean;
 }
 
+/**
+ * A positive integer flag value.
+ *
+ * `--tasks 0` and `--runs 0` used to fall through `|| DEFAULT` and silently
+ * become 16 and 5: the caller asked for nothing and got a full paid run. A count
+ * that cannot be honoured is a usage error, not an invitation to guess.
+ */
+function positiveInt(flag: string, raw: string | undefined): number {
+  const value = Number.parseInt(raw ?? "", 10);
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`${flag} needs a positive integer (got ${raw === undefined ? "nothing" : `"${raw}"`})`);
+  }
+  return value;
+}
+
+function positiveNumber(flag: string, raw: string | undefined): number {
+  const value = Number.parseFloat(raw ?? "");
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`${flag} needs a positive number (got ${raw === undefined ? "nothing" : `"${raw}"`})`);
+  }
+  return value;
+}
+
 function parseArgs(args: string[]): Options {
+  let maxUsd: number | undefined;
   const options: Options = {
     fixture: false,
     repo: undefined,
@@ -628,6 +844,9 @@ function parseArgs(args: string[]): Options {
     model: DEFAULT_MODEL,
     tasks: DEFAULT_TASKS,
     seed: 1,
+    timeoutMs: SESSION_TIMEOUT_MS,
+    maxUsd: null,
+    categories: null,
     dryRun: false,
     gate: false,
     keep: false,
@@ -642,19 +861,44 @@ function parseArgs(args: string[]): Options {
     else if (arg === "--repo") options.repo = args[++i];
     else if (arg === "--model") options.model = args[++i] ?? DEFAULT_MODEL;
     else if (arg === "--condition") options.conditions.push(...(args[++i] ?? "").split(",").filter((c) => c !== ""));
-    else if (arg === "--runs") options.runs = Number.parseInt(args[++i] ?? "", 10) || DEFAULT_RUNS;
-    else if (arg === "--tasks") options.tasks = Number.parseInt(args[++i] ?? "", 10) || DEFAULT_TASKS;
-    else if (arg === "--seed") options.seed = Number.parseInt(args[++i] ?? "", 10) || 1;
+    else if (arg === "--runs") options.runs = positiveInt("--runs", args[++i]);
+    else if (arg === "--tasks") options.tasks = positiveInt("--tasks", args[++i]);
+    else if (arg === "--seed") options.seed = positiveInt("--seed", args[++i]);
+    else if (arg === "--timeout") options.timeoutMs = positiveInt("--timeout", args[++i]);
+    else if (arg === "--max-usd") maxUsd = positiveNumber("--max-usd", args[++i]);
+    else if (arg === "--categories") options.categories = parseCategories(args[++i]);
   }
+  // A corpus run bills a real account, so it is capped unless the caller says
+  // otherwise. The fixture run is hermetic (a fake `claude` in tests, a handful
+  // of tiny sessions by hand) and a cap there would only get in the way.
+  options.maxUsd = maxUsd ?? (options.fixture ? null : DEFAULT_MAX_USD);
+
   if (options.conditions.length === 0) options.conditions.push("base", "gl");
   // De-duplicated and put in table order, so the results file is stable whatever
   // order the flags arrived in.
   const wanted = new Set(options.conditions);
   options.conditions = CONDITION_ORDER.filter((name) => wanted.has(name));
   for (const name of wanted) {
-    if (!(name in CONDITIONS)) throw new Error(`unknown condition "${name}" (expected ${CONDITION_ORDER.join(", ")})`);
+    // `Object.hasOwn`, not `in`: `"constructor" in CONDITIONS` is true on any
+    // object literal, and a typo that resolves to Object.prototype would be
+    // cast to a Condition and crash somewhere far from the argument list.
+    if (!Object.hasOwn(CONDITIONS, name)) {
+      throw new Error(`unknown condition "${name}" (expected ${CONDITION_ORDER.join(", ")})`);
+    }
   }
   return options;
+}
+
+/** `--categories definition,importers` -> the validated category list. */
+function parseCategories(raw: string | undefined): TaskCategory[] {
+  const names = (raw ?? "").split(",").filter((name) => name !== "");
+  if (names.length === 0) throw new Error(`--categories needs a comma-separated list of ${ALL_CATEGORIES.join(", ")}`);
+  for (const name of names) {
+    if (!ALL_CATEGORIES.includes(name as TaskCategory)) {
+      throw new Error(`unknown category "${name}" (expected ${ALL_CATEGORIES.join(", ")})`);
+    }
+  }
+  return names as TaskCategory[];
 }
 
 interface Target {
@@ -695,7 +939,17 @@ function buildTasks(target: Target, options: Options): Task[] {
   // compiler actually loaded, so an answer key can never name a file that is not
   // in the same universe Eval 1 scores over.
   const truth = generateTsTruth(target.root, files);
-  return loadTasks(target.name, truth, options.tasks, options.seed);
+  const tasks = loadTasks(target.name, truth, options.tasks, options.seed, options.categories ?? undefined);
+  // Integrity check on the hand-written keys: a curated task that names a file
+  // the compiler never loaded is scored against a universe Eval 1 does not
+  // share, which is exactly the drift `truth_source` exists to prevent.
+  const universe = new Set(truth.files);
+  const strays = tasks.flatMap((task) => task.truth.files.filter((file) => !universe.has(file)).map((file) => `${task.id}: ${file}`));
+  if (strays.length > 0) {
+    console.error(`${SUITE}: curated answer keys name ${strays.length} file(s) outside the compiler truth:`);
+    for (const stray of strays.slice(0, 20)) console.error(`  ${stray}`);
+  }
+  return tasks;
 }
 
 // ---------------------------------------------------------------------------
@@ -703,7 +957,7 @@ function buildTasks(target: Target, options: Options): Task[] {
 // ---------------------------------------------------------------------------
 
 /** One (task, condition, run). Every field is measured; none is derived later. */
-interface RunRecord {
+export interface RunRecord {
   taskId: string;
   category: TaskCategory;
   condition: string;
@@ -725,6 +979,94 @@ interface RunRecord {
   wallMs: number;
   costUsd: number;
   error: string | null;
+}
+
+/** Everything `runTask` needs that is not the task or the condition. */
+export interface RunTaskOptions {
+  /** The prepared working copy the session runs in. */
+  cwd: string;
+  model?: string;
+  /** Ask for `stream-json` directly (the only format that carries tool calls). */
+  stream?: boolean;
+  timeoutMs?: number;
+  /** Per-session `--max-budget-usd`; omit to leave the flag off. */
+  maxUsd?: number | null;
+  /** Directory holding the `greplost` shim; one is made on demand if omitted. */
+  shimDir?: string;
+  /** 1-based run index, recorded on the result. */
+  run?: number;
+}
+
+/**
+ * Run one task in one already-prepared working copy and score it.
+ *
+ * The programmatic seam X7 and X8 need (tech spec 10.0): both are Eval 4 with a
+ * different task set, so they want the measurement of a single (task,
+ * condition) pair without inheriting this suite's argument parsing, its
+ * per-condition copies, or its results file. It never throws - a failed session
+ * is a `RunRecord` with an `error`, the same as inside `execute`.
+ */
+export function runTask(task: Task, condition: string, options: RunTaskOptions): RunRecord {
+  if (!Object.hasOwn(CONDITIONS, condition)) {
+    throw new Error(`greplost: unknown condition "${condition}" (expected ${CONDITION_ORDER.join(", ")})`);
+  }
+  const definition = CONDITIONS[condition] as Condition;
+  const session = invokeClaude({
+    cwd: options.cwd,
+    prompt: task.prompt,
+    model: options.model ?? DEFAULT_MODEL,
+    condition: definition,
+    stream: options.stream ?? true,
+    timeoutMs: options.timeoutMs ?? SESSION_TIMEOUT_MS,
+    maxUsd: options.maxUsd ?? null,
+    shimDir: definition.plugin ? (options.shimDir ?? defaultShimDir()) : undefined,
+  });
+  return record(task, condition, options.run ?? 1, session, false, options.cwd);
+}
+
+/**
+ * The working copy's real path, for stripping an absolute prefix out of an
+ * answer. macOS resolves `/var` to `/private/var`, so the child's idea of its
+ * own cwd is not the string this process handed it, and an agent that answered
+ * with absolute paths would otherwise score zero for a cosmetic difference.
+ */
+function resolvedRoot(cwd: string): string {
+  try {
+    return realpathSync(cwd);
+  } catch {
+    return cwd;
+  }
+}
+
+/** Score a finished session into the row the results file keeps. */
+function record(
+  task: Task,
+  condition: string,
+  run: number,
+  session: Session,
+  toolCallsFromProbe: boolean,
+  cwd: string,
+): RunRecord {
+  // A broken session has no answer to score; scoring its empty output as a wrong
+  // answer would hide a harness failure inside the accuracy column.
+  const answer = session.error === null ? extractAnswer(session.answerText, resolvedRoot(cwd)) : null;
+  const scored = scoreAnswer(task, answer);
+  return {
+    taskId: task.id,
+    category: task.category,
+    condition,
+    run,
+    score: scored.score,
+    symbolsF1: scored.symbolsF1,
+    parsed: scored.parsed,
+    tokens: session.tokens,
+    toolCalls: session.toolCalls ?? 0,
+    toolCallsFromProbe,
+    numTurns: session.numTurns,
+    wallMs: session.wallMs,
+    costUsd: session.costUsd,
+    error: session.error,
+  };
 }
 
 interface MetricBlock {
@@ -812,6 +1154,68 @@ function winLossTie(records: RunRecord[], conditions: string[]): Record<string, 
   return out;
 }
 
+/**
+ * One row of the section 3 metrics table, keyed by its spec id.
+ *
+ * `RESULTS.md` quotes these fields directly rather than recomputing them from
+ * the aggregate, so that the published number and the gate decision can never
+ * come from two different arithmetics.
+ */
+interface SpecMetric {
+  id: string;
+  metric: string;
+  /** The baseline's value in the metric's own unit. */
+  base: number;
+  /** greplost's value in the same unit. */
+  gl: number;
+  /** gl / base, for the metrics the spec states as a proportion of baseline. */
+  ratio: number | null;
+  /** gl - base in points, for the accuracy metrics the spec states as a delta. */
+  delta: number | null;
+  target: number;
+  met: boolean;
+}
+
+function ratioMetric(id: string, metric: string, base: number, gl: number, target: number): SpecMetric {
+  // A zero baseline has no meaningful proportion; report the raw pair and let
+  // the reader see why, rather than publishing an Infinity or a silent 0.
+  const ratio = base === 0 ? null : gl / base;
+  return { id, metric, base, gl, ratio, delta: null, target, met: ratio !== null && ratio <= target + EPSILON };
+}
+
+function deltaMetric(id: string, metric: string, base: number, gl: number, target: number): SpecMetric {
+  const delta = gl - base;
+  return { id, metric, base, gl, ratio: null, delta, target, met: delta >= target - EPSILON };
+}
+
+/**
+ * A1 to A4 from tech spec 3, computed off the same aggregate table the printed
+ * report uses. Null when the run did not measure both `base` and `gl`, because
+ * every one of these is defined relative to the baseline and a number invented
+ * from one condition would be worse than no number.
+ */
+function specMetrics(table: Record<string, Record<string, MetricBlock>>): Record<string, SpecMetric> | null {
+  const base = table["base"]?.["overall"];
+  const gl = table["gl"]?.["overall"];
+  if (base === undefined || gl === undefined) return null;
+  const baseBlast = table["base"]?.["blast_radius"];
+  const glBlast = table["gl"]?.["blast_radius"];
+  const metrics: Record<string, SpecMetric> = {
+    A1: ratioMetric("A1", "tokens per task (median), gl vs base", base.tokens.median, gl.tokens.median, A1_TARGET),
+    A2: ratioMetric("A2", "tool calls per task (median), gl vs base", base.toolCalls.median, gl.toolCalls.median, A2_TARGET),
+    A3: deltaMetric("A3", "answer accuracy (mean), gl minus base", base.accuracy.mean, gl.accuracy.mean, -A3_MARGIN),
+    A3blast: deltaMetric(
+      "A3blast",
+      "blast-radius accuracy (mean), gl minus base",
+      baseBlast?.accuracy.mean ?? 0,
+      glBlast?.accuracy.mean ?? 0,
+      A3_BLAST_TARGET,
+    ),
+    A4: ratioMetric("A4", "wall clock per task (median ms), gl vs base", base.wallMs.median, gl.wallMs.median, A4_TARGET),
+  };
+  return metrics;
+}
+
 /** What the extra tool-call probe sessions cost, over and above the measured runs. */
 interface Probe {
   sessions: number;
@@ -832,7 +1236,19 @@ interface PayloadParts {
   aggregate: Record<string, Record<string, MetricBlock>>;
   winLossTie: Record<string, WinLossTie>;
   probe: Probe;
+  budget: Budget;
+  metrics: Record<string, SpecMetric> | null;
   gate: { passed: boolean; missed: string[] } | null;
+}
+
+/** The run-level spend ceiling and what was actually spent under it. */
+interface Budget {
+  /** The cap in USD, or null when the run was uncapped (fixture runs). */
+  maxUsd: number | null;
+  /** Every dollar this run billed, measured sessions and probes together. */
+  spentUsd: number;
+  /** True when the cap stopped the run before every planned session had run. */
+  stopped: boolean;
 }
 
 /**
@@ -854,9 +1270,20 @@ function buildPayload(target: Target, options: Options, parts: PayloadParts): Re
     conditionTools: Object.fromEntries(
       parts.conditions.map((name) => {
         const condition = CONDITIONS[name] as Condition;
-        return [name, { allowedTools: condition.allowed, disallowedTools: condition.disallowed }];
+        return [
+          name,
+          {
+            allowedTools: condition.allowed,
+            disallowedTools: condition.disallowed,
+            pluginDir: condition.plugin ? PLUGIN_DIR : null,
+          },
+        ];
       }),
     ),
+    categories: options.categories,
+    sessionTimeoutMs: options.timeoutMs,
+    budget: parts.budget,
+    metrics: parts.metrics,
     unavailable: parts.unavailable,
     tasks: parts.tasks,
     runs: parts.runs,
@@ -872,8 +1299,13 @@ async function loadMachine(): Promise<unknown> {
   const specifier = "./machine.ts";
   try {
     const mod = (await import(specifier)) as Partial<{ machineProfile: () => unknown }>;
-    return typeof mod.machineProfile === "function" ? mod.machineProfile() : null;
-  } catch {
+    if (typeof mod.machineProfile === "function") return mod.machineProfile();
+    console.error(`${SUITE}: warning: ${specifier} exports no machineProfile; results carry machine: null`);
+    return null;
+  } catch (err) {
+    // Silence here used to mean a results file with `machine: null` and no way
+    // to tell a missing profile from a broken one when comparing timings later.
+    console.error(`${SUITE}: warning: could not read the machine profile: ${(err as Error).message}`);
     return null;
   }
 }
@@ -967,6 +1399,15 @@ async function execute(options: Options): Promise<number> {
 
   const version = claudeVersion();
   const work = mkdtempSync(path.join(tmpdir(), "greplost-agent-"));
+  // One shim for the whole run: the plugin's hooks call `greplost`, which does
+  // not exist inside a throwaway copy of a corpus repo.
+  const shimDir = createGreplostShim(path.join(work, "shim"));
+  if (!existsSync(PLUGIN_DIR)) {
+    console.error(
+      `${SUITE}: warning: ${PLUGIN_DIR} does not exist, so the gl conditions will load no plugin ` +
+        "and are measuring the map without the hooks tech spec 10.6 describes",
+    );
+  }
   const records: RunRecord[] = [];
   const unavailable: Record<string, string> = {};
   const ran: string[] = [];
@@ -974,12 +1415,16 @@ async function execute(options: Options): Promise<number> {
   // from the run records - it is the harness's overhead, not the task's price -
   // but recorded, because an unreported dollar is an unreported dollar.
   const probe: Probe = { sessions: 0, costUsd: 0, tokens: 0, wallMs: 0 };
+  const budget: Budget = { maxUsd: options.maxUsd, spentUsd: 0, stopped: false };
+  /** True once the run has spent its cap; every remaining session is skipped. */
+  const overBudget = (): boolean => budget.maxUsd !== null && budget.spentUsd >= budget.maxUsd - EPSILON;
   // Sticky: the first envelope without a tool-call count switches the whole run
   // to stream-json, which carries the count and the envelope in one call.
   let stream = false;
 
   try {
     for (const name of options.conditions) {
+      if (budget.stopped) break;
       const condition = CONDITIONS[name] as Condition;
       const copy = path.join(work, name);
       copyRepo(target.root, copy);
@@ -994,15 +1439,31 @@ async function execute(options: Options): Promise<number> {
       ran.push(name);
 
       for (const task of tasks) {
+        if (budget.stopped) break;
         for (let index = 0; index < options.runs; index++) {
+          if (overBudget()) {
+            // Stop before spending, not after: the cap is a promise about the
+            // bill, and the partial results below are still worth writing.
+            budget.stopped = true;
+            console.error(
+              `${SUITE}: stopping at $${budget.spentUsd.toFixed(4)} of the $${budget.maxUsd} --max-usd cap; ` +
+                `${records.length} of ${tasks.length * options.runs * options.conditions.length} planned sessions ran, ` +
+                "and the partial results are written",
+            );
+            break;
+          }
           const invocation: Invocation = {
             cwd: copy,
             prompt: task.prompt,
             model: options.model,
             condition,
             stream,
+            timeoutMs: options.timeoutMs,
+            maxUsd: options.maxUsd,
+            shimDir: condition.plugin ? shimDir : undefined,
           };
           let session = invokeClaude(invocation);
+          budget.spentUsd += session.costUsd;
           const probed = session.toolCalls === undefined;
           if (session.toolCalls === undefined) {
             // The measured case on Claude Code 2.1.258: no count in the JSON
@@ -1014,26 +1475,10 @@ async function execute(options: Options): Promise<number> {
             probe.costUsd += transcript.costUsd;
             probe.tokens += transcript.tokens.total;
             probe.wallMs += transcript.wallMs;
+            budget.spentUsd += transcript.costUsd;
             stream = true;
           }
-          const answer = extractAnswer(session.answerText, copy);
-          const scored = scoreAnswer(task, answer);
-          records.push({
-            taskId: task.id,
-            category: task.category,
-            condition: name,
-            run: index + 1,
-            score: scored.score,
-            symbolsF1: scored.symbolsF1,
-            parsed: scored.parsed,
-            tokens: session.tokens,
-            toolCalls: session.toolCalls ?? 0,
-            toolCallsFromProbe: probed,
-            numTurns: session.numTurns,
-            wallMs: session.wallMs,
-            costUsd: session.costUsd,
-            error: session.error,
-          });
+          records.push(record(task, name, index + 1, session, probed, copy));
         }
       }
     }
@@ -1055,7 +1500,7 @@ async function execute(options: Options): Promise<number> {
 
   const gate = options.gate ? a3Gate(table) : null;
   writeResult(
-    SUITE,
+    resultSuite(options.fixture),
     buildPayload(target, options, {
       machine: await loadMachine(),
       claudeVersion: version,
@@ -1064,6 +1509,7 @@ async function execute(options: Options): Promise<number> {
         outputFormat: stream ? "stream-json" : "json",
         streamJsonFallback: stream,
         confirmedFlags: REQUIRED_FLAGS,
+        pluginDir: existsSync(PLUGIN_DIR) ? PLUGIN_DIR : null,
         toolCallSource: stream ? "stream-json transcript tool_use blocks" : "json envelope",
       },
       conditions: ran,
@@ -1073,6 +1519,8 @@ async function execute(options: Options): Promise<number> {
       aggregate: table,
       winLossTie: winLossTie(records, ran),
       probe,
+      budget,
+      metrics: specMetrics(table),
       gate,
     }),
   );
@@ -1137,6 +1585,8 @@ function dryRun(target: Target, options: Options): number {
       aggregate: {},
       winLossTie: {},
       probe: { sessions: 0, costUsd: 0, tokens: 0, wallMs: 0 },
+      budget: { maxUsd: options.maxUsd, spentUsd: 0, stopped: false },
+      metrics: null,
       gate: null,
     }),
   };
