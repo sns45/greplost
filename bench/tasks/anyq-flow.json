@@ -1,0 +1,57 @@
+[
+  {
+    "id": "anyq-flow-01",
+    "category": "flow",
+    "prompt": "A connected `MemoryProducer` from the memory driver runs `await producer.publish(body)`. Trace, in order, the source files involved from that call to the message id being returned. List each file once, at the position where it is first involved, as repository-relative paths; skip barrel files that only re-export. Answer with a JSON block {\"files\": [...]}",
+    "truth": {
+      "files": [
+        "packages/memory/src/producer.ts",
+        "packages/memory/src/queue.ts",
+        "packages/core/src/utils/id-generator.ts"
+      ]
+    },
+    "truth_source": "hand-curated by the leaf 1.5.6 bench agent, verified against source at 657f41c2cbe06039c0d82cf81c17759d1149eda2: packages/memory/src/producer.ts `MemoryProducer.publish` calls `this.queue.enqueue(body, {...})` (l.87-95) - it overrides `BaseProducer` rather than routing through it; packages/memory/src/queue.ts `MemoryQueue.enqueue` (l.48) calls `generateMessageId()` (l.55), imported from `@anyq/core` (l.7) and declared in packages/core/src/utils/id-generator.ts"
+  },
+  {
+    "id": "anyq-flow-02",
+    "category": "flow",
+    "prompt": "A `MemoryConsumer` from the memory driver is subscribed with `consumer.subscribe(handler)` and one message is waiting in the queue. Trace, in order, the source files involved from the poll that picks the message up to the handler being invoked with a wrapped message. List each file once, at the position where it is first involved, as repository-relative paths; skip barrel files that only re-export. Answer with a JSON block {\"files\": [...]}",
+    "truth": {
+      "files": [
+        "packages/memory/src/consumer.ts",
+        "packages/memory/src/queue.ts",
+        "packages/core/src/base/base-adapter.ts"
+      ]
+    },
+    "truth_source": "hand-curated by the leaf 1.5.6 bench agent, verified against source at 657f41c2cbe06039c0d82cf81c17759d1149eda2: packages/memory/src/consumer.ts `subscribe` installs a `poll` on setInterval which calls `this.queue.dequeue()` (l.234); packages/memory/src/queue.ts `dequeue` moves the message into `processing` and increments `deliveryAttempt` (l.81-89); back in consumer.ts `createWrappedMessage(stored)` (l.239, l.394) calls `createMessage(...)`, exported from packages/core/src/base/base-adapter.ts (l.75), and the resulting `IMessage` is passed to `await handler(message)` (l.243)"
+  },
+  {
+    "id": "anyq-flow-03",
+    "category": "flow",
+    "prompt": "A `MemoryConsumer` is configured with the `retryThenDeadLetter()` retry strategy and a dead-letter queue. Its handler throws an error the strategy classifies as non-retryable. Trace, in order, the source files involved from the handler throwing to the message landing in the dead-letter queue. List each file once, at the position where it is first involved, as repository-relative paths; skip barrel files that only re-export. Answer with a JSON block {\"files\": [...]}",
+    "truth": {
+      "files": [
+        "packages/memory/src/consumer.ts",
+        "packages/core/src/base/base-adapter.ts",
+        "packages/core/src/strategies/built-ins.ts",
+        "packages/core/src/middleware/retry.ts",
+        "packages/memory/src/queue.ts"
+      ]
+    },
+    "truth_source": "hand-curated by the leaf 1.5.6 bench agent, verified against source at 657f41c2cbe06039c0d82cf81c17759d1149eda2: packages/memory/src/consumer.ts `poll` catches the handler error and calls `this.applyStrategy(message, err, ...)` (l.249-252); `applyStrategy` is `BaseConsumer.applyStrategy` in packages/core/src/base/base-adapter.ts (l.467) and calls `strategy.decide(ctx)` (l.493); the strategy is `retryThenDeadLetter` in packages/core/src/strategies/built-ins.ts (l.44) whose `decide` calls `isRetryableError` from packages/core/src/middleware/retry.ts (l.8 import, retry.ts l.67) and returns `{ action: 'deadLetter' }`; base-adapter.ts then calls `this.deadLetterMessage(message, reason)` (l.523), overridden in packages/memory/src/consumer.ts (l.146) to call `this.queue.deadLetter(stored.id, this.dlq, ...)`; packages/memory/src/queue.ts `deadLetter` writes the x-death-* headers and `dlq.enqueue`s the body (l.160-176)"
+  },
+  {
+    "id": "anyq-flow-04",
+    "category": "flow",
+    "prompt": "A `MemoryConsumer` is configured with the `backpressurePause()` retry strategy. Its handler throws an error whose message says the downstream service is rate limited. Trace, in order, the source files involved from the handler throwing to the consumer being paused and the message being parked for a later retry. List each file once, at the position where it is first involved, as repository-relative paths; skip barrel files that only re-export. Answer with a JSON block {\"files\": [...]}",
+    "truth": {
+      "files": [
+        "packages/memory/src/consumer.ts",
+        "packages/core/src/base/base-adapter.ts",
+        "packages/core/src/strategies/built-ins.ts",
+        "packages/memory/src/queue.ts"
+      ]
+    },
+    "truth_source": "hand-curated by the leaf 1.5.6 bench agent, verified against source at 657f41c2cbe06039c0d82cf81c17759d1149eda2: packages/memory/src/consumer.ts `poll` catches and calls `this.applyStrategy(...)` (l.249); packages/core/src/base/base-adapter.ts `BaseConsumer.applyStrategy` calls `strategy.decide` (l.493); packages/core/src/strategies/built-ins.ts `backpressurePause().decide` matches the rate-limit wording and returns `{ action: 'park', delayMs }` (l.113-117) under the name `BACKPRESSURE_PAUSE_STRATEGY_NAME`; base-adapter.ts compares that same constant (l.535) to call `this.pause()` and schedule `this.resume()`, then - because MemoryConsumer sets `supportsNativeDelay` true (packages/memory/src/consumer.ts l.62) - calls `this.parkMessage(message, delayMs)`, overridden in packages/memory/src/consumer.ts (l.171), which calls `queue.ack(stored.id)` and, after the timer, `queue.enqueue(body, ...)` in packages/memory/src/queue.ts. The constant's declaring file packages/core/src/strategies/types.ts is deliberately NOT in the answer key: it contributes a string, not a step in the flow"
+  }
+]
