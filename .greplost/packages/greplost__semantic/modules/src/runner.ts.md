@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/semantic/src/index.ts`](index.ts.md), [`packages/semantic/src/refresh.ts`](refresh.ts.md)
 
-**Blast radius:** 8 files (`greplost impact packages/semantic/src/runner.ts`)
+**Blast radius:** 6 files (`greplost impact packages/semantic/src/runner.ts`)
 
 **Key symbols:**
 - `type PromptRunner = (prompt: string, opts: { model: string }) => Promise<string>`  L27-27

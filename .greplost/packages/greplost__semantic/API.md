@@ -47,10 +47,10 @@
 - `const DEFAULT_BATCH_SIZE = 12` L62-62
 - `const RETRIES_PER_BATCH = 1` L72-72
 - `interface RefreshOptions` L80-93
-- `interface RefreshResult` L95-130
-- `async function refresh(root: string, opts: RefreshOptions = {}): Promise<RefreshResult>` L132-271
-- `interface RefreshCommandOptions` L278-287
-- `async function refreshCommand(root: string, opts: RefreshCommandOptions = {}): Promise<number>` L297-317
+- `interface RefreshResult` L95-140
+- `async function refresh(root: string, opts: RefreshOptions = {}): Promise<RefreshResult>` L142-292
+- `interface RefreshCommandOptions` L299-308
+- `async function refreshCommand(root: string, opts: RefreshCommandOptions = {}): Promise<number>` L318-338
 
 ## packages/semantic/src/runner.ts
 

@@ -301,13 +301,14 @@
 ## bench/src/truth/ts-calls.ts
 
 - `interface CallEndpoints` L22-27
-- `function resolveCallEdge( node: ts.CallExpression | ts.NewExpression, checker: ts.TypeChecker, toId: (fileName: string) => string | undefined, fileId: string, ): CallEndpoints | undefined` L36-55
-- `function unwrapExpression(expr: ts.Expression): ts.Expression` L58-65
-- `function calleeIdentifier(node: ts.CallExpression | ts.NewExpression): ts.Node | undefined` L68-74
-- `function unalias(checker: ts.TypeChecker, symbol: ts.Symbol | undefined): ts.Symbol | undefined` L77-90
-- `function declarationSymbolPath(declaration: ts.Declaration): string | undefined` L93-120
-- `function moduleScopePath(node: ts.Node): string | undefined` L127-135
-- `function enclosingCaller(node: ts.Node, fileId: string): string` L201-211
+- `type CallLike = ts.CallExpression | ts.NewExpression | ts.TaggedTemplateExpression` L37-37
+- `function resolveCallEdge( node: CallLike, checker: ts.TypeChecker, toId: (fileName: string) => string | undefined, fileId: string, ): CallEndpoints | undefined` L39-58
+- `function unwrapExpression(expr: ts.Expression): ts.Expression` L61-68
+- `function calleeIdentifier(node: CallLike): ts.Node | undefined` L71-77
+- `function unalias(checker: ts.TypeChecker, symbol: ts.Symbol | undefined): ts.Symbol | undefined` L80-93
+- `function declarationSymbolPath(declaration: ts.Declaration): string | undefined` L96-123
+- `function moduleScopePath(node: ts.Node): string | undefined` L130-138
+- `function enclosingCaller(node: ts.Node, fileId: string): string` L204-214
 
 ## bench/src/truth/ts-workspace.ts
 
@@ -315,7 +316,7 @@
 
 ## bench/src/truth/ts.ts
 
-- `interface Truth` L45-66
-- `function listTypeScriptFiles(root: string): string[]` L78-96
-- `interface TruthOptions` L99-110
-- `function generateTsTruth(root: string, files: string[], options: TruthOptions = {}): Truth` L127-317
+- `interface Truth` L46-67
+- `function listTypeScriptFiles(root: string): string[]` L79-97
+- `interface TruthOptions` L100-111
+- `function generateTsTruth(root: string, files: string[], options: TruthOptions = {}): Truth` L128-319

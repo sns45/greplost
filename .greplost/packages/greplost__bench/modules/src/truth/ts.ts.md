@@ -8,35 +8,35 @@
 
 **Exports:** `Truth (interface)`, `TruthOptions (interface)`, `generateTsTruth(root: string, files: string[], options: TruthOptions = {}): Truth`, `listTypeScriptFiles(root: string): string[]`
 
-**Imports:** `node:fs` (existsSync, readdirSync, realpathSync), `node:path` (default), `typescript` (default), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Edge, compareEdges, compareStrings), [`./ts-calls.ts`](ts-calls.ts.md) (resolveCallEdge), [`./ts-workspace.ts`](ts-workspace.ts.md) (WorkspaceEntryMapper)
+**Imports:** `node:fs` (existsSync, readdirSync, realpathSync), `node:path` (default), `typescript` (default), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Edge, compareEdges, compareStrings), [`./ts-calls.ts`](ts-calls.ts.md) (CallLike, resolveCallEdge), [`./ts-workspace.ts`](ts-workspace.ts.md) (WorkspaceEntryMapper)
 
 **Imported by:** [`bench/src/agent.ts`](../agent.ts.md), [`bench/src/headtohead.ts`](../headtohead.ts.md), [`bench/src/structural.ts`](../structural.ts.md), [`bench/src/tasks.ts`](../tasks.ts.md), [`bench/src/truth/go.ts`](go.ts.md)
 
 **Blast radius:** 5 files (`greplost impact bench/src/truth/ts.ts`)
 
 **Key symbols:**
-- `interface Truth`  L45-66
-- `const SOURCE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts"] as const`  L69-69
-- `const CANDIDATE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"] as const`  L71-71
-- `const SKIP_DIRECTORIES = new Set([".git", "node_modules", "dist", "build", ".greplost"])`  L72-72
-- `function listTypeScriptFiles(root: string): string[]`  L78-96
-- `interface TruthOptions`  L99-110
-- `function diagnosticsEnabled(options: TruthOptions): boolean`  L113-116
-- `function generateTsTruth(root: string, files: string[], options: TruthOptions = {}): Truth`  L127-317
-- `function readCompilerOptions(absRoot: string): { options: ts.CompilerOptions; configErrors: ts.Diagnostic[] }`  L323-349
-- `function reportDiagnostics( program: ts.Program, configErrors: ts.Diagnostic[], coveredCount: number, missing: string[], diagnostics: boolean, ): void`  L361-383
-- `function moduleExportNames(checker: ts.TypeChecker, moduleSymbol: ts.Symbol): string[]`  L401-405
-- `function importedNames(clause: ts.ImportClause | undefined): string[]`  L408-418
-- `function reexportedNames(clause: ts.NamedExportBindings | undefined): string[]`  L421-425
-- `function importTypeName(qualifier: ts.EntityName | undefined): string`  L431-436
-- `function moduleLoadSpecifier(node: ts.CallExpression): ts.Expression | undefined`  L439-445
-- `function findCycles(nodes: string[], edges: Edge[]): string[][]`  L451-511
-- `class EdgeSet`  L524-557
-- `EdgeSet.add(from: string, to: string, kind: Edge["kind"], symbols: string[]): void`  L527-544
-- `EdgeSet.toArray(): Edge[]`  L546-556
-- `function extensionOf(file: string): ts.Extension`  L560-573
-- `function toPosix(p: string): string`  L575-577
-- `function normalizeId(absRoot: string, file: string): string`  L580-583
-- `function sourceCandidates(fileName: string): string[]`  L590-600
+- `interface Truth`  L46-67
+- `const SOURCE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts"] as const`  L70-70
+- `const CANDIDATE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"] as const`  L72-72
+- `const SKIP_DIRECTORIES = new Set([".git", "node_modules", "dist", "build", ".greplost"])`  L73-73
+- `function listTypeScriptFiles(root: string): string[]`  L79-97
+- `interface TruthOptions`  L100-111
+- `function diagnosticsEnabled(options: TruthOptions): boolean`  L114-117
+- `function generateTsTruth(root: string, files: string[], options: TruthOptions = {}): Truth`  L128-319
+- `function readCompilerOptions(absRoot: string): { options: ts.CompilerOptions; configErrors: ts.Diagnostic[] }`  L325-351
+- `function reportDiagnostics( program: ts.Program, configErrors: ts.Diagnostic[], coveredCount: number, missing: string[], diagnostics: boolean, ): void`  L363-385
+- `function moduleExportNames(checker: ts.TypeChecker, moduleSymbol: ts.Symbol): string[]`  L403-407
+- `function importedNames(clause: ts.ImportClause | undefined): string[]`  L410-420
+- `function reexportedNames(clause: ts.NamedExportBindings | undefined): string[]`  L423-427
+- `function importTypeName(qualifier: ts.EntityName | undefined): string`  L433-438
+- `function moduleLoadSpecifier(node: ts.CallExpression): ts.Expression | undefined`  L441-447
+- `function findCycles(nodes: string[], edges: Edge[]): string[][]`  L453-513
+- `class EdgeSet`  L526-559
+- `EdgeSet.add(from: string, to: string, kind: Edge["kind"], symbols: string[]): void`  L529-546
+- `EdgeSet.toArray(): Edge[]`  L548-558
+- `function extensionOf(file: string): ts.Extension`  L562-575
+- `function toPosix(p: string): string`  L577-579
+- `function normalizeId(absRoot: string, file: string): string`  L582-585
+- `function sourceCandidates(fileName: string): string[]`  L592-602
 
 **Calls:** `resolveCallEdge` → [`bench/src/truth/ts-calls.ts#resolveCallEdge`](ts-calls.ts.md) (high), `load` → [`bench/src/truth/ts-workspace.ts#WorkspaceEntryMapper.load`](ts-workspace.ts.md) (high), `EdgeSet` → [`bench/src/truth/ts.ts#EdgeSet`](ts.ts.md) (high), `diagnosticsEnabled` → [`bench/src/truth/ts.ts#diagnosticsEnabled`](ts.ts.md) (high), `extensionOf` → [`bench/src/truth/ts.ts#extensionOf`](ts.ts.md) (high), `findCycles` → [`bench/src/truth/ts.ts#findCycles`](ts.ts.md) (high), `importTypeName` → [`bench/src/truth/ts.ts#importTypeName`](ts.ts.md) (high), `importedNames` → [`bench/src/truth/ts.ts#importedNames`](ts.ts.md) (high), `moduleExportNames` → [`bench/src/truth/ts.ts#moduleExportNames`](ts.ts.md) (high), `moduleLoadSpecifier` → [`bench/src/truth/ts.ts#moduleLoadSpecifier`](ts.ts.md) (high), `normalizeId` → [`bench/src/truth/ts.ts#normalizeId`](ts.ts.md) (high), `readCompilerOptions` → [`bench/src/truth/ts.ts#readCompilerOptions`](ts.ts.md) (high), `reexportedNames` → [`bench/src/truth/ts.ts#reexportedNames`](ts.ts.md) (high), `reportDiagnostics` → [`bench/src/truth/ts.ts#reportDiagnostics`](ts.ts.md) (high), `sourceCandidates` → [`bench/src/truth/ts.ts#sourceCandidates`](ts.ts.md) (high), `toPosix` → [`bench/src/truth/ts.ts#toPosix`](ts.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high)

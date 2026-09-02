@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/sync/src/incremental.ts`](incremental.ts.md), [`packages/sync/src/index.ts`](index.ts.md)
 
-**Blast radius:** 22 files (`greplost impact packages/sync/src/write.ts`)
+**Blast radius:** 20 files (`greplost impact packages/sync/src/write.ts`)
 
 **Key symbols:**
 - `interface WriteResult`  L58-65

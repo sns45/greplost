@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/index.ts`](index.ts.md)
 
-**Blast radius:** 31 files (`greplost impact packages/core/src/build.ts`)
+**Blast radius:** 29 files (`greplost impact packages/core/src/build.ts`)
 
 **Key symbols:**
 - `interface ParseCache`  L55-58

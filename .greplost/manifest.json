@@ -1,27 +1,5 @@
 {
   "files": {
-    ".probe-leaf16/probe.ts": {
-      "blast": 0,
-      "exports": [],
-      "fanIn": 0,
-      "fanOut": 5,
-      "lang": "ts",
-      "loc": 214,
-      "pkg": "greplost-monorepo",
-      "sha256": "ff5de108cbab4653be5f748c51894fca449bc1e70b32fbe720625c0d4579e6f3",
-      "staleSummary": false
-    },
-    ".probe-leaf16/probe2.ts": {
-      "blast": 0,
-      "exports": [],
-      "fanIn": 0,
-      "fanOut": 5,
-      "lang": "ts",
-      "loc": 105,
-      "pkg": "greplost-monorepo",
-      "sha256": "6a9be081b4cb0b9910912722f5fd8c69bd9ff3d825ac206533c1e3d6e765aeaa",
-      "staleSummary": false
-    },
     "bench/src/adapters/crg.ts": {
       "blast": 2,
       "exports": [
@@ -554,6 +532,7 @@
       "blast": 6,
       "exports": [
         "CallEndpoints",
+        "CallLike",
         "calleeIdentifier",
         "declarationSymbolPath",
         "enclosingCaller",
@@ -565,9 +544,9 @@
       "fanIn": 1,
       "fanOut": 1,
       "lang": "ts",
-      "loc": 211,
+      "loc": 214,
       "pkg": "@greplost/bench",
-      "sha256": "26ecad4aeff1d34108bd7150d26869e1ca218dfeec764f2f61347601e1b73114",
+      "sha256": "89747445b197f398aa176b2cf93b78b80a82ed570c8b443c7f9777facf41af17",
       "staleSummary": false
     },
     "bench/src/truth/ts-workspace.ts": {
@@ -594,9 +573,9 @@
       "fanIn": 5,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 600,
+      "loc": 602,
       "pkg": "@greplost/bench",
-      "sha256": "cb0d70cb465b5bc7d81ff21f251c93bb2dc3a006bd5c8b523d1707510f526039",
+      "sha256": "48a34e8fa3aae6e3130bd386e3037b16e96fb9694613269a70aaf77c06ea531c",
       "staleSummary": false
     },
     "bench/truth/gocallgraph/main.go": {
@@ -916,7 +895,7 @@
       "staleSummary": false
     },
     "packages/core/src/build.ts": {
-      "blast": 31,
+      "blast": 29,
       "exports": [
         "BuildOptions",
         "ParseCache",
@@ -931,7 +910,7 @@
       "staleSummary": false
     },
     "packages/core/src/config.ts": {
-      "blast": 32,
+      "blast": 30,
       "exports": [
         "loadConfig",
         "validateConfig"
@@ -945,7 +924,7 @@
       "staleSummary": false
     },
     "packages/core/src/discover.ts": {
-      "blast": 32,
+      "blast": 30,
       "exports": [
         "DiscoveredFile",
         "discoverFiles"
@@ -959,7 +938,7 @@
       "staleSummary": false
     },
     "packages/core/src/extract/go.ts": {
-      "blast": 33,
+      "blast": 31,
       "exports": [
         "extractGo",
         "isExportedName"
@@ -973,7 +952,7 @@
       "staleSummary": false
     },
     "packages/core/src/extract/index.ts": {
-      "blast": 32,
+      "blast": 30,
       "exports": [
         "ExtractInput",
         "extractFile",
@@ -989,7 +968,7 @@
       "staleSummary": false
     },
     "packages/core/src/extract/ts-calls.ts": {
-      "blast": 35,
+      "blast": 33,
       "exports": [
         "Callee",
         "calleeOf",
@@ -1004,7 +983,7 @@
       "staleSummary": false
     },
     "packages/core/src/extract/ts-imports.ts": {
-      "blast": 35,
+      "blast": 33,
       "exports": [
         "collectCommonJsExport",
         "collectExportStatement",
@@ -1020,7 +999,7 @@
       "staleSummary": false
     },
     "packages/core/src/extract/ts-signature.ts": {
-      "blast": 37,
+      "blast": 35,
       "exports": [
         "BODY_VALUES",
         "FUNCTION_VALUES",
@@ -1051,7 +1030,7 @@
       "staleSummary": false
     },
     "packages/core/src/extract/ts.ts": {
-      "blast": 35,
+      "blast": 33,
       "exports": [
         "TsContext",
         "extractTs"
@@ -1065,7 +1044,7 @@
       "staleSummary": false
     },
     "packages/core/src/graph/blast.ts": {
-      "blast": 45,
+      "blast": 43,
       "exports": [
         "blastRadius",
         "impactOf"
@@ -1079,7 +1058,7 @@
       "staleSummary": false
     },
     "packages/core/src/graph/directories.ts": {
-      "blast": 46,
+      "blast": 44,
       "exports": [
         "directoryOf",
         "expandDirectoryTargets",
@@ -1096,7 +1075,7 @@
       "staleSummary": false
     },
     "packages/core/src/graph/index.ts": {
-      "blast": 43,
+      "blast": 41,
       "exports": [
         "ComputedMetrics",
         "ExportIndex",
@@ -1126,7 +1105,7 @@
       "staleSummary": false
     },
     "packages/core/src/graph/link.ts": {
-      "blast": 44,
+      "blast": 42,
       "exports": [
         "ExportIndex",
         "ExportTarget",
@@ -1146,7 +1125,7 @@
       "staleSummary": false
     },
     "packages/core/src/graph/metrics.ts": {
-      "blast": 44,
+      "blast": 42,
       "exports": [
         "ComputedMetrics",
         "FileMetrics",
@@ -1161,7 +1140,7 @@
       "staleSummary": false
     },
     "packages/core/src/graph/query.ts": {
-      "blast": 31,
+      "blast": 29,
       "exports": [
         "callersOf",
         "findSymbols",
@@ -1176,7 +1155,7 @@
       "staleSummary": false
     },
     "packages/core/src/graph/tarjan.ts": {
-      "blast": 47,
+      "blast": 45,
       "exports": [
         "GraphEdges",
         "SccResult",
@@ -1192,7 +1171,7 @@
       "staleSummary": false
     },
     "packages/core/src/hash.ts": {
-      "blast": 33,
+      "blast": 31,
       "exports": [
         "countLoc",
         "sha256Hex"
@@ -1206,7 +1185,7 @@
       "staleSummary": false
     },
     "packages/core/src/index.ts": {
-      "blast": 30,
+      "blast": 28,
       "exports": [
         "ARTIFACT_DIR",
         "ARTIFACT_PATHS",
@@ -1310,7 +1289,7 @@
       "staleSummary": false
     },
     "packages/core/src/parser.ts": {
-      "blast": 36,
+      "blast": 34,
       "exports": [
         "ParserHandle",
         "createParser",
@@ -1327,7 +1306,7 @@
       "staleSummary": false
     },
     "packages/core/src/resolve/go.ts": {
-      "blast": 48,
+      "blast": 46,
       "exports": [
         "GoCallIndex",
         "GoRepoContext",
@@ -1347,7 +1326,7 @@
       "staleSummary": false
     },
     "packages/core/src/resolve/index.ts": {
-      "blast": 45,
+      "blast": 43,
       "exports": [
         "RepoContext",
         "ResolvedTarget",
@@ -1367,7 +1346,7 @@
       "staleSummary": false
     },
     "packages/core/src/resolve/packages.ts": {
-      "blast": 46,
+      "blast": 44,
       "exports": [
         "detectPackages",
         "packageOf"
@@ -1381,7 +1360,7 @@
       "staleSummary": false
     },
     "packages/core/src/resolve/resolver.ts": {
-      "blast": 46,
+      "blast": 44,
       "exports": [
         "RepoContext",
         "ResolvedTarget",
@@ -1397,7 +1376,7 @@
       "staleSummary": false
     },
     "packages/core/src/resolve/tsconfig.ts": {
-      "blast": 47,
+      "blast": 45,
       "exports": [
         "TsPaths",
         "loadTsconfigPaths",
@@ -1412,7 +1391,7 @@
       "staleSummary": false
     },
     "packages/core/src/schema.ts": {
-      "blast": 98,
+      "blast": 96,
       "exports": [
         "ARTIFACT_DIR",
         "ARTIFACT_PATHS",
@@ -1454,7 +1433,7 @@
         "symbolId",
         "unresolvedId"
       ],
-      "fanIn": 76,
+      "fanIn": 74,
       "fanOut": 0,
       "lang": "ts",
       "loc": 361,
@@ -1463,7 +1442,7 @@
       "staleSummary": false
     },
     "packages/core/src/serialize/index.ts": {
-      "blast": 31,
+      "blast": 29,
       "exports": [
         "Structure",
         "parseJsonl",
@@ -1481,7 +1460,7 @@
       "staleSummary": false
     },
     "packages/core/src/serialize/json.ts": {
-      "blast": 34,
+      "blast": 32,
       "exports": [
         "parseJsonl",
         "toJson",
@@ -1496,7 +1475,7 @@
       "staleSummary": false
     },
     "packages/core/src/serialize/read.ts": {
-      "blast": 32,
+      "blast": 30,
       "exports": [
         "Structure",
         "readStructure"
@@ -1510,7 +1489,7 @@
       "staleSummary": false
     },
     "packages/core/src/serialize/write.ts": {
-      "blast": 32,
+      "blast": 30,
       "exports": [
         "serializeSnapshot"
       ],
@@ -1523,7 +1502,7 @@
       "staleSummary": false
     },
     "packages/render/src/ascii.ts": {
-      "blast": 36,
+      "blast": 34,
       "exports": [
         "RenderTreeOptions",
         "renderTree"
@@ -1537,7 +1516,7 @@
       "staleSummary": false
     },
     "packages/render/src/docs/api.ts": {
-      "blast": 35,
+      "blast": 33,
       "exports": [
         "apiSignature",
         "buildApi",
@@ -1557,7 +1536,7 @@
       "staleSummary": false
     },
     "packages/render/src/docs/card.ts": {
-      "blast": 35,
+      "blast": 33,
       "exports": [
         "buildCard"
       ],
@@ -1570,7 +1549,7 @@
       "staleSummary": false
     },
     "packages/render/src/docs/hotspots.ts": {
-      "blast": 35,
+      "blast": 33,
       "exports": [
         "RankedFile",
         "buildHotspots",
@@ -1587,7 +1566,7 @@
       "staleSummary": false
     },
     "packages/render/src/docs/index-doc.ts": {
-      "blast": 35,
+      "blast": 33,
       "exports": [
         "buildIndex"
       ],
@@ -1600,7 +1579,7 @@
       "staleSummary": false
     },
     "packages/render/src/docs/package-map.ts": {
-      "blast": 35,
+      "blast": 33,
       "exports": [
         "buildPackageMap",
         "relativeToPackage"
@@ -1614,7 +1593,7 @@
       "staleSummary": false
     },
     "packages/render/src/docs/repo-map.ts": {
-      "blast": 35,
+      "blast": 33,
       "exports": [
         "buildRepoMap",
         "packageNodeIds",
@@ -1629,7 +1608,7 @@
       "staleSummary": false
     },
     "packages/render/src/index.ts": {
-      "blast": 28,
+      "blast": 26,
       "exports": [
         "Diagram",
         "DocContext",
@@ -1667,7 +1646,7 @@
       "staleSummary": false
     },
     "packages/render/src/mermaid.ts": {
-      "blast": 37,
+      "blast": 35,
       "exports": [
         "GraphEdge",
         "GraphNode",
@@ -1684,7 +1663,7 @@
       "staleSummary": false
     },
     "packages/render/src/render.ts": {
-      "blast": 35,
+      "blast": 33,
       "exports": [
         "DocContext",
         "GENERATED_LINE",
@@ -1707,7 +1686,7 @@
       "staleSummary": false
     },
     "packages/render/src/slug.ts": {
-      "blast": 36,
+      "blast": 34,
       "exports": [
         "cardPath",
         "packageDir",
@@ -1722,7 +1701,7 @@
       "staleSummary": false
     },
     "packages/render/src/split.ts": {
-      "blast": 36,
+      "blast": 34,
       "exports": [
         "Diagram",
         "SplitNode",
@@ -1737,7 +1716,7 @@
       "staleSummary": false
     },
     "packages/render/src/tokens.ts": {
-      "blast": 36,
+      "blast": 34,
       "exports": [
         "INDEX_TOKEN_BUDGET",
         "estimateTokens"
@@ -1751,7 +1730,7 @@
       "staleSummary": false
     },
     "packages/semantic/src/flows.ts": {
-      "blast": 9,
+      "blast": 7,
       "exports": [
         "Flow",
         "FlowStep",
@@ -1767,13 +1746,13 @@
       "fanIn": 3,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 229,
+      "loc": 232,
       "pkg": "@greplost/semantic",
-      "sha256": "ca5c84df3d6d599fe67d9062712cc97c9acb87c8f3c787b47759c073ae79d448",
+      "sha256": "257b8c4e4c7b086b4b7bd23fa4a313b06ef40a764867ca87841f9889cff5776d",
       "staleSummary": false
     },
     "packages/semantic/src/index.ts": {
-      "blast": 6,
+      "blast": 4,
       "exports": [
         "DEFAULT_BATCH_SIZE",
         "DefaultRunnerOptions",
@@ -1810,7 +1789,7 @@
         "renderFlows",
         "selectEntryPoints"
       ],
-      "fanIn": 3,
+      "fanIn": 1,
       "fanOut": 4,
       "lang": "ts",
       "loc": 46,
@@ -1819,7 +1798,7 @@
       "staleSummary": false
     },
     "packages/semantic/src/prompts.ts": {
-      "blast": 8,
+      "blast": 6,
       "exports": [
         "ENTRY_PREFIX",
         "FILE_PREFIX",
@@ -1835,7 +1814,7 @@
         "parseFlowsResponse",
         "parseSummaryResponse"
       ],
-      "fanIn": 4,
+      "fanIn": 2,
       "fanOut": 1,
       "lang": "ts",
       "loc": 333,
@@ -1844,7 +1823,7 @@
       "staleSummary": false
     },
     "packages/semantic/src/refresh.ts": {
-      "blast": 7,
+      "blast": 5,
       "exports": [
         "DEFAULT_BATCH_SIZE",
         "RETRIES_PER_BATCH",
@@ -1854,16 +1833,16 @@
         "refresh",
         "refreshCommand"
       ],
-      "fanIn": 3,
+      "fanIn": 1,
       "fanOut": 7,
       "lang": "ts",
-      "loc": 674,
+      "loc": 748,
       "pkg": "@greplost/semantic",
-      "sha256": "d42825b4b0a06b1849c4099d56faf1b4d129d9907f2b2e9152c1cd29da565d8a",
+      "sha256": "fe285e843c77b63acb0ffc2a6bbc21d01ae61024d9e175f1a1bc8d12c1de8374",
       "staleSummary": false
     },
     "packages/semantic/src/runner.ts": {
-      "blast": 8,
+      "blast": 6,
       "exports": [
         "DefaultRunnerOptions",
         "PromptRunner",
@@ -1879,7 +1858,7 @@
       "staleSummary": false
     },
     "packages/sync/src/artifacts.ts": {
-      "blast": 25,
+      "blast": 23,
       "exports": [
         "STRUCTURE_GLOBS",
         "isStructurePath",
@@ -1894,7 +1873,7 @@
       "staleSummary": false
     },
     "packages/sync/src/build.ts": {
-      "blast": 23,
+      "blast": 21,
       "exports": [
         "BuildArtifactsOptions",
         "BuildResult",
@@ -1910,7 +1889,7 @@
       "staleSummary": false
     },
     "packages/sync/src/dirty.ts": {
-      "blast": 22,
+      "blast": 20,
       "exports": [
         "appendDirty",
         "readAndClearDirty",
@@ -1925,7 +1904,7 @@
       "staleSummary": false
     },
     "packages/sync/src/githooks.ts": {
-      "blast": 21,
+      "blast": 19,
       "exports": [
         "HOOK_END_MARKER",
         "HOOK_MARKER",
@@ -1942,7 +1921,7 @@
       "staleSummary": false
     },
     "packages/sync/src/incremental.ts": {
-      "blast": 21,
+      "blast": 19,
       "exports": [
         "UpdateOptions",
         "UpdateResult",
@@ -1957,7 +1936,7 @@
       "staleSummary": false
     },
     "packages/sync/src/index.ts": {
-      "blast": 19,
+      "blast": 17,
       "exports": [
         "BuildArtifactsOptions",
         "BuildResult",
@@ -2001,7 +1980,7 @@
         "writeArtifacts",
         "writeState"
       ],
-      "fanIn": 11,
+      "fanIn": 9,
       "fanOut": 11,
       "lang": "ts",
       "loc": 49,
@@ -2010,7 +1989,7 @@
       "staleSummary": false
     },
     "packages/sync/src/init.ts": {
-      "blast": 20,
+      "blast": 18,
       "exports": [
         "InitOptions",
         "InitResult",
@@ -2025,7 +2004,7 @@
       "staleSummary": false
     },
     "packages/sync/src/lock.ts": {
-      "blast": 22,
+      "blast": 20,
       "exports": [
         "LOCK_HEARTBEAT_MS",
         "LOCK_STALE_MS",
@@ -2044,7 +2023,7 @@
       "staleSummary": false
     },
     "packages/sync/src/parse-cache.ts": {
-      "blast": 22,
+      "blast": 20,
       "exports": [
         "FileParseCache",
         "PARSE_CACHE_PATH",
@@ -2062,7 +2041,7 @@
       "staleSummary": false
     },
     "packages/sync/src/state.ts": {
-      "blast": 22,
+      "blast": 20,
       "exports": [
         "SyncState",
         "readState",
@@ -2077,7 +2056,7 @@
       "staleSummary": false
     },
     "packages/sync/src/verify.ts": {
-      "blast": 20,
+      "blast": 18,
       "exports": [
         "VerifyOptions",
         "VerifyResult",
@@ -2093,7 +2072,7 @@
       "staleSummary": false
     },
     "packages/sync/src/write.ts": {
-      "blast": 22,
+      "blast": 20,
       "exports": [
         "WriteResult",
         "writeArtifacts",
@@ -2320,7 +2299,7 @@
         "@greplost/sync"
       ],
       "files": 29,
-      "loc": 14054,
+      "loc": 14059,
       "path": "bench",
       "rdeps": []
     },
@@ -2335,8 +2314,7 @@
         "@greplost/semantic",
         "@greplost/sync",
         "@greplost/workspace",
-        "greplost",
-        "greplost-monorepo"
+        "greplost"
       ]
     },
     "@greplost/render": {
@@ -2360,11 +2338,10 @@
         "@greplost/sync"
       ],
       "files": 5,
-      "loc": 1400,
+      "loc": 1477,
       "path": "packages/semantic",
       "rdeps": [
-        "greplost",
-        "greplost-monorepo"
+        "greplost"
       ]
     },
     "@greplost/sync": {
@@ -2379,8 +2356,7 @@
         "@greplost/bench",
         "@greplost/semantic",
         "@greplost/workspace",
-        "greplost",
-        "greplost-monorepo"
+        "greplost"
       ]
     },
     "@greplost/workspace": {
@@ -2410,13 +2386,9 @@
       "rdeps": []
     },
     "greplost-monorepo": {
-      "deps": [
-        "@greplost/core",
-        "@greplost/semantic",
-        "@greplost/sync"
-      ],
-      "files": 4,
-      "loc": 415,
+      "deps": [],
+      "files": 2,
+      "loc": 96,
       "path": ".",
       "rdeps": []
     }
