@@ -10,8 +10,8 @@
 
 **Imports:** [`./mermaid.ts`](mermaid.ts.md) (*), [`./ascii.ts`](ascii.ts.md) (*), [`./split.ts`](split.ts.md) (*), [`./tokens.ts`](tokens.ts.md) (*), [`./slug.ts`](slug.ts.md) (*), [`./render.ts`](render.ts.md) (DocContext, GENERATED_LINE, RenderInput, createContext, renderApi, renderArtifacts, renderCard, renderHotspots, renderIndex, renderPackageMap, renderRepoMap)
 
-**Imported by:** [`packages/cli/src/commands/flows.ts`](../../../greplost/modules/src/commands/flows.ts.md), [`packages/cli/src/commands/structure.ts`](../../../greplost/modules/src/commands/structure.ts.md), [`packages/semantic/src/refresh.ts`](../../../greplost__semantic/modules/src/refresh.ts.md), [`packages/sync/src/build.ts`](../../../greplost__sync/modules/src/build.ts.md), [`packages/workspace/src/render.ts`](../../../greplost__workspace/modules/src/render.ts.md)
+**Imported by:** [`packages/cli/src/commands/flows.ts`](../../../greplost/modules/src/commands/flows.ts.md), [`packages/cli/src/commands/structure.ts`](../../../greplost/modules/src/commands/structure.ts.md), [`packages/semantic/src/refresh.ts`](../../../greplost__semantic/modules/src/refresh.ts.md), [`packages/sync/src/build.ts`](../../../greplost__sync/modules/src/build.ts.md), [`packages/workspace/src/query.ts`](../../../greplost__workspace/modules/src/query.ts.md), [`packages/workspace/src/render.ts`](../../../greplost__workspace/modules/src/render.ts.md)
 
-**Blast radius:** 25 files (`greplost impact packages/render/src/index.ts`)
+**Blast radius:** 26 files (`greplost impact packages/render/src/index.ts`)
 
 **Key symbols:** None.

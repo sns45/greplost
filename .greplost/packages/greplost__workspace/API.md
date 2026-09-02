@@ -4,11 +4,11 @@
 
 ## packages/workspace/src/build.ts
 
-- `interface WorkspaceBuild` L28-37
-- `interface BuildWorkspaceOptions` L39-42
-- `async function buildWorkspace(root: string, opts: BuildWorkspaceOptions = {}): Promise<WorkspaceBuild>` L54-80
-- `async function verifyWorkspace(root: string, opts: { diff?: boolean } = {}): Promise<VerifyResult>` L91-146
-- `function renderArtifacts( name: string, repos: readonly RepoView[], cross: readonly ResolvedCross[], ): Map<string, string>` L149-159
+- `interface WorkspaceBuild` L29-38
+- `interface BuildWorkspaceOptions` L40-50
+- `async function buildWorkspace(root: string, opts: BuildWorkspaceOptions = {}): Promise<WorkspaceBuild>` L62-88
+- `async function verifyWorkspace(root: string, opts: { diff?: boolean } = {}): Promise<VerifyResult>` L99-158
+- `function renderArtifacts( name: string, repos: readonly RepoView[], cross: readonly ResolvedCross[], ): Map<string, string>` L161-171
 
 ## packages/workspace/src/config.ts
 
@@ -26,29 +26,40 @@
 
 ## packages/workspace/src/cross.ts
 
-- `interface CrossEdge` L40-50
-- `interface ResolvedCross` L53-60
-- `interface RepoView` L63-82
-- `function readRepo(root: string, dir: string): RepoView` L91-133
-- `function crossEdges(repos: readonly RepoView[]): ResolvedCross[]` L142-193
-- `function goModulePath(text: string | null): string` L369-379
+- `interface CrossEdge` L44-54
+- `interface ResolvedCross` L57-64
+- `interface RepoView` L67-92
+- `function readRepo(root: string, dir: string): RepoView` L101-161
+- `function crossEdges(repos: readonly RepoView[]): ResolvedCross[]` L170-221
+- `function goModulePath(text: string | null): string` L336-346
+- re-exports `NpmPackage` from `./entry.ts`
+
+## packages/workspace/src/entry.ts
+
+- `interface NpmPackage` L23-30
+- `function subpathOf(specifier: string, name: string): string` L33-36
+- `function resolveNpmTarget( files: ReadonlySet<string>, pkg: NpmPackage, subpath: string, ): string | undefined` L55-73
+- `function normalizeDir(dir: string): string` L168-175
+- `function joinRelative(dir: string, rest: string): string` L177-179
 
 ## packages/workspace/src/impact.ts
 
-- `interface ImpactedFile` L22-27
-- `function impactAcross(root: string, target: string, depth?: number): ImpactedFile[]` L36-53
-- `function readWorkspaceRepos(root: string): RepoView[]` L56-65
-- `function workspacePairs(repos: readonly RepoView[]): Array<readonly [string, string]>` L73-100
+- `interface ImpactedFile` L26-31
+- `function impactAcross(root: string, target: string, depth?: number): ImpactedFile[]` L40-56
+- `function resolveWorkspaceTarget( root: string, argument: string, repos: readonly RepoView[], ): string | undefined` L71-91
+- `function readWorkspaceRepos(root: string): RepoView[]` L141-150
+- `function workspacePairs(repos: readonly RepoView[]): Array<readonly [string, string]>` L158-185
 
 ## packages/workspace/src/index.ts
 
-- `type WorkspaceHookName = "update" | "verify" | "impact"` L55-55
-- `interface WorkspaceCommandContext` L62-73
-- `type WorkspaceHook = (ctx: WorkspaceCommandContext) => Promise<number | undefined>` L76-76
-- `type SetWorkspaceHook = (name: WorkspaceHookName, hook: WorkspaceHook) => void` L78-78
-- `interface WorkspaceUpdateResult` L81-88
-- `interface WorkspaceImpactResult` L91-96
-- `function registerWorkspaceHooks(set: SetWorkspaceHook): void` L99-103
+- `type WorkspaceHookName = "update" | "verify" | "impact" | "query"` L61-61
+- `interface WorkspaceCommandContext` L68-89
+- `type WorkspaceHook = (ctx: WorkspaceCommandContext) => Promise<number | undefined>` L92-92
+- `type SetWorkspaceHook = (name: WorkspaceHookName, hook: WorkspaceHook) => void` L94-94
+- `interface WorkspaceUpdateResult` L97-104
+- `interface WorkspaceImpactResult` L107-112
+- `function registerWorkspaceHooks(set: SetWorkspaceHook): void` L115-120
+- `async function initWorkspace( root: string, opts: { hooks?: boolean; json?: boolean } = {}, ): Promise<number>` L132-156
 - re-exports `ID_SEPARATOR`, `WORKSPACE_ARTIFACTS`, `WORKSPACE_FILE`, `findWorkspaceRoot`, `loadWorkspace`, `repoDirId`, `splitWorkspaceId`, `workspaceId` from `./config.ts`
 - re-exports `WorkspaceConfig` from `./config.ts`
 - re-exports `crossEdges`, `readRepo` from `./cross.ts`
@@ -57,8 +68,17 @@
 - re-exports `RepoSummary`, `WorkspaceRender` from `./render.ts`
 - re-exports `buildWorkspace`, `renderArtifacts`, `verifyWorkspace` from `./build.ts`
 - re-exports `BuildWorkspaceOptions`, `WorkspaceBuild` from `./build.ts`
-- re-exports `impactAcross`, `readWorkspaceRepos`, `workspacePairs` from `./impact.ts`
+- re-exports `impactAcross`, `readWorkspaceRepos`, `resolveWorkspaceTarget`, `workspacePairs` from `./impact.ts`
 - re-exports `ImpactedFile` from `./impact.ts`
+- re-exports `queryAcross` from `./query.ts`
+- re-exports `WorkspaceQueryFile`, `WorkspaceQueryMatch`, `WorkspaceQueryResult` from `./query.ts`
+
+## packages/workspace/src/query.ts
+
+- `interface WorkspaceQueryMatch` L25-42
+- `interface WorkspaceQueryFile` L45-58
+- `interface WorkspaceQueryResult` L60-64
+- `async function queryAcross(root: string, needle: string): Promise<WorkspaceQueryResult>` L78-101
 
 ## packages/workspace/src/render.ts
 

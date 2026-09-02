@@ -21,17 +21,17 @@
 |---|---|---|---|---|---|---|---|
 | greplost-monorepo | . | 2 | 96 | 2 | 0 | 0 | [MAP](packages/greplost-monorepo/MAP.md) |
 | @greplost/bench | bench | 24 | 8345 | 27 | 0 | 2 | [MAP](packages/greplost__bench/MAP.md) |
-| greplost | packages/cli | 18 | 1870 | 4 | 0 | 5 | [MAP](packages/greplost/MAP.md) |
+| greplost | packages/cli | 18 | 1898 | 4 | 0 | 5 | [MAP](packages/greplost/MAP.md) |
 | @greplost/core | packages/core | 29 | 5928 | 10 | 6 | 0 | [MAP](packages/greplost__core/MAP.md) |
 | @greplost/render | packages/render | 13 | 1768 | 1 | 4 | 1 | [MAP](packages/greplost__render/MAP.md) |
 | @greplost/semantic | packages/semantic | 5 | 1175 | 4 | 1 | 3 | [MAP](packages/greplost__semantic/MAP.md) |
 | @greplost/sync | packages/sync | 12 | 2946 | 4 | 4 | 2 | [MAP](packages/greplost__sync/MAP.md) |
-| @greplost/workspace | packages/workspace | 6 | 1313 | 2 | 1 | 3 | [MAP](packages/greplost__workspace/MAP.md) |
+| @greplost/workspace | packages/workspace | 8 | 1931 | 2 | 1 | 3 | [MAP](packages/greplost__workspace/MAP.md) |
 
 ## Hotspots
 
-- Most imported: `packages/core/src/schema.ts` (fan-in 70), `packages/cli/src/args.ts` (fan-in 14), `packages/cli/src/output.ts` (fan-in 11), `packages/core/src/graph/index.ts` (fan-in 10), `packages/sync/src/index.ts` (fan-in 9)
-- Largest blast radius: `packages/core/src/schema.ts` (92 files), `packages/core/src/resolve/go.ts` (45 files), `packages/core/src/graph/tarjan.ts` (44 files), `packages/core/src/resolve/tsconfig.ts` (44 files), `packages/core/src/graph/directories.ts` (43 files)
+- Most imported: `packages/core/src/schema.ts` (fan-in 73), `packages/cli/src/args.ts` (fan-in 14), `packages/cli/src/output.ts` (fan-in 11), `packages/core/src/graph/index.ts` (fan-in 10), `packages/core/src/index.ts` (fan-in 9)
+- Largest blast radius: `packages/core/src/schema.ts` (94 files), `packages/core/src/resolve/go.ts` (46 files), `packages/core/src/graph/tarjan.ts` (45 files), `packages/core/src/resolve/tsconfig.ts` (45 files), `packages/core/src/graph/directories.ts` (44 files)
 - Import cycles: 2, see [repo/HOTSPOTS.md](repo/HOTSPOTS.md)
 
 ## Navigation

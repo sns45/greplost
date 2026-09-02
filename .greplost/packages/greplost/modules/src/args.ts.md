@@ -23,24 +23,24 @@
 - `type ParseResult = { ok: true; command: ParsedCommand } | { ok: false; message: string }`  L77-77
 - `interface CommandContext`  L83-93
 - `const COMMAND_USAGE: ReadonlyArray<readonly [CommandName, string, string]> = [ ["init", "greplost init [--no-hooks] [--workspace]", "build the map, install git hooks, write config"], [ "update", "gre…`  L99-116
-- `const USAGE_FOOTER = `Every command accepts --root <dir> and --json. Exit codes: 0 success, 1 drift or not found, 2 usage error.``  L118-119
-- `const USAGE_WIDTH = Math.max(...COMMAND_USAGE.filter(([, s]) => s.length <= 46).map(([, s]) => s.length))`  L122-122
-- `function usageLine(synopsis: string, summary: string): string`  L129-132
-- `const USAGE = `usage: greplost <command> [options] ${COMMAND_USAGE.map(([, synopsis, summary]) => usageLine(synopsis, summary)).join("\n")} ${USAGE_FOOTER}``  L134-138
-- `function usageFor(name: string): string`  L141-145
-- `const COMMANDS: ReadonlySet<string> = new Set<CommandName>([ "init", "update", "verify", "query", "impact", "flows", "refresh", "bench", "screenshots", "hook", "version", "help", ])`  L147-160
-- `const ARITY: Readonly<Record<CommandName, readonly [number, number]>> = { init: [0, 0], update: [0, 0], verify: [0, 0], query: [1, 1], impact: [1, 1], flows: [1, 1], refresh: [0, 1], bench: [1, 1], s…`  L163-176
-- `interface Cursor`  L179-182
-- `function usageError(message: string): ParseResult`  L184-186
-- `function parseArgs(argv: string[]): ParseResult`  L188-211
-- `function parseRest(name: CommandName, argv: string[]): ParseResult`  L213-297
-- `function rootOf(root: string | undefined): { root?: string }`  L299-301
-- `interface BenchTail`  L303-308
-- `function splitBenchTail(tail: readonly string[]): BenchTail`  L320-350
-- `function takeValue(cursor: Cursor, inline: string | undefined): string | undefined`  L360-366
-- `function applyCommandFlag( name: CommandName, flag: string, inline: string | undefined, cursor: Cursor, options: CommandOptions, ): true | string`  L372-459
-- `function findRoot(cwd: string): string`  L468-476
-- `function resolveRoot(cwd: string, explicit: string | undefined): string`  L484-489
-- `function isDirectory(candidate: string): boolean`  L491-497
+- `const USAGE_FOOTER = `Every command accepts --root <dir> and --json. In a workspace (a directory holding greplost.workspace.json), update, verify, query and impact act on every listed repo when run f…`  L118-122
+- `const USAGE_WIDTH = Math.max(...COMMAND_USAGE.filter(([, s]) => s.length <= 46).map(([, s]) => s.length))`  L125-125
+- `function usageLine(synopsis: string, summary: string): string`  L132-135
+- `const USAGE = `usage: greplost <command> [options] ${COMMAND_USAGE.map(([, synopsis, summary]) => usageLine(synopsis, summary)).join("\n")} ${USAGE_FOOTER}``  L137-141
+- `function usageFor(name: string): string`  L144-148
+- `const COMMANDS: ReadonlySet<string> = new Set<CommandName>([ "init", "update", "verify", "query", "impact", "flows", "refresh", "bench", "screenshots", "hook", "version", "help", ])`  L150-163
+- `const ARITY: Readonly<Record<CommandName, readonly [number, number]>> = { init: [0, 0], update: [0, 0], verify: [0, 0], query: [1, 1], impact: [1, 1], flows: [1, 1], refresh: [0, 1], bench: [1, 1], s…`  L166-179
+- `interface Cursor`  L182-185
+- `function usageError(message: string): ParseResult`  L187-189
+- `function parseArgs(argv: string[]): ParseResult`  L191-214
+- `function parseRest(name: CommandName, argv: string[]): ParseResult`  L216-300
+- `function rootOf(root: string | undefined): { root?: string }`  L302-304
+- `interface BenchTail`  L306-311
+- `function splitBenchTail(tail: readonly string[]): BenchTail`  L323-353
+- `function takeValue(cursor: Cursor, inline: string | undefined): string | undefined`  L363-369
+- `function applyCommandFlag( name: CommandName, flag: string, inline: string | undefined, cursor: Cursor, options: CommandOptions, ): true | string`  L375-462
+- `function findRoot(cwd: string): string`  L471-479
+- `function resolveRoot(cwd: string, explicit: string | undefined): string`  L487-492
+- `function isDirectory(candidate: string): boolean`  L494-500
 
 **Calls:** `applyCommandFlag` → [`packages/cli/src/args.ts#applyCommandFlag`](args.ts.md) (high), `findRoot` → [`packages/cli/src/args.ts#findRoot`](args.ts.md) (high), `isDirectory` → [`packages/cli/src/args.ts#isDirectory`](args.ts.md) (high), `parseRest` → [`packages/cli/src/args.ts#parseRest`](args.ts.md) (high), `rootOf` → [`packages/cli/src/args.ts#rootOf`](args.ts.md) (high), `splitBenchTail` → [`packages/cli/src/args.ts#splitBenchTail`](args.ts.md) (high), `takeValue` → [`packages/cli/src/args.ts#takeValue`](args.ts.md) (high), `usageError` → [`packages/cli/src/args.ts#usageError`](args.ts.md) (high), `usageLine` → [`packages/cli/src/args.ts#usageLine`](args.ts.md) (high)

@@ -12,6 +12,6 @@
 
 **Imported by:** [`packages/core/src/index.ts`](../index.ts.md)
 
-**Blast radius:** 28 files (`greplost impact packages/core/src/serialize/index.ts`)
+**Blast radius:** 29 files (`greplost impact packages/core/src/serialize/index.ts`)
 
 **Key symbols:** None.

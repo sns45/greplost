@@ -12,6 +12,6 @@
 
 **Imported by:** [`bench/src/perf-child.ts`](../../../greplost__bench/modules/src/perf-child.ts.md), [`bench/src/perf.ts`](../../../greplost__bench/modules/src/perf.ts.md), [`bench/src/replay.ts`](../../../greplost__bench/modules/src/replay.ts.md), [`packages/cli/src/commands/hook.ts`](../../../greplost/modules/src/commands/hook.ts.md), [`packages/cli/src/commands/init.ts`](../../../greplost/modules/src/commands/init.ts.md), [`packages/cli/src/commands/update.ts`](../../../greplost/modules/src/commands/update.ts.md), [`packages/cli/src/commands/verify.ts`](../../../greplost/modules/src/commands/verify.ts.md), [`packages/semantic/src/refresh.ts`](../../../greplost__semantic/modules/src/refresh.ts.md), [`packages/workspace/src/build.ts`](../../../greplost__workspace/modules/src/build.ts.md)
 
-**Blast radius:** 16 files (`greplost impact packages/sync/src/index.ts`)
+**Blast radius:** 17 files (`greplost impact packages/sync/src/index.ts`)
 
 **Key symbols:** None.

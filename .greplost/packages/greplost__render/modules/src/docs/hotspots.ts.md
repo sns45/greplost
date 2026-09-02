@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/render/src/docs/index-doc.ts`](index-doc.ts.md), [`packages/render/src/render.ts`](../render.ts.md)
 
-**Blast radius:** 32 files (`greplost impact packages/render/src/docs/hotspots.ts`)
+**Blast radius:** 33 files (`greplost impact packages/render/src/docs/hotspots.ts`)
 
 **Key symbols:**
 - `const TABLE_LIMIT = 20`  L17-17

@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/workspace/src/build.ts`](build.ts.md), [`packages/workspace/src/index.ts`](index.ts.md)
 
-**Blast radius:** 9 files (`greplost impact packages/workspace/src/render.ts`)
+**Blast radius:** 10 files (`greplost impact packages/workspace/src/render.ts`)
 
 **Key symbols:**
 - `interface RepoSummary`  L23-32
@@ -21,7 +21,7 @@
 - `function renderWorkspace(input: WorkspaceRender): string`  L44-56
 - `function renderCross(edges: readonly CrossEdge[]): string`  L59-61
 - `function repoTable(repos: readonly RepoSummary[]): string`  L63-73
-- `function repoGraph(repos: readonly RepoSummary[], cross: readonly ResolvedCross[]): string`  L81-112
-- `function dependencyTable(cross: readonly ResolvedCross[]): string`  L114-125
+- `function repoGraph(repos: readonly RepoSummary[], cross: readonly ResolvedCross[]): string`  L81-121
+- `function dependencyTable(cross: readonly ResolvedCross[]): string`  L123-134
 
 **Calls:** `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high), `toJsonl` → [`packages/core/src/serialize/json.ts#toJsonl`](../../../greplost__core/modules/src/serialize/json.ts.md) (med), `mermaidId` → [`packages/render/src/mermaid.ts#mermaidId`](../../../greplost__render/modules/src/mermaid.ts.md) (med), `renderGraph` → [`packages/render/src/mermaid.ts#renderGraph`](../../../greplost__render/modules/src/mermaid.ts.md) (med), `dependencyTable` → [`packages/workspace/src/render.ts#dependencyTable`](render.ts.md) (high), `repoGraph` → [`packages/workspace/src/render.ts#repoGraph`](render.ts.md) (high), `repoTable` → [`packages/workspace/src/render.ts#repoTable`](render.ts.md) (high)

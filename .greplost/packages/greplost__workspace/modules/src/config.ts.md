@@ -10,9 +10,9 @@
 
 **Imports:** `node:fs` (existsSync, readFileSync, statSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, compareStrings)
 
-**Imported by:** [`packages/workspace/src/build.ts`](build.ts.md), [`packages/workspace/src/cross.ts`](cross.ts.md), [`packages/workspace/src/impact.ts`](impact.ts.md), [`packages/workspace/src/index.ts`](index.ts.md)
+**Imported by:** [`packages/workspace/src/build.ts`](build.ts.md), [`packages/workspace/src/cross.ts`](cross.ts.md), [`packages/workspace/src/impact.ts`](impact.ts.md), [`packages/workspace/src/index.ts`](index.ts.md), [`packages/workspace/src/query.ts`](query.ts.md)
 
-**Blast radius:** 12 files (`greplost impact packages/workspace/src/config.ts`)
+**Blast radius:** 14 files (`greplost impact packages/workspace/src/config.ts`)
 
 **Key symbols:**
 - `const WORKSPACE_FILE = "greplost.workspace.json"`  L22-22

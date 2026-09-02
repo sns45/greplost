@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md), [`packages/core/src/extract/ts-calls.ts`](ts-calls.ts.md), [`packages/core/src/extract/ts-imports.ts`](ts-imports.ts.md)
 
-**Blast radius:** 32 files (`greplost impact packages/core/src/extract/ts.ts`)
+**Blast radius:** 33 files (`greplost impact packages/core/src/extract/ts.ts`)
 
 **Key symbols:**
 - `interface TsContext`  L59-77

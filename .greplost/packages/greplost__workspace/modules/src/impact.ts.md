@@ -6,19 +6,23 @@
 
 **Package:** `@greplost/workspace` ([map](../../MAP.md))
 
-**Exports:** `ImpactedFile (interface)`, `impactAcross(root: string, target: string, depth?: number): ImpactedFile[]`, `readWorkspaceRepos(root: string): RepoView[]`, `workspacePairs(repos: readonly RepoView[]): Array<readonly [string, string]>`
+**Exports:** `ImpactedFile (interface)`, `impactAcross(root: string, target: string, depth?: number): ImpactedFile[]`, `readWorkspaceRepos(root: string): RepoView[]`, `resolveWorkspaceTarget( root: string, argument: string, repos: readonly RepoView[], ): string | undefined`, `workspacePairs(repos: readonly RepoView[]): Array<readonly [string, string]>`
 
-**Imports:** [`@greplost/core/graph`](../../../greplost__core/modules/src/graph/index.ts.md) (expandDirectoryTargets, impactOf), [`./config.ts`](config.ts.md) (loadWorkspace, repoDirId, splitWorkspaceId, workspaceId), [`./cross.ts`](cross.ts.md) (RepoView, crossEdges, readRepo)
+**Imports:** `node:fs` (realpathSync), `node:path` (default), [`@greplost/core/graph`](../../../greplost__core/modules/src/graph/index.ts.md) (expandDirectoryTargets, impactOf), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (compareStrings), [`./config.ts`](config.ts.md) (loadWorkspace, repoDirId, splitWorkspaceId, workspaceId), [`./cross.ts`](cross.ts.md) (RepoView, crossEdges, readRepo)
 
-**Imported by:** [`packages/workspace/src/index.ts`](index.ts.md)
+**Imported by:** [`packages/workspace/src/index.ts`](index.ts.md), [`packages/workspace/src/query.ts`](query.ts.md)
 
-**Blast radius:** 8 files (`greplost impact packages/workspace/src/impact.ts`)
+**Blast radius:** 10 files (`greplost impact packages/workspace/src/impact.ts`)
 
 **Key symbols:**
-- `interface ImpactedFile`  L22-27
-- `function impactAcross(root: string, target: string, depth?: number): ImpactedFile[]`  L36-53
-- `function readWorkspaceRepos(root: string): RepoView[]`  L56-65
-- `function workspacePairs(repos: readonly RepoView[]): Array<readonly [string, string]>`  L73-100
-- `function exampleId(repos: readonly RepoView[]): string`  L103-109
+- `interface ImpactedFile`  L26-31
+- `function impactAcross(root: string, target: string, depth?: number): ImpactedFile[]`  L40-56
+- `function resolveWorkspaceTarget( root: string, argument: string, repos: readonly RepoView[], ): string | undefined`  L71-91
+- `function workspaceRelatives(root: string, argument: string): string[]`  L103-125
+- `function realPath(candidate: string): string`  L128-134
+- `function unique(values: readonly string[]): string[]`  L136-138
+- `function readWorkspaceRepos(root: string): RepoView[]`  L141-150
+- `function workspacePairs(repos: readonly RepoView[]): Array<readonly [string, string]>`  L158-185
+- `function exampleId(repos: readonly RepoView[]): string`  L188-194
 
-**Calls:** `impactOf` → [`packages/core/src/graph/blast.ts#impactOf`](../../../greplost__core/modules/src/graph/blast.ts.md) (med), `expandDirectoryTargets` → [`packages/core/src/graph/directories.ts#expandDirectoryTargets`](../../../greplost__core/modules/src/graph/directories.ts.md) (med), `loadWorkspace` → [`packages/workspace/src/config.ts#loadWorkspace`](config.ts.md) (high), `repoDirId` → [`packages/workspace/src/config.ts#repoDirId`](config.ts.md) (high), `splitWorkspaceId` → [`packages/workspace/src/config.ts#splitWorkspaceId`](config.ts.md) (high), `workspaceId` → [`packages/workspace/src/config.ts#workspaceId`](config.ts.md) (high), `crossEdges` → [`packages/workspace/src/cross.ts#crossEdges`](cross.ts.md) (high), `readRepo` → [`packages/workspace/src/cross.ts#readRepo`](cross.ts.md) (high), `exampleId` → [`packages/workspace/src/impact.ts#exampleId`](impact.ts.md) (high), `readWorkspaceRepos` → [`packages/workspace/src/impact.ts#readWorkspaceRepos`](impact.ts.md) (high), `workspacePairs` → [`packages/workspace/src/impact.ts#workspacePairs`](impact.ts.md) (high)
+**Calls:** `impactOf` → [`packages/core/src/graph/blast.ts#impactOf`](../../../greplost__core/modules/src/graph/blast.ts.md) (med), `expandDirectoryTargets` → [`packages/core/src/graph/directories.ts#expandDirectoryTargets`](../../../greplost__core/modules/src/graph/directories.ts.md) (med), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high), `loadWorkspace` → [`packages/workspace/src/config.ts#loadWorkspace`](config.ts.md) (high), `repoDirId` → [`packages/workspace/src/config.ts#repoDirId`](config.ts.md) (high), `splitWorkspaceId` → [`packages/workspace/src/config.ts#splitWorkspaceId`](config.ts.md) (high), `workspaceId` → [`packages/workspace/src/config.ts#workspaceId`](config.ts.md) (high), `crossEdges` → [`packages/workspace/src/cross.ts#crossEdges`](cross.ts.md) (high), `readRepo` → [`packages/workspace/src/cross.ts#readRepo`](cross.ts.md) (high), `exampleId` → [`packages/workspace/src/impact.ts#exampleId`](impact.ts.md) (high), `readWorkspaceRepos` → [`packages/workspace/src/impact.ts#readWorkspaceRepos`](impact.ts.md) (high), `realPath` → [`packages/workspace/src/impact.ts#realPath`](impact.ts.md) (high), `resolveWorkspaceTarget` → [`packages/workspace/src/impact.ts#resolveWorkspaceTarget`](impact.ts.md) (high), `unique` → [`packages/workspace/src/impact.ts#unique`](impact.ts.md) (high), `workspacePairs` → [`packages/workspace/src/impact.ts#workspacePairs`](impact.ts.md) (high), `workspaceRelatives` → [`packages/workspace/src/impact.ts#workspaceRelatives`](impact.ts.md) (high)

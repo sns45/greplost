@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/render/src/docs/package-map.ts`](docs/package-map.ts.md), [`packages/render/src/docs/repo-map.ts`](docs/repo-map.ts.md), [`packages/render/src/index.ts`](index.ts.md)
 
-**Blast radius:** 33 files (`greplost impact packages/render/src/split.ts`)
+**Blast radius:** 34 files (`greplost impact packages/render/src/split.ts`)
 
 **Key symbols:**
 - `interface SplitNode extends GraphNode`  L17-20

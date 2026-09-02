@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/sync/src/incremental.ts`](incremental.ts.md), [`packages/sync/src/index.ts`](index.ts.md), [`packages/sync/src/verify.ts`](verify.ts.md)
 
-**Blast radius:** 20 files (`greplost impact packages/sync/src/build.ts`)
+**Blast radius:** 21 files (`greplost impact packages/sync/src/build.ts`)
 
 **Key symbols:**
 - `interface BuildArtifactsOptions`  L28-35

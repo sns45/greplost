@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/sync/src/incremental.ts`](incremental.ts.md), [`packages/sync/src/index.ts`](index.ts.md)
 
-**Blast radius:** 19 files (`greplost impact packages/sync/src/lock.ts`)
+**Blast radius:** 20 files (`greplost impact packages/sync/src/lock.ts`)
 
 **Key symbols:**
 - `const LOCK_STALE_MS = 60_000`  L36-36

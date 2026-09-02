@@ -6,27 +6,28 @@
 
 **Package:** `greplost` ([map](../../../MAP.md))
 
-**Exports:** `WORKSPACE_UNAVAILABLE (const)`, `WorkspaceHook (type)`, `WorkspaceHookName (type)`, `WorkspaceInit (type)`, `clearWorkspaceHooks(): void`, `dispatchWorkspace( name: WorkspaceHookName, ctx: CommandContext, ): Promise<number | undefined>`, `loadWorkspaceHooks(): Promise<void>`, `loadWorkspaceInit(): Promise<WorkspaceInit | undefined>`, `setWorkspaceHook(name: WorkspaceHookName, hook: WorkspaceHook): void`, `workspaceHook(name: WorkspaceHookName): WorkspaceHook | undefined`
+**Exports:** `WORKSPACE_UNAVAILABLE (const)`, `WorkspaceHook (type)`, `WorkspaceHookName (type)`, `WorkspaceInit (type)`, `clearWorkspaceHooks(): void`, `dispatchWorkspace( name: WorkspaceHookName, ctx: CommandContext, ): Promise<number | undefined>`, `isWorkspaceRoot(root: string): boolean`, `loadWorkspaceHooks(): Promise<void>`, `loadWorkspaceInit(): Promise<WorkspaceInit | undefined>`, `setWorkspaceHook(name: WorkspaceHookName, hook: WorkspaceHook): void`, `workspaceHook(name: WorkspaceHookName): WorkspaceHook | undefined`
 
-**Imports:** [`../args.ts`](../args.ts.md) (CommandContext), [`@greplost/workspace`](../../../../greplost__workspace/modules/src/index.ts.md) (*)
+**Imports:** `node:fs` (existsSync), `node:path` (join), [`../args.ts`](../args.ts.md) (CommandContext), [`@greplost/workspace`](../../../../greplost__workspace/modules/src/index.ts.md) (*)
 
-**Imported by:** [`packages/cli/src/commands/impact.ts`](impact.ts.md), [`packages/cli/src/commands/init.ts`](init.ts.md), [`packages/cli/src/commands/update.ts`](update.ts.md), [`packages/cli/src/commands/verify.ts`](verify.ts.md), [`packages/cli/src/index.ts`](../index.ts.md)
+**Imported by:** [`packages/cli/src/commands/impact.ts`](impact.ts.md), [`packages/cli/src/commands/init.ts`](init.ts.md), [`packages/cli/src/commands/query.ts`](query.ts.md), [`packages/cli/src/commands/update.ts`](update.ts.md), [`packages/cli/src/commands/verify.ts`](verify.ts.md), [`packages/cli/src/index.ts`](../index.ts.md)
 
-**Blast radius:** 6 files (`greplost impact packages/cli/src/commands/workspace.ts`)
+**Blast radius:** 7 files (`greplost impact packages/cli/src/commands/workspace.ts`)
 
 **Key symbols:**
-- `type WorkspaceHookName = "update" | "verify" | "impact"`  L22-22
-- `type WorkspaceHook = (ctx: CommandContext) => Promise<number | undefined>`  L25-25
-- `const hooks = new Map<WorkspaceHookName, WorkspaceHook>()`  L27-27
-- `function setWorkspaceHook(name: WorkspaceHookName, hook: WorkspaceHook): void`  L30-32
-- `function workspaceHook(name: WorkspaceHookName): WorkspaceHook | undefined`  L35-37
-- `function clearWorkspaceHooks(): void`  L40-42
-- `const WORKSPACE_UNAVAILABLE = "workspace layer not available in this build"`  L45-45
-- `type WorkspaceInit = (root: string, opts: { hooks?: boolean; json?: boolean }) => Promise<number>`  L52-52
-- `async function loadWorkspaceInit(): Promise<WorkspaceInit | undefined>`  L55-63
-- `let loading: Promise<void> | null = null`  L65-65
-- `function loadWorkspaceHooks(): Promise<void>`  L68-71
-- `async function importWorkspace(): Promise<void>`  L73-84
-- `async function dispatchWorkspace( name: WorkspaceHookName, ctx: CommandContext, ): Promise<number | undefined>`  L90-97
+- `type WorkspaceHookName = "update" | "verify" | "impact" | "query"`  L24-24
+- `type WorkspaceHook = (ctx: CommandContext) => Promise<number | undefined>`  L27-27
+- `const hooks = new Map<WorkspaceHookName, WorkspaceHook>()`  L29-29
+- `function setWorkspaceHook(name: WorkspaceHookName, hook: WorkspaceHook): void`  L32-34
+- `function workspaceHook(name: WorkspaceHookName): WorkspaceHook | undefined`  L37-39
+- `function clearWorkspaceHooks(): void`  L42-44
+- `const WORKSPACE_UNAVAILABLE = "workspace layer not available in this build"`  L47-47
+- `type WorkspaceInit = (root: string, opts: { hooks?: boolean; json?: boolean }) => Promise<number>`  L54-54
+- `async function loadWorkspaceInit(): Promise<WorkspaceInit | undefined>`  L57-65
+- `let loading: Promise<void> | null = null`  L67-67
+- `function loadWorkspaceHooks(): Promise<void>`  L70-73
+- `async function importWorkspace(): Promise<void>`  L75-86
+- `async function dispatchWorkspace( name: WorkspaceHookName, ctx: CommandContext, ): Promise<number | undefined>`  L92-99
+- `function isWorkspaceRoot(root: string): boolean`  L102-104
 
 **Calls:** `importWorkspace` → [`packages/cli/src/commands/workspace.ts#importWorkspace`](workspace.ts.md) (high), `loadWorkspaceHooks` → [`packages/cli/src/commands/workspace.ts#loadWorkspaceHooks`](workspace.ts.md) (high), `workspaceHook` → [`packages/cli/src/commands/workspace.ts#workspaceHook`](workspace.ts.md) (high)

@@ -47,35 +47,35 @@ Path: `packages/core` · 29 files · 5928 LOC · depends on: none · depended on
 
 | File | LOC | Exports | Fan-in | Fan-out | Blast |
 |---|---|---|---|---|---|
-| [`src/build.ts`](modules/src/build.ts.md) | 352 | 3 | 1 | 8 | 28 |
-| [`src/config.ts`](modules/src/config.ts.md) | 136 | 2 | 2 | 1 | 29 |
-| [`src/discover.ts`](modules/src/discover.ts.md) | 133 | 2 | 2 | 1 | 29 |
-| [`src/extract/go.ts`](modules/src/extract/go.ts.md) | 412 | 2 | 1 | 2 | 30 |
-| [`src/extract/index.ts`](modules/src/extract/index.ts.md) | 55 | 4 | 2 | 5 | 29 |
-| [`src/extract/ts-calls.ts`](modules/src/extract/ts-calls.ts.md) | 84 | 3 | 1 | 2 | 32 |
-| [`src/extract/ts-imports.ts`](modules/src/extract/ts-imports.ts.md) | 335 | 4 | 1 | 3 | 32 |
-| [`src/extract/ts-signature.ts`](modules/src/extract/ts-signature.ts.md) | 187 | 19 | 4 | 0 | 34 |
-| [`src/extract/ts.ts`](modules/src/extract/ts.ts.md) | 814 | 2 | 3 | 5 | 32 |
-| [`src/graph/blast.ts`](modules/src/graph/blast.ts.md) | 112 | 2 | 2 | 2 | 42 |
-| [`src/graph/directories.ts`](modules/src/graph/directories.ts.md) | 122 | 5 | 3 | 1 | 43 |
-| [`src/graph/index.ts`](modules/src/graph/index.ts.md) | 14 | 18 | 10 | 5 | 40 |
-| [`src/graph/link.ts`](modules/src/graph/link.ts.md) | 554 | 8 | 1 | 3 | 41 |
-| [`src/graph/metrics.ts`](modules/src/graph/metrics.ts.md) | 150 | 3 | 1 | 5 | 41 |
-| [`src/graph/query.ts`](modules/src/graph/query.ts.md) | 81 | 3 | 1 | 2 | 28 |
-| [`src/graph/tarjan.ts`](modules/src/graph/tarjan.ts.md) | 152 | 4 | 4 | 1 | 44 |
-| [`src/hash.ts`](modules/src/hash.ts.md) | 28 | 2 | 3 | 0 | 30 |
-| [`src/index.ts`](modules/src/index.ts.md) | 27 | 91 | 8 | 11 | 27 |
-| [`src/parser.ts`](modules/src/parser.ts.md) | 122 | 4 | 4 | 1 | 33 |
-| [`src/resolve/go.ts`](modules/src/resolve/go.ts.md) | 331 | 8 | 2 | 1 | 45 |
-| [`src/resolve/index.ts`](modules/src/resolve/index.ts.md) | 10 | 8 | 3 | 3 | 42 |
-| [`src/resolve/packages.ts`](modules/src/resolve/packages.ts.md) | 389 | 2 | 1 | 1 | 43 |
-| [`src/resolve/resolver.ts`](modules/src/resolve/resolver.ts.md) | 525 | 4 | 1 | 3 | 43 |
-| [`src/resolve/tsconfig.ts`](modules/src/resolve/tsconfig.ts.md) | 316 | 3 | 2 | 0 | 44 |
-| [`src/schema.ts`](modules/src/schema.ts.md) | 361 | 39 | 70 | 0 | 92 |
-| [`src/serialize/index.ts`](modules/src/serialize/index.ts.md) | 4 | 6 | 1 | 3 | 28 |
-| [`src/serialize/json.ts`](modules/src/serialize/json.ts.md) | 35 | 3 | 3 | 1 | 31 |
-| [`src/serialize/read.ts`](modules/src/serialize/read.ts.md) | 65 | 2 | 1 | 2 | 29 |
-| [`src/serialize/write.ts`](modules/src/serialize/write.ts.md) | 22 | 1 | 1 | 2 | 29 |
+| [`src/build.ts`](modules/src/build.ts.md) | 352 | 3 | 1 | 8 | 29 |
+| [`src/config.ts`](modules/src/config.ts.md) | 136 | 2 | 2 | 1 | 30 |
+| [`src/discover.ts`](modules/src/discover.ts.md) | 133 | 2 | 2 | 1 | 30 |
+| [`src/extract/go.ts`](modules/src/extract/go.ts.md) | 412 | 2 | 1 | 2 | 31 |
+| [`src/extract/index.ts`](modules/src/extract/index.ts.md) | 55 | 4 | 2 | 5 | 30 |
+| [`src/extract/ts-calls.ts`](modules/src/extract/ts-calls.ts.md) | 84 | 3 | 1 | 2 | 33 |
+| [`src/extract/ts-imports.ts`](modules/src/extract/ts-imports.ts.md) | 335 | 4 | 1 | 3 | 33 |
+| [`src/extract/ts-signature.ts`](modules/src/extract/ts-signature.ts.md) | 187 | 19 | 4 | 0 | 35 |
+| [`src/extract/ts.ts`](modules/src/extract/ts.ts.md) | 814 | 2 | 3 | 5 | 33 |
+| [`src/graph/blast.ts`](modules/src/graph/blast.ts.md) | 112 | 2 | 2 | 2 | 43 |
+| [`src/graph/directories.ts`](modules/src/graph/directories.ts.md) | 122 | 5 | 3 | 1 | 44 |
+| [`src/graph/index.ts`](modules/src/graph/index.ts.md) | 14 | 18 | 10 | 5 | 41 |
+| [`src/graph/link.ts`](modules/src/graph/link.ts.md) | 554 | 8 | 1 | 3 | 42 |
+| [`src/graph/metrics.ts`](modules/src/graph/metrics.ts.md) | 150 | 3 | 1 | 5 | 42 |
+| [`src/graph/query.ts`](modules/src/graph/query.ts.md) | 81 | 3 | 1 | 2 | 29 |
+| [`src/graph/tarjan.ts`](modules/src/graph/tarjan.ts.md) | 152 | 4 | 4 | 1 | 45 |
+| [`src/hash.ts`](modules/src/hash.ts.md) | 28 | 2 | 3 | 0 | 31 |
+| [`src/index.ts`](modules/src/index.ts.md) | 27 | 91 | 9 | 11 | 28 |
+| [`src/parser.ts`](modules/src/parser.ts.md) | 122 | 4 | 4 | 1 | 34 |
+| [`src/resolve/go.ts`](modules/src/resolve/go.ts.md) | 331 | 8 | 2 | 1 | 46 |
+| [`src/resolve/index.ts`](modules/src/resolve/index.ts.md) | 10 | 8 | 3 | 3 | 43 |
+| [`src/resolve/packages.ts`](modules/src/resolve/packages.ts.md) | 389 | 2 | 1 | 1 | 44 |
+| [`src/resolve/resolver.ts`](modules/src/resolve/resolver.ts.md) | 525 | 4 | 1 | 3 | 44 |
+| [`src/resolve/tsconfig.ts`](modules/src/resolve/tsconfig.ts.md) | 316 | 3 | 2 | 0 | 45 |
+| [`src/schema.ts`](modules/src/schema.ts.md) | 361 | 39 | 73 | 0 | 94 |
+| [`src/serialize/index.ts`](modules/src/serialize/index.ts.md) | 4 | 6 | 1 | 3 | 29 |
+| [`src/serialize/json.ts`](modules/src/serialize/json.ts.md) | 35 | 3 | 3 | 1 | 32 |
+| [`src/serialize/read.ts`](modules/src/serialize/read.ts.md) | 65 | 2 | 1 | 2 | 30 |
+| [`src/serialize/write.ts`](modules/src/serialize/write.ts.md) | 22 | 1 | 1 | 2 | 30 |
 
 ## Components
 

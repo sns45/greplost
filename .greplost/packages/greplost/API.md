@@ -11,11 +11,11 @@
 - `interface ParsedCommand` L67-75
 - `type ParseResult = { ok: true; command: ParsedCommand } | { ok: false; message: string }` L77-77
 - `interface CommandContext` L83-93
-- `const USAGE = `usage: greplost <command> [options] ${COMMAND_USAGE.map(([, synopsis, summary]) => usageLine(synopsis, summary)).join("\n")} ${USAGE_FOOTER}`` L134-138
-- `function usageFor(name: string): string` L141-145
-- `function parseArgs(argv: string[]): ParseResult` L188-211
-- `function findRoot(cwd: string): string` L468-476
-- `function resolveRoot(cwd: string, explicit: string | undefined): string` L484-489
+- `const USAGE = `usage: greplost <command> [options] ${COMMAND_USAGE.map(([, synopsis, summary]) => usageLine(synopsis, summary)).join("\n")} ${USAGE_FOOTER}`` L137-141
+- `function usageFor(name: string): string` L144-148
+- `function parseArgs(argv: string[]): ParseResult` L191-214
+- `function findRoot(cwd: string): string` L471-479
+- `function resolveRoot(cwd: string, explicit: string | undefined): string` L487-492
 
 ## packages/cli/src/commands/bench.ts
 
@@ -41,15 +41,15 @@
 
 ## packages/cli/src/commands/init.ts
 
-- `async function run(ctx: CommandContext): Promise<number>` L19-45
+- `async function run(ctx: CommandContext): Promise<number>` L19-59
 
 ## packages/cli/src/commands/query.ts
 
-- `interface QueryMatch` L35-55
-- `interface QueryFile` L58-69
-- `interface QueryResult` L71-75
-- `async function run(ctx: CommandContext): Promise<number>` L77-106
-- `function queryStructure(structure: Structure, root: string, needle: string): QueryResult` L109-126
+- `interface QueryMatch` L36-56
+- `interface QueryFile` L59-70
+- `interface QueryResult` L72-76
+- `async function run(ctx: CommandContext): Promise<number>` L78-110
+- `function queryStructure(structure: Structure, root: string, needle: string): QueryResult` L113-130
 
 ## packages/cli/src/commands/refresh.ts
 
@@ -88,16 +88,17 @@
 
 ## packages/cli/src/commands/workspace.ts
 
-- `type WorkspaceHookName = "update" | "verify" | "impact"` L22-22
-- `type WorkspaceHook = (ctx: CommandContext) => Promise<number | undefined>` L25-25
-- `function setWorkspaceHook(name: WorkspaceHookName, hook: WorkspaceHook): void` L30-32
-- `function workspaceHook(name: WorkspaceHookName): WorkspaceHook | undefined` L35-37
-- `function clearWorkspaceHooks(): void` L40-42
-- `const WORKSPACE_UNAVAILABLE = "workspace layer not available in this build"` L45-45
-- `type WorkspaceInit = (root: string, opts: { hooks?: boolean; json?: boolean }) => Promise<number>` L52-52
-- `async function loadWorkspaceInit(): Promise<WorkspaceInit | undefined>` L55-63
-- `function loadWorkspaceHooks(): Promise<void>` L68-71
-- `async function dispatchWorkspace( name: WorkspaceHookName, ctx: CommandContext, ): Promise<number | undefined>` L90-97
+- `type WorkspaceHookName = "update" | "verify" | "impact" | "query"` L24-24
+- `type WorkspaceHook = (ctx: CommandContext) => Promise<number | undefined>` L27-27
+- `function setWorkspaceHook(name: WorkspaceHookName, hook: WorkspaceHook): void` L32-34
+- `function workspaceHook(name: WorkspaceHookName): WorkspaceHook | undefined` L37-39
+- `function clearWorkspaceHooks(): void` L42-44
+- `const WORKSPACE_UNAVAILABLE = "workspace layer not available in this build"` L47-47
+- `type WorkspaceInit = (root: string, opts: { hooks?: boolean; json?: boolean }) => Promise<number>` L54-54
+- `async function loadWorkspaceInit(): Promise<WorkspaceInit | undefined>` L57-65
+- `function loadWorkspaceHooks(): Promise<void>` L70-73
+- `async function dispatchWorkspace( name: WorkspaceHookName, ctx: CommandContext, ): Promise<number | undefined>` L92-99
+- `function isWorkspaceRoot(root: string): boolean` L102-104
 
 ## packages/cli/src/index.ts
 
