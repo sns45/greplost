@@ -53,6 +53,8 @@ describe("sync-readme", () => {
     mkdirSync(join(root, "bench"));
     writeFileSync(join(root, "README.md"), README);
     writeFileSync(join(root, "bench", "RESULTS.md"), RESULTS);
+    mkdirSync(join(root, "docs", "assets"), { recursive: true });
+    writeFileSync(join(root, "docs", "assets", "x2-staleness.png"), "png");
     expect(main(["--root", root, "--check"])).toBe(1);
     expect(main(["--root", root])).toBe(0);
     expect(readFileSync(join(root, "README.md"), "utf8")).toContain("| X1 | ≥ 0.95 | 1.000 |");

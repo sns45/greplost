@@ -95,7 +95,9 @@ export function main(argv: string[]): number {
   if (!existsSync(resultsPath)) { console.error("sync-readme: bench/RESULTS.md not found; run bun run bench:report first"); return 1; }
   const readme = readFileSync(readmePath, "utf8");
   const { text, missing } = syncReadme(readme, readFileSync(resultsPath, "utf8"));
-  const tracked = (rel: string) => spawnSync("git", ["-C", root, "ls-files", "--error-unmatch", rel], { stdio: "ignore" }).status === 0;
+  // Outside a git work tree (a temp copy, a tarball) only existence can be checked.
+  const inGit = spawnSync("git", ["-C", root, "rev-parse", "--is-inside-work-tree"], { stdio: "ignore" }).status === 0;
+  const tracked = (rel: string) => !inGit || spawnSync("git", ["-C", root, "ls-files", "--error-unmatch", rel], { stdio: "ignore" }).status === 0;
   const images = missingImages(text, root, tracked);
   for (const i of images) console.error(`sync-readme: README image ${i}`);
   if (images.length > 0 && check) return 1;
