@@ -116,7 +116,10 @@ describe("hooks", () => {
     expect(result.installed).toEqual([...HOOK_NAMES]);
     for (const hook of HOOK_NAMES) {
       const file = path.join(root, ".husky", hook);
-      expect(readFileSync(file, "utf8")).toContain(HOOK_MARKER);
+      const body = readFileSync(file, "utf8");
+      expect(body).toContain(HOOK_MARKER);
+      // A husky hook is still a script someone may run by hand.
+      expect(body.startsWith("#!/bin/sh\n")).toBe(true);
       expect(isExecutable(file)).toBe(true);
       expect(existsSync(path.join(root, ".git", "hooks", hook))).toBe(false);
     }
@@ -172,22 +175,41 @@ describe("hooks", () => {
     }
   });
 
-  test("running the installed hook does not block and does not touch the repo", () => {
+  test("running the installed hook does not block, fail, or touch the repo", () => {
     const root = gitRepo("run");
     installGitHooks(root);
 
     // `greplost` is not on PATH here and `bunx greplost` must never be reached
-    // synchronously, so the hook returns immediately either way.
+    // synchronously, so the hook returns immediately either way. `-e` is how
+    // husky runs a hook: the script must still succeed, or every commit in a
+    // checkout without greplost reports a failed hook.
     const started = Date.now();
-    const ran = spawnSync("/bin/sh", [path.join(root, ".git", "hooks", "post-commit")], {
+    const ran = spawnSync("/bin/sh", ["-e", path.join(root, ".git", "hooks", "post-commit")], {
       cwd: root,
       encoding: "utf8",
       env: { ...process.env, PATH: "/usr/bin:/bin" },
       timeout: 20_000,
     });
     expect(ran.error).toBeUndefined();
+    expect(ran.status).toBe(0);
     expect(Date.now() - started).toBeLessThan(20_000);
     expect(ran.stdout).toBe("");
     expect(existsSync(path.join(root, ".greplost"))).toBe(false);
+  });
+
+  test("does nothing from a subdirectory of a repository", () => {
+    const root = gitRepo("subdirectory");
+    const nested = path.join(root, "packages", "app");
+    mkdirSync(nested, { recursive: true });
+
+    const result = installGitHooks(nested);
+
+    // `update` only trusts git at the top level, because porcelain paths are
+    // relative to it; installing hooks anywhere else would wire a commit to an
+    // update that cannot find the map.
+    expect(result.mode).toBe("none");
+    expect(result.installed).toEqual([]);
+    expect(result.notes.join(" ")).toContain("not a git repository root");
+    expect(existsSync(path.join(root, ".git", "hooks", "post-commit"))).toBe(false);
   });
 });

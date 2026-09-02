@@ -33,10 +33,17 @@ export type { UpdateOptions, UpdateResult } from "./incremental.ts";
 export { init } from "./init.ts";
 export type { InitOptions, InitResult } from "./init.ts";
 
-export { LOCK_STALE_MS, isLocked, withLock } from "./lock.ts";
-export type { LockInfo } from "./lock.ts";
+export { LOCK_HEARTBEAT_MS, LOCK_STALE_MS, isLocked, isStaleLock, withLock } from "./lock.ts";
+export type { LockInfo, WithLockOptions } from "./lock.ts";
 
-export { FileParseCache, PARSE_CACHE_PATH, parseCacheKey } from "./parse-cache.ts";
+export {
+  FileParseCache,
+  PARSE_CACHE_PATH,
+  PARSE_CACHE_STAMP,
+  PARSE_CACHE_VERSION,
+  PARSE_CACHE_VERSION_KEY,
+  parseCacheKey,
+} from "./parse-cache.ts";
 
 export { readState, writeState } from "./state.ts";
 export type { SyncState } from "./state.ts";

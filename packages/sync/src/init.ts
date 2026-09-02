@@ -47,7 +47,10 @@ export interface InitResult {
  * meant to be in the repository; that is the whole point of it being there.
  */
 const GITIGNORE_ENTRIES: readonly string[] = [
-  ARTIFACT_PATHS.dirty,
+  // A glob, not the bare name: the queue is consumed by renaming it aside, and
+  // a run killed at that instant leaves `.dirty.taken` behind. It is swept up
+  // by the next update, but it must never show in anyone's `git status`.
+  `${ARTIFACT_PATHS.dirty}*`,
   ARTIFACT_PATHS.lock,
   ARTIFACT_PATHS.state,
   PARSE_CACHE_PATH,

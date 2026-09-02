@@ -36,7 +36,12 @@ import { appendDirty, readAndClearDirty } from "../src/dirty.ts";
 import { HOOK_NAMES } from "../src/githooks.ts";
 import { update } from "../src/incremental.ts";
 import { init } from "../src/init.ts";
-import { FileParseCache, parseCacheKey } from "../src/parse-cache.ts";
+import {
+  FileParseCache,
+  PARSE_CACHE_STAMP,
+  PARSE_CACHE_VERSION_KEY,
+  parseCacheKey,
+} from "../src/parse-cache.ts";
 import { readState } from "../src/state.ts";
 import { verify } from "../src/verify.ts";
 
@@ -122,6 +127,14 @@ function tree(root: string, skip: ReadonlySet<string> = RUNTIME_FILES): Map<stri
   };
   walk(path.join(root, ARTIFACT_DIR), "");
   return found;
+}
+
+/** The parse cache as stored, minus the version sentinel. */
+function storedRecords(root: string): Record<string, unknown> {
+  const stored = JSON.parse(readFileSync(artifact(root, "cache/parse.json"), "utf8")) as Record<string, unknown>;
+  expect(stored[PARSE_CACHE_VERSION_KEY]).toBe(PARSE_CACHE_STAMP);
+  const { [PARSE_CACHE_VERSION_KEY]: _stamp, ...records } = stored;
+  return records;
 }
 
 function record(overrides: Partial<FileRecord> = {}): FileRecord {
@@ -280,7 +293,13 @@ describe("dirty", () => {
     expect(result.written).toBe(0);
     expect(existsSync(artifact(root, ".dirty"))).toBe(false);
 
-    // And with the dirty file gone the repo is clean again.
+    // A build driven by a dirty signal cannot claim its tree matched HEAD, so
+    // the next run rebuilds once to confirm (writing nothing) before the fast
+    // path is available again. One wasted rebuild is the price of never
+    // trusting a commit that describes a tree the map was not built from.
+    const confirming = await update(root, { mode: "incremental", quiet: true });
+    expect(confirming.skipped).toBeUndefined();
+    expect(confirming.written).toBe(0);
     expect((await update(root, { mode: "incremental", quiet: true })).skipped).toBe("clean");
   });
 
@@ -348,6 +367,75 @@ describe("dirty", () => {
     expect(second.written).toBe(0);
     expect(second.cached).toBe(FIXTURE_SOURCES);
     expect(readState(root).lastIndexedCommit).toBeUndefined();
+  });
+
+  test("a map built from a dirty tree is not trusted once the tree is reverted", async () => {
+    const root = gitFixture("reverted");
+    await init(root, { hooks: false, quiet: true });
+    editSource(root, QUEUE_SOURCE);
+
+    const indexedDirty = await update(root, { mode: "incremental", quiet: true });
+    expect(indexedDirty.written).toBeGreaterThan(0);
+    // The map now describes bytes that are in no commit, and the state file
+    // says so.
+    expect(readState(root).lastIndexedCommit).toBe(head(root));
+    expect(readState(root).treeClean).toBe(false);
+
+    // The user throws the edit away. HEAD never moved, the tree is clean again
+    // and the dirty queue was consumed by the run above: nothing except the
+    // recorded treeClean can tell that the map is now wrong.
+    git(root, ["checkout", "--", "."]);
+    expect(git(root, ["status", "--porcelain", "--untracked-files=no"])).toBe("");
+
+    const repair = await update(root, { mode: "incremental", quiet: true });
+
+    expect(repair.skipped).toBeUndefined();
+    expect(repair.written).toBeGreaterThan(0);
+    expect((await verify(root)).ok).toBe(true);
+    // And having indexed a tree that matches HEAD, it may say so.
+    expect(readState(root).treeClean).toBe(true);
+    expect((await update(root, { mode: "incremental", quiet: true })).skipped).toBe("clean");
+  });
+
+  test("churn that could never be indexed does not defeat the fast path", async () => {
+    const root = gitFixture("irrelevant-churn");
+    await init(root, { hooks: false, quiet: true });
+
+    // Neither of these can change a byte of the map: one has no language, the
+    // other lives under a `config.exclude` glob.
+    writeFileSync(path.join(root, ".env.local"), "SECRET=1\n");
+    mkdirSync(path.join(root, "dist"), { recursive: true });
+    writeFileSync(path.join(root, "dist/index.js"), "export const built = 1;\n");
+    // Staged, so status names the file rather than collapsing to `dist/`, and
+    // the exclude glob is what has to reject it.
+    git(root, ["add", "dist/index.js"]);
+
+    const status = git(root, ["status", "--porcelain"]);
+    expect(status).toContain(".env.local");
+    expect(status).toContain("dist/index.js");
+
+    const result = await update(root, { mode: "incremental", quiet: true });
+
+    expect(result.skipped).toBe("clean");
+    expect(result.dirty).toBe(0);
+  });
+
+  test("sweeps temporaries left behind by a writer that was killed", async () => {
+    const root = gitFixture("temporaries");
+    await init(root, { hooks: false, quiet: true });
+    const residue = artifact(root, ".INDEX.md.999999.0.tmp");
+    const inFlight = artifact(root, `.INDEX.md.${process.pid}.0.tmp`);
+    writeFileSync(residue, "half an artifact");
+    writeFileSync(inFlight, "mid-rename");
+    appendDirty(root, [QUEUE_SOURCE]);
+
+    await update(root, { mode: "incremental", quiet: true });
+
+    expect(existsSync(residue)).toBe(false);
+    // A temporary this process owns may be between its write and its rename.
+    expect(existsSync(inFlight)).toBe(true);
+    // Neither is a structure path, so neither was ever the map's business.
+    expect((await verify(root)).ok).toBe(true);
   });
 
   test("sees both sides of a git rename", async () => {
@@ -486,7 +574,7 @@ describe("parse cache", () => {
     cache.set(kept);
     cache.set(dropped);
     cache.save();
-    expect(Object.keys(JSON.parse(readFileSync(artifact(root, "cache/parse.json"), "utf8")))).toHaveLength(2);
+    expect(Object.keys(storedRecords(root))).toHaveLength(2);
 
     const second = new FileParseCache(root);
     second.load();
@@ -501,7 +589,7 @@ describe("parse cache", () => {
     const root = gitFixture("cache-update");
     await init(root, { hooks: false, quiet: true });
 
-    const stored = JSON.parse(readFileSync(artifact(root, "cache/parse.json"), "utf8")) as Record<string, unknown>;
+    const stored = storedRecords(root);
     expect(Object.keys(stored)).toHaveLength(FIXTURE_SOURCES);
     // Stable JSON: keys sorted, so the cache does not churn in a diff.
     expect(Object.keys(stored)).toEqual([...Object.keys(stored)].sort());
@@ -532,9 +620,7 @@ describe("parse cache", () => {
     expect(result.reparsed).toBe(FIXTURE_SOURCES);
     expect(result.cached).toBe(0);
     // And the corruption is gone, not carried forward.
-    expect(Object.keys(JSON.parse(readFileSync(artifact(root, "cache/parse.json"), "utf8")))).toHaveLength(
-      FIXTURE_SOURCES,
-    );
+    expect(Object.keys(storedRecords(root))).toHaveLength(FIXTURE_SOURCES);
   });
 
   test("ignores an entry whose key does not match the record it holds", () => {
@@ -543,6 +629,7 @@ describe("parse cache", () => {
     writeFileSync(
       artifact(root, "cache/parse.json"),
       stableStringify({
+        [PARSE_CACHE_VERSION_KEY]: PARSE_CACHE_STAMP,
         [parseCacheKey("c".repeat(64), "ts")]: record({ sha256: "a".repeat(64) }),
         [parseCacheKey("a".repeat(64), "tsx")]: record({ sha256: "a".repeat(64), lang: "ts" }),
         [parseCacheKey("a".repeat(64), "ts")]: record({ sha256: "a".repeat(64) }),
@@ -557,13 +644,52 @@ describe("parse cache", () => {
     expect(cache.get("a".repeat(64), "ts")).toBeDefined();
   });
 
+  test("discards a cache written by a different extractor generation", () => {
+    const root = copyFixture("cache-version");
+    mkdirSync(artifact(root, "cache"), { recursive: true });
+    const entries = { [parseCacheKey("a".repeat(64), "ts")]: record() };
+
+    writeFileSync(
+      artifact(root, "cache/parse.json"),
+      stableStringify({ [PARSE_CACHE_VERSION_KEY]: "0/0", ...entries }),
+    );
+    expect(new FileParseCache(root).get("a".repeat(64), "ts")).toBeUndefined();
+
+    // And one written before the stamp existed at all.
+    writeFileSync(artifact(root, "cache/parse.json"), stableStringify(entries));
+    expect(new FileParseCache(root).get("a".repeat(64), "ts")).toBeUndefined();
+
+    // Saving replaces it with a stamped cache rather than merging into it.
+    const cache = new FileParseCache(root);
+    cache.set(record({ sha256: "b".repeat(64) }));
+    cache.save();
+    expect(Object.keys(storedRecords(root))).toEqual([parseCacheKey("b".repeat(64), "ts")]);
+  });
+
+  test("an update against a stale stamp reparses everything", async () => {
+    const root = gitFixture("cache-stamped");
+    await init(root, { hooks: false, quiet: true });
+    const stored = JSON.parse(readFileSync(artifact(root, "cache/parse.json"), "utf8")) as Record<string, unknown>;
+    stored[PARSE_CACHE_VERSION_KEY] = "0/0";
+    writeFileSync(artifact(root, "cache/parse.json"), stableStringify(stored));
+    appendDirty(root, [QUEUE_SOURCE]);
+
+    const result = await update(root, { mode: "incremental", quiet: true });
+
+    expect(result.reparsed).toBe(FIXTURE_SOURCES);
+    expect(result.cached).toBe(0);
+    expect(result.written).toBe(0);
+    // storedRecords asserts the stamp is the current one again.
+    expect(Object.keys(storedRecords(root))).toHaveLength(FIXTURE_SOURCES);
+  });
+
   test("never hands the same object to two builds unfrozen", async () => {
     const root = gitFixture("cache-immutable");
     await init(root, { hooks: false, quiet: true });
 
     const cache = new FileParseCache(root);
     cache.load();
-    const stored = JSON.parse(readFileSync(artifact(root, "cache/parse.json"), "utf8")) as Record<string, FileRecord>;
+    const stored = storedRecords(root) as Record<string, FileRecord>;
     const key = Object.keys(stored)[0] as string;
     const entry = stored[key] as FileRecord;
     const hit = cache.get(entry.sha256, entry.lang);
@@ -587,7 +713,7 @@ describe("init", () => {
 
     expect(readFileSync(artifact(root, "config.json"), "utf8")).toBe(`${stableStringify(DEFAULT_CONFIG, 2)}\n`);
     expect(readFileSync(artifact(root, ".gitignore"), "utf8")).toBe(
-      [".dirty", ".lock", ".state.json", "cache/parse.json", ""].join("\n"),
+      [".dirty*", ".lock", ".state.json", "cache/parse.json", ""].join("\n"),
     );
 
     expect(result.update.mode).toBe("full");
@@ -634,7 +760,7 @@ describe("init", () => {
     const lines = readFileSync(artifact(root, ".gitignore"), "utf8").split("\n");
     expect(lines[0]).toBe("# mine");
     expect(lines.filter((line) => line === ".lock")).toHaveLength(1);
-    for (const entry of [".dirty", ".lock", ".state.json", "cache/parse.json"]) {
+    for (const entry of [".dirty*", ".lock", ".state.json", "cache/parse.json"]) {
       expect(lines).toContain(entry);
     }
   });
