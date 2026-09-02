@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "greplost",
+  "version": "0.0.1",
+  "description": "grep lost. Read the map.",
+  "author": {
+    "name": "Shantanu",
+    "url": "https://github.com/sns45"
+  },
+  "homepage": "https://github.com/sns45/greplost",
+  "repository": "https://github.com/sns45/greplost",
+  "license": "MIT",
+  "keywords": [
+    "code-map",
+    "codebase-navigation",
+    "structure",
+    "static-analysis",
+    "context",
+    "typescript",
+    "go",
+    "blast-radius"
+  ]
+}

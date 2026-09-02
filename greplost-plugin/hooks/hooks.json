@@ -1,0 +1,53 @@
+{
+  "description": "greplost: keep the committed structure map (.greplost/) current and point agents at it before they grep.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'command -v greplost >/dev/null 2>&1 && greplost hook session-start || bunx greplost hook session-start'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'command -v greplost >/dev/null 2>&1 && greplost hook pre-tool-use || bunx greplost hook pre-tool-use'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'command -v greplost >/dev/null 2>&1 && greplost hook post-tool-use || bunx greplost hook post-tool-use'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'command -v greplost >/dev/null 2>&1 && greplost hook stop || bunx greplost hook stop'",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
