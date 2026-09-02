@@ -199,9 +199,11 @@ export function isoDate(date: Date): string {
  * The name alone is not enough: `export const fetch = 5` is a constant that
  * happens to be called `fetch`, and treating it as a front door would put a
  * module of numbers at the head of a flow. So the declaration has to be
- * callable — a `function`, or a `const`/`let` bound to an arrow, which is how
- * the extractor records `export const handler = async () => {}` (the signature
- * is the header as written, so the arrow is in it and the body is not).
+ * callable — a `function`, or a `const`/`let` bound to an arrow or a function
+ * expression, which is how the extractor records `export const handler = async
+ * () => {}` and `export const fetch = function () {}`. The signature is the
+ * header as written, so the `=>` or the `function` keyword is in it and the
+ * body is not.
  */
 function exportedEntryNames(snapshot: Snapshot): Set<string> {
   const files = new Set<string>();
@@ -212,7 +214,8 @@ function exportedEntryNames(snapshot: Snapshot): Set<string> {
       files.add(decl.file);
       continue;
     }
-    if ((decl.kind === "const" || decl.kind === "let") && decl.signature.includes("=>")) files.add(decl.file);
+    if (decl.kind !== "const" && decl.kind !== "let") continue;
+    if (decl.signature.includes("=>") || decl.signature.includes("function")) files.add(decl.file);
   }
   return files;
 }
