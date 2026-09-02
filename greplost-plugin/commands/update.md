@@ -4,8 +4,8 @@ argument-hint: [--full]
 allowed-tools: Bash(greplost update:*), Bash(bunx greplost update:*)
 ---
 
-Run `greplost update --json $ARGUMENTS` in the project root (if `greplost` is
-not on PATH, run `bunx greplost update --json $ARGUMENTS` instead). Default
+Run `greplost update --json "$ARGUMENTS"` in the project root (if `greplost` is
+not on PATH, run `bunx greplost update --json "$ARGUMENTS"` instead). Default
 mode is incremental over `.greplost/.dirty` and any changed files; pass
 `--full` only when asked to rebuild everything.
 
