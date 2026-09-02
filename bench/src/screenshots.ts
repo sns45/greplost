@@ -28,6 +28,8 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { compareStrings } from "@greplost/core/schema";
+
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
 const SUITE = "screenshots";
 const ASSETS_DIR = path.join(REPO_ROOT, "docs", "assets");
@@ -71,6 +73,14 @@ function versionOf(binary: string): string | null {
  * browser binary it downloads separately. Both have to be there, and the second
  * one is the one that is usually missing, so they are reported apart.
  */
+/** The `chromium-<build>` segment of a playwright executable path, or null. */
+export function chromiumBuild(executable: string): string | null {
+  for (const segment of executable.split(path.sep)) {
+    if (/^chromium(?:-headless-shell)?-\d+$/.test(segment)) return segment;
+  }
+  return null;
+}
+
 function playwrightStatus(): ToolStatus {
   const install = "bunx playwright install chromium";
   let executable: string | null = null;
@@ -94,7 +104,10 @@ function playwrightStatus(): ToolStatus {
     name: "playwright (chromium)",
     id: "playwright",
     available,
-    version: available ? path.basename(path.dirname(path.dirname(executable ?? ""))) : null,
+    // The build directory two levels up is `chrome-mac-arm64` on this platform
+    // and `Contents` on a macOS app bundle, so the version is read from the
+    // `chromium-<build>` segment of the path instead of a fixed depth.
+    version: available ? chromiumBuild(executable ?? "") : null,
     install,
     note,
   };
@@ -163,23 +176,103 @@ function runCommand(binary: string, args: string[], cwd: string): { ok: boolean;
   };
 }
 
-/** Run one tape and collect the files its `Output` directives named. */
+/**
+ * Run one tape and collect the files it named.
+ *
+ * Both directives are read, and the difference between them matters: vhs writes
+ * an `Output foo.png` as a **directory of one PNG per frame** (5,282 files and
+ * 276MB for the init tape), while `Screenshot foo.png` writes the single still
+ * a README can embed. The tapes use `Screenshot` for stills; `collect` refuses
+ * a directory outright, so a tape that regresses to `Output …png` reports
+ * nothing written instead of announcing a 276MB "file".
+ */
 function runTape(ctx: CaptureContext, tape: string): CaptureResult {
   const file = path.join(TAPES_DIR, tape);
   if (!existsSync(file)) return { written: [], skipped: `docs/tapes/${tape} is missing` };
-  const outputs = [...readFileSync(file, "utf8").matchAll(/^\s*Output\s+(\S+)/gm)].map((match) => match[1] ?? "");
+  const text = readFileSync(file, "utf8");
+  const outputs = [...text.matchAll(/^\s*(?:Output|Screenshot)\s+(\S+)/gm)].map((match) => match[1] ?? "");
   const ran = runCommand("vhs", [path.join("docs", "tapes", tape)], REPO_ROOT);
   if (!ran.ok) return { written: [], skipped: `vhs failed on ${tape}: ${lastLine(ran.output)}` };
-  return { written: collect(ctx, outputs), skipped: null };
+  const written = collect(ctx, outputs);
+  if (written.length === 0) return { written: [], skipped: `${tape} produced no single-file output` };
+  return { written, skipped: null };
+}
+
+/** Columns a captured terminal line is wrapped to, and the cap on lines kept. */
+const FREEZE_COLUMNS = 100;
+const FREEZE_LINES = 40;
+/**
+ * The rendered canvas width, in pixels.
+ *
+ * freeze sizes its canvas from the longest line it is given at about 36 px per
+ * character, so a 100-column capture came out 3,607 px wide and 355KB — a
+ * download, not a README image. `--width` fixes the canvas and lays the same
+ * wrapped text out inside it; nothing is clipped.
+ */
+const FREEZE_WIDTH_PX = 1200;
+/** A README image over this is a download, not a screenshot. */
+const MAX_CAPTURE_BYTES = 300_000;
+
+/**
+ * Hard-wrap `text` at `columns` and keep at most `lines` of it.
+ *
+ * freeze sizes its canvas to the longest line it is given, so one unwrapped
+ * 1,500-column line of JSON produced a 15,574 x 3,692 px, 1.6MB PNG that no
+ * README can show. Wrapping is done here rather than left to `--wrap` alone
+ * because the truncation notice has to be part of the captured text: an image
+ * that silently drops the rest of the output is worse than a wide one.
+ */
+export function fitForCapture(text: string, columns = FREEZE_COLUMNS, lines = FREEZE_LINES): string {
+  const wrapped: string[] = [];
+  for (const line of text.replace(/\s+$/, "").split("\n")) {
+    if (line.length <= columns) {
+      wrapped.push(line);
+      continue;
+    }
+    for (let at = 0; at < line.length; at += columns) wrapped.push(line.slice(at, at + columns));
+  }
+  if (wrapped.length <= lines) return wrapped.join("\n");
+  const kept = wrapped.slice(0, lines - 1);
+  kept.push(`… ${wrapped.length - kept.length} more lines, cut so the image stays a screenshot`);
+  return kept.join("\n");
 }
 
 /**
- * A `freeze` code screenshot of a command's own output.
+ * A `freeze` code screenshot of some text.
  *
  * The captured text goes to a temp file, not into `docs/assets/`: that directory
  * holds the images the README embeds, and a stray `.txt` beside each PNG is
- * clutter a future reader has to decide about. `env` lets a capture keep a
- * command's side effects out of the working tree.
+ * clutter a future reader has to decide about.
+ */
+function freezeText(ctx: CaptureContext, out: string, text: string): CaptureResult {
+  const target = path.join(ctx.assets, out);
+  const scratch = path.join(mkdtempSync(path.join(tmpdir(), "greplost-freeze-")), `${path.basename(out, ".png")}.txt`);
+  let lines = FREEZE_LINES;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    writeFileSync(scratch, fitForCapture(text, FREEZE_COLUMNS, lines));
+    mkdirSync(ctx.assets, { recursive: true });
+    const frozen = runCommand(
+      "freeze",
+      [
+        "--output", target,
+        "--language", "ansi",
+        "--wrap", String(FREEZE_COLUMNS),
+        "--width", String(FREEZE_WIDTH_PX),
+        scratch,
+      ],
+      REPO_ROOT,
+    );
+    if (!frozen.ok) return { written: [], skipped: `freeze failed: ${lastLine(frozen.output)}` };
+    if (!existsSync(target) || statSync(target).size <= MAX_CAPTURE_BYTES) return { written: [target], skipped: null };
+    // Still too heavy: the only dimension left to cut is height.
+    lines = Math.max(8, Math.floor(lines / 2));
+  }
+  return { written: [target], skipped: null };
+}
+
+/**
+ * A `freeze` code screenshot of a command's own output. `env` lets a capture
+ * keep a command's side effects out of the working tree.
  */
 function freezeCommand(
   ctx: CaptureContext,
@@ -187,21 +280,20 @@ function freezeCommand(
   command: string[],
   cwd: string,
   env?: NodeJS.ProcessEnv,
+  shape: (output: string) => string = (output) => output,
 ): CaptureResult {
-  const target = path.join(ctx.assets, out);
   const ran = spawnSync(command[0] ?? "", command.slice(1), {
     cwd,
     encoding: "utf8",
     timeout: CAPTURE_TIMEOUT_MS,
     ...(env === undefined ? {} : { env }),
   });
-  const text = `$ ${command.join(" ")}\n${ran.stdout ?? ""}${ran.stderr ?? ""}`;
-  const scratch = path.join(mkdtempSync(path.join(tmpdir(), "greplost-freeze-")), `${path.basename(out, ".png")}.txt`);
-  writeFileSync(scratch, text);
-  mkdirSync(ctx.assets, { recursive: true });
-  const frozen = runCommand("freeze", ["--output", target, "--language", "ansi", scratch], REPO_ROOT);
-  if (!frozen.ok) return { written: [], skipped: `freeze failed: ${lastLine(frozen.output)}` };
-  return { written: [target], skipped: null };
+  const output = shape(`${ran.stdout ?? ""}${ran.stderr ?? ""}`);
+  // Repo-relative, because an absolute path in a committed screenshot is both
+  // noise and a leak of whoever's checkout produced it (and this one runs in a
+  // worktree, whose path nobody else has).
+  const shown = command.map((part) => (part.startsWith(REPO_ROOT) ? path.relative(REPO_ROOT, part) || "." : part));
+  return freezeText(ctx, out, `$ ${shown.join(" ")}\n${output}`);
 }
 
 /** Move tape outputs into `--assets` when it is not the default directory. */
@@ -210,6 +302,9 @@ function collect(ctx: CaptureContext, outputs: readonly string[]): string[] {
   for (const rel of outputs) {
     const source = path.isAbsolute(rel) ? rel : path.join(REPO_ROOT, rel);
     if (!existsSync(source)) continue;
+    // A directory here is vhs's per-frame dump, not a capture: reporting it as
+    // a written file would announce a 276MB "image" the README cannot embed.
+    if (!statSync(source).isFile()) continue;
     const destination = path.join(ctx.assets, path.basename(source));
     if (path.resolve(source) !== path.resolve(destination)) {
       mkdirSync(ctx.assets, { recursive: true });
@@ -223,6 +318,73 @@ function collect(ctx: CaptureContext, outputs: readonly string[]): string[] {
 function lastLine(text: string): string {
   const lines = text.split("\n").map((line) => line.trim()).filter((line) => line.length > 0);
   return lines[lines.length - 1] ?? "no output";
+}
+
+/**
+ * Capture 11 is "the `diff -r` summary and the byte counts", not a transcript.
+ *
+ * `headtohead --metrics X4` prints its table, then its per-tool reasons, then
+ * the path it wrote. The reasons are where the byte counts and the differing
+ * files live, so they are the capture; the convention line and the harness's
+ * progress chatter are not, and freezing them made a 15,574 px wide image of
+ * mostly nothing.
+ */
+export function x4Summary(output: string): string {
+  const kept = output.split("\n").filter((line) => {
+    const text = line.trim();
+    if (text.length === 0) return false;
+    if (/^headtohead: wrote /.test(text)) return false;
+    // The header, the X4 row itself, and any reason that carries a byte count.
+    // A tool that was never built has no reproducibility finding, and its
+    // "no headless CLI" sentence is five lines of an image about byte counts;
+    // it stays in RESULTS.md, which is where a reason belongs.
+    if (/^ID\b/.test(text)) return true;
+    if (/^X4\s{2,}/.test(text)) return true;
+    return /^X4 \S+:/.test(text) && /\bbytes?\b/.test(text);
+  });
+  return kept.length === 0 ? output.trim() : kept.join("\n");
+}
+
+/**
+ * A symbol and a file worth showing, read out of the map under `root`.
+ *
+ * The most-imported file is the one whose impact set is interesting, and an
+ * exported symbol declared in it is one `query` will actually find. Both come
+ * from the artifacts rather than from a constant here, so the capture keeps
+ * working when the corpus repo changes.
+ */
+export function querySubject(root: string): { symbol: string; file: string } {
+  const fallback = { symbol: "index", file: "src/index.ts" };
+  const graph = path.join(root, ".greplost", "graph");
+  const read = (name: string): Record<string, unknown>[] => {
+    const file = path.join(graph, name);
+    if (!existsSync(file)) return [];
+    return readFileSync(file, "utf8")
+      .split("\n")
+      .filter((line) => line.trim().length > 0)
+      .flatMap((line) => {
+        try {
+          return [JSON.parse(line) as Record<string, unknown>];
+        } catch {
+          return [];
+        }
+      });
+  };
+
+  const inbound = new Map<string, number>();
+  for (const edge of read("imports.jsonl")) {
+    const to = typeof edge["to"] === "string" ? edge["to"] : null;
+    if (to === null || to.includes(":")) continue;
+    inbound.set(to, (inbound.get(to) ?? 0) + 1);
+  }
+  const ranked = [...inbound.entries()].sort((a, b) => b[1] - a[1] || compareStrings(a[0], b[0]));
+  const file = ranked[0]?.[0] ?? fallback.file;
+
+  const symbols = read("symbols.jsonl");
+  const inFile = symbols.filter((entry) => entry["file"] === file && entry["exported"] === true);
+  const chosen = inFile[0] ?? symbols.find((entry) => entry["exported"] === true);
+  const symbol = typeof chosen?.["name"] === "string" ? (chosen["name"] as string) : fallback.symbol;
+  return { symbol, file };
 }
 
 /** A corpus checkout the terminal captures can run inside, or null. */
@@ -304,11 +466,62 @@ export const CAPTURES: Capture[] = [
     perform: (ctx) => {
       const root = corpusRepo("hono") ?? path.join(REPO_ROOT, "fixtures", "tiny-ts");
       const cli = path.join(REPO_ROOT, "packages", "cli", "src", "main.ts");
-      const first = freezeCommand(ctx, "query-json.png", ["bun", cli, "query", "retry", "--json", "--root", root], REPO_ROOT);
-      const second = freezeCommand(ctx, "impact.png", ["bun", cli, "impact", "packages/core/src/retry.ts", "--root", root], REPO_ROOT);
+      // `query` needs a map. Capture 1 builds one in the same checkout, but a
+      // `--only query-impact` run does not, and a capture of an error message is
+      // not the capture. `--root` is explicit for the reason docs/tapes/init.tape
+      // gives: greplost resolves its root upward, and this directory sits inside
+      // a checkout that has a `.greplost/` of its own.
+      if (!existsSync(path.join(root, ".greplost"))) {
+        runCommand("bun", [cli, "init", "--no-hooks", "--root", root], REPO_ROOT);
+      }
+      // Query and impact arguments come out of the map that was just built, not
+      // out of this file: a hard-coded `retry` was another repo's symbol, and
+      // the capture it produced was a screenshot of `"matches": []`.
+      const subject = querySubject(root);
+      const first = freezeCommand(ctx, "query-json.png", ["bun", cli, "query", subject.symbol, "--json", "--root", root], REPO_ROOT);
+      const second = freezeCommand(ctx, "impact.png", ["bun", cli, "impact", subject.file, "--root", root], REPO_ROOT);
       const skipped = first.skipped ?? second.skipped;
       return { written: [...first.written, ...second.written], ...(skipped === null ? { skipped: null } : { skipped }) };
     },
+  },
+  {
+    id: 7,
+    name: "bench-charts",
+    description: "benchmark charts: tokens and accuracy by condition, build time vs files, latency box plot (produced by `bench report`)",
+    needs: [],
+    paid: false,
+    perform: () => ({
+      written: [],
+      skipped:
+        "produced by `bench report` (tech spec 10.9), not by this suite: `bun bench/src/cli.ts report` writes " +
+        "docs/assets/x7-agent.png, build-time.png and latency-box.png from the agent and perf payloads",
+    }),
+  },
+  {
+    id: 8,
+    name: "human-study",
+    description: "human study: time to answer per task, with and without greplost (produced by `bench report`)",
+    needs: [],
+    paid: false,
+    perform: () => ({
+      written: [],
+      skipped:
+        "produced by `bench report` from the human study's anonymised CSV (tech spec 10.7, 11); no study has " +
+        "been run, so `report` renders Eval 5 as `not run` and draws no chart",
+    }),
+  },
+  {
+    id: 9,
+    name: "staleness-curve",
+    description: "the X2 staleness decay curve, one line per tool, the hero chart (produced by `bench report`)",
+    needs: [],
+    paid: false,
+    perform: () => ({
+      written: [],
+      skipped:
+        "produced by `bench report` from the head-to-head payload (tech spec 10.9): " +
+        "docs/assets/x2-staleness.png, with x2-no-refresh.png beside it",
+    }),
   },
   {
     id: 10,
@@ -335,12 +548,17 @@ export const CAPTURES: Capture[] = [
       // Redirected away from `bench/results/`: capturing a screenshot must not
       // add a committed benchmark result as a side effect.
       const results = mkdtempSync(path.join(tmpdir(), "greplost-shot-results-"));
+      // And away from `bench/.competitors/`: the repo copies this run makes are
+      // what the agent suite reads as "this competitor has artifacts here", so a
+      // screenshot would otherwise flip another suite's conditions.
+      const work = mkdtempSync(path.join(tmpdir(), "greplost-shot-work-"));
       return freezeCommand(
         ctx,
         "reproducibility.png",
         ["bun", path.join(REPO_ROOT, "bench", "src", "cli.ts"), "headtohead", "--fixture", "--metrics", "X4"],
         root,
-        { ...process.env, GREPLOST_BENCH_RESULTS_DIR: results, NODE_ENV: "test" },
+        { ...process.env, GREPLOST_BENCH_RESULTS_DIR: results, GREPLOST_BENCH_WORK_DIR: work, NODE_ENV: "test" },
+        x4Summary,
       );
     },
   },

@@ -73,6 +73,20 @@ export interface MetricRow {
   title: string;
   target: string;
   tools: Record<string, MetricCell>;
+  /**
+   * The run this row's numbers came from, when the table was assembled from
+   * more than one.
+   *
+   * X1 and X5 want a whole corpus repo and X2 wants a commit walk, which are
+   * different runs with different costs, so the head-to-head table is often
+   * filled from two payloads. A single provenance line above such a table would
+   * put one run's corpus under the other run's numbers, which is the same
+   * defect as printing a tier-M target against a fixture — so the scale travels
+   * on the row.
+   */
+  run?: RunTarget;
+  /** `Measured … on …` for that run, already rendered. */
+  runLabel?: string;
 }
 
 /** One `ID | Metric | Target | Measured` row in a single-tool eval section. */
@@ -125,6 +139,79 @@ export interface SummaryRow {
   source: string;
 }
 
+/**
+ * What a head-to-head run was measured on. Every field is optional because it
+ * comes out of a payload, and a payload written by an older run may not carry it.
+ */
+export interface RunTarget {
+  repo?: string;
+  fixture?: boolean;
+  tier?: string;
+  /** Files the oracle loaded, which is the honest size of the thing measured. */
+  files?: number;
+  /** Commits walked, when the run walked any. */
+  commits?: number;
+}
+
+/**
+ * `Measured <date> at <sha> on <corpus> (<n> files, <m> commits).`
+ *
+ * The scale belongs next to the numbers. "greplost holds F1 1.000" reads as a
+ * claim about software; "on fixtures/tiny-ts (12 files, 24 commits)" is what
+ * makes it a measurement a reader can size. Tech spec 10.1 pins the corpus in
+ * `RESULTS.md` for exactly this reason, and a head-to-head table that omits it
+ * is the same table with the denominator hidden.
+ */
+export function provenanceLine(
+  date: string | null,
+  sha: string | null,
+  target: RunTarget | undefined,
+): string {
+  const when = `Measured ${date ?? "an unknown date"} at ${sha ?? "an unknown commit"}`;
+  if (target === undefined) return `${when}.`;
+
+  const where = target.repo === undefined
+    ? null
+    : target.fixture === true
+      ? `fixtures/${target.repo}`
+      : target.tier === undefined
+        ? target.repo
+        : `${target.repo}, tier ${target.tier}`;
+
+  const scale: string[] = [];
+  if (typeof target.files === "number") scale.push(`${target.files} file${target.files === 1 ? "" : "s"}`);
+  // A zero is "no walk was asked for", not "a walk of length zero": printing
+  // `0 commits` beside a corpus reads as a measurement that was taken.
+  if (typeof target.commits === "number" && target.commits > 0) {
+    scale.push(`${target.commits} commit${target.commits === 1 ? "" : "s"}`);
+  }
+
+  return `${when}${where === null ? "" : ` on ${where}`}${scale.length === 0 ? "" : ` (${scale.join(", ")})`}.`;
+}
+
+/**
+ * A target string with a tier claim it did not earn removed.
+ *
+ * Section 3.1 writes some targets against a tier ("<= 5s and $0 (tier M)").
+ * Printing that verbatim beside a 12-file fixture number states a threshold the
+ * run never tested, which is the same defect as an unlabelled measurement: the
+ * reader compares a fixture result against a tier-M bar and concludes something
+ * neither number supports. The tier clause is dropped and replaced with what was
+ * actually run.
+ */
+export function scopeTarget(target: string, run: RunTarget | undefined): string {
+  const match = /\s*\(tier ([A-Z]+)\)/.exec(target);
+  if (match === null) return target;
+  const wanted = match[1];
+  if (run !== undefined && run.fixture !== true && run.tier === wanted) return target;
+  const ran = run === undefined
+    ? "not measured at that tier"
+    : run.fixture === true
+      ? `measured on fixtures/${run.repo ?? "the fixture"}, not tier ${wanted}`
+      : `measured on ${run.repo ?? "another repo"}${run.tier === undefined ? "" : `, tier ${run.tier}`}, not tier ${wanted}`;
+  return `${target.replace(match[0], "")} (${ran})`;
+}
+
 export interface ReportModel {
   machine: Record<string, unknown> | null;
   corpus: { name: string; sha?: string; tier?: string; lang?: string }[];
@@ -133,7 +220,10 @@ export interface ReportModel {
     tools: string[];
     rows: MetricRow[];
     ran: boolean;
+    /** Already rendered by `provenanceLine`, so the scale travels with the date. */
     provenance: string | null;
+    /** What the run was measured on, so a tier-scoped target can be checked. */
+    target: RunTarget | undefined;
     charts: ChartRef[];
     notes: string[];
   };
@@ -243,8 +333,22 @@ function headToHeadSection(model: ReportModel): string[] {
   out.push("");
   if (!ran) {
     out.push(`The head-to-head suite has not been run: \`bun bench/src/cli.ts headtohead --fixture\`.`, "");
-  } else if (provenance !== null) {
-    out.push(`Measured ${provenance}.`, "");
+  } else {
+    // One line per run that supplied a row, each naming the ids it supplied.
+    // With a single run this is the one provenance sentence; with two it is the
+    // only way the reader can tell which corpus each number was taken on.
+    const byRun = new Map<string, string[]>();
+    for (const row of rows) {
+      const label = row.runLabel;
+      if (label === undefined) continue;
+      byRun.set(label, [...(byRun.get(label) ?? []), row.id]);
+    }
+    if (byRun.size > 1) {
+      for (const [label, ids] of byRun) out.push(`- ${ids.join(", ")}: ${label}`);
+      out.push("");
+    } else if (provenance !== null) {
+      out.push(provenance, "");
+    }
   }
 
   const header = ["ID", "Target", "Measured", ...competitors.map((tool) => `vs ${tool}`), "Reason on loss"];
@@ -255,7 +359,7 @@ function headToHeadSection(model: ReportModel): string[] {
   for (const id of X_IDS) {
     const row = byId.get(id);
     const meta = METRIC_TITLES[id];
-    const target = row?.target ?? meta.target;
+    const target = scopeTarget(row?.target ?? meta.target, row?.run ?? model.headToHead.target);
     const measured = row === undefined ? NOT_RUN : formatCell(row.tools["greplost"]);
     const verdicts = competitors.map((tool) => (row === undefined ? NOT_RUN : verdictCell(row.tools[tool])));
     const reason = row === undefined ? "the head-to-head suite has not been run" : lossReasonsOf(row, competitors);
@@ -333,7 +437,7 @@ function evalSection(heading: string, subtitle: string, section: EvalSection): s
     for (const note of section.notes) out.push(`> ${note}`, "");
     return out;
   }
-  if (section.provenance !== null) out.push(`Measured ${section.provenance}.`, "");
+  if (section.provenance !== null) out.push(section.provenance, "");
   for (const group of section.groups) {
     if (group.name !== null) out.push(`### ${group.name}`, "");
     out.push("| ID | Metric | Target | Measured | Detail |", "|---|---|---|---|---|");
@@ -405,15 +509,19 @@ export function formatNumber(value: number): string {
 }
 
 /**
- * The loss reasons on one row: greplost missing its own target, and any
- * competitor greplost came out behind. N/A reasons are listed under the table
- * instead (see `headToHeadSection`), so this column stays the one thing the
- * publishing rule asks it to be: why greplost lost.
+ * The reason column: why greplost did not win this row.
+ *
+ * greplost's own reason is emitted whenever it is non-empty, whatever the
+ * verdict. A `tie` against a *gap* target (X1 asks for +10 points on calls) is a
+ * miss, and dropping its reason because the verdict was not the word "loss"
+ * hides the one sentence that explains the row. Competitors' reasons are still
+ * gated on `loss`, because a competitor's reason answers "how did it beat us",
+ * which only exists when it did.
  */
 function lossReasonsOf(row: MetricRow, competitors: readonly string[]): string {
   const parts: string[] = [];
   const ours = row.tools["greplost"];
-  if (ours !== undefined && ours.verdict === "loss" && ours.reason.length > 0) parts.push(`greplost: ${ours.reason}`);
+  if (ours !== undefined && ours.reason.length > 0 && ours.verdict !== "na") parts.push(`greplost: ${ours.reason}`);
   for (const tool of competitors) {
     const entry = row.tools[tool];
     if (entry !== undefined && entry.verdict === "loss" && entry.reason.length > 0) parts.push(`${tool}: ${entry.reason}`);

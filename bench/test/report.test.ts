@@ -26,21 +26,28 @@ import {
   wrapText,
   writeChart,
 } from "../src/charts.ts";
-import { renderResultsMd, SECTION_HEADERS, X_IDS } from "../src/results-md.ts";
+import { renderResultsMd, SECTION_HEADERS, X_IDS, provenanceLine, scopeTarget } from "../src/results-md.ts";
 import { buildModel, run as reportRun } from "../src/report.ts";
 import {
   METRIC_PLAN,
   TOOLS,
   byteDistance,
   describeDifference,
+  describeLineChange,
   diffLineCount,
   emptyMetrics,
   median,
   planImportEdits,
+  readHookLog,
   run as headtoheadRun,
+  scaleTitles,
+  shimRuns,
+  shimTime,
   verdictFor,
+  x3GreplostVerdict,
 } from "../src/headtohead.ts";
-import { checkTools, run as screenshotsRun } from "../src/screenshots.ts";
+import { stalenessCharts, scaleNote } from "../src/report-charts.ts";
+import { CAPTURES, checkTools, fitForCapture, run as screenshotsRun, x4Summary } from "../src/screenshots.ts";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
 
@@ -324,6 +331,91 @@ describe("headtohead", () => {
     expect(planImportEdits(snapshot, 5)).toEqual(edits);
   });
 
+  test("X3's greplost verdict is not a win against an arm nobody walked", () => {
+    // The target is "<= 1% of ua, <= 20% of graphify". ua cannot be run here at
+    // all, so a bare `win` claims a comparison nobody made (review round 1).
+    const none = x3GreplostVerdict(0.2, null);
+    expect(none.verdict).toBe("na");
+    expect(none.reason).toContain("ratio");
+
+    const under = x3GreplostVerdict(0.2, 5.4);
+    expect(under.verdict).toBe("win");
+    expect(under.reason).toContain("graphify arm");
+    expect(under.reason).toContain("ua arm cannot be evaluated");
+
+    const over = x3GreplostVerdict(3, 5);
+    expect(over.verdict).toBe("loss");
+
+    expect(x3GreplostVerdict(null, 5).verdict).toBe("na");
+  });
+
+  test("scaleTitles rewrites X2 and X3 from the walk that actually ran", () => {
+    const metrics = emptyMetrics("not run");
+    scaleTitles(metrics, 100);
+    expect(metrics["X2"].title).toBe("Staleness after 100 replayed commits");
+    expect(metrics["X2"].target).toContain("100 commits");
+    expect(metrics["X3"].title).toContain("100 replayed commits");
+    expect(metrics["X2"].tools["greplost"]?.target).toBe(metrics["X2"].target);
+
+    const nothing = emptyMetrics("not run");
+    scaleTitles(nothing, 0);
+    expect(nothing["X2"].title).toBe("Staleness after no replayed commits");
+    expect(nothing["X2"].target).toContain("not walked");
+    expect(nothing["X2"].title).not.toContain("500");
+  });
+
+  test("the shim log is per-invocation evidence a hook ran, and for how long", () => {
+    const dir = tempDir("shim-log");
+    const file = path.join(dir, "hook.log");
+    writeFileSync(
+      file,
+      [
+        "start\tgreplost\t1000",
+        "end\tgreplost\t1128\t0",
+        "start\tcode-review-graph\t1200",
+        "end\tcode-review-graph\t1900\t0",
+        "start\tgreplost\t2000",
+        "end\tgreplost\t2100\t0",
+        "nonsense line that is not a fact",
+        "start\tgreplost\t3000",
+        "",
+      ].join("\n"),
+    );
+    const calls = readHookLog(file);
+    expect(shimRuns(calls, "greplost")).toEqual([128, 100]);
+    expect(shimRuns(calls, "code-review-graph")).toEqual([700]);
+    const ours = shimTime(calls, "greplost");
+    expect(ours.ms).toBe(228);
+    expect(ours.runs).toBe(3);
+    // The third start has no end: a process still running is a call with no time.
+    expect(ours.pending).toBe(1);
+    expect(readHookLog(path.join(dir, "absent.log"))).toEqual([]);
+  });
+
+  test("describeLineChange names the artifacts and their line counts, largest first", () => {
+    const before = new Map([
+      ["INDEX.md", "a\nb\nc"],
+      ["repo/MAP.md", "x\ny"],
+      ["graph/imports.jsonl", "one"],
+      ["packages/core/MAP.md", "keep"],
+    ]);
+    const after = new Map([
+      ["INDEX.md", "a\nb\nc\nd"],
+      ["repo/MAP.md", "x\ny\nz\nw\nv"],
+      ["graph/imports.jsonl", "two"],
+      ["packages/core/MAP.md", "keep"],
+    ]);
+    const text = describeLineChange(before, after);
+    expect(text).toContain("`repo/MAP.md` 3 lines");
+    expect(text).toContain("`INDEX.md` 1 line");
+    expect(text.indexOf("repo/MAP.md")).toBeLessThan(text.indexOf("INDEX.md"));
+    // Unchanged files are not named.
+    expect(text).not.toContain("packages/core/MAP.md");
+    // The tail is counted, never dropped.
+    expect(describeLineChange(before, after, 1)).toContain("and 2 more files");
+    expect(describeLineChange(before, before)).toBe("");
+  });
+
   test("--fixture --dry-run prints the convention line and writes nothing", async () => {
     const results = tempDir("h2h-results");
     const before = process.env["GREPLOST_BENCH_RESULTS_DIR"];
@@ -402,6 +494,39 @@ describe("results-md", () => {
     expect(text).toMatch(/## Eval 2[\s\S]*not run/);
   });
 
+  test("provenanceLine names the corpus, the file count and the walk length", () => {
+    expect(
+      provenanceLine("2026-09-02", "ac3bcd1", { repo: "tiny-ts", fixture: true, files: 12, commits: 24 }),
+    ).toBe("Measured 2026-09-02 at ac3bcd1 on fixtures/tiny-ts (12 files, 24 commits).");
+    expect(
+      provenanceLine("2026-09-02", "ac3bcd1", { repo: "hono", fixture: false, tier: "M", files: 618, commits: 100 }),
+    ).toBe("Measured 2026-09-02 at ac3bcd1 on hono, tier M (618 files, 100 commits).");
+    // No walk, no commit count invented.
+    expect(provenanceLine("2026-09-02", "ac3bcd1", { repo: "anyq", fixture: false, tier: "S", files: 148 })).toBe(
+      "Measured 2026-09-02 at ac3bcd1 on anyq, tier S (148 files).",
+    );
+    // `commits: 0` means no walk was asked for, not a walk of length zero.
+    expect(provenanceLine("2026-09-02", "ac3bcd1", { repo: "anyq", fixture: false, tier: "S", files: 148, commits: 0 })).toBe(
+      "Measured 2026-09-02 at ac3bcd1 on anyq, tier S (148 files).",
+    );
+    expect(provenanceLine("2026-09-02", "ac3bcd1", undefined)).toBe("Measured 2026-09-02 at ac3bcd1.");
+  });
+
+  test("a tier-scoped target is not printed verbatim against a run at another scale", () => {
+    const tierM = "<= 5s and $0 (tier M)";
+    // The run that earned it keeps it.
+    expect(scopeTarget(tierM, { repo: "hono", fixture: false, tier: "M" })).toBe(tierM);
+    // A fixture run says so instead of implying a tier-M result.
+    expect(scopeTarget(tierM, { repo: "tiny-ts", fixture: true })).toBe(
+      "<= 5s and $0 (measured on fixtures/tiny-ts, not tier M)",
+    );
+    expect(scopeTarget(tierM, { repo: "anyq", fixture: false, tier: "S" })).toBe(
+      "<= 5s and $0 (measured on anyq, tier S, not tier M)",
+    );
+    // A target with no tier clause is untouched.
+    expect(scopeTarget("0 bytes differ", { repo: "tiny-ts", fixture: true })).toBe("0 bytes differ");
+  });
+
   test("a head-to-head payload fills the win/loss/tie columns and every loss reason", () => {
     const dir = tempDir("h2h-result");
     writeFileSync(
@@ -413,6 +538,19 @@ describe("results-md", () => {
         tools: ["greplost", "graphify", "ua", "crg"],
         method: ["X4: both builds ran in the same process"],
         metrics: {
+          X1: {
+            id: "X1",
+            title: "Structural precision",
+            target: ">= +10pt calls",
+            tools: {
+              greplost: {
+                value: "calls 1 P",
+                target: ">= +10pt calls",
+                verdict: "tie",
+                reason: "gap over the best competitor is 0 on calls",
+              },
+            },
+          },
           X4: {
             id: "X4",
             title: "Reproducibility",
@@ -444,6 +582,10 @@ describe("results-md", () => {
     // The method the suite recorded reaches the document, not only the JSON:
     // a head-to-head with no method is a scoreboard (tech spec 10.1).
     expect(text).toContain("X4: both builds ran in the same process");
+    // greplost's own reason is published whatever its verdict: a `tie` against
+    // a gap target is a miss, and the reason is why it missed.
+    const x1 = text.split("\n").find((l) => l.startsWith("| X1 "));
+    expect(x1).toContain("gap over the best competitor is 0");
   });
 
   test("the README sync contract: `## Head-to-head` and `## Single-tool`, once each", () => {
@@ -487,10 +629,122 @@ describe("results-md", () => {
     const filled = renderResultsMd(buildModel({ resultsDir: withCount }));
     expect(filled.split("\n").find((l) => l.startsWith("| unparsable "))).toContain("| 3 |");
 
+    // Derived when the payload carries per-file truth totals: a file every one
+    // of whose truth items was missed is a file nothing was extracted from.
+    const derived = tempDir("unparsable-derived");
+    writeFileSync(
+      path.join(derived, "structural-2026-09-02-abc1234.json"),
+      JSON.stringify({
+        suite: "structural", date: "2026-09-02", greplostSha: "abc1234",
+        repos: {
+          hono: {
+            perFile: {
+              "src/a.ts": { truth: 12, missed: 12 },
+              "src/b.ts": { truth: 40, missed: 1 },
+              "src/c.ts": { truth: 3, missed: 3 },
+            },
+          },
+        },
+      }),
+    );
+    const derivedRow = renderResultsMd(buildModel({ resultsDir: derived }))
+      .split("\n")
+      .find((l) => l.startsWith("| unparsable "));
+    expect(derivedRow).toContain("| 2 |");
+    expect(derivedRow).toContain("derived");
+
+    // Neither reported nor derivable: `not measured`, and no claim about why.
     const without = renderResultsMd(buildModel({ resultsDir: tempDir("unparsable-no") }));
     const row = without.split("\n").find((l) => l.startsWith("| unparsable "));
     expect(row).toContain("n/a");
-    expect(row).toContain("recovery is in progress");
+    expect(row).toContain("not measured");
+    expect(row).not.toContain("recovery is in progress");
+  });
+
+  test("the X2 row's target names the walk that was actually run", () => {
+    const dir = tempDir("x2-title");
+    writeFileSync(
+      path.join(dir, "headtohead-2026-09-02-abc1234.json"),
+      JSON.stringify({
+        suite: "headtohead", date: "2026-09-02", greplostSha: "abc1234",
+        tools: ["greplost"],
+        target: { repo: "hono", fixture: false, tier: "M", files: 618, commits: 100 },
+        metrics: {
+          X2: {
+            id: "X2",
+            title: "Staleness after 100 replayed commits",
+            target: "greplost F1 >= 0.99 after 100 commits",
+            tools: { greplost: { value: 1, target: "greplost F1 >= 0.99 after 100 commits", verdict: "win", reason: "" } },
+          },
+        },
+      }),
+    );
+    const text = renderResultsMd(buildModel({ resultsDir: dir }));
+    const row = text.split("\n").find((l) => l.startsWith("| X2 "));
+    expect(row).toContain("100 commits");
+    expect(row).not.toContain("500");
+    expect(text).toContain("100 commits");
+  });
+
+  test("two head-to-head runs fill one table, each row keeping its own corpus", () => {
+    const dir = tempDir("h2h-two-runs");
+    const na = (reason: string) => ({ value: null, target: "", verdict: "na", reason });
+    // The corpus run: X1 measured on anyq, X2 not selected.
+    writeFileSync(
+      path.join(dir, "headtohead-2026-09-02-aaa1111.json"),
+      JSON.stringify({
+        suite: "headtohead", date: "2026-09-02", greplostSha: "aaa1111",
+        tools: ["greplost", "graphify"],
+        target: { repo: "anyq", fixture: false, tier: "S", files: 148, commits: 0 },
+        metrics: {
+          X1: {
+            id: "X1", title: "Structural precision", target: ">= +10pt calls",
+            tools: { greplost: { value: "calls 1 P", target: ">= +10pt calls", verdict: "tie", reason: "" } },
+          },
+          X2: { id: "X2", title: "Staleness after no replayed commits", target: "greplost F1 >= 0.99 (not walked)", tools: { greplost: na("not selected by --metrics") } },
+          X6: {
+            id: "X6", title: "Cold start", target: "<= 5s and $0 (tier M)",
+            tools: { greplost: { value: "0.27 s", target: "<= 5s and $0 (tier M)", verdict: "win", reason: "" } },
+          },
+        },
+        method: ["X1: scored over every emitted edge."],
+      }),
+    );
+    // The walk run: X2 measured on hono over 100 commits, X1 not selected.
+    writeFileSync(
+      path.join(dir, "headtohead-2026-09-02-bbb2222.json"),
+      JSON.stringify({
+        suite: "headtohead", date: "2026-09-02", greplostSha: "bbb2222",
+        tools: ["greplost", "graphify"],
+        target: { repo: "hono", fixture: false, tier: "M", files: 248, commits: 100 },
+        metrics: {
+          X1: { id: "X1", title: "Structural precision", target: ">= +10pt calls", tools: { greplost: na("not selected by --metrics") } },
+          X2: {
+            id: "X2", title: "Staleness after 100 replayed commits", target: "greplost F1 >= 0.99 after 100 commits",
+            tools: { greplost: { value: 1, target: "greplost F1 >= 0.99 after 100 commits", verdict: "win", reason: "", detail: { "syncF1@50": 1, "syncF1@100": 1 } } },
+          },
+          X6: { id: "X6", title: "Cold start", target: "<= 5s and $0 (tier M)", tools: { greplost: na("not selected by --metrics") } },
+        },
+        method: ["X2: the walk is 100 synthetic commits over hono."],
+      }),
+    );
+
+    const text = renderResultsMd(buildModel({ resultsDir: dir }));
+    const x1 = text.split("\n").find((line) => line.startsWith("| X1 "));
+    const x2 = text.split("\n").find((line) => line.startsWith("| X2 "));
+    // Neither run is dropped: each id keeps the number the run that measured it produced.
+    expect(x1).toContain("calls 1 P");
+    expect(x2).toContain("100 commits");
+    // Each row's corpus travels with it, so the tier-M target is not printed
+    // against the tier-S run and vice versa.
+    const head = text.slice(text.indexOf("## Head-to-head"), text.indexOf("| ID |"));
+    expect(head).toContain("on anyq, tier S (148 files)");
+    expect(head).toContain("on hono, tier M (248 files, 100 commits)");
+    const x6 = text.split("\n").find((line) => line.startsWith("| X6 "));
+    expect(x6).toContain("not tier M");
+    // Both runs' method lines survive the merge.
+    expect(text).toContain("scored over every emitted edge");
+    expect(text).toContain("100 synthetic commits over hono");
   });
 
   test("shape differences in a neighbour payload degrade to `not run`, never to a throw", () => {
@@ -505,6 +759,38 @@ describe("results-md", () => {
     expect(text).toContain("## Eval 2");
     expect(text).toContain("## Bench 3");
     expect(text).toContain("## Eval 4");
+  });
+
+  test("the perf suite's actual payload shape fills P1 to P3", () => {
+    // `repos` is an ARRAY of { name, files, tier, scenarios: [...] }, and each
+    // scenario is { scenario, ms: { p50, p95 }, peakRssBytes } — not the flat
+    // `scenarios` object this reader first assumed. Captured from
+    // bench/results/perf-2026-09-02-334b337.json.
+    const dir = tempDir("perf-real");
+    writeFileSync(
+      path.join(dir, "perf-2026-09-02-abc1234.json"),
+      JSON.stringify({
+        suite: "perf", date: "2026-09-02", greplostSha: "abc1234",
+        peakRssTargetBytes: 524_288_000,
+        repos: [
+          {
+            name: "anyq", files: 148, tier: "S",
+            scenarios: [
+              { scenario: "full", iterations: 10, ms: { p50: 203, p95: 216 }, peakRssBytes: 241_041_408 },
+              { scenario: "incremental-1", iterations: 10, ms: { p50: 131, p95: 145 }, peakRssBytes: 147_406_848 },
+              { scenario: "package-rename", iterations: 10, ms: { p50: 126, p95: 134 }, peakRssBytes: 117_293_056 },
+            ],
+          },
+        ],
+      }),
+    );
+    const text = renderResultsMd(buildModel({ resultsDir: dir }));
+    const bench3 = text.slice(text.indexOf("## Bench 3"), text.indexOf("## Eval 4"));
+    expect(bench3).not.toContain("not run");
+    expect(bench3).toContain("203");   // P1: the full build's p50
+    expect(bench3).toContain("145");   // P2: the incremental p95
+    expect(bench3).toContain("229");   // P3: 241041408 bytes as MB
+    expect(bench3).toContain("148");   // the file count the scenario ran over
   });
 
   test("replay, perf and agent payloads in their documented shapes are read", () => {
@@ -548,6 +834,68 @@ describe("results-md", () => {
 // ---------------------------------------------------------------------------
 // report suite
 // ---------------------------------------------------------------------------
+
+describe("charts: X2 arms", () => {
+  const cell = (detail: Record<string, number>) => ({ value: 1, target: "", verdict: "win" as const, reason: "", detail });
+
+  test("the documented-sync arm is the hero and its note names arm, corpus and walk", () => {
+    const row = {
+      id: "X2" as const,
+      title: "Staleness after 100 replayed commits",
+      target: "greplost F1 >= 0.99 after 100 commits",
+      tools: {
+        greplost: cell({ "syncF1@25": 1, "syncF1@50": 1, "syncF1@100": 1, commits: 100 }),
+        graphify: cell({ "syncF1@25": 0.9, "syncF1@50": 0.7, "syncF1@100": 0.5 }),
+      },
+    };
+    const target = { repo: "hono", fixture: false, tier: "M", files: 618, commits: 100 };
+    const charts = stalenessCharts(row, null, "docs/assets", target);
+    const hero = charts.find((chart) => chart.png === "docs/assets/x2-staleness.png");
+    expect(hero).toBeDefined();
+    expect(hero?.svg).toContain("documented-sync");
+    expect(hero?.svg).toContain("100 replayed commits");
+    expect(hero?.svg).toContain("hono, tier M");
+    // A tool that was not walked is named as omitted, never drawn at zero.
+    expect(hero?.svg).toContain("Omitted (not run here): ua, crg");
+  });
+
+  test("the harness-driven arm never lands on the hero path", () => {
+    const row = {
+      id: "X2" as const,
+      title: "Staleness after 24 replayed commits",
+      target: "greplost F1 >= 0.99",
+      tools: {
+        // `f1@` is the spelling the first round wrote: the refresh-every-commit arm.
+        greplost: cell({ "f1@12": 1, "f1@24": 1, "staleF1@12": 0.8, "staleF1@24": 0.6 }),
+      },
+    };
+    const charts = stalenessCharts(row, null, "docs/assets", { repo: "tiny-ts", fixture: true, files: 12, commits: 24 });
+    const paths = charts.map((chart) => chart.png);
+    expect(paths).toContain("docs/assets/x2-refresh-every-commit.png");
+    expect(paths).toContain("docs/assets/x2-no-refresh.png");
+    // The hero still exists, and says nothing was measured in its arm.
+    const hero = charts.find((chart) => chart.png === "docs/assets/x2-staleness.png");
+    expect(hero).toBeDefined();
+    expect(hero?.svg).not.toContain("documented-sync");
+    const companion = charts.find((chart) => chart.png === "docs/assets/x2-refresh-every-commit.png");
+    expect(companion?.svg).toContain("refresh-every-commit");
+    expect(companion?.svg).toContain("24 replayed commits");
+    expect(companion?.svg).toContain("fixtures/tiny-ts");
+    const noRefresh = charts.find((chart) => chart.png === "docs/assets/x2-no-refresh.png");
+    expect(noRefresh?.svg).toContain("no-refresh");
+  });
+
+  test("scaleNote states the corpus and the walk, and nothing it was not given", () => {
+    expect(scaleNote({ repo: "anyq", fixture: false, tier: "S", files: 148 }, null)).toBe(
+      " Measured on corpus anyq, tier S (148 files).",
+    );
+    expect(scaleNote(undefined, null)).toBe("");
+    // A run with no walk does not claim "0 replayed commits".
+    expect(scaleNote({ repo: "anyq", fixture: false, tier: "S", files: 148, commits: 0 }, null)).toBe(
+      " Measured on corpus anyq, tier S (148 files).",
+    );
+  });
+});
 
 describe("report", () => {
   test("--dry-run on an empty results dir writes a complete RESULTS.md and no PNG", async () => {
@@ -643,8 +991,67 @@ describe("screenshots", () => {
     for (const tape of ["init.tape", "side-by-side-baseline.tape", "side-by-side-greplost.tape"]) {
       const file = path.join(REPO_ROOT, "docs", "tapes", tape);
       expect(existsSync(file)).toBe(true);
-      expect(readFileSync(file, "utf8")).toContain("Output");
+      const text = readFileSync(file, "utf8");
+      expect(text).toContain("Output");
+      // A still is a `Screenshot`. `Output <name>.png` makes vhs write a
+      // directory of one PNG per frame at that path (5,282 files for init.tape).
+      expect(text).toContain("Screenshot docs/assets/");
+      const outputs = [...text.matchAll(/^\s*Output\s+(\S+)/gm)].map((match) => match[1] ?? "");
+      expect(outputs.filter((out) => out.endsWith(".png"))).toEqual([]);
     }
+  });
+
+  test("captures 7 to 9 are listed as produced by `bench report`", () => {
+    for (const id of [7, 8, 9]) {
+      const capture = CAPTURES.find((entry) => entry.id === id);
+      expect(capture).toBeDefined();
+      expect(capture?.description).toContain("bench report");
+      expect(capture?.needs).toEqual([]);
+      expect(capture?.perform({ assets: "/tmp", tools: new Map(), paid: false }).skipped).toContain("bench report");
+    }
+    expect(CAPTURES.map((capture) => capture.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  });
+
+  test("the reproducibility capture leaves no competitor artifacts in the shared work dir", () => {
+    const capture = CAPTURES.find((entry) => entry.id === 11);
+    expect(capture).toBeDefined();
+    // Both redirects, or photographing X4 writes a benchmark result and flips
+    // the agent suite's competitor conditions as a side effect.
+    const source = readFileSync(path.join(REPO_ROOT, "bench", "src", "screenshots.ts"), "utf8");
+    expect(source).toContain("GREPLOST_BENCH_RESULTS_DIR: results");
+    expect(source).toContain("GREPLOST_BENCH_WORK_DIR: work");
+    // And the suite it drives has to honour the redirect.
+    const harness = readFileSync(path.join(REPO_ROOT, "bench", "src", "headtohead.ts"), "utf8");
+    expect(harness).toContain('process.env["GREPLOST_BENCH_WORK_DIR"]');
+  });
+
+  test("a captured terminal is wrapped and clipped, so freeze cannot size a 15,000px canvas", () => {
+    const wide = `${"x".repeat(250)}\nshort`;
+    const fitted = fitForCapture(wide, 100, 40);
+    for (const line of fitted.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
+    expect(fitted.split("\n")).toHaveLength(4);
+
+    const tall = Array.from({ length: 200 }, (_, i) => `line ${i}`).join("\n");
+    const clipped = fitForCapture(tall, 100, 10);
+    expect(clipped.split("\n")).toHaveLength(10);
+    expect(clipped).toContain("more lines, cut so the image stays a screenshot");
+  });
+
+  test("capture 11 keeps the X4 rows and byte counts, not the whole transcript", () => {
+    const transcript = [
+      "  ID    Measured   vs graphify   vs ua   vs crg",
+      "  X4    0 bytes    0 bytes       n/a     79098 bytes",
+      "  X4 crg: graph.json differs in nodes, edges, stats; 79098 bytes",
+      "  X4 ua: no headless CLI, so nothing was built to compare",
+      "headtohead: wrote bench/results/headtohead-2026-09-02-abc1234.json",
+      "",
+    ].join("\n");
+    const shaped = x4Summary(transcript);
+    expect(shaped).toContain("X4 crg:");
+    expect(shaped).toContain("ID");
+    expect(shaped).not.toContain("headtohead: wrote");
+    // A tool that was never built has no reproducibility finding to show.
+    expect(shaped).not.toContain("no headless CLI");
   });
 
   test("a run with no tools available skips every capture and still returns 0", async () => {
