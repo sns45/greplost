@@ -1,0 +1,22 @@
+{
+  "name": "@greplost/bench",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@greplost/core": "workspace:*",
+    "@greplost/render": "workspace:*",
+    "@greplost/sync": "workspace:*",
+    "greplost": "workspace:*",
+    "typescript": "~5.9.3",
+    "js-tiktoken": "1.0.21",
+    "mermaid": "11.17.2",
+    "jsdom": "30.0.1",
+    "@resvg/resvg-js": "2.6.2",
+    "fast-glob": "3.3.3"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1",
+    "@types/jsdom": "^21.1.7"
+  }
+}

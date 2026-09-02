@@ -1,0 +1,1 @@
+{ "name": "tiny-ts", "private": true, "workspaces": ["packages/*", "apps/*"] }

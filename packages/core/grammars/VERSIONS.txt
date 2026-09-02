@@ -1,0 +1,4 @@
+tree-sitter-typescript.wasm, tree-sitter-tsx.wasm: tree-sitter-typescript@0.23.2 (ABI 14)
+tree-sitter-go.wasm: tree-sitter-go@0.25.0 (ABI 15)
+web-tree-sitter.wasm: web-tree-sitter@0.27.0 runtime
+Vendored so installs never need a C++ toolchain. Regenerate with: bun scripts/vendor-grammars.ts

@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "ESNext", "moduleResolution": "bundler", "strict": true,
+    "baseUrl": ".", "paths": { "@tiny/*": ["packages/*/src/index.ts"] }
+  },
+  "include": ["packages/*/src", "apps/*/src"]
+}

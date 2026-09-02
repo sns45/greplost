@@ -1,0 +1,8 @@
+{
+  "name": "@greplost/sync",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": { "@greplost/core": "workspace:*", "@greplost/render": "workspace:*" }
+}

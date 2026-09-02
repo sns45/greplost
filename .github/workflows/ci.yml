@@ -1,0 +1,28 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.2.21 }
+      - uses: actions/setup-go@v5
+        with: { go-version: "1.25" }
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun test
+      - name: verify the committed map of this repo
+        run: bun packages/cli/src/main.ts verify --diff
+      - name: structural accuracy gate (tier S)
+        run: bun run bench:structural --tier S --gate
+      - name: map quality gate
+        run: bun run bench:mapquality --gate
+      - name: freshness gate (100-commit replay)
+        run: bun run bench:replay --commits 100 --gate
+      - name: performance gate (tier S)
+        run: bun run bench:perf --tier S --gate

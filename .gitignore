@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.unlazy/
+.unlazy-hook-state.json
+.claude/settings.local.json
+bench/.corpus/
+bench/.competitors/
+*.log
+.DS_Store
+.superpowers/

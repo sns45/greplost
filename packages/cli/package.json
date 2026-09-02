@@ -1,0 +1,24 @@
+{
+  "name": "greplost",
+  "version": "0.0.1",
+  "description": "grep lost. Read the map. A committed, deterministic, always-fresh map of your codebase in Markdown, ASCII and Mermaid, for humans and coding agents.",
+  "license": "MIT",
+  "type": "module",
+  "repository": { "type": "git", "url": "https://github.com/sns45/greplost" },
+  "homepage": "https://github.com/sns45/greplost#readme",
+  "keywords": ["codebase", "map", "architecture", "mermaid", "monorepo", "claude-code", "tree-sitter", "navigation"],
+  "bin": { "greplost": "./bin/greplost.js" },
+  "files": ["bin", "dist", "README.md"],
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "build": "bun build src/main.ts --target node --outdir dist --minify-whitespace && cp -R ../core/grammars dist/grammars",
+    "prepublishOnly": "bun run build"
+  },
+  "dependencies": {
+    "@greplost/core": "workspace:*",
+    "@greplost/render": "workspace:*",
+    "@greplost/sync": "workspace:*",
+    "@greplost/semantic": "workspace:*",
+    "@greplost/workspace": "workspace:*"
+  }
+}
