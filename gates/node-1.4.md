@@ -7,14 +7,14 @@ Scope: CLI and plugin merged
   EXPECT: ALL MET
   EVIDENCE: pending
 
-- [ ] N2: cli typechecks
+- [x] N2: cli typechecks
   CHECK: bunx tsc -p packages/cli/tsconfig.json --noEmit
-  EVIDENCE: pending
+  EVIDENCE: (no output)
 
-- [ ] N3: cli tests green
+- [x] N3: cli tests green
   CHECK: bun test packages/cli
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: pending
+  EVIDENCE: 353 expect() calls | Ran 72 tests across 3 files. [597.00ms]
 
 - [ ] N4: greplost verifies its own committed map (dogfood)
   CHECK: bun packages/cli/src/main.ts verify --diff
