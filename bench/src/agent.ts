@@ -1595,12 +1595,17 @@ async function execute(options: Options): Promise<number> {
           // not carry. A session that *failed* has no count to be missing: buying
           // a second doomed session teaches nothing, doubles the damage, and used
           // to flip the whole run to stream-json on the strength of a timeout.
-          const probed = session.error === null && session.toolCalls === undefined;
+          const capExhausted = budget.maxUsd !== null && budget.spentUsd >= budget.maxUsd;
+          const probed = session.error === null && session.toolCalls === undefined && !capExhausted;
           if (probed) {
             // The measured case on Claude Code 2.1.258: no count in the JSON
             // envelope. Pay for one extra session to learn the count for this
             // prompt, then stay on stream-json for everything after it.
-            const transcript = invokeClaude({ ...invocation, stream: true });
+            // The probe bills too, so it gets its own budget from what is left
+            // *after* the measured session, never the measured session's copy.
+            const probeBudget = sessionBudget(budget, options.maxSessionUsd, observedCosts);
+            if (probeBudget.truncated) budget.truncatedSessions++;
+            const transcript = invokeClaude({ ...invocation, stream: true, maxUsd: probeBudget.value });
             session = { ...session, toolCalls: transcript.toolCalls ?? 0 };
             probe.sessions++;
             probe.costUsd += transcript.costUsd;

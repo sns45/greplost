@@ -215,7 +215,7 @@ function exportedEntryNames(snapshot: Snapshot): Set<string> {
       continue;
     }
     if (decl.kind !== "const" && decl.kind !== "let") continue;
-    if (decl.signature.includes("=>") || decl.signature.includes("function")) files.add(decl.file);
+    if (decl.signature.includes("=>") || /(^|[^A-Za-z0-9_$])function[\s*(<]/.test(decl.signature)) files.add(decl.file);
   }
   return files;
 }
