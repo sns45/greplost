@@ -12,7 +12,6 @@
 # capture is that one deterministic call answers what the left half greps for.
 
 Output docs/assets/side-by-side-greplost.gif
-Output docs/assets/side-by-side-greplost.png
 
 Set Shell "bash"
 Set FontSize 15
@@ -38,3 +37,7 @@ Sleep 6s
 Type "claude -p 'Which files would break if the signature of createContext changed? Answer with a JSON block {\"files\": [...]}.' --allowedTools Bash Read --output-format json"
 Enter
 Sleep 120s
+
+# The final frame as one file. `Output <name>.png` would make vhs write a
+# directory of one PNG per frame at that path instead (see docs/tapes/init.tape).
+Screenshot docs/assets/side-by-side-greplost.png

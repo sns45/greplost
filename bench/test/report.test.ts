@@ -33,14 +33,21 @@ import {
   TOOLS,
   byteDistance,
   describeDifference,
+  describeLineChange,
   diffLineCount,
   emptyMetrics,
   median,
   planImportEdits,
+  readHookLog,
   run as headtoheadRun,
+  scaleTitles,
+  shimRuns,
+  shimTime,
   verdictFor,
+  x3GreplostVerdict,
 } from "../src/headtohead.ts";
-import { checkTools, run as screenshotsRun } from "../src/screenshots.ts";
+import { stalenessCharts, scaleNote } from "../src/report-charts.ts";
+import { CAPTURES, checkTools, fitForCapture, run as screenshotsRun, x4Summary } from "../src/screenshots.ts";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
 
@@ -322,6 +329,91 @@ describe("headtohead", () => {
     // Only `src/c.ts` can take `./b`: `src/a.ts` already has it and `src/b.ts` is the target.
     expect(edits).toEqual([{ file: "src/c.ts", specifier: "./b", to: "src/b.ts" }]);
     expect(planImportEdits(snapshot, 5)).toEqual(edits);
+  });
+
+  test("X3's greplost verdict is not a win against an arm nobody walked", () => {
+    // The target is "<= 1% of ua, <= 20% of graphify". ua cannot be run here at
+    // all, so a bare `win` claims a comparison nobody made (review round 1).
+    const none = x3GreplostVerdict(0.2, null);
+    expect(none.verdict).toBe("na");
+    expect(none.reason).toContain("ratio");
+
+    const under = x3GreplostVerdict(0.2, 5.4);
+    expect(under.verdict).toBe("win");
+    expect(under.reason).toContain("graphify arm");
+    expect(under.reason).toContain("ua arm cannot be evaluated");
+
+    const over = x3GreplostVerdict(3, 5);
+    expect(over.verdict).toBe("loss");
+
+    expect(x3GreplostVerdict(null, 5).verdict).toBe("na");
+  });
+
+  test("scaleTitles rewrites X2 and X3 from the walk that actually ran", () => {
+    const metrics = emptyMetrics("not run");
+    scaleTitles(metrics, 100);
+    expect(metrics["X2"].title).toBe("Staleness after 100 replayed commits");
+    expect(metrics["X2"].target).toContain("100 commits");
+    expect(metrics["X3"].title).toContain("100 replayed commits");
+    expect(metrics["X2"].tools["greplost"]?.target).toBe(metrics["X2"].target);
+
+    const nothing = emptyMetrics("not run");
+    scaleTitles(nothing, 0);
+    expect(nothing["X2"].title).toBe("Staleness after no replayed commits");
+    expect(nothing["X2"].target).toContain("not walked");
+    expect(nothing["X2"].title).not.toContain("500");
+  });
+
+  test("the shim log is per-invocation evidence a hook ran, and for how long", () => {
+    const dir = tempDir("shim-log");
+    const file = path.join(dir, "hook.log");
+    writeFileSync(
+      file,
+      [
+        "start\tgreplost\t1000",
+        "end\tgreplost\t1128\t0",
+        "start\tcode-review-graph\t1200",
+        "end\tcode-review-graph\t1900\t0",
+        "start\tgreplost\t2000",
+        "end\tgreplost\t2100\t0",
+        "nonsense line that is not a fact",
+        "start\tgreplost\t3000",
+        "",
+      ].join("\n"),
+    );
+    const calls = readHookLog(file);
+    expect(shimRuns(calls, "greplost")).toEqual([128, 100]);
+    expect(shimRuns(calls, "code-review-graph")).toEqual([700]);
+    const ours = shimTime(calls, "greplost");
+    expect(ours.ms).toBe(228);
+    expect(ours.runs).toBe(3);
+    // The third start has no end: a process still running is a call with no time.
+    expect(ours.pending).toBe(1);
+    expect(readHookLog(path.join(dir, "absent.log"))).toEqual([]);
+  });
+
+  test("describeLineChange names the artifacts and their line counts, largest first", () => {
+    const before = new Map([
+      ["INDEX.md", "a\nb\nc"],
+      ["repo/MAP.md", "x\ny"],
+      ["graph/imports.jsonl", "one"],
+      ["packages/core/MAP.md", "keep"],
+    ]);
+    const after = new Map([
+      ["INDEX.md", "a\nb\nc\nd"],
+      ["repo/MAP.md", "x\ny\nz\nw\nv"],
+      ["graph/imports.jsonl", "two"],
+      ["packages/core/MAP.md", "keep"],
+    ]);
+    const text = describeLineChange(before, after);
+    expect(text).toContain("`repo/MAP.md` 3 lines");
+    expect(text).toContain("`INDEX.md` 1 line");
+    expect(text.indexOf("repo/MAP.md")).toBeLessThan(text.indexOf("INDEX.md"));
+    // Unchanged files are not named.
+    expect(text).not.toContain("packages/core/MAP.md");
+    // The tail is counted, never dropped.
+    expect(describeLineChange(before, after, 1)).toContain("and 2 more files");
+    expect(describeLineChange(before, before)).toBe("");
   });
 
   test("--fixture --dry-run prints the convention line and writes nothing", async () => {
@@ -652,6 +744,64 @@ describe("results-md", () => {
 // report suite
 // ---------------------------------------------------------------------------
 
+describe("charts: X2 arms", () => {
+  const cell = (detail: Record<string, number>) => ({ value: 1, target: "", verdict: "win" as const, reason: "", detail });
+
+  test("the documented-sync arm is the hero and its note names arm, corpus and walk", () => {
+    const row = {
+      id: "X2" as const,
+      title: "Staleness after 100 replayed commits",
+      target: "greplost F1 >= 0.99 after 100 commits",
+      tools: {
+        greplost: cell({ "syncF1@25": 1, "syncF1@50": 1, "syncF1@100": 1, commits: 100 }),
+        graphify: cell({ "syncF1@25": 0.9, "syncF1@50": 0.7, "syncF1@100": 0.5 }),
+      },
+    };
+    const target = { repo: "hono", fixture: false, tier: "M", files: 618, commits: 100 };
+    const charts = stalenessCharts(row, null, "docs/assets", target);
+    const hero = charts.find((chart) => chart.png === "docs/assets/x2-staleness.png");
+    expect(hero).toBeDefined();
+    expect(hero?.svg).toContain("documented-sync");
+    expect(hero?.svg).toContain("100 replayed commits");
+    expect(hero?.svg).toContain("hono, tier M");
+    // A tool that was not walked is named as omitted, never drawn at zero.
+    expect(hero?.svg).toContain("Omitted (not run here): ua, crg");
+  });
+
+  test("the harness-driven arm never lands on the hero path", () => {
+    const row = {
+      id: "X2" as const,
+      title: "Staleness after 24 replayed commits",
+      target: "greplost F1 >= 0.99",
+      tools: {
+        // `f1@` is the spelling the first round wrote: the refresh-every-commit arm.
+        greplost: cell({ "f1@12": 1, "f1@24": 1, "staleF1@12": 0.8, "staleF1@24": 0.6 }),
+      },
+    };
+    const charts = stalenessCharts(row, null, "docs/assets", { repo: "tiny-ts", fixture: true, files: 12, commits: 24 });
+    const paths = charts.map((chart) => chart.png);
+    expect(paths).toContain("docs/assets/x2-refresh-every-commit.png");
+    expect(paths).toContain("docs/assets/x2-no-refresh.png");
+    // The hero still exists, and says nothing was measured in its arm.
+    const hero = charts.find((chart) => chart.png === "docs/assets/x2-staleness.png");
+    expect(hero).toBeDefined();
+    expect(hero?.svg).not.toContain("documented-sync");
+    const companion = charts.find((chart) => chart.png === "docs/assets/x2-refresh-every-commit.png");
+    expect(companion?.svg).toContain("refresh-every-commit");
+    expect(companion?.svg).toContain("24 replayed commits");
+    expect(companion?.svg).toContain("fixtures/tiny-ts");
+    const noRefresh = charts.find((chart) => chart.png === "docs/assets/x2-no-refresh.png");
+    expect(noRefresh?.svg).toContain("no-refresh");
+  });
+
+  test("scaleNote states the corpus and the walk, and nothing it was not given", () => {
+    expect(scaleNote({ repo: "anyq", fixture: false, tier: "S", files: 148 }, null)).toBe(
+      " Measured on corpus anyq, tier S (148 files).",
+    );
+    expect(scaleNote(undefined, null)).toBe("");
+  });
+});
+
 describe("report", () => {
   test("--dry-run on an empty results dir writes a complete RESULTS.md and no PNG", async () => {
     const results = tempDir("report-results");
@@ -746,8 +896,51 @@ describe("screenshots", () => {
     for (const tape of ["init.tape", "side-by-side-baseline.tape", "side-by-side-greplost.tape"]) {
       const file = path.join(REPO_ROOT, "docs", "tapes", tape);
       expect(existsSync(file)).toBe(true);
-      expect(readFileSync(file, "utf8")).toContain("Output");
+      const text = readFileSync(file, "utf8");
+      expect(text).toContain("Output");
+      // A still is a `Screenshot`. `Output <name>.png` makes vhs write a
+      // directory of one PNG per frame at that path (5,282 files for init.tape).
+      expect(text).toContain("Screenshot docs/assets/");
+      const outputs = [...text.matchAll(/^\s*Output\s+(\S+)/gm)].map((match) => match[1] ?? "");
+      expect(outputs.filter((out) => out.endsWith(".png"))).toEqual([]);
     }
+  });
+
+  test("captures 7 to 9 are listed as produced by `bench report`", () => {
+    for (const id of [7, 8, 9]) {
+      const capture = CAPTURES.find((entry) => entry.id === id);
+      expect(capture).toBeDefined();
+      expect(capture?.description).toContain("bench report");
+      expect(capture?.needs).toEqual([]);
+      expect(capture?.perform({ assets: "/tmp", tools: new Map(), paid: false }).skipped).toContain("bench report");
+    }
+    expect(CAPTURES.map((capture) => capture.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  });
+
+  test("a captured terminal is wrapped and clipped, so freeze cannot size a 15,000px canvas", () => {
+    const wide = `${"x".repeat(250)}\nshort`;
+    const fitted = fitForCapture(wide, 100, 40);
+    for (const line of fitted.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
+    expect(fitted.split("\n")).toHaveLength(4);
+
+    const tall = Array.from({ length: 200 }, (_, i) => `line ${i}`).join("\n");
+    const clipped = fitForCapture(tall, 100, 10);
+    expect(clipped.split("\n")).toHaveLength(10);
+    expect(clipped).toContain("more lines");
+  });
+
+  test("capture 11 keeps the X4 rows and byte counts, not the whole transcript", () => {
+    const transcript = [
+      "  ID    Measured   vs graphify   vs ua   vs crg",
+      "  X4    0 bytes    0 bytes       n/a     79098 bytes",
+      "  X4 crg: graph.json differs in nodes, edges, stats; 79098 bytes",
+      "headtohead: wrote bench/results/headtohead-2026-09-02-abc1234.json",
+      "",
+    ].join("\n");
+    const shaped = x4Summary(transcript);
+    expect(shaped).toContain("X4 crg:");
+    expect(shaped).toContain("ID");
+    expect(shaped).not.toContain("headtohead: wrote");
   });
 
   test("a run with no tools available skips every capture and still returns 0", async () => {

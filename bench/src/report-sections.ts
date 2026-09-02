@@ -230,13 +230,14 @@ export function headToHead(payload: Payload | null, replay: Payload | null, asse
       "refreshed, never checked.",
   );
 
+  const target = targetOf(payload);
   return {
     tools: toolList,
     rows,
     ran: payload !== null,
     provenance: provenanceOf(payload),
-    target: targetOf(payload),
-    charts: headToHeadCharts(rows, replay, assetsRel),
+    target,
+    charts: headToHeadCharts(rows, replay, assetsRel, target),
     notes,
   };
 }

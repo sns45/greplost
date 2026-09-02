@@ -227,11 +227,26 @@ interface Options {
   tier: string;
   metrics: Set<XId> | null;
   commits: number | undefined;
+  /**
+   * Which X2 arms to walk. The documented-sync arm alone by default: the
+   * refresh-every-commit arm is a second full walk of every tool, which on a
+   * tier-M repo is tens of minutes for a curve that is a companion, not the
+   * finding (`--arms both` asks for it).
+   */
+  arms: Arm[];
   dryRun: boolean;
 }
 
 function parseArgs(args: string[]): Options {
-  const options: Options = { fixture: false, repo: undefined, tier: "S", metrics: null, commits: undefined, dryRun: false };
+  const options: Options = {
+    fixture: false,
+    repo: undefined,
+    tier: "S",
+    metrics: null,
+    commits: undefined,
+    arms: ["documented-sync"],
+    dryRun: false,
+  };
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     // Unknown flags are ignored: `bench all` forwards one argument list to every suite.
@@ -243,6 +258,10 @@ function parseArgs(args: string[]): Options {
       // A non-numeric or negative value means "no walk" rather than NaN commits.
       const parsed = Number(args[++i]);
       options.commits = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 0;
+    }
+    else if (arg === "--arms") {
+      const value = (args[++i] ?? "").trim().toLowerCase();
+      options.arms = value === "both" ? ["documented-sync", "refresh-every-commit"] : ["documented-sync"];
     }
     else if (arg === "--metrics") {
       const list = (args[++i] ?? "").split(",").map((id) => id.trim().toUpperCase());
@@ -326,6 +345,23 @@ interface Invocation {
   coldStart?: string[][];
   /** The incremental refresh a commit triggers, for X2/X3. */
   refresh?: string[][];
+  /**
+   * The tool's own commit-time sync mechanism, installed exactly as its README
+   * describes, for X2's documented-sync arm. Defaults to `commands` for a tool
+   * that has nothing extra to install.
+   */
+  syncInstall?: string[][];
+  /**
+   * The part of `refresh` whose wall-clock X3 counts.
+   *
+   * Split from `refresh` because crg keeps its graph in SQLite and only
+   * `visualize --format json` writes the JSON the adapters read: charging its
+   * refresh for an export step greplost has no equivalent of is the timing
+   * asymmetry review round 1 found. The export moves to `exportAtCheckpoint`.
+   */
+  refreshTimed?: string[][];
+  /** An export run only at scoring checkpoints, never inside a timed refresh. */
+  exportAtCheckpoint?: string[][];
   /** Anything the reader must know about a deviation from the README. */
   caveat: string | null;
   /** True when the tool cannot be driven from a shell at all. */
@@ -343,11 +379,19 @@ const INVOCATIONS: Record<CompetitorName, Invocation> = {
     // structure layer is LLM-free too.
     commands: [["update", "."]],
     refresh: [["update", "."]],
+    refreshTimed: [["update", "."]],
+    // X2's documented-sync arm: build the graph, then let `graphify hook
+    // install` write the post-commit and post-checkout hooks its README
+    // documents. The hooks land in the repo copy's own `.git/hooks`, inside the
+    // work directory, so nothing outside the sandbox is touched.
+    syncInstall: [["update", "."], ["hook", "install"]],
     artifacts: ["graphify-out/graph.json", "graphify-out/GRAPH_REPORT.md", "graphify-out/manifest.json"],
     caveat:
       "run through `graphify update .` (the documented no-LLM rebuild) rather than the `/graphify .` " +
       "slash command, which needs a model; graph.html is excluded from the byte comparison because it is " +
-      "a viewer, not the graph",
+      "a viewer, not the graph. `graphify hook install` is run in X2's documented-sync arm, where the hooks " +
+      "it writes go into the repo copy's own .git/hooks; `graphify install`, which writes a global CLAUDE.md " +
+      "section and a Claude Code PreToolUse hook, is not run",
     headless: true,
   },
   ua: {
@@ -364,18 +408,27 @@ const INVOCATIONS: Record<CompetitorName, Invocation> = {
   },
   crg: {
     binary: "code-review-graph",
-    // `code-review-graph install` is deliberately NOT run: it detects the AI
-    // coding tools on the machine and writes their MCP configuration and hooks,
-    // which is a global side effect a benchmark has no business causing. `build`
-    // and `visualize` are the documented commands that produce the artifact, and
-    // `update` is the documented manual incremental path.
+    // `build` + `visualize --format json` are the documented commands that
+    // produce the artifact; `update` is the documented incremental path.
+    //
+    // `code-review-graph install` is run only in X2's documented-sync arm,
+    // under the sandbox HOME (driver ruling 2026-09-03): it detects the AI
+    // coding tools it can see and writes their MCP configuration, per-repo
+    // instruction files and a git pre-commit hook. Everything it writes lands
+    // either in the repo copy or in `bench/.competitors/home`; the machine's
+    // real `~/.claude`, `~/.claude.json`, `~/.code-review-graph` and global
+    // CLAUDE.md are never in its path.
     commands: [["build"], ["visualize", "--format", "json"]],
     refresh: [["update"], ["visualize", "--format", "json"]],
+    refreshTimed: [["update"]],
+    exportAtCheckpoint: [["visualize", "--format", "json"]],
+    syncInstall: [["install"], ["build"], ["visualize", "--format", "json"]],
     artifacts: [".code-review-graph/graph.json"],
     caveat:
-      "`code-review-graph install` is not run: it writes MCP config and hooks into every AI coding tool it " +
-      "detects on the machine. `build` + `visualize --format json` produce the same artifact. `graph.db` is " +
-      "excluded from the byte comparison because a SQLite page layout is not the tool's output contract",
+      "`build` + `visualize --format json` produce the artifact; `graph.db` is excluded from the byte " +
+      "comparison because a SQLite page layout is not the tool's output contract. `code-review-graph install` " +
+      "runs only in X2's documented-sync arm and only with HOME, XDG_* and CLAUDE_CONFIG_DIR pointed inside " +
+      "bench/.competitors/home",
     headless: true,
   },
 };
@@ -479,14 +532,19 @@ export function writeShim(name: string, real: string): string {
   return file;
 }
 
-/** A shim for greplost's own CLI, so its hook's `command -v greplost` resolves. */
+/**
+ * A shim for greplost's own CLI, so its hook's `command -v greplost` resolves.
+ *
+ * The runner spells out `process.execPath` rather than the word `bun`: a git
+ * hook inherits whatever PATH the commit had, and a benchmark that resolved its
+ * own runtime differently from the way it resolved the competitors' would be
+ * measuring its own PATH again.
+ */
 export function writeGreplostShim(): string {
   mkdirSync(SHIM_DIR, { recursive: true });
   const runner = path.join(SHIM_DIR, "greplost-real");
-  writeFileSync(
-    runner,
-    `#!/bin/sh\nexec bun ${JSON.stringify(path.join(REPO_ROOT, "packages", "cli", "src", "main.ts"))} "$@"\n`,
-  );
+  const main = path.join(REPO_ROOT, "packages", "cli", "src", "main.ts");
+  writeFileSync(runner, `#!/bin/sh\nexec ${JSON.stringify(process.execPath)} ${JSON.stringify(main)} "$@"\n`);
   chmodSync(runner, 0o755);
   return writeShim("greplost", runner);
 }
@@ -533,6 +591,29 @@ export function shimTime(calls: readonly HookCall[], tool: string): { ms: number
     }
   }
   return { ms, runs, pending: open === null ? 0 : 1 };
+}
+
+/**
+ * The duration of each completed shimmed call for one tool, in order.
+ *
+ * `shimTime` sums; this keeps them apart, which is what "wait for the rebuild
+ * this commit started and charge only that one" needs.
+ */
+export function shimRuns(calls: readonly HookCall[], tool: string): number[] {
+  const out: number[] = [];
+  let open: number | null = null;
+  for (const call of calls) {
+    if (call.tool !== tool) continue;
+    if (call.phase === "start") {
+      open = call.at;
+      continue;
+    }
+    if (open !== null) {
+      out.push(Math.max(0, call.at - open));
+      open = null;
+    }
+  }
+  return out;
 }
 
 function runTool(binary: string, args: string[], cwd: string, env?: NodeJS.ProcessEnv): Ran {
@@ -733,6 +814,36 @@ function hasDifferingTimestamp(a: string, b: string): boolean {
   const right = b.match(pattern) ?? [];
   if (left.length === 0 && right.length === 0) return false;
   return left.join(",") !== right.join(",");
+}
+
+/**
+ * Which artifact files a one-line source change moved, and by how many lines
+ * each — the same treatment X4's `describeDifference` gives bytes.
+ *
+ * "40 of 902 lines" is a number. "`INDEX.md` 2 lines, `graph/imports.jsonl` 1
+ * line, `packages/core/MAP.md` 6 lines" is a finding: it says whether the churn
+ * is the edge that was added or a renumbering of everything downstream of it,
+ * which is the whole question X5 asks. Files are listed largest first, capped so
+ * the reason column stays a sentence, with the tail counted rather than dropped.
+ */
+export function describeLineChange(a: Map<string, string>, b: Map<string, string>, limit = 4): string {
+  const moved: { file: string; lines: number }[] = [];
+  for (const key of [...new Set([...a.keys(), ...b.keys()])].sort(compareStrings)) {
+    const left = a.get(key);
+    const right = b.get(key);
+    if (left === right) continue;
+    if (left === undefined || right === undefined) {
+      moved.push({ file: `${key} (${left === undefined ? "added" : "removed"})`, lines: (right ?? left ?? "").split("\n").length });
+      continue;
+    }
+    moved.push({ file: key, lines: diffLineCount(left.split("\n"), right.split("\n")) });
+  }
+  if (moved.length === 0) return "";
+  // Largest first, and ties by name so the sentence is the same on two runs.
+  moved.sort((x, y) => (y.lines - x.lines) || compareStrings(x.file, y.file));
+  const shown = moved.slice(0, limit).map((entry) => `\`${entry.file}\` ${entry.lines} line${entry.lines === 1 ? "" : "s"}`);
+  const rest = moved.length - shown.length;
+  return `${shown.join(", ")}${rest > 0 ? `, and ${rest} more file${rest === 1 ? "" : "s"}` : ""}`;
 }
 
 /** Lines added plus lines removed between two texts, per file, summed. */
@@ -973,6 +1084,15 @@ async function execute(options: Options, target: Target): Promise<number> {
     oracleFailure = (err as Error).message;
     method.push(`X1, X2, X5: ${snapshot === null ? "the greplost snapshot" : "the compiler oracle"} could not be built — ${oracleFailure}.`);
   }
+  // The file universe X1, X2 and X5 score inside: the compiler's file list when
+  // the oracle loaded, and greplost's own scored files when it did not.
+  const scoredFileCount =
+    truth !== null && truth.files.length > 0
+      ? truth.files.length
+      : snapshot === null
+        ? 0
+        : scoredFiles(snapshot, target.lang === "go" ? "go" : "ts").length;
+
   const noOracle = (what: string): string =>
     `${what} needs compiler truth for ${target.name}, which could not be built here: ${oracleFailure ?? "unknown reason"}`;
 
@@ -980,9 +1100,10 @@ async function execute(options: Options, target: Target): Promise<number> {
     if (snapshot !== null && truth !== null) await metricX1(metrics, snapshot, truth, states, method);
     else for (const tool of TOOLS) (metrics["X1"] as MetricRow).tools[tool] = na(METRIC_PLAN[0]?.target ?? "", noOracle("X1"));
   }
+  let walked = 0;
   if (selected("X2") || selected("X3")) {
     if (snapshot !== null) {
-      await metricX2X3(metrics, target, snapshot, states, method, selected, options.commits ?? 0);
+      walked = await metricX2X3(metrics, target, snapshot, states, method, selected, options.commits ?? 0, options.arms);
     } else {
       for (const tool of TOOLS) {
         if (selected("X2")) (metrics["X2"] as MetricRow).tools[tool] = na(METRIC_PLAN[1]?.target ?? "", noOracle("X2"));
@@ -1000,6 +1121,11 @@ async function execute(options: Options, target: Target): Promise<number> {
   if (selected("X9")) metricX9(metrics, method);
   if (selected("X10")) metricX10(metrics, states, method);
 
+  // X2 and X3 are worded against 500 commits in tech spec 3.1. Printing that
+  // over a 24- or 100-commit walk states a target nobody tested, in the one
+  // column a reader trusts to be the target (review round 1, important 6).
+  scaleTitles(metrics, walked);
+
   const rows = METRIC_PLAN.map((metric) => metrics[metric.id]);
   printTable(rows);
 
@@ -1011,7 +1137,17 @@ async function execute(options: Options, target: Target): Promise<number> {
     corpus: target.sha === null
       ? [{ name: target.name }]
       : [{ name: target.name, sha: target.sha, ...(target.tier === null ? {} : { tier: target.tier }), lang: target.lang }],
-    target: { repo: target.name, fixture: options.fixture, tier: options.tier },
+    // The scale the numbers were taken at, so `RESULTS.md` can print it beside
+    // them and refuse to print a tier-scoped target against a fixture run
+    // (review round 1, critical 3). `files` is the file universe the oracle and
+    // every prediction were cut to, which is the honest size of what was measured.
+    target: {
+      repo: target.name,
+      fixture: options.fixture,
+      tier: options.fixture ? null : (target.tier ?? options.tier),
+      files: scoredFileCount,
+      commits: walked,
+    },
     tools: [...TOOLS],
     competitors: Object.fromEntries(
       [...states.values()].map((state) => [
@@ -1041,12 +1177,19 @@ async function execute(options: Options, target: Target): Promise<number> {
   return 0;
 }
 
-function runInvocation(state: CompetitorState, dir: string, commands: readonly string[][]): string | null {
+function runInvocation(
+  state: CompetitorState,
+  dir: string,
+  commands: readonly string[][],
+  env: NodeJS.ProcessEnv = sandboxEnv(),
+): string | null {
   if (state.binary === null) return unavailableReason(state.name, state.spec);
   for (const args of commands) {
     // Every competitor command runs under the scratch HOME, without exception:
     // `build`, `update` and `visualize` all touch the tool's own global state.
-    const ran = runTool(state.binary, args, dir, sandboxEnv());
+    // The caller may hand in an env that also puts the shim directory on PATH,
+    // but it is always built from `sandboxEnv()`.
+    const ran = runTool(state.binary, args, dir, env);
     if (!ran.ok) {
       const detail = (ran.stderr || ran.stdout).split("\n").filter((l) => l.trim().length > 0).slice(-1)[0] ?? "";
       return `\`${state.name} ${args.join(" ")}\` exited ${ran.code ?? "on a signal"}${detail ? `: ${detail.trim()}` : ""}`;
@@ -1221,8 +1364,130 @@ function round(value: number, digits: number): number {
 // ---------------------------------------------------------------------------
 
 /**
- * A commit walk, one refresh per tool per commit, scoring every tool's artifact
- * against compiler truth at checkpoints (tech spec 10.0, X2 and X3).
+ * The arms X2 can be walked in.
+ *
+ * `documented-sync` is the primary one and the one tech spec 10.0 X2 actually
+ * words: "install its own sync mechanism exactly as its README describes, then
+ * walk 500 commits **without any manual intervention**". The harness commits and
+ * nothing else; whether a tool keeps up is the measurement.
+ *
+ * `refresh-every-commit` is the arm this suite used to publish as the hero: the
+ * harness itself invokes each tool's documented refresh command after each
+ * commit. That is a comparison of incremental *accuracy* between four tools all
+ * being driven by hand, and no line in it decays, so it must never be presented
+ * as a staleness curve. It is kept behind `--arms both` because it costs a
+ * second walk of every tool.
+ *
+ * A third curve is free and always drawn: each tool's commit-0 artifact scored
+ * against truth at each later commit (`x2-no-refresh.png`), which is what a
+ * reader gets when a sync mechanism is absent or silently does not fire.
+ */
+export type Arm = "documented-sync" | "refresh-every-commit";
+
+/** The detail-key prefix each arm's per-checkpoint F1 is stored under. */
+export const ARM_PREFIX: Record<Arm, string> = {
+  "documented-sync": "syncF1",
+  "refresh-every-commit": "refreshF1",
+};
+
+/** One sentence per arm, for the payload's method list and the chart notes. */
+export const ARM_DESCRIPTION: Record<Arm, string> = {
+  "documented-sync":
+    "each tool's own sync mechanism was installed exactly as its README describes and then left alone: the " +
+    "harness commits, and nothing else",
+  "refresh-every-commit":
+    "the harness invoked each tool's documented refresh command after every commit, so this arm compares " +
+    "incremental accuracy under manual driving and is not a staleness curve",
+};
+
+/**
+ * One tool's documented commit-time sync mechanism, as installed and observed.
+ *
+ * Every field is evidence rather than assertion: `hook` is a file this suite
+ * read back off disk after the install command ran, `fired` counts the commits
+ * where the mechanism was *observed* to run, and `ms` is wall-clock of the
+ * child processes it started. A tool whose commit-time path turns out to be a
+ * manual command has `automatic: false`, which in this arm is no sync at all,
+ * and the row says so rather than quietly scoring its stale artifact as a result.
+ */
+interface SyncMechanism {
+  tool: string;
+  /** The install commands run, worded as the tool's README words them. */
+  install: string[];
+  /** The hook file found after the install, repo-relative, or null when none. */
+  hook: string | null;
+  /** How this suite knows the mechanism fired on a commit. */
+  evidence: string;
+  /** False when the tool's commit-time path is a manual command. */
+  automatic: boolean;
+  /** Commits where the mechanism was observed to run. */
+  fired: number;
+  /** Commits walked while this mechanism was installed. */
+  walked: number;
+  /** Milliseconds its child processes spent, summed over the walk. */
+  ms: number;
+  notes: string[];
+}
+
+/** One scoring checkpoint of one arm. */
+interface ArmPoint {
+  index: number;
+  importF1: Map<string, number>;
+  callF1: Map<string, number>;
+}
+
+interface ArmRun {
+  arm: Arm;
+  /** tool -> repo copy. */
+  dirs: Map<string, string>;
+  points: ArmPoint[];
+  /** tool -> refresh wall-clock over the walk, milliseconds. */
+  ms: Map<string, number>;
+  /** tool -> refreshes that failed. */
+  failures: Map<string, number>;
+}
+
+interface StalenessRun {
+  commits: number;
+  every: number;
+  corpus: string;
+  arms: ArmRun[];
+  /** Each tool's commit-0 artifact scored against truth at each checkpoint. */
+  stale: { index: number; f1: Map<string, number> }[];
+  mechanisms: Map<string, SyncMechanism>;
+  notes: string[];
+}
+
+/** Env var the graphify hook writes its background rebuild log under (relative to HOME). */
+const GRAPHIFY_REBUILD_LOG = path.join(".cache", "graphify-rebuild.log");
+
+/** How long to wait for one backgrounded hook rebuild before giving up on it. */
+const HOOK_WAIT_MS = 600_000;
+
+/** Poll interval while waiting for a detached hook to finish. */
+const HOOK_POLL_MS = 25;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Lines in a file, or 0 when it does not exist. */
+function lineCount(file: string): number {
+  if (!existsSync(file)) return 0;
+  return readFileSync(file, "utf8").split("\n").length;
+}
+
+/** Is a detached process whose command line contains `needle` still running? */
+function processAlive(needle: string): boolean {
+  const found = spawnSync("pgrep", ["-f", needle], { encoding: "utf8" });
+  // `pgrep` missing (status null, an error) is not evidence of absence, but it
+  // is all this platform can offer; the caller falls back to the log.
+  return found.error === undefined && found.status === 0 && found.stdout.trim().length > 0;
+}
+
+/**
+ * A commit walk, scoring every tool's artifact against compiler truth at
+ * checkpoints (tech spec 10.0, X2 and X3).
  *
  * The measured quantity is **import edge F1**, not the F1 over every edge kind.
  * Imports are the one relationship all four tools model the same way, and the
@@ -1230,57 +1495,20 @@ function round(value: number, digits: number): number {
  * drift rather than a modelling difference. Call F1 is recorded next to it in
  * each cell's detail, where the level rather than the shape is the story.
  *
- * Two deviations from the tech spec's letter, both because of what this machine
- * has rather than what the tools are:
- *
- *  - The history is synthetic. Each commit appends one resolvable import line to
- *    one file, chosen from the repo's own specifiers (`planImportEdits`), so
- *    every commit adds exactly one architecture edge and truth moves by exactly
- *    one edge. A corpus checkout with 500 real commits is what the spec asks
- *    for; it is not cloned here, and a synthetic walk is stated as such.
- *  - Each tool's documented refresh is invoked by the harness once per commit,
- *    rather than left to the tool's own git hook. Hooks resolve their binary
- *    from PATH inside a throwaway repository, where none of these tools is on
- *    PATH; leaving it to the hooks would measure the harness's PATH and report
- *    it as the tools' staleness. Whether each tool's mechanism is automatic is
- *    recorded separately, from `bench/competitors.json`.
+ * One deviation from the tech spec's letter, because of what this machine has
+ * rather than what the tools are: the history is synthetic. Each commit appends
+ * one resolvable import line to one file, chosen from the repo's own specifiers
+ * (`planImportEdits`), so every commit adds exactly one architecture edge and
+ * truth moves by exactly one edge. A corpus checkout with 500 real commits is
+ * what the spec asks for; it is not cloned here, and the synthetic walk is
+ * stated as such in `RESULTS.md`.
  */
-interface StalenessPoint {
-  index: number;
-  /** tool -> import F1 of the artifact its documented refresh keeps up to date. */
-  importF1: Map<string, number>;
-  /** tool -> call F1 of that same refreshed artifact. */
-  callF1: Map<string, number>;
-  /**
-   * tool -> import F1 of the artifact **as it stood at commit 0**, scored against
-   * truth at this commit.
-   *
-   * This is the arm the tech spec's phrase "walk 500 commits without any manual
-   * intervention" describes: what a reader sees when the tool's sync mechanism
-   * is not installed, or is installed and does not fire. It costs nothing to
-   * measure — the commit-0 edges are already in hand and the oracle is already
-   * built — and without it the refreshed arm would be presented as a decay curve
-   * when it is not one.
-   */
-  staleF1: Map<string, number>;
-}
-
-interface StalenessRun {
-  commits: number;
-  every: number;
-  points: StalenessPoint[];
-  /** tool -> total refresh wall-clock, milliseconds. */
-  ms: Map<string, number>;
-  /** tool -> refreshes that failed. */
-  failures: Map<string, number>;
-  notes: string[];
-}
-
 async function replayStaleness(
   target: Target,
   snapshot: Snapshot,
   states: Map<CompetitorName, CompetitorState>,
   requested: number,
+  arms: readonly Arm[],
 ): Promise<StalenessRun> {
   const notes: string[] = [];
   const edits = planImportEdits(snapshot, requested);
@@ -1295,138 +1523,385 @@ async function replayStaleness(
   // point and no curve, so the interval shrinks with the walk and never grows.
   const every = Math.max(1, Math.min(25, Math.floor(commits / 8) || 1));
 
-  const dirs = new Map<string, string>();
-  const ms = new Map<string, number>();
-  const failures = new Map<string, number>();
-
-  const greplostDir = path.join(WORK_DIR, "greplost", `${target.name}-replay`);
-  prepareCopy(target.root, greplostDir);
-  dirs.set("greplost", greplostDir);
-  const { init, update } = await loadSync();
-  const initStarted = Date.now();
-  await init(greplostDir, { hooks: false, quiet: true });
-  ms.set("greplost", Date.now() - initStarted);
-  failures.set("greplost", 0);
-
-  const live: CompetitorState[] = [];
+  // Shims first: every hook resolves its binary through PATH, and every tool
+  // this suite times runs as a child process behind one of these.
+  const hookLog = path.join(WORK_DIR, "hook.log");
+  mkdirSync(path.dirname(hookLog), { recursive: true });
+  writeFileSync(hookLog, "");
+  const greplostShim = writeGreplostShim();
   for (const state of states.values()) {
-    if (state.binary === null) continue;
-    const dir = path.join(WORK_DIR, state.name, `${target.name}-replay`);
-    prepareCopy(target.root, dir);
-    const started = Date.now();
-    const failure = runInvocation(state, dir, INVOCATIONS[state.name].commands);
-    ms.set(state.name, Date.now() - started);
-    failures.set(state.name, failure === null ? 0 : 1);
-    if (failure !== null) {
-      notes.push(`${state.name}: its first build failed during the replay (${failure}), so its line stops here`);
-      continue;
+    if (state.binary !== null) writeShim(INVOCATIONS[state.name].binary, state.binary);
+  }
+  const shimPath = `${SHIM_DIR}${path.delimiter}${process.env["PATH"] ?? ""}`;
+  const ourEnv: NodeJS.ProcessEnv = { ...process.env, PATH: shimPath, [HOOK_LOG_ENV]: hookLog };
+  const theirEnv: NodeJS.ProcessEnv = { ...sandboxEnv(), PATH: shimPath, [HOOK_LOG_ENV]: hookLog };
+  const rebuildLog = path.join(SANDBOX_HOME, GRAPHIFY_REBUILD_LOG);
+
+  const live = [...states.values()].filter((state) => state.binary !== null);
+  const mechanisms = new Map<string, SyncMechanism>();
+  const armRuns: ArmRun[] = [];
+
+  const commitIn = (dir: string, env: NodeJS.ProcessEnv, message: string): void => {
+    runTool("git", ["add", "-A"], dir, env);
+    runTool(
+      "git",
+      ["-c", "user.email=bench@greplost.invalid", "-c", "user.name=bench", "commit", "-qm", message],
+      dir,
+      env,
+    );
+  };
+
+  // -- arm setup ------------------------------------------------------------
+
+  for (const arm of arms) {
+    const dirs = new Map<string, string>();
+    const ms = new Map<string, number>();
+    const failures = new Map<string, number>();
+    const suffix = arm === "documented-sync" ? "sync" : "refresh";
+
+    const ourDir = path.join(WORK_DIR, "greplost", `${target.name}-${suffix}`);
+    prepareCopy(target.root, ourDir);
+    // `init` in a child process, through the same shim the hook resolves: the
+    // build greplost is timed on must not be an in-process function call while
+    // every competitor pays interpreter startup (review round 1, critical 2).
+    //
+    // `--root` is not optional, and the reason is a bug this arm had: greplost's
+    // own root resolution walks *up* from the working directory until it finds a
+    // `.greplost/`, and these copies live under `bench/.competitors/`, inside the
+    // greplost checkout — which has one. Without `--root`, `init` in the copy
+    // rebuilt the checkout's own map instead (6 files written, 119 parsed) and
+    // left the copy empty, so the hook never installed and the walk measured
+    // nothing. Once `init` has written `.greplost/` into the copy, the hook's own
+    // `greplost update` stops at the copy, which is checked below.
+    const ourInit = runTool(
+      greplostShim,
+      arm === "documented-sync" ? ["init", "--root", ourDir] : ["init", "--no-hooks", "--root", ourDir],
+      ourDir,
+      ourEnv,
+    );
+    if (!ourInit.ok) {
+      notes.push(`greplost: \`greplost init\` failed in the ${arm} arm (${ourInit.stderr.trim().split("\n").pop() ?? ""})`);
     }
-    dirs.set(state.name, dir);
-    live.push(state);
+    if (!existsSync(path.join(ourDir, ".greplost"))) {
+      notes.push(
+        `greplost: \`greplost init\` wrote no .greplost/ into its ${arm} copy, so the copy would resolve its ` +
+          "root upward to the enclosing checkout; this arm's greplost numbers are not trustworthy",
+      );
+    }
+    dirs.set("greplost", ourDir);
+    ms.set("greplost", 0);
+    failures.set("greplost", ourInit.ok ? 0 : 1);
+    if (arm === "documented-sync") {
+      mechanisms.set("greplost", {
+        tool: "greplost",
+        install: ["greplost init"],
+        hook: hookFileWith(ourDir, ["post-commit"], HOOK_SIGNATURES["greplost"] ?? "greplost-hook"),
+        evidence:
+          "the hook resolves `greplost` through PATH and backgrounds `greplost update --incremental --quiet`; " +
+          "a PATH shim in front of it writes a start and an end line per invocation, so a commit's rebuild is " +
+          "waited for rather than slept on, and its wall-clock is the child process's own",
+        automatic: true,
+        fired: 0,
+        walked: 0,
+        ms: 0,
+        notes: [],
+      });
+    }
+
+    for (const state of live) {
+      const dir = path.join(WORK_DIR, state.name, `${target.name}-${suffix}`);
+      prepareCopy(target.root, dir);
+      const invocation = INVOCATIONS[state.name];
+      const setup = arm === "documented-sync" ? (invocation.syncInstall ?? invocation.commands) : invocation.commands;
+      const failure = runInvocation(state, dir, setup, theirEnv);
+      failures.set(state.name, failure === null ? 0 : 1);
+      if (failure !== null) {
+        notes.push(`${state.name}: its ${arm} setup failed (${failure}), so its line stops at commit 0`);
+        continue;
+      }
+      dirs.set(state.name, dir);
+      ms.set(state.name, 0);
+      if (arm === "documented-sync") {
+        const hook = hookFileWith(dir, HOOK_CANDIDATES, HOOK_SIGNATURES[state.name] ?? state.name);
+        mechanisms.set(state.name, {
+          tool: state.name,
+          // The tool's own binary name, not this suite's short label: a reader
+          // checking the command against the README needs the command.
+          install: setup.map((args) => `${invocation.binary} ${args.join(" ")}`),
+          hook,
+          evidence: SYNC_EVIDENCE[state.name] ?? "not determined",
+          // No git hook after the documented install means the tool's
+          // commit-time path is `update` typed by a human, which is not sync.
+          automatic: hook !== null,
+          fired: 0,
+          walked: 0,
+          ms: 0,
+          notes:
+            hook === null
+              ? [
+                  `the documented install wrote no git hook into the repo copy, so ${state.name}'s commit-time ` +
+                    "mechanism here is a manual `update`; in this arm that is no sync at all and its curve is " +
+                    "its commit-0 artifact",
+                ]
+              : [],
+        });
+      }
+    }
+    armRuns.push({ arm, dirs, points: [], ms, failures });
   }
 
-  const points: StalenessPoint[] = [];
-  const buildSnapshot = await loadBuildSnapshot();
+  // -- the commit-0 artifacts, for the free unrefreshed curve ----------------
 
-  // The commit-0 artifact of every tool, kept for the unrefreshed arm.
+  const primary = armRuns.find((run) => run.arm === "documented-sync") ?? armRuns[0];
   const atZero = new Map<string, { imports: Edge[]; calls: Edge[] }>();
-  const ourZero = readGreplostArtifact(greplostDir);
-  if (ourZero !== null) {
-    atZero.set("greplost", {
-      imports: ourZero.imports.filter((e) => !e.to.startsWith("ext:") && !e.to.startsWith("unresolved:")),
-      // Every confidence, on both sides: see the note on X1's `score`.
-      calls: [...ourZero.calls],
-    });
+  if (primary !== undefined) {
+    const ourZero = readGreplostArtifact(primary.dirs.get("greplost") ?? "");
+    if (ourZero !== null) atZero.set("greplost", ourCleanEdges(ourZero));
+    for (const state of live) {
+      const dir = primary.dirs.get(state.name);
+      if (dir === undefined) continue;
+      exportForScoring(state, dir, theirEnv);
+      const loaded = loadArtifact(state.name, dir, state.spec?.version ?? "unknown");
+      if (typeof loaded !== "string") atZero.set(state.name, { imports: loaded.imports, calls: loaded.calls });
+    }
   }
-  for (const state of live) {
-    const dir = dirs.get(state.name);
-    if (dir === undefined) continue;
-    const loaded = loadArtifact(state.name, dir, state.spec?.version ?? "unknown");
-    if (typeof loaded !== "string") atZero.set(state.name, { imports: loaded.imports, calls: loaded.calls });
-  }
+
+  // -- the walk -------------------------------------------------------------
+
+  const buildSnapshot = await loadBuildSnapshot();
+  const stale: { index: number; f1: Map<string, number> }[] = [];
 
   for (let k = 1; k <= commits; k++) {
     const edit = edits[k - 1];
     if (edit === undefined) break;
     const line = `import "${edit.specifier}";`;
-    for (const dir of dirs.values()) {
-      appendLine(path.join(dir, edit.file), line);
-      runTool("git", ["add", "-A"], dir);
-      runTool("git", ["-c", "user.email=bench@greplost.invalid", "-c", "user.name=bench", "commit", "-qm", `bench commit ${k}`], dir);
-    }
 
-    const greplostStarted = Date.now();
-    try {
-      await update(greplostDir, { mode: "incremental", quiet: true });
-    } catch {
-      failures.set("greplost", (failures.get("greplost") ?? 0) + 1);
-    }
-    ms.set("greplost", (ms.get("greplost") ?? 0) + (Date.now() - greplostStarted));
+    for (const run of armRuns) {
+      for (const [tool, dir] of run.dirs) {
+        const env = tool === "greplost" ? ourEnv : theirEnv;
+        appendLine(path.join(dir, edit.file), line);
 
-    for (const state of live) {
-      const dir = dirs.get(state.name);
-      if (dir === undefined) continue;
-      const started = Date.now();
-      const failure = runInvocation(state, dir, INVOCATIONS[state.name].refresh ?? INVOCATIONS[state.name].commands);
-      ms.set(state.name, (ms.get(state.name) ?? 0) + (Date.now() - started));
-      if (failure !== null) failures.set(state.name, (failures.get(state.name) ?? 0) + 1);
+        if (run.arm === "documented-sync") {
+          const mechanism = mechanisms.get(tool);
+          const before = observation(tool, hookLog, rebuildLog);
+          commitIn(dir, env, `bench commit ${k}`);
+          const after = await settle(tool, hookLog, rebuildLog, before);
+          if (mechanism !== undefined) {
+            mechanism.walked++;
+            if (after.ran) mechanism.fired++;
+            mechanism.ms += after.ms;
+          }
+          run.ms.set(tool, (run.ms.get(tool) ?? 0) + after.ms);
+          continue;
+        }
+
+        // refresh-every-commit: the harness drives the documented refresh, and
+        // times it as a child process for every tool including greplost.
+        commitIn(dir, env, `bench commit ${k}`);
+        if (tool === "greplost") {
+          const ran = runTool(greplostShim, ["update", "--incremental", "--quiet", "--root", dir], dir, env);
+          run.ms.set(tool, (run.ms.get(tool) ?? 0) + ran.ms);
+          if (!ran.ok) run.failures.set(tool, (run.failures.get(tool) ?? 0) + 1);
+          continue;
+        }
+        const state = live.find((candidate) => candidate.name === tool);
+        if (state === undefined) continue;
+        const invocation = INVOCATIONS[state.name];
+        const timed = invocation.refreshTimed ?? invocation.refresh ?? invocation.commands;
+        const started = Date.now();
+        const failure = runInvocation(state, dir, timed, theirEnv);
+        run.ms.set(tool, (run.ms.get(tool) ?? 0) + (Date.now() - started));
+        if (failure !== null) run.failures.set(tool, (run.failures.get(tool) ?? 0) + 1);
+      }
     }
 
     if (k % every !== 0 && k !== commits) continue;
 
-    // Truth at this commit, from the tree every tool is looking at. The copies
-    // are byte-identical (the same edit was applied to each), so one oracle run
-    // serves all of them.
-    const current = await buildSnapshot({ root: greplostDir });
+    // Truth at this commit, from the tree every copy shares: the same edit was
+    // applied to each, so one oracle run serves every arm and every tool.
+    const oracleRoot = primary?.dirs.get("greplost") ?? armRuns[0]?.dirs.get("greplost");
+    if (oracleRoot === undefined) break;
+    const current = await buildSnapshot({ root: oracleRoot });
     const files = scoredFiles(current, "ts");
-    const truth = generateTsTruth(greplostDir, files);
+    const truth = generateTsTruth(oracleRoot, files);
     const universe = new Set(truth.files.length > 0 ? truth.files : files);
     const inside = (id: string): boolean => universe.has(fileOf(id));
     const truthImports = truth.imports.filter((e) => inside(e.from) && inside(e.to));
     const truthCalls = truth.calls.filter((e) => inside(e.from) && inside(e.to));
+    const keep = (edges: Edge[]): Edge[] => edges.filter((e) => inside(e.from) && inside(e.to));
 
-    const importF1 = new Map<string, number>();
-    const callF1 = new Map<string, number>();
-    const staleF1 = new Map<string, number>();
-    const record = (tool: string, imports: Edge[], calls: Edge[]): void => {
-      importF1.set(tool, scoreEdges(imports.filter((e) => inside(e.from) && inside(e.to)), truthImports).f1);
-      callF1.set(tool, scoreEdges(calls.filter((e) => inside(e.from) && inside(e.to)), truthCalls).f1);
-      const zero = atZero.get(tool);
-      if (zero !== undefined) {
-        staleF1.set(tool, scoreEdges(zero.imports.filter((e) => inside(e.from) && inside(e.to)), truthImports).f1);
+    for (const run of armRuns) {
+      const importF1 = new Map<string, number>();
+      const callF1 = new Map<string, number>();
+      for (const [tool, dir] of run.dirs) {
+        if (tool === "greplost") {
+          const ours = readGreplostArtifact(dir);
+          if (ours === null) continue;
+          const clean = ourCleanEdges(ours);
+          importF1.set(tool, scoreEdges(keep(clean.imports), truthImports).f1);
+          callF1.set(tool, scoreEdges(keep(clean.calls), truthCalls).f1);
+          continue;
+        }
+        const state = live.find((candidate) => candidate.name === tool);
+        if (state === undefined) continue;
+        // The export is run here and never timed: crg keeps its graph in SQLite
+        // and only `visualize --format json` writes the JSON the adapters read,
+        // so charging its refresh for an export step greplost has no equivalent
+        // of was the X3 asymmetry the review found (round 1, critical 2).
+        exportForScoring(state, dir, theirEnv);
+        const loaded = loadArtifact(state.name, dir, state.spec?.version ?? "unknown");
+        if (typeof loaded === "string") continue;
+        importF1.set(tool, scoreEdges(keep(loaded.imports), truthImports).f1);
+        callF1.set(tool, scoreEdges(keep(loaded.calls), truthCalls).f1);
       }
-    };
+      run.points.push({ index: k, importF1, callF1 });
+    }
 
-    const ourArtifact = readGreplostArtifact(greplostDir);
-    if (ourArtifact !== null) {
-      record(
-        "greplost",
-        ourArtifact.imports.filter((e) => !e.to.startsWith("ext:") && !e.to.startsWith("unresolved:")),
-        // Every confidence, on both sides: see the note on X1's `score`.
-        [...ourArtifact.calls],
-      );
-    }
-    for (const state of live) {
-      const dir = dirs.get(state.name);
-      if (dir === undefined) continue;
-      const loaded = loadArtifact(state.name, dir, state.spec?.version ?? "unknown");
-      if (typeof loaded === "string") continue;
-      record(state.name, loaded.imports, loaded.calls);
-    }
-    points.push({ index: k, importF1, callF1, staleF1 });
+    const staleF1 = new Map<string, number>();
+    for (const [tool, zero] of atZero) staleF1.set(tool, scoreEdges(keep(zero.imports), truthImports).f1);
+    stale.push({ index: k, f1: staleF1 });
   }
 
   notes.push(
     `the walk is ${commits} synthetic commits over ${target.name}, each adding one resolvable import line, ` +
       `scored every ${every} commit${every === 1 ? "" : "s"} against compiler truth at that commit`,
   );
-  return { commits, every, points, ms, failures, notes };
+  return { commits, every, corpus: target.name, arms: armRuns, stale, mechanisms, notes };
+}
+
+/**
+ * greplost's edges as X2 scores them: resolved imports only (an `ext:` or
+ * `unresolved:` target is not a repo edge and truth has no such node), and calls
+ * at every confidence, on both sides, for the reason X1's `score` gives.
+ */
+function ourCleanEdges(artifact: { imports: Edge[]; calls: Edge[] }): { imports: Edge[]; calls: Edge[] } {
+  return {
+    imports: artifact.imports.filter((e) => !e.to.startsWith("ext:") && !e.to.startsWith("unresolved:")),
+    calls: [...artifact.calls],
+  };
+}
+
+/** Run a tool's checkpoint-only export, if it has one. Never timed. */
+function exportForScoring(state: CompetitorState, dir: string, env: NodeJS.ProcessEnv): void {
+  const commands = INVOCATIONS[state.name].exportAtCheckpoint;
+  if (commands === undefined) return;
+  runInvocation(state, dir, commands, env);
+}
+
+/** Hook files a documented install could plausibly write. */
+const HOOK_CANDIDATES: readonly string[] = ["pre-commit", "post-commit", "post-checkout", "post-merge"];
+
+/** The string that identifies each tool's own block inside a hook file. */
+const HOOK_SIGNATURES: Record<string, string | undefined> = {
+  greplost: "greplost-hook",
+  graphify: "graphify-hook-start",
+  crg: "code-review-graph",
+};
+
+/** How this suite observes each competitor's mechanism firing. */
+const SYNC_EVIDENCE: Record<string, string> = {
+  graphify:
+    "`graphify hook install` writes a post-commit hook that launches a detached python rebuild without going " +
+    "through the `graphify` launcher, so a PATH shim cannot see it: the rebuild is observed instead through " +
+    "the hook's own log under the sandbox HOME (`.cache/graphify-rebuild.log`, one line per rebuild) and " +
+    "waited for until the detached process is gone, which is what its wall-clock is measured over. That " +
+    "window starts when the commit returns rather than when the hook launched the child, so graphify's " +
+    "number is a slight under-count \u2014 the direction that flatters graphify, not greplost",
+  crg:
+    "`code-review-graph install` writes a pre-commit hook that runs `code-review-graph update` synchronously " +
+    "and resolves the binary through PATH, so a PATH shim in front of it records a start and an end line per " +
+    "commit; the hook runs `update` and then `detect-changes --brief`, and both are counted because both are " +
+    "what a commit costs a crg user; it does not run `visualize`, so no export is inside its timing",
+};
+
+/**
+ * The hook file under `dir` carrying `signature`, repo-relative, or null.
+ *
+ * Read back off disk after the install command, because "the README says it
+ * installs a hook" and "a hook is installed" are different claims and only the
+ * second one is evidence.
+ */
+function hookFileWith(dir: string, names: readonly string[], signature: string): string | null {
+  for (const name of names) {
+    const file = path.join(dir, ".git", "hooks", name);
+    if (!existsSync(file)) continue;
+    try {
+      if (readFileSync(file, "utf8").includes(signature)) return `.git/hooks/${name}`;
+    } catch {
+      // Unreadable is not installed, for this purpose.
+    }
+  }
+  return null;
+}
+
+/** What was observed of a tool's mechanism before a commit, to diff against after. */
+interface Observation {
+  shim: number;
+  rebuildLines: number;
+}
+
+function observation(tool: string, hookLog: string, rebuildLog: string): Observation {
+  return {
+    shim: shimTime(readHookLog(hookLog), shimName(tool)).runs,
+    rebuildLines: tool === "graphify" ? lineCount(rebuildLog) : 0,
+  };
+}
+
+/** The binary name a tool's hook resolves through PATH. */
+function shimName(tool: string): string {
+  return tool === "greplost" ? "greplost" : (INVOCATIONS[tool as CompetitorName]?.binary ?? tool);
+}
+
+/**
+ * Wait for whatever a commit set off, and report whether it ran and for how long.
+ *
+ * greplost and crg go through the PATH shim, so the wait is exact: a new
+ * completed start/end pair in the log. graphify's hook never touches its own
+ * launcher — it pins a python interpreter and detaches — so it is waited for
+ * through the hook's own rebuild log plus the process table, and its wall-clock
+ * is measured from the commit's return to the moment the detached rebuild is
+ * gone. Both methods are recorded in the payload; neither is a sleep.
+ */
+async function settle(
+  tool: string,
+  hookLog: string,
+  rebuildLog: string,
+  before: Observation,
+): Promise<{ ran: boolean; ms: number }> {
+  const deadline = Date.now() + HOOK_WAIT_MS;
+  if (tool === "graphify") {
+    const started = Date.now();
+    let ran = false;
+    while (Date.now() < deadline) {
+      const grew = lineCount(rebuildLog) > before.rebuildLines;
+      if (grew) ran = true;
+      if (!processAlive("_rebuild_code") && (grew || Date.now() - started > 2_000)) break;
+      await sleep(HOOK_POLL_MS);
+    }
+    return { ran, ms: ran ? Date.now() - started : 0 };
+  }
+
+  const name = shimName(tool);
+  while (Date.now() < deadline) {
+    const calls = readHookLog(hookLog);
+    const seen = shimTime(calls, name);
+    if (seen.runs > before.shim && seen.pending === 0) {
+      const each = shimRuns(calls, name);
+      const latest = each.slice(before.shim);
+      return { ran: latest.length > 0, ms: latest.reduce((total, value) => total + value, 0) };
+    }
+    await sleep(HOOK_POLL_MS);
+  }
+  return { ran: false, ms: 0 };
 }
 
 /**
  * greplost's staleness and freshness cost, from a real per-tool walk when
  * `--commits` asked for one, and otherwise from the replay suite's committed
  * result (Eval 2), which is where a 500-commit walk belongs.
+ *
+ * Returns the number of commits actually walked, so the caller can rewrite X2's
+ * and X3's titles from the walk that happened rather than from the spec's 500.
  */
 async function metricX2X3(
   metrics: Record<XId, MetricRow>,
@@ -1436,14 +1911,15 @@ async function metricX2X3(
   method: string[],
   selected: (id: XId) => boolean,
   commits: number,
-): Promise<void> {
+  arms: readonly Arm[],
+): Promise<number> {
   const x2 = PLAN_BY_ID.get("X2") as MetricDef;
   const x3 = PLAN_BY_ID.get("X3") as MetricDef;
 
   let walk: StalenessRun | null = null;
   if (commits > 0) {
     try {
-      walk = await replayStaleness(target, snapshot, states, commits);
+      walk = await replayStaleness(target, snapshot, states, commits, arms);
     } catch (err) {
       // A replay that blows up must not take the other nine metrics with it.
       method.push(`X2: the commit walk failed and X2/X3 fall back to the replay suite's result — ${(err as Error).message}.`);
@@ -1453,9 +1929,10 @@ async function metricX2X3(
 
   if (walk !== null) {
     fromWalk(metrics, states, walk, method, selected, x2, x3);
-    return;
+    return walk.commits;
   }
   fromReplayResult(metrics, states, method, selected, x2, x3);
+  return 0;
 }
 
 function fromWalk(
@@ -1473,26 +1950,42 @@ function fromWalk(
       "relationship all four tools model the same way and the one a fresh greplost build already scores 1.0 " +
       "on, so a fall in the line is drift and not a modelling difference; call F1 is in each cell's detail.",
   );
+  for (const arm of walk.arms) {
+    method.push(`X2 arm \`${arm.arm}\` (\`${ARM_PREFIX[arm.arm]}@<commit>\` in each cell's detail): ${ARM_DESCRIPTION[arm.arm]}.`);
+  }
   method.push(
-    "X2: two arms, both in every cell's detail. `f1@<commit>` is the artifact each tool's own documented " +
-      "refresh keeps up to date, invoked after every commit — that arm is a comparison of incremental " +
-      "accuracy, and it does not decay for anyone, so it must not be read as a staleness curve. " +
-      "`staleF1@<commit>` is the same tool's commit-0 artifact scored against truth at that commit: the " +
-      "curve a reader gets when the sync mechanism is absent or does not fire, which is the decay tech spec " +
-      "10.0 X2 asks about. greplost is the only one of the four whose `verify` reports that second state at " +
-      "all; the others refresh without ever checking.",
+    "X2 arm `staleF1@<commit>`: each tool's commit-0 artifact scored against truth at that commit — the curve " +
+      "a reader gets when a sync mechanism is absent or does not fire. greplost is the only one of the four " +
+      "whose `verify` reports that state at all; the others refresh without ever checking.",
   );
+  for (const mechanism of walk.mechanisms.values()) {
+    method.push(
+      `X2 sync (${mechanism.tool}): installed with \`${mechanism.install.join("` + `")}\`; ` +
+        `${mechanism.hook === null ? "no git hook was written into the repo copy" : `hook at \`${mechanism.hook}\``}; ` +
+        `observed to run on ${mechanism.fired} of ${mechanism.walked} commits ` +
+        `(${round(mechanism.ms / 1000, 2)} s of child-process wall-clock in total). ${mechanism.evidence}.` +
+        (mechanism.notes.length === 0 ? "" : ` ${mechanism.notes.join(" ")}.`),
+    );
+  }
 
-  const last = walk.points[walk.points.length - 1];
+  const primary = walk.arms.find((run) => run.arm === "documented-sync") ?? walk.arms[0];
+  const last = primary?.points[primary.points.length - 1];
+  const staleLast = walk.stale[walk.stale.length - 1];
+
   const seriesFor = (tool: string): Record<string, number> => {
     const detail: Record<string, number> = {};
-    for (const point of walk.points) {
-      const value = point.importF1.get(tool);
-      if (value !== undefined) detail[`f1@${point.index}`] = round(value, 4);
-      const calls = point.callF1.get(tool);
-      if (calls !== undefined) detail[`callF1@${point.index}`] = round(calls, 4);
-      const stale = point.staleF1.get(tool);
-      if (stale !== undefined) detail[`staleF1@${point.index}`] = round(stale, 4);
+    for (const run of walk.arms) {
+      const prefix = ARM_PREFIX[run.arm];
+      for (const point of run.points) {
+        const value = point.importF1.get(tool);
+        if (value !== undefined) detail[`${prefix}@${point.index}`] = round(value, 4);
+        const calls = point.callF1.get(tool);
+        if (calls !== undefined) detail[`${prefix}Calls@${point.index}`] = round(calls, 4);
+      }
+    }
+    for (const point of walk.stale) {
+      const value = point.f1.get(tool);
+      if (value !== undefined) detail[`staleF1@${point.index}`] = round(value, 4);
     }
     return detail;
   };
@@ -1500,6 +1993,7 @@ function fromWalk(
   const ourFinal = last?.importF1.get("greplost") ?? null;
   if (selected("X2")) {
     const row = metrics["X2"];
+    const ourMechanism = walk.mechanisms.get("greplost");
     row.tools["greplost"] = ourFinal === null
       ? na(x2.target, `the walk ran ${walk.commits} commits but greplost's artifact could not be scored at the last checkpoint`)
       : measured(
@@ -1512,25 +2006,36 @@ function fromWalk(
           {
             ...seriesFor("greplost"),
             commits: walk.commits,
-            refreshFailures: walk.failures.get("greplost") ?? 0,
-            unrefreshedFinalF1: round(last?.staleF1.get("greplost") ?? 0, 4),
+            refreshFailures: primary?.failures.get("greplost") ?? 0,
+            syncFired: ourMechanism?.fired ?? 0,
+            syncWalked: ourMechanism?.walked ?? 0,
+            unrefreshedFinalF1: round(staleLast?.f1.get("greplost") ?? 0, 4),
           },
         );
     for (const state of states.values()) {
       const theirs = last?.importF1.get(state.name) ?? null;
+      const mechanism = walk.mechanisms.get(state.name);
+      const noSync =
+        mechanism !== undefined && !mechanism.automatic
+          ? `${state.name}'s documented install wrote no git hook here, so its commit-time mechanism is a ` +
+            "manual `update`, which is no sync in this arm"
+          : null;
       row.tools[state.name] = theirs === null
         ? na(x2.target, state.reason ?? `${sentenceOfSync(state)} — its artifact could not be scored during the walk`)
         : measured(
             round(theirs, 4),
             x2.target,
             verdictFor({ ours: ourFinal, theirs, higherIsBetter: true, margin: x2.margin }),
-            ourFinal !== null && theirs > ourFinal
-              ? `${state.name} held ${round(theirs, 3)} import F1 against greplost's ${round(ourFinal, 3)} after ${walk.commits} commits`
-              : "",
+            noSync ??
+              (ourFinal !== null && theirs > ourFinal
+                ? `${state.name} held ${round(theirs, 3)} import F1 against greplost's ${round(ourFinal, 3)} after ${walk.commits} commits`
+                : ""),
             {
               ...seriesFor(state.name),
-              refreshFailures: walk.failures.get(state.name) ?? 0,
-              unrefreshedFinalF1: round(last?.staleF1.get(state.name) ?? 0, 4),
+              refreshFailures: primary?.failures.get(state.name) ?? 0,
+              syncFired: mechanism?.fired ?? 0,
+              syncWalked: mechanism?.walked ?? 0,
+              unrefreshedFinalF1: round(staleLast?.f1.get(state.name) ?? 0, 4),
             },
           );
     }
@@ -1538,23 +2043,38 @@ function fromWalk(
 
   if (selected("X3")) {
     const row = metrics["X3"];
+    // Wall-clock comes from the primary arm, where every number is one child
+    // process's own run time: greplost's through `greplost update` behind the
+    // hook, crg's through the pre-commit hook the same way, graphify's over its
+    // detached rebuild. No in-process call is timed against a subprocess, and no
+    // export step sits inside anyone's refresh (review round 1, critical 2).
     const minutes = (tool: string): number | null => {
-      const total = walk.ms.get(tool);
+      const total = primary?.ms.get(tool);
       return total === undefined ? null : total / 60_000;
     };
     const ourMinutes = minutes("greplost");
     const perCommit = (value: number | null): number | null => (value === null ? null : (value * 60) / Math.max(walk.commits, 1));
+    const ours = x3GreplostVerdict(ourMinutes, minutes("graphify"));
     row.tools["greplost"] = measured(
       ourMinutes === null ? "$0" : `$0, ${round(ourMinutes, 3)} min`,
       x3.target,
-      "win",
-      "",
+      ours.verdict,
+      ours.reason,
       { usd: 0, minutes: round(ourMinutes ?? 0, 4), secondsPerCommit: round(perCommit(ourMinutes) ?? 0, 4) },
     );
     for (const state of states.values()) {
       const theirMinutes = minutes(state.name);
+      const mechanism = walk.mechanisms.get(state.name);
       if (theirMinutes === null) {
         row.tools[state.name] = na(x3.target, state.reason ?? "this tool was not walked, so there is no cost to sum");
+        continue;
+      }
+      if (mechanism !== undefined && !mechanism.automatic) {
+        row.tools[state.name] = na(
+          x3.target,
+          `${state.name} installed no commit-time hook here, so nothing ran to be timed; its documented ` +
+            "incremental path is `update` typed by a human, whose cost is a person's, not a machine's",
+        );
         continue;
       }
       // USD ties at zero for every tool that was run, because all three ran
@@ -1572,6 +2092,13 @@ function fromWalk(
       );
     }
     method.push(
+      "X3: every tool's wall-clock is the run time of the child processes its own commit-time mechanism " +
+        "started, interpreter startup included, measured the same way for greplost as for the competitors. " +
+        "crg's `visualize --format json` export is outside that number: its hook does not run it, and it is " +
+        "invoked by this suite only at scoring checkpoints, because greplost has no export step to charge " +
+        "against it.",
+    );
+    method.push(
       "X3: every tool that ran here ran its no-LLM path, so USD is 0 for all of them and the verdict falls to " +
         "wall-clock. That is not the tech spec's comparison, which costs each tool's *documented* refresh: " +
         "graphify's `/graphify` first pass and Understand-Anything's `/understand` are LLM pipelines whose USD " +
@@ -1579,6 +2106,41 @@ function fromWalk(
         "that their documented path is free.",
     );
   }
+}
+
+/**
+ * greplost's own X3 verdict.
+ *
+ * The target is a ratio against two tools — "<= 1% of ua, <= 20% of graphify" —
+ * and Understand-Anything cannot be run headless here at all, so the ua arm is
+ * unevaluable. Printing `win` on that row claimed a comparison nobody made
+ * (review round 1, important 7). When graphify was walked, the graphify arm is
+ * evaluated on its own and the reason column says that is the half being
+ * tested; when it was not, the row is `na` with the reason.
+ */
+export function x3GreplostVerdict(
+  ourMinutes: number | null,
+  graphifyMinutes: number | null,
+): { verdict: MetricCell["verdict"]; reason: string } {
+  if (ourMinutes === null) {
+    return { verdict: "na", reason: "greplost's own refresh could not be timed during the walk" };
+  }
+  if (graphifyMinutes === null || graphifyMinutes <= 0) {
+    return {
+      verdict: "na",
+      reason:
+        "the target is a ratio against ua and graphify; neither was walked here, so there is nothing to take " +
+        "a ratio of. greplost's own cost is $0 (no model call in the structure layer)",
+    };
+  }
+  const share = ourMinutes / graphifyMinutes;
+  return {
+    verdict: share <= 0.2 ? "win" : "loss",
+    reason:
+      `evaluated on the graphify arm of the target only: ${round(share * 100, 1)}% of graphify's wall-clock ` +
+      `(target <= 20%). The ua arm cannot be evaluated — Understand-Anything has no headless entry point here, ` +
+      "so no cost exists to take 1% of.",
+  };
 }
 
 function fromReplayResult(
@@ -1620,7 +2182,7 @@ function fromReplayResult(
       row.tools[state.name] = na(
         x2.target,
         `${sentenceOfSync(state)} — not walked: pass \`--commits <n>\` to replay every installed tool through ` +
-          "its own documented refresh",
+          "its own documented sync mechanism",
       );
     }
   }
@@ -1633,12 +2195,12 @@ function fromReplayResult(
     // Not a win: the target is "<= 1% of ua, <= 20% of graphify", and neither
     // arm was measured. $0 is what greplost cost, not evidence that it beat a
     // number nobody produced.
+    const ours = x3GreplostVerdict(minutes, null);
     row.tools["greplost"] = measured(
       minutes === null ? "$0" : `$0, ${round(minutes, 2)} min`,
       x3.target,
-      "na",
-      "the target is a ratio against ua and graphify; neither was walked here, so there is nothing to take a " +
-        "ratio of. greplost's own cost is $0 (no model call in the structure layer)",
+      ours.verdict,
+      ours.reason,
       minutes === null ? { usd: 0 } : { usd: 0, minutes: round(minutes, 3) },
     );
     method.push(
@@ -1882,6 +2444,7 @@ async function metricX5(
   appendLine(path.join(scratch, edit.file), line);
   const after = (await buildArtifacts(scratch)).files;
   const ourDelta = lineDelta(before, after);
+  const ourWhere = describeLineChange(before, after);
   row.tools["greplost"] = measured(
     `${ourDelta.lines} of ${ourDelta.total} lines`,
     plan.target,
@@ -1889,7 +2452,7 @@ async function metricX5(
     ourDelta.lines <= 10
       ? ""
       : `${ourDelta.lines} artifact lines of ${ourDelta.total} changed across ${ourDelta.files} files for a ` +
-        "one-line source change; the target is 10 lines",
+        `one-line source change; the target is 10 lines. Where: ${ourWhere}`,
     {
       lines: ourDelta.lines,
       files: ourDelta.files,
@@ -1920,7 +2483,8 @@ async function metricX5(
       verdictFor({ ours: ourDelta.lines, theirs: delta.lines, higherIsBetter: false, margin: plan.margin }),
       delta.lines <= ourDelta.lines
         ? ""
-        : `${delta.lines} lines of ${delta.total} in the committed artifact changed for a one-line source change`,
+        : `${delta.lines} lines of ${delta.total} in the committed artifact changed for a one-line source ` +
+          `change. Where: ${describeLineChange(theirBefore, theirAfter)}`,
       {
         lines: delta.lines,
         files: delta.files,

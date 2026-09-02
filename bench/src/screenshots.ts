@@ -163,23 +163,88 @@ function runCommand(binary: string, args: string[], cwd: string): { ok: boolean;
   };
 }
 
-/** Run one tape and collect the files its `Output` directives named. */
+/**
+ * Run one tape and collect the files it named.
+ *
+ * Both directives are read, and the difference between them matters: vhs writes
+ * an `Output foo.png` as a **directory of one PNG per frame** (5,282 files and
+ * 276MB for the init tape), while `Screenshot foo.png` writes the single still
+ * a README can embed. The tapes use `Screenshot` for stills; `collect` refuses
+ * a directory outright, so a tape that regresses to `Output …png` reports
+ * nothing written instead of announcing a 276MB "file".
+ */
 function runTape(ctx: CaptureContext, tape: string): CaptureResult {
   const file = path.join(TAPES_DIR, tape);
   if (!existsSync(file)) return { written: [], skipped: `docs/tapes/${tape} is missing` };
-  const outputs = [...readFileSync(file, "utf8").matchAll(/^\s*Output\s+(\S+)/gm)].map((match) => match[1] ?? "");
+  const text = readFileSync(file, "utf8");
+  const outputs = [...text.matchAll(/^\s*(?:Output|Screenshot)\s+(\S+)/gm)].map((match) => match[1] ?? "");
   const ran = runCommand("vhs", [path.join("docs", "tapes", tape)], REPO_ROOT);
   if (!ran.ok) return { written: [], skipped: `vhs failed on ${tape}: ${lastLine(ran.output)}` };
-  return { written: collect(ctx, outputs), skipped: null };
+  const written = collect(ctx, outputs);
+  if (written.length === 0) return { written: [], skipped: `${tape} produced no single-file output` };
+  return { written, skipped: null };
+}
+
+/** Columns a captured terminal line is wrapped to, and the cap on lines kept. */
+const FREEZE_COLUMNS = 100;
+const FREEZE_LINES = 40;
+/** A README image over this is a download, not a screenshot. */
+const MAX_CAPTURE_BYTES = 300_000;
+
+/**
+ * Hard-wrap `text` at `columns` and keep at most `lines` of it.
+ *
+ * freeze sizes its canvas to the longest line it is given, so one unwrapped
+ * 1,500-column line of JSON produced a 15,574 x 3,692 px, 1.6MB PNG that no
+ * README can show. Wrapping is done here rather than left to `--wrap` alone
+ * because the truncation notice has to be part of the captured text: an image
+ * that silently drops the rest of the output is worse than a wide one.
+ */
+export function fitForCapture(text: string, columns = FREEZE_COLUMNS, lines = FREEZE_LINES): string {
+  const wrapped: string[] = [];
+  for (const line of text.replace(/\s+$/, "").split("\n")) {
+    if (line.length <= columns) {
+      wrapped.push(line);
+      continue;
+    }
+    for (let at = 0; at < line.length; at += columns) wrapped.push(line.slice(at, at + columns));
+  }
+  if (wrapped.length <= lines) return wrapped.join("\n");
+  const kept = wrapped.slice(0, lines - 1);
+  kept.push(`… ${wrapped.length - kept.length} more lines (full output in bench/RESULTS.md)`);
+  return kept.join("\n");
 }
 
 /**
- * A `freeze` code screenshot of a command's own output.
+ * A `freeze` code screenshot of some text.
  *
  * The captured text goes to a temp file, not into `docs/assets/`: that directory
  * holds the images the README embeds, and a stray `.txt` beside each PNG is
- * clutter a future reader has to decide about. `env` lets a capture keep a
- * command's side effects out of the working tree.
+ * clutter a future reader has to decide about.
+ */
+function freezeText(ctx: CaptureContext, out: string, text: string): CaptureResult {
+  const target = path.join(ctx.assets, out);
+  const scratch = path.join(mkdtempSync(path.join(tmpdir(), "greplost-freeze-")), `${path.basename(out, ".png")}.txt`);
+  let lines = FREEZE_LINES;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    writeFileSync(scratch, fitForCapture(text, FREEZE_COLUMNS, lines));
+    mkdirSync(ctx.assets, { recursive: true });
+    const frozen = runCommand(
+      "freeze",
+      ["--output", target, "--language", "ansi", "--wrap", String(FREEZE_COLUMNS), scratch],
+      REPO_ROOT,
+    );
+    if (!frozen.ok) return { written: [], skipped: `freeze failed: ${lastLine(frozen.output)}` };
+    if (!existsSync(target) || statSync(target).size <= MAX_CAPTURE_BYTES) return { written: [target], skipped: null };
+    // Still too heavy: the only dimension left to cut is height.
+    lines = Math.max(8, Math.floor(lines / 2));
+  }
+  return { written: [target], skipped: null };
+}
+
+/**
+ * A `freeze` code screenshot of a command's own output. `env` lets a capture
+ * keep a command's side effects out of the working tree.
  */
 function freezeCommand(
   ctx: CaptureContext,
@@ -187,21 +252,16 @@ function freezeCommand(
   command: string[],
   cwd: string,
   env?: NodeJS.ProcessEnv,
+  shape: (output: string) => string = (output) => output,
 ): CaptureResult {
-  const target = path.join(ctx.assets, out);
   const ran = spawnSync(command[0] ?? "", command.slice(1), {
     cwd,
     encoding: "utf8",
     timeout: CAPTURE_TIMEOUT_MS,
     ...(env === undefined ? {} : { env }),
   });
-  const text = `$ ${command.join(" ")}\n${ran.stdout ?? ""}${ran.stderr ?? ""}`;
-  const scratch = path.join(mkdtempSync(path.join(tmpdir(), "greplost-freeze-")), `${path.basename(out, ".png")}.txt`);
-  writeFileSync(scratch, text);
-  mkdirSync(ctx.assets, { recursive: true });
-  const frozen = runCommand("freeze", ["--output", target, "--language", "ansi", scratch], REPO_ROOT);
-  if (!frozen.ok) return { written: [], skipped: `freeze failed: ${lastLine(frozen.output)}` };
-  return { written: [target], skipped: null };
+  const output = shape(`${ran.stdout ?? ""}${ran.stderr ?? ""}`);
+  return freezeText(ctx, out, `$ ${command.join(" ")}\n${output}`);
 }
 
 /** Move tape outputs into `--assets` when it is not the default directory. */
@@ -210,6 +270,9 @@ function collect(ctx: CaptureContext, outputs: readonly string[]): string[] {
   for (const rel of outputs) {
     const source = path.isAbsolute(rel) ? rel : path.join(REPO_ROOT, rel);
     if (!existsSync(source)) continue;
+    // A directory here is vhs's per-frame dump, not a capture: reporting it as
+    // a written file would announce a 276MB "image" the README cannot embed.
+    if (!statSync(source).isFile()) continue;
     const destination = path.join(ctx.assets, path.basename(source));
     if (path.resolve(source) !== path.resolve(destination)) {
       mkdirSync(ctx.assets, { recursive: true });
@@ -223,6 +286,26 @@ function collect(ctx: CaptureContext, outputs: readonly string[]): string[] {
 function lastLine(text: string): string {
   const lines = text.split("\n").map((line) => line.trim()).filter((line) => line.length > 0);
   return lines[lines.length - 1] ?? "no output";
+}
+
+/**
+ * Capture 11 is "the `diff -r` summary and the byte counts", not a transcript.
+ *
+ * `headtohead --metrics X4` prints its table, then its per-tool reasons, then
+ * the path it wrote. The reasons are where the byte counts and the differing
+ * files live, so they are the capture; the convention line and the harness's
+ * progress chatter are not, and freezing them made a 15,574 px wide image of
+ * mostly nothing.
+ */
+export function x4Summary(output: string): string {
+  const lines = output.split("\n");
+  const kept = lines.filter((line) => {
+    const text = line.trim();
+    if (text.length === 0) return false;
+    if (/^headtohead: wrote /.test(text)) return false;
+    return /^(ID|X4)\b/.test(text) || /^X4 /.test(text);
+  });
+  return kept.length === 0 ? output.trim() : kept.join("\n");
 }
 
 /** A corpus checkout the terminal captures can run inside, or null. */
@@ -311,6 +394,45 @@ export const CAPTURES: Capture[] = [
     },
   },
   {
+    id: 7,
+    name: "bench-charts",
+    description: "benchmark charts: tokens and accuracy by condition, build time vs files, latency box plot (produced by `bench report`)",
+    needs: [],
+    paid: false,
+    perform: () => ({
+      written: [],
+      skipped:
+        "produced by `bench report` (tech spec 10.9), not by this suite: `bun bench/src/cli.ts report` writes " +
+        "docs/assets/x7-agent.png, build-time.png and latency-box.png from the agent and perf payloads",
+    }),
+  },
+  {
+    id: 8,
+    name: "human-study",
+    description: "human study: time to answer per task, with and without greplost (produced by `bench report`)",
+    needs: [],
+    paid: false,
+    perform: () => ({
+      written: [],
+      skipped:
+        "produced by `bench report` from the human study's anonymised CSV (tech spec 10.7, 11); no study has " +
+        "been run, so `report` renders Eval 5 as `not run` and draws no chart",
+    }),
+  },
+  {
+    id: 9,
+    name: "staleness-curve",
+    description: "the X2 staleness decay curve, one line per tool, the hero chart (produced by `bench report`)",
+    needs: [],
+    paid: false,
+    perform: () => ({
+      written: [],
+      skipped:
+        "produced by `bench report` from the head-to-head payload (tech spec 10.9): " +
+        "docs/assets/x2-staleness.png, with x2-no-refresh.png beside it",
+    }),
+  },
+  {
     id: 10,
     name: "three-artifacts",
     description: "the same one-line change in three artifacts, side by side (X5)",
@@ -341,6 +463,7 @@ export const CAPTURES: Capture[] = [
         ["bun", path.join(REPO_ROOT, "bench", "src", "cli.ts"), "headtohead", "--fixture", "--metrics", "X4"],
         root,
         { ...process.env, GREPLOST_BENCH_RESULTS_DIR: results, NODE_ENV: "test" },
+        x4Summary,
       );
     },
   },
