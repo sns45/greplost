@@ -119,3 +119,4 @@ Append-only. One line per event.
 - 2026-09-02 leaf 1.1.3 fix round 1/5 merged (1542c9b): unpinned export targets, transitive export * via star-graph condensation, importKind in dedupe key, shared packageOf; 11/11 re-verified, core 266 pass; scoped re-review dispatched
 - 2026-09-02 leaf 1.1.2: fix round 1/5 (8 addressed, 0 open; commits bdd3dfd..ac99cec); complete (review clean); minors deferred: pattern tie-break ignores suffix specificity, less-specific exports pattern tried after a NO_MATCH on the best one
 - 2026-09-02 leaf 1.5.3: fix round 1/5 (4 addressed, 0 open; commits 5ab3d8c..2d7a1a0); complete (review clean); minor deferred: partial init (git dir without origin remote) is not auto-repaired
+- 2026-09-02 leaf 1.1.1 fix round 1/5 merged (266ad20): node-identity callers, non-null callees, method/namespace/static-block rulings, type-position imports, ts.ts split; 10/10 re-verified; scoped re-review dispatched
