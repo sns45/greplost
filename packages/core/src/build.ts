@@ -1,0 +1,307 @@
+/**
+ * Snapshot build: the one entry point that turns a checkout into a `Snapshot`
+ * (tech spec 5.1 to 5.4, core-extract spec "Build").
+ *
+ * The pipeline is fixed: discover -> read -> hash -> (cache | extract) ->
+ * detect packages -> resolve -> link imports -> export index -> link calls ->
+ * metrics -> manifest. Only the reads are asynchronous; everything after them
+ * is a pure function of the bytes on disk, which is what makes
+ * `build(repo) == build(repo)` byte-for-byte (tech spec 5.3).
+ *
+ * Nothing here is order-sensitive: the discovered list is re-sorted before it
+ * is used, so a different discovery order cannot change a byte of the output.
+ */
+
+import { readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
+import type {
+  Declaration,
+  FileEntry,
+  FileRecord,
+  GreplostConfig,
+  Manifest,
+  Snapshot,
+  SummaryCache,
+} from "./schema.ts";
+import { SCHEMA_VERSION, compareDeclarations, compareEdges, compareStrings, symbolId } from "./schema.ts";
+import { loadConfig } from "./config.ts";
+import { discoverFiles } from "./discover.ts";
+import type { DiscoveredFile } from "./discover.ts";
+import { sha256Hex } from "./hash.ts";
+import { createParser } from "./parser.ts";
+import type { ParserHandle } from "./parser.ts";
+import { extractFile } from "./extract/index.ts";
+import { createResolver, detectPackages } from "./resolve/index.ts";
+import { buildExportIndex, computeMetrics, exportNames, linkCalls, linkImports } from "./graph/index.ts";
+
+/**
+ * Content-addressed extraction cache (tech spec 8). Keyed by the sha256 of the
+ * raw bytes, so a file that moves or that duplicates another file's content is
+ * never re-parsed; `buildSnapshot` re-stamps the path onto the hit, and ignores
+ * a hit that was extracted as a different language.
+ */
+export interface ParseCache {
+  get(sha256: string): FileRecord | undefined;
+  set(record: FileRecord): void;
+}
+
+export interface BuildOptions {
+  /** Repo root. Resolved to an absolute path; never serialized. */
+  root: string;
+  /** Config to build with. Defaults to `loadConfig(root)`. */
+  config?: GreplostConfig;
+  /** Parser handle. Created on demand, and only when something needs parsing. */
+  parser?: ParserHandle;
+  /** Extraction cache. Absent means every file is parsed. */
+  cache?: ParseCache;
+  /** Semantic-layer cache, for `summaryHash`/`staleSummary` only. */
+  summaries?: SummaryCache;
+}
+
+/** Files read in parallel per batch: enough to saturate a disk, few enough to keep FDs sane. */
+const READ_CONCURRENCY = 32;
+
+interface SourceFile extends DiscoveredFile {
+  source: string;
+  sha256: string;
+}
+
+export async function buildSnapshot(opts: BuildOptions): Promise<Snapshot> {
+  const root = path.resolve(opts.root);
+  const config = opts.config ?? loadConfig(root);
+
+  // Discovery order is not trusted: the pipeline is fed a path-sorted list so
+  // the output cannot depend on how the files were found.
+  const discovered = [...(await discoverFiles(root, config))].sort((a, b) => compareStrings(a.path, b.path));
+  const sources = await readSources(discovered);
+
+  const files = await extractAll(sources, opts);
+
+  const paths = files.map((file) => file.path);
+  const packages = detectPackages(root, paths, config);
+  const readRepoFile = repoReader(root);
+  const resolver = createResolver({ root, files: new Set(paths), packages, readFile: readRepoFile });
+
+  const imports = linkImports(files, resolver);
+  const exportIndex = buildExportIndex(files, imports);
+  const calls = linkCalls(files, imports, exportIndex);
+  const { manifestFiles, manifestPackages, metrics } = computeMetrics(files, packages, imports);
+
+  const summaries = indexSummaries(opts.summaries);
+  const manifestEntries: Record<string, FileEntry> = {};
+  for (const filePath of Object.keys(manifestFiles).sort(compareStrings)) {
+    const computed = manifestFiles[filePath];
+    if (computed === undefined) continue;
+    const summary = summaryFor(filePath, computed.sha256, summaries);
+    manifestEntries[filePath] = {
+      ...computed,
+      exports: exportNames(exportIndex, filePath),
+      staleSummary: summary.stale,
+      ...(summary.hash === undefined ? {} : { summaryHash: summary.hash }),
+    };
+  }
+
+  const manifest: Manifest = {
+    version: SCHEMA_VERSION,
+    packages: manifestPackages,
+    files: manifestEntries,
+  };
+
+  const symbols: Declaration[] = [];
+  for (const file of files) for (const decl of file.decls) symbols.push(decl);
+  symbols.sort(compareDeclarations);
+
+  return {
+    root,
+    config,
+    packages,
+    files,
+    manifest,
+    imports: [...imports].sort(compareEdges),
+    calls: [...calls].sort(compareEdges),
+    symbols,
+    metrics,
+  };
+}
+
+/** Read every discovered file, hashing the raw bytes before decoding them. */
+async function readSources(discovered: DiscoveredFile[]): Promise<SourceFile[]> {
+  const sources: SourceFile[] = new Array<SourceFile>(discovered.length);
+  for (let start = 0; start < discovered.length; start += READ_CONCURRENCY) {
+    const batch = discovered.slice(start, start + READ_CONCURRENCY);
+    const read = await Promise.all(batch.map(async (file) => readOne(file)));
+    for (let i = 0; i < read.length; i++) sources[start + i] = read[i] as SourceFile;
+  }
+  return sources;
+}
+
+async function readOne(file: DiscoveredFile): Promise<SourceFile> {
+  let bytes: Buffer;
+  try {
+    bytes = await readFile(file.absPath);
+  } catch (cause) {
+    const reason = cause instanceof Error ? cause.message : String(cause);
+    throw new Error(`greplost: cannot read ${file.path}: ${reason}`);
+  }
+  // Source is the bytes, untouched: the hash and the text the extractor sees
+  // describe the same file. (A leading BOM is left in place; tree-sitter keeps
+  // it out of every node's text, so it changes no declaration or signature.)
+  return { ...file, source: bytes.toString("utf8"), sha256: sha256Hex(bytes) };
+}
+
+/**
+ * Cache lookups first, then one synchronous extraction pass over the misses.
+ * The parser is created only if something actually needs parsing, so a fully
+ * warm cache never pays for WASM start-up.
+ *
+ * Content, not path, is what gets parsed: two indexed files with identical
+ * bytes are parsed once and the record is re-stamped for the second, whether
+ * the twin arrived from the cache or from this very build.
+ *
+ * Content alone is not enough to identify a record, though. `ParseCache` is
+ * keyed by hash (tech spec 8), but extraction also depends on the language:
+ * two empty files, one `.ts` and one `.jsx`, share a hash and must not share a
+ * record. A hit whose language differs is therefore ignored and re-parsed.
+ */
+async function extractAll(sources: SourceFile[], opts: BuildOptions): Promise<FileRecord[]> {
+  const cache = opts.cache;
+  const files = new Array<FileRecord | undefined>(sources.length);
+  /** Index of the first file to claim each (language, hash): the one that is parsed. */
+  const firstOfKey = new Map<string, number>();
+  /** (language, hash) -> the later files that share it and are filled from that parse. */
+  const twins = new Map<string, number[]>();
+  const misses: number[] = [];
+
+  for (let i = 0; i < sources.length; i++) {
+    const source = sources[i] as SourceFile;
+    const key = recordKey(source);
+    const hit = cache?.get(source.sha256);
+    if (hit !== undefined && hit.lang === source.lang) {
+      files[i] = restamp(hit, source.path);
+      continue;
+    }
+    if (!firstOfKey.has(key)) {
+      firstOfKey.set(key, i);
+      misses.push(i);
+      continue;
+    }
+    const siblings = twins.get(key);
+    if (siblings === undefined) twins.set(key, [i]);
+    else siblings.push(i);
+  }
+
+  if (misses.length > 0) {
+    const parser = opts.parser ?? (await createParser());
+    for (const i of misses) {
+      const source = sources[i] as SourceFile;
+      const record = extractFile(
+        { path: source.path, lang: source.lang, source: source.source, sha256: source.sha256 },
+        parser,
+      );
+      cache?.set(record);
+      files[i] = record;
+      for (const twin of twins.get(recordKey(source)) ?? []) {
+        files[twin] = restamp(record, (sources[twin] as SourceFile).path);
+      }
+    }
+  }
+
+  return files.map((record, i) => {
+    // Every slot is filled above: a cache hit, a parse, or a twin of a parse.
+    if (record === undefined) {
+      throw new Error(`greplost: internal error: no record extracted for ${(sources[i] as SourceFile).path}`);
+    }
+    return record;
+  });
+}
+
+/** Identity of an extraction result: the same bytes read as two languages are two records. */
+function recordKey(source: SourceFile): string {
+  return `${source.lang}:${source.sha256}`;
+}
+
+/**
+ * Re-address a cached record onto the path that asked for it. Identical bytes
+ * can live at two paths, and a `Declaration` carries the file it came from in
+ * both `file` and `id`, so those move with the record.
+ */
+function restamp(record: FileRecord, filePath: string): FileRecord {
+  if (record.path === filePath) return record;
+  return {
+    ...record,
+    path: filePath,
+    decls: record.decls.map((decl) => ({ ...decl, file: filePath, id: symbolId(filePath, decl.name) })),
+  };
+}
+
+/**
+ * Repo-relative reader for the resolver: package.json, tsconfig.json and the
+ * like, which are not in the indexed file set. Memoised (misses included)
+ * because one tsconfig is consulted by every file beneath it.
+ */
+function repoReader(root: string): (rel: string) => string | null {
+  const cache = new Map<string, string | null>();
+  return (rel: string): string | null => {
+    const cached = cache.get(rel);
+    if (cached !== undefined) return cached;
+    let text: string | null;
+    try {
+      text = readFileSync(path.join(root, rel), "utf8");
+    } catch {
+      text = null;
+    }
+    cache.set(rel, text);
+    return text;
+  };
+}
+
+/**
+ * The two lookups `summaryFor` needs, precomputed once: whole-cache scans per
+ * file would make a large repo quadratic in the number of summaries.
+ */
+interface SummaryIndex {
+  /** Is there a summary for this exact content? */
+  fresh(sha256: string): boolean;
+  /** Hash of the newest summary ever written for this path, if any. */
+  newestFor(filePath: string): string | undefined;
+}
+
+function indexSummaries(summaries: SummaryCache | undefined): SummaryIndex | null {
+  if (summaries === undefined) return null;
+  const newest = new Map<string, { hash: string; refreshedAt: string }>();
+  // Keys are visited in code-unit order and only a strictly newer entry wins,
+  // so a `refreshedAt` tie resolves to the smallest hash, never to whatever
+  // order the parsed JSON happened to have.
+  for (const hash of Object.keys(summaries).sort(compareStrings)) {
+    const entry = summaries[hash];
+    if (entry === undefined) continue;
+    const current = newest.get(entry.path);
+    if (current === undefined || compareStrings(entry.refreshedAt, current.refreshedAt) > 0) {
+      newest.set(entry.path, { hash, refreshedAt: entry.refreshedAt });
+    }
+  }
+  return {
+    fresh: (sha256) => summaries[sha256] !== undefined,
+    newestFor: (filePath) => newest.get(filePath)?.hash,
+  };
+}
+
+/**
+ * `summaryHash`/`staleSummary` (tech spec 6, core-extract spec "Build"):
+ *  - a summary written for the current content hash is fresh;
+ *  - otherwise the newest summary written for this path is reported as stale,
+ *    so a card can still show its last known prose behind the banner;
+ *  - a file that was never summarised is not stale and carries no hash.
+ */
+function summaryFor(
+  filePath: string,
+  sha256: string,
+  summaries: SummaryIndex | null,
+): { hash?: string; stale: boolean } {
+  if (summaries === null) return { stale: false };
+  if (summaries.fresh(sha256)) return { hash: sha256, stale: false };
+  const previous = summaries.newestFor(filePath);
+  return previous === undefined ? { stale: false } : { hash: previous, stale: true };
+}
