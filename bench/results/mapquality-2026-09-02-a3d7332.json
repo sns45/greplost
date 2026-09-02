@@ -1,0 +1,68 @@
+{
+  "checker": "mermaid",
+  "corpus": [
+    {
+      "dir": "packages/render/test/golden/tiny-ts"
+    }
+  ],
+  "date": "2026-09-02",
+  "diagrams": {
+    "byFence": [
+      {
+        "checker": "mermaid",
+        "file": "packages/tiny__adapters/MAP.md",
+        "index": 1,
+        "nodeCount": 3,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/tiny__core/MAP.md",
+        "index": 1,
+        "nodeCount": 7,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "packages/worker/MAP.md",
+        "index": 1,
+        "nodeCount": 2,
+        "ok": true
+      },
+      {
+        "checker": "mermaid",
+        "file": "repo/MAP.md",
+        "index": 1,
+        "nodeCount": 4,
+        "ok": true
+      }
+    ],
+    "fences": 4,
+    "maxNodeCount": 7,
+    "maxNodes": 25
+  },
+  "dir": "packages/render/test/golden/tiny-ts",
+  "gate": {
+    "missed": [],
+    "passed": true
+  },
+  "greplostSha": "a3d7332",
+  "machine": {
+    "arch": "arm64",
+    "bun": "1.2.21",
+    "cores": 16,
+    "cpu": "Apple M4 Max",
+    "go": "go version go1.25.3 darwin/arm64",
+    "greplostSha": "a3d7332",
+    "greplostVersion": "0.0.1",
+    "memoryGB": 128,
+    "node": "24.3.0",
+    "os": "Darwin 25.5.0"
+  },
+  "suite": "mapquality",
+  "tokens": {
+    "budget": 3000,
+    "encoding": "cl100k_base",
+    "indexMd": 545
+  }
+}

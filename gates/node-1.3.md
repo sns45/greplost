@@ -16,13 +16,13 @@ Scope: children merged; freshness and performance targets hold
   EXPECT: / [1-9]\d* pass\n 0 fail/
   EVIDENCE: 690 expect() calls | Ran 137 tests across 5 files. [4.30s]
 
-- [ ] N4: F1 = 100 percent and F2 = 0 over a 100-commit replay of hono
+- [x] N4: F1 = 100 percent and F2 = 0 over a 100-commit replay of hono
   CHECK: bun run bench:replay --repo hono --commits 100 --gate
   EXPECT: replay: GATE PASS
-  EVIDENCE: pending
+  EVIDENCE: replay: GATE PASS | $ bun bench/src/cli.ts replay --repo hono --commits "100" --gate
 
-- [ ] N5: P1 and P2 within targets on tier S
+- [x] N5: P1 and P2 within targets on tier S
   CHECK: bun run bench:perf --tier S --gate
   EXPECT: perf: GATE PASS
-  EVIDENCE: pending
+  EVIDENCE: perf: GATE PASS | $ bun bench/src/cli.ts perf --tier S --gate
 

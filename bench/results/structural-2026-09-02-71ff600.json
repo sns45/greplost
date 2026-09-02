@@ -1,0 +1,119 @@
+{
+  "corpus": [
+    {
+      "name": "gin",
+      "sha": "dcaa4296d111981ffb31ac3eba90bb63e1eb5ab9"
+    }
+  ],
+  "date": "2026-09-02",
+  "gate": {
+    "missed": [],
+    "passed": true
+  },
+  "greplostSha": "71ff600",
+  "machine": {
+    "arch": "arm64",
+    "bun": "1.2.21",
+    "cores": 16,
+    "cpu": "Apple M4 Max",
+    "go": "go version go1.25.3 darwin/arm64",
+    "greplostSha": "71ff600",
+    "greplostVersion": "0.0.1",
+    "memoryGB": 128,
+    "node": "24.3.0",
+    "os": "Darwin 25.5.0"
+  },
+  "repos": {
+    "gin": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 20
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 191
+      },
+      "S3": {
+        "f1": 0.7613526570048309,
+        "fn": 247,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.6146645865834633,
+        "tp": 394
+      },
+      "S4": 1,
+      "callsAllConfidences": {
+        "f1": 0.7613526570048309,
+        "fn": 247,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.6146645865834633,
+        "tp": 394
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [
+          "auth.go:98 (auth.go#BasicAuthForProxy -> auth.go#authPairs.searchCredential)",
+          "auth.go:98 (auth.go#BasicAuthForProxy -> context.go#Context.AbortWithStatus)",
+          "auth.go:98 (auth.go#BasicAuthForProxy -> context.go#Context.Header)",
+          "auth.go:98 (auth.go#BasicAuthForProxy -> context.go#Context.Set)",
+          "auth.go:98 (auth.go#BasicAuthForProxy -> context.go#Context.requestHeader)",
+          "auth.go:48 (auth.go#BasicAuthForRealm -> auth.go#authPairs.searchCredential)",
+          "auth.go:48 (auth.go#BasicAuthForRealm -> context.go#Context.AbortWithStatus)",
+          "auth.go:48 (auth.go#BasicAuthForRealm -> context.go#Context.Header)",
+          "auth.go:48 (auth.go#BasicAuthForRealm -> context.go#Context.Set)",
+          "auth.go:48 (auth.go#BasicAuthForRealm -> context.go#Context.requestHeader)",
+          "binding/binding.go:122 (binding/binding.go#validate -> binding/default_validator.go#defaultValidator.ValidateStruct)",
+          "binding/default_validator.go:24 (binding/default_validator.go#SliceValidationError.Error -> binding/default_validator.go#SliceValidationError.Error)",
+          "binding/default_validator.go:24 (binding/default_validator.go#SliceValidationError.Error -> errors.go#Error.Error)",
+          "binding/form.go:24 (binding/form.go#formBinding.Bind -> binding/binding.go#validate)",
+          "binding/form.go:55 (binding/form.go#formMultipartBinding.Bind -> binding/binding.go#validate)",
+          "binding/form.go:41 (binding/form.go#formPostBinding.Bind -> binding/binding.go#validate)",
+          "binding/form_mapping.go:323 (binding/form_mapping.go#setWithProperType -> codec/json/json.go#jsonApi.Unmarshal)",
+          "binding/form_mapping.go:145 (binding/form_mapping.go#tryToSetValue -> binding/form_mapping.go#formSource.TrySet)",
+          "binding/form_mapping.go:145 (binding/form_mapping.go#tryToSetValue -> binding/header.go#headerSource.TrySet)",
+          "binding/form_mapping.go:145 (binding/form_mapping.go#tryToSetValue -> binding/multipart_form_mapping.go#multipartRequest.TrySet)"
+        ],
+        "S4": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": []
+      },
+      "files": 53,
+      "noFiles": false,
+      "truthEmpty": false
+    }
+  },
+  "suite": "structural",
+  "targets": {
+    "S1": [
+      0.99,
+      0.97
+    ],
+    "S2": [
+      0.99,
+      0.99
+    ],
+    "S3": 0.95,
+    "S4": 1
+  },
+  "truth": {
+    "notes": [
+      "cha-callgraph",
+      "cha-over-approximation",
+      "go-packages-per-file-imports"
+    ]
+  }
+}
