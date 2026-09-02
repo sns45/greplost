@@ -21,8 +21,8 @@ Scope: children 1.1.1 to 1.1.5 merged into a working structure layer
   EXPECT: structural: GATE PASS
   EVIDENCE: $ bun bench/src/cli.ts structural --fixture --gate | truth-ts: 12 files, 0 tsconfig errors (semantic diagnostics off: --diagnostics or GREPLOST_BENCH_DIAGNOSTICS=1 to check them)
 
-- [ ] N5: S1 to S4 hold on tier S (anyq) against tsc truth
+- [x] N5: S1 to S4 hold on tier S (anyq) against tsc truth
   CHECK: bun run bench:structural --repo anyq --gate
   EXPECT: structural: GATE PASS
-  EVIDENCE: pending
+  EVIDENCE: $ bun bench/src/cli.ts structural --repo anyq --gate | truth-ts: 148 files, 0 tsconfig errors (semantic diagnostics off: --diagnostics or GREPLOST_BENCH_DIAGNOSTICS=1 to check them)
 
