@@ -48,6 +48,41 @@ export function filesByDirectory(files: readonly string[]): Map<string, string[]
 }
 
 /**
+ * The resolved import targets behind `edges`, **unexpanded**: one pair per
+ * import statement whose target is inside the repo, with a Go package directory
+ * left as the single id it is.
+ *
+ * This is the counting view. "How many imports does this package edge stand
+ * for?" and "how many things does this file import?" are questions about import
+ * *statements*, so importing a four-file Go package must count once, not four
+ * times (ruling 2026-09-02). `expandDirectoryTargets` is the reachability view -
+ * who is affected when this file changes - and that one does count all four.
+ *
+ * For TypeScript the two are identical: every target is already a file.
+ */
+export function resolvedImportTargets(
+  edges: readonly ImportEdge[],
+  files: readonly string[],
+): Array<readonly [string, string]> {
+  const indexed = new Set(files);
+  const byDirectory = filesByDirectory(files);
+  const pairs: Array<readonly [string, string]> = [];
+
+  for (const edge of edges) {
+    if (edge.kind !== "import" && edge.kind !== "reexport") continue;
+    if (!indexed.has(edge.from)) continue;
+    if (edge.from === edge.to) continue;
+    // A directory target counts only when it actually holds indexed files; an
+    // `ext:`/`unresolved:` target carries no repo structure at all.
+    if (!indexed.has(edge.to) && (byDirectory.get(edge.to) ?? []).length === 0) continue;
+    pairs.push([edge.from, edge.to] as const);
+  }
+
+  pairs.sort((a, b) => compareStrings(a[0], b[0]) || compareStrings(a[1], b[1]));
+  return pairs;
+}
+
+/**
  * File-to-file pairs behind `edges`, with directory targets expanded.
  *
  *  - `to` is an indexed file            -> one pair, unchanged;

@@ -14,7 +14,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { compareEdges, stableStringify } from "@greplost/core/schema";
 import { generateGoTruth, goCallgraphTool, GO_TRUTH_NOTES } from "../src/truth/go.ts";
-import { scoreAgainstTruth } from "../src/structural.ts";
+import { missedMetrics, scoreAgainstTruth } from "../src/structural.ts";
 import { edgeKey, exportKeys, scoreEdges, scoreSet } from "../src/score.ts";
 import type { Truth } from "../src/truth/ts.ts";
 
@@ -176,6 +176,23 @@ describe("empty truth", () => {
     expect(() => generateGoTruth(root, ["b.go"])).toThrow(
       /greplost: go truth is empty for .*loaded none of the 1 requested files/,
     );
+  });
+
+  test("a repo whose config excludes the language is a no-files miss", async () => {
+    // The snapshot side of the same question: a `.greplost/config.json` that
+    // leaves Go out indexes nothing, and empty-against-empty is 1.000 four times.
+    const repo = module({
+      "go.mod": "module example.com/excluded\n\ngo 1.25\n",
+      "a.go": "package excluded\n\nfunc A() {}\n",
+      ".greplost/config.json": JSON.stringify({ languages: ["ts"] }),
+    });
+    const { buildSnapshot } = await import("@greplost/core");
+    const snapshot = await buildSnapshot({ root: repo });
+    expect(snapshot.files.length).toBe(0);
+    const nothing: Truth = { files: [], imports: [], exports: {}, calls: [], cycles: [], notes: [] };
+    const scores = scoreAgainstTruth("excluded", snapshot, nothing, "go");
+    expect(scores.noFiles).toBe(true);
+    expect(missedMetrics(scores)).toEqual(["no-files"]);
   });
 
   test("the structural runner calls a truth set that covers nothing empty", () => {

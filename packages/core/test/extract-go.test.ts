@@ -539,6 +539,50 @@ describe("resolve-go calls", () => {
     ).toEqual(["shared.set -> (dropped)"]);
   });
 
+  test("a method that rebinds its receiver name shadows it", () => {
+    // Only the receiver's own parameter_declaration is exempt: `s := &Other{}`
+    // is an ordinary binder, so `s.set()` is a call on the new `s`.
+    expect(
+      resolveCalls(
+        {
+          "store/a.go":
+            "package store\n\ntype Store struct{}\ntype Other struct{}\n\n" +
+            "func (s *Store) set() {}\n\n" +
+            "func (s *Store) Put() {\n\ts := &Other{}\n\ts.set()\n}\n",
+        },
+        "store/a.go",
+      ),
+    ).toEqual([]);
+  });
+
+  test("a closure parameter named like the receiver shadows it", () => {
+    expect(
+      resolveCalls(
+        {
+          "store/a.go":
+            "package store\n\ntype Store struct{}\n\n" +
+            "func (s *Store) set() {}\n\n" +
+            "func (s *Store) Put() {\n\tgo func(s *Store) { s.set() }(nil)\n}\n",
+        },
+        "store/a.go",
+      ),
+    ).toEqual([]);
+  });
+
+  test("an unrebound receiver call still resolves (control)", () => {
+    expect(
+      resolveCalls(
+        {
+          "store/a.go":
+            "package store\n\ntype Store struct{}\n\n" +
+            "func (s *Store) set() {}\n\n" +
+            "func (s *Store) Put() {\n\ts.set()\n}\n",
+        },
+        "store/a.go",
+      ),
+    ).toEqual(["s.set -> store/a.go#Store.set (high)"]);
+  });
+
   test("a method with no receiver variable resolves no member calls", () => {
     expect(
       resolveCalls(
@@ -612,6 +656,13 @@ describe("resolve-go calls", () => {
   });
 
   test("an explicit alias wins over another import's default local name", () => {
+    // The real case: a package whose declared name differs from the last segment
+    // of its path (`gopkg.in/yaml.v3` declares `package yaml`, `x/baz` might
+    // declare `package bar`). The extractor can only guess the default local
+    // from the path, so a written-down alias must always win the name - whatever
+    // order the imports appear in. The sources below are written for the
+    // extractor, not for `go build`: two imports claiming `bar` would not
+    // compile, which is exactly the collision this rule has to break.
     expect(
       resolveCalls(
         {

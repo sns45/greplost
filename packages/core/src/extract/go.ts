@@ -281,14 +281,15 @@ function calleeText(node: Node): string | null {
  * than a coincidence. Over-dropping costs recall; under-dropping emits a wrong
  * `high` edge, which is the one thing the structure layer must never do.
  */
-function boundNames(fn: Node): Set<string> {
+function boundNames(fn: Node, exclude: Node | null): Set<string> {
   const names = new Set<string>();
+  const excludedId = exclude === null ? null : exclude.id;
   const add = (node: Node | null): void => {
     if (node === null) return;
     if (node.type === "identifier" || node.type === "package_identifier") names.add(node.text);
   };
   const visit = (node: Node): void => {
-    if (NAME_FIELD_BINDERS.has(node.type)) {
+    if (NAME_FIELD_BINDERS.has(node.type) && node.id !== excludedId) {
       for (const name of node.childrenForFieldName("name")) add(name);
     }
     for (const [type, fieldName] of LIST_BINDERS) {
@@ -305,20 +306,24 @@ function boundNames(fn: Node): Set<string> {
   return names;
 }
 
-/** The receiver variable of a method declaration, or null when it has no name. */
-function receiverVariableOf(node: Node): string | null {
+/**
+ * The `parameter_declaration` that declares a method's receiver, if it has one.
+ *
+ * That one binder is left out of the bound set, because `recv.m()` is precisely
+ * the call the resolver's rule 3 wants. Every *other* binder of the same name
+ * stays in, so a method that rebinds its receiver - `func (s *Store) Put() { s
+ * := &Other{}; s.set() }`, or a closure parameter also called `s` - shadows it
+ * exactly like any other local, and the call is withheld.
+ */
+function receiverBinder(node: Node): Node | null {
   if (node.type !== "method_declaration") return null;
   const receiver = field(node, "receiver");
-  const parameter = receiver === null ? null : receiver.namedChild(0);
-  const name = parameter === null ? null : field(parameter, "name");
-  return name === null ? null : name.text;
+  return receiver === null ? null : receiver.namedChild(0);
 }
 
-/** The local bindings in force at a call site, and the receiver they exclude. */
+/** The local bindings in force at a call site. */
 interface Scope {
   bound: ReadonlySet<string>;
-  /** The enclosing method's receiver: bound, but the one name `obj.m` wants. */
-  receiver: string | null;
 }
 
 /**
@@ -333,10 +338,7 @@ interface Scope {
 function shadowed(callee: string, scope: Scope | null): boolean {
   if (scope === null) return false;
   const dot = callee.indexOf(".");
-  if (dot === -1) return scope.bound.has(callee);
-  const object = callee.slice(0, dot);
-  if (object === scope.receiver) return false;
-  return scope.bound.has(object);
+  return scope.bound.has(dot === -1 ? callee : callee.slice(0, dot));
 }
 
 function collectCalls(state: GoState, root: Node): void {
@@ -346,7 +348,7 @@ function collectCalls(state: GoState, root: Node): void {
     // it, so a literal inside a declaration reuses the declaration's set.
     const inner =
       scope === null && SCOPE_NODES.has(node.type)
-        ? { bound: boundNames(node), receiver: receiverVariableOf(node) }
+        ? { bound: boundNames(node, receiverBinder(node)) }
         : scope;
     if (node.type === "call_expression") {
       const callee = calleeText(node);
