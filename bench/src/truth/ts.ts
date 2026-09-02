@@ -39,6 +39,7 @@ import path from "node:path";
 import ts from "typescript";
 import { compareEdges, compareStrings, type Edge } from "@greplost/core/schema";
 import { resolveCallEdge } from "./ts-calls.ts";
+import type { CallLike } from "./ts-calls.ts";
 import { WorkspaceEntryMapper } from "./ts-workspace.ts";
 
 /** Compiler truth for one repo, in greplost ids. */
@@ -288,13 +289,14 @@ export function generateTsTruth(root: string, files: string[], options: TruthOpt
           return;
         }
         recordCall(node);
-      } else if (ts.isNewExpression(node)) {
+      } else if (ts.isNewExpression(node) || ts.isTaggedTemplateExpression(node)) {
+        // A tagged template invokes its tag exactly like a call (ruling 2026-09-04).
         recordCall(node);
       }
       ts.forEachChild(node, visit);
     };
 
-    const recordCall = (node: ts.CallExpression | ts.NewExpression): void => {
+    const recordCall = (node: CallLike): void => {
       const edge = resolveCallEdge(node, checker, toId, fileId);
       if (edge) calls.add(edge.from, edge.to, "call", []);
     };

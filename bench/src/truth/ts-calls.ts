@@ -33,8 +33,11 @@ export interface CallEndpoints {
  * `toId` maps an absolute file name to a listed file id (or undefined when the file is
  * outside the scored universe: lib.d.ts, node_modules, a file the caller did not list).
  */
+/** A call, a construction, or a tagged template (`tag\`…\`` invokes `tag`; ruling 2026-09-04). */
+export type CallLike = ts.CallExpression | ts.NewExpression | ts.TaggedTemplateExpression;
+
 export function resolveCallEdge(
-  node: ts.CallExpression | ts.NewExpression,
+  node: CallLike,
   checker: ts.TypeChecker,
   toId: (fileName: string) => string | undefined,
   fileId: string,
@@ -65,8 +68,8 @@ export function unwrapExpression(expr: ts.Expression): ts.Expression {
 }
 
 /** The identifier naming the callee: `foo`, the `.name` of `a.foo`, else nothing. */
-export function calleeIdentifier(node: ts.CallExpression | ts.NewExpression): ts.Node | undefined {
-  const expr = unwrapExpression(node.expression);
+export function calleeIdentifier(node: CallLike): ts.Node | undefined {
+  const expr = unwrapExpression(ts.isTaggedTemplateExpression(node) ? node.tag : node.expression);
   if (ts.isIdentifier(expr)) return expr;
   if (ts.isPropertyAccessExpression(expr)) return expr.name;
   // Element access, `super()`, `import()`, calls on call results: never guessed.
