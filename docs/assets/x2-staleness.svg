@@ -1,46 +1,56 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="497" viewBox="0 0 720 497" font-family="sans-serif" font-size="12">
-<rect x="0" y="0" width="720" height="497" fill="#ffffff"/>
-<text x="20" y="26" font-size="15" font-weight="bold" fill="#111827">Freshness under each tool's own sync mechanism: F1 vs commit</text>
-<rect x="20" y="38" width="10" height="10" fill="#1d4ed8"/>
-<text x="35" y="47" fill="#6b7280">greplost</text>
-<rect x="106" y="38" width="10" height="10" fill="#ea580c"/>
-<text x="121" y="47" fill="#6b7280">graphify</text>
-<rect x="192" y="38" width="10" height="10" fill="#0f766e"/>
-<text x="207" y="47" fill="#6b7280">crg</text>
-<line x1="64" y1="322" x2="700" y2="322" stroke="#e5e7eb"/>
-<text x="56" y="326" fill="#6b7280" font-size="11" text-anchor="end">0</text>
-<line x1="64" y1="256" x2="700" y2="256" stroke="#e5e7eb"/>
-<text x="56" y="260" fill="#6b7280" font-size="11" text-anchor="end">0.25</text>
-<line x1="64" y1="190" x2="700" y2="190" stroke="#e5e7eb"/>
-<text x="56" y="194" fill="#6b7280" font-size="11" text-anchor="end">0.5</text>
-<line x1="64" y1="124" x2="700" y2="124" stroke="#e5e7eb"/>
-<text x="56" y="128" fill="#6b7280" font-size="11" text-anchor="end">0.75</text>
-<line x1="64" y1="58" x2="700" y2="58" stroke="#e5e7eb"/>
-<text x="56" y="62" fill="#6b7280" font-size="11" text-anchor="end">1</text>
-<line x1="64" y1="58" x2="64" y2="322" stroke="#9ca3af"/>
-<line x1="64" y1="322" x2="700" y2="322" stroke="#9ca3af"/>
-<text x="18" y="190" fill="#6b7280" font-size="11" text-anchor="middle" transform="rotate(-90 18 190)">F1 vs compiler truth</text>
-<text x="382" y="356" fill="#6b7280" font-size="11" text-anchor="middle">commit index</text>
-<text x="20" y="372" fill="#6b7280" font-size="10">Arm: documented-sync — each tool's sync mechanism was installed exactly as its README describes and then left alone; the harness</text>
-<text x="20" y="385" fill="#6b7280" font-size="10">only commits, except that crg's `visualize --format json` export is run at each scoring checkpoint because nothing else writes the</text>
-<text x="20" y="398" fill="#6b7280" font-size="10">JSON its artifact is read from (it is outside every timing and does not rebuild). This is the arm tech spec 10.0 X2 words. Read</text>
-<text x="20" y="411" fill="#6b7280" font-size="10">the FALL of each line, not its height: the height is that tool's import coverage (X1's subject) and only the fall is staleness. At</text>
-<text x="20" y="424" fill="#6b7280" font-size="10">commit 0 the freshly built artifacts scored greplost 1.000, graphify 0.131, crg 0.894; over the walk their decay (F1 at commit 0</text>
-<text x="20" y="437" fill="#6b7280" font-size="10">minus F1 at the last commit) was greplost 0.000, graphify +0.005, crg -0.003, a negative decay being ground gained. The distance</text>
-<text x="20" y="450" fill="#6b7280" font-size="10">between the lines is mostly that starting difference, which is coverage and belongs to X1; the staleness X2 measures is the</text>
-<text x="20" y="463" fill="#6b7280" font-size="10">movement. Omitted (not run here): ua. Measured on corpus hono, tier M (248 files); 100 replayed commits. The walk is synthetic:</text>
-<text x="20" y="476" fill="#6b7280" font-size="10">each commit appends exactly one resolvable import line to one file, so truth moves by exactly one edge per commit, and the walk</text>
-<text x="20" y="489" fill="#6b7280" font-size="10">contains no deletions, no renames and no new files.</text>
-<polyline points="64,58 140.32,58 216.64,58 292.96,58 369.28,58 445.6,58 521.92,58 598.24,58 674.56,58 700,58" fill="none" stroke="#1d4ed8" stroke-width="2"/>
-<polyline points="64,287.55 140.32,287.42 216.64,288.08 292.96,288.68 369.28,289.29 445.6,288.42 521.92,288.29 598.24,288.87 674.56,288.71 700,288.92" fill="none" stroke="#ea580c" stroke-width="2"/>
-<polyline points="64,85.85 140.32,85.51 216.64,84.9 292.96,84.29 369.28,83.74 445.6,83.21 521.92,82.68 598.24,82.21 674.56,84.35 700,85.11" fill="none" stroke="#0f766e" stroke-width="2"/>
-<text x="64" y="338" fill="#6b7280" font-size="11" text-anchor="middle">0</text>
-<text x="140.32" y="338" fill="#6b7280" font-size="11" text-anchor="middle">12</text>
-<text x="216.64" y="338" fill="#6b7280" font-size="11" text-anchor="middle">24</text>
-<text x="292.96" y="338" fill="#6b7280" font-size="11" text-anchor="middle">36</text>
-<text x="369.28" y="338" fill="#6b7280" font-size="11" text-anchor="middle">48</text>
-<text x="445.6" y="338" fill="#6b7280" font-size="11" text-anchor="middle">60</text>
-<text x="521.92" y="338" fill="#6b7280" font-size="11" text-anchor="middle">72</text>
-<text x="598.24" y="338" fill="#6b7280" font-size="11" text-anchor="middle">84</text>
-<text x="700" y="338" fill="#6b7280" font-size="11" text-anchor="middle">100</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="685" viewBox="0 0 1200 685" font-family="system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12">
+<rect x="0" y="0" width="1200" height="685" fill="#000000"/>
+<rect x="0.5" y="0.5" width="1199" height="684" fill="none" stroke="#262626"/>
+<text x="32" y="40" font-size="20" font-weight="600" fill="#FFFFFF">Freshness under each tool's own sync mechanism: F1 vs commit</text>
+<text x="1168" y="40" font-size="11" fill="#8A8983" text-anchor="end">greplost bench · bench/RESULTS.md</text>
+<text x="32" y="64" font-size="13" fill="#C3C2B7">Arm: documented-sync; corpus hono, tier M (248 files); 100 replayed commits; the walk is synthetic (one added import line per commit). Read the fall of a line, not its height.</text>
+<circle cx="38" cy="90" r="5" fill="#0fa976"/>
+<circle cx="38" cy="90" r="8" fill="none" stroke="#FFFFFF" stroke-width="1.5"/>
+<text x="52" y="94" fill="#C3C2B7" font-size="12">greplost</text>
+<circle cx="134.8" cy="90" r="5" fill="#e0561c"/>
+<text x="148.8" y="94" fill="#C3C2B7" font-size="12">Graphify</text>
+<circle cx="231.6" cy="90" r="5" fill="#2f86ef"/>
+<text x="245.6" y="94" fill="#C3C2B7" font-size="12">code-review-graph</text>
+<circle cx="387.8" cy="90" r="5" fill="none" stroke="#8A8983" stroke-width="1.5"/>
+<text x="401.8" y="94" fill="#8A8983" font-size="12">Understand-Anything: n/a</text>
+<line x1="84" y1="516" x2="1000" y2="516" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="74" y="520" fill="#8A8983" font-size="11" text-anchor="end">0</text>
+<line x1="84" y1="418.5" x2="1000" y2="418.5" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="74" y="422.5" fill="#8A8983" font-size="11" text-anchor="end">0.25</text>
+<line x1="84" y1="321" x2="1000" y2="321" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="74" y="325" fill="#8A8983" font-size="11" text-anchor="end">0.5</text>
+<line x1="84" y1="223.5" x2="1000" y2="223.5" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="74" y="227.5" fill="#8A8983" font-size="11" text-anchor="end">0.75</text>
+<line x1="84" y1="126" x2="1000" y2="126" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="74" y="130" fill="#8A8983" font-size="11" text-anchor="end">1</text>
+<line x1="84" y1="516" x2="1000" y2="516" stroke="#3A3A3A"/>
+<text x="24" y="321" fill="#C3C2B7" font-size="11" text-anchor="middle" transform="rotate(-90 24 321)">F1 vs compiler truth</text>
+<text x="542" y="586" fill="#C3C2B7" font-size="11" text-anchor="middle">commit index</text>
+<text x="32" y="610" fill="#8A8983" font-size="10">Arm: documented-sync — each tool's sync mechanism was installed exactly as its README describes and then left alone; the harness only commits, except that crg's `visualize --format json` export is run at each scoring</text>
+<text x="32" y="623" fill="#8A8983" font-size="10">checkpoint because nothing else writes the JSON its artifact is read from (it is outside every timing and does not rebuild). This is the arm tech spec 10.0 X2 words. Read the FALL of each line, not its height: the</text>
+<text x="32" y="636" fill="#8A8983" font-size="10">height is that tool's import coverage (X1's subject) and only the fall is staleness. At commit 0 the freshly built artifacts scored greplost 1.000, graphify 0.131, crg 0.894; over the walk their decay (F1 at commit 0</text>
+<text x="32" y="649" fill="#8A8983" font-size="10">minus F1 at the last commit) was greplost 0.000, graphify +0.005, crg -0.003, a negative decay being ground gained. The distance between the lines is mostly that starting difference, which is coverage and belongs to</text>
+<text x="32" y="662" fill="#8A8983" font-size="10">X1; the staleness X2 measures is the movement. Omitted (not run here): ua. Measured on corpus hono, tier M (248 files); 100 replayed commits. The walk is synthetic: each commit appends exactly one resolvable import</text>
+<text x="32" y="675" fill="#8A8983" font-size="10">line to one file, so truth moves by exactly one edge per commit, and the walk contains no deletions, no renames and no new files.</text>
+<polyline points="84,126 193.92,126 303.84,126 413.76,126 523.68,126 633.6,126 743.52,126 853.44,126 963.36,126 1000,126" fill="none" stroke="#0fa976" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="84" cy="126" r="4" fill="#0fa976" stroke="#000000" stroke-width="2"/>
+<circle cx="1000" cy="126" r="4" fill="#0fa976" stroke="#000000" stroke-width="2"/>
+<polyline points="84,465.11 193.92,464.91 303.84,465.89 413.76,466.78 523.68,467.68 633.6,466.39 743.52,466.2 853.44,467.06 963.36,466.82 1000,467.13" fill="none" stroke="#e0561c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="84" cy="465.11" r="4" fill="#e0561c" stroke="#000000" stroke-width="2"/>
+<circle cx="1000" cy="467.13" r="4" fill="#e0561c" stroke="#000000" stroke-width="2"/>
+<polyline points="84,167.15 193.92,166.64 303.84,165.74 413.76,164.84 523.68,164.03 633.6,163.25 743.52,162.47 853.44,161.76 963.36,164.92 1000,166.05" fill="none" stroke="#2f86ef" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="84" cy="167.15" r="4" fill="#2f86ef" stroke="#000000" stroke-width="2"/>
+<circle cx="1000" cy="166.05" r="4" fill="#2f86ef" stroke="#000000" stroke-width="2"/>
+<text x="1012" y="130" fill="#FFFFFF" font-size="12">greplost</text>
+<text x="1012" y="170.05" fill="#FFFFFF" font-size="12">code-review-graph</text>
+<text x="1012" y="471.13" fill="#FFFFFF" font-size="12">Graphify</text>
+<text x="84" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">0</text>
+<text x="193.92" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">12</text>
+<text x="303.84" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">24</text>
+<text x="413.76" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">36</text>
+<text x="523.68" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">48</text>
+<text x="633.6" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">60</text>
+<text x="743.52" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">72</text>
+<text x="853.44" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">84</text>
+<text x="1000" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">100</text>
 </svg>

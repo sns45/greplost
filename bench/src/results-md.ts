@@ -119,6 +119,14 @@ export interface ChartRef {
   caption: string;
   /** An `xychart-beta` body, already indented for a fence. Empty to omit the fence. */
   body: string;
+  /**
+   * Why there is no fence, when `body` is empty on purpose.
+   *
+   * The default sentence says the data was not measured, which is true of an
+   * empty plot and wrong about a form Mermaid cannot draw at all (the quadrant
+   * scatters). A chart that has numbers must not print a line saying it has none.
+   */
+  bodyNote?: string;
   /** Repo-relative PNG path the document links, or null when there is no PNG. */
   png: string | null;
   /**
@@ -509,8 +517,8 @@ function renderCharts(charts: readonly ChartRef[]): string[] {
       out.push("");
     } else {
       out.push(
-        "_No inline chart: nothing in this chart was measured, and an `xychart-beta` fence with an empty " +
-          "axis renders as a Mermaid error rather than as an empty plot._",
+        `_${chart.bodyNote ?? "No inline chart: nothing in this chart was measured, and an `xychart-beta` fence " +
+          "with an empty axis renders as a Mermaid error rather than as an empty plot."}_`,
         "",
       );
     }

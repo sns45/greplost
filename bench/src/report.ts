@@ -206,7 +206,7 @@ export function buildModel(options: BuildOptions = {}): ReportModel {
     headToHead: headToHeadFrom(headtoheads, replay, assetsRel),
     singleTool: { rows: [], notes: [] },
     sections: {
-      eval1: eval1Section(structural),
+      eval1: eval1Section(structural, assetsRel),
       eval2: eval2Section(replay),
       bench3: bench3Section(perf, assetsRel),
       eval4: eval4Section(agent, assetsRel),

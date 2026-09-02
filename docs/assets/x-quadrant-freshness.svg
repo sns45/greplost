@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="659" viewBox="0 0 1200 659" font-family="system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12">
+<rect x="0" y="0" width="1200" height="659" fill="#000000"/>
+<rect x="0.5" y="0.5" width="1199" height="658" fill="none" stroke="#262626"/>
+<text x="32" y="40" font-size="20" font-weight="600" fill="#FFFFFF">Cost to stay fresh vs freshness</text>
+<text x="1168" y="40" font-size="11" fill="#8A8983" text-anchor="end">greplost bench · bench/RESULTS.md</text>
+<text x="32" y="64" font-size="13" fill="#C3C2B7">Arm: documented-sync; corpus hono, tier M (248 files); 100 replayed commits; the walk is synthetic (one added import line per commit).</text>
+<circle cx="38" cy="90" r="5" fill="#0fa976"/>
+<circle cx="38" cy="90" r="8" fill="none" stroke="#FFFFFF" stroke-width="1.5"/>
+<text x="52" y="94" fill="#C3C2B7" font-size="12">greplost</text>
+<circle cx="134.8" cy="90" r="5" fill="#e0561c"/>
+<text x="148.8" y="94" fill="#C3C2B7" font-size="12">Graphify</text>
+<circle cx="231.6" cy="90" r="5" fill="#2f86ef"/>
+<text x="245.6" y="94" fill="#C3C2B7" font-size="12">code-review-graph</text>
+<circle cx="387.8" cy="90" r="5" fill="none" stroke="#8A8983" stroke-width="1.5"/>
+<text x="401.8" y="94" fill="#8A8983" font-size="12">Understand-Anything: n/a</text>
+<rect x="584.2" y="84" width="12" height="12" fill="#0fa976" fill-opacity="0.12" stroke="#0fa976" stroke-opacity="0.35"/>
+<text x="604.2" y="94" fill="#C3C2B7" font-size="12">Most attractive quadrant</text>
+<line x1="786.6" y1="90" x2="800.6" y2="90" stroke="#C3C2B7" stroke-width="2" stroke-dasharray="2 6"/>
+<text x="806.6" y="94" fill="#C3C2B7" font-size="12">Pareto line</text>
+<rect x="84" y="126" width="430.4" height="156" fill="#0fa976" fill-opacity="0.12"/>
+<line x1="84" y1="516" x2="1160" y2="516" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="74" y="520" fill="#8A8983" font-size="11" text-anchor="end">0</text>
+<line x1="84" y1="418.5" x2="1160" y2="418.5" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="74" y="422.5" fill="#8A8983" font-size="11" text-anchor="end">0.25</text>
+<line x1="84" y1="321" x2="1160" y2="321" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="74" y="325" fill="#8A8983" font-size="11" text-anchor="end">0.5</text>
+<line x1="84" y1="223.5" x2="1160" y2="223.5" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="74" y="227.5" fill="#8A8983" font-size="11" text-anchor="end">0.75</text>
+<line x1="84" y1="126" x2="1160" y2="126" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="74" y="130" fill="#8A8983" font-size="11" text-anchor="end">1</text>
+<line x1="84" y1="516" x2="1160" y2="516" stroke="#3A3A3A"/>
+<text x="84" y="538" fill="#8A8983" font-size="11" text-anchor="middle">0</text>
+<text x="299.2" y="538" fill="#8A8983" font-size="11" text-anchor="middle">0.5</text>
+<text x="514.4" y="538" fill="#8A8983" font-size="11" text-anchor="middle">1</text>
+<text x="729.6" y="538" fill="#8A8983" font-size="11" text-anchor="middle">1.5</text>
+<text x="944.8" y="538" fill="#8A8983" font-size="11" text-anchor="middle">2</text>
+<text x="1160" y="538" fill="#8A8983" font-size="11" text-anchor="middle">2.5</text>
+<text x="24" y="321" fill="#C3C2B7" font-size="11" text-anchor="middle" transform="rotate(-90 24 321)">import edge F1 vs compiler truth at the last commit</text>
+<text x="622" y="586" fill="#C3C2B7" font-size="11" text-anchor="middle">minutes of machine time to stay fresh over 100 commits (lower is better)</text>
+<text x="32" y="610" fill="#8A8983" font-size="10">x is X3 (the wall-clock of the child processes each tool's own commit-time mechanism started) and y is the last point of the X2 documented-sync curve. The height of a dot is mostly import coverage, which is X1's</text>
+<text x="32" y="623" fill="#8A8983" font-size="10">subject; X2 is the fall, and it is in the hero chart. The shaded corner is a reading aid, not a threshold: it covers the cheapest 40% of the x axis and the best 40% of the y axis, and no measurement decides where it</text>
+<text x="32" y="636" fill="#8A8983" font-size="10">sits. The dotted line is the Pareto front — a tool is on it when nothing else is at least as good on both axes and better on one. Measured on corpus hono, tier M (248 files); 100 replayed commits. The walk is</text>
+<text x="32" y="649" fill="#8A8983" font-size="10">synthetic: each commit appends exactly one resolvable import line to one file, so truth moves by exactly one edge per commit, and the walk contains no deletions, no renames and no new files.</text>
+<polyline points="212.56,126 212.56,126 1160,126" fill="none" stroke="#C3C2B7" stroke-width="2" stroke-dasharray="2 6"/>
+<circle cx="212.56" cy="126" r="5" fill="#0fa976" stroke="#FFFFFF" stroke-width="2"/>
+<circle cx="1101.81" cy="467.13" r="5" fill="#e0561c" stroke="#000000" stroke-width="2"/>
+<circle cx="453.07" cy="166.05" r="5" fill="#2f86ef" stroke="#000000" stroke-width="2"/>
+<text x="200.56" y="130" fill="#FFFFFF" font-size="12" text-anchor="end">greplost</text>
+<text x="1113.81" y="471.13" fill="#FFFFFF" font-size="12" text-anchor="start">Graphify</text>
+<text x="465.07" y="170.05" fill="#FFFFFF" font-size="12" text-anchor="start">code-review-graph</text>
+</svg>

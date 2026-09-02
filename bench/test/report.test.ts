@@ -20,10 +20,21 @@ import {
   barChart,
   boxChart,
   categoryOffsets,
+  displayValue,
   groupedBarChart,
   lineChart,
+  logScaleFor,
   mermaidXy,
+  MERMAID_DARK_INIT,
+  PALETTE,
+  paretoFrontier,
+  pngChunks,
+  scatterChart,
+  sortDesc,
+  sortSeriesDesc,
+  stripPngMetadata,
   toPng,
+  TOOL_COLORS,
   wrapText,
   writeChart,
 } from "../src/charts.ts";
@@ -58,6 +69,7 @@ import {
 import { stalenessCharts, scaleNote, freshnessNote } from "../src/report-charts.ts";
 import { latestResult, writeResult } from "../src/results-io.ts";
 import { CAPTURES, checkTools, fitForCapture, run as screenshotsRun, x4Summary } from "../src/screenshots.ts";
+import { checkMermaid } from "../src/mermaid-check.ts";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
 
@@ -108,32 +120,39 @@ const FIXED_BARS = {
  * Golden SVG for `FIXED_BARS`, inline so a determinism change is visible in the test
  * diff itself. Regenerate only on a deliberate renderer change (tech spec 10.9,
  * "deterministic, seed-free"): print `barChart(FIXED_BARS)` and paste it here.
+ *
+ * Re-baselined once, deliberately, when the charts were restyled onto the black
+ * Artificial Analysis surface (1200px wide, dotted gridlines, no plot frame, one
+ * hue per tool rather than per row, values inside the bars). Everything the old
+ * golden locked is still locked: the same three bars, the same values, the same
+ * `coord()` rounding, and no id, clock or random anywhere in the markup.
  */
-const GOLDEN_BAR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" font-family="sans-serif" font-size="12">
-<rect x="0" y="0" width="720" height="380" fill="#ffffff"/>
-<text x="20" y="26" font-size="15" font-weight="bold" fill="#111827">X1 import precision</text>
-<line x1="64" y1="322" x2="700" y2="322" stroke="#e5e7eb"/>
-<text x="56" y="326" fill="#6b7280" font-size="11" text-anchor="end">0</text>
-<line x1="64" y1="256" x2="700" y2="256" stroke="#e5e7eb"/>
-<text x="56" y="260" fill="#6b7280" font-size="11" text-anchor="end">0.25</text>
-<line x1="64" y1="190" x2="700" y2="190" stroke="#e5e7eb"/>
-<text x="56" y="194" fill="#6b7280" font-size="11" text-anchor="end">0.5</text>
-<line x1="64" y1="124" x2="700" y2="124" stroke="#e5e7eb"/>
-<text x="56" y="128" fill="#6b7280" font-size="11" text-anchor="end">0.75</text>
-<line x1="64" y1="58" x2="700" y2="58" stroke="#e5e7eb"/>
-<text x="56" y="62" fill="#6b7280" font-size="11" text-anchor="end">1</text>
-<line x1="64" y1="58" x2="64" y2="322" stroke="#9ca3af"/>
-<line x1="64" y1="322" x2="700" y2="322" stroke="#9ca3af"/>
-<text x="18" y="190" fill="#6b7280" font-size="11" text-anchor="middle" transform="rotate(-90 18 190)">precision</text>
-<rect x="93.68" y="58" width="150.64" height="264" fill="#1d4ed8"/>
-<text x="170" y="71" fill="#ffffff" font-size="10" text-anchor="middle">1</text>
-<text x="170" y="338" fill="#6b7280" font-size="11" text-anchor="middle">greplost</text>
-<rect x="305.68" y="110.8" width="150.64" height="211.2" fill="#1d4ed8"/>
-<text x="382" y="106.8" fill="#111827" font-size="10" text-anchor="middle">0.8</text>
-<text x="382" y="338" fill="#6b7280" font-size="11" text-anchor="middle">graphify</text>
-<rect x="517.68" y="190" width="150.64" height="132" fill="#1d4ed8"/>
-<text x="594" y="186" fill="#111827" font-size="10" text-anchor="middle">0.5</text>
-<text x="594" y="338" fill="#6b7280" font-size="11" text-anchor="middle">crg</text>
+const GOLDEN_BAR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" font-family="system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12">
+<rect x="0" y="0" width="1200" height="620" fill="#000000"/>
+<rect x="0.5" y="0.5" width="1199" height="619" fill="none" stroke="#262626"/>
+<text x="32" y="40" font-size="20" font-weight="600" fill="#FFFFFF">X1 import precision</text>
+<text x="1168" y="40" font-size="11" fill="#8A8983" text-anchor="end">greplost bench · bench/RESULTS.md</text>
+<line x1="84" y1="516" x2="1160" y2="516" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="74" y="520" fill="#8A8983" font-size="11" text-anchor="end">0</text>
+<line x1="84" y1="418.5" x2="1160" y2="418.5" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="74" y="422.5" fill="#8A8983" font-size="11" text-anchor="end">0.25</text>
+<line x1="84" y1="321" x2="1160" y2="321" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="74" y="325" fill="#8A8983" font-size="11" text-anchor="end">0.5</text>
+<line x1="84" y1="223.5" x2="1160" y2="223.5" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="74" y="227.5" fill="#8A8983" font-size="11" text-anchor="end">0.75</text>
+<line x1="84" y1="126" x2="1160" y2="126" stroke="#262626" stroke-dasharray="2 4"/>
+<text x="74" y="130" fill="#8A8983" font-size="11" text-anchor="end">1</text>
+<line x1="84" y1="516" x2="1160" y2="516" stroke="#3A3A3A"/>
+<text x="24" y="321" fill="#C3C2B7" font-size="11" text-anchor="middle" transform="rotate(-90 24 321)">precision</text>
+<path d="M 228.33 516 L 228.33 130 Q 228.33 126 232.33 126 L 294.33 126 Q 298.33 126 298.33 130 L 298.33 516 Z" fill="#0fa976"/>
+<text x="263.33" y="504" fill="#FFFFFF" font-size="12" font-weight="600" text-anchor="middle">1</text>
+<text x="263.33" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">greplost</text>
+<path d="M 587 516 L 587 208 Q 587 204 591 204 L 653 204 Q 657 204 657 208 L 657 516 Z" fill="#e0561c"/>
+<text x="622" y="504" fill="#FFFFFF" font-size="12" font-weight="600" text-anchor="middle">0.8</text>
+<text x="622" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">Graphify</text>
+<path d="M 945.67 516 L 945.67 325 Q 945.67 321 949.67 321 L 1011.67 321 Q 1015.67 321 1015.67 325 L 1015.67 516 Z" fill="#2f86ef"/>
+<text x="980.67" y="504" fill="#FFFFFF" font-size="12" font-weight="600" text-anchor="middle">0.5</text>
+<text x="980.67" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">code-review-graph</text>
 </svg>
 `;
 
@@ -223,7 +242,10 @@ describe("charts", () => {
     const points = (/<polyline points="([^"]+)"/.exec(svg)?.[1] ?? "").split(" ").map((p) => Number(p.split(",")[0]));
     expect(points).toHaveLength(4);
     const gaps = points.slice(1).map((x, i) => x - (points[i] as number));
-    expect(gaps[0]).toBeCloseTo(gaps[1] as number, 6);
+    // To a tenth of a pixel: every coordinate is printed through `coord()`, which
+    // rounds to two decimals, so two equal gaps across a 1076px plot can differ
+    // in the last printed digit.
+    expect(gaps[0]).toBeCloseTo(gaps[1] as number, 1);
     expect(gaps[2] as number).toBeLessThan((gaps[0] as number) / 10);
     // Two labels that would collide print as one, and the end of the walk survives.
     expect(svg).toContain(">104<");
@@ -281,11 +303,375 @@ describe("charts", () => {
       categories: ["0", "25", "50"],
       series: [{ name: "greplost", values: [1, 0.99, 0.99] }],
     });
-    expect(text.startsWith("xychart-beta")).toBe(true);
+    // The dark init directive comes first, then the diagram: a Mermaid
+    // directive is only honoured before the diagram type.
+    expect(text.startsWith(MERMAID_DARK_INIT)).toBe(true);
+    expect(text.split("\n")[1]).toBe("xychart-beta");
+    expect(text).toContain('"plotColorPalette": "#0fa976,#e0561c,#2f86ef"');
     expect(text).toContain('title "X2 staleness"');
     expect(text).toContain("x-axis");
     expect(text).toContain("y-axis");
     expect(text.match(/^\s+line \[/gm)?.length ?? 0).toBe(1);
+  });
+
+  /**
+   * The palette is not a taste. It was validated against this exact surface
+   * with the dataviz skill's checker before it was written into `charts.ts`:
+   *
+   *   node <dataviz-skill>/scripts/validate_palette.js "#0fa976,#e0561c,#2f86ef" \
+   *     --mode dark --surface "#000000" --pairs all
+   *
+   *   Palette (dark, surface #000000, categorical): 3 slots
+   *     [PASS] Lightness band         all 3 inside L 0.48-0.67
+   *     [PASS] Chroma floor           all 3 >= 0.1
+   *     [PASS] CVD separation         worst all-pairs #e0561c<->#0fa976 dE 9.7 (deutan) - tritan 4.7
+   *     [PASS] Normal-vision floor    worst all-pairs #2f86ef<->#0fa976 dE 23.3 (normal)
+   *     [PASS] Contrast vs surface    all 3 >= 3:1
+   *     -> ALL CHECKS PASS
+   *
+   * The checker is not run from here: it lives in a skill directory that exists
+   * on one machine, and a test that shells out to it would fail everywhere else.
+   * What this test locks is the thing the run was about — the exact hexes, in the
+   * exact order, bound to the exact tools — so a later edit to any of them has to
+   * come with a new run of the command above.
+   */
+  test("the validated palette is the one the charts draw, bound to the tools", () => {
+    expect(PALETTE).toEqual(["#0fa976", "#e0561c", "#2f86ef"]);
+    expect(TOOL_COLORS).toEqual({ greplost: "#0fa976", graphify: "#e0561c", crg: "#2f86ef" });
+    // Understand-Anything has never been runnable here, so it has no hue to
+    // reuse and no way to appear as a mark.
+    expect(Object.keys(TOOL_COLORS)).not.toContain("ua");
+  });
+
+  test("colour follows the tool, not the row: sorting does not repaint a bar", () => {
+    const spec = {
+      title: "X6 cold start",
+      yLabel: "seconds",
+      categories: ["greplost", "graphify", "crg"],
+      highlight: "greplost",
+      series: [{ name: "seconds", values: [0.283, 2.159, 1.207] }],
+    };
+    const sorted = sortDesc(spec);
+    // Descending by value puts graphify first and greplost last...
+    expect(sorted.categories).toEqual(["graphify", "crg", "greplost"]);
+    expect(sorted.series[0]?.values).toEqual([2.159, 1.207, 0.283]);
+    // ...and every tool still wears the hue it wears on every other chart.
+    const svg = barChart(sorted);
+    expect(svg).toContain('fill="#0fa976"');
+    expect(svg).toContain('fill="#e0561c"');
+    expect(svg).toContain('fill="#2f86ef"');
+    // greplost keeps its anchor ring wherever the sort put it.
+    expect(svg).toContain(`stroke="#FFFFFF" stroke-width="1.5"`);
+  });
+
+  test("sortDesc is stable and puts an unmeasured category last", () => {
+    const sorted = sortDesc({
+      title: "t",
+      categories: ["a", "b", "ua", "c"],
+      series: [{ name: "v", values: [1, 1, null, 2] }],
+    });
+    // `c` leads on value; `a` and `b` tie and keep their input order; the
+    // category nobody measured is last, because n/a is not a small number.
+    expect(sorted.categories).toEqual(["c", "a", "b", "ua"]);
+  });
+
+  test("sortSeriesDesc orders the series of a grouped chart, gaps last", () => {
+    const sorted = sortSeriesDesc({
+      title: "t",
+      categories: ["call edges", "import edges"],
+      series: [
+        { name: "ua", values: [null, null] },
+        { name: "crg", values: [0.361, 1] },
+        { name: "greplost", values: [1, 1] },
+      ],
+    });
+    expect(sorted.series.map((one) => one.name)).toEqual(["greplost", "crg", "ua"]);
+  });
+
+  test("a tool with no value gets an n/a legend entry and no mark", () => {
+    const svg = lineChart({
+      title: "X2 staleness",
+      yLabel: "F1",
+      yMax: 1,
+      categories: ["0", "50", "100"],
+      series: [{ name: "greplost", values: [1, 1, 1] }],
+      absent: ["ua"],
+    });
+    expect(svg).toContain("Understand-Anything: n/a");
+    // The n/a entry is muted text and a hollow ring: no hue is invented for it.
+    expect(svg).toContain('fill="none" stroke="#8A8983"');
+    expect(svg.match(/<polyline/g)?.length ?? 0).toBe(1);
+  });
+
+  test("a measured zero keeps ink; an unmeasured value is a dashed stub", () => {
+    const svg = barChart({
+      title: "X4 bytes",
+      yLabel: "bytes",
+      categories: ["greplost", "crg", "ua"],
+      series: [{ name: "bytes", values: [0, 5160286, null] }],
+    });
+    // The zero is a bar of its own colour with its own label...
+    expect(svg).toContain('fill="#0fa976"');
+    expect(svg).toContain(">0<");
+    // ...and the thousands separator is for the reader, not for Mermaid.
+    expect(svg).toContain(">5,160,286<");
+    // ...while "not measured" is a dashed outline and the word itself.
+    expect(svg).toContain('stroke-dasharray="2 2"');
+    expect(svg).toContain(">n/a<");
+  });
+
+  test("a value that will not fit inside its bar is printed above it", () => {
+    // A short bar cannot hold a label: it goes above the bar's end rather than
+    // being clipped by the mark it belongs to.
+    const svg = barChart({
+      title: "X5 lines",
+      yLabel: "lines",
+      yMax: 100,
+      categories: ["greplost", "crg"],
+      series: [{ name: "lines", values: [1, 100] }],
+    });
+    // Each bar's own top edge, off its path: `M x bottom L x top …`.
+    const tops = [...svg.matchAll(/<path d="M [\d.]+ [\d.]+ L [\d.]+ ([\d.]+)/g)].map((m) => Number(m[1]));
+    const labels = [...svg.matchAll(/<text x="[\d.]+" y="([\d.]+)"[^>]*font-weight="600"[^>]*>([\d.]+)<\/text>/g)];
+    expect(labels.map((m) => m[2])).toEqual(["1", "100"]);
+    // The short bar's value is above its own top edge; the tall bar's is inside
+    // it, near the baseline. Neither is clipped by the mark it belongs to.
+    expect(Number(labels[0]?.[1])).toBeLessThan(tops[0] as number);
+    expect(Number(labels[1]?.[1])).toBeGreaterThan(tops[1] as number);
+  });
+
+  test("text never wears a series colour", () => {
+    const svgs = [
+      barChart({
+        title: "X6",
+        yLabel: "seconds",
+        categories: ["greplost", "graphify"],
+        series: [{ name: "seconds", values: [0.283, 2.159] }],
+      }),
+      lineChart({
+        title: "X2",
+        yLabel: "F1",
+        yMax: 1,
+        categories: ["0", "100"],
+        series: [{ name: "greplost", values: [1, 1] }, { name: "crg", values: [0.9, 0.8] }],
+      }),
+      scatterChart({
+        title: "quadrant",
+        points: [{ name: "greplost", x: 0.3, y: 1 }, { name: "crg", x: 0.9, y: 0.9 }],
+        xLabel: "minutes",
+        yLabel: "F1",
+        yMax: 1,
+      }),
+    ];
+    for (const svg of svgs) {
+      for (const element of svg.match(/<text[^>]*>/g) ?? []) {
+        const fill = /fill="([^"]+)"/.exec(element)?.[1] ?? "";
+        expect(PALETTE).not.toContain(fill);
+      }
+    }
+  });
+
+  test("logScaleFor asks for two decades and no zero", () => {
+    expect(logScaleFor([1, 5160286])).toBe(true);
+    expect(logScaleFor([100, 10000])).toBe(true);
+    // A measured zero has no place on a log axis, and dropping it to get the
+    // axis would drop the best result X4 has.
+    expect(logScaleFor([0, 0, 5160286])).toBe(false);
+    expect(logScaleFor([24, 54, 60])).toBe(false);
+    expect(logScaleFor([1])).toBe(false);
+    expect(logScaleFor([null, null])).toBe(false);
+  });
+
+  test("a log axis prints decade ticks and says so in the axis title", () => {
+    const svg = barChart({
+      title: "X4 bytes",
+      yLabel: "bytes (log scale)",
+      logY: true,
+      categories: ["greplost", "crg"],
+      series: [{ name: "bytes", values: [12, 5160286] }],
+    });
+    for (const tick of ["10", "1,000", "100,000", "10,000,000"]) expect(svg).toContain(`>${tick}<`);
+    expect(svg).toContain("bytes (log scale)");
+  });
+
+  test("paretoFrontier keeps the points nothing dominates, left to right", () => {
+    // Lower x is better, higher y is better.
+    const points = [
+      { name: "graphify", x: 2.36, y: 0.125 },
+      { name: "greplost", x: 0.29, y: 1 },
+      { name: "crg", x: 0.85, y: 0.897 },
+    ];
+    expect(paretoFrontier(points).map((p) => p.name)).toEqual(["greplost"]);
+    // With no single winner, both survivors are kept in x order.
+    const split = [
+      { name: "cheap", x: 0.1, y: 0.4 },
+      { name: "good", x: 2, y: 0.9 },
+      { name: "neither", x: 2.5, y: 0.3 },
+    ];
+    expect(paretoFrontier(split).map((p) => p.name)).toEqual(["cheap", "good"]);
+  });
+
+  test("the quadrant scatter shades the corner under the marks and labels every dot", () => {
+    const svg = scatterChart({
+      title: "Cost to stay fresh vs freshness",
+      subtitle: "Arm: documented-sync; corpus hono, tier M (248 files)",
+      points: [
+        { name: "greplost", x: 0.2987, y: 1 },
+        { name: "graphify", x: 2.3648, y: 0.125 },
+        { name: "crg", x: 0.8575, y: 0.897 },
+      ],
+      xLabel: "minutes over 100 commits (lower is better)",
+      yLabel: "F1 at the last commit",
+      yMax: 1,
+      highlight: "greplost",
+      absent: ["ua"],
+      note: "the shaded corner is a reading aid",
+    });
+    // The wash is drawn before the first gridline, so it is behind the marks.
+    const wash = svg.indexOf('fill-opacity="0.12"');
+    const grid = svg.indexOf('stroke-dasharray="2 4"');
+    const dot = svg.indexOf('<circle cx="');
+    expect(wash).toBeGreaterThan(0);
+    expect(wash).toBeLessThan(grid);
+    expect(grid).toBeLessThan(svg.lastIndexOf("<circle"));
+    expect(dot).toBeGreaterThan(0);
+    // Every tool is named beside its own dot, and the one that was not run is
+    // named in the legend instead of being drawn at zero.
+    for (const name of ["greplost", "Graphify", "code-review-graph"]) expect(svg).toContain(`>${name}</text>`);
+    expect(svg).toContain("Understand-Anything: n/a");
+    expect(svg).toContain("Most attractive quadrant");
+    expect(svg).toContain("Pareto line");
+    // greplost's dot carries the white ring; the others carry the surface ring.
+    expect(svg).toContain('r="5" fill="#0fa976" stroke="#FFFFFF" stroke-width="2"');
+    expect(svg).toContain('r="5" fill="#2f86ef" stroke="#000000" stroke-width="2"');
+    // Two runs, one file.
+    expect(svg).toBe(
+      scatterChart({
+        title: "Cost to stay fresh vs freshness",
+        subtitle: "Arm: documented-sync; corpus hono, tier M (248 files)",
+        points: [
+          { name: "greplost", x: 0.2987, y: 1 },
+          { name: "graphify", x: 2.3648, y: 0.125 },
+          { name: "crg", x: 0.8575, y: 0.897 },
+        ],
+        xLabel: "minutes over 100 commits (lower is better)",
+        yLabel: "F1 at the last commit",
+        yMax: 1,
+        highlight: "greplost",
+        absent: ["ua"],
+        note: "the shaded corner is a reading aid",
+      }),
+    );
+  });
+
+  test("no scatter label is clipped by the canvas or printed on another one", () => {
+    // Two tools at the same cost and almost the same score: the second label
+    // cannot take the same side as the first.
+    const svg = scatterChart({
+      title: "collision",
+      points: [
+        { name: "greplost", x: 1, y: 0.5 },
+        { name: "graphify", x: 1, y: 0.5 },
+        // Hard against the right edge: its label has to flip to the left.
+        { name: "crg", x: 2, y: 0.9 },
+      ],
+      xLabel: "x",
+      yLabel: "y",
+      yMax: 1,
+    });
+    const labels = [...svg.matchAll(/<text x="([\d.]+)" y="([\d.]+)" fill="#FFFFFF" font-size="12" text-anchor="(\w+)"/g)];
+    expect(labels.length).toBe(3);
+    for (const [, x, , anchor] of labels) {
+      const at = Number(x);
+      expect(at).toBeGreaterThan(0);
+      // An `end`-anchored label runs left from its x, a `start` label runs
+      // right: either way it has to have landed inside the canvas.
+      expect(anchor === "end" ? at : at + 120).toBeLessThan(1200);
+    }
+    // The two coincident dots did not both take the right-hand side.
+    expect(new Set(labels.map((match) => match[3])).size).toBeGreaterThan(1);
+  });
+
+  test("every chart is 1200px wide with a hairline inner border", () => {
+    const svgs = [
+      barChart(FIXED_BARS),
+      groupedBarChart({ ...FIXED_BARS, series: [...FIXED_BARS.series, { name: "calls", values: [1, 0.4, 0.6] }] }),
+      lineChart({ ...FIXED_BARS, xLabel: "commit" }),
+      scatterChart({
+        title: "quadrant",
+        points: [{ name: "greplost", x: 1, y: 1 }],
+        xLabel: "x",
+        yLabel: "y",
+        yMax: 1,
+      }),
+      boxChart({ title: "P2", yLabel: "ms", boxes: [{ name: "full", low: null, q1: 12, mid: 20, q3: 40, high: null }] }),
+    ];
+    for (const svg of svgs) {
+      expect(svg).toContain('width="1200"');
+      // The border is inside the image, so a black card does not bleed into
+      // GitHub's black page.
+      expect(svg).toContain('fill="none" stroke="#262626"/>');
+      expect(svg).toContain('fill="#000000"/>');
+    }
+  });
+
+  test("a rasterised PNG carries pixels and nothing else", () => {
+    const png = toPng(GOLDEN_BAR_SVG);
+    // No tEXt, no tIME, no eXIf: these files are committed, and a chunk that
+    // says which machine drew them is a diff nobody can read.
+    expect(pngChunks(png)).toEqual(["IHDR", "IDAT", "IEND"]);
+    expect(png.readUInt32BE(16)).toBe(1200);
+    // Well under the 250KB the README budget allows per image.
+    expect(png.length).toBeLessThan(250 * 1024);
+  });
+
+  test("stripPngMetadata drops an ancillary chunk and keeps pHYs", () => {
+    const png = toPng(GOLDEN_BAR_SVG);
+    const insertAt = 8 + 12 + png.readUInt32BE(8);
+    const chunk = (type: string, body: Buffer): Buffer => {
+      const length = Buffer.alloc(4);
+      length.writeUInt32BE(body.length);
+      // The CRC is not recomputed: nothing downstream of a dropped chunk
+      // depends on it, which is why dropping one is safe in the first place.
+      return Buffer.concat([length, Buffer.from(type, "ascii"), body, Buffer.alloc(4)]);
+    };
+    const dirty = Buffer.concat([
+      png.subarray(0, insertAt),
+      chunk("tEXt", Buffer.from("Software\0resvg", "latin1")),
+      chunk("pHYs", Buffer.alloc(9)),
+      png.subarray(insertAt),
+    ]);
+    expect(pngChunks(dirty)).toEqual(["IHDR", "tEXt", "pHYs", "IDAT", "IEND"]);
+    expect(pngChunks(stripPngMetadata(dirty))).toEqual(["IHDR", "pHYs", "IDAT", "IEND"]);
+  });
+
+  test("the dark init directive still parses as Mermaid", async () => {
+    const fence = mermaidXy({
+      title: "X2 staleness",
+      xLabel: "commit index",
+      yLabel: "F1 vs compiler truth",
+      yMax: 1,
+      categories: ["0", "50", "100"],
+      series: [{ name: "greplost", values: [1, 1, 1] }, { name: "crg", values: [0.894, 0.9, 0.897] }],
+    });
+    const result = await checkMermaid(fence);
+    // The fallback checker validates the `graph LR` subset the render package
+    // emits, not an xychart, so it can only speak when mermaid itself loaded.
+    if (result.checker === "mermaid") expect(result.ok).toBe(true);
+  });
+
+  test("displayValue groups digits for a reader and label() does not for Mermaid", () => {
+    expect(displayValue(5160286)).toBe("5,160,286");
+    expect(displayValue(0.283)).toBe("0.283");
+    expect(displayValue(-1234)).toBe("-1,234");
+    // The fence keeps bare digits: a comma inside an xychart series is a
+    // value separator and would not parse.
+    const fence = mermaidXy(
+      { title: "X4", yLabel: "bytes", categories: ["crg"], series: [{ name: "bytes", values: [5160286] }] },
+      "bar",
+    );
+    expect(fence).toContain("bar [5160286]");
+    expect(fence).not.toContain("5,160,286");
   });
 });
 
