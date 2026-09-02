@@ -16,8 +16,8 @@ Scope: children 1.2.1 and 1.2.2 merged; artifacts render on GitHub
   EXPECT: / [1-9]\d* pass\n 0 fail/
   EVIDENCE: 8798 expect() calls | Ran 100 tests across 2 files. [143.00ms]
 
-- [ ] N4: M1, M2 and the Mermaid parse check hold on the golden render
+- [x] N4: M1, M2 and the Mermaid parse check hold on the golden render
   CHECK: bun run bench:mapquality --dir packages/render/test/golden/tiny-ts --gate
   EXPECT: mapquality: GATE PASS
-  EVIDENCE: pending
+  EVIDENCE: mapquality: GATE PASS | $ bun bench/src/cli.ts mapquality --dir packages/render/test/golden/tiny-ts --gate
 
