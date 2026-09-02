@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/resolve/index.ts`](index.ts.md)
 
-**Blast radius:** 46 files (`greplost impact packages/core/src/resolve/packages.ts`)
+**Blast radius:** 44 files (`greplost impact packages/core/src/resolve/packages.ts`)
 
 **Key symbols:**
 - `const IGNORED_DIRS: ReadonlySet<string> = new Set([ ".cache", ".git", ".greplost", ".hg", ".next", ".svn", ".turbo", "build", "coverage", "dist", "node_modules", "out", "vendor", ])`  L19-33

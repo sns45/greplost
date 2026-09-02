@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/go.ts`](go.ts.md), [`packages/core/src/extract/ts-calls.ts`](ts-calls.ts.md), [`packages/core/src/extract/ts-imports.ts`](ts-imports.ts.md), [`packages/core/src/extract/ts.ts`](ts.ts.md)
 
-**Blast radius:** 37 files (`greplost impact packages/core/src/extract/ts-signature.ts`)
+**Blast radius:** 35 files (`greplost impact packages/core/src/extract/ts-signature.ts`)
 
 **Key symbols:**
 - `const MAX_SIGNATURE = 200`  L12-12

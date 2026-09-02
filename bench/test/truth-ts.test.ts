@@ -611,3 +611,15 @@ describe("structural gate", () => {
     expect(code).toBe(0);
   });
 });
+
+describe("tagged templates", () => {
+  test("a tagged template is a call to its tag (ruling 2026-09-04)", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "greplost-truth-tag-"));
+    writeFileSync(path.join(dir, "tsconfig.json"), `${JSON.stringify({ compilerOptions: { strict: true, module: "esnext", target: "es2022", moduleResolution: "bundler" } })}\n`);
+    writeFileSync(path.join(dir, "tag.ts"), "export function html(parts: TemplateStringsArray): string {\n  return parts.join(\"\");\n}\n");
+    writeFileSync(path.join(dir, "use.ts"), "import { html } from \"./tag\";\nexport function render(): string {\n  return html`<p></p>`;\n}\n");
+    const t = generateTsTruth(dir, ["tag.ts", "use.ts"]);
+    expect(edgeKeys(t.calls)).toContain("use.ts#render -> tag.ts#html");
+    rmSync(dir, { recursive: true, force: true });
+  });
+});

@@ -12,6 +12,6 @@
 
 **Imported by:** [`packages/core/src/build.ts`](../build.ts.md), [`packages/core/src/graph/metrics.ts`](../graph/metrics.ts.md), [`packages/core/src/index.ts`](../index.ts.md)
 
-**Blast radius:** 45 files (`greplost impact packages/core/src/resolve/index.ts`)
+**Blast radius:** 43 files (`greplost impact packages/core/src/resolve/index.ts`)
 
 **Key symbols:** None.

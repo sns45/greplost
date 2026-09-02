@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/sync/src/index.ts`](index.ts.md), [`packages/sync/src/init.ts`](init.ts.md)
 
-**Blast radius:** 21 files (`greplost impact packages/sync/src/githooks.ts`)
+**Blast radius:** 19 files (`greplost impact packages/sync/src/githooks.ts`)
 
 **Key symbols:**
 - `const HOOK_MARKER = "# greplost-hook"`  L43-43

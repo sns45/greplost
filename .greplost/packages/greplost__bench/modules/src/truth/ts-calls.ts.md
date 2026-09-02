@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/bench` ([map](../../../MAP.md))
 
-**Exports:** `CallEndpoints (interface)`, `calleeIdentifier(node: ts.CallExpression | ts.NewExpression): ts.Node | undefined`, `declarationSymbolPath(declaration: ts.Declaration): string | undefined`, `enclosingCaller(node: ts.Node, fileId: string): string`, `moduleScopePath(node: ts.Node): string | undefined`, `resolveCallEdge( node: ts.CallExpression | ts.NewExpression, checker: ts.TypeChecker, toId: (fileName: string) => string | undefined, fileId: string, ): CallEndpoints | undefined`, `unalias(checker: ts.TypeChecker, symbol: ts.Symbol | undefined): ts.Symbol | undefined`, `unwrapExpression(expr: ts.Expression): ts.Expression`
+**Exports:** `CallEndpoints (interface)`, `CallLike (type)`, `calleeIdentifier(node: CallLike): ts.Node | undefined`, `declarationSymbolPath(declaration: ts.Declaration): string | undefined`, `enclosingCaller(node: ts.Node, fileId: string): string`, `moduleScopePath(node: ts.Node): string | undefined`, `resolveCallEdge( node: CallLike, checker: ts.TypeChecker, toId: (fileName: string) => string | undefined, fileId: string, ): CallEndpoints | undefined`, `unalias(checker: ts.TypeChecker, symbol: ts.Symbol | undefined): ts.Symbol | undefined`, `unwrapExpression(expr: ts.Expression): ts.Expression`
 
 **Imports:** `typescript` (default), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (symbolId)
 
@@ -16,15 +16,16 @@
 
 **Key symbols:**
 - `interface CallEndpoints`  L22-27
-- `function resolveCallEdge( node: ts.CallExpression | ts.NewExpression, checker: ts.TypeChecker, toId: (fileName: string) => string | undefined, fileId: string, ): CallEndpoints | undefined`  L36-55
-- `function unwrapExpression(expr: ts.Expression): ts.Expression`  L58-65
-- `function calleeIdentifier(node: ts.CallExpression | ts.NewExpression): ts.Node | undefined`  L68-74
-- `function unalias(checker: ts.TypeChecker, symbol: ts.Symbol | undefined): ts.Symbol | undefined`  L77-90
-- `function declarationSymbolPath(declaration: ts.Declaration): string | undefined`  L93-120
-- `function moduleScopePath(node: ts.Node): string | undefined`  L127-135
-- `function moduleScopeOwner(node: ts.Node): ts.SourceFile | ts.ModuleDeclaration | undefined`  L138-151
-- `function nameText(name: ts.Node | undefined): string | undefined`  L153-158
-- `function isCallerDeclaration(node: ts.Node): boolean`  L175-192
-- `function enclosingCaller(node: ts.Node, fileId: string): string`  L201-211
+- `type CallLike = ts.CallExpression | ts.NewExpression | ts.TaggedTemplateExpression`  L37-37
+- `function resolveCallEdge( node: CallLike, checker: ts.TypeChecker, toId: (fileName: string) => string | undefined, fileId: string, ): CallEndpoints | undefined`  L39-58
+- `function unwrapExpression(expr: ts.Expression): ts.Expression`  L61-68
+- `function calleeIdentifier(node: CallLike): ts.Node | undefined`  L71-77
+- `function unalias(checker: ts.TypeChecker, symbol: ts.Symbol | undefined): ts.Symbol | undefined`  L80-93
+- `function declarationSymbolPath(declaration: ts.Declaration): string | undefined`  L96-123
+- `function moduleScopePath(node: ts.Node): string | undefined`  L130-138
+- `function moduleScopeOwner(node: ts.Node): ts.SourceFile | ts.ModuleDeclaration | undefined`  L141-154
+- `function nameText(name: ts.Node | undefined): string | undefined`  L156-161
+- `function isCallerDeclaration(node: ts.Node): boolean`  L178-195
+- `function enclosingCaller(node: ts.Node, fileId: string): string`  L204-214
 
 **Calls:** `calleeIdentifier` → [`bench/src/truth/ts-calls.ts#calleeIdentifier`](ts-calls.ts.md) (high), `declarationSymbolPath` → [`bench/src/truth/ts-calls.ts#declarationSymbolPath`](ts-calls.ts.md) (high), `enclosingCaller` → [`bench/src/truth/ts-calls.ts#enclosingCaller`](ts-calls.ts.md) (high), `isCallerDeclaration` → [`bench/src/truth/ts-calls.ts#isCallerDeclaration`](ts-calls.ts.md) (high), `moduleScopeOwner` → [`bench/src/truth/ts-calls.ts#moduleScopeOwner`](ts-calls.ts.md) (high), `moduleScopePath` → [`bench/src/truth/ts-calls.ts#moduleScopePath`](ts-calls.ts.md) (high), `nameText` → [`bench/src/truth/ts-calls.ts#nameText`](ts-calls.ts.md) (high), `unalias` → [`bench/src/truth/ts-calls.ts#unalias`](ts-calls.ts.md) (high), `unwrapExpression` → [`bench/src/truth/ts-calls.ts#unwrapExpression`](ts-calls.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../../../../greplost__core/modules/src/schema.ts.md) (high)

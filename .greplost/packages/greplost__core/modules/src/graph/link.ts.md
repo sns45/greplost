@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/graph/index.ts`](index.ts.md)
 
-**Blast radius:** 44 files (`greplost impact packages/core/src/graph/link.ts`)
+**Blast radius:** 42 files (`greplost impact packages/core/src/graph/link.ts`)
 
 **Key symbols:**
 - `type ResolvedTarget = | { type: "file"; path: string } | { type: "external"; pkg: string } | { type: "unresolved" }`  L27-30

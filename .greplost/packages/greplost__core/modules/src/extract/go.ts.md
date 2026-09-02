@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md)
 
-**Blast radius:** 33 files (`greplost impact packages/core/src/extract/go.ts`)
+**Blast radius:** 31 files (`greplost impact packages/core/src/extract/go.ts`)
 
 **Key symbols:**
 - `const SPEC_PARENTS: ReadonlySet<string> = new Set([ "const_spec_list", "import_spec_list", "type_spec_list", "var_spec_list", ])`  L37-42

@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/render/src/render.ts`](../render.ts.md)
 
-**Blast radius:** 35 files (`greplost impact packages/render/src/docs/card.ts`)
+**Blast radius:** 33 files (`greplost impact packages/render/src/docs/card.ts`)
 
 **Key symbols:**
 - `const KEY_SYMBOL_CAP = 50`  L20-20

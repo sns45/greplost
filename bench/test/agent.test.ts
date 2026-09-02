@@ -212,7 +212,8 @@ describe("tasks", () => {
         expect(task.prompt).toContain('{"files": [...]}');
         expect(task.truth.files.length).toBeGreaterThanOrEqual(5);
         expect(task.truth_source).toContain("hand-curated");
-        expect(task.truth_source).toContain("Curation rule:");
+        // The key has to come from a stated rule, not from taste.
+        expect(task.truth_source).toContain("Curation rule");
       }
     }
     expect(loadOrientationTasks("no-such-repo")).toEqual([]);
@@ -247,6 +248,24 @@ describe("tasks", () => {
     const only = loadTasks("tiny-ts", fixtureTruth, 8, 1, ["definition", "importers"]);
     expect(only.length).toBeGreaterThan(0);
     for (const task of only) expect(["definition", "importers"]).toContain(task.category);
+  });
+
+  test("n is the number of tasks asked for, after the category filter, not before", () => {
+    // Splitting 8 over four categories and then dropping three of them used to
+    // leave 2 tasks for a caller who asked for 8.
+    const one = loadTasks("tiny-ts", fixtureTruth, 8, 1, ["definition"]);
+    expect(one).toHaveLength(8);
+    for (const task of one) expect(task.category).toBe("definition");
+    expect(new Set(one.map((t) => t.id)).size).toBe(8);
+
+    const two = loadTasks("tiny-ts", fixtureTruth, 8, 1, ["definition", "importers"]);
+    expect(two).toHaveLength(8);
+    expect(two.filter((t) => t.category === "definition")).toHaveLength(4);
+    expect(two.filter((t) => t.category === "importers")).toHaveLength(4);
+
+    // A category with fewer candidates than its share still shrinks rather than
+    // inventing tasks: the fixture has 10 definition subjects, not 40.
+    expect(loadTasks("tiny-ts", fixtureTruth, 40, 1, ["definition"]).length).toBeLessThanOrEqual(10);
   });
 });
 
@@ -864,6 +883,26 @@ describe("fake claude timeouts and budget", () => {
     expect(overall?.["errors"]).toBe(runs.length);
   }, 60000);
 
+  test("a failed session never buys a probe session and never flips the run to stream-json", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 1));
+    expect(
+      await runInMode("sleep", ["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "1", "--timeout", "400"]),
+    ).toBe(0);
+
+    // One doomed session, not two: a session that never produced an envelope has
+    // no missing tool-call count to go and buy.
+    expect(invocations()).toHaveLength(1);
+    const payload = writtenResult();
+    expect((payload["toolCallProbe"] as Record<string, number>)["sessions"]).toBe(0);
+    const cli = payload["cli"] as Record<string, unknown>;
+    expect(cli["streamJsonFallback"]).toBe(false);
+    expect(cli["outputFormat"]).toBe("json");
+    for (const record of payload["runs"] as Record<string, unknown>[]) {
+      expect(record["toolCallsFromProbe"]).toBe(false);
+    }
+  }, 60000);
+
   test("an envelope with no answer and no usage is an unrecognised envelope, not an unreadable answer", async () => {
     resetHarness();
     writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 1));
@@ -913,9 +952,66 @@ describe("fake claude timeouts and budget", () => {
     expect(budget["maxUsd"]).toBe(0.03);
     expect(budget["stopped"]).toBe(true);
     expect(budget["spentUsd"] as number).toBeGreaterThanOrEqual(0.03);
-    for (const call of invocations()) {
-      expect(call.argv[call.argv.indexOf("--max-budget-usd") + 1]).toBe("0.03");
+    // The first session sees the whole remaining cap (below the 1 USD seed
+    // ceiling), and every session's flag stays inside what is left of the cap.
+    const calls = invocations();
+    expect(calls[0]?.argv[(calls[0]?.argv.indexOf("--max-budget-usd") ?? -1) + 1]).toBe("0.03");
+    for (const call of calls) {
+      const passed = Number(call.argv[call.argv.indexOf("--max-budget-usd") + 1]);
+      expect(passed).toBeGreaterThan(0);
+      expect(passed).toBeLessThanOrEqual(0.03);
     }
+    // The cap, not the per-session ceiling, was the binding constraint every
+    // time; the recorded source is the one in force when the run ended, by which
+    // point sessions had billed and the ceiling was following the observed median.
+    expect(budget["sessionCeilingSource"]).toBe("observed");
+    expect(budget["truncatedSessions"] as number).toBeGreaterThanOrEqual(1);
+    // Attributable: every record says which ceiling its own session was given.
+    for (const record of runs) expect(record["sessionBudgetUsd"] as number).toBeLessThanOrEqual(0.03);
+  });
+
+  test("--max-session-usd sets the per-session ceiling and is recorded", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 2));
+    expect(
+      await run(["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "2", "--max-session-usd", "0.5"]),
+    ).toBe(0);
+
+    const payload = writtenResult();
+    const budget = payload["budget"] as Record<string, unknown>;
+    expect(budget["maxUsd"]).toBeNull();
+    expect(budget["sessionCeilingUsd"]).toBe(0.5);
+    expect(budget["sessionCeilingSource"]).toBe("flag");
+    // No run cap, so nothing could truncate a session below its ceiling.
+    expect(budget["truncatedSessions"]).toBe(0);
+    for (const call of invocations()) {
+      expect(call.argv[call.argv.indexOf("--max-budget-usd") + 1]).toBe("0.5");
+    }
+    for (const record of payload["runs"] as Record<string, unknown>[]) {
+      expect(record["sessionBudgetUsd"]).toBe(0.5);
+    }
+  });
+
+  test("the per-session ceiling follows the observed median once sessions have billed", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 4));
+    // A cap far above what the fake bills, so the ceiling is the only constraint.
+    expect(
+      await run(["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "4", "--max-usd", "100"]),
+    ).toBe(0);
+
+    const budget = writtenResult()["budget"] as Record<string, unknown>;
+    expect(budget["stopped"]).toBe(false);
+    expect(budget["sessionCeilingSource"]).toBe("observed");
+    // Every fake session bills 0.0125, so the median is 0.0125 and 4x is 0.05.
+    expect(budget["sessionCeilingUsd"]).toBeCloseTo(0.05, 9);
+    expect(budget["truncatedSessions"]).toBe(0);
+    const calls = invocations();
+    // The very first session had nothing to observe yet: the 1 USD seed.
+    expect(calls[0]?.argv[(calls[0]?.argv.indexOf("--max-budget-usd") ?? -1) + 1]).toBe("1");
+    expect(calls[calls.length - 1]?.argv[(calls[calls.length - 1]?.argv.indexOf("--max-budget-usd") ?? -1) + 1]).toBe(
+      "0.05",
+    );
   });
 
   test("a fixture run has no budget cap and passes no budget flag", async () => {
@@ -976,6 +1072,32 @@ describe("fake claude results, metrics and seams", () => {
     expect(metrics["A1"]?.["target"]).toBe(0.5);
     expect(metrics["A1"]?.["met"]).toBe(false);
     expect(metrics["A4"]?.["id"]).toBe("A4");
+  });
+
+  test("A3blast is null when the blast-radius category never ran", async () => {
+    resetHarness();
+    writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 4));
+    expect(
+      await run([
+        "--fixture",
+        "--condition",
+        "base,gl",
+        "--runs",
+        "1",
+        "--tasks",
+        "4",
+        "--categories",
+        "definition",
+      ]),
+    ).toBe(0);
+
+    const payload = writtenResult();
+    for (const task of payload["tasks"] as Task[]) expect(task.category).toBe("definition");
+    const metrics = payload["metrics"] as Record<string, unknown>;
+    // A category that never ran has no number, and 0 is a number.
+    expect(metrics["A3blast"]).toBeNull();
+    expect((metrics["A3"] as Record<string, unknown>)["delta"]).toBe(0);
+    expect((metrics["A1"] as Record<string, unknown>)["ratio"]).toBe(1);
   });
 
   test("metrics are null when the run cannot compare gl against base", async () => {

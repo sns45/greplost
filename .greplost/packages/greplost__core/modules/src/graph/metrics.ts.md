@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/graph/index.ts`](index.ts.md)
 
-**Blast radius:** 44 files (`greplost impact packages/core/src/graph/metrics.ts`)
+**Blast radius:** 42 files (`greplost impact packages/core/src/graph/metrics.ts`)
 
 **Key symbols:**
 - `type FileMetrics = Omit<FileEntry, "summaryHash" | "staleSummary" | "exports">`  L23-23
