@@ -106,17 +106,39 @@ export async function createParser(opts?: { grammarDir?: string }): Promise<Pars
 }
 
 /**
+ * The spare parser used by error recovery.
+ *
+ * Ownership: this module owns exactly one, for the life of the process, alongside
+ * the process-wide runtime init and grammar cache above. It is created on first
+ * use and never recreated per file, because a `Parser` is a fixed wasm allocation
+ * of a few kilobytes while creating one costs more than the re-parse it serves.
+ * `disposeSpareParser` releases it for a host that wants the memory back; the next
+ * `reparse` simply builds a new one.
+ */
+let spare: Parser | null = null;
+let spareLanguage: Language | null = null;
+
+/**
  * Re-parse a fragment with a language that is already compiled, synchronously.
  *
  * Error recovery uses this to re-read a region the parser could not make sense of
  * in context: the fragment is verbatim source, so what comes back is still a real
- * parse, never a guess. One spare parser is created on first use and reused; a
- * `Tree` is independent of the parser that produced it, so nesting is safe.
+ * parse, never a guess. A `Tree` is independent of the parser that produced it, so
+ * nesting re-parses is safe.
  */
-let spare: Parser | null = null;
-
 export function reparse(language: Language, source: string): Tree | null {
   if (spare === null) spare = new Parser();
-  spare.setLanguage(language);
+  if (spareLanguage !== language) {
+    spare.setLanguage(language);
+    spareLanguage = language;
+  }
   return spare.parse(source);
+}
+
+/** Release the spare parser. The next `reparse` transparently creates another. */
+export function disposeSpareParser(): void {
+  if (spare === null) return;
+  spare.delete();
+  spare = null;
+  spareLanguage = null;
 }

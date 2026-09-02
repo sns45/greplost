@@ -141,6 +141,14 @@ const RECOVERY_MIN_CHARS = 8;
 const RECOVERY_MAX_RESUMES = 32;
 const RECOVERY_MAX_PARSES = 512;
 
+/**
+ * Region trees that yielded a declaration are held until extraction ends, so their
+ * cost is bounded against the file itself rather than against the number of parses:
+ * nested regions overlap, and depth is capped at 6, so 4x the source is the most any
+ * honest recovery needs. Recovery stops rather than growing past it.
+ */
+const RECOVERY_MAX_RETAINED_RATIO = 4;
+
 /** A region with none of these cannot hold a declaration, so it is not worth a parse. */
 const DECLARATION_KEYWORDS = [
   "export",
@@ -191,6 +199,9 @@ export function extractTs(
   const regionTrees: Tree[] = [];
   /** Re-parses spent on this file. */
   let parseBudget = RECOVERY_MAX_PARSES;
+  /** Bytes of region text held alive by `regionTrees`. */
+  let retainedBytes = 0;
+  const retainedLimit = source.length * RECOVERY_MAX_RETAINED_RATIO;
   /** Absolute source ranges already extracted, so recovery never emits a node twice. */
   const consumed = new Set<string>();
 
@@ -538,7 +549,8 @@ export function extractTs(
    * read (a call signature with defaulted type parameters, in hono's case).
    */
   function salvageRegion(start: number, end: number, depth: number): number {
-    if (depth > RECOVERY_MAX_DEPTH || end - start < RECOVERY_MIN_CHARS || parseBudget <= 0) return 0;
+    if (depth > RECOVERY_MAX_DEPTH || end - start < RECOVERY_MIN_CHARS) return 0;
+    if (parseBudget <= 0 || retainedBytes >= retainedLimit) return 0;
     const text = source.slice(start, end);
     if (!mayDeclare(text)) return 0;
     parseBudget -= 1;
@@ -558,8 +570,12 @@ export function extractTs(
         : [];
     // Nodes of a region that gave nothing are referenced by no record, so the tree
     // can go now; keeping only the useful ones bounds memory on a shredded file.
-    if (found > 0) regionTrees.push(regionTree);
-    else regionTree.delete();
+    if (found > 0) {
+      regionTrees.push(regionTree);
+      retainedBytes += text.length;
+    } else {
+      regionTree.delete();
+    }
 
     for (const [runStart, runEnd] of runs) {
       if (runEnd - runStart >= end - start) continue;
@@ -659,21 +675,28 @@ export function extractTs(
 
   // ------------------------------------------------------------------ run
 
-  ctx.source = source;
-  for (const child of tree.rootNode.namedChildren) collectTop(child);
-  if (tree.rootNode.hasError) recoverBrokenRegions();
+  try {
+    ctx.source = source;
+    for (const child of tree.rootNode.namedChildren) collectTop(child);
+    if (tree.rootNode.hasError) recoverBrokenRegions();
 
-  ctx.source = source;
-  rowOffset = 0;
-  walk(tree.rootNode, EMPTY_CTX);
-  for (const statement of recoveredStatements) {
-    ctx.source = statement.source;
-    rowOffset = statement.rowOffset;
-    walk(statement.node, EMPTY_CTX);
+    ctx.source = source;
+    rowOffset = 0;
+    walk(tree.rootNode, EMPTY_CTX);
+    for (const statement of recoveredStatements) {
+      ctx.source = statement.source;
+      rowOffset = statement.rowOffset;
+      walk(statement.node, EMPTY_CTX);
+    }
+  } finally {
+    // Region trees are wasm allocations the finalizer would only reclaim later, and
+    // a throw anywhere above must not strand them.
+    for (const regionTree of regionTrees) regionTree.delete();
+    regionTrees.length = 0;
+    retainedBytes = 0;
+    ctx.source = source;
+    rowOffset = 0;
   }
-  ctx.source = source;
-  rowOffset = 0;
-  for (const regionTree of regionTrees) regionTree.delete();
 
   // Static imports are collected in document order by pass A and dynamic ones by
   // pass B, so the two streams interleave only after sorting. Line order is the
@@ -701,9 +724,18 @@ function callKey(record: CallSite): string {
   return [record.line, record.caller, record.callee].join("|");
 }
 
+/**
+ * Names a function or class *expression* binds to itself: `const run = function g() {…}`
+ * makes `g` the expression inside its own body, never the top-level `g`.
+ */
+const SELF_BINDING: ReadonlySet<string> = new Set(["function_expression", "generator_function", "class"]);
+
 /** Every name bound anywhere inside a function: parameters, declarations, catches, loops. */
 function boundNames(root: Node): ReadonlySet<string> {
   const names = new Set<string>();
+  // The scope's own name counts only for the expression forms: a `function f()`
+  // *declaration* binds `f` in the scope around it, so its recursive self-calls stay.
+  if (SELF_BINDING.has(root.type)) addName(root, names);
   const stack: Node[] = [...root.namedChildren];
   while (stack.length > 0) {
     const node = stack.pop();
@@ -719,11 +751,15 @@ function boundNames(root: Node): ReadonlySet<string> {
       case "function_declaration":
       case "generator_function_declaration":
       case "class_declaration":
-      case "abstract_class_declaration": {
-        const name = node.childForFieldName("name");
-        if (name !== null) names.add(name.text);
+      case "abstract_class_declaration":
+      // Expression forms bind their name too, for anything nested inside them.
+      case "function_expression":
+      case "generator_function":
+      case "class":
+      case "enum_declaration":
+      case "internal_module":
+        addName(node, names);
         break;
-      }
       case "catch_clause":
         addPattern(node.childForFieldName("parameter"), names);
         break;
@@ -743,6 +779,16 @@ function boundNames(root: Node): ReadonlySet<string> {
     for (const child of node.namedChildren) stack.push(child);
   }
   return names;
+}
+
+/** The `name` a declaration binds, plus the head of a dotted namespace name. */
+function addName(node: Node, names: Set<string>): void {
+  const name = node.childForFieldName("name");
+  if (name === null) return;
+  names.add(name.text);
+  // `namespace A.B {}` binds `A` in the scope around it.
+  const dot = name.text.indexOf(".");
+  if (dot > 0) names.add(name.text.slice(0, dot));
 }
 
 /** Names bound by a binding pattern, however nested. */

@@ -54,14 +54,19 @@ export function resolveCallEdge(
   return undefined;
 }
 
+/** Look through parentheses, non-null assertions and `as` / `satisfies` casts. */
+export function unwrapExpression(expr: ts.Expression): ts.Expression {
+  let current = expr;
+  for (;;) {
+    if (ts.isParenthesizedExpression(current) || ts.isNonNullExpression(current)) current = current.expression;
+    else if (ts.isAsExpression(current) || ts.isSatisfiesExpression(current)) current = current.expression;
+    else return current;
+  }
+}
+
 /** The identifier naming the callee: `foo`, the `.name` of `a.foo`, else nothing. */
 export function calleeIdentifier(node: ts.CallExpression | ts.NewExpression): ts.Node | undefined {
-  let expr: ts.Expression = node.expression;
-  for (;;) {
-    if (ts.isParenthesizedExpression(expr) || ts.isNonNullExpression(expr)) expr = expr.expression;
-    else if (ts.isAsExpression(expr) || ts.isSatisfiesExpression(expr)) expr = expr.expression;
-    else break;
-  }
+  const expr = unwrapExpression(node.expression);
   if (ts.isIdentifier(expr)) return expr;
   if (ts.isPropertyAccessExpression(expr)) return expr.name;
   // Element access, `super()`, `import()`, calls on call results: never guessed.
@@ -169,7 +174,9 @@ function nameText(name: ts.Node | undefined): string | undefined {
  */
 function isCallerDeclaration(node: ts.Node): boolean {
   if (ts.isVariableDeclaration(node) || ts.isPropertyDeclaration(node)) {
-    const initializer = node.initializer;
+    // The initializer is unwrapped exactly as `calleeIdentifier` unwraps a callee, so
+    // `const f = ((…) => {…})` owns its calls like `const f = <T>(…) => …` already does.
+    const initializer = node.initializer === undefined ? undefined : unwrapExpression(node.initializer);
     return initializer !== undefined && (ts.isArrowFunction(initializer) || ts.isFunctionExpression(initializer));
   }
   return (
