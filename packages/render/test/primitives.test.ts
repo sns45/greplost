@@ -137,6 +137,19 @@ describe("renderGraph", () => {
     });
     expect(out).toContain("  a -->|3#124;4| b");
   });
+
+  test('escapes the full label character set " [ ] ( ) { } # ; < > without corrupting any inserted entity', () => {
+    // # and ; are the tricky pair: every entity this function inserts (including #35; and #59;
+    // themselves) contains both characters, so a naive chained sequence of separate .replace()
+    // calls for # and ; would have one rule's inserted entity re-matched (and corrupted) by the
+    // other; this asserts the exact, uncorrupted output for a label containing all of them at once.
+    const out = renderGraph({
+      direction: "LR",
+      nodes: [{ id: "n", label: 'a"b[c]d(e)f{g}h#i;j<k>l' }],
+      edges: [],
+    });
+    expect(out).toContain('  n["a#quot;b#91;c#93;d#40;e#41;f#123;g#125;h#35;i#59;j#60;k#62;l"]');
+  });
 });
 
 describe("renderTree", () => {
@@ -511,6 +524,14 @@ describe("paths", () => {
     expect(cardPath(pkg, "packages/core/src/registry.ts")).toBe("packages/tiny__core/modules/src/registry.ts.md");
   });
 
+  test("cardPath strips the prefix by plain string match, even when the package's directory itself contains an @", () => {
+    // pkg.path (a real directory, e.g. a pnpm-style packages/@scope/x layout) is independent of
+    // pkg.name; stripPackagePrefix uses startsWith, not a regex, so a literal "@" in the path is
+    // not a metacharacter concern, but this pins the behaviour regardless.
+    const pkg: PackageInfo = { name: "scoped-thing", path: "packages/@scope/x", source: "package.json" };
+    expect(cardPath(pkg, "packages/@scope/x/src/main.ts")).toBe("packages/scoped-thing/modules/src/main.ts.md");
+  });
+
   test("relLink: the spec's own worked example", () => {
     expect(relLink("packages/tiny__core/modules/src/registry.ts.md", "packages/tiny__core/MAP.md")).toBe(
       "../../MAP.md",
@@ -527,5 +548,11 @@ describe("paths", () => {
 
   test("relLink: between two different packages' maps", () => {
     expect(relLink("packages/tiny__core/MAP.md", "packages/tiny__render/MAP.md")).toBe("../tiny__render/MAP.md");
+  });
+
+  test("relLink: from a nested module card up and over into a different package's map", () => {
+    expect(
+      relLink("packages/tiny__core/modules/src/registry.ts.md", "packages/tiny__render/MAP.md"),
+    ).toBe("../../../tiny__render/MAP.md");
   });
 });
