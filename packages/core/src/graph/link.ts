@@ -33,15 +33,21 @@ export interface Resolver {
   resolve(fromFile: string, specifier: string, lang: Lang): ResolvedTarget;
 }
 
-/** Where an exported name actually lives. `hops` is 0 for a local declaration, 1 through one re-export. */
+/** Where an exported name actually lives. */
 export interface ExportTarget {
   file: string;
   symbol: string;
-  hops: 0 | 1;
+  /**
+   * Re-export hops between the exporting file and the declaration: 0 for a
+   * declaration in the file itself, 1 for one `export … from` / `export *`,
+   * and so on through a barrel chain of any depth.
+   */
+  hops: number;
   /**
    * The name is exported but this leaf cannot say which declaration it names:
-   * it comes from outside the repo, from a namespace object, or from more than
-   * one re-export hop. Such an entry exists only so `exportNames` reports the
+   * the chain leaves the repo, ends at a namespace object or an expression,
+   * dead-ends on a missing name, runs into a cycle, or two `export *` sources
+   * supply the name. Such an entry exists only so `exportNames` reports the
    * name; it is never a call target, whatever happens to be declared under
    * `file`/`symbol`.
    */
@@ -143,10 +149,6 @@ function importBindings(file: FileRecord, specifiers: Map<string, string> | unde
   return bindings;
 }
 
-function setIfAbsent(map: Map<string, ExportTarget>, name: string, target: ExportTarget): void {
-  if (!map.has(name)) map.set(name, target);
-}
-
 /** Names declared at the top level of a file (methods excluded), with their kind. */
 function topLevelDeclarations(file: FileRecord): Map<string, DeclKind> {
   const names = new Map<string, DeclKind>();
@@ -158,85 +160,81 @@ function topLevelDeclarations(file: FileRecord): Map<string, DeclKind> {
 }
 
 /**
+ * How one exported name gets its value: it is declared here, it comes from
+ * exactly one other (module, name), or it cannot be pinned at all.
+ */
+type Sourcing =
+  | { kind: "declared"; symbol: string }
+  | { kind: "chain"; module: string; name: string }
+  | { kind: "unpinnable" };
+
+/**
  * Exported name -> declaration site, per file.
  *
- * Two different jobs, deliberately kept apart:
+ * Two jobs, deliberately kept apart:
  *
  *  - The *name set* (`exportNames`, `FileEntry.exports`) matches what a
- *    compiler would report: direct declarations, one hop of named re-exports,
- *    and `export *` followed transitively through nested barrels.
- *  - The *pinned targets* are only those this leaf can name with certainty:
- *    a declaration in the file (hops 0) or one re-export hop onto a declaration
- *    (hops 1). Everything else — an external or unresolved source, a namespace
- *    object, a name arriving through more than one hop — is marked `unpinned`
- *    and can never become a call edge.
+ *    compiler would report: declarations, named re-exports, and `export *`
+ *    followed transitively through nested barrels.
+ *  - The *target* is the one declaration the name resolves to, with the number
+ *    of re-export hops it took to get there. A chain is followed to any depth
+ *    but must be exact: it stops, and the name is marked `unpinned`, when a hop
+ *    leaves the repo, names something that is not a single symbol, dead-ends on
+ *    a missing name, runs into a cycle, or when two `export *` sources supply
+ *    the same name with no local export shadowing them.
  */
 export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex {
   const specifiersByFile = resolvedSpecifiers(files, imports);
 
-  // Pass 1: everything a file declares itself. This is the only thing a
-  // re-export hop may read, which is what keeps chains one hop deep.
-  const local: ExportIndex = new Map();
-  const topLevelByFile = new Map<string, Map<string, DeclKind>>();
+  // Pass 1: what each file says about its own exported names, before any chain
+  // is followed. Declarations first, then export records in source order.
+  const explicit = new Map<string, Map<string, Sourcing>>();
   for (const file of files) {
     const topLevel = topLevelDeclarations(file);
-    topLevelByFile.set(file.path, topLevel);
-    const map = new Map<string, ExportTarget>();
+    const specifiers = specifiersByFile.get(file.path);
+    const bindings = importBindings(file, specifiers);
+    const map = new Map<string, Sourcing>();
+
     for (const decl of file.decls) {
       if (decl.parent !== undefined || decl.kind === "method") continue;
       if (!decl.exported) continue;
-      setIfAbsent(map, decl.name, { file: file.path, symbol: decl.name, hops: 0 });
+      if (!map.has(decl.name)) map.set(decl.name, { kind: "declared", symbol: decl.name });
     }
     for (const record of file.exports) {
-      if (record.from !== undefined || record.kind === "star") continue;
+      // `export * from "x"` exports no name of its own; pass 2 expands it.
+      if (record.kind === "star") continue;
+      if (map.has(record.name)) continue;
       const localName = record.local ?? record.name;
-      if (topLevel.has(localName)) {
-        setIfAbsent(map, record.name, { file: file.path, symbol: localName, hops: 0 });
+      if (record.from !== undefined) {
+        const module = specifiers?.get(record.from);
+        // A namespace object (`export * as ns from "x"`) is not one symbol.
+        map.set(
+          record.name,
+          module === undefined || localName === "*"
+            ? { kind: "unpinnable" }
+            : { kind: "chain", module, name: localName },
+        );
+        continue;
       }
-    }
-    local.set(file.path, map);
-  }
-
-  // Pass 2: re-exports, one hop, reading only pass 1.
-  const index: ExportIndex = new Map();
-  for (const file of files) index.set(file.path, new Map(local.get(file.path)));
-
-  for (const file of files) {
-    const specifiers = specifiersByFile.get(file.path);
-    const map = index.get(file.path);
-    const topLevel = topLevelByFile.get(file.path);
-    if (map === undefined || topLevel === undefined) continue;
-    const bindings = importBindings(file, specifiers);
-
-    // `export { x }` / `export { x as y }` where x is an imported binding.
-    for (const record of file.exports) {
-      if (record.from !== undefined || record.kind === "star") continue;
-      const localName = record.local ?? record.name;
-      if (topLevel.has(localName)) continue;
+      if (topLevel.has(localName)) {
+        map.set(record.name, { kind: "declared", symbol: localName });
+        continue;
+      }
       const binding = bindings.get(localName);
-      const target = binding !== undefined && binding.name !== "*" ? local.get(binding.module)?.get(binding.name) : undefined;
-      if (target !== undefined) setIfAbsent(map, record.name, { file: target.file, symbol: target.symbol, hops: 1 });
-      else setIfAbsent(map, record.name, { file: file.path, symbol: localName, hops: 0, unpinned: true });
+      map.set(
+        record.name,
+        binding === undefined || binding.name === "*"
+          ? { kind: "unpinnable" }
+          : { kind: "chain", module: binding.module, name: binding.name },
+      );
     }
-
-    // `export { a as b } from "x"`, including `export { default as X } from "x"`.
-    for (const record of file.exports) {
-      if (record.from === undefined || record.kind === "star") continue;
-      const localName = record.local ?? record.name;
-      const module = specifiers?.get(record.from);
-      const target = module !== undefined && localName !== "*" ? local.get(module)?.get(localName) : undefined;
-      if (target !== undefined) setIfAbsent(map, record.name, { file: target.file, symbol: target.symbol, hops: 1 });
-      else setIfAbsent(map, record.name, { file: file.path, symbol: record.name, hops: 0, unpinned: true });
-    }
+    explicit.set(file.path, map);
   }
 
-  // Pass 3: `export * from "x"`, transitively, so a barrel over barrels reports
-  // the leaf's names the way a compiler does. Only the first hop onto a
-  // declaration stays pinned; anything deeper is a name without a usable target.
-  //
-  // The star graph is condensed with Tarjan and walked in the order the
-  // components come out (every target finished before the file that stars it),
-  // so each name is copied once per edge rather than chased to a fixpoint.
+  // Pass 2: `export * from "x"` name sets, transitively. The star graph is
+  // condensed with Tarjan and walked in the order the components come out
+  // (every starred module finished before the file that stars it), so a barrel
+  // over barrels reports the leaf's names and a star cycle terminates.
   const starTargets = new Map<string, string[]>();
   const starEdges: Array<[string, string]> = [];
   for (const file of files) {
@@ -253,7 +251,7 @@ export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): Ex
   }
 
   const closure = new Map<string, Set<string>>();
-  for (const file of files) closure.set(file.path, new Set(index.get(file.path)?.keys()));
+  for (const file of files) closure.set(file.path, new Set(explicit.get(file.path)?.keys()));
 
   const stars = sccComponents(
     files.map((f) => f.path),
@@ -285,26 +283,105 @@ export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): Ex
     }
   }
 
+  // Pass 3: one node per (file, exported name), each with at most one source,
+  // so resolving a name is walking a chain rather than searching a graph.
+  const nodeIds = new Map<string, Map<string, number>>();
+  const nodeFile: string[] = [];
+  const nodeName: string[] = [];
+  const nodeSourcing: Sourcing[] = [];
   for (const file of files) {
-    const map = index.get(file.path);
-    const names = closure.get(file.path);
-    if (map === undefined || names === undefined) continue;
-    for (const name of [...names].sort(compareStrings)) {
-      if (map.has(name)) continue;
-      // The first star that can supply the name wins, in source order.
-      for (const module of starTargets.get(file.path) ?? []) {
-        if (!closure.get(module)?.has(name)) continue;
-        const declared = local.get(module)?.get(name);
-        if (declared !== undefined) {
-          map.set(name, { file: declared.file, symbol: declared.symbol, hops: 1 });
-        } else {
-          map.set(name, { file: module, symbol: name, hops: 1, unpinned: true });
-        }
-        break;
+    const ids = new Map<string, number>();
+    nodeIds.set(file.path, ids);
+    const own = explicit.get(file.path);
+    for (const name of [...(closure.get(file.path) ?? [])].sort(compareStrings)) {
+      let sourcing = own?.get(name);
+      if (sourcing === undefined) {
+        // Star-derived: exactly one starred module may supply the name.
+        const suppliers = (starTargets.get(file.path) ?? []).filter((m) => closure.get(m)?.has(name) === true);
+        const supplier = suppliers.length === 1 ? suppliers[0] : undefined;
+        sourcing = supplier === undefined ? { kind: "unpinnable" } : { kind: "chain", module: supplier, name };
       }
+      ids.set(name, nodeFile.length);
+      nodeFile.push(file.path);
+      nodeName.push(name);
+      nodeSourcing.push(sourcing);
     }
   }
 
+  const count = nodeFile.length;
+  const values: Array<ExportTarget | undefined> = new Array<ExportTarget | undefined>(count);
+  const onPath = new Uint8Array(count);
+  const unpinnedAt = (node: number): ExportTarget => ({
+    file: nodeFile[node] ?? "",
+    symbol: nodeName[node] ?? "",
+    hops: 0,
+    unpinned: true,
+  });
+
+  for (let start = 0; start < count; start++) {
+    if (values[start] !== undefined) continue;
+    const path: number[] = [];
+    let current = start;
+    let result: ExportTarget | undefined;
+    for (;;) {
+      const known = values[current];
+      if (known !== undefined) {
+        result = known;
+        break;
+      }
+      if (onPath[current] === 1) {
+        // A re-export cycle reaches no declaration, and everything that walked
+        // into it fails with it.
+        result = unpinnedAt(current);
+        break;
+      }
+      onPath[current] = 1;
+      path.push(current);
+      const sourcing = nodeSourcing[current] ?? { kind: "unpinnable" };
+      if (sourcing.kind === "declared") {
+        result = { file: nodeFile[current] ?? "", symbol: sourcing.symbol, hops: 0 };
+        values[current] = result;
+        break;
+      }
+      if (sourcing.kind === "unpinnable") {
+        result = unpinnedAt(current);
+        values[current] = result;
+        break;
+      }
+      const next = nodeIds.get(sourcing.module)?.get(sourcing.name);
+      if (next === undefined) {
+        // The chain names something the target module does not export.
+        result = unpinnedAt(current);
+        values[current] = result;
+        break;
+      }
+      current = next;
+    }
+    for (let i = path.length - 1; i >= 0; i--) {
+      const node = path[i] ?? 0;
+      onPath[node] = 0;
+      const settled = values[node];
+      if (settled !== undefined) {
+        result = settled;
+        continue;
+      }
+      const lifted: ExportTarget =
+        result === undefined || result.unpinned === true
+          ? unpinnedAt(node)
+          : { file: result.file, symbol: result.symbol, hops: result.hops + 1 };
+      values[node] = lifted;
+      result = lifted;
+    }
+  }
+
+  const index: ExportIndex = new Map();
+  for (const file of files) {
+    const map = new Map<string, ExportTarget>();
+    for (const [name, node] of nodeIds.get(file.path) ?? []) {
+      map.set(name, values[node] ?? unpinnedAt(node));
+    }
+    index.set(file.path, map);
+  }
   return index;
 }
 
@@ -314,6 +391,7 @@ export function exportNames(index: ExportIndex, file: string): string[] {
   return map === undefined ? [] : [...map.keys()].sort(compareStrings);
 }
 
+/** A resolved export as a call target: no hop is high, any chain is med. */
 function targetOf(index: ExportIndex, module: string, name: string): { to: string; confidence: Confidence } | null {
   const target = index.get(module)?.get(name);
   if (target === undefined || target.unpinned === true) return null;
@@ -321,9 +399,10 @@ function targetOf(index: ExportIndex, module: string, name: string): { to: strin
 }
 
 /**
- * Call edges. A callee is resolved to a same-file declaration or a uniquely
- * imported symbol (high), or through one re-export hop (med). Everything else
- * is dropped, and a target that is not a callable declaration is dropped too.
+ * Call edges. A callee is resolved to a same-file declaration or a directly
+ * imported symbol (high), or through a chain of re-exports of any depth (med).
+ * Everything else is dropped, and a target that is not a callable declaration
+ * is dropped too.
  */
 export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[] {
   const declKinds = new Map<string, DeclKind>();
@@ -342,7 +421,8 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
     return kind !== undefined && kind !== "interface" && kind !== "type";
   };
 
-  const edges = new Map<string, CallEdge>();
+  // from -> to -> edge, so no separator can collide with a path or symbol name.
+  const edges = new Map<string, Map<string, CallEdge>>();
   for (const file of files) {
     const topLevel = topLevelByFile.get(file.path) ?? new Map<string, DeclKind>();
     const bindings = importBindings(file, specifiersByFile.get(file.path));
@@ -366,17 +446,23 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
       if (resolved === null || !isCallable(resolved.to)) continue;
 
       const from = site.caller === "" ? file.path : symbolId(file.path, site.caller);
-      // NUL joins the pair: paths and symbol names may contain spaces.
-      const key = `${from}\u0000${resolved.to}`;
-      const existing = edges.get(key);
+      let targets = edges.get(from);
+      if (targets === undefined) {
+        targets = new Map<string, CallEdge>();
+        edges.set(from, targets);
+      }
+      const existing = targets.get(resolved.to);
       if (existing === undefined) {
-        edges.set(key, { from, to: resolved.to, kind: "call", confidence: resolved.confidence });
+        targets.set(resolved.to, { from, to: resolved.to, kind: "call", confidence: resolved.confidence });
       } else if (existing.confidence === "med" && resolved.confidence === "high") {
         existing.confidence = "high";
       }
     }
   }
-  return [...edges.values()].sort(compareEdges);
+
+  const out: CallEdge[] = [];
+  for (const targets of edges.values()) out.push(...targets.values());
+  return out.sort(compareEdges);
 }
 
 function resolveName(
@@ -428,10 +514,10 @@ function resolveMember(
   // A namespace import: resolve the member as an export of that module.
   if (binding.name === "*") return targetOf(index, binding.module, member);
 
-  // An imported class used statically. Only a direct (hops 0) import is
-  // resolved: through a re-export the declaring file is not known here.
+  // An imported class used statically, through however many re-export hops.
   const target = index.get(binding.module)?.get(binding.name);
-  if (target === undefined || target.hops !== 0 || target.unpinned === true) return null;
+  if (target === undefined || target.unpinned === true) return null;
   const id = symbolId(target.file, `${target.symbol}.${member}`);
-  return declKinds.has(id) ? { to: id, confidence: "high" } : null;
+  if (!declKinds.has(id)) return null;
+  return { to: id, confidence: target.hops === 0 ? "high" : "med" };
 }
