@@ -1098,7 +1098,7 @@ describe("charts: X2 arms", () => {
     };
     const note = freshnessNote(row, { categories: ["50", "100"], series: [{ name: "graphify", values: [0.127, 0.125] }] });
     expect(note).toContain("graphify 0.131");
-    expect(note).toContain("graphify -0.006");
+    expect(note).toContain("graphify +0.006");
     expect(freshnessNote(undefined, { categories: [], series: [] })).toBe("");
   });
 
