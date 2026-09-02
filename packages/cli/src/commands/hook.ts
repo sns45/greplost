@@ -13,7 +13,11 @@
  * payload, an unreadable repo, a failed update and a held lock are all "nothing
  * to say", reported on stderr where Claude Code logs it, never on stdout where
  * it would be parsed as a decision. `PreToolUse` in particular is advisory
- * only: it allows and adds a reminder, and has no path that can block a tool.
+ * only: it emits `additionalContext` and no `permissionDecision` at all, so it
+ * neither blocks the tool nor takes the user's permission prompt away from
+ * them. `permissionDecision: "allow"` would do the latter, which is a bigger
+ * decision than "read the map first" has any business making (ruling, fix
+ * round 1).
  *
  * `cwd` from the payload wins over the process's own, because Claude Code may
  * run the command from anywhere; an explicit `--root` wins over both.
@@ -81,7 +85,6 @@ export async function runHook(event: HookEvent, payloadText: string, ctx: Comman
         emit({
           hookSpecificOutput: {
             hookEventName: "PreToolUse",
-            permissionDecision: "allow",
             additionalContext: PRE_TOOL_USE_CONTEXT,
           },
         });

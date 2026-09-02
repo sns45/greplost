@@ -41,6 +41,27 @@ export function clearWorkspaceHooks(): void {
   hooks.clear();
 }
 
+/** What every command says when the optional workspace package is not present. */
+export const WORKSPACE_UNAVAILABLE = "workspace layer not available in this build";
+
+/**
+ * The second seam: `greplost init --workspace`. `@greplost/workspace` may
+ * export this to own the multi-repo build; the CLI only decides that the flag
+ * was given and hands over the root.
+ */
+export type WorkspaceInit = (root: string, opts: { hooks?: boolean; json?: boolean }) => Promise<number>;
+
+/** The workspace package's `initWorkspace`, or `undefined` when it is not in this build. */
+export async function loadWorkspaceInit(): Promise<WorkspaceInit | undefined> {
+  try {
+    const module = (await import("@greplost/workspace")) as Record<string, unknown>;
+    const init = module["initWorkspace"];
+    return typeof init === "function" ? (init as WorkspaceInit) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 let loading: Promise<void> | null = null;
 
 /** Ask `@greplost/workspace` to register its hooks, at most once per process. */

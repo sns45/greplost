@@ -11,7 +11,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { USAGE, findRoot, parseArgs, resolveRoot } from "../src/args.ts";
+import { USAGE, findRoot, parseArgs, resolveRoot, usageFor } from "../src/args.ts";
 
 function ok(argv: string[]) {
   const result = parseArgs(argv);
@@ -68,9 +68,25 @@ describe("args", () => {
     }
   });
 
-  test("init takes --no-hooks", () => {
+  test("init takes --no-hooks and --workspace", () => {
     expect(ok(["init"]).options.hooks).toBeUndefined();
     expect(ok(["init", "--no-hooks"]).options.hooks).toBe(false);
+    // Parsed, not rejected: the command reports a missing layer, exit 1.
+    expect(ok(["init", "--workspace"]).options.workspace).toBe(true);
+    expect(ok(["init"]).options.workspace).toBeUndefined();
+  });
+
+  test("update takes --semantic", () => {
+    expect(ok(["update", "--semantic"]).options.semantic).toBe(true);
+    expect(ok(["update"]).options.semantic).toBeUndefined();
+  });
+
+  test("help takes a command name and usageFor narrows to it", () => {
+    expect(ok(["help", "query"]).operands).toEqual(["query"]);
+    expect(ok(["impact", "x", "--help"]).operands).toEqual(["impact"]);
+    expect(usageFor("query")).toContain("greplost query <symbol|path>");
+    expect(usageFor("query")).not.toContain("greplost impact");
+    expect(usageFor("nonsense")).toBe(USAGE);
   });
 
   test("update defaults to incremental and accepts the mode flags", () => {
@@ -128,13 +144,35 @@ describe("args", () => {
     expect(fail(["refresh", "--model"])).toContain("--model");
   });
 
-  test("bench takes a suite and passes everything after it through untouched", () => {
-    const cmd = ok(["bench", "structural", "--gate", "--tier", "S", "--json"]);
+  test("bench takes a suite and passes the rest of its flags through untouched", () => {
+    const cmd = ok(["bench", "structural", "--gate", "--tier", "S"]);
     expect(cmd.operands).toEqual(["structural"]);
-    expect(cmd.options.passthrough).toEqual(["--gate", "--tier", "S", "--json"]);
-    expect(cmd.json).toBe(false);
-    expect(ok(["bench", "--root", "/tmp/x", "all"]).root).toBe("/tmp/x");
+    expect(cmd.options.passthrough).toEqual(["--gate", "--tier", "S"]);
     expect(fail(["bench"])).toContain("bench");
+  });
+
+  test("bench lifts --root and --json out of the tail", () => {
+    const before = ok(["bench", "--root", "/tmp/x", "all"]);
+    expect(before.root).toBe("/tmp/x");
+    expect(before.options.passthrough).toEqual([]);
+
+    const after = ok(["bench", "structural", "--gate", "--root", "/tmp/y", "--tier", "S"]);
+    expect(after.root).toBe("/tmp/y");
+    expect(after.options.passthrough).toEqual(["--gate", "--tier", "S"]);
+    expect(ok(["bench", "structural", "--root=/tmp/z"]).root).toBe("/tmp/z");
+    expect(fail(["bench", "structural", "--root"])).toContain("--root");
+
+    // `--json` is recorded and still forwarded: the CLI has no --json output
+    // for bench, and bench/src/mapquality.ts defines one of its own.
+    const json = ok(["bench", "mapquality", "--json"]);
+    expect(json.json).toBe(true);
+    expect(json.options.passthrough).toEqual(["--json"]);
+  });
+
+  test("screenshots parses --root and --json normally", () => {
+    const cmd = ok(["screenshots", "--root", "/tmp/x", "--json"]);
+    expect(cmd.root).toBe("/tmp/x");
+    expect(cmd.json).toBe(true);
   });
 
   test("screenshots takes no operands", () => {

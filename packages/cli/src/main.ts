@@ -8,7 +8,8 @@
  * 2 usage error (the command line was wrong, nothing ran).
  *
  * Two things happen before any command does: the grammar directory is pointed
- * at the bundle's vendored copy when this module is running from `dist/`, and
+ * at the bundle's vendored copy when this module is running from `dist/` (once,
+ * as this module loads, so it is set long before a parser could be built), and
  * `--root` is resolved. Both are process-level facts that every command would
  * otherwise have to rediscover.
  */
@@ -16,9 +17,9 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { USAGE, parseArgs, resolveRoot } from "./args.ts";
+import { USAGE, parseArgs, resolveRoot, usageFor } from "./args.ts";
 import type { CommandContext, ParsedCommand } from "./args.ts";
-import { errorMessage, printError, printLine } from "./output.ts";
+import { errorMessage, printError, printJson, printLine } from "./output.ts";
 
 import * as bench from "./commands/bench.ts";
 import * as flows from "./commands/flows.ts";
@@ -50,8 +51,6 @@ function configureGrammarDir(): void {
 configureGrammarDir();
 
 export async function main(argv: string[]): Promise<number> {
-  configureGrammarDir();
-
   const parsed = parseArgs(argv);
   if (!parsed.ok) {
     printError(parsed.message);
@@ -60,7 +59,12 @@ export async function main(argv: string[]): Promise<number> {
 
   const command = parsed.command;
   if (command.name === "help") {
-    printLine(USAGE);
+    // `greplost help <cmd>` and `greplost <cmd> --help` both land here with the
+    // command in the first operand.
+    const topic = command.operands[0];
+    const text = topic === undefined ? USAGE : usageFor(topic);
+    if (command.json) printJson({ usage: text });
+    else printLine(text);
     return 0;
   }
 

@@ -15,7 +15,7 @@ import path from "node:path";
 
 import { readStructure } from "@greplost/core";
 import type { Structure } from "@greplost/core";
-import { expandDirectoryTargets } from "@greplost/core/graph";
+import { expandDirectoryTargets, resolvedImportTargets } from "@greplost/core/graph";
 import type { Manifest, PackageInfo } from "@greplost/core/schema";
 import { ARTIFACT_DIR, LANG_BY_EXTENSION, compareStrings } from "@greplost/core/schema";
 import { cardPath } from "@greplost/render";
@@ -98,10 +98,19 @@ export function importPairs(structure: Structure): Array<readonly [string, strin
   return expandDirectoryTargets(structure.imports, Object.keys(structure.manifest.files));
 }
 
-/** Repo files that `file` imports, sorted and unique (directory targets expanded). */
+/**
+ * What `file` imports, sorted and unique: the *counting* view, so this list
+ * always has exactly `fanIn`/`fanOut`'s idea of a length.
+ *
+ * "What does this file import?" is a question about import statements, so a Go
+ * file importing a four-file package imports one thing, named as the package
+ * directory id it targets, not four (core's `resolvedImportTargets`, ruling
+ * 2026-09-02). The reachability view, which does expand to all four, is
+ * `importPairs` and belongs to `impact`. For TypeScript the two are identical.
+ */
 export function importsOfFile(structure: Structure, file: string): string[] {
   const targets = new Set<string>();
-  for (const [from, to] of importPairs(structure)) {
+  for (const [from, to] of resolvedImportTargets(structure.imports, Object.keys(structure.manifest.files))) {
     if (from === file) targets.add(to);
   }
   return [...targets].sort(compareStrings);

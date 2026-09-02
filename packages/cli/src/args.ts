@@ -42,6 +42,10 @@ export type HookEvent = (typeof HOOK_EVENTS)[number];
 export interface CommandOptions {
   /** `init --no-hooks` -> false. */
   hooks?: boolean;
+  /** `init --workspace`: build the multi-repo workspace map (tech spec 9). */
+  workspace?: boolean;
+  /** `update --semantic`: refresh the semantic layer after the update (tech spec 9). */
+  semantic?: boolean;
   /** `update` mode; always set for `update`. */
   mode?: "incremental" | "full";
   /** `update --files a b`. */
@@ -88,22 +92,57 @@ export interface CommandContext {
   options: CommandOptions;
 }
 
+/**
+ * One synopsis and one summary per command, so `greplost help <cmd>` and the
+ * full usage block can never disagree about what a command takes.
+ */
+const COMMAND_USAGE: ReadonlyArray<readonly [CommandName, string, string]> = [
+  ["init", "greplost init [--no-hooks] [--workspace]", "build the map, install git hooks, write config"],
+  [
+    "update",
+    "greplost update [--incremental|--full] [--files <p>...] [--semantic] [--quiet]",
+    "bring the map up to date",
+  ],
+  ["verify", "greplost verify [--diff]", "exit 1 on drift"],
+  ["query", "greplost query <symbol|path>", "definition, importers, callers, package, card"],
+  ["impact", "greplost impact <path> [--depth <n>]", "blast radius, by depth"],
+  ["flows", "greplost flows <pkg>", "print the package's FLOWS.md"],
+  ["refresh", "greplost refresh [pkg] [--model <m>] [--dry-run]", "semantic layer"],
+  ["bench", "greplost bench <suite> [args...]", "benchmark suites (inside the greplost repo)"],
+  ["screenshots", "greplost screenshots", "regenerate docs/assets"],
+  ["hook", `greplost hook <${HOOK_EVENTS.join("|")}>`, "Claude Code plugin transport (payload on stdin)"],
+  ["version", "greplost --version", "print the version"],
+  ["help", "greplost --help | greplost help <command>", "print this"],
+];
+
+const USAGE_FOOTER = `Every command accepts --root <dir> and --json.
+Exit codes: 0 success, 1 drift or not found, 2 usage error.`;
+
+/** Column width: the longest synopsis that is not itself an outlier. */
+const USAGE_WIDTH = Math.max(...COMMAND_USAGE.filter(([, s]) => s.length <= 46).map(([, s]) => s.length));
+
+/**
+ * `  <synopsis>  <summary>`, aligned. A synopsis too long for the column keeps
+ * the column honest by dropping its summary to the next line rather than
+ * pushing every other row to the right.
+ */
+function usageLine(synopsis: string, summary: string): string {
+  if (synopsis.length > USAGE_WIDTH) return `  ${synopsis}\n  ${" ".repeat(USAGE_WIDTH)}  ${summary}`;
+  return `  ${synopsis.padEnd(USAGE_WIDTH)}  ${summary}`.replace(/\s+$/, "");
+}
+
 export const USAGE = `usage: greplost <command> [options]
 
-  greplost init [--no-hooks]                     build the map, install git hooks, write config
-  greplost update [--incremental|--full] [--files <p>...] [--quiet]
-  greplost verify [--diff]                       exit 1 on drift
-  greplost query <symbol|path>                   definition, importers, callers, package, card
-  greplost impact <path> [--depth <n>]           blast radius, by depth
-  greplost flows <pkg>                           print the package's FLOWS.md
-  greplost refresh [pkg] [--model <m>] [--dry-run]   semantic layer
-  greplost bench <suite> [args...]               benchmark suites (inside the greplost repo)
-  greplost screenshots                           regenerate docs/assets
-  greplost hook <${HOOK_EVENTS.join("|")}>
-  greplost --version | --help
+${COMMAND_USAGE.map(([, synopsis, summary]) => usageLine(synopsis, summary)).join("\n")}
 
-Every command accepts --root <dir> and --json.
-Exit codes: 0 success, 1 drift or not found, 2 usage error.`;
+${USAGE_FOOTER}`;
+
+/** Usage for one command, for `greplost help <cmd>` and `greplost <cmd> --help`. */
+export function usageFor(name: string): string {
+  const entry = COMMAND_USAGE.find(([command]) => command === name);
+  if (entry === undefined) return USAGE;
+  return `usage: ${entry[1]}\n\n  ${entry[2]}\n\n${USAGE_FOOTER}`;
+}
 
 const COMMANDS: ReadonlySet<string> = new Set<CommandName>([
   "init",
@@ -190,10 +229,16 @@ function parseRest(name: CommandName, argv: string[]): ParseResult {
     if (flagsEnded || arg === "-" || !arg.startsWith("-")) {
       operands.push(arg);
       // The bench dispatcher owns its own flags; this parser must not need a
-      // release every time a suite grows one.
+      // release every time a suite grows one. The two flags the usage block
+      // promises on every command are lifted out of the tail first, so
+      // `greplost bench structural --root x` means what it says.
       if (name === "bench" && operands.length === 1) {
-        options.passthrough = argv.slice(cursor.index);
+        const tail = splitBenchTail(argv.slice(cursor.index));
         cursor.index = argv.length;
+        if (tail.error !== undefined) return usageError(`${tail.error}\n\n${USAGE}`);
+        if (tail.root !== undefined) root = tail.root;
+        if (tail.json) json = true;
+        options.passthrough = tail.passthrough;
       }
       continue;
     }
@@ -255,6 +300,55 @@ function rootOf(root: string | undefined): { root?: string } {
   return root === undefined ? {} : { root };
 }
 
+interface BenchTail {
+  root: string | undefined;
+  json: boolean;
+  passthrough: string[];
+  error?: string;
+}
+
+/**
+ * Lift `--root` and `--json` out of a `bench` tail, leaving everything else for
+ * the suite.
+ *
+ * `--root` is consumed: no bench suite defines one, and the usage block
+ * promises it on every command. `--json` is recorded *and forwarded*, because
+ * the CLI has no `--json` rendering of its own for `bench` (it delegates with
+ * inherited stdio) while a suite may well have one, and `bench/src/mapquality.ts`
+ * already does. Swallowing it there would break a flag that works today.
+ */
+function splitBenchTail(tail: readonly string[]): BenchTail {
+  const passthrough: string[] = [];
+  let root: string | undefined;
+  let json = false;
+
+  for (let index = 0; index < tail.length; index += 1) {
+    const arg = tail[index] as string;
+    const equals = arg.indexOf("=");
+    const flag = equals === -1 ? arg : arg.slice(0, equals);
+    const inline = equals === -1 ? undefined : arg.slice(equals + 1);
+
+    if (flag === "--root") {
+      if (inline !== undefined) {
+        root = inline;
+        continue;
+      }
+      const next = tail[index + 1];
+      if (next === undefined || (next.startsWith("-") && next !== "-")) {
+        return { root, json, passthrough, error: "--root needs a directory" };
+      }
+      root = next;
+      index += 1;
+      continue;
+    }
+
+    if (flag === "--json" && inline === undefined) json = true;
+    passthrough.push(arg);
+  }
+
+  return { root, json, passthrough };
+}
+
 /**
  * Consume a flag's value: the inline `--k=v` form, else the next argv entry.
  *
@@ -284,9 +378,18 @@ function applyCommandFlag(
 ): true | string {
   const noValue = (): true | string => (inline === undefined ? true : `${flag} takes no value`);
 
-  if (name === "init" && flag === "--no-hooks") {
-    options.hooks = false;
-    return noValue();
+  if (name === "init") {
+    if (flag === "--no-hooks") {
+      options.hooks = false;
+      return noValue();
+    }
+    // Parsed even though the workspace layer is not in this build: a flag the
+    // tech spec documents should report a missing layer (exit 1), not read as
+    // a typo (exit 2).
+    if (flag === "--workspace") {
+      options.workspace = true;
+      return noValue();
+    }
   }
 
   if (name === "update") {
@@ -300,6 +403,10 @@ function applyCommandFlag(
     }
     if (flag === "--quiet") {
       options.quiet = true;
+      return noValue();
+    }
+    if (flag === "--semantic") {
+      options.semantic = true;
       return noValue();
     }
     if (flag === "--files") {

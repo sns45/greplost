@@ -13,9 +13,22 @@
 import { init } from "@greplost/sync";
 
 import type { CommandContext } from "../args.ts";
-import { printJson, printLine } from "../output.ts";
+import { printError, printJson, printLine } from "../output.ts";
+import { WORKSPACE_UNAVAILABLE, loadWorkspaceInit } from "./workspace.ts";
 
 export async function run(ctx: CommandContext): Promise<number> {
+  if (ctx.options.workspace === true) {
+    const initWorkspace = await loadWorkspaceInit();
+    if (initWorkspace === undefined) {
+      printError(WORKSPACE_UNAVAILABLE);
+      return 1;
+    }
+    return initWorkspace(ctx.root, {
+      ...(ctx.options.hooks === false ? { hooks: false } : {}),
+      ...(ctx.json ? { json: true } : {}),
+    });
+  }
+
   const result = await init(ctx.root, {
     ...(ctx.options.hooks === false ? { hooks: false } : {}),
     ...(ctx.json ? { quiet: true } : {}),
