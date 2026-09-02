@@ -1,0 +1,8 @@
+{
+  "diagram": { "maxNodes": 25, "splitBy": "directory" },
+  "exclude": ["**/node_modules/**", "**/dist/**", "**/build/**", "**/.git/**", "**/.greplost/**", "**/*.d.ts", "**/*.test.*", "**/*.spec.*", "**/__tests__/**", "**/testdata/**", "**/*_test.go", "**/vendor/**", "fixtures/**", "bench/fixtures/**", "bench/.corpus/**", "bench/.competitors/**"],
+  "include": ["**"],
+  "languages": ["ts", "tsx", "js", "jsx", "go"],
+  "packages": { "roots": ["packages/*", "bench"] },
+  "semantic": { "enabled": true, "model": "claude-sonnet-5" }
+}

@@ -1,0 +1,1847 @@
+{
+  "files": {
+    "bench/src/adapters/crg.ts": {
+      "blast": 1,
+      "exports": [
+        "crgAdapter"
+      ],
+      "fanIn": 1,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 233,
+      "pkg": "@greplost/bench",
+      "sha256": "ca9e3249e4b92d225d9f598f7833be534e20e10000a1ea40d1fc8c0d9fe3c6e4",
+      "staleSummary": false
+    },
+    "bench/src/adapters/graphify.ts": {
+      "blast": 1,
+      "exports": [
+        "graphifyAdapter"
+      ],
+      "fanIn": 1,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 319,
+      "pkg": "@greplost/bench",
+      "sha256": "51df4e10cce82c99cc427d4e407cd93a9cf266612fba93e8c853acaf2a40c26e",
+      "staleSummary": false
+    },
+    "bench/src/adapters/index.ts": {
+      "blast": 0,
+      "exports": [
+        "Adapter",
+        "CompetitorArtifact",
+        "CompetitorFixture",
+        "EdgeSet",
+        "adapters",
+        "crgAdapter",
+        "fixtures",
+        "graphifyAdapter",
+        "run",
+        "toRepoRelative",
+        "toSymbolId",
+        "uaAdapter"
+      ],
+      "fanIn": 0,
+      "fanOut": 4,
+      "lang": "ts",
+      "loc": 97,
+      "pkg": "@greplost/bench",
+      "sha256": "5f8b8af5a5e3bc37709fad2486e3d5436d8f95af178060fc71fbd54e5df7fa1a",
+      "staleSummary": false
+    },
+    "bench/src/adapters/types.ts": {
+      "blast": 4,
+      "exports": [
+        "Adapter",
+        "CompetitorArtifact",
+        "EdgeSet",
+        "ReadArtifact",
+        "asArray",
+        "asRecord",
+        "asString",
+        "hasAny",
+        "readFirstJson",
+        "sortedIds",
+        "toRepoRelative",
+        "toSymbolId"
+      ],
+      "fanIn": 4,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 276,
+      "pkg": "@greplost/bench",
+      "sha256": "85017287f94217354db4ab897bbb52c0b5a41a41777ab8f95c1a155e73935e3b",
+      "staleSummary": false
+    },
+    "bench/src/adapters/ua.ts": {
+      "blast": 1,
+      "exports": [
+        "uaAdapter"
+      ],
+      "fanIn": 1,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 263,
+      "pkg": "@greplost/bench",
+      "sha256": "a40cb51ed337cc78365e1f9b5491ac689c93e68635357e488f73c94da751bd66",
+      "staleSummary": false
+    },
+    "bench/src/cli.ts": {
+      "blast": 0,
+      "exports": [
+        "main"
+      ],
+      "fanIn": 0,
+      "fanOut": 0,
+      "lang": "ts",
+      "loc": 50,
+      "pkg": "@greplost/bench",
+      "sha256": "1316d103ae35a7d36c2babeace13b5e6292320c911f7ca4393101da8f23dd330",
+      "staleSummary": false
+    },
+    "bench/src/corpus.ts": {
+      "blast": 4,
+      "exports": [
+        "Corpus",
+        "CorpusLang",
+        "CorpusRepoEntry",
+        "Tier",
+        "corpusRoot",
+        "deepenHistory",
+        "fetchAndCheckout",
+        "loadCorpus",
+        "repoDir",
+        "run",
+        "selectRepos",
+        "setupRepo"
+      ],
+      "fanIn": 4,
+      "fanOut": 0,
+      "lang": "ts",
+      "loc": 279,
+      "pkg": "@greplost/bench",
+      "sha256": "34331c53d6afe53eb9d232002760f6673761b210e35adbb68d6925566ab6dfe7",
+      "staleSummary": false
+    },
+    "bench/src/machine.ts": {
+      "blast": 3,
+      "exports": [
+        "MachineProfile",
+        "machineProfile"
+      ],
+      "fanIn": 3,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 63,
+      "pkg": "@greplost/bench",
+      "sha256": "06d6494b3ccfb51506364bad6fa2556b271f52514d23ac367fe6e377cd4c36f0",
+      "staleSummary": false
+    },
+    "bench/src/mapquality.ts": {
+      "blast": 0,
+      "exports": [
+        "DEFAULT_MAX_NODES",
+        "FenceReport",
+        "M1_TOKEN_BUDGET",
+        "countNodes",
+        "countTokens",
+        "resolveTarget",
+        "run",
+        "walkMarkdown"
+      ],
+      "fanIn": 0,
+      "fanOut": 5,
+      "lang": "ts",
+      "loc": 291,
+      "pkg": "@greplost/bench",
+      "sha256": "fc641b0da28c917a28be4e4c89170fd32dd57841300a4a44e750170b1f4b12c9",
+      "staleSummary": false
+    },
+    "bench/src/mermaid-check.ts": {
+      "blast": 1,
+      "exports": [
+        "CheckResult",
+        "Checker",
+        "checkMermaid",
+        "checkSubset",
+        "mermaidUnavailableReason"
+      ],
+      "fanIn": 1,
+      "fanOut": 0,
+      "lang": "ts",
+      "loc": 156,
+      "pkg": "@greplost/bench",
+      "sha256": "a5a3d545fc7099185df65396ab7d9048eba2d786a59aeba619f41be96c7a13b2",
+      "staleSummary": false
+    },
+    "bench/src/perf.ts": {
+      "blast": 0,
+      "exports": [
+        "PEAK_RSS_TARGET_BYTES",
+        "PerfOptions",
+        "PerfRun",
+        "RepoPerf",
+        "SCENARIOS",
+        "ScenarioName",
+        "ScenarioResult",
+        "Stats",
+        "missedTargets",
+        "perf",
+        "regressedScenarios",
+        "run",
+        "summarize",
+        "targetsFor"
+      ],
+      "fanIn": 0,
+      "fanOut": 6,
+      "lang": "ts",
+      "loc": 906,
+      "pkg": "@greplost/bench",
+      "sha256": "67e805e0d3e9ec68657f8bbf25c718f3c514f8bc64b33a472a46f8045f3455ec",
+      "staleSummary": false
+    },
+    "bench/src/replay.ts": {
+      "blast": 1,
+      "exports": [
+        "Drift",
+        "GitResult",
+        "ReplayOptions",
+        "ReplayRun",
+        "ReplayStep",
+        "ReplaySummary",
+        "TARGETS",
+        "aggregate",
+        "cloneWorkingCopy",
+        "compareArtifactTrees",
+        "copySourceTree",
+        "createSyntheticHistory",
+        "git",
+        "gitOrThrow",
+        "isPartialClone",
+        "missedGates",
+        "percentile",
+        "replay",
+        "run"
+      ],
+      "fanIn": 1,
+      "fanOut": 5,
+      "lang": "ts",
+      "loc": 1012,
+      "pkg": "@greplost/bench",
+      "sha256": "dcc4bed85a32a00139437b5b66ac9c968f256b8f3b111cb2bce5b3444123eefe",
+      "staleSummary": false
+    },
+    "bench/src/results-io.ts": {
+      "blast": 4,
+      "exports": [
+        "RESULTS_DIR",
+        "gitSha7",
+        "latestResult",
+        "resultsDir",
+        "todayIso",
+        "writeResult"
+      ],
+      "fanIn": 4,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 96,
+      "pkg": "@greplost/bench",
+      "sha256": "314b08fe4e8585d077e95d2efcd04e5f566299cf22f605a952271d6e49526fa4",
+      "staleSummary": false
+    },
+    "bench/src/score.ts": {
+      "blast": 1,
+      "exports": [
+        "Score",
+        "edgeKey",
+        "exportKeys",
+        "jaccardCycles",
+        "scoreEdges",
+        "scoreSet"
+      ],
+      "fanIn": 1,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 100,
+      "pkg": "@greplost/bench",
+      "sha256": "f295511e6d5047961e77c29f0dec66c3a982c62fe3e8fccafb65e7b461f8de53",
+      "staleSummary": false
+    },
+    "bench/src/structural.ts": {
+      "blast": 0,
+      "exports": [
+        "RepoScores",
+        "TARGETS",
+        "TruthLang",
+        "locate",
+        "missedMetrics",
+        "run",
+        "scoreAgainstTruth",
+        "scoredFiles"
+      ],
+      "fanIn": 0,
+      "fanOut": 4,
+      "lang": "ts",
+      "loc": 622,
+      "pkg": "@greplost/bench",
+      "sha256": "e8ab97307b6fcf0df37920b285c8616930bddb4e964fcd285441302e932a8d63",
+      "staleSummary": false
+    },
+    "bench/src/truth/go.ts": {
+      "blast": 0,
+      "exports": [
+        "GO_TRUTH_NOTES",
+        "generateGoTruth",
+        "goCallgraphTool"
+      ],
+      "fanIn": 0,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 235,
+      "pkg": "@greplost/bench",
+      "sha256": "9f10a72d7889b94161ed67408a9e0fb583d15fb77a683a5693f776a5d413fafe",
+      "staleSummary": false
+    },
+    "bench/src/truth/ts-calls.ts": {
+      "blast": 3,
+      "exports": [
+        "CallEndpoints",
+        "calleeIdentifier",
+        "declarationSymbolPath",
+        "enclosingCaller",
+        "moduleScopePath",
+        "resolveCallEdge",
+        "unalias"
+      ],
+      "fanIn": 1,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 204,
+      "pkg": "@greplost/bench",
+      "sha256": "96bf71b7b02ca62f92430e2a29b3f3782b34aa4b18d3dac8a734b6e874d1afa3",
+      "staleSummary": false
+    },
+    "bench/src/truth/ts-workspace.ts": {
+      "blast": 3,
+      "exports": [
+        "WorkspaceEntryMapper"
+      ],
+      "fanIn": 1,
+      "fanOut": 0,
+      "lang": "ts",
+      "loc": 355,
+      "pkg": "@greplost/bench",
+      "sha256": "502caeb9af1f52ad18ff1956eb72a380fb0c0086a83935663b49f368638b330f",
+      "staleSummary": false
+    },
+    "bench/src/truth/ts.ts": {
+      "blast": 2,
+      "exports": [
+        "Truth",
+        "TruthOptions",
+        "generateTsTruth",
+        "listTypeScriptFiles"
+      ],
+      "fanIn": 2,
+      "fanOut": 3,
+      "lang": "ts",
+      "loc": 600,
+      "pkg": "@greplost/bench",
+      "sha256": "cb0d70cb465b5bc7d81ff21f251c93bb2dc3a006bd5c8b523d1707510f526039",
+      "staleSummary": false
+    },
+    "bench/truth/gocallgraph/main.go": {
+      "blast": 0,
+      "exports": [],
+      "fanIn": 0,
+      "fanOut": 0,
+      "lang": "go",
+      "loc": 436,
+      "pkg": "@greplost/bench",
+      "sha256": "8c640988173c4bedd767aca4ca1dc7a56bb1043989fc8a8aee23ae4fd6aef1b6",
+      "staleSummary": false
+    },
+    "packages/cli/bin/greplost.js": {
+      "blast": 0,
+      "exports": [],
+      "fanIn": 0,
+      "fanOut": 0,
+      "lang": "js",
+      "loc": 6,
+      "pkg": "greplost",
+      "sha256": "1340c7a4ad3039400b626c879e2d5bce8c773a967974f67be78648cf87dd37f9",
+      "staleSummary": false
+    },
+    "packages/cli/src/args.ts": {
+      "blast": 14,
+      "exports": [
+        "CommandContext",
+        "CommandName",
+        "CommandOptions",
+        "HOOK_EVENTS",
+        "HookEvent",
+        "ParseResult",
+        "ParsedCommand",
+        "USAGE",
+        "findRoot",
+        "parseArgs",
+        "resolveRoot",
+        "usageFor"
+      ],
+      "fanIn": 14,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 497,
+      "pkg": "greplost",
+      "sha256": "cf645aa3a4ceb1382510ed6e8e3e9e7219966703d521acc27b92e60e5d4fa27d",
+      "staleSummary": false
+    },
+    "packages/cli/src/commands/bench.ts": {
+      "blast": 3,
+      "exports": [
+        "benchRepoRoot",
+        "delegateToBench",
+        "run"
+      ],
+      "fanIn": 2,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 74,
+      "pkg": "greplost",
+      "sha256": "c2128e91b729ea9cbe78b45796f0de370e8bc1a815e0561a09c6a30935036f00",
+      "staleSummary": false
+    },
+    "packages/cli/src/commands/flows.ts": {
+      "blast": 2,
+      "exports": [
+        "FlowsResult",
+        "run"
+      ],
+      "fanIn": 2,
+      "fanOut": 4,
+      "lang": "ts",
+      "loc": 43,
+      "pkg": "greplost",
+      "sha256": "a289daa80fb34971461f2bb3749919a28414335a4097832228639b8977f797ed",
+      "staleSummary": false
+    },
+    "packages/cli/src/commands/hook.ts": {
+      "blast": 2,
+      "exports": [
+        "HookPayload",
+        "run",
+        "runHook"
+      ],
+      "fanIn": 2,
+      "fanOut": 4,
+      "lang": "ts",
+      "loc": 168,
+      "pkg": "greplost",
+      "sha256": "4f54a68f3c7e624bb87c65559fdfdda7d3c6460e3d2ccd3e2368585a7de8dec9",
+      "staleSummary": false
+    },
+    "packages/cli/src/commands/impact.ts": {
+      "blast": 2,
+      "exports": [
+        "ImpactResult",
+        "run"
+      ],
+      "fanIn": 2,
+      "fanOut": 5,
+      "lang": "ts",
+      "loc": 64,
+      "pkg": "greplost",
+      "sha256": "5d29f006ed84676edf05c29b594a0aef132509e00e8fb620b95ab5d770b010b3",
+      "staleSummary": false
+    },
+    "packages/cli/src/commands/init.ts": {
+      "blast": 2,
+      "exports": [
+        "run"
+      ],
+      "fanIn": 1,
+      "fanOut": 4,
+      "lang": "ts",
+      "loc": 45,
+      "pkg": "greplost",
+      "sha256": "30a0b43a5f74dc40b6fe722c02bfc1ff821b767a4ba68ce7235b7bda0385c932",
+      "staleSummary": false
+    },
+    "packages/cli/src/commands/query.ts": {
+      "blast": 2,
+      "exports": [
+        "QueryFile",
+        "QueryMatch",
+        "QueryResult",
+        "queryStructure",
+        "run"
+      ],
+      "fanIn": 2,
+      "fanOut": 6,
+      "lang": "ts",
+      "loc": 275,
+      "pkg": "greplost",
+      "sha256": "3e8db378e9072afb60ade021ce548cd27b31fac60fb824ee74230294d8c074c3",
+      "staleSummary": false
+    },
+    "packages/cli/src/commands/refresh.ts": {
+      "blast": 3,
+      "exports": [
+        "SEMANTIC_UNAVAILABLE",
+        "SemanticRefresh",
+        "SemanticRefreshOptions",
+        "loadRefresh",
+        "run"
+      ],
+      "fanIn": 3,
+      "fanOut": 3,
+      "lang": "ts",
+      "loc": 56,
+      "pkg": "greplost",
+      "sha256": "dc8b672349b44c3c4afa33fd07033beb72f31c7f960c0c0d599b3f7fe566e9fd",
+      "staleSummary": false
+    },
+    "packages/cli/src/commands/screenshots.ts": {
+      "blast": 2,
+      "exports": [
+        "run"
+      ],
+      "fanIn": 1,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 13,
+      "pkg": "greplost",
+      "sha256": "863f658533d9d1762847f71b9aa1d8f4bb969afed8396c25c8beeb4e80cad918",
+      "staleSummary": false
+    },
+    "packages/cli/src/commands/structure.ts": {
+      "blast": 4,
+      "exports": [
+        "cardOf",
+        "importPairs",
+        "importsOfFile",
+        "loadStructure",
+        "looksLikePath",
+        "resolveFile",
+        "toRepoRelative"
+      ],
+      "fanIn": 2,
+      "fanOut": 4,
+      "lang": "ts",
+      "loc": 117,
+      "pkg": "greplost",
+      "sha256": "9bb304d6159c91c2e6de2db857d5af745c62391fc8d32fe2190a95920ab764d1",
+      "staleSummary": false
+    },
+    "packages/cli/src/commands/update.ts": {
+      "blast": 2,
+      "exports": [
+        "run"
+      ],
+      "fanIn": 1,
+      "fanOut": 5,
+      "lang": "ts",
+      "loc": 47,
+      "pkg": "greplost",
+      "sha256": "4bc2342ab67725a9388751bbced350e1f56561f9a4128d10fafe312524bc9276",
+      "staleSummary": false
+    },
+    "packages/cli/src/commands/verify.ts": {
+      "blast": 2,
+      "exports": [
+        "run"
+      ],
+      "fanIn": 1,
+      "fanOut": 4,
+      "lang": "ts",
+      "loc": 52,
+      "pkg": "greplost",
+      "sha256": "a19be2cd461e2895cef1baf33de81f395fe6a7c5c44013e513fa96ea8e631c68",
+      "staleSummary": false
+    },
+    "packages/cli/src/commands/version.ts": {
+      "blast": 2,
+      "exports": [
+        "run"
+      ],
+      "fanIn": 1,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 16,
+      "pkg": "greplost",
+      "sha256": "26ad7d11278017a6756f8ae7e48316a90809d5577725430fe4b37fdd5ade40e1",
+      "staleSummary": false
+    },
+    "packages/cli/src/commands/workspace.ts": {
+      "blast": 6,
+      "exports": [
+        "WORKSPACE_UNAVAILABLE",
+        "WorkspaceHook",
+        "WorkspaceHookName",
+        "WorkspaceInit",
+        "clearWorkspaceHooks",
+        "dispatchWorkspace",
+        "loadWorkspaceHooks",
+        "loadWorkspaceInit",
+        "setWorkspaceHook",
+        "workspaceHook"
+      ],
+      "fanIn": 5,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 97,
+      "pkg": "greplost",
+      "sha256": "871f6dffe918004471e3954642acab31e9bca9b6bbbd18536749f7c5cb758d35",
+      "staleSummary": false
+    },
+    "packages/cli/src/index.ts": {
+      "blast": 0,
+      "exports": [
+        "CommandContext",
+        "CommandName",
+        "CommandOptions",
+        "FlowsResult",
+        "HookEvent",
+        "HookPayload",
+        "ImpactResult",
+        "ParseResult",
+        "ParsedCommand",
+        "QueryFile",
+        "QueryMatch",
+        "QueryResult",
+        "SemanticRefresh",
+        "SemanticRefreshOptions",
+        "USAGE",
+        "WorkspaceHook",
+        "WorkspaceHookName",
+        "findRoot",
+        "main",
+        "parseArgs",
+        "resolveRoot",
+        "setWorkspaceHook",
+        "workspaceHook"
+      ],
+      "fanIn": 0,
+      "fanOut": 8,
+      "lang": "ts",
+      "loc": 25,
+      "pkg": "greplost",
+      "sha256": "e9c8df8baa4ab51868ef803d31c470bb7e7e186b904641b14e04c0cec3c2f2c1",
+      "staleSummary": false
+    },
+    "packages/cli/src/main.ts": {
+      "blast": 1,
+      "exports": [
+        "main"
+      ],
+      "fanIn": 1,
+      "fanOut": 13,
+      "lang": "ts",
+      "loc": 150,
+      "pkg": "greplost",
+      "sha256": "46d4a05f8b9220c328a47168a01f352cad9824b1effdbae889559a6680bf3712",
+      "staleSummary": false
+    },
+    "packages/cli/src/output.ts": {
+      "blast": 13,
+      "exports": [
+        "VERSION",
+        "errorMessage",
+        "fields",
+        "packageRoot",
+        "printError",
+        "printJson",
+        "printLine",
+        "readStdin",
+        "summarise",
+        "table"
+      ],
+      "fanIn": 11,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 116,
+      "pkg": "greplost",
+      "sha256": "0e0ac47cb43f2aa46f521d15ac433cf7028c71ee066eb082494010e11b6b94c7",
+      "staleSummary": false
+    },
+    "packages/core/src/build.ts": {
+      "blast": 18,
+      "exports": [
+        "BuildOptions",
+        "ParseCache",
+        "buildSnapshot"
+      ],
+      "fanIn": 1,
+      "fanOut": 8,
+      "lang": "ts",
+      "loc": 352,
+      "pkg": "@greplost/core",
+      "sha256": "b2831b9263b4d2e3168904bfec5c1f15495d09ff494c97e6ff82e999dadda771",
+      "staleSummary": false
+    },
+    "packages/core/src/config.ts": {
+      "blast": 19,
+      "exports": [
+        "loadConfig",
+        "validateConfig"
+      ],
+      "fanIn": 2,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 136,
+      "pkg": "@greplost/core",
+      "sha256": "130b42fa13895419a391b46be323aa1df454a20ce0aaa6a691c986e8b5d088ba",
+      "staleSummary": false
+    },
+    "packages/core/src/discover.ts": {
+      "blast": 19,
+      "exports": [
+        "DiscoveredFile",
+        "discoverFiles"
+      ],
+      "fanIn": 2,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 133,
+      "pkg": "@greplost/core",
+      "sha256": "bfcbad772971eb9f413022530803b0771572cd63ee91677fe593e49f05b7c9b0",
+      "staleSummary": false
+    },
+    "packages/core/src/extract/go.ts": {
+      "blast": 20,
+      "exports": [
+        "extractGo",
+        "isExportedName"
+      ],
+      "fanIn": 1,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 412,
+      "pkg": "@greplost/core",
+      "sha256": "cf860eb460539a4b72adb6b6e7c43f0e67bf4f048e029c195a5bd2de657fbc6f",
+      "staleSummary": false
+    },
+    "packages/core/src/extract/index.ts": {
+      "blast": 19,
+      "exports": [
+        "ExtractInput",
+        "extractFile",
+        "extractGo",
+        "extractTs"
+      ],
+      "fanIn": 2,
+      "fanOut": 5,
+      "lang": "ts",
+      "loc": 55,
+      "pkg": "@greplost/core",
+      "sha256": "78738a3edf3bec32f4ecd1b4704635ddec259f04068de71cb877aec5aaa0469c",
+      "staleSummary": false
+    },
+    "packages/core/src/extract/ts-calls.ts": {
+      "blast": 22,
+      "exports": [
+        "calleeText",
+        "recordCall"
+      ],
+      "fanIn": 1,
+      "fanOut": 3,
+      "lang": "ts",
+      "loc": 68,
+      "pkg": "@greplost/core",
+      "sha256": "55517a14c760bbad53de77d76b3d76fd8bbef29849bd6bccfb0c3c1fa74ba09e",
+      "staleSummary": false
+    },
+    "packages/core/src/extract/ts-imports.ts": {
+      "blast": 22,
+      "exports": [
+        "collectCommonJsExport",
+        "collectExportStatement",
+        "collectImportStatement",
+        "recordModuleCall"
+      ],
+      "fanIn": 2,
+      "fanOut": 3,
+      "lang": "ts",
+      "loc": 335,
+      "pkg": "@greplost/core",
+      "sha256": "1d6f8d1baab48f4ce6ba56cca7e369fa3c40f4cb9971f6bc4a5dd4ad1a7d21e7",
+      "staleSummary": false
+    },
+    "packages/core/src/extract/ts-signature.ts": {
+      "blast": 24,
+      "exports": [
+        "BODY_VALUES",
+        "FUNCTION_VALUES",
+        "MAX_SIGNATURE",
+        "bodyCut",
+        "childOfType",
+        "clip",
+        "decoratorCuts",
+        "field",
+        "initialiserSignature",
+        "lineOf",
+        "nameOf",
+        "signatureText",
+        "sliceExcluding",
+        "spanOf",
+        "specifierName",
+        "stringOf",
+        "variableSignature"
+      ],
+      "fanIn": 4,
+      "fanOut": 0,
+      "lang": "ts",
+      "loc": 149,
+      "pkg": "@greplost/core",
+      "sha256": "290774790f11723c2c302098258e71ec3fd04670df898b0904f9613a0412e7cf",
+      "staleSummary": false
+    },
+    "packages/core/src/extract/ts.ts": {
+      "blast": 22,
+      "exports": [
+        "TsContext",
+        "extractTs"
+      ],
+      "fanIn": 3,
+      "fanOut": 4,
+      "lang": "ts",
+      "loc": 448,
+      "pkg": "@greplost/core",
+      "sha256": "ff64a49c290ea0fb25f3b3ae94b021047efc0ce64bea6f29d7c34ad9aa47f1a7",
+      "staleSummary": false
+    },
+    "packages/core/src/graph/blast.ts": {
+      "blast": 30,
+      "exports": [
+        "blastRadius",
+        "impactOf"
+      ],
+      "fanIn": 2,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 112,
+      "pkg": "@greplost/core",
+      "sha256": "ace54b0e7345b7a57bf2cfd971967deda8706430ec5463a5e6cc7d28092c070a",
+      "staleSummary": false
+    },
+    "packages/core/src/graph/directories.ts": {
+      "blast": 31,
+      "exports": [
+        "directoryOf",
+        "expandDirectoryTargets",
+        "filesByDirectory",
+        "importTargetsOf",
+        "resolvedImportTargets"
+      ],
+      "fanIn": 3,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 122,
+      "pkg": "@greplost/core",
+      "sha256": "79a35de365f3a902ca0620dee595d6697d38efac0b273e984652c32df6333651",
+      "staleSummary": false
+    },
+    "packages/core/src/graph/index.ts": {
+      "blast": 28,
+      "exports": [
+        "ComputedMetrics",
+        "ExportIndex",
+        "ExportTarget",
+        "FileMetrics",
+        "GraphEdges",
+        "blastRadius",
+        "buildExportIndex",
+        "computeMetrics",
+        "directoryOf",
+        "expandDirectoryTargets",
+        "exportNames",
+        "filesByDirectory",
+        "impactOf",
+        "importTargetsOf",
+        "linkCalls",
+        "linkImports",
+        "resolvedImportTargets",
+        "stronglyConnected"
+      ],
+      "fanIn": 7,
+      "fanOut": 5,
+      "lang": "ts",
+      "loc": 14,
+      "pkg": "@greplost/core",
+      "sha256": "c73d9ac9bc7c8cac715e89930eda2041b36c31d3a6a3b7fe534b80b35f9ec09a",
+      "staleSummary": false
+    },
+    "packages/core/src/graph/link.ts": {
+      "blast": 29,
+      "exports": [
+        "ExportIndex",
+        "ExportTarget",
+        "ResolvedTarget",
+        "Resolver",
+        "buildExportIndex",
+        "exportNames",
+        "linkCalls",
+        "linkImports"
+      ],
+      "fanIn": 1,
+      "fanOut": 3,
+      "lang": "ts",
+      "loc": 554,
+      "pkg": "@greplost/core",
+      "sha256": "c1e9c0d2fff5871ad6f46a82b9c13e33bf4a385995fd796f8af53542a020eda3",
+      "staleSummary": false
+    },
+    "packages/core/src/graph/metrics.ts": {
+      "blast": 29,
+      "exports": [
+        "ComputedMetrics",
+        "FileMetrics",
+        "computeMetrics"
+      ],
+      "fanIn": 1,
+      "fanOut": 5,
+      "lang": "ts",
+      "loc": 150,
+      "pkg": "@greplost/core",
+      "sha256": "1819ab73bfd0b3f4e4c536c7e9e387f1ec87f30d1c6ec4cc8e5293874126f04e",
+      "staleSummary": false
+    },
+    "packages/core/src/graph/query.ts": {
+      "blast": 18,
+      "exports": [
+        "callersOf",
+        "findSymbols",
+        "importersOf"
+      ],
+      "fanIn": 1,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 81,
+      "pkg": "@greplost/core",
+      "sha256": "2352f6a2d2dfdc40a3829cc5da941a1b39c77d85eece913c048aa76d0bc82294",
+      "staleSummary": false
+    },
+    "packages/core/src/graph/tarjan.ts": {
+      "blast": 32,
+      "exports": [
+        "GraphEdges",
+        "SccResult",
+        "sccComponents",
+        "stronglyConnected"
+      ],
+      "fanIn": 4,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 152,
+      "pkg": "@greplost/core",
+      "sha256": "a88b076ce1e13806196ce72c424d5370eaa41c6108b4b860d21623121feb2227",
+      "staleSummary": false
+    },
+    "packages/core/src/hash.ts": {
+      "blast": 20,
+      "exports": [
+        "countLoc",
+        "sha256Hex"
+      ],
+      "fanIn": 3,
+      "fanOut": 0,
+      "lang": "ts",
+      "loc": 28,
+      "pkg": "@greplost/core",
+      "sha256": "73814db290e5a52ea0b5a07c022c8c45b905ee5b30484ea54b0c440e625ba4d1",
+      "staleSummary": false
+    },
+    "packages/core/src/index.ts": {
+      "blast": 17,
+      "exports": [
+        "ARTIFACT_DIR",
+        "ARTIFACT_PATHS",
+        "BuildOptions",
+        "CallEdge",
+        "CallSite",
+        "ComputedMetrics",
+        "Confidence",
+        "DEFAULT_CONFIG",
+        "DeclKind",
+        "Declaration",
+        "DiagramConfig",
+        "DiscoveredFile",
+        "Edge",
+        "ExportIndex",
+        "ExportRecord",
+        "ExportTarget",
+        "ExtractInput",
+        "FileEntry",
+        "FileMetrics",
+        "FileRecord",
+        "GraphEdges",
+        "GreplostConfig",
+        "ImportEdge",
+        "ImportKind",
+        "ImportRecord",
+        "ImportedSymbol",
+        "LANG_BY_EXTENSION",
+        "Lang",
+        "Manifest",
+        "Metrics",
+        "PackageEdge",
+        "PackageEntry",
+        "PackageInfo",
+        "ParseCache",
+        "ParserHandle",
+        "RepoContext",
+        "ResolvedTarget",
+        "Resolver",
+        "SCHEMA_VERSION",
+        "Snapshot",
+        "Structure",
+        "SummaryCache",
+        "SummaryEntry",
+        "TsPaths",
+        "blastRadius",
+        "buildExportIndex",
+        "buildSnapshot",
+        "callersOf",
+        "compareDeclarations",
+        "compareEdges",
+        "compareStrings",
+        "computeMetrics",
+        "countLoc",
+        "createParser",
+        "createResolver",
+        "detectPackages",
+        "directoryOf",
+        "discoverFiles",
+        "expandDirectoryTargets",
+        "exportNames",
+        "externalId",
+        "extractFile",
+        "extractGo",
+        "extractTs",
+        "filesByDirectory",
+        "findSymbols",
+        "grammarDir",
+        "impactOf",
+        "importTargetsOf",
+        "importersOf",
+        "isFileId",
+        "linkCalls",
+        "linkImports",
+        "loadConfig",
+        "loadTsconfigPaths",
+        "packageId",
+        "packageOf",
+        "packageSlug",
+        "parseJsonl",
+        "readStructure",
+        "resolvedImportTargets",
+        "serializeSnapshot",
+        "sha256Hex",
+        "stableStringify",
+        "stronglyConnected",
+        "symbolId",
+        "toJson",
+        "toJsonl",
+        "unresolvedId",
+        "validateConfig"
+      ],
+      "fanIn": 5,
+      "fanOut": 11,
+      "lang": "ts",
+      "loc": 27,
+      "pkg": "@greplost/core",
+      "sha256": "5ab116557778880192ea4c2f8a8b5f20f4dd0a35ef62d7d7898a755aa59fba4c",
+      "staleSummary": false
+    },
+    "packages/core/src/parser.ts": {
+      "blast": 20,
+      "exports": [
+        "ParserHandle",
+        "createParser",
+        "grammarDir"
+      ],
+      "fanIn": 3,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 106,
+      "pkg": "@greplost/core",
+      "sha256": "96de65d71916094a0a5a97e4976de89c80b9001b4a9b4f43dda6f930643ce9b6",
+      "staleSummary": false
+    },
+    "packages/core/src/resolve/go.ts": {
+      "blast": 33,
+      "exports": [
+        "GoCallIndex",
+        "GoRepoContext",
+        "GoTarget",
+        "buildGoCallIndex",
+        "createGoResolver",
+        "goDirectoryOf",
+        "goModulePath",
+        "resolveGoCall"
+      ],
+      "fanIn": 2,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 331,
+      "pkg": "@greplost/core",
+      "sha256": "0e204a7e9795f51547bd1801d1a72d0e8adc400bd31d83da8c8650994335ab16",
+      "staleSummary": false
+    },
+    "packages/core/src/resolve/index.ts": {
+      "blast": 30,
+      "exports": [
+        "RepoContext",
+        "ResolvedTarget",
+        "Resolver",
+        "TsPaths",
+        "createResolver",
+        "detectPackages",
+        "loadTsconfigPaths",
+        "packageOf"
+      ],
+      "fanIn": 3,
+      "fanOut": 3,
+      "lang": "ts",
+      "loc": 10,
+      "pkg": "@greplost/core",
+      "sha256": "0e78f15f15b92847be78695c69cf3c8cf794678a8e36f4e427b2704aa4fe51b2",
+      "staleSummary": false
+    },
+    "packages/core/src/resolve/packages.ts": {
+      "blast": 31,
+      "exports": [
+        "detectPackages",
+        "packageOf"
+      ],
+      "fanIn": 1,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 389,
+      "pkg": "@greplost/core",
+      "sha256": "3ca1e14fc1c93d8933758d449810e0b2c3f7caf0219bb98fe333868a53dbf4ce",
+      "staleSummary": false
+    },
+    "packages/core/src/resolve/resolver.ts": {
+      "blast": 31,
+      "exports": [
+        "RepoContext",
+        "ResolvedTarget",
+        "Resolver",
+        "createResolver"
+      ],
+      "fanIn": 1,
+      "fanOut": 3,
+      "lang": "ts",
+      "loc": 525,
+      "pkg": "@greplost/core",
+      "sha256": "b465e23ce4c237fa7b2f570c5faa4a9ce131dea0c15a6644c6c377f1994c5c99",
+      "staleSummary": false
+    },
+    "packages/core/src/resolve/tsconfig.ts": {
+      "blast": 32,
+      "exports": [
+        "TsPaths",
+        "loadTsconfigPaths",
+        "parseJsonc"
+      ],
+      "fanIn": 2,
+      "fanOut": 0,
+      "lang": "ts",
+      "loc": 316,
+      "pkg": "@greplost/core",
+      "sha256": "48184f6bcb3af60fc24d43c69d2cab390321888b8e4849f0b541f7d0e35e18ef",
+      "staleSummary": false
+    },
+    "packages/core/src/schema.ts": {
+      "blast": 79,
+      "exports": [
+        "ARTIFACT_DIR",
+        "ARTIFACT_PATHS",
+        "CallEdge",
+        "CallSite",
+        "Confidence",
+        "DEFAULT_CONFIG",
+        "DeclKind",
+        "Declaration",
+        "DiagramConfig",
+        "Edge",
+        "ExportRecord",
+        "FileEntry",
+        "FileRecord",
+        "GreplostConfig",
+        "ImportEdge",
+        "ImportKind",
+        "ImportRecord",
+        "ImportedSymbol",
+        "LANG_BY_EXTENSION",
+        "Lang",
+        "Manifest",
+        "Metrics",
+        "PackageEdge",
+        "PackageEntry",
+        "PackageInfo",
+        "SCHEMA_VERSION",
+        "Snapshot",
+        "SummaryCache",
+        "SummaryEntry",
+        "compareDeclarations",
+        "compareEdges",
+        "compareStrings",
+        "externalId",
+        "isFileId",
+        "packageId",
+        "packageSlug",
+        "stableStringify",
+        "symbolId",
+        "unresolvedId"
+      ],
+      "fanIn": 61,
+      "fanOut": 0,
+      "lang": "ts",
+      "loc": 361,
+      "pkg": "@greplost/core",
+      "sha256": "30d494441066cff2738825f9cf28a2eae75f0856e957596c5312e7217e29b8da",
+      "staleSummary": false
+    },
+    "packages/core/src/serialize/index.ts": {
+      "blast": 18,
+      "exports": [
+        "Structure",
+        "parseJsonl",
+        "readStructure",
+        "serializeSnapshot",
+        "toJson",
+        "toJsonl"
+      ],
+      "fanIn": 1,
+      "fanOut": 3,
+      "lang": "ts",
+      "loc": 4,
+      "pkg": "@greplost/core",
+      "sha256": "4e47f70fd6df0ccf252db36cc232a8ba7deafe9457397f4365aebf0caacdffdb",
+      "staleSummary": false
+    },
+    "packages/core/src/serialize/json.ts": {
+      "blast": 21,
+      "exports": [
+        "parseJsonl",
+        "toJson",
+        "toJsonl"
+      ],
+      "fanIn": 3,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 35,
+      "pkg": "@greplost/core",
+      "sha256": "6505f0e407fee18543607b897bb553449148588a49c1dcd36365f1d3feff2dd9",
+      "staleSummary": false
+    },
+    "packages/core/src/serialize/read.ts": {
+      "blast": 19,
+      "exports": [
+        "Structure",
+        "readStructure"
+      ],
+      "fanIn": 1,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 65,
+      "pkg": "@greplost/core",
+      "sha256": "b238364dcec6eab445f27dcfe251f003ea734b2becb42f5e64cb2246cc2f4802",
+      "staleSummary": false
+    },
+    "packages/core/src/serialize/write.ts": {
+      "blast": 19,
+      "exports": [
+        "serializeSnapshot"
+      ],
+      "fanIn": 1,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 22,
+      "pkg": "@greplost/core",
+      "sha256": "2357aea76f073406a3190cc18aa4a9beae0f6c909cd55d55b8f44a12ca001e29",
+      "staleSummary": false
+    },
+    "packages/render/src/ascii.ts": {
+      "blast": 25,
+      "exports": [
+        "RenderTreeOptions",
+        "renderTree"
+      ],
+      "fanIn": 3,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 82,
+      "pkg": "@greplost/render",
+      "sha256": "5a8759f8d4435670718e597a725c6549467ccdf289ea0b7cf70cd87427f07970",
+      "staleSummary": false
+    },
+    "packages/render/src/docs/api.ts": {
+      "blast": 24,
+      "exports": [
+        "apiSignature",
+        "buildApi",
+        "exportEntry",
+        "exportedDeclarations",
+        "keySymbol",
+        "localNames",
+        "reexportBullet",
+        "shortName"
+      ],
+      "fanIn": 2,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 176,
+      "pkg": "@greplost/render",
+      "sha256": "5d69b7e43a7f0b522fa619b59d2fb3d256f23601de9086ab8145560fe3c1663e",
+      "staleSummary": false
+    },
+    "packages/render/src/docs/card.ts": {
+      "blast": 24,
+      "exports": [
+        "buildCard"
+      ],
+      "fanIn": 1,
+      "fanOut": 4,
+      "lang": "ts",
+      "loc": 220,
+      "pkg": "@greplost/render",
+      "sha256": "7b096f9eaa471d38f1b58c3d3285c82d0c7c13b51d37dea92944fe661b00f49a",
+      "staleSummary": false
+    },
+    "packages/render/src/docs/hotspots.ts": {
+      "blast": 24,
+      "exports": [
+        "RankedFile",
+        "buildHotspots",
+        "cycleLine",
+        "topByBlast",
+        "topByFanIn"
+      ],
+      "fanIn": 2,
+      "fanOut": 4,
+      "lang": "ts",
+      "loc": 90,
+      "pkg": "@greplost/render",
+      "sha256": "3afaac9e65613bfdebf449080665f28312d6bb0e84dcbf2cfa2f9caf78069d59",
+      "staleSummary": false
+    },
+    "packages/render/src/docs/index-doc.ts": {
+      "blast": 24,
+      "exports": [
+        "buildIndex"
+      ],
+      "fanIn": 1,
+      "fanOut": 6,
+      "lang": "ts",
+      "loc": 185,
+      "pkg": "@greplost/render",
+      "sha256": "c8c41a49393d1eb973415431f26d3de41b0e8f5d1cc7d36883b1d637837cd713",
+      "staleSummary": false
+    },
+    "packages/render/src/docs/package-map.ts": {
+      "blast": 24,
+      "exports": [
+        "buildPackageMap",
+        "relativeToPackage"
+      ],
+      "fanIn": 1,
+      "fanOut": 6,
+      "lang": "ts",
+      "loc": 140,
+      "pkg": "@greplost/render",
+      "sha256": "6f1ecede2193ef073eac5022d95b5915f5edf50f45ee05f5a405f830f65f5481",
+      "staleSummary": false
+    },
+    "packages/render/src/docs/repo-map.ts": {
+      "blast": 24,
+      "exports": [
+        "buildRepoMap",
+        "packageNodeIds",
+        "packageTree"
+      ],
+      "fanIn": 2,
+      "fanOut": 6,
+      "lang": "ts",
+      "loc": 111,
+      "pkg": "@greplost/render",
+      "sha256": "fbe11fa74a44667a988324637945ad1e787b4aa0bcf2ea0598cab97e84068d6d",
+      "staleSummary": false
+    },
+    "packages/render/src/index.ts": {
+      "blast": 17,
+      "exports": [
+        "Diagram",
+        "DocContext",
+        "GENERATED_LINE",
+        "GraphEdge",
+        "GraphNode",
+        "GraphSpec",
+        "INDEX_TOKEN_BUDGET",
+        "RenderInput",
+        "RenderTreeOptions",
+        "SplitNode",
+        "cardPath",
+        "createContext",
+        "estimateTokens",
+        "mermaidId",
+        "packageDir",
+        "relLink",
+        "renderApi",
+        "renderArtifacts",
+        "renderCard",
+        "renderGraph",
+        "renderHotspots",
+        "renderIndex",
+        "renderPackageMap",
+        "renderRepoMap",
+        "renderTree",
+        "splitDiagram"
+      ],
+      "fanIn": 3,
+      "fanOut": 6,
+      "lang": "ts",
+      "loc": 26,
+      "pkg": "@greplost/render",
+      "sha256": "50cc77776c539c1596774321a0fc61855cbfcd09ff8a206e01134457b12f0fb8",
+      "staleSummary": false
+    },
+    "packages/render/src/mermaid.ts": {
+      "blast": 26,
+      "exports": [
+        "GraphEdge",
+        "GraphNode",
+        "GraphSpec",
+        "mermaidId",
+        "renderGraph"
+      ],
+      "fanIn": 4,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 133,
+      "pkg": "@greplost/render",
+      "sha256": "b5e3a57c98830d3b82fc4dbefba6c2bf371e03b9bcfa0b19cacc65d73105a2b3",
+      "staleSummary": false
+    },
+    "packages/render/src/render.ts": {
+      "blast": 24,
+      "exports": [
+        "DocContext",
+        "GENERATED_LINE",
+        "RenderInput",
+        "createContext",
+        "renderApi",
+        "renderArtifacts",
+        "renderCard",
+        "renderHotspots",
+        "renderIndex",
+        "renderPackageMap",
+        "renderRepoMap"
+      ],
+      "fanIn": 7,
+      "fanOut": 9,
+      "lang": "ts",
+      "loc": 298,
+      "pkg": "@greplost/render",
+      "sha256": "01fedc415cbd4fb75d39902abae873f65c54dfe699c74328356123cfab9949c1",
+      "staleSummary": false
+    },
+    "packages/render/src/slug.ts": {
+      "blast": 25,
+      "exports": [
+        "cardPath",
+        "packageDir",
+        "relLink"
+      ],
+      "fanIn": 7,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 45,
+      "pkg": "@greplost/render",
+      "sha256": "0d88ca75b7439aaa9d3ab619116c1b83c78ba9b7cc6b1d44b5e78b7432210ea6",
+      "staleSummary": false
+    },
+    "packages/render/src/split.ts": {
+      "blast": 25,
+      "exports": [
+        "Diagram",
+        "SplitNode",
+        "splitDiagram"
+      ],
+      "fanIn": 3,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 248,
+      "pkg": "@greplost/render",
+      "sha256": "a82e15ee1a7ed34a38d66bae7dc6e260f4c4b8474f2295516d0b725b3c50ed01",
+      "staleSummary": false
+    },
+    "packages/render/src/tokens.ts": {
+      "blast": 25,
+      "exports": [
+        "INDEX_TOKEN_BUDGET",
+        "estimateTokens"
+      ],
+      "fanIn": 2,
+      "fanOut": 0,
+      "lang": "ts",
+      "loc": 14,
+      "pkg": "@greplost/render",
+      "sha256": "28eee804d708173f76de98f6a125d5254e2c9d5a9e9074b194734e58d5878f98",
+      "staleSummary": false
+    },
+    "packages/semantic/src/index.ts": {
+      "blast": 4,
+      "exports": [],
+      "fanIn": 1,
+      "fanOut": 0,
+      "lang": "ts",
+      "loc": 2,
+      "pkg": "@greplost/semantic",
+      "sha256": "d29869ebdc83f46f9d8b2dd19ffd5c42843a06005dff39dcdffbc085272d640b",
+      "staleSummary": false
+    },
+    "packages/sync/src/artifacts.ts": {
+      "blast": 14,
+      "exports": [
+        "STRUCTURE_GLOBS",
+        "isStructurePath",
+        "listStructurePaths"
+      ],
+      "fanIn": 4,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 174,
+      "pkg": "@greplost/sync",
+      "sha256": "109a3bbf5017a059a9ea947203b8ce537d773c1cd140762eed7ea47e49ad7dac",
+      "staleSummary": false
+    },
+    "packages/sync/src/build.ts": {
+      "blast": 12,
+      "exports": [
+        "BuildArtifactsOptions",
+        "BuildResult",
+        "buildArtifacts",
+        "readSummaries"
+      ],
+      "fanIn": 3,
+      "fanOut": 4,
+      "lang": "ts",
+      "loc": 140,
+      "pkg": "@greplost/sync",
+      "sha256": "c38b195946d1689e9b9975e68d229f75bb4778b9e6a266590a6b980edcb6f0b4",
+      "staleSummary": false
+    },
+    "packages/sync/src/dirty.ts": {
+      "blast": 11,
+      "exports": [
+        "appendDirty",
+        "readAndClearDirty",
+        "toRepoRelative"
+      ],
+      "fanIn": 2,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 191,
+      "pkg": "@greplost/sync",
+      "sha256": "0c25c80d25bec86242bb785407caa0946180ef6bae2a76d09228834f3b192566",
+      "staleSummary": false
+    },
+    "packages/sync/src/githooks.ts": {
+      "blast": 10,
+      "exports": [
+        "HOOK_END_MARKER",
+        "HOOK_MARKER",
+        "HOOK_NAMES",
+        "HookInstallResult",
+        "installGitHooks"
+      ],
+      "fanIn": 2,
+      "fanOut": 0,
+      "lang": "ts",
+      "loc": 233,
+      "pkg": "@greplost/sync",
+      "sha256": "48e036875a56aed3c4666c12baa191e25555fa4b778206d113b537265108ede2",
+      "staleSummary": false
+    },
+    "packages/sync/src/incremental.ts": {
+      "blast": 10,
+      "exports": [
+        "UpdateOptions",
+        "UpdateResult",
+        "update"
+      ],
+      "fanIn": 2,
+      "fanOut": 8,
+      "lang": "ts",
+      "loc": 575,
+      "pkg": "@greplost/sync",
+      "sha256": "34dd1a2aeb44071103bfb34defe2c7959aca7785b918b1ddf2d239c37a32a49c",
+      "staleSummary": false
+    },
+    "packages/sync/src/index.ts": {
+      "blast": 8,
+      "exports": [
+        "BuildArtifactsOptions",
+        "BuildResult",
+        "FileParseCache",
+        "HOOK_MARKER",
+        "HOOK_NAMES",
+        "HookInstallResult",
+        "InitOptions",
+        "InitResult",
+        "LOCK_HEARTBEAT_MS",
+        "LOCK_STALE_MS",
+        "LockInfo",
+        "PARSE_CACHE_PATH",
+        "PARSE_CACHE_STAMP",
+        "PARSE_CACHE_VERSION",
+        "PARSE_CACHE_VERSION_KEY",
+        "STRUCTURE_GLOBS",
+        "SyncState",
+        "UpdateOptions",
+        "UpdateResult",
+        "VerifyOptions",
+        "VerifyResult",
+        "WithLockOptions",
+        "WriteResult",
+        "appendDirty",
+        "buildArtifacts",
+        "init",
+        "installGitHooks",
+        "isLocked",
+        "isStaleLock",
+        "isStructurePath",
+        "listStructurePaths",
+        "parseCacheKey",
+        "readAndClearDirty",
+        "readState",
+        "readSummaries",
+        "unifiedDiff",
+        "update",
+        "verify",
+        "withLock",
+        "writeArtifacts",
+        "writeState"
+      ],
+      "fanIn": 6,
+      "fanOut": 11,
+      "lang": "ts",
+      "loc": 49,
+      "pkg": "@greplost/sync",
+      "sha256": "a9be9346e4721f5680a593e144d9009cc5fd792b14543f949a8112a433c15655",
+      "staleSummary": false
+    },
+    "packages/sync/src/init.ts": {
+      "blast": 9,
+      "exports": [
+        "InitOptions",
+        "InitResult",
+        "init"
+      ],
+      "fanIn": 1,
+      "fanOut": 4,
+      "lang": "ts",
+      "loc": 143,
+      "pkg": "@greplost/sync",
+      "sha256": "fac774743b74ac610a59bc05e1901cc18dc7ce1a4d2c8f5648da1514431e18ac",
+      "staleSummary": false
+    },
+    "packages/sync/src/lock.ts": {
+      "blast": 11,
+      "exports": [
+        "LOCK_HEARTBEAT_MS",
+        "LOCK_STALE_MS",
+        "LockInfo",
+        "WithLockOptions",
+        "isLocked",
+        "isStaleLock",
+        "withLock"
+      ],
+      "fanIn": 2,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 281,
+      "pkg": "@greplost/sync",
+      "sha256": "a05612ecc585d841ea567df3894a56697bc3dd6869b3ccd02d92234094dbaded",
+      "staleSummary": false
+    },
+    "packages/sync/src/parse-cache.ts": {
+      "blast": 11,
+      "exports": [
+        "FileParseCache",
+        "PARSE_CACHE_PATH",
+        "PARSE_CACHE_STAMP",
+        "PARSE_CACHE_VERSION",
+        "PARSE_CACHE_VERSION_KEY",
+        "parseCacheKey"
+      ],
+      "fanIn": 3,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 232,
+      "pkg": "@greplost/sync",
+      "sha256": "a39476cbad91c008b1dd99cdda8b0dc6cbe98a42bfbca3e426cde9c214d56ae1",
+      "staleSummary": false
+    },
+    "packages/sync/src/state.ts": {
+      "blast": 11,
+      "exports": [
+        "SyncState",
+        "readState",
+        "writeState"
+      ],
+      "fanIn": 2,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 105,
+      "pkg": "@greplost/sync",
+      "sha256": "30bdebe40167e547e09822a34b107f6d044a055fb870d0c84df9acc85b821236",
+      "staleSummary": false
+    },
+    "packages/sync/src/verify.ts": {
+      "blast": 9,
+      "exports": [
+        "VerifyOptions",
+        "VerifyResult",
+        "unifiedDiff",
+        "verify"
+      ],
+      "fanIn": 1,
+      "fanOut": 3,
+      "lang": "ts",
+      "loc": 359,
+      "pkg": "@greplost/sync",
+      "sha256": "bc903ec929a1ad512df2acf5ff83d9200d69181682ed3542f4dd2e371c762209",
+      "staleSummary": false
+    },
+    "packages/sync/src/write.ts": {
+      "blast": 11,
+      "exports": [
+        "WriteResult",
+        "writeArtifacts",
+        "writeSeam"
+      ],
+      "fanIn": 2,
+      "fanOut": 2,
+      "lang": "ts",
+      "loc": 464,
+      "pkg": "@greplost/sync",
+      "sha256": "7d1a8c9cab93215675875c3e11963eec0789a4e615f196d2f42783b7541ad4ef",
+      "staleSummary": false
+    },
+    "packages/workspace/src/index.ts": {
+      "blast": 7,
+      "exports": [],
+      "fanIn": 1,
+      "fanOut": 0,
+      "lang": "ts",
+      "loc": 2,
+      "pkg": "@greplost/workspace",
+      "sha256": "d29869ebdc83f46f9d8b2dd19ffd5c42843a06005dff39dcdffbc085272d640b",
+      "staleSummary": false
+    },
+    "scripts/vendor-grammars.ts": {
+      "blast": 0,
+      "exports": [],
+      "fanIn": 0,
+      "fanOut": 0,
+      "lang": "ts",
+      "loc": 17,
+      "pkg": "greplost-monorepo",
+      "sha256": "8874015e4fcbe08008a3032994316786a39e3f9eab324fd2baaae050f2b1c8d1",
+      "staleSummary": false
+    }
+  },
+  "packages": {
+    "@greplost/bench": {
+      "deps": [
+        "@greplost/core",
+        "@greplost/sync"
+      ],
+      "files": 20,
+      "loc": 6593,
+      "path": "bench",
+      "rdeps": []
+    },
+    "@greplost/core": {
+      "deps": [],
+      "files": 29,
+      "loc": 5492,
+      "path": "packages/core",
+      "rdeps": [
+        "@greplost/bench",
+        "@greplost/render",
+        "@greplost/sync",
+        "greplost"
+      ]
+    },
+    "@greplost/render": {
+      "deps": [
+        "@greplost/core"
+      ],
+      "files": 13,
+      "loc": 1768,
+      "path": "packages/render",
+      "rdeps": [
+        "@greplost/sync",
+        "greplost"
+      ]
+    },
+    "@greplost/semantic": {
+      "deps": [],
+      "files": 1,
+      "loc": 2,
+      "path": "packages/semantic",
+      "rdeps": [
+        "greplost"
+      ]
+    },
+    "@greplost/sync": {
+      "deps": [
+        "@greplost/core",
+        "@greplost/render"
+      ],
+      "files": 12,
+      "loc": 2946,
+      "path": "packages/sync",
+      "rdeps": [
+        "@greplost/bench",
+        "greplost"
+      ]
+    },
+    "@greplost/workspace": {
+      "deps": [],
+      "files": 1,
+      "loc": 2,
+      "path": "packages/workspace",
+      "rdeps": [
+        "greplost"
+      ]
+    },
+    "greplost": {
+      "deps": [
+        "@greplost/core",
+        "@greplost/render",
+        "@greplost/semantic",
+        "@greplost/sync",
+        "@greplost/workspace"
+      ],
+      "files": 18,
+      "loc": 1861,
+      "path": "packages/cli",
+      "rdeps": []
+    },
+    "greplost-monorepo": {
+      "deps": [],
+      "files": 1,
+      "loc": 17,
+      "path": ".",
+      "rdeps": []
+    }
+  },
+  "version": "1"
+}
