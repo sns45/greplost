@@ -43,22 +43,22 @@
 
 ## bench/src/agent.ts
 
-- `const DEFAULT_MODEL = "claude-opus-5"` L62-62
-- `const CONDITIONS: Readonly<Record<string, Condition>> = { base: { allowed: ["Read", "Grep", "Glob"], disallowed: [], artifacts: { kind: "none" }, plugin: false, note: "stock Claude Code", }, g…` L142-185
-- `interface Answer` L194-197
-- `interface TaskScore` L200-213
-- `function normalizeAnswerPath(value: string, root?: string): string` L225-234
-- `function extractAnswer(text: string, root?: string): Answer | null` L263-289
-- `function lcsRatio(a: string[], b: string[]): number` L325-337
-- `function scoreAnswer(task: Task, answer: Answer | null): TaskScore` L357-377
-- `interface Stats` L384-391
-- `function summarize(values: number[]): Stats` L393-402
-- `function resolveClaude(): string` L535-547
-- `function createGreplostShim(dir: string): string` L689-696
-- `interface RunRecord` L979-1007
-- `interface RunTaskOptions` L1010-1023
-- `function runTask(task: Task, condition: string, options: RunTaskOptions): RunRecord` L1034-1050
-- `async function run(args: string[]): Promise<number>` L1453-1470
+- `const DEFAULT_MODEL = "claude-opus-5"` L64-64
+- `const CONDITIONS: Readonly<Record<string, Condition>> = { base: { allowed: ["Read", "Grep", "Glob"], disallowed: [], artifacts: { kind: "none" }, plugin: false, note: "stock Claude Code", }, g…` L144-187
+- `interface Answer` L196-199
+- `interface TaskScore` L202-215
+- `function normalizeAnswerPath(value: string, root?: string): string` L227-236
+- `function extractAnswer(text: string, root?: string): Answer | null` L265-291
+- `function lcsRatio(a: string[], b: string[]): number` L327-339
+- `function scoreAnswer(task: Task, answer: Answer | null): TaskScore` L359-379
+- `interface Stats` L386-393
+- `function summarize(values: number[]): Stats` L395-404
+- `function resolveClaude(): string` L537-549
+- `function createGreplostShim(dir: string): string` L691-698
+- `interface RunRecord` L981-1009
+- `interface RunTaskOptions` L1012-1025
+- `function runTask(task: Task, condition: string, options: RunTaskOptions): RunRecord` L1036-1052
+- `async function run(args: string[]): Promise<number>` L1455-1472
 
 ## bench/src/charts.ts
 

@@ -633,9 +633,9 @@ afterAll(() => {
   if (savedPath === undefined) delete process.env["PATH"];
   else process.env["PATH"] = savedPath;
   if (savedResultsDir === undefined) delete process.env["GREPLOST_BENCH_RESULTS_DIR"];
+  else process.env["GREPLOST_BENCH_RESULTS_DIR"] = savedResultsDir;
   if (savedWorkDir === undefined) delete process.env["GREPLOST_BENCH_WORK_DIR"];
   else process.env["GREPLOST_BENCH_WORK_DIR"] = savedWorkDir;
-  else process.env["GREPLOST_BENCH_RESULTS_DIR"] = savedResultsDir;
   delete process.env["FAKE_CLAUDE_LOG"];
   delete process.env["FAKE_CLAUDE_ANSWERS"];
   rmSync(harness.dir, { recursive: true, force: true });
