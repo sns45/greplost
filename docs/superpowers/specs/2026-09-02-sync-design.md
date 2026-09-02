@@ -7,7 +7,7 @@ Depends on `@greplost/core` (`buildSnapshot`, `serializeSnapshot`, `readStructur
 
 | Leaf | Files | Exports |
 |---|---|---|
-| 1.3.1 build-verify | `src/artifacts.ts`, `src/build.ts`, `src/write.ts`, `src/verify.ts`, `src/index.ts` | `STRUCTURE_GLOBS`, `isStructurePath`, `buildArtifacts`, `writeArtifacts`, `verify`, `readSummaries` |
+| 1.3.1 build-verify | `src/artifacts.ts`, `src/build.ts`, `src/write.ts`, `src/verify.ts`, `src/index.ts` | `STRUCTURE_GLOBS`, `isStructurePath`, `listStructurePaths`, `buildArtifacts`, `writeArtifacts`, `verify`, `readSummaries`, `unifiedDiff` |
 | 1.3.2 incremental | `src/incremental.ts`, `src/state.ts`, `src/lock.ts`, `src/dirty.ts`, `src/githooks.ts`, `src/parse-cache.ts`, `src/init.ts` | `update`, `init`, `readState`, `writeState`, `withLock`, `appendDirty`, `readAndClearDirty`, `installGitHooks`, `FileParseCache` |
 
 `src/index.ts` is written by 1.3.1 re-exporting only its own modules; leaf 1.3.2 (a later wave) appends re-exports for its modules. Ownership of `src/index.ts` transfers to 1.3.2 when it starts.
@@ -56,9 +56,9 @@ export const HOOK_MARKER = "# greplost-hook";
 
 **Build.** `buildArtifacts` = `buildSnapshot({ root, config, parser, cache, summaries: readSummaries(root) })`, then `serializeSnapshot` merged with `renderArtifacts`. Keys are artifact-relative paths; all satisfy `isStructurePath`.
 
-**Write.** Compare bytes before writing so unchanged files keep their mtime (git stays quiet). Prune: any file on disk under `.greplost/` for which `isStructurePath` is true and which is absent from the map is deleted (e.g. the card of a removed file); empty directories are removed. Never write outside `.greplost/`.
+**Write.** Compare bytes before writing so unchanged files keep their mtime (git stays quiet). Containment is checked on real paths: every directory segment under `.greplost/` is walked with `lstat` (a symlink segment is replaced by a real directory) and the parent's `realpath` must lie inside the artifact root's `realpath` before any write or delete; a directory squatting an artifact path is removed only when empty or when it contains nothing but structure paths (ruling 2026-09-03). A failed write is retried after removing the target only for `EACCES`/`EPERM`/`EISDIR`/`ENOTDIR`; other errors propagate with the artifact intact. Prune: any file on disk under `.greplost/` for which `isStructurePath` is true and which is absent from the map is deleted (e.g. the card of a removed file); empty directories are removed. Never write outside `.greplost/`.
 
-**Verify.** Build in memory with the committed `cache/summaries.json`, compare against disk for every structure path in either set: `changed` (both exist, bytes differ), `missing` (expected, not on disk), `extra` (on disk, not expected). `ok` iff all three are empty. With `diff`, produce a unified diff (`--- a/.greplost/<p>`, `+++ b/.greplost/<p>`, 3 lines of context) of the first path in `changed` (or the first `missing`/`extra` listed as whole-file added/removed), capped at 200 lines with a trailing `… truncated` line.
+**Verify.** Build in memory with the committed `cache/summaries.json`, compare against disk for every structure path in either set: `changed` (both exist, bytes differ), `missing` (expected, not on disk), `extra` (on disk, not expected). `ok` iff all three are empty. With `diff`, produce a unified diff (`--- a/.greplost/<p>`, `+++ b/.greplost/<p>`, 3 lines of context) of the first path in `changed` (or the first `missing`/`extra` listed as whole-file added/removed), capped at 200 lines including a trailing `… truncated` line (199 body lines plus the marker; ruling 2026-09-03).
 
 **Update (incremental).**
 1. `withLock`. If locked → `{ skipped: "locked" }` and nothing else.
