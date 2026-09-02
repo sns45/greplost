@@ -14,6 +14,7 @@ import type {
   Lang,
 } from "../schema.ts";
 import { compareEdges, compareStrings, externalId, symbolId, unresolvedId } from "../schema.ts";
+import { buildGoCallIndex, resolveGoCall } from "../resolve/go.ts";
 import { sccComponents } from "./tarjan.ts";
 
 /**
@@ -336,6 +337,9 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
     topLevelByFile.set(file.path, topLevelDeclarations(file));
   }
   const specifiersByFile = resolvedSpecifiers(files, imports);
+  // Go resolves calls through its own scope rules (leaf 1.8); the index is the
+  // shared empty one, at no cost, when the repo holds no Go file.
+  const goCalls = buildGoCallIndex(files, imports);
 
   const isCallable = (id: string): boolean => {
     const kind = declKinds.get(id);
@@ -350,8 +354,11 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
     for (const site of file.calls) {
       const callee = site.callee.startsWith("new ") ? site.callee.slice(4) : site.callee;
       const dot = callee.indexOf(".");
-      const resolved =
-        dot === -1
+      const resolved = file.lang === "go"
+        ? // Package scope, import aliases and method receivers: none of the
+          // TypeScript rules below apply to a Go file. See resolve/go.ts.
+          resolveGoCall(file, site, goCalls)
+        : dot === -1
           ? resolveName(callee, file.path, topLevel, bindings, index)
           : resolveMember(
               callee.slice(0, dot),

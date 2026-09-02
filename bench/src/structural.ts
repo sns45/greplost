@@ -20,7 +20,15 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { compareStrings, isFileId, type Snapshot } from "@greplost/core/schema";
+import {
+  ARTIFACT_DIR,
+  ARTIFACT_PATHS,
+  DEFAULT_CONFIG,
+  compareStrings,
+  isFileId,
+  type GreplostConfig,
+  type Snapshot,
+} from "@greplost/core/schema";
 import { exportKeys, jaccardCycles, scoreEdges, scoreSet, type Score } from "./score.ts";
 import { writeResult } from "./results-io.ts";
 import { generateTsTruth, type Truth } from "./truth/ts.ts";
@@ -250,7 +258,7 @@ function resolveTargets(options: Options): Target[] | string {
 // ---------------------------------------------------------------------------
 
 /** `buildSnapshot` lives in leaf 1.1.5 and is loaded only when something is measured. */
-type BuildSnapshot = (opts: { root: string }) => Promise<Snapshot>;
+type BuildSnapshot = (opts: { root: string; config?: GreplostConfig }) => Promise<Snapshot>;
 
 async function loadBuildSnapshot(): Promise<BuildSnapshot> {
   // The specifier is built at runtime so this file typechecks before core's build lands
@@ -301,9 +309,22 @@ async function loadMachine(): Promise<unknown> {
 // scoring
 // ---------------------------------------------------------------------------
 
+/**
+ * Build options for one target. `DEFAULT_CONFIG.languages` does not include `go`
+ * (it is opt-in per repo), so a Go corpus checkout with no committed
+ * `.greplost/config.json` would index nothing at all and score four vacuous
+ * 1.000s. The runner supplies exactly that one override, and only when the repo
+ * has not already made the choice itself.
+ */
+function buildOptionsFor(target: Target): { root: string; config?: GreplostConfig } {
+  if (target.lang !== "go") return { root: target.root };
+  if (existsSync(path.join(target.root, ARTIFACT_DIR, ARTIFACT_PATHS.config))) return { root: target.root };
+  return { root: target.root, config: { ...DEFAULT_CONFIG, languages: ["go"] } };
+}
+
 async function scoreTarget(target: Target, options: Options): Promise<RepoScores> {
   const buildSnapshot = await loadBuildSnapshot();
-  const snapshot = await buildSnapshot({ root: target.root });
+  const snapshot = await buildSnapshot(buildOptionsFor(target));
   const files = scoredFiles(snapshot, target.lang);
   const truth =
     target.lang === "go"
@@ -339,14 +360,20 @@ export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth
   const covered = Array.isArray(truth.files) && truth.files.length > 0 ? new Set(truth.files) : null;
   const files = scoredFiles(snapshot, lang).filter((file) => covered === null || covered.has(file));
   const fileSet = new Set(files);
+  // A Go import names a package, so both sides target the package *directory*
+  // (tech spec Appendix C). Those ids are not files and would otherwise be
+  // filtered off both sides, turning S1 into a vacuous 1.000; the covered
+  // universe therefore includes the directories the covered files live in.
+  const dirSet = lang === "go" ? new Set(files.map(directoryOf)) : new Set<string>();
+  const coveredTarget = (id: string): boolean => fileSet.has(id) || dirSet.has(id);
 
-  const predImports = snapshot.imports.filter((e) => isFileId(e.to) && fileSet.has(e.from) && fileSet.has(e.to));
+  const predImports = snapshot.imports.filter((e) => isFileId(e.to) && fileSet.has(e.from) && coveredTarget(e.to));
   const predCalls = snapshot.calls.filter((e) => fileSet.has(fileOf(e.from)) && fileSet.has(fileOf(e.to)));
   const predExports: Record<string, string[]> = {};
   for (const file of files) predExports[file] = snapshot.manifest.files[file]?.exports ?? [];
   const predCycles = snapshot.metrics.cycles.filter((cycle) => cycle.every((id) => fileSet.has(id)));
 
-  const truthImports = truth.imports.filter((e) => fileSet.has(e.from) && fileSet.has(e.to));
+  const truthImports = truth.imports.filter((e) => fileSet.has(e.from) && coveredTarget(e.to));
   const truthCalls = truth.calls.filter((e) => fileSet.has(fileOf(e.from)) && fileSet.has(fileOf(e.to)));
   const truthExports: Record<string, string[]> = {};
   for (const file of files) truthExports[file] = truth.exports[file] ?? [];
@@ -445,6 +472,12 @@ function serializeScores(scores: RepoScores): Record<string, unknown> {
 // ---------------------------------------------------------------------------
 // locating false positives (`file:line`)
 // ---------------------------------------------------------------------------
+
+/** The directory of a repo-relative file, `"."` at the repo root (a Go package id). */
+function directoryOf(file: string): string {
+  const slash = file.lastIndexOf("/");
+  return slash === -1 ? "." : file.slice(0, slash);
+}
 
 /** The file part of a node id: `a/b.ts#Sym` -> `a/b.ts`, `a/b.ts` -> `a/b.ts`. */
 function fileOf(id: string): string {
