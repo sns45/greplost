@@ -84,6 +84,13 @@ export interface RepoScores {
    * its own right (`truth-empty`) rather than a warning.
    */
   truthEmpty: boolean;
+  /**
+   * True when the snapshot indexed no file at all in the target's declared language.
+   * Nothing was predicted and nothing was expected, so all four metrics score 1.000 on
+   * an empty universe: a miss of its own (`no-files`), usually a config that excluded
+   * the language or a repo root that is not the checkout.
+   */
+  noFiles: boolean;
   /** Metric id -> `file:line (key)` for the first false positives, so a failure is actionable. */
   falsePositives: Record<string, string[]>;
   /**
@@ -397,6 +404,15 @@ export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth
   // has to be judged against what the snapshot offered, not against what
   // survived the intersection.
   const offered = scoredFiles(snapshot, lang).length;
+  // The snapshot side of the same integrity question: a repo greplost indexed
+  // nothing in scores four vacuous 1.000s just as loudly as an empty oracle.
+  const noFiles = offered === 0;
+  if (noFiles) {
+    console.error(
+      `${SUITE}: greplost indexed no ${lang} file in ${name}; the scores below are meaningless ` +
+        `(check the repo root and .greplost/config.json "languages")`,
+    );
+  }
   const truthEmpty =
     offered > 0 && (files.length === 0 || (truthImports.length === 0 && exportKeys(truthExports).length === 0));
   if (truthEmpty) {
@@ -415,6 +431,7 @@ export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth
     callsAll,
     S4,
     truthEmpty,
+    noFiles,
     notes: Array.isArray(truth.notes) ? truth.notes : [],
     falsePositives: {
       S1: locateAll(snapshot, S1.falsePositives, "import"),
@@ -440,8 +457,9 @@ export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth
 /**
  * The gate ids this repo missed, in id order. Empty means the repo passes Eval 1.
  *
- * `truth-empty` is a miss in its own right: without it a run where both the compiler and
- * greplost produced nothing would report four perfect scores and pass the gate.
+ * `truth-empty` and `no-files` are misses in their own right: without them a run where the
+ * oracle, or greplost, or both produced nothing would report four perfect scores and pass
+ * the gate.
  */
 export function missedMetrics(scores: RepoScores): string[] {
   const missed: string[] = [];
@@ -452,6 +470,7 @@ export function missedMetrics(scores: RepoScores): string[] {
   if (scores.S3.precision < TARGETS.S3 - EPSILON) missed.push("S3");
   if (scores.S4 < TARGETS.S4 - EPSILON) missed.push("S4");
   if (scores.truthEmpty) missed.push("truth-empty");
+  if (scores.noFiles) missed.push("no-files");
   return missed;
 }
 
@@ -472,6 +491,7 @@ function serializeScores(scores: RepoScores): Record<string, unknown> {
     callsAllConfidences: brief(scores.callsAll),
     S4: scores.S4,
     truthEmpty: scores.truthEmpty,
+    noFiles: scores.noFiles,
     falsePositives: scores.falsePositives,
     falseNegatives: scores.falseNegatives,
   };

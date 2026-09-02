@@ -14,7 +14,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { buildSnapshot, importersOf } from "@greplost/core";
-import { expandDirectoryTargets, impactOf } from "@greplost/core/graph";
+import { expandDirectoryTargets, impactOf, resolvedImportTargets } from "@greplost/core/graph";
 import type { GreplostConfig, Snapshot } from "@greplost/core/schema";
 import { DEFAULT_CONFIG } from "@greplost/core/schema";
 
@@ -60,11 +60,30 @@ describe("go directory targets", () => {
     ]);
   });
 
-  test("fan-in and fan-out count the files behind a package import", () => {
-    expect(snapshot.manifest.files[STORE]?.fanIn).toBeGreaterThan(0);
-    expect(snapshot.manifest.files[MEMORY]?.fanIn).toBeGreaterThan(0);
-    expect(snapshot.manifest.files[MAIN]?.fanOut).toBe(4);
+  test("fan-in counts the files behind a package import", () => {
+    // Reachability: importing `internal/store` reaches both of its files, so
+    // both have an importer.
+    expect(snapshot.manifest.files[STORE]?.fanIn).toBe(1);
+    expect(snapshot.manifest.files[MEMORY]?.fanIn).toBe(1);
+    expect(snapshot.manifest.files[RETRY]?.fanIn).toBe(2);
     expect(snapshot.manifest.files[MAIN]?.fanIn).toBe(0);
+  });
+
+  test("fan-out counts import statements, not the files behind them", () => {
+    // Counting (ruling 2026-09-02): main.go imports two in-repo packages, which
+    // is two targets however many files those packages hold. `fmt` is external
+    // and carries no repo structure.
+    expect(snapshot.manifest.files[MAIN]?.fanOut).toBe(2);
+    expect(snapshot.manifest.files[STORE]?.fanOut).toBe(1);
+    expect(snapshot.manifest.files[MEMORY]?.fanOut).toBe(0);
+  });
+
+  test("a package edge counts imports, not expanded file pairs", () => {
+    // tiny-go is one package, so there is no cross-package edge to count here;
+    // the invariant is asserted directly on the two views instead.
+    const paths = snapshot.files.map((f) => f.path);
+    expect(resolvedImportTargets(snapshot.imports, paths).length).toBe(3);
+    expect(expandDirectoryTargets(snapshot.imports, paths).length).toBe(6);
   });
 
   test("blast radius reaches through a package import", () => {
@@ -106,5 +125,75 @@ describe("go directory targets", () => {
     const card = artifacts.get("packages/tiny/modules/cmd/app/main.go.md");
     expect(card).toBeDefined();
     expect(card).not.toContain(`\`${STORE}\`\n`);
+  });
+});
+
+describe("importer cap", () => {
+  /** A snapshot with `count` files all importing one package directory. */
+  function fanned(count: number): Snapshot {
+    const target = "pkg/target.go";
+    const importers = Array.from({ length: count }, (_, i) => `app/f${String(i).padStart(3, "0")}.go`);
+    const files = [target, ...importers];
+    const record = (path: string) => ({
+      path,
+      lang: "go" as const,
+      sha256: "0".repeat(64),
+      loc: 1,
+      decls: [],
+      imports: path === target ? [] : [{ specifier: "example.com/m/pkg", kind: "static" as const, symbols: [], reexport: false, line: 1 }],
+      exports: [],
+      calls: [],
+    });
+    const entry = (path: string) => ({
+      sha256: "0".repeat(64),
+      pkg: "m",
+      lang: "go" as const,
+      loc: 1,
+      exports: [],
+      fanIn: 0,
+      fanOut: 0,
+      blast: 0,
+      staleSummary: false,
+    });
+    return {
+      root: "/tmp/fanned",
+      config: GO_CONFIG,
+      packages: [{ name: "m", path: ".", source: "root" as const }],
+      files: files.map(record),
+      manifest: {
+        version: "1",
+        packages: { m: { path: ".", deps: [], rdeps: [], loc: files.length, files: files.length } },
+        files: Object.fromEntries(files.map((f) => [f, entry(f)])),
+      },
+      imports: importers.map((from) => ({
+        from,
+        to: "pkg",
+        kind: "import" as const,
+        symbols: [],
+        confidence: "high" as const,
+        specifier: "example.com/m/pkg",
+        importKind: "static" as const,
+      })),
+      calls: [],
+      symbols: [],
+      metrics: { cycles: [], packageEdges: [] },
+    };
+  }
+
+  test("a card lists at most fifty importers and counts the rest", () => {
+    const artifacts = renderArtifacts({ snapshot: fanned(63), summaries: {} });
+    const card = artifacts.get("packages/m/modules/pkg/target.go.md");
+    expect(card).toBeDefined();
+    const line = (card ?? "").split("\n").find((l) => l.startsWith("**Imported by:**")) ?? "";
+    expect(line).toContain("… 13 more");
+    expect(line.match(/\[`app\/f\d{3}\.go`\]/g)?.length).toBe(50);
+  });
+
+  test("fifty or fewer importers are listed in full", () => {
+    const artifacts = renderArtifacts({ snapshot: fanned(50), summaries: {} });
+    const card = artifacts.get("packages/m/modules/pkg/target.go.md") ?? "";
+    const line = card.split("\n").find((l) => l.startsWith("**Imported by:**")) ?? "";
+    expect(line).not.toContain("more");
+    expect(line.match(/\[`app\/f\d{3}\.go`\]/g)?.length).toBe(50);
   });
 });

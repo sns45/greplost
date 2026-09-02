@@ -485,7 +485,10 @@ describe("structural gate", () => {
     expect(missedMetrics(scores)).toEqual(["truth-empty"]);
   });
 
-  test("a repo the compiler genuinely sees as empty of files is not a truth-empty miss", () => {
+  test("a repo greplost indexed no file in is a no-files miss, not four perfect scores", () => {
+    // Ruling 2026-09-02 (leaf 1.8 fix round 2): an empty snapshot scores 1.000
+    // across the board against an empty truth, so it is a miss of its own rather
+    // than a pass. `truth-empty` stays reserved for the oracle's side of it.
     const scores = scoreAgainstTruth(
       "tiny",
       snapshotOf({ files: [], imports: [], calls: [], metrics: { cycles: [], packageEdges: [] } }),
@@ -494,7 +497,8 @@ describe("structural gate", () => {
     );
     expect(scores.files).toBe(0);
     expect(scores.truthEmpty).toBe(false);
-    expect(missedMetrics(scores)).toEqual([]);
+    expect(scores.noFiles).toBe(true);
+    expect(missedMetrics(scores)).toEqual(["no-files"]);
   });
 
   test("files the truth generator could not cover leave the scored universe on both sides", () => {

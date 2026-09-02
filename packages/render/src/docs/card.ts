@@ -18,6 +18,12 @@ import { exportEntry, keySymbol, localNames, shortName } from "./api.ts";
 
 /** Tech spec 4.3: a card lists at most this many declarations, then says how many were dropped. */
 const KEY_SYMBOL_CAP = 50;
+/**
+ * Importers listed before the tail is summarised. A Go import names a package,
+ * so every file of a widely used package inherits the whole package's importer
+ * list, and one card could otherwise carry hundreds of links.
+ */
+const IMPORTER_CAP = 50;
 
 const NO_SUMMARY = "No summary yet; run `greplost refresh`.";
 
@@ -157,12 +163,15 @@ function importersField(
 ): string {
   const importers = ctx.importersOf.get(file) ?? [];
   if (importers.length === 0) return "None.";
-  return importers
+  const shown = importers.slice(0, IMPORTER_CAP);
+  const listed = shown
     .map((importer) => {
       const card = ctx.cardPathOf(importer);
       return card === undefined ? `\`${importer}\`` : `[\`${importer}\`](${link(card)})`;
     })
     .join(", ");
+  // Same tail as Key symbols, so a reader learns one convention, not two.
+  return importers.length > shown.length ? `${listed}, … ${importers.length - shown.length} more` : listed;
 }
 
 function keySymbolsField(ctx: DocContext, file: string): string {

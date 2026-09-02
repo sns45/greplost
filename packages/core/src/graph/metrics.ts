@@ -16,7 +16,7 @@ import type {
 import { compareStrings } from "../schema.ts";
 import { packageOf } from "../resolve/index.ts";
 import { blastRadius } from "./blast.ts";
-import { expandDirectoryTargets } from "./directories.ts";
+import { expandDirectoryTargets, resolvedImportTargets } from "./directories.ts";
 import { stronglyConnected } from "./tarjan.ts";
 
 /** The parts of a `FileEntry` this leaf can compute; the rest comes from the build. */
@@ -42,21 +42,25 @@ export function computeMetrics(
 ): ComputedMetrics {
   const paths = [...new Set(files.map((f) => f.path))].sort(compareStrings);
 
-  // File-to-file edges, duplicates kept: the package edge count is the number of
-  // file-level edges behind it. Self-imports carry no structure at all.
+  // Two views of the same import edges, because a Go import target is a package
+  // *directory* rather than a file (tech spec Appendix C):
   //
-  // A Go import target is a package *directory* (tech spec Appendix C), so it is
-  // expanded to the indexed files of that directory before anything is measured;
-  // a file target passes through unchanged, which leaves every TypeScript number
-  // byte-identical.
+  //  - `edges` expands a directory to the indexed files it holds. This is
+  //    reachability: who is affected when a file changes. Fan-in, blast radius
+  //    and cycles read it.
+  //  - `targets` leaves the directory as the one id it is, so counting stays a
+  //    question about import *statements*. Fan-out and the package edge counts
+  //    read it (ruling 2026-09-02).
+  //
+  // For TypeScript every target is already a file, so the two lists are equal
+  // and every TypeScript number is byte-identical to before.
   const edges = expandDirectoryTargets(imports, paths);
+  const targets = resolvedImportTargets(imports, paths);
 
   const fanIn = new Map<string, Set<string>>();
   const fanOut = new Map<string, Set<string>>();
-  for (const [from, to] of edges) {
-    addTo(fanOut, from, to);
-    addTo(fanIn, to, from);
-  }
+  for (const [from, to] of edges) addTo(fanIn, to, from);
+  for (const [from, to] of targets) addTo(fanOut, from, to);
   const blast = blastRadius(paths, edges);
 
   const packageNameOf = new Map<string, string>();
@@ -104,9 +108,10 @@ export function computeMetrics(
   }
 
   // The pair is joined with NUL: a package name may contain a space (duplicate
-  // names are disambiguated as "<name> (<path>)").
+  // names are disambiguated as "<name> (<path>)"). Counted over the unexpanded
+  // targets, so a Go package edge reads "2 imports", not "8 file pairs".
   const counts = new Map<string, number>();
-  for (const [from, to] of edges) {
+  for (const [from, to] of targets) {
     const a = nameFor(from);
     const b = nameFor(to);
     if (a === b) continue;

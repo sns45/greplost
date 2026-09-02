@@ -203,7 +203,7 @@ export interface FileEntry {
   exports: string[];
   /** Number of distinct repo files importing this file (import + reexport edges). */
   fanIn: number;
-  /** Number of distinct repo files this file imports (import + reexport edges, repo files only). */
+  /** Number of distinct import targets this file resolves inside the repo: files for TypeScript, package directories for Go (ruling 2026-09-02). */
   fanOut: number;
   /** Blast radius: size of the reverse transitive closure over import + reexport edges. */
   blast: number;
@@ -257,7 +257,7 @@ export const DEFAULT_CONFIG: GreplostConfig = {
 export interface PackageEdge {
   from: string;
   to: string;
-  /** Number of file-level import/reexport edges behind this package edge. */
+  /** Number of resolved import/reexport edges behind this package edge: one per import statement, never expanded to a Go package's files (ruling 2026-09-02). */
   count: number;
 }
 
