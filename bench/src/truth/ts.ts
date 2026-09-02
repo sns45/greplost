@@ -7,7 +7,18 @@
  * every comparison speak the same language.
  *
  * This file owns the program, module resolution, imports, exports and cycles;
- * `truth/ts-calls.ts` owns call resolution and symbol paths.
+ * `truth/ts-calls.ts` owns call resolution and symbol paths, and `truth/ts-workspace.ts`
+ * emulates the installed-and-built state of the repo's own workspace packages.
+ *
+ * The public surface is `generateTsTruth(root, files, options?)` returning `Truth`:
+ *   files   -> the subset of `files` the program actually loaded, which every consumer must
+ *              intersect its own file set with before scoring (a file the compiler never saw
+ *              is not "a file that exports nothing");
+ *   imports / exports / calls / cycles -> the truth sets themselves;
+ *   notes   -> emulations applied, for `RESULTS.md` to disclose.
+ * The optional third argument (`TruthOptions`) currently carries only `diagnostics`, which
+ * turns on the expensive semantic check. The two-argument form in the bench spec still
+ * type-checks unchanged.
  *
  * Identity, restated for this file:
  *   file   -> repo-relative posix path, no leading "./"
@@ -23,11 +34,12 @@
  *   - module-loading expressions (`import("x")`, `require("x")`) are import edges, never
  *     call edges.
  */
-import { readdirSync, realpathSync } from "node:fs";
+import { existsSync, readdirSync, realpathSync } from "node:fs";
 import path from "node:path";
 import ts from "typescript";
 import { compareEdges, compareStrings, type Edge } from "@greplost/core/schema";
 import { resolveCallEdge } from "./ts-calls.ts";
+import { WorkspaceEntryMapper } from "./ts-workspace.ts";
 
 /** Compiler truth for one repo, in greplost ids. */
 export interface Truth {
@@ -45,6 +57,12 @@ export interface Truth {
   calls: Edge[];
   /** Tarjan SCCs of size > 1 over the import graph; each cycle sorted, the list sorted. */
   cycles: string[][];
+  /**
+   * Emulations the truth generator applied, for `RESULTS.md` to disclose. Currently only
+   * `workspace-entry-mapping` (see `truth/ts-workspace.ts`), present when at least one edge
+   * came from it.
+   */
+  notes: string[];
 }
 
 /** Source extensions the TypeScript truth covers. */
@@ -113,10 +131,66 @@ export function generateTsTruth(root: string, files: string[], options: TruthOpt
   const requested = [...new Set(files.map((file) => normalizeId(absRoot, file)))].sort(compareStrings);
 
   const { options: compilerOptions, configErrors } = readCompilerOptions(absRoot);
-  const program = ts.createProgram(
-    requested.map((id) => path.join(absRoot, id)),
-    compilerOptions,
-  );
+  const canonical = ts.sys.useCaseSensitiveFileNames ? (p: string) => p : (p: string) => p.toLowerCase();
+  const rootNames = requested.map((id) => path.join(absRoot, id));
+
+  // A corpus clone has no node_modules and no dist, so the compiler cannot resolve the repo's
+  // own workspace packages by name. The mapping is installed on the *compiler host* rather
+  // than applied afterwards, so the checker sees those modules too: otherwise imports would
+  // resolve (S1) while every call into a workspace package stayed unresolved (S3).
+  // See truth/ts-workspace.ts for why emulating the installed state is the oracle's job.
+  const workspace = WorkspaceEntryMapper.load(absRoot);
+  const requestedByPath = new Set<string>();
+  for (const name of rootNames) {
+    requestedByPath.add(canonical(toPosix(name)));
+    try {
+      requestedByPath.add(canonical(toPosix(realpathSync(name))));
+    } catch {
+      // Listed but absent; the literal path is enough for the resolver.
+    }
+  }
+
+  const resolutionCache = ts.createModuleResolutionCache(absRoot, canonical, compilerOptions);
+  let workspaceEdges = 0;
+
+  /**
+   * Resolve one specifier the way an installed, built workspace would. Falls back to
+   * whatever the standard resolver found (including real node_modules packages), so nothing
+   * outside the workspace changes.
+   */
+  const resolveModuleFile = (specifier: string, containingFile: string): string | undefined => {
+    const standard = ts.resolveModuleName(specifier, containingFile, compilerOptions, ts.sys, resolutionCache);
+    const found = standard.resolvedModule?.resolvedFileName;
+    if (found !== undefined && requestedByPath.has(canonical(toPosix(found)))) return found;
+    if (!workspace.enabled) return found;
+    const candidates =
+      found !== undefined
+        ? [...workspace.candidatesForBuiltFile(found), ...workspace.candidatesForSpecifier(specifier)]
+        : workspace.candidatesForSpecifier(specifier);
+    for (const candidate of candidates) {
+      if (requestedByPath.has(canonical(toPosix(candidate)))) {
+        workspaceEdges += 1;
+        return candidate;
+      }
+    }
+    return found;
+  };
+
+  const host = ts.createCompilerHost(compilerOptions, true);
+  host.resolveModuleNameLiterals = (literals, containingFile) =>
+    literals.map((literal) => {
+      const resolvedFileName = resolveModuleFile(literal.text, containingFile);
+      if (resolvedFileName === undefined) return { resolvedModule: undefined };
+      return {
+        resolvedModule: {
+          resolvedFileName,
+          extension: extensionOf(resolvedFileName),
+          isExternalLibraryImport: resolvedFileName.includes("/node_modules/"),
+        },
+      };
+    });
+
+  const program = ts.createProgram(rootNames, compilerOptions, host);
   const checker = program.getTypeChecker();
 
   // Files the program could not load leave the scored universe entirely: recording them
@@ -131,7 +205,6 @@ export function generateTsTruth(root: string, files: string[], options: TruthOpt
   }
   reportDiagnostics(program, configErrors, covered.length, missing, diagnosticsEnabled(options));
 
-  const canonical = ts.sys.useCaseSensitiveFileNames ? (p: string) => p : (p: string) => p.toLowerCase();
   const idByPath = new Map<string, string>();
   for (const { id, absolute } of covered) {
     idByPath.set(canonical(toPosix(absolute)), id);
@@ -146,8 +219,6 @@ export function generateTsTruth(root: string, files: string[], options: TruthOpt
       // indexed, which is all the resolver needs.
     }
   }
-
-  const resolutionCache = ts.createModuleResolutionCache(absRoot, canonical, compilerOptions);
 
   /** Absolute file name -> covered file id, following `.js`/`.d.ts` specifiers back to source. */
   const toId = (fileName: string): string | undefined => {
@@ -170,15 +241,11 @@ export function generateTsTruth(root: string, files: string[], options: TruthOpt
 
     /** Resolve a module specifier to a covered file id, or undefined. */
     const resolveTarget = (specifier: string, specifierNode: ts.Expression): string | undefined => {
-      const resolved = ts.resolveModuleName(
-        specifier,
-        sourceFile.fileName,
-        compilerOptions,
-        ts.sys,
-        resolutionCache,
-      );
-      const byResolver = resolved.resolvedModule ? toId(resolved.resolvedModule.resolvedFileName) : undefined;
+      // Same resolution the program was built with, workspace emulation included.
+      const resolvedFile = resolveModuleFile(specifier, sourceFile.fileName);
+      const byResolver = resolvedFile !== undefined ? toId(resolvedFile) : undefined;
       if (byResolver !== undefined) return byResolver;
+
       // Fallback: ask the checker which module the specifier bound to. This catches
       // resolutions the standalone resolver misses (path mappings applied by the program,
       // `.js` specifiers redirected to their `.ts` source, package `exports` maps).
@@ -245,6 +312,7 @@ export function generateTsTruth(root: string, files: string[], options: TruthOpt
       covered.map((entry) => entry.id),
       importEdges,
     ),
+    notes: workspaceEdges > 0 ? ["workspace-entry-mapping"] : [],
   };
 }
 
@@ -261,9 +329,15 @@ function readCompilerOptions(absRoot: string): { options: ts.CompilerOptions; co
     jsx: ts.JsxEmit.Preserve,
     target: ts.ScriptTarget.ES2022,
   };
+  // A repo with no tsconfig.json is the designed bundler-fallback path, not a problem to
+  // report: only a config that exists and failed to parse is a real error.
+  const configExists = existsSync(configPath);
   const read = ts.readConfigFile(configPath, ts.sys.readFile);
   if (read.error || !read.config) {
-    return { options: { ...fallback, noEmit: true }, configErrors: read.error ? [read.error] : [] };
+    return {
+      options: { ...fallback, noEmit: true },
+      configErrors: read.error && configExists ? [read.error] : [],
+    };
   }
   const parsed = ts.parseJsonConfigFileContent(read.config, ts.sys, absRoot);
   // `files`/`include` from the config are ignored on purpose: the caller decides which
@@ -480,6 +554,22 @@ class EdgeSet {
     }
     return out.sort(compareEdges);
   }
+}
+
+/** The `ts.Extension` a resolved file name carries, for a hand-built ResolvedModuleFull. */
+function extensionOf(file: string): ts.Extension {
+  if (file.endsWith(".d.ts")) return ts.Extension.Dts;
+  if (file.endsWith(".d.mts")) return ts.Extension.Dmts;
+  if (file.endsWith(".d.cts")) return ts.Extension.Dcts;
+  if (file.endsWith(".tsx")) return ts.Extension.Tsx;
+  if (file.endsWith(".mts")) return ts.Extension.Mts;
+  if (file.endsWith(".cts")) return ts.Extension.Cts;
+  if (file.endsWith(".ts")) return ts.Extension.Ts;
+  if (file.endsWith(".jsx")) return ts.Extension.Jsx;
+  if (file.endsWith(".mjs")) return ts.Extension.Mjs;
+  if (file.endsWith(".cjs")) return ts.Extension.Cjs;
+  if (file.endsWith(".json")) return ts.Extension.Json;
+  return ts.Extension.Js;
 }
 
 function toPosix(p: string): string {

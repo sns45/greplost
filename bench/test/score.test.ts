@@ -304,6 +304,7 @@ describe("structural gate", () => {
     exports: overrides.exports ?? { "a.ts": ["run"], "b.ts": ["helper"] },
     calls: overrides.calls ?? [{ from: "a.ts#run", to: "b.ts#helper", kind: "call", symbols: [], confidence: "high" }],
     cycles: overrides.cycles ?? [],
+    notes: overrides.notes ?? [],
   });
 
   test("scoredFiles keeps the languages the truth generator speaks", () => {

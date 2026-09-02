@@ -248,6 +248,23 @@ describe("resolution edge cases", () => {
     }
     return dir;
   };
+  /** A temp monorepo: every file is written verbatim, including its package.json files. */
+  const workspace = (files: Record<string, string>): string => {
+    const dir = mkdtempSync(path.join(tmpdir(), "greplost-ws-"));
+    dirs.push(dir);
+    writeFileSync(
+      path.join(dir, "tsconfig.json"),
+      JSON.stringify({
+        compilerOptions: { target: "ES2022", module: "NodeNext", moduleResolution: "NodeNext", strict: true },
+      }),
+    );
+    for (const [name, body] of Object.entries(files)) {
+      mkdirSync(path.join(dir, path.dirname(name)), { recursive: true });
+      writeFileSync(path.join(dir, name), body);
+    }
+    return dir;
+  };
+
   afterAll(() => {
     for (const dir of dirs) rmSync(dir, { recursive: true, force: true });
   });
@@ -454,6 +471,79 @@ describe("resolution edge cases", () => {
     const off = generateTsTruth(dir, ["src/a.ts", "src/b.ts"], { diagnostics: false });
     const on = generateTsTruth(dir, ["src/a.ts", "src/b.ts"], { diagnostics: true });
     expect(stableStringify(on, 2)).toBe(stableStringify(off, 2));
+  });
+
+  test("resolves a workspace package whose exports point at an unbuilt dist", () => {
+    // The shape a corpus clone is always in: no node_modules, no dist. `ts.resolveModuleName`
+    // resolves nothing, but the dependency is real and its source is right there.
+    const dir = workspace({
+      "package.json": JSON.stringify({ name: "root", private: true, workspaces: ["packages/*", "apps/*"] }),
+      "packages/x/package.json": JSON.stringify({
+        name: "@w/x",
+        exports: { ".": { types: "./dist/index.d.ts", import: "./dist/index.js" } },
+      }),
+      "packages/x/tsconfig.json": JSON.stringify({ compilerOptions: { outDir: "./dist", rootDir: "./src" } }),
+      "packages/x/src/index.ts": "export function hello(): string { return 'hi'; }\n",
+      "apps/a/package.json": JSON.stringify({ name: "@w/a" }),
+      "apps/a/src/main.ts": "import { hello } from '@w/x';\nexport const greeting = hello();\n",
+    });
+    const local = generateTsTruth(dir, ["apps/a/src/main.ts", "packages/x/src/index.ts"]);
+    expect(edgeKeys(local.imports)).toEqual(["apps/a/src/main.ts -> packages/x/src/index.ts"]);
+    // The emulation reaches the checker too, so calls into the package resolve as well.
+    expect(edgeKeys(local.calls)).toEqual(["apps/a/src/main.ts -> packages/x/src/index.ts#hello"]);
+    expect(local.notes).toEqual(["workspace-entry-mapping"]);
+  });
+
+  test("resolves an `exports` subpath pattern through dist to source", () => {
+    const dir = workspace({
+      "package.json": JSON.stringify({ name: "root", private: true, workspaces: ["packages/*", "apps/*"] }),
+      "packages/x/package.json": JSON.stringify({ name: "@w/x", exports: { "./*": "./dist/*.js" } }),
+      "packages/x/tsconfig.json": JSON.stringify({ compilerOptions: { outDir: "./dist", rootDir: "./src" } }),
+      "packages/x/src/deep/thing.ts": "export const thing = 1;\n",
+      "apps/a/package.json": JSON.stringify({ name: "@w/a" }),
+      "apps/a/src/main.ts": "import { thing } from '@w/x/deep/thing';\nexport const used = thing;\n",
+    });
+    const local = generateTsTruth(dir, ["apps/a/src/main.ts", "packages/x/src/deep/thing.ts"]);
+    expect(edgeKeys(local.imports)).toEqual(["apps/a/src/main.ts -> packages/x/src/deep/thing.ts"]);
+    expect(local.notes).toEqual(["workspace-entry-mapping"]);
+  });
+
+  test("reads workspace globs from pnpm-workspace.yaml and honours default dist/src", () => {
+    const dir = workspace({
+      "package.json": JSON.stringify({ name: "root", private: true }),
+      "pnpm-workspace.yaml": "packages:\n  - 'packages/*'\n  - \"apps/*\"\n",
+      // No tsconfig in the package: outDir/rootDir default to dist/src.
+      "packages/x/package.json": JSON.stringify({ name: "@w/x", main: "./dist/index.js" }),
+      "packages/x/src/index.ts": "export const value = 1;\n",
+      "apps/a/package.json": JSON.stringify({ name: "@w/a" }),
+      "apps/a/src/main.ts": "import { value } from '@w/x';\nexport const used = value;\n",
+    });
+    const local = generateTsTruth(dir, ["apps/a/src/main.ts", "packages/x/src/index.ts"]);
+    expect(edgeKeys(local.imports)).toEqual(["apps/a/src/main.ts -> packages/x/src/index.ts"]);
+  });
+
+  test("invents nothing for a bare specifier that names no workspace package", () => {
+    const dir = workspace({
+      "package.json": JSON.stringify({ name: "root", private: true, workspaces: ["packages/*", "apps/*"] }),
+      "packages/x/package.json": JSON.stringify({ name: "@w/x", main: "./dist/index.js" }),
+      "packages/x/src/index.ts": "export const value = 1;\n",
+      "apps/a/package.json": JSON.stringify({ name: "@w/a" }),
+      // `@w/absent` is not a workspace package and is not installed: no edge, no guess.
+      "apps/a/src/main.ts": "import { gone } from '@w/absent';\nimport kafkajs from 'kafkajs';\nexport const used = [gone, kafkajs];\n",
+    });
+    const local = generateTsTruth(dir, ["apps/a/src/main.ts", "packages/x/src/index.ts"]);
+    expect(edgeKeys(local.imports)).toEqual([]);
+    expect(local.notes).toEqual([]);
+  });
+
+  test("a repo with no workspaces is untouched by the emulation", () => {
+    const dir = project({
+      "src/a.ts": "import { b } from './b.js';\nexport const a = b();\n",
+      "src/b.ts": "export function b(): number { return 1; }\n",
+    });
+    const local = generateTsTruth(dir, ["src/a.ts", "src/b.ts"]);
+    expect(edgeKeys(local.imports)).toEqual(["src/a.ts -> src/b.ts"]);
+    expect(local.notes).toEqual([]);
   });
 
   test("ignores program files that are not in the given list", () => {

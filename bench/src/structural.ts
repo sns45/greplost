@@ -32,6 +32,8 @@ export const TARGETS = { S1: [0.99, 0.97], S2: [0.99, 0.99], S3: 0.95, S4: 1.0 }
 /** Floating-point slack, so 0.98999999999 never fails a 0.99 gate for arithmetic reasons. */
 const EPSILON = 1e-9;
 const MAX_REPORTED_FALSE_POSITIVES = 20;
+/** Metric ids in table order, for the verbose listing. */
+const METRIC_IDS = ["S1", "S2", "S3", "S4"] as const;
 
 /** Languages the structural suite can score; each has its own truth generator. */
 export type TruthLang = "ts" | "go";
@@ -45,6 +47,8 @@ interface Options {
   dryRun: boolean;
   /** Run a full semantic check in the truth generator and report the count (expensive). */
   diagnostics: boolean;
+  /** List false positives *and* false negatives for every metric, not only failed ones. */
+  verbose: boolean;
 }
 
 interface Target {
@@ -74,10 +78,19 @@ export interface RepoScores {
   truthEmpty: boolean;
   /** Metric id -> `file:line (key)` for the first false positives, so a failure is actionable. */
   falsePositives: Record<string, string[]>;
+  /**
+   * Metric id -> `file:line (key)` for the first false negatives: edges the compiler found
+   * and greplost did not. Never gated (S3 recall is reported, not gated) but printed by
+   * `--fp all`, because a recall gap is the thing worth reading after precision is clean.
+   */
+  falseNegatives: Record<string, string[]>;
+  /** Emulations the truth generator applied for this repo (see `Truth.notes`). */
+  notes: string[];
 }
 
 export async function run(args: string[]): Promise<number> {
   const options = parseArgs(args);
+  warnOnRedirectedResults();
   try {
     return await execute(options);
   } catch (err) {
@@ -112,6 +125,7 @@ async function execute(options: Options): Promise<number> {
     return 1;
   }
   for (const score of scores) printTable(score.name, score);
+  if (options.verbose) printMisses(scores, METRIC_IDS, true);
 
   const missed = [...new Set(scores.flatMap(missedMetrics))].sort(compareStrings);
   writeResult(SUITE, {
@@ -119,12 +133,14 @@ async function execute(options: Options): Promise<number> {
     machine: await loadMachine(),
     repos: Object.fromEntries(scores.map((s) => [s.name, serializeScores(s)])),
     targets: TARGETS,
+    // Disclosed so RESULTS.md can state how the oracle was built, not just what it scored.
+    truth: { notes: [...new Set(scores.flatMap((s) => s.notes))].sort(compareStrings) },
     gate: options.gate ? { passed: missed.length === 0, missed } : null,
   });
 
   if (!options.gate) return 0;
   if (missed.length > 0) {
-    printFalsePositives(scores, missed);
+    if (!options.verbose) printMisses(scores, missed, false);
     console.log(`${SUITE}: GATE FAIL (${missed.join(",")})`);
     return 1;
   }
@@ -136,6 +152,19 @@ async function execute(options: Options): Promise<number> {
 // arguments and targets
 // ---------------------------------------------------------------------------
 
+/**
+ * `GREPLOST_BENCH_RESULTS_DIR` is a test-only escape hatch (see `results-io.ts`). If it is
+ * set for a real run, results are not landing in `bench/results/` and nobody would know.
+ */
+function warnOnRedirectedResults(): void {
+  const override = process.env["GREPLOST_BENCH_RESULTS_DIR"];
+  if (!override || process.env["NODE_ENV"] === "test") return;
+  console.error(
+    `${SUITE}: warning: GREPLOST_BENCH_RESULTS_DIR is set, so results go to ${override} ` +
+      "instead of bench/results/; that override is meant for tests only",
+  );
+}
+
 function parseArgs(args: string[]): Options {
   const options: Options = {
     fixture: false,
@@ -145,6 +174,7 @@ function parseArgs(args: string[]): Options {
     gate: false,
     dryRun: false,
     diagnostics: process.env["GREPLOST_BENCH_DIAGNOSTICS"] === "1",
+    verbose: false,
   };
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -155,6 +185,9 @@ function parseArgs(args: string[]): Options {
     else if (arg === "--gate") options.gate = true;
     else if (arg === "--dry-run") options.dryRun = true;
     else if (arg === "--diagnostics") options.diagnostics = true;
+    else if (arg === "--verbose") options.verbose = true;
+    // `--fp all` lists every metric's misses; any other value keeps the default (failed only).
+    else if (arg === "--fp") options.verbose = args[++i] === "all";
     else if (arg === "--repo") options.repo = args[++i];
     else if (arg === "--tier") options.tier = args[++i] ?? "S";
   }
@@ -347,12 +380,22 @@ export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth
     callsAll,
     S4,
     truthEmpty,
+    notes: Array.isArray(truth.notes) ? truth.notes : [],
     falsePositives: {
       S1: locateAll(snapshot, S1.falsePositives, "import"),
       S2: locateAll(snapshot, S2.falsePositives, "export"),
       S3: locateAll(snapshot, S3.falsePositives, "call"),
       S4: predCycles
         .filter((cycle) => !truth.cycles.some((expected) => sameCycle(expected, cycle)))
+        .slice(0, MAX_REPORTED_FALSE_POSITIVES)
+        .map((cycle) => `${cycle[0] ?? "?"}:1 (cycle ${cycle.join(" -> ")})`),
+    },
+    falseNegatives: {
+      S1: locateAll(snapshot, S1.falseNegatives, "import"),
+      S2: locateAll(snapshot, S2.falseNegatives, "export"),
+      S3: locateAll(snapshot, S3.falseNegatives, "call"),
+      S4: truth.cycles
+        .filter((cycle) => !predCycles.some((predicted) => sameCycle(predicted, cycle)))
         .slice(0, MAX_REPORTED_FALSE_POSITIVES)
         .map((cycle) => `${cycle[0] ?? "?"}:1 (cycle ${cycle.join(" -> ")})`),
     },
@@ -395,6 +438,7 @@ function serializeScores(scores: RepoScores): Record<string, unknown> {
     S4: scores.S4,
     truthEmpty: scores.truthEmpty,
     falsePositives: scores.falsePositives,
+    falseNegatives: scores.falseNegatives,
   };
 }
 
@@ -493,13 +537,25 @@ function num(value: number): string {
   return value.toFixed(3);
 }
 
-function printFalsePositives(scores: RepoScores[], missed: string[]): void {
+/**
+ * List the misses behind the numbers. With `--fp all` this runs for every metric whether it
+ * passed or not, and includes false negatives: precision can be clean while recall hides a
+ * large, routable gap (anyq's S3 is 0.973 precision with 49 false negatives).
+ */
+function printMisses(scores: RepoScores[], ids: readonly string[], includeNegatives: boolean): void {
   for (const repo of scores) {
-    for (const id of missed) {
-      const located = repo.falsePositives[id] ?? [];
-      if (located.length === 0) continue;
-      console.log(`${SUITE}: ${repo.name} ${id} false positives (first ${located.length}):`);
-      for (const entry of located) console.log(`  ${entry}`);
+    for (const id of ids) {
+      const positives = repo.falsePositives[id] ?? [];
+      if (positives.length > 0) {
+        console.log(`${SUITE}: ${repo.name} ${id} false positives (first ${positives.length}):`);
+        for (const entry of positives) console.log(`  ${entry}`);
+      }
+      if (!includeNegatives) continue;
+      const negatives = repo.falseNegatives[id] ?? [];
+      if (negatives.length > 0) {
+        console.log(`${SUITE}: ${repo.name} ${id} false negatives (first ${negatives.length}):`);
+        for (const entry of negatives) console.log(`  ${entry}`);
+      }
     }
   }
 }

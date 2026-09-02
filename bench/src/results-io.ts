@@ -8,6 +8,12 @@
  * The date and the greplost SHA are the only environment values allowed in a results
  * file (tech spec 5.3 forbids them in structure-layer output, not here); machine and
  * corpus pinning are the caller's to supply.
+ *
+ * `GREPLOST_BENCH_RESULTS_DIR` redirects every write away from `bench/results/`. It exists
+ * **for tests only**, so a test can drive a suite's `run()` end to end without leaving a
+ * file in the working tree. Nothing in normal operation sets it, and a suite that sees it
+ * outside a test run says so on stderr: a benchmark whose results silently went somewhere
+ * else is worse than one that did not run.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -22,10 +28,7 @@ export const RESULTS_DIR = "bench/results";
 
 /**
  * Absolute results directory: `dir` when given (tests use a temp dir), else
- * `$GREPLOST_BENCH_RESULTS_DIR`, else `bench/results`.
- *
- * The environment override exists so a test can drive a whole suite's `run()` without
- * leaving a result file in the working tree; nothing in normal operation sets it.
+ * `$GREPLOST_BENCH_RESULTS_DIR` (test-only, see the header), else `bench/results`.
  */
 export function resultsDir(dir?: string): string {
   if (dir !== undefined) return path.resolve(dir);
