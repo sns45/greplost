@@ -113,3 +113,5 @@ Append-only. One line per event.
 - 2026-09-02 leaf 1.2.1 fix round 1/5 merged: NUL delimiter removed (two-level Map), label escaping widened via single-pass replacer, 9/9 re-verified; scoped re-review dispatched
 - 2026-09-02 leaf 1.1.2 fix round 1/5 merged (ac99cec): baseUrlDeclared gate, blocked exports subpaths, root self-name resolution, # fallthrough, best-pattern paths, imports escape guard; 9/9 re-verified, core 264 pass; scoped re-review dispatched
 - 2026-09-02 leaf 1.5.3 fix round 1/5 merged (2d7a1a0): init+fetch --depth=600 --filter=blob:none, deepen tests on an 8-commit fixture, gin lands at 600 commits shallow; 6/6 re-verified on fresh clones; scoped re-review dispatched
+- 2026-09-02 leaf 1.2.1: fix round 1/5 (3 addressed, 0 open; commits df4062a..dcb7f22)
+- 2026-09-02 leaf 1.2.1: complete (commits f941b3d..dcb7f22, review clean)
