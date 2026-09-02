@@ -10,11 +10,25 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { checkMermaid, checkSubset } from "../src/mermaid-check.ts";
-import { run, countNodes, countTokens, walkMarkdown, M1_TOKEN_BUDGET, DEFAULT_MAX_NODES } from "../src/mapquality.ts";
+import {
+  run,
+  countNodes,
+  countTokens,
+  walkMarkdown,
+  resolveTarget,
+  M1_TOKEN_BUDGET,
+  DEFAULT_MAX_NODES,
+} from "../src/mapquality.ts";
 import { latestResult } from "../src/results-io.ts";
+import { loadCorpus, repoDir } from "../src/corpus.ts";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
 const GOLDEN_DIR = path.join(REPO_ROOT, "packages", "render", "test", "golden", "tiny-ts");
+
+/** Base `Options`-shaped object for `resolveTarget`; each test overrides only what it needs. */
+function baseOptions(): { dirArg: string | undefined; repo: string | undefined; fixture: boolean; gate: boolean; json: boolean } {
+  return { dirArg: undefined, repo: undefined, fixture: false, gate: false, json: false };
+}
 
 /**
  * A real fence, copied verbatim from the golden render (`packages/tiny__core/MAP.md`,
@@ -276,7 +290,7 @@ describe("mapquality run (golden tiny-ts)", () => {
     expect(tokens).toBeLessThanOrEqual(M1_TOKEN_BUDGET);
   });
 
-  test("results payload has the shared shape: suite, date, greplostSha, machine, corpus, tokens, diagrams, checker, gate", async () => {
+  test("results payload has the shared shape: suite, date, greplostSha, target, machine, corpus, tokens, diagrams, checker, gate", async () => {
     const results = tempResultsDir();
     await runCaptured(["--dir", GOLDEN_DIR, "--gate"], results);
 
@@ -288,7 +302,13 @@ describe("mapquality run (golden tiny-ts)", () => {
     expect(typeof payload["date"]).toBe("string");
     expect(typeof payload["greplostSha"]).toBe("string");
     expect(typeof payload["machine"]).toBe("object");
-    expect(Array.isArray(payload["corpus"])).toBe(true);
+
+    const target = payload["target"] as Record<string, unknown>;
+    expect(typeof target["dir"]).toBe("string");
+
+    // An explicit `--dir` (an arbitrary directory, not a pinned corpus repo) keeps the
+    // shared payload shape but reports no pinned corpus (driver ruling 2026-09-02).
+    expect(payload["corpus"]).toEqual([]);
 
     const tokens = payload["tokens"] as Record<string, unknown>;
     expect(typeof tokens["indexMd"]).toBe("number");
@@ -360,10 +380,91 @@ describe("mapquality run (golden tiny-ts)", () => {
     expect(stdout[stdout.length - 1]).toBe("mapquality: GATE FAIL (M1)");
   });
 
-  test("a missing --dir fails cleanly with a non-zero exit code, never throws", async () => {
+  test("a missing --dir without --gate: stderr carries the reason, no GATE line on stdout", async () => {
     const results = tempResultsDir();
-    const { code } = await runCaptured(["--dir", path.join(REPO_ROOT, "does-not-exist-xyz")], results);
+    const { code, stdout, stderr } = await runCaptured(
+      ["--dir", path.join(REPO_ROOT, "does-not-exist-xyz")],
+      results,
+    );
     expect(code).toBeGreaterThan(0);
+    expect(stdout.some((line) => line.includes("GATE"))).toBe(false);
+    expect(stderr.some((line) => line.startsWith("mapquality: error:"))).toBe(true);
+  });
+
+  test("a missing --dir with --gate: GATE FAIL (dir) is the last stdout line", async () => {
+    const results = tempResultsDir();
+    const { code, stdout } = await runCaptured(
+      ["--dir", path.join(REPO_ROOT, "does-not-exist-xyz"), "--gate"],
+      results,
+    );
+    expect(code).toBeGreaterThan(0);
+    expect(stdout[stdout.length - 1]).toBe("mapquality: GATE FAIL (dir)");
+  });
+
+  test("an unknown --repo without --gate: stderr carries the reason, no GATE line on stdout", async () => {
+    const results = tempResultsDir();
+    const { code, stdout, stderr } = await runCaptured(["--repo", "not-a-real-repo"], results);
+    expect(code).toBeGreaterThan(0);
+    expect(stdout.some((line) => line.includes("GATE"))).toBe(false);
+    expect(stderr.some((line) => line.startsWith("mapquality: error:"))).toBe(true);
+  });
+
+  test("an unknown --repo with --gate: GATE FAIL (error) is the last stdout line", async () => {
+    const results = tempResultsDir();
+    const { code, stdout } = await runCaptured(["--repo", "not-a-real-repo", "--gate"], results);
+    expect(code).toBeGreaterThan(0);
+    expect(stdout[stdout.length - 1]).toBe("mapquality: GATE FAIL (error)");
+  });
+
+  test("--repo <pinned name not yet cloned> resolves the right path and fails as a missing dir, both with and without --gate", async () => {
+    const pinned = loadCorpus().repos[0]!;
+    const expectedDir = path.join(repoDir(pinned.name), ".greplost");
+
+    const results = tempResultsDir();
+    const gated = await runCaptured(["--repo", pinned.name, "--gate"], results);
+    expect(gated.stdout[gated.stdout.length - 1]).toBe("mapquality: GATE FAIL (dir)");
+    expect(gated.stderr.some((line) => line.includes(expectedDir))).toBe(true);
+
+    const ungated = await runCaptured(["--repo", pinned.name], results);
+    expect(ungated.stdout.some((line) => line.includes("GATE"))).toBe(false);
+    expect(ungated.stderr.some((line) => line.includes(expectedDir))).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resolveTarget: --dir / --repo / --fixture precedence and the resulting corpus shape
+// ---------------------------------------------------------------------------
+
+describe("resolveTarget (--dir / --repo / --fixture)", () => {
+  test("an explicit --dir wins outright and reports an empty corpus", () => {
+    const target = resolveTarget({ ...baseOptions(), dirArg: "some/relative/path", repo: "anyq", fixture: true });
+    expect(target.dir).toBe(path.resolve("some/relative/path"));
+    expect(target.corpus).toEqual([]);
+  });
+
+  test("--repo <pinned name> resolves to bench/.corpus/<name>/.greplost and carries the pinned identity", () => {
+    const pinned = loadCorpus().repos[0]!;
+    const target = resolveTarget({ ...baseOptions(), repo: pinned.name });
+    expect(target.dir).toBe(path.join(repoDir(pinned.name), ".greplost"));
+    expect(target.corpus).toEqual([
+      { name: pinned.name, sha: pinned.sha, tier: pinned.tier, lang: pinned.lang },
+    ]);
+  });
+
+  test("--repo with an unknown name throws", () => {
+    expect(() => resolveTarget({ ...baseOptions(), repo: "not-a-real-repo" })).toThrow();
+  });
+
+  test("--fixture resolves to the golden render dir with an empty corpus", () => {
+    const target = resolveTarget({ ...baseOptions(), fixture: true });
+    expect(target.dir).toBe(GOLDEN_DIR);
+    expect(target.corpus).toEqual([]);
+  });
+
+  test("no flags at all defaults to .greplost at the repo root with an empty corpus", () => {
+    const target = resolveTarget(baseOptions());
+    expect(target.dir).toBe(path.join(REPO_ROOT, ".greplost"));
+    expect(target.corpus).toEqual([]);
   });
 });
 
