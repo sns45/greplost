@@ -116,3 +116,4 @@ Append-only. One line per event.
 - 2026-09-02 leaf 1.2.1: fix round 1/5 (3 addressed, 0 open; commits df4062a..dcb7f22)
 - 2026-09-02 leaf 1.2.1: complete (commits f941b3d..dcb7f22, review clean)
 - 2026-09-02 leaf 1.5.2 review: Approved, no fix round; leaf 1.5.2: complete (commits f941b3d..125fd16, review clean); forward items: (a) capture one real run per competitor and diff against the hand-written fixtures before publishing X1 (node-1.9 R4 precondition), (b) leaf 1.5.7 must intersect truth and every prediction with greplost's indexed file set, (c) minor: G1 evidence counts drifted (40 vs 44 tests)
+- 2026-09-02 leaf 1.1.3 fix round 1/5 merged (1542c9b): unpinned export targets, transitive export * via star-graph condensation, importKind in dedupe key, shared packageOf; 11/11 re-verified, core 266 pass; scoped re-review dispatched
