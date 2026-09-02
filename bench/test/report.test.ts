@@ -890,6 +890,10 @@ describe("charts: X2 arms", () => {
       " Measured on corpus anyq, tier S (148 files).",
     );
     expect(scaleNote(undefined, null)).toBe("");
+    // A run with no walk does not claim "0 replayed commits".
+    expect(scaleNote({ repo: "anyq", fixture: false, tier: "S", files: 148, commits: 0 }, null)).toBe(
+      " Measured on corpus anyq, tier S (148 files).",
+    );
   });
 });
 
@@ -1008,6 +1012,19 @@ describe("screenshots", () => {
     expect(CAPTURES.map((capture) => capture.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
   });
 
+  test("the reproducibility capture leaves no competitor artifacts in the shared work dir", () => {
+    const capture = CAPTURES.find((entry) => entry.id === 11);
+    expect(capture).toBeDefined();
+    // Both redirects, or photographing X4 writes a benchmark result and flips
+    // the agent suite's competitor conditions as a side effect.
+    const source = readFileSync(path.join(REPO_ROOT, "bench", "src", "screenshots.ts"), "utf8");
+    expect(source).toContain("GREPLOST_BENCH_RESULTS_DIR: results");
+    expect(source).toContain("GREPLOST_BENCH_WORK_DIR: work");
+    // And the suite it drives has to honour the redirect.
+    const harness = readFileSync(path.join(REPO_ROOT, "bench", "src", "headtohead.ts"), "utf8");
+    expect(harness).toContain('process.env["GREPLOST_BENCH_WORK_DIR"]');
+  });
+
   test("a captured terminal is wrapped and clipped, so freeze cannot size a 15,000px canvas", () => {
     const wide = `${"x".repeat(250)}\nshort`;
     const fitted = fitForCapture(wide, 100, 40);
@@ -1017,7 +1034,7 @@ describe("screenshots", () => {
     const tall = Array.from({ length: 200 }, (_, i) => `line ${i}`).join("\n");
     const clipped = fitForCapture(tall, 100, 10);
     expect(clipped.split("\n")).toHaveLength(10);
-    expect(clipped).toContain("more lines");
+    expect(clipped).toContain("more lines, cut so the image stays a screenshot");
   });
 
   test("capture 11 keeps the X4 rows and byte counts, not the whole transcript", () => {
@@ -1025,6 +1042,7 @@ describe("screenshots", () => {
       "  ID    Measured   vs graphify   vs ua   vs crg",
       "  X4    0 bytes    0 bytes       n/a     79098 bytes",
       "  X4 crg: graph.json differs in nodes, edges, stats; 79098 bytes",
+      "  X4 ua: no headless CLI, so nothing was built to compare",
       "headtohead: wrote bench/results/headtohead-2026-09-02-abc1234.json",
       "",
     ].join("\n");
@@ -1032,6 +1050,8 @@ describe("screenshots", () => {
     expect(shaped).toContain("X4 crg:");
     expect(shaped).toContain("ID");
     expect(shaped).not.toContain("headtohead: wrote");
+    // A tool that was never built has no reproducibility finding to show.
+    expect(shaped).not.toContain("no headless CLI");
   });
 
   test("a run with no tools available skips every capture and still returns 0", async () => {

@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="393" viewBox="0 0 720 393" font-family="sans-serif" font-size="12">
-<rect x="0" y="0" width="720" height="393" fill="#ffffff"/>
-<text x="20" y="26" font-size="15" font-weight="bold" fill="#111827">X2 artifact F1 with each tool's own refresh</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="406" viewBox="0 0 720 406" font-family="sans-serif" font-size="12">
+<rect x="0" y="0" width="720" height="406" fill="#ffffff"/>
+<text x="20" y="26" font-size="15" font-weight="bold" fill="#111827">X2 staleness under each tool's own documented sync</text>
 <rect x="20" y="38" width="10" height="10" fill="#1d4ed8"/>
 <text x="35" y="47" fill="#6b7280">greplost</text>
 <rect x="106" y="38" width="10" height="10" fill="#ea580c"/>
@@ -21,17 +21,19 @@
 <line x1="64" y1="322" x2="700" y2="322" stroke="#9ca3af"/>
 <text x="18" y="190" fill="#6b7280" font-size="11" text-anchor="middle" transform="rotate(-90 18 190)">F1 vs compiler truth</text>
 <text x="382" y="356" fill="#6b7280" font-size="11" text-anchor="middle">commit index</text>
-<text x="20" y="372" fill="#6b7280" font-size="10">Each tool's own documented refresh was invoked after every commit, so this is a comparison of incremental accuracy, not a decay</text>
-<text x="20" y="385" fill="#6b7280" font-size="10">curve. Omitted (not run here): ua.</text>
-<polyline points="64,58 154.86,58 245.71,58 336.57,58 427.43,58 518.29,58 609.14,58 700,58" fill="none" stroke="#1d4ed8" stroke-width="2"/>
-<polyline points="64,193.56 154.86,174.66 245.71,168.01 336.57,162.6 427.43,164.52 518.29,166.19 609.14,161.99 700,168.96" fill="none" stroke="#ea580c" stroke-width="2"/>
-<polyline points="64,102.01 154.86,95.73 245.71,91 336.57,87.33 427.43,84.4 518.29,82 609.14,79.99 700,78.3" fill="none" stroke="#0f766e" stroke-width="2"/>
-<text x="64" y="338" fill="#6b7280" font-size="11" text-anchor="middle">3</text>
-<text x="154.86" y="338" fill="#6b7280" font-size="11" text-anchor="middle">6</text>
-<text x="245.71" y="338" fill="#6b7280" font-size="11" text-anchor="middle">9</text>
-<text x="336.57" y="338" fill="#6b7280" font-size="11" text-anchor="middle">12</text>
-<text x="427.43" y="338" fill="#6b7280" font-size="11" text-anchor="middle">15</text>
-<text x="518.29" y="338" fill="#6b7280" font-size="11" text-anchor="middle">18</text>
-<text x="609.14" y="338" fill="#6b7280" font-size="11" text-anchor="middle">21</text>
-<text x="700" y="338" fill="#6b7280" font-size="11" text-anchor="middle">24</text>
+<text x="20" y="372" fill="#6b7280" font-size="10">Arm: documented-sync — each tool's sync mechanism was installed exactly as its README describes and then left alone; the harness</text>
+<text x="20" y="385" fill="#6b7280" font-size="10">only commits. This is the arm tech spec 10.0 X2 words. Omitted (not run here): ua. Measured on corpus hono, tier M (248 files);</text>
+<text x="20" y="398" fill="#6b7280" font-size="10">100 replayed commits.</text>
+<polyline points="64,58 143.5,58 223,58 302.5,58 382,58 461.5,58 541,58 620.5,58 700,58" fill="none" stroke="#1d4ed8" stroke-width="2"/>
+<polyline points="64,287.42 143.5,288.08 223,288.68 302.5,289.29 382,288.42 461.5,288.29 541,288.87 620.5,288.71 700,288.92" fill="none" stroke="#ea580c" stroke-width="2"/>
+<polyline points="64,85.51 143.5,84.9 223,84.29 302.5,83.74 382,83.21 461.5,82.68 541,82.21 620.5,84.35 700,85.11" fill="none" stroke="#0f766e" stroke-width="2"/>
+<text x="64" y="338" fill="#6b7280" font-size="11" text-anchor="middle">12</text>
+<text x="143.5" y="338" fill="#6b7280" font-size="11" text-anchor="middle">24</text>
+<text x="223" y="338" fill="#6b7280" font-size="11" text-anchor="middle">36</text>
+<text x="302.5" y="338" fill="#6b7280" font-size="11" text-anchor="middle">48</text>
+<text x="382" y="338" fill="#6b7280" font-size="11" text-anchor="middle">60</text>
+<text x="461.5" y="338" fill="#6b7280" font-size="11" text-anchor="middle">72</text>
+<text x="541" y="338" fill="#6b7280" font-size="11" text-anchor="middle">84</text>
+<text x="620.5" y="338" fill="#6b7280" font-size="11" text-anchor="middle">96</text>
+<text x="700" y="338" fill="#6b7280" font-size="11" text-anchor="middle">100</text>
 </svg>

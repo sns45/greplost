@@ -78,7 +78,8 @@ export function scaleNote(target: RunTarget | undefined, commits: number | null)
     parts.push(`corpus ${where}${target.files === undefined ? "" : ` (${target.files} files)`}`);
   }
   const walked = commits ?? target?.commits ?? null;
-  if (walked !== null) parts.push(`${walked} replayed commit${walked === 1 ? "" : "s"}`);
+  // Zero is "no walk was asked for", not "a walk of length zero".
+  if (walked !== null && walked > 0) parts.push(`${walked} replayed commit${walked === 1 ? "" : "s"}`);
   return parts.length === 0 ? "" : ` Measured on ${parts.join("; ")}.`;
 }
 
@@ -92,11 +93,14 @@ export function headToHeadCharts(
   const charts: ChartRef[] = [];
   const byId = new Map(rows.map((row) => [row.id, row]));
   const x2 = byId.get("X2");
-  const commits = walkLength(x2) ?? target?.commits ?? null;
-  const scale = scaleNote(target, commits);
+  // Each chart takes its scale from the row it draws, not from the table's: X1
+  // and X2 are routinely different runs on different repos, and a chart that
+  // named the other run's corpus in its own note would be the disclosure defect
+  // the note exists to prevent.
+  const runOf = (row: MetricRow | undefined): RunTarget | undefined => row?.run ?? target;
 
   // Hero (tech spec 10.9, capture #9): F1 vs commit index, one line per tool.
-  charts.push(...stalenessCharts(x2, replay, assetsRel, target));
+  charts.push(...stalenessCharts(x2, replay, assetsRel, runOf(x2)));
 
   const x1 = byId.get("X1");
   if (x1 !== undefined) {
@@ -110,7 +114,7 @@ export function headToHeadCharts(
         { name: "imports", values: tools.map((t) => x1.tools[t]?.detail?.["importPrecision"] ?? null) },
         { name: "calls", values: tools.map((t) => x1.tools[t]?.detail?.["callPrecision"] ?? null) },
       ],
-      note: `A dashed stub is a tool that could not be run; see the reason column.${scaleNote(target, null)}`,
+      note: `A dashed stub is a tool that could not be run; see the reason column.${scaleNote(runOf(x1), null)}`,
     };
     if (spec.series.some((s) => s.values.some((v) => v !== null))) {
       charts.push(chartRef("X1 precision per tool per edge kind", spec, "x1-precision", assetsRel, groupedBarChart(spec), "bar"));
@@ -120,6 +124,8 @@ export function headToHeadCharts(
   const x3 = byId.get("X3");
   if (x3 !== undefined) {
     const tools = Object.keys(x3.tools);
+    const x3Run = runOf(x3);
+    const commits = walkLength(x3) ?? x3Run?.commits ?? null;
     const spec: ChartSpec = {
       title: "X3 cost to stay fresh",
       yLabel: commits === null ? "USD over the walk" : `USD over ${commits} commits`,
@@ -127,7 +133,7 @@ export function headToHeadCharts(
       series: [{ name: "USD", values: tools.map((t) => x3.tools[t]?.detail?.["usd"] ?? num(x3.tools[t]?.value ?? null)) }],
       note:
         "Every tool that ran here ran its no-LLM path, so USD is 0 for all of them; the wall-clock that " +
-        `separates them is in the table.${scale}`,
+        `separates them is in the table.${scaleNote(x3Run, commits)}`,
     };
     if (spec.series.some((s) => s.values.some((v) => v !== null))) {
       charts.push(chartRef("X3 cost per tool", spec, "x3-cost", assetsRel, groupedBarChart(spec), "bar"));

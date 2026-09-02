@@ -28,6 +28,8 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { compareStrings } from "@greplost/core/schema";
+
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
 const SUITE = "screenshots";
 const ASSETS_DIR = path.join(REPO_ROOT, "docs", "assets");
@@ -71,6 +73,14 @@ function versionOf(binary: string): string | null {
  * browser binary it downloads separately. Both have to be there, and the second
  * one is the one that is usually missing, so they are reported apart.
  */
+/** The `chromium-<build>` segment of a playwright executable path, or null. */
+export function chromiumBuild(executable: string): string | null {
+  for (const segment of executable.split(path.sep)) {
+    if (/^chromium(?:-headless-shell)?-\d+$/.test(segment)) return segment;
+  }
+  return null;
+}
+
 function playwrightStatus(): ToolStatus {
   const install = "bunx playwright install chromium";
   let executable: string | null = null;
@@ -94,7 +104,10 @@ function playwrightStatus(): ToolStatus {
     name: "playwright (chromium)",
     id: "playwright",
     available,
-    version: available ? path.basename(path.dirname(path.dirname(executable ?? ""))) : null,
+    // The build directory two levels up is `chrome-mac-arm64` on this platform
+    // and `Contents` on a macOS app bundle, so the version is read from the
+    // `chromium-<build>` segment of the path instead of a fixed depth.
+    version: available ? chromiumBuild(executable ?? "") : null,
     install,
     note,
   };
@@ -188,6 +201,15 @@ function runTape(ctx: CaptureContext, tape: string): CaptureResult {
 /** Columns a captured terminal line is wrapped to, and the cap on lines kept. */
 const FREEZE_COLUMNS = 100;
 const FREEZE_LINES = 40;
+/**
+ * The rendered canvas width, in pixels.
+ *
+ * freeze sizes its canvas from the longest line it is given at about 36 px per
+ * character, so a 100-column capture came out 3,607 px wide and 355KB — a
+ * download, not a README image. `--width` fixes the canvas and lays the same
+ * wrapped text out inside it; nothing is clipped.
+ */
+const FREEZE_WIDTH_PX = 1200;
 /** A README image over this is a download, not a screenshot. */
 const MAX_CAPTURE_BYTES = 300_000;
 
@@ -211,7 +233,7 @@ export function fitForCapture(text: string, columns = FREEZE_COLUMNS, lines = FR
   }
   if (wrapped.length <= lines) return wrapped.join("\n");
   const kept = wrapped.slice(0, lines - 1);
-  kept.push(`… ${wrapped.length - kept.length} more lines (full output in bench/RESULTS.md)`);
+  kept.push(`… ${wrapped.length - kept.length} more lines, cut so the image stays a screenshot`);
   return kept.join("\n");
 }
 
@@ -231,7 +253,13 @@ function freezeText(ctx: CaptureContext, out: string, text: string): CaptureResu
     mkdirSync(ctx.assets, { recursive: true });
     const frozen = runCommand(
       "freeze",
-      ["--output", target, "--language", "ansi", "--wrap", String(FREEZE_COLUMNS), scratch],
+      [
+        "--output", target,
+        "--language", "ansi",
+        "--wrap", String(FREEZE_COLUMNS),
+        "--width", String(FREEZE_WIDTH_PX),
+        scratch,
+      ],
       REPO_ROOT,
     );
     if (!frozen.ok) return { written: [], skipped: `freeze failed: ${lastLine(frozen.output)}` };
@@ -261,7 +289,11 @@ function freezeCommand(
     ...(env === undefined ? {} : { env }),
   });
   const output = shape(`${ran.stdout ?? ""}${ran.stderr ?? ""}`);
-  return freezeText(ctx, out, `$ ${command.join(" ")}\n${output}`);
+  // Repo-relative, because an absolute path in a committed screenshot is both
+  // noise and a leak of whoever's checkout produced it (and this one runs in a
+  // worktree, whose path nobody else has).
+  const shown = command.map((part) => (part.startsWith(REPO_ROOT) ? path.relative(REPO_ROOT, part) || "." : part));
+  return freezeText(ctx, out, `$ ${shown.join(" ")}\n${output}`);
 }
 
 /** Move tape outputs into `--assets` when it is not the default directory. */
@@ -298,14 +330,61 @@ function lastLine(text: string): string {
  * mostly nothing.
  */
 export function x4Summary(output: string): string {
-  const lines = output.split("\n");
-  const kept = lines.filter((line) => {
+  const kept = output.split("\n").filter((line) => {
     const text = line.trim();
     if (text.length === 0) return false;
     if (/^headtohead: wrote /.test(text)) return false;
-    return /^(ID|X4)\b/.test(text) || /^X4 /.test(text);
+    // The header, the X4 row itself, and any reason that carries a byte count.
+    // A tool that was never built has no reproducibility finding, and its
+    // "no headless CLI" sentence is five lines of an image about byte counts;
+    // it stays in RESULTS.md, which is where a reason belongs.
+    if (/^ID\b/.test(text)) return true;
+    if (/^X4\s{2,}/.test(text)) return true;
+    return /^X4 \S+:/.test(text) && /\bbytes?\b/.test(text);
   });
   return kept.length === 0 ? output.trim() : kept.join("\n");
+}
+
+/**
+ * A symbol and a file worth showing, read out of the map under `root`.
+ *
+ * The most-imported file is the one whose impact set is interesting, and an
+ * exported symbol declared in it is one `query` will actually find. Both come
+ * from the artifacts rather than from a constant here, so the capture keeps
+ * working when the corpus repo changes.
+ */
+export function querySubject(root: string): { symbol: string; file: string } {
+  const fallback = { symbol: "index", file: "src/index.ts" };
+  const graph = path.join(root, ".greplost", "graph");
+  const read = (name: string): Record<string, unknown>[] => {
+    const file = path.join(graph, name);
+    if (!existsSync(file)) return [];
+    return readFileSync(file, "utf8")
+      .split("\n")
+      .filter((line) => line.trim().length > 0)
+      .flatMap((line) => {
+        try {
+          return [JSON.parse(line) as Record<string, unknown>];
+        } catch {
+          return [];
+        }
+      });
+  };
+
+  const inbound = new Map<string, number>();
+  for (const edge of read("imports.jsonl")) {
+    const to = typeof edge["to"] === "string" ? edge["to"] : null;
+    if (to === null || to.includes(":")) continue;
+    inbound.set(to, (inbound.get(to) ?? 0) + 1);
+  }
+  const ranked = [...inbound.entries()].sort((a, b) => b[1] - a[1] || compareStrings(a[0], b[0]));
+  const file = ranked[0]?.[0] ?? fallback.file;
+
+  const symbols = read("symbols.jsonl");
+  const inFile = symbols.filter((entry) => entry["file"] === file && entry["exported"] === true);
+  const chosen = inFile[0] ?? symbols.find((entry) => entry["exported"] === true);
+  const symbol = typeof chosen?.["name"] === "string" ? (chosen["name"] as string) : fallback.symbol;
+  return { symbol, file };
 }
 
 /** A corpus checkout the terminal captures can run inside, or null. */
@@ -387,8 +466,20 @@ export const CAPTURES: Capture[] = [
     perform: (ctx) => {
       const root = corpusRepo("hono") ?? path.join(REPO_ROOT, "fixtures", "tiny-ts");
       const cli = path.join(REPO_ROOT, "packages", "cli", "src", "main.ts");
-      const first = freezeCommand(ctx, "query-json.png", ["bun", cli, "query", "retry", "--json", "--root", root], REPO_ROOT);
-      const second = freezeCommand(ctx, "impact.png", ["bun", cli, "impact", "packages/core/src/retry.ts", "--root", root], REPO_ROOT);
+      // `query` needs a map. Capture 1 builds one in the same checkout, but a
+      // `--only query-impact` run does not, and a capture of an error message is
+      // not the capture. `--root` is explicit for the reason docs/tapes/init.tape
+      // gives: greplost resolves its root upward, and this directory sits inside
+      // a checkout that has a `.greplost/` of its own.
+      if (!existsSync(path.join(root, ".greplost"))) {
+        runCommand("bun", [cli, "init", "--no-hooks", "--root", root], REPO_ROOT);
+      }
+      // Query and impact arguments come out of the map that was just built, not
+      // out of this file: a hard-coded `retry` was another repo's symbol, and
+      // the capture it produced was a screenshot of `"matches": []`.
+      const subject = querySubject(root);
+      const first = freezeCommand(ctx, "query-json.png", ["bun", cli, "query", subject.symbol, "--json", "--root", root], REPO_ROOT);
+      const second = freezeCommand(ctx, "impact.png", ["bun", cli, "impact", subject.file, "--root", root], REPO_ROOT);
       const skipped = first.skipped ?? second.skipped;
       return { written: [...first.written, ...second.written], ...(skipped === null ? { skipped: null } : { skipped }) };
     },
@@ -457,12 +548,16 @@ export const CAPTURES: Capture[] = [
       // Redirected away from `bench/results/`: capturing a screenshot must not
       // add a committed benchmark result as a side effect.
       const results = mkdtempSync(path.join(tmpdir(), "greplost-shot-results-"));
+      // And away from `bench/.competitors/`: the repo copies this run makes are
+      // what the agent suite reads as "this competitor has artifacts here", so a
+      // screenshot would otherwise flip another suite's conditions.
+      const work = mkdtempSync(path.join(tmpdir(), "greplost-shot-work-"));
       return freezeCommand(
         ctx,
         "reproducibility.png",
         ["bun", path.join(REPO_ROOT, "bench", "src", "cli.ts"), "headtohead", "--fixture", "--metrics", "X4"],
         root,
-        { ...process.env, GREPLOST_BENCH_RESULTS_DIR: results, NODE_ENV: "test" },
+        { ...process.env, GREPLOST_BENCH_RESULTS_DIR: results, GREPLOST_BENCH_WORK_DIR: work, NODE_ENV: "test" },
         x4Summary,
       );
     },

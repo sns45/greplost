@@ -256,10 +256,13 @@ export function headToHeadFrom(
       // it (`--metrics`) or could not read it never displaces a real number.
       if (held !== undefined && measuredAtAll(held)) continue;
       if (!measuredAtAll(row) && held !== undefined) continue;
+      // A row nobody measured belongs to no run: attributing X7 to whichever
+      // payload was read last would put a corpus behind an `n/a`.
+      const attributed = measuredAtAll(row);
       byId.set(row.id, {
         ...row,
-        ...(target === undefined ? {} : { run: target }),
-        ...(label === null ? {} : { runLabel: label }),
+        ...(target === undefined || !attributed ? {} : { run: target }),
+        ...(label === null || !attributed ? {} : { runLabel: label }),
       });
     }
   }
@@ -280,6 +283,8 @@ export function headToHeadFrom(
     ...base,
     rows,
     notes: [...notes],
+    // The fallback target only matters for a row with no run of its own; each
+    // chart prefers the run recorded on the row it draws.
     charts: headToHeadCharts(rows, replay, assetsRel, targetOf(x2Payload ?? primary)),
   };
 }

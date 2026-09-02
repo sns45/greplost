@@ -41,3 +41,6 @@ Sleep 180s
 # The final frame as one file. `Output <name>.png` would make vhs write a
 # directory of one PNG per frame at that path instead (see docs/tapes/init.tape).
 Screenshot docs/assets/side-by-side-baseline.png
+# vhs 0.11.0 writes a `Screenshot` only when another command follows it, so this
+# `Sleep` is what makes the still land on disk rather than being dropped.
+Sleep 1s

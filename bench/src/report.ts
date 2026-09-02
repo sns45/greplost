@@ -20,8 +20,10 @@
  *   bun bench/src/cli.ts report --dry-run       # RESULTS.md only, no rasterisation
  *   bun bench/src/cli.ts report --results-dir <d> --out <f> --assets <d>
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
+
+import { compareStrings } from "@greplost/core/schema";
 
 import { boxChart, groupedBarChart, lineChart, mermaidXy, writeChart, type BoxDatum, type ChartSpec } from "./charts.ts";
 import { latestResult, resultsDir } from "./results-io.ts";
@@ -168,12 +170,38 @@ export function buildModel(options: BuildOptions = {}): ReportModel {
       const target = resultsDir(from);
       if (!existsSync(target)) return found;
       const pattern = new RegExp(`^${suite}-\\d{4}-\\d{2}-\\d{2}-[^/]*\\.json$`);
-      for (const name of readdirSync(target).filter((entry) => pattern.test(entry)).sort()) {
+      const names = readdirSync(target).filter((entry) => pattern.test(entry));
+      // Oldest first, by the payload's own date and then by when the file was
+      // written. Name order — which is what `latestResult` uses — is the run's
+      // commit sha7, and sha7s do not sort chronologically: a payload from an
+      // earlier round whose sha happens to sort last would otherwise displace
+      // the run that superseded it. `mtime` is a local fact, so the file name
+      // breaks the remaining ties and a fresh clone still gets a stable order.
+      const keyed = names.map((name) => {
+        const file = path.join(target, name);
+        let date = "";
+        let written = 0;
         try {
-          found.push({ data: JSON.parse(readFileSync(path.join(target, name), "utf8")) as Record<string, unknown>, file: path.join(target, name) });
+          written = statSync(file).mtimeMs;
+        } catch {
+          written = 0;
+        }
+        try {
+          const parsed = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
+          date = typeof parsed["date"] === "string" ? parsed["date"] : "";
+          return { file, date, written, name, payload: parsed };
         } catch {
           // One corrupt result must not take the report down with it.
+          return null;
         }
+      });
+      keyed.sort((a, b) => {
+        if (a === null || b === null) return 0;
+        return compareStrings(a.date, b.date) || a.written - b.written || compareStrings(a.name, b.name);
+      });
+      for (const entry of keyed) {
+        if (entry === null) continue;
+        found.push({ data: entry.payload, file: entry.file });
       }
     } catch {
       return found;

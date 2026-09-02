@@ -48,10 +48,24 @@ import { generateTsTruth, type Truth } from "./truth/ts.ts";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
 const SUITE = "headtohead";
-/** Where a competitor's repo copy and its artifacts live. Gitignored. */
-const WORK_DIR = path.join(REPO_ROOT, "bench", ".competitors");
-/** Where `uv tool install` / `pipx install` put the competitor binaries, if used. */
-const LOCAL_BIN = path.join(WORK_DIR, "_bin");
+/** Where the installed competitor binaries and the sandbox HOME live. Gitignored. */
+const COMPETITORS_DIR = path.join(REPO_ROOT, "bench", ".competitors");
+/**
+ * Where a competitor's repo copy and its artifacts live.
+ *
+ * `GREPLOST_BENCH_WORK_DIR` redirects it, the way
+ * `GREPLOST_BENCH_RESULTS_DIR` redirects the results. The screenshot suite runs
+ * a fixture X4 to photograph its output, and without the redirect that run left
+ * `bench/.competitors/graphify/tiny-ts` behind — which the agent suite reads as
+ * "graphify has artifacts here", so taking a screenshot changed another suite's
+ * conditions. A benchmark must not be a side effect of a screenshot.
+ */
+const WORK_DIR = process.env["GREPLOST_BENCH_WORK_DIR"] ?? COMPETITORS_DIR;
+/**
+ * Where `uv tool install` / `pipx install` put the competitor binaries, if used.
+ * Always the real directory: a redirected work dir must still find the tools.
+ */
+const LOCAL_BIN = path.join(COMPETITORS_DIR, "_bin");
 /**
  * The HOME every competitor process runs under.
  *
@@ -69,7 +83,7 @@ const LOCAL_BIN = path.join(WORK_DIR, "_bin");
  * `pipx install code-review-graph`) are not run from here at all; they are the
  * operator's to run, and this suite records N/A when their binaries are absent.
  */
-const SANDBOX_HOME = path.join(WORK_DIR, "home");
+const SANDBOX_HOME = path.join(COMPETITORS_DIR, "home");
 /**
  * Wrapper scripts placed ahead of everything on `PATH` for the replay.
  *

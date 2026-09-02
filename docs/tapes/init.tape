@@ -28,12 +28,19 @@ Set Padding 24
 Set TypingSpeed 40ms
 
 Hide
-Type "cd bench/.corpus/hono && clear"
+# The map is removed first so the timing on screen is a cold build and the
+# `written` count is the whole map, not the zero an already-built repo prints.
+Type "cd bench/.corpus/hono && rm -rf .greplost && clear"
 Enter
 Sleep 1s
 Show
 
-Type "time bun ../../../packages/cli/src/main.ts init --no-hooks"
+# `--root .` is not optional. greplost resolves its root by walking *up* from
+# the working directory until it finds a `.greplost/`, and `bench/.corpus/hono`
+# sits inside the greplost checkout, which has one: without it this line rebuilds
+# the checkout's own map and leaves hono without one, which is exactly what the
+# capture then shows.
+Type "time bun ../../../packages/cli/src/main.ts init --no-hooks --root ."
 Enter
 # hono is tier M; a full build plus the artifact write is seconds, not minutes,
 # and the point of the capture is that number being visible on screen.
@@ -49,3 +56,6 @@ Sleep 4s
 
 # The final frame, as one file.
 Screenshot docs/assets/init.png
+# vhs 0.11.0 writes a `Screenshot` only when another command follows it, so this
+# `Sleep` is what makes the still land on disk rather than being dropped.
+Sleep 1s
