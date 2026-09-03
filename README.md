@@ -1,5 +1,9 @@
 # greplost
 
+<p align="center">
+  <img src="assets/marketing/greplost-poster-600x900.png" alt="greplost poster: a committed, deterministic map of your codebase that fails the build when it goes stale. grep lost. Read the map." width="420">
+</p>
+
 > grep lost. Read the map.
 
 greplost is not a search tool. It is the map you read so you do not have to search. It generates a committed, deterministic, always-fresh map of a codebase under `.greplost/`: Markdown you can read on GitHub, ASCII trees, Mermaid diagrams, and JSONL graphs that coding agents query instead of grepping. The structure layer is built from the AST with tree-sitter and contains no LLM output, so two builds of the same commit are byte-identical and `greplost verify` fails CI the moment the map lags the code.
