@@ -41,7 +41,7 @@ jobs:
         with:
           path: bench/.corpus
           key: corpus-${{ hashFiles('bench/corpus.json') }}
-      - name: Corpus setup (tiers S and M: anyq, gin, hono, bubbletea)
+      - name: "Corpus setup (tiers S and M: anyq, gin, hono, bubbletea)"
         run: bun bench/src/cli.ts corpus setup --tier S && bun bench/src/cli.ts corpus setup --tier M
       - name: structural accuracy gate (tier S)
         run: bun run bench:structural --tier S --gate
