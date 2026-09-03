@@ -1615,6 +1615,7 @@
 {"confidence":"high","from":"packages/sync/src/dirty.ts#toRepoRelative","kind":"call","to":"packages/sync/src/dirty.ts#escapes"}
 {"confidence":"high","from":"packages/sync/src/dirty.ts#toRepoRelative","kind":"call","to":"packages/sync/src/dirty.ts#realpath"}
 {"confidence":"high","from":"packages/sync/src/githooks.ts#gitHooksDir","kind":"call","to":"packages/sync/src/githooks.ts#git"}
+{"confidence":"high","from":"packages/sync/src/githooks.ts#installGitHooks","kind":"call","to":"packages/sync/src/githooks.ts#blockFor"}
 {"confidence":"high","from":"packages/sync/src/githooks.ts#installGitHooks","kind":"call","to":"packages/sync/src/githooks.ts#gitHooksDir"}
 {"confidence":"high","from":"packages/sync/src/githooks.ts#installGitHooks","kind":"call","to":"packages/sync/src/githooks.ts#isDirectory"}
 {"confidence":"high","from":"packages/sync/src/githooks.ts#installGitHooks","kind":"call","to":"packages/sync/src/githooks.ts#isRepoRoot"}

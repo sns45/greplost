@@ -56,5 +56,5 @@ graph LR
 | @greplost/core | packages/core | 30 | 6134 | none | [MAP](../packages/greplost__core/MAP.md) |
 | @greplost/render | packages/render | 14 | 1833 | @greplost/core | [MAP](../packages/greplost__render/MAP.md) |
 | @greplost/semantic | packages/semantic | 5 | 1509 | @greplost/core, @greplost/render, @greplost/sync | [MAP](../packages/greplost__semantic/MAP.md) |
-| @greplost/sync | packages/sync | 12 | 3080 | @greplost/core, @greplost/render | [MAP](../packages/greplost__sync/MAP.md) |
+| @greplost/sync | packages/sync | 12 | 3098 | @greplost/core, @greplost/render | [MAP](../packages/greplost__sync/MAP.md) |
 | @greplost/workspace | packages/workspace | 8 | 1903 | @greplost/core, @greplost/render, @greplost/sync | [MAP](../packages/greplost__workspace/MAP.md) |

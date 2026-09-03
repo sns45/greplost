@@ -86,7 +86,7 @@ greplost verify --diff     # exit 1 with a unified diff when the map is stale
 greplost update            # incremental: only files changed since the last index
 ```
 
-The git hooks installed by `init` (post-commit, post-checkout, post-merge) run an incremental update, so the committed map follows the code without anyone remembering to regenerate it. Every command accepts `--root <dir>` and `--json`; the JSON shapes are stable and documented in the plugin skill.
+The git hooks installed by `init` keep the map current: pre-commit runs an incremental update and stages `.greplost/`, so every commit carries the map of its own tree and `verify` passes in CI by construction; post-commit, post-checkout and post-merge refresh it in the background after the fact. Every command accepts `--root <dir>` and `--json`; the JSON shapes are stable and documented in the plugin skill.
 
 ## Keep it honest in CI
 

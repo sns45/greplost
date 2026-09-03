@@ -46,7 +46,7 @@ export const HOOK_MARKER = "# greplost-hook";
 export const HOOK_END_MARKER = "# end greplost-hook";
 
 /** The git events that can change the working tree behind greplost's back. */
-export const HOOK_NAMES: readonly string[] = ["post-commit", "post-merge", "post-checkout"];
+export const HOOK_NAMES: readonly string[] = ["pre-commit", "post-commit", "post-merge", "post-checkout"];
 
 /** Mode 755: git only runs a hook that is executable. */
 const HOOK_MODE = 0o755;
@@ -72,6 +72,24 @@ const HOOK_BLOCK = [
   HOOK_END_MARKER,
   "",
 ].join("\n");
+
+/**
+ * The pre-commit block runs the update in the foreground and stages the map,
+ * so the commit that changes a source file carries the map of that very tree:
+ * a CI `greplost verify` on the commit then passes by construction. The
+ * post-* hooks keep the backgrounded form (they run after git is done).
+ */
+const PRE_COMMIT_BLOCK = [
+  HOOK_MARKER,
+  'if command -v greplost >/dev/null 2>&1; then GL="greplost"; elif command -v bunx >/dev/null 2>&1; then GL="bunx greplost"; else GL=""; fi',
+  '[ -n "$GL" ] && $GL update --incremental --quiet >/dev/null 2>&1 && git add -A .greplost >/dev/null 2>&1 || :',
+  HOOK_END_MARKER,
+  "",
+].join("\n");
+
+function blockFor(hook: string): string {
+  return hook === "pre-commit" ? PRE_COMMIT_BLOCK : HOOK_BLOCK;
+}
 
 export interface HookInstallResult {
   /** Hook names newly given a greplost block, in install order. */
@@ -111,7 +129,7 @@ export function installGitHooks(root: string): HookInstallResult {
   if (!husky && existsSync(path.join(absoluteRoot, "lefthook.yml"))) {
     notes.push(
       "lefthook.yml found: plain git hooks were installed; if lefthook takes over core.hooksPath, " +
-        "add a `greplost update --incremental --quiet` command to its post-commit, post-merge and post-checkout entries",
+        "add a `greplost update --incremental --quiet` command to its pre-commit (followed by `git add -A .greplost`), post-commit, post-merge and post-checkout entries",
     );
   }
 
@@ -134,7 +152,7 @@ export function installGitHooks(root: string): HookInstallResult {
       continue;
     }
 
-    write(file, existing);
+    write(file, existing, blockFor(hook));
     makeExecutable(file);
     installed.push(hook);
   }
@@ -150,18 +168,18 @@ export function installGitHooks(root: string): HookInstallResult {
  * existing file is appended to, with a newline first if it lacks one — running
  * the previous last line and the marker together would comment out a command.
  */
-function write(file: string, existing: string | undefined): void {
+function write(file: string, existing: string | undefined, block: string = HOOK_BLOCK): void {
   try {
     if (existing === undefined) {
       // Both kinds get the shebang. Husky runs its files itself and does not
       // need one, but a `.husky/post-commit` is also just a script someone may
       // run by hand, and a file that is executable without saying what should
       // execute it is a trap.
-      writeFileSync(file, SHEBANG + HOOK_BLOCK);
+      writeFileSync(file, SHEBANG + block);
       return;
     }
     const separator = existing.length === 0 || existing.endsWith("\n") ? "" : "\n";
-    appendFileSync(file, separator + HOOK_BLOCK);
+    appendFileSync(file, separator + block);
   } catch (cause) {
     throw new Error(`greplost: cannot install the ${path.basename(file)} hook: ${reasonOf(cause)}`);
   }

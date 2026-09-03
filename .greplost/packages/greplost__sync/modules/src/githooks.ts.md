@@ -17,20 +17,22 @@
 **Key symbols:**
 - `const HOOK_MARKER = "# greplost-hook"`  L43-43
 - `const HOOK_END_MARKER = "# end greplost-hook"`  L46-46
-- `const HOOK_NAMES: readonly string[] = ["post-commit", "post-merge", "post-checkout"]`  L49-49
+- `const HOOK_NAMES: readonly string[] = ["pre-commit", "post-commit", "post-merge", "post-checkout"]`  L49-49
 - `const HOOK_MODE = 0o755`  L52-52
 - `const SHEBANG = "#!/bin/sh\n"`  L54-54
 - `const HOOK_BLOCK = [ HOOK_MARKER, 'if command -v greplost >/dev/null 2>&1; then GL="greplost"; elif command -v bunx >/dev/null 2>&1; then GL="bunx greplost"; else GL=""; fi', // The trailing `|| :` i…`  L64-74
-- `interface HookInstallResult`  L76-83
-- `function installGitHooks(root: string): HookInstallResult`  L92-143
-- `function write(file: string, existing: string | undefined): void`  L153-168
-- `function makeExecutable(file: string): void`  L170-177
-- `function readIfPresent(file: string): string | undefined`  L179-185
-- `function gitHooksDir(root: string): string`  L192-196
-- `function isRepoRoot(root: string): boolean`  L199-206
-- `function realpath(target: string): string`  L208-214
-- `function isDirectory(target: string): boolean`  L216-222
-- `function git(root: string, args: string[]): string | undefined`  L225-229
-- `function reasonOf(cause: unknown): string`  L231-233
+- `const PRE_COMMIT_BLOCK = [ HOOK_MARKER, 'if command -v greplost >/dev/null 2>&1; then GL="greplost"; elif command -v bunx >/dev/null 2>&1; then GL="bunx greplost"; else GL=""; fi', '[ -n "$GL" ] && $…`  L82-88
+- `function blockFor(hook: string): string`  L90-92
+- `interface HookInstallResult`  L94-101
+- `function installGitHooks(root: string): HookInstallResult`  L110-161
+- `function write(file: string, existing: string | undefined, block: string = HOOK_BLOCK): void`  L171-186
+- `function makeExecutable(file: string): void`  L188-195
+- `function readIfPresent(file: string): string | undefined`  L197-203
+- `function gitHooksDir(root: string): string`  L210-214
+- `function isRepoRoot(root: string): boolean`  L217-224
+- `function realpath(target: string): string`  L226-232
+- `function isDirectory(target: string): boolean`  L234-240
+- `function git(root: string, args: string[]): string | undefined`  L243-247
+- `function reasonOf(cause: unknown): string`  L249-251
 
-**Calls:** `git` → [`packages/sync/src/githooks.ts#git`](githooks.ts.md) (high), `gitHooksDir` → [`packages/sync/src/githooks.ts#gitHooksDir`](githooks.ts.md) (high), `isDirectory` → [`packages/sync/src/githooks.ts#isDirectory`](githooks.ts.md) (high), `isRepoRoot` → [`packages/sync/src/githooks.ts#isRepoRoot`](githooks.ts.md) (high), `makeExecutable` → [`packages/sync/src/githooks.ts#makeExecutable`](githooks.ts.md) (high), `readIfPresent` → [`packages/sync/src/githooks.ts#readIfPresent`](githooks.ts.md) (high), `realpath` → [`packages/sync/src/githooks.ts#realpath`](githooks.ts.md) (high), `reasonOf` → [`packages/sync/src/githooks.ts#reasonOf`](githooks.ts.md) (high), `write` → [`packages/sync/src/githooks.ts#write`](githooks.ts.md) (high)
+**Calls:** `blockFor` → [`packages/sync/src/githooks.ts#blockFor`](githooks.ts.md) (high), `git` → [`packages/sync/src/githooks.ts#git`](githooks.ts.md) (high), `gitHooksDir` → [`packages/sync/src/githooks.ts#gitHooksDir`](githooks.ts.md) (high), `isDirectory` → [`packages/sync/src/githooks.ts#isDirectory`](githooks.ts.md) (high), `isRepoRoot` → [`packages/sync/src/githooks.ts#isRepoRoot`](githooks.ts.md) (high), `makeExecutable` → [`packages/sync/src/githooks.ts#makeExecutable`](githooks.ts.md) (high), `readIfPresent` → [`packages/sync/src/githooks.ts#readIfPresent`](githooks.ts.md) (high), `realpath` → [`packages/sync/src/githooks.ts#realpath`](githooks.ts.md) (high), `reasonOf` → [`packages/sync/src/githooks.ts#reasonOf`](githooks.ts.md) (high), `write` → [`packages/sync/src/githooks.ts#write`](githooks.ts.md) (high)

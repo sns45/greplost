@@ -40,7 +40,7 @@ function isExecutable(file: string): boolean {
 }
 
 describe("hooks", () => {
-  test("installs all three hooks under .git/hooks, executable and marked", () => {
+  test("installs all four hooks under .git/hooks, executable and marked", () => {
     const root = gitRepo("plain");
 
     const result = installGitHooks(root);
@@ -211,5 +211,19 @@ describe("hooks", () => {
     expect(result.installed).toEqual([]);
     expect(result.notes.join(" ")).toContain("not a git repository root");
     expect(existsSync(path.join(root, ".git", "hooks", "post-commit"))).toBe(false);
+  });
+});
+
+describe("pre-commit hook", () => {
+  test("runs the update in the foreground and stages the map", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "greplost-hooks-pre-"));
+    spawnSync("git", ["init", "-q", root]);
+    installGitHooks(root);
+    const body = readFileSync(path.join(root, ".git", "hooks", "pre-commit"), "utf8");
+    expect(body).toContain("update --incremental --quiet");
+    expect(body).toContain("git add -A .greplost");
+    expect(body).not.toContain("& )");
+    const post = readFileSync(path.join(root, ".git", "hooks", "post-commit"), "utf8");
+    expect(post).toContain("& )");
   });
 });
