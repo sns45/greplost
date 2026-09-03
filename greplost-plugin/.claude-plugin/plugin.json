@@ -9,7 +9,7 @@
   },
   "homepage": "https://github.com/sns45/greplost",
   "repository": "https://github.com/sns45/greplost",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "keywords": [
     "code-map",
     "codebase-navigation",

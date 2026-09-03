@@ -47,4 +47,4 @@ Everything else — the artifact layout, the Claude Code plugin, the benchmark
 results, and the design spec — is in the project README:
 <https://github.com/sns45/greplost#readme>.
 
-MIT licensed.
+Apache 2.0 licensed.
