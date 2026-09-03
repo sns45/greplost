@@ -1,0 +1,79 @@
+name: Publish
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  # Gate the release on the full CI workflow (typecheck, tests, verify, bench gates).
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.21
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build the publishable bundle
+        run: bun run build
+
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
+
+      - name: Configure registry auth (NPM_TOKEN sourced from Doppler release-tooling/prd)
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+        run: |
+          cat > /tmp/configure-registry-auth.sh <<'SCRIPT'
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "::error::NPM_TOKEN could not be resolved from Doppler. Set the DOPPLER_TOKEN repo secret (a read service token on release-tooling/prd)."
+            exit 1
+          fi
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+          SCRIPT
+          doppler run -- bash /tmp/configure-registry-auth.sh
+
+      - name: Verify npm authentication
+        run: |
+          if ! npm whoami >/dev/null 2>&1; then
+            echo "::error::npm authentication failed: NPM_TOKEN from Doppler is missing, expired, or lacks publish rights."
+            exit 1
+          fi
+          echo "Authenticated to npm as: $(npm whoami)"
+
+      - name: Tag matches package version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG=$(node -p "require('./packages/cli/package.json').version")
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::tag v$TAG does not match packages/cli version $PKG"
+            exit 1
+          fi
+
+      - name: Publish greplost (skips when this version is already on the registry)
+        working-directory: packages/cli
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "greplost@${VERSION}" version >/dev/null 2>&1; then
+            echo "greplost@${VERSION} is already published; nothing to do"
+            exit 0
+          fi
+          npm publish --access public
+
+      - name: Smoke the published package
+        run: |
+          cd "$(mktemp -d)"
+          for i in 1 2 3 4 5 6; do npx -y greplost@"${GITHUB_REF_NAME#v}" --version && exit 0; sleep 20; done
+          echo "::error::published package did not resolve from the registry"
+          exit 1
