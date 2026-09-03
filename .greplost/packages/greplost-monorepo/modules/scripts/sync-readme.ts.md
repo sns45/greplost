@@ -6,19 +6,21 @@
 
 **Package:** `greplost-monorepo` ([map](../../MAP.md))
 
-**Exports:** `SECTIONS (const)`, `extractSection(results: string, heading: string): string | undefined`, `main(argv: string[]): number`, `splice(readme: string, key: string, body: string): string`, `syncReadme(readme: string, results: string): { text: string; missing: string[] }`
+**Exports:** `SECTIONS (const)`, `extractSection(results: string, heading: string): string | undefined`, `main(argv: string[]): number`, `missingImages(readme: string, root: string, tracked: (rel: string) => boolean): string[]`, `splice(readme: string, key: string, body: string): string`, `stripFences(lines: string[], lang: string): string[]`, `syncReadme(readme: string, results: string): { text: string; missing: string[] }`
 
-**Imports:** `node:fs` (existsSync, readFileSync, writeFileSync), `node:path` (join)
+**Imports:** `node:fs` (existsSync, readFileSync, writeFileSync), `node:child_process` (spawnSync), `node:path` (join)
 
 **Imported by:** None.
 
 **Blast radius:** 0 files (`greplost impact scripts/sync-readme.ts`)
 
 **Key symbols:**
-- `const SECTIONS: Readonly<Record<string, string>> = { headtohead: "Head-to-head", singletool: "Single-tool", }`  L16-19
-- `function extractSection(results: string, heading: string): string | undefined`  L21-34
-- `function splice(readme: string, key: string, body: string): string`  L36-45
-- `function syncReadme(readme: string, results: string): { text: string; missing: string[] }`  L47-56
-- `function main(argv: string[]): number`  L58-77
+- `const SECTIONS: Readonly<Record<string, string>> = { headtohead: "Head-to-head", singletool: "Single-tool", }`  L17-20
+- `function extractSection(results: string, heading: string): string | undefined`  L22-37
+- `function stripFences(lines: string[], lang: string): string[]`  L40-49
+- `function missingImages(readme: string, root: string, tracked: (rel: string) => boolean): string[]`  L52-61
+- `function splice(readme: string, key: string, body: string): string`  L63-72
+- `function syncReadme(readme: string, results: string): { text: string; missing: string[] }`  L74-83
+- `function main(argv: string[]): number`  L85-110
 
-**Calls:** `extractSection` → [`scripts/sync-readme.ts#extractSection`](sync-readme.ts.md) (high), `main` → [`scripts/sync-readme.ts#main`](sync-readme.ts.md) (high), `splice` → [`scripts/sync-readme.ts#splice`](sync-readme.ts.md) (high), `syncReadme` → [`scripts/sync-readme.ts#syncReadme`](sync-readme.ts.md) (high)
+**Calls:** `extractSection` → [`scripts/sync-readme.ts#extractSection`](sync-readme.ts.md) (high), `main` → [`scripts/sync-readme.ts#main`](sync-readme.ts.md) (high), `missingImages` → [`scripts/sync-readme.ts#missingImages`](sync-readme.ts.md) (high), `splice` → [`scripts/sync-readme.ts#splice`](sync-readme.ts.md) (high), `stripFences` → [`scripts/sync-readme.ts#stripFences`](sync-readme.ts.md) (high), `syncReadme` → [`scripts/sync-readme.ts#syncReadme`](sync-readme.ts.md) (high)

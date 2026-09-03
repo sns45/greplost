@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/bench` ([map](../../MAP.md))
 
-**Exports:** `BoxDatum (interface)`, `BoxSpec (interface)`, `ChartSpec (interface)`, `PALETTE (const)`, `Series (interface)`, `axisMax(raw: number): number`, `barChart(spec: ChartSpec): string`, `boxChart(spec: BoxSpec): string`, `categoryOffsets(categories: readonly string[]): number[]`, `coord(value: number): string`, `esc(text: string): string`, `groupedBarChart(spec: ChartSpec): string`, `label(value: number): string`, `lineChart(spec: ChartSpec): string`, `mermaidXy(spec: ChartSpec, kind: "line" | "bar" = "line"): string`, `toPng(svg: string): Buffer`, `wrapText(text: string, columns: number): string[]`, `writeChart(dir: string, name: string, svg: string): { svg: string; png: string }`
+**Exports:** `BoxDatum (interface)`, `BoxSpec (interface)`, `ChartSpec (interface)`, `MERMAID_DARK_INIT (const)`, `PALETTE (const)`, `ScatterPoint (interface)`, `ScatterSpec (interface)`, `Series (interface)`, `TOOL_COLORS (const)`, `TOOL_NAMES (const)`, `axisMax(raw: number): number`, `barChart(spec: ChartSpec): string`, `boxChart(spec: BoxSpec): string`, `categoryOffsets(categories: readonly string[]): number[]`, `coord(value: number): string`, `displayName(name: string): string`, `displayValue(value: number): string`, `esc(text: string): string`, `groupedBarChart(spec: ChartSpec): string`, `label(value: number): string`, `lineChart(spec: ChartSpec): string`, `logScaleFor(values: readonly (number | null | undefined)[]): boolean`, `markColor(name: string, index: number): string`, `mermaidXy(spec: ChartSpec, kind: "line" | "bar" = "line"): string`, `paretoFrontier(points: readonly ScatterPoint[]): ScatterPoint[]`, `pngChunks(png: Buffer): string[]`, `scatterChart(spec: ScatterSpec): string`, `sortDesc(spec: ChartSpec): ChartSpec`, `sortSeriesDesc(spec: ChartSpec): ChartSpec`, `stripPngMetadata(png: Buffer): Buffer`, `textWidth(text: string, fontSize: number): number`, `toPng(svg: string): Buffer`, `wrapText(text: string, columns: number): string[]`, `writeChart(dir: string, name: string, svg: string): { svg: string; png: string }`
 
 **Imports:** `node:fs` (mkdirSync, writeFileSync), `node:module` (createRequire), `node:path` (default)
 
@@ -15,52 +15,56 @@
 **Blast radius:** 4 files (`greplost impact bench/src/charts.ts`)
 
 **Key symbols:**
-- `interface Series`  L37-41
-- `interface ChartSpec`  L43-56
-- `interface BoxDatum`  L59-66
-- `interface BoxSpec`  L68-76
-- `const PALETTE: readonly string[] = ["#1d4ed8", "#ea580c", "#0f766e", "#a21caf", "#4d7c0f", "#b91c1c"]`  L87-87
-- `const INK = "#111827"`  L89-89
-- `const MUTED = "#6b7280"`  L90-90
-- `const GRID = "#e5e7eb"`  L91-91
-- `const AXIS = "#9ca3af"`  L92-92
-- `const PAPER = "#ffffff"`  L93-93
-- `const DEFAULT_WIDTH = 720`  L95-95
-- `const DEFAULT_HEIGHT = 380`  L96-96
-- `const PAD_LEFT = 64`  L97-97
-- `const PAD_RIGHT = 20`  L98-98
-- `const PAD_TOP = 58`  L99-99
-- `const PAD_BOTTOM = 58`  L100-100
-- `const Y_INTERVALS = 4`  L102-102
-- `const NOTE_LINE_HEIGHT = 13`  L104-104
-- `const NOTE_CHAR_WIDTH = 5.2`  L106-106
-- `const MIN_LABEL_GAP = 34`  L114-114
-- `function noteWidth(width: number): number`  L117-119
-- `function wrapText(text: string, columns: number): string[]`  L126-140
-- `function coord(value: number): string`  L151-155
-- `function label(value: number): string`  L158-163
-- `function trimZeros(text: string): string`  L165-167
-- `function esc(text: string): string`  L170-176
-- `function axisMax(raw: number): number`  L183-191
-- `function round6(value: number): number`  L194-196
-- `interface Frame`  L202-214
-- `function startFrame( opts: { title: string; yLabel: string | undefined; xLabel: string | undefined; note: string | undefined; width: number | undefined; height: number | undefined; max: number; legen…`  L216-290
-- `function finishFrame(frame: Frame): string`  L292-295
-- `function peak(series: readonly Series[]): number`  L298-306
-- `function legendOf(series: readonly Series[]): { name: string; color: string }[]`  L308-310
-- `function categoryLabel(frame: Frame, x: number, text: string): string`  L313-315
-- `function barChart(spec: ChartSpec): string`  L322-324
-- `function groupedBarChart(spec: ChartSpec): string`  L327-329
-- `function bars(spec: ChartSpec, series: readonly Series[]): string`  L331-383
-- `function categoryOffsets(categories: readonly string[]): number[]`  L398-415
-- `function lineChart(spec: ChartSpec): string`  L427-492
-- `function boxChart(spec: BoxSpec): string`  L499-549
-- `function mermaidXy(spec: ChartSpec, kind: "line" | "bar" = "line"): string`  L572-611
-- `function quoteCategory(text: string): string`  L614-616
-- `function toPng(svg: string): Buffer`  L629-633
-- `interface ResvgModule`  L635-639
-- `let resvgModule: ResvgModule | undefined`  L641-641
-- `function loadResvg(): ResvgModule`  L649-659
-- `function writeChart(dir: string, name: string, svg: string): { svg: string; png: string }`  L662-669
+- `interface Series`  L72-76
+- `interface ChartSpec`  L78-105
+- `interface BoxDatum`  L108-115
+- `interface BoxSpec`  L117-126
+- `interface ScatterPoint`  L129-133
+- `interface ScatterSpec`  L135-150
+- `interface LegendEntry`  L152-159
+- `const PALETTE: readonly string[] = ["#0fa976", "#e0561c", "#2f86ef"]`  L172-172
+- `const TOOL_COLORS: Readonly<Record<string, string>> = { greplost: "#0fa976", graphify: "#e0561c", crg: "#2f86ef", }`  L182-186
+- `const TOOL_NAMES: Readonly<Record<string, string>> = { greplost: "greplost", graphify: "Graphify", ua: "Understand-Anything", crg: "code-review-graph", }`  L189-194
+- `const SURFACE = "#000000"`  L196-196
+- `const TEXT_PRIMARY = "#FFFFFF"`  L197-197
+- `const TEXT_SECONDARY = "#C3C2B7"`  L198-198
+- `const TEXT_MUTED = "#8A8983"`  L199-199
+- `const GRID = "#262626"`  L200-200
+- `const GRID_DASH = "2 4"`  L202-202
+- `const AXIS = "#3A3A3A"`  L203-203
+- `const BORDER = "#262626"`  L205-205
+- `const QUADRANT_OPACITY = "0.12"`  L207-207
+- `const FONT_STACK = "system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif"`  L209-209
+- `const SOURCE_MARK = "greplost bench · bench/RESULTS.md"`  L210-210
+- `const DEFAULT_WIDTH = 1200`  L212-212
+- `const DEFAULT_HEIGHT = 620`  L213-213
+- `const PAD_LEFT = 84`  L215-215
+- `const PAD_RIGHT = 40`  L216-216
+- `const PAD_RIGHT_LABELLED = 200`  L218-218
+- `const PAD_BOTTOM = 104`  L224-224
+- `const CATEGORY_LABEL_Y = 22`  L226-226
+- `const CATEGORY_LABEL_Y2 = 36`  L227-227
+- `const ANCHOR_RING_Y = 40`  L228-228
+- `const ANCHOR_RING_Y2 = 52`  L229-229
+- `const AXIS_TITLE_Y = 70`  L230-230
+- `const TITLE_Y = 40`  L231-231
+- `const SUBTITLE_Y = 64`  L232-232
+- `const LEGEND_Y = 94`  L233-233
+- `const LEGEND_ROW_HEIGHT = 22`  L234-234
+- `const PLOT_TOP = 126`  L235-235
+- `const Y_INTERVALS = 4`  L237-237
+- `const NOTE_LINE_HEIGHT = 13`  L239-239
+- `const NOTE_CHAR_WIDTH = 5.2`  L241-241
+- `const NOTE_MARGIN = 32`  L243-243
+- `const BAR_MAX = 72`  L245-245
+- `const BAR_GAP = 2`  L247-247
+- `const BAR_ZERO_HEIGHT = 2`  L249-249
+- `const BAR_LABEL_MIN_HEIGHT = 30`  L251-251
+- `const MIN_LABEL_GAP = 44`  L259-259
+- `const MIN_DIRECT_LABEL_GAP = 15`  L261-261
+- `const QUADRANT_X_FRACTION = 0.4`  L269-269
+- `const QUADRANT_Y_FRACTION = 0.4`  L270-270
+- `function noteWidth(width: number): number`  L273-275
+- … 51 more
 
-**Calls:** `axisMax` → [`bench/src/charts.ts#axisMax`](charts.ts.md) (high), `bars` → [`bench/src/charts.ts#bars`](charts.ts.md) (high), `categoryLabel` → [`bench/src/charts.ts#categoryLabel`](charts.ts.md) (high), `categoryOffsets` → [`bench/src/charts.ts#categoryOffsets`](charts.ts.md) (high), `coord` → [`bench/src/charts.ts#coord`](charts.ts.md) (high), `esc` → [`bench/src/charts.ts#esc`](charts.ts.md) (high), `finishFrame` → [`bench/src/charts.ts#finishFrame`](charts.ts.md) (high), `label` → [`bench/src/charts.ts#label`](charts.ts.md) (high), `legendOf` → [`bench/src/charts.ts#legendOf`](charts.ts.md) (high), `loadResvg` → [`bench/src/charts.ts#loadResvg`](charts.ts.md) (high), `noteWidth` → [`bench/src/charts.ts#noteWidth`](charts.ts.md) (high), `peak` → [`bench/src/charts.ts#peak`](charts.ts.md) (high), `quoteCategory` → [`bench/src/charts.ts#quoteCategory`](charts.ts.md) (high), `round6` → [`bench/src/charts.ts#round6`](charts.ts.md) (high), `startFrame` → [`bench/src/charts.ts#startFrame`](charts.ts.md) (high), `toPng` → [`bench/src/charts.ts#toPng`](charts.ts.md) (high), `trimZeros` → [`bench/src/charts.ts#trimZeros`](charts.ts.md) (high), `wrapText` → [`bench/src/charts.ts#wrapText`](charts.ts.md) (high)
+**Calls:** `allValues` → [`bench/src/charts.ts#allValues`](charts.ts.md) (high), `axisMax` → [`bench/src/charts.ts#axisMax`](charts.ts.md) (high), `barPath` → [`bench/src/charts.ts#barPath`](charts.ts.md) (high), `bars` → [`bench/src/charts.ts#bars`](charts.ts.md) (high), `categoryLabel` → [`bench/src/charts.ts#categoryLabel`](charts.ts.md) (high), `categoryLegend` → [`bench/src/charts.ts#categoryLegend`](charts.ts.md) (high), `categoryOffsets` → [`bench/src/charts.ts#categoryOffsets`](charts.ts.md) (high), `coord` → [`bench/src/charts.ts#coord`](charts.ts.md) (high), `displayName` → [`bench/src/charts.ts#displayName`](charts.ts.md) (high), `displayValue` → [`bench/src/charts.ts#displayValue`](charts.ts.md) (high), `esc` → [`bench/src/charts.ts#esc`](charts.ts.md) (high), `finishFrame` → [`bench/src/charts.ts#finishFrame`](charts.ts.md) (high), `hasFinite` → [`bench/src/charts.ts#hasFinite`](charts.ts.md) (high), `label` → [`bench/src/charts.ts#label`](charts.ts.md) (high), `layoutLegend` → [`bench/src/charts.ts#layoutLegend`](charts.ts.md) (high), `legendMark` → [`bench/src/charts.ts#legendMark`](charts.ts.md) (high), `legendOf` → [`bench/src/charts.ts#legendOf`](charts.ts.md) (high), `loadResvg` → [`bench/src/charts.ts#loadResvg`](charts.ts.md) (high), `logFloor` → [`bench/src/charts.ts#logFloor`](charts.ts.md) (high), `markColor` → [`bench/src/charts.ts#markColor`](charts.ts.md) (high), `noteWidth` → [`bench/src/charts.ts#noteWidth`](charts.ts.md) (high), `overlaps` → [`bench/src/charts.ts#overlaps`](charts.ts.md) (high), `paretoFrontier` → [`bench/src/charts.ts#paretoFrontier`](charts.ts.md) (high), `peak` → [`bench/src/charts.ts#peak`](charts.ts.md) (high), `quoteCategory` → [`bench/src/charts.ts#quoteCategory`](charts.ts.md) (high), `round6` → [`bench/src/charts.ts#round6`](charts.ts.md) (high), `startFrame` → [`bench/src/charts.ts#startFrame`](charts.ts.md) (high), `stripPngMetadata` → [`bench/src/charts.ts#stripPngMetadata`](charts.ts.md) (high), `textWidth` → [`bench/src/charts.ts#textWidth`](charts.ts.md) (high), `tickCount` → [`bench/src/charts.ts#tickCount`](charts.ts.md) (high), `ticksFor` → [`bench/src/charts.ts#ticksFor`](charts.ts.md) (high), `toPng` → [`bench/src/charts.ts#toPng`](charts.ts.md) (high), `trimZeros` → [`bench/src/charts.ts#trimZeros`](charts.ts.md) (high), `wrapText` → [`bench/src/charts.ts#wrapText`](charts.ts.md) (high), `wrapToWidth` → [`bench/src/charts.ts#wrapToWidth`](charts.ts.md) (high)

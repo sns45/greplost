@@ -63,24 +63,40 @@
 
 ## bench/src/charts.ts
 
-- `interface Series` L37-41
-- `interface ChartSpec` L43-56
-- `interface BoxDatum` L59-66
-- `interface BoxSpec` L68-76
-- `const PALETTE: readonly string[] = ["#1d4ed8", "#ea580c", "#0f766e", "#a21caf", "#4d7c0f", "#b91c1c"]` L87-87
-- `function wrapText(text: string, columns: number): string[]` L126-140
-- `function coord(value: number): string` L151-155
-- `function label(value: number): string` L158-163
-- `function esc(text: string): string` L170-176
-- `function axisMax(raw: number): number` L183-191
-- `function barChart(spec: ChartSpec): string` L322-324
-- `function groupedBarChart(spec: ChartSpec): string` L327-329
-- `function categoryOffsets(categories: readonly string[]): number[]` L398-415
-- `function lineChart(spec: ChartSpec): string` L427-492
-- `function boxChart(spec: BoxSpec): string` L499-549
-- `function mermaidXy(spec: ChartSpec, kind: "line" | "bar" = "line"): string` L572-611
-- `function toPng(svg: string): Buffer` L629-633
-- `function writeChart(dir: string, name: string, svg: string): { svg: string; png: string }` L662-669
+- `interface Series` L72-76
+- `interface ChartSpec` L78-105
+- `interface BoxDatum` L108-115
+- `interface BoxSpec` L117-126
+- `interface ScatterPoint` L129-133
+- `interface ScatterSpec` L135-150
+- `const PALETTE: readonly string[] = ["#0fa976", "#e0561c", "#2f86ef"]` L172-172
+- `const TOOL_COLORS: Readonly<Record<string, string>> = { greplost: "#0fa976", graphify: "#e0561c", crg: "#2f86ef", }` L182-186
+- `const TOOL_NAMES: Readonly<Record<string, string>> = { greplost: "greplost", graphify: "Graphify", ua: "Understand-Anything", crg: "code-review-graph", }` L189-194
+- `function wrapText(text: string, columns: number): string[]` L282-296
+- `function textWidth(text: string, fontSize: number): number` L308-310
+- `function coord(value: number): string` L321-325
+- `function label(value: number): string` L328-333
+- `function displayValue(value: number): string` L342-348
+- `function esc(text: string): string` L355-361
+- `function axisMax(raw: number): number` L368-376
+- `function logScaleFor(values: readonly (number | null | undefined)[]): boolean` L388-393
+- `function displayName(name: string): string` L438-440
+- `function markColor(name: string, index: number): string` L449-451
+- `function sortDesc(spec: ChartSpec): ChartSpec` L470-496
+- `function sortSeriesDesc(spec: ChartSpec): ChartSpec` L506-520
+- `function barChart(spec: ChartSpec): string` L849-851
+- `function groupedBarChart(spec: ChartSpec): string` L854-856
+- `function categoryOffsets(categories: readonly string[]): number[]` L953-970
+- `function lineChart(spec: ChartSpec): string` L989-1097
+- `function scatterChart(spec: ScatterSpec): string` L1115-1221
+- `function paretoFrontier(points: readonly ScatterPoint[]): ScatterPoint[]` L1238-1250
+- `function boxChart(spec: BoxSpec): string` L1257-1311
+- `const MERMAID_DARK_INIT = '%%{init: {"theme": "dark", "themeVariables": {"xyChart": {"backgroundColor": "#000000", ' + '"titleColor": "#ffffff", "xAxisLabelColor": "#c3c2b7", "yAxisLabelColor"…` L1323-1327
+- `function mermaidXy(spec: ChartSpec, kind: "line" | "bar" = "line"): string` L1346-1386
+- `function toPng(svg: string): Buffer` L1404-1408
+- `function stripPngMetadata(png: Buffer): Buffer` L1424-1437
+- `function pngChunks(png: Buffer): string[]` L1440-1449
+- `function writeChart(dir: string, name: string, svg: string): { svg: string; png: string }` L1478-1485
 
 ## bench/src/cli.ts
 
@@ -233,21 +249,25 @@
 
 ## bench/src/report-charts.ts
 
-- `const SYNTHETIC_WALK_NOTE = " The walk is synthetic: each commit appends exactly one resolvable import line to one file, so truth " + "moves by exactly one edge per commit, and the walk contai…` L82-84
-- `function scaleNote(target: RunTarget | undefined, commits: number | null): string` L86-100
-- `function headToHeadCharts( rows: readonly MetricRow[], replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]` L103-159
-- `function stalenessCharts( x2: MetricRow | undefined, replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]` L199-276
-- `function freshnessNote( x2: MetricRow | undefined, curve: { categories: string[]; series: { name: string; values: (number | null)[] }[] }, ): string` L286-314
-- `function chartRef( caption: string, spec: ChartSpec, name: string, assetsRel: string, svg: string, kind: "line" | "bar" = "line", ): ChartRef` L352-361
+- `const SYNTHETIC_WALK_NOTE = " The walk is synthetic: each commit appends exactly one resolvable import line to one file, so truth " + "moves by exactly one edge per commit, and the walk contai…` L101-103
+- `function scaleParts(target: RunTarget | undefined, commits: number | null): string` L118-132
+- `function scaleNote(target: RunTarget | undefined, commits: number | null): string` L140-143
+- `function f1(precision: number | null | undefined, recall: number | null | undefined): number | null` L146-151
+- `function headToHeadCharts( rows: readonly MetricRow[], replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]` L169-277
+- `function quadrantCharts( byId: Map<string, MetricRow>, assetsRel: string, runOf: (row: MetricRow | undefined) => RunTarget | undefined, ): ChartRef[]` L329-422
+- `function stalenessCharts( x2: MetricRow | undefined, replay: Payload | null, assetsRel: string, target: RunTarget | undefined, ): ChartRef[]` L462-549
+- `function freshnessNote( x2: MetricRow | undefined, curve: { categories: string[]; series: { name: string; values: (number | null)[] }[] }, ): string` L559-587
+- `function structuralAccuracyChart( repo: string, files: number | null, scores: { id: string; label: string; value: number | null }[], assetsRel: string, ): ChartRef | null` L633-662
+- `function chartRef( caption: string, spec: ChartSpec, name: string, assetsRel: string, svg: string, kind: "line" | "bar" = "line", ): ChartRef` L664-673
 
 ## bench/src/report-evals.ts
 
-- `function eval1Section(payload: Payload | null): EvalSection` L46-105
-- `function eval2Section(payload: Payload | null): EvalSection` L163-218
-- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection` L231-336
-- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection` L342-429
-- `function eval5Section(payload: Payload | null): EvalSection` L453-481
-- `function mapqualitySection(payload: Payload | null): EvalSection` L483-541
+- `function eval1Section(payload: Payload | null, assetsRel = "docs/assets"): EvalSection` L47-126
+- `function eval2Section(payload: Payload | null): EvalSection` L184-239
+- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection` L252-357
+- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection` L363-450
+- `function eval5Section(payload: Payload | null): EvalSection` L474-502
+- `function mapqualitySection(payload: Payload | null): EvalSection` L504-562
 
 ## bench/src/report-payload.ts
 
@@ -312,17 +332,17 @@
 - `interface MetricRow` L71-90
 - `interface EvalRow` L93-103
 - `interface EvalSection` L105-116
-- `interface ChartRef` L118-131
-- `interface SummaryRow` L134-144
-- `interface RunTarget` L150-158
-- `function provenanceLine( date: string | null, sha: string | null, target: RunTarget | undefined, ): string` L169-194
-- `function scopeTarget(target: string, run: RunTarget | undefined, scaleText?: string): string` L206-229
-- `interface ReportModel` L241-266
-- `function emptySection(): EvalSection` L269-271
-- `function renderResultsMd(model: ReportModel): string` L278-307
-- `function cell(text: string): string` L529-531
-- `function formatNumber(value: number): string` L547-553
-- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L597-608
+- `interface ChartRef` L118-139
+- `interface SummaryRow` L142-152
+- `interface RunTarget` L158-166
+- `function provenanceLine( date: string | null, sha: string | null, target: RunTarget | undefined, ): string` L177-202
+- `function scopeTarget(target: string, run: RunTarget | undefined, scaleText?: string): string` L214-237
+- `interface ReportModel` L249-274
+- `function emptySection(): EvalSection` L277-279
+- `function renderResultsMd(model: ReportModel): string` L286-315
+- `function cell(text: string): string` L537-539
+- `function formatNumber(value: number): string` L555-561
+- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L605-616
 
 ## bench/src/score.ts
 

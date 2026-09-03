@@ -4,8 +4,10 @@
 
 ## scripts/sync-readme.ts
 
-- `const SECTIONS: Readonly<Record<string, string>> = { headtohead: "Head-to-head", singletool: "Single-tool", }` L16-19
-- `function extractSection(results: string, heading: string): string | undefined` L21-34
-- `function splice(readme: string, key: string, body: string): string` L36-45
-- `function syncReadme(readme: string, results: string): { text: string; missing: string[] }` L47-56
-- `function main(argv: string[]): number` L58-77
+- `const SECTIONS: Readonly<Record<string, string>> = { headtohead: "Head-to-head", singletool: "Single-tool", }` L17-20
+- `function extractSection(results: string, heading: string): string | undefined` L22-37
+- `function stripFences(lines: string[], lang: string): string[]` L40-49
+- `function missingImages(readme: string, root: string, tracked: (rel: string) => boolean): string[]` L52-61
+- `function splice(readme: string, key: string, body: string): string` L63-72
+- `function syncReadme(readme: string, results: string): { text: string; missing: string[] }` L74-83
+- `function main(argv: string[]): number` L85-110

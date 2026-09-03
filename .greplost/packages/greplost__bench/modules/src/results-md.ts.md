@@ -25,28 +25,28 @@
 - `interface MetricRow`  L71-90
 - `interface EvalRow`  L93-103
 - `interface EvalSection`  L105-116
-- `interface ChartRef`  L118-131
-- `interface SummaryRow`  L134-144
-- `interface RunTarget`  L150-158
-- `function provenanceLine( date: string | null, sha: string | null, target: RunTarget | undefined, ): string`  L169-194
-- `function scopeTarget(target: string, run: RunTarget | undefined, scaleText?: string): string`  L206-229
-- `function describeRun(run: RunTarget): string`  L232-239
-- `interface ReportModel`  L241-266
-- `function emptySection(): EvalSection`  L269-271
-- `function renderResultsMd(model: ReportModel): string`  L278-307
-- `function machineSection(model: ReportModel): string[]`  L309-321
-- `function corpusSection(model: ReportModel): string[]`  L323-335
-- `function versionsSection(model: ReportModel): string[]`  L337-347
-- `function headToHeadSection(model: ReportModel): string[]`  L349-445
-- `function singleToolSection(model: ReportModel): string[]`  L453-475
-- `function evalSection(heading: string, subtitle: string, section: EvalSection): string[]`  L477-499
-- `function renderCharts(charts: readonly ChartRef[]): string[]`  L501-522
-- `function cell(text: string): string`  L529-531
-- `function formatCell(cellValue: MetricCell | undefined): string`  L533-537
-- `function verdictCell(cellValue: MetricCell | undefined): string`  L539-544
-- `function formatNumber(value: number): string`  L547-553
-- `function lossReasonsOf(row: MetricRow, competitors: readonly string[]): string`  L565-574
-- `function perToolLine(row: MetricRow, tools: readonly string[]): string | null`  L577-585
-- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…`  L597-608
+- `interface ChartRef`  L118-139
+- `interface SummaryRow`  L142-152
+- `interface RunTarget`  L158-166
+- `function provenanceLine( date: string | null, sha: string | null, target: RunTarget | undefined, ): string`  L177-202
+- `function scopeTarget(target: string, run: RunTarget | undefined, scaleText?: string): string`  L214-237
+- `function describeRun(run: RunTarget): string`  L240-247
+- `interface ReportModel`  L249-274
+- `function emptySection(): EvalSection`  L277-279
+- `function renderResultsMd(model: ReportModel): string`  L286-315
+- `function machineSection(model: ReportModel): string[]`  L317-329
+- `function corpusSection(model: ReportModel): string[]`  L331-343
+- `function versionsSection(model: ReportModel): string[]`  L345-355
+- `function headToHeadSection(model: ReportModel): string[]`  L357-453
+- `function singleToolSection(model: ReportModel): string[]`  L461-483
+- `function evalSection(heading: string, subtitle: string, section: EvalSection): string[]`  L485-507
+- `function renderCharts(charts: readonly ChartRef[]): string[]`  L509-530
+- `function cell(text: string): string`  L537-539
+- `function formatCell(cellValue: MetricCell | undefined): string`  L541-545
+- `function verdictCell(cellValue: MetricCell | undefined): string`  L547-552
+- `function formatNumber(value: number): string`  L555-561
+- `function lossReasonsOf(row: MetricRow, competitors: readonly string[]): string`  L573-582
+- `function perToolLine(row: MetricRow, tools: readonly string[]): string | null`  L585-593
+- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…`  L605-616
 
 **Calls:** `cell` → [`bench/src/results-md.ts#cell`](results-md.ts.md) (high), `corpusSection` → [`bench/src/results-md.ts#corpusSection`](results-md.ts.md) (high), `describeRun` → [`bench/src/results-md.ts#describeRun`](results-md.ts.md) (high), `evalSection` → [`bench/src/results-md.ts#evalSection`](results-md.ts.md) (high), `formatCell` → [`bench/src/results-md.ts#formatCell`](results-md.ts.md) (high), `formatNumber` → [`bench/src/results-md.ts#formatNumber`](results-md.ts.md) (high), `headToHeadSection` → [`bench/src/results-md.ts#headToHeadSection`](results-md.ts.md) (high), `lossReasonsOf` → [`bench/src/results-md.ts#lossReasonsOf`](results-md.ts.md) (high), `machineSection` → [`bench/src/results-md.ts#machineSection`](results-md.ts.md) (high), `perToolLine` → [`bench/src/results-md.ts#perToolLine`](results-md.ts.md) (high), `renderCharts` → [`bench/src/results-md.ts#renderCharts`](results-md.ts.md) (high), `scopeTarget` → [`bench/src/results-md.ts#scopeTarget`](results-md.ts.md) (high), `singleToolSection` → [`bench/src/results-md.ts#singleToolSection`](results-md.ts.md) (high), `verdictCell` → [`bench/src/results-md.ts#verdictCell`](results-md.ts.md) (high), `versionsSection` → [`bench/src/results-md.ts#versionsSection`](results-md.ts.md) (high)

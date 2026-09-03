@@ -122,18 +122,34 @@
         "BoxDatum",
         "BoxSpec",
         "ChartSpec",
+        "MERMAID_DARK_INIT",
         "PALETTE",
+        "ScatterPoint",
+        "ScatterSpec",
         "Series",
+        "TOOL_COLORS",
+        "TOOL_NAMES",
         "axisMax",
         "barChart",
         "boxChart",
         "categoryOffsets",
         "coord",
+        "displayName",
+        "displayValue",
         "esc",
         "groupedBarChart",
         "label",
         "lineChart",
+        "logScaleFor",
+        "markColor",
         "mermaidXy",
+        "paretoFrontier",
+        "pngChunks",
+        "scatterChart",
+        "sortDesc",
+        "sortSeriesDesc",
+        "stripPngMetadata",
+        "textWidth",
         "toPng",
         "wrapText",
         "writeChart"
@@ -141,9 +157,9 @@
       "fanIn": 3,
       "fanOut": 0,
       "lang": "ts",
-      "loc": 669,
+      "loc": 1485,
       "pkg": "@greplost/bench",
-      "sha256": "677ca84c0f4d79f8410eeb8e17736d975952f348f1bc508f2e076374bdb569f5",
+      "sha256": "16952c51cec94b0e8e67c34e9b8ab0085793dbf9595d43e09388894169979b41",
       "staleSummary": false
     },
     "bench/src/cli.ts": {
@@ -386,21 +402,25 @@
       "staleSummary": false
     },
     "bench/src/report-charts.ts": {
-      "blast": 2,
+      "blast": 3,
       "exports": [
         "SYNTHETIC_WALK_NOTE",
         "chartRef",
+        "f1",
         "freshnessNote",
         "headToHeadCharts",
+        "quadrantCharts",
         "scaleNote",
-        "stalenessCharts"
+        "scaleParts",
+        "stalenessCharts",
+        "structuralAccuracyChart"
       ],
-      "fanIn": 1,
+      "fanIn": 2,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 361,
+      "loc": 673,
       "pkg": "@greplost/bench",
-      "sha256": "d5b91a61b2c376fbf54625775426a32ff5e4c117b9deee8c7b30973218fc9dce",
+      "sha256": "21e936cee9ed775717973b2b6130505a2b8a8f31feb8e30aa433eb1d21763574",
       "staleSummary": false
     },
     "bench/src/report-evals.ts": {
@@ -414,11 +434,11 @@
         "mapqualitySection"
       ],
       "fanIn": 1,
-      "fanOut": 3,
+      "fanOut": 4,
       "lang": "ts",
-      "loc": 541,
+      "loc": 562,
       "pkg": "@greplost/bench",
-      "sha256": "4e585747490376b0360be4cbcd9e768895dc74d47f7ac706bf4fba7c44427406",
+      "sha256": "34d0258f96c652f33d92d690539f60a35779e38d15b6f1c93765f1e1cb716a75",
       "staleSummary": false
     },
     "bench/src/report-payload.ts": {
@@ -485,7 +505,7 @@
       "lang": "ts",
       "loc": 242,
       "pkg": "@greplost/bench",
-      "sha256": "911be1531897f426f1aba6dacb99627f42a30c49f62f64a4d5da0942dc8eda3e",
+      "sha256": "3423dd5511bb0746f38f1bb72eb7e842db417f4919a660ed1ef1b8e7ea69fb29",
       "staleSummary": false
     },
     "bench/src/results-io.ts": {
@@ -536,9 +556,9 @@
       "fanIn": 6,
       "fanOut": 0,
       "lang": "ts",
-      "loc": 608,
+      "loc": 616,
       "pkg": "@greplost/bench",
-      "sha256": "81e71837de39641cd0463366aba25f50b53d5bd6e9fd099482bf2da3047dfdca",
+      "sha256": "0a85eb41a01b968180df8ab04b449bcb94578ee0ef5257a1e208bb8dd313315e",
       "staleSummary": false
     },
     "bench/src/score.ts": {
@@ -2441,15 +2461,17 @@
         "SECTIONS",
         "extractSection",
         "main",
+        "missingImages",
         "splice",
+        "stripFences",
         "syncReadme"
       ],
       "fanIn": 0,
       "fanOut": 0,
       "lang": "ts",
-      "loc": 79,
+      "loc": 112,
       "pkg": "greplost-monorepo",
-      "sha256": "34d84161f725a062299daf0605692bcf262728207decbde90021ce46597218b3",
+      "sha256": "4eecbb51a43ed4c20286128b02c7b73f17e093c260c7427595c307861e4074dc",
       "staleSummary": false
     },
     "scripts/vendor-grammars.ts": {
@@ -2471,7 +2493,7 @@
         "@greplost/sync"
       ],
       "files": 33,
-      "loc": 16728,
+      "loc": 17885,
       "path": "bench",
       "rdeps": []
     },
@@ -2560,7 +2582,7 @@
     "greplost-monorepo": {
       "deps": [],
       "files": 2,
-      "loc": 96,
+      "loc": 129,
       "path": ".",
       "rdeps": []
     }
