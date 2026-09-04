@@ -14,7 +14,7 @@ import type {
   ImportEdge,
   Lang,
 } from "../schema.ts";
-import { compareEdges, compareStrings, externalId, splitNodeId, symbolId, unresolvedId } from "../schema.ts";
+import { compareEdges, compareStrings, externalId, isNodeKind, symbolId, unresolvedId } from "../schema.ts";
 import { buildGoCallIndex, resolveGoCall } from "../resolve/go.ts";
 import { buildJavaCallIndex, resolveJavaCall } from "../resolve/java.ts";
 import { buildKotlinCallIndex, resolveKotlinCall } from "../resolve/kotlin.ts";

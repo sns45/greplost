@@ -1707,7 +1707,7 @@
       "lang": "ts",
       "loc": 627,
       "pkg": "@greplost/core",
-      "sha256": "07d64a3386426d400f0f0daea50888032cae030b7894bfa41da685eb40ce5307",
+      "sha256": "7988424ec1ae05fd6f167b83dd7d3516626a361e3b254ef27f4b0fc01787f1d6",
       "staleSummary": false
     },
     "packages/core/src/graph/metrics.ts": {
