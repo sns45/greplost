@@ -70,7 +70,7 @@ this leaf's edges changed — only how many of them were in scope to be scored.
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
   EVIDENCE: 73 expect() calls | Ran 18 tests across 1 file. [254.00ms]
 
-- [x] G5: a `locals` block yields one `const` per attribute named `local.<name>`; describe('locals')
+- [x] G5: a `locals` block yields one `local` node per attribute named `<name>` (id `<file>#local.<name>`); describe('locals')
   CHECK: bun test packages/core/test/extract-hcl.test.ts -t locals 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
   EVIDENCE: 7 expect() calls | Ran 3 tests across 1 file. [58.00ms]
