@@ -279,7 +279,8 @@ describe("stubs", () => {
   test("every unimplemented extractor throws, naming the file and its leaf", () => {
     const cases: ReadonlyArray<readonly [string, (path: string) => unknown, RegExp]> = [
       ["main.py", (p) => extractPython(p, "python", "", NO_TREE), /python extractor .* build-2 leaf 2\.1/],
-      ["main.rs", (p) => extractRust(p, "rust", "", NO_TREE), /rust extractor .* build-2 leaf 2\.4/],
+      // rust is no longer a stub: leaf 2.4 landed `extract/rust.ts`, and its own test file
+      // (`extract-rust.test.ts`) is what holds it to the contract now.
       ["A.java", (p) => extractJava(p, "java", "", NO_TREE), /java extractor .* build-2 leaf 2\.5/],
       ["A.kt", (p) => extractKotlin(p, "kotlin", "", NO_TREE), /kotlin extractor .* build-2 leaf 2\.6/],
       ["main.tf", (p) => extractHcl(p, "hcl", "", NO_TREE), /hcl extractor .* build-2 leaf 2\.2/],
@@ -299,7 +300,6 @@ describe("stubs", () => {
     const ctx = emptyContext([]);
     const cases: ReadonlyArray<readonly [ReturnType<typeof createPythonResolver>, RegExp]> = [
       [createPythonResolver(ctx), /python resolver .* build-2 leaf 2\.1/],
-      [createRustResolver(ctx), /rust resolver .* build-2 leaf 2\.4/],
       [createJavaResolver(ctx), /java resolver .* build-2 leaf 2\.5/],
       [createKotlinResolver(ctx), /kotlin resolver .* build-2 leaf 2\.6/],
       [createHclResolver(ctx), /hcl resolver .* build-2 leaf 2\.2/],
@@ -308,6 +308,13 @@ describe("stubs", () => {
     for (const [resolve, pattern] of cases) {
       expect(() => resolve("a/b", "x")).toThrow(pattern);
     }
+  });
+
+  test("the Rust resolver is implemented: a `use` of an absent crate is external, not a throw", () => {
+    // Leaf 2.4 landed, so this pair is the counterpart of the stub cases above: the module
+    // exists, answers, and never throws.
+    const resolve = createRustResolver(emptyContext(["src/lib.rs"]));
+    expect(resolve("src/lib.rs", "serde::Serialize")).toEqual({ type: "external", pkg: "crate/serde" });
   });
 
   test("the YAML resolver is implemented: YAML has no imports, so nothing resolves", () => {
