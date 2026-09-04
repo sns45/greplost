@@ -10,8 +10,8 @@
 
 ## packages/core/src/config.ts
 
-- `function validateConfig(value: unknown): GreplostConfig` L105-119
-- `function loadConfig(root: string): GreplostConfig` L126-141
+- `function validateConfig(value: unknown): GreplostConfig` L105-120
+- `function loadConfig(root: string): GreplostConfig` L138-153
 
 ## packages/core/src/discover.ts
 

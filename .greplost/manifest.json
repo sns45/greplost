@@ -1290,9 +1290,9 @@
       "fanIn": 2,
       "fanOut": 1,
       "lang": "ts",
-      "loc": 141,
+      "loc": 153,
       "pkg": "@greplost/core",
-      "sha256": "deffd974a911024db8bc129419d87b35cb225a4e46339c649f51cccb72fa72b1",
+      "sha256": "47d9298bb2ae67c8590c455b6127fcedc4de01353a3dbc13e0e998d03c822a95",
       "staleSummary": false
     },
     "packages/core/src/discover.ts": {
@@ -3328,7 +3328,7 @@
     "@greplost/core": {
       "deps": [],
       "files": 63,
-      "loc": 12245,
+      "loc": 12257,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
@@ -3415,5 +3415,5 @@
       "rdeps": []
     }
   },
-  "version": "2"
+  "version": "1"
 }

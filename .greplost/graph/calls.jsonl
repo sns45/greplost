@@ -1282,6 +1282,7 @@
 {"confidence":"high","from":"packages/core/src/config.ts#validateConfig","kind":"call","to":"packages/core/src/config.ts#validateLanguages"}
 {"confidence":"high","from":"packages/core/src/config.ts#validateConfig","kind":"call","to":"packages/core/src/config.ts#validatePackages"}
 {"confidence":"high","from":"packages/core/src/config.ts#validateConfig","kind":"call","to":"packages/core/src/config.ts#validateSemantic"}
+{"confidence":"high","from":"packages/core/src/config.ts#validateConfig","kind":"call","to":"packages/core/src/config.ts#validateSignals"}
 {"confidence":"high","from":"packages/core/src/config.ts#validateConfig","kind":"call","to":"packages/core/src/config.ts#validateStringArray"}
 {"confidence":"high","from":"packages/core/src/config.ts#validateDiagram","kind":"call","to":"packages/core/src/config.ts#invalid"}
 {"confidence":"high","from":"packages/core/src/config.ts#validateDiagram","kind":"call","to":"packages/core/src/config.ts#isPlainObject"}
@@ -1292,6 +1293,8 @@
 {"confidence":"high","from":"packages/core/src/config.ts#validatePackages","kind":"call","to":"packages/core/src/config.ts#validateStringArray"}
 {"confidence":"high","from":"packages/core/src/config.ts#validateSemantic","kind":"call","to":"packages/core/src/config.ts#invalid"}
 {"confidence":"high","from":"packages/core/src/config.ts#validateSemantic","kind":"call","to":"packages/core/src/config.ts#isPlainObject"}
+{"confidence":"high","from":"packages/core/src/config.ts#validateSignals","kind":"call","to":"packages/core/src/config.ts#invalid"}
+{"confidence":"high","from":"packages/core/src/config.ts#validateSignals","kind":"call","to":"packages/core/src/config.ts#validateStringArray"}
 {"confidence":"high","from":"packages/core/src/config.ts#validateStringArray","kind":"call","to":"packages/core/src/config.ts#invalid"}
 {"confidence":"high","from":"packages/core/src/discover.ts#discoverCandidates","kind":"call","to":"packages/core/src/discover.ts#gitCandidates"}
 {"confidence":"high","from":"packages/core/src/discover.ts#discoverCandidates","kind":"call","to":"packages/core/src/discover.ts#globCandidates"}

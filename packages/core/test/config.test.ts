@@ -184,3 +184,18 @@ describe("loadConfig", () => {
     expect(validateConfig(null)).toEqual(DEFAULT_CONFIG);
   });
 });
+
+describe("signals", () => {
+  test("a signals list is read from the config, deduplicated and sorted", () => {
+    const config = validateConfig({ signals: ["tanstack", "react", "react"] });
+    expect(config.signals).toEqual(["react", "tanstack"]);
+  });
+
+  test("absent signals stays undefined so every applicable pass runs", () => {
+    expect(validateConfig({}).signals).toBeUndefined();
+  });
+
+  test("an unknown signal pass is rejected by name", () => {
+    expect(() => validateConfig({ signals: ["angular"] })).toThrow(/unknown signal pass "angular"/);
+  });
+});
