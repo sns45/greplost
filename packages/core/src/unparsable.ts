@@ -24,6 +24,8 @@ import { createParser, type ParserHandle } from "./parser.ts";
 import { compareStrings } from "./schema.ts";
 import type { Lang } from "./schema.ts";
 import { langOf } from "./lang.ts";
+import { isHelmPath } from "./extract/yaml.ts";
+import { blankTemplates } from "./extract/yaml-helm.ts";
 
 /** One file the grammar could not make a program of. */
 export interface UnparsableFile {
@@ -71,7 +73,16 @@ export async function findUnparsableFiles(
     } catch {
       continue;
     }
-    const reason = brokenRoot(source, lang, parser);
+    // A Helm template is not YAML and is never meant to parse as written: `extract/yaml-helm.ts`
+    // blanks every `{{ … }}` span before it reads one, so the bucket has to ask the same
+    // question the extractor does. Without this every template in a chart is reported as a
+    // file nothing could be read from, which is the opposite of true (leaf 2.8; the pre-pass is
+    // the published ruling of 2026-09-04).
+    const reason = brokenRoot(
+      lang === "yaml" && isHelmPath(path) ? blankTemplates(source) : source,
+      lang,
+      parser,
+    );
     if (reason !== null) found.push({ path, lang, reason });
   }
   found.sort((a, b) => compareStrings(a.path, b.path));

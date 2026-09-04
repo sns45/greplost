@@ -1,0 +1,6 @@
+apiVersion: v2
+name: tiny
+description: The smallest chart that exercises every Helm rule greplost has.
+type: application
+version: 0.1.0
+appVersion: "1.27"

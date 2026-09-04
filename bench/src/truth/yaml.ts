@@ -15,8 +15,8 @@
 import type { Edge } from "@greplost/core/schema";
 import type { Truth } from "./ts.ts";
 import { generateTruth as generateActionsTruth } from "./yaml-actions.ts";
-import { generateTruth as generateHelmTruth } from "./yaml-helm.ts";
-import { generateTruth as generateK8sTruth } from "./yaml-k8s.ts";
+import { generateExtra as generateHelmExtra, generateTruth as generateHelmTruth } from "./yaml-helm.ts";
+import { generateExtra as generateK8sExtra, generateTruth as generateK8sTruth } from "./yaml-k8s.ts";
 
 export const NOTES: readonly string[] = ["yaml-flavour-dispatch"];
 
@@ -32,6 +32,26 @@ const GENERATORS: Readonly<Record<YamlFlavour, (root: string, files: string[]) =
   "yaml-actions": generateActionsTruth,
   "yaml-helm": generateHelmTruth,
   "yaml-k8s": generateK8sTruth,
+};
+
+/** The reference and node sets S5 and S6 read, per flavour (`TruthModule.generateExtra`). */
+type ExtraGenerator = (root: string, files: string[]) => { references: Edge[]; nodes: string[] };
+
+/**
+ * Added by leaf 2.8, which needed S5 and S6 measured for `yaml` and found the dispatcher
+ * offering `generateTruth` alone; `structural.ts` asks the *target's* truth module for
+ * `generateExtra`, and for every YAML target that module is this one. Reported to the driver
+ * as an edit to a seam file.
+ *
+ * `undefined` means "this flavour's oracle does not measure references and nodes yet", which is
+ * where `yaml-actions` sits until leaf 2.9 lands: its group contributes nothing rather than
+ * contributing an empty set, because an empty truth set would score every real edge greplost
+ * found in a workflow as a false positive.
+ */
+const EXTRA_GENERATORS: Readonly<Record<YamlFlavour, ExtraGenerator | undefined>> = {
+  "yaml-actions": undefined,
+  "yaml-helm": generateHelmExtra,
+  "yaml-k8s": generateK8sExtra,
 };
 
 function compare(a: string, b: string): number {
@@ -93,6 +113,22 @@ export function generateTruth(root: string, files: string[]): Truth {
     return { files: [], imports: [], exports: {}, calls: [], cycles: [], notes: [...NOTES] };
   }
   return merge(groups.map(([flavour, group]) => GENERATORS[flavour](root, group)));
+}
+
+/** The reference and node sets for a file list, merged across the flavours it holds. */
+export function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] } {
+  const references: Edge[] = [];
+  const nodes: string[] = [];
+  for (const [flavour, group] of groupByFlavour(files)) {
+    const generate = EXTRA_GENERATORS[flavour];
+    if (generate === undefined) continue;
+    const extra = generate(root, group);
+    references.push(...extra.references);
+    nodes.push(...extra.nodes);
+  }
+  references.sort((a, b) => compare(a.from, b.from) || compare(a.to, b.to));
+  nodes.sort(compare);
+  return { references, nodes };
 }
 
 /**
