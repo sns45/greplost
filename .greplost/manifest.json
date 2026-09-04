@@ -735,14 +735,18 @@
       "blast": 0,
       "exports": [
         "NOTES",
-        "generateTruth"
+        "generateTruth",
+        "hasKotlinToolchain",
+        "isFixtureRoot",
+        "kotlinToolOutput",
+        "kotlinTruthTool"
       ],
       "fanIn": 0,
-      "fanOut": 1,
+      "fanOut": 2,
       "lang": "ts",
-      "loc": 22,
+      "loc": 347,
       "pkg": "@greplost/bench",
-      "sha256": "fc8b1faff058537c9dd96d3358b6d3ee32112ee6152087ef7756d76ca4fe4831",
+      "sha256": "43f8f58115b5fba876c7f20d394eab1d8f9c3976eb6c5e686e11f21a03283299",
       "staleSummary": false
     },
     "bench/src/truth/python.ts": {
@@ -1424,11 +1428,11 @@
         "extractKotlin"
       ],
       "fanIn": 1,
-      "fanOut": 1,
+      "fanOut": 2,
       "lang": "ts",
-      "loc": 18,
+      "loc": 724,
       "pkg": "@greplost/core",
-      "sha256": "acdfcd89121ccc6495ef3659c332c24b7eb71b7aabe6ba5f4ac0d0a79291dfc6",
+      "sha256": "628f2a2c6b6f6e932c3131fd8fb96d0a56f523514dd82e288d4cca5e992b758d",
       "staleSummary": false
     },
     "packages/core/src/extract/python.ts": {
@@ -1489,7 +1493,7 @@
       "staleSummary": false
     },
     "packages/core/src/extract/ts-signature.ts": {
-      "blast": 61,
+      "blast": 62,
       "exports": [
         "BODY_VALUES",
         "FUNCTION_VALUES",
@@ -1511,7 +1515,7 @@
         "unwrapValue",
         "variableSignature"
       ],
-      "fanIn": 11,
+      "fanIn": 12,
       "fanOut": 0,
       "lang": "ts",
       "loc": 187,
@@ -1698,11 +1702,11 @@
         "linkImports"
       ],
       "fanIn": 1,
-      "fanOut": 6,
+      "fanOut": 7,
       "lang": "ts",
-      "loc": 621,
+      "loc": 625,
       "pkg": "@greplost/core",
-      "sha256": "9233f02f712c7daa8ddc86b38e018aaed442611a610f8d52425fe3020be47804",
+      "sha256": "dcd4f7a4a267d3e7459d440cab90d9884220497e8aecf79fe20bf18be48c0af0",
       "staleSummary": false
     },
     "packages/core/src/graph/metrics.ts": {
@@ -2205,15 +2209,18 @@
       "blast": 67,
       "exports": [
         "KotlinCallIndex",
+        "buildKotlinCallIndex",
         "createKotlinResolver",
+        "kotlinPackageOf",
+        "kotlinTopLevelNames",
         "resolveKotlinCall"
       ],
-      "fanIn": 2,
+      "fanIn": 3,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 29,
+      "loc": 429,
       "pkg": "@greplost/core",
-      "sha256": "777686629401914654ceef4aa6a7916c53e8c45f4d27078e3b4f6f843271ea42",
+      "sha256": "e5ae0b0f116c963ae483580603dc493b60a549e180b25ad60badc1e2e5bec924",
       "staleSummary": false
     },
     "packages/core/src/resolve/packages.ts": {
@@ -2362,7 +2369,7 @@
         "symbolId",
         "unresolvedId"
       ],
-      "fanIn": 122,
+      "fanIn": 123,
       "fanOut": 0,
       "lang": "ts",
       "loc": 498,
@@ -3391,14 +3398,14 @@
         "@greplost/sync"
       ],
       "files": 49,
-      "loc": 23472,
+      "loc": 23797,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 65,
-      "loc": 15237,
+      "loc": 16347,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",

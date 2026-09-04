@@ -57,7 +57,7 @@
 
 ## packages/core/src/extract/kotlin.ts
 
-- `function extractKotlin( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L11-18
+- `function extractKotlin( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L701-724
 
 ## packages/core/src/extract/python.ts
 
@@ -179,14 +179,14 @@
 
 ## packages/core/src/graph/link.ts
 
-- `type ResolvedTarget = | { type: "file"; path: string } | { type: "external"; pkg: string } | { type: "unresolved" }` L31-34
-- `interface Resolver` L37-39
-- `interface ExportTarget` L42-60
-- `type ExportIndex = Map<string, Map<string, ExportTarget>>` L63-63
-- `function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge[]` L83-125
-- `function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex` L229-462
-- `function exportNames(index: ExportIndex, file: string): string[]` L465-468
-- `function linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[]` L483-564
+- `type ResolvedTarget = | { type: "file"; path: string } | { type: "external"; pkg: string } | { type: "unresolved" }` L32-35
+- `interface Resolver` L38-40
+- `interface ExportTarget` L43-61
+- `type ExportIndex = Map<string, Map<string, ExportTarget>>` L64-64
+- `function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge[]` L84-126
+- `function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex` L230-463
+- `function exportNames(index: ExportIndex, file: string): string[]` L466-469
+- `function linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[]` L484-568
 
 ## packages/core/src/graph/metrics.ts
 
@@ -342,9 +342,12 @@
 
 ## packages/core/src/resolve/kotlin.ts
 
-- `type KotlinCallIndex = Readonly<Record<string, never>>` L12-12
-- `function createKotlinResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L14-21
-- `function resolveKotlinCall( file: FileRecord, _site: CallSite, _index: KotlinCallIndex, ): { to: string; confidence: Confidence } | null` L23-29
+- `function kotlinPackageOf(source: string): string` L67-78
+- `function kotlinTopLevelNames(source: string): Set<string>` L88-109
+- `function createKotlinResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L126-231
+- `interface KotlinCallIndex` L244-255
+- `function buildKotlinCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): KotlinCallIndex` L275-341
+- `function resolveKotlinCall( file: FileRecord, site: CallSite, index: KotlinCallIndex, ): { to: string; confidence: Confidence } | null` L377-429
 
 ## packages/core/src/resolve/packages.ts
 

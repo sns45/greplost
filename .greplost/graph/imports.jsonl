@@ -165,6 +165,11 @@
 {"confidence":"high","from":"bench/src/truth/java.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
 {"confidence":"high","from":"bench/src/truth/java.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["Edge"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/truth/kotlin.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
+{"confidence":"high","from":"bench/src/truth/kotlin.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["execFileSync"],"to":"ext:node:child_process"}
+{"confidence":"high","from":"bench/src/truth/kotlin.ts","importKind":"static","kind":"import","specifier":"node:crypto","symbols":["createHash"],"to":"ext:node:crypto"}
+{"confidence":"high","from":"bench/src/truth/kotlin.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","mkdirSync","readFileSync","writeFileSync"],"to":"ext:node:fs"}
+{"confidence":"high","from":"bench/src/truth/kotlin.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
+{"confidence":"high","from":"bench/src/truth/kotlin.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["Edge"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/truth/python.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
 {"confidence":"high","from":"bench/src/truth/python.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["execFileSync"],"to":"ext:node:child_process"}
 {"confidence":"high","from":"bench/src/truth/python.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["mkdtempSync","rmSync","writeFileSync"],"to":"ext:node:fs"}
@@ -434,8 +439,10 @@
 {"confidence":"high","from":"packages/core/src/extract/java.ts","importKind":"static","kind":"import","specifier":"./ts-signature.ts","symbols":["clip","field","lineOf","spanOf"],"to":"packages/core/src/extract/ts-signature.ts"}
 {"confidence":"high","from":"packages/core/src/extract/java.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","DeclKind","Declaration","ExportRecord","FileRecord","ImportRecord","ImportedSymbol","Lang"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/extract/java.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings","symbolId"],"to":"packages/core/src/schema.ts"}
-{"confidence":"high","from":"packages/core/src/extract/kotlin.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Tree"],"to":"ext:web-tree-sitter"}
-{"confidence":"high","from":"packages/core/src/extract/kotlin.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","Lang"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/extract/kotlin.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Node","Tree"],"to":"ext:web-tree-sitter"}
+{"confidence":"high","from":"packages/core/src/extract/kotlin.ts","importKind":"static","kind":"import","specifier":"./ts-signature.ts","symbols":["clip","lineOf","spanOf"],"to":"packages/core/src/extract/ts-signature.ts"}
+{"confidence":"high","from":"packages/core/src/extract/kotlin.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","DeclKind","Declaration","ExportRecord","FileRecord","ImportRecord","Lang"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/extract/kotlin.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["symbolId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/extract/python.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Node","Tree"],"to":"ext:web-tree-sitter"}
 {"confidence":"high","from":"packages/core/src/extract/python.ts","importKind":"static","kind":"import","specifier":"./ts-signature.ts","symbols":["clip","field","lineOf","spanOf"],"to":"packages/core/src/extract/ts-signature.ts"}
 {"confidence":"high","from":"packages/core/src/extract/python.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","DeclKind","Declaration","ExportRecord","FileRecord","ImportKind","ImportRecord","ImportedSymbol","Lang"],"to":"packages/core/src/schema.ts"}
@@ -496,6 +503,7 @@
 {"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"./tarjan.ts","symbols":["sccComponents"],"to":"packages/core/src/graph/tarjan.ts"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../resolve/go.ts","symbols":["buildGoCallIndex","resolveGoCall"],"to":"packages/core/src/resolve/go.ts"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../resolve/java.ts","symbols":["buildJavaCallIndex","resolveJavaCall"],"to":"packages/core/src/resolve/java.ts"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../resolve/kotlin.ts","symbols":["buildKotlinCallIndex","resolveKotlinCall"],"to":"packages/core/src/resolve/kotlin.ts"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../resolve/python.ts","symbols":["buildPythonCallIndex","resolvePythonCall"],"to":"packages/core/src/resolve/python.ts"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../resolve/rust.ts","symbols":["buildRustCallIndex","resolveRustCall"],"to":"packages/core/src/resolve/rust.ts"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallEdge","Confidence","DeclKind","Declaration","FileRecord","ImportEdge","Lang"],"to":"packages/core/src/schema.ts"}
@@ -599,7 +607,8 @@
 {"confidence":"high","from":"packages/core/src/resolve/java.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","Confidence","DeclKind","FileRecord","ImportEdge"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/resolve/java.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings","symbolId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/resolve/kotlin.ts","importKind":"type","kind":"import","specifier":"./resolver.ts","symbols":["RepoContext","ResolvedTarget"],"to":"packages/core/src/resolve/resolver.ts"}
-{"confidence":"high","from":"packages/core/src/resolve/kotlin.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","Confidence","FileRecord"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/resolve/kotlin.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","Confidence","DeclKind","FileRecord","ImportEdge"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/resolve/kotlin.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings","symbolId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/resolve/packages.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["readFileSync","readdirSync","statSync"],"to":"ext:node:fs"}
 {"confidence":"high","from":"packages/core/src/resolve/packages.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
 {"confidence":"high","from":"packages/core/src/resolve/packages.ts","importKind":"static","kind":"import","specifier":"picomatch","symbols":["default"],"to":"ext:picomatch"}

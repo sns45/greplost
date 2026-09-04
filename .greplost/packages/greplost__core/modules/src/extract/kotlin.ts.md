@@ -6,13 +6,58 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `extractKotlin( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`
+**Exports:** `extractKotlin( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (FileRecord, Lang), `web-tree-sitter` (Tree)
+**Imports:** `web-tree-sitter` (Node, Tree), [`../schema.ts`](../schema.ts.md) (CallSite, DeclKind, Declaration, ExportRecord, FileRecord, ImportRecord, Lang, symbolId), [`./ts-signature.ts`](ts-signature.ts.md) (clip, lineOf, spanOf)
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md)
 
 **Blast radius:** 31 files (`greplost impact packages/core/src/extract/kotlin.ts`)
 
 **Key symbols:**
-- `function extractKotlin( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L11-18
+- `const TYPE_BODIES: ReadonlySet<string> = new Set(["class_body", "enum_class_body"])`  L49-49
+- `const HIDDEN: ReadonlySet<string> = new Set(["private", "internal"])`  L52-52
+- `const NAME = "simple_identifier"`  L60-60
+- `const TYPE_NAME = "type_identifier"`  L61-61
+- `const ACCESSORS: ReadonlySet<string> = new Set(["getter", "setter"])`  L64-64
+- `function childrenOfType(node: Node, type: string): Node[]`  L71-77
+- `function firstOfType(node: Node, type: string): Node | null`  L79-81
+- `function modifiersOf(node: Node): Node | null`  L84-86
+- `function modifierWords(node: Node): string[]`  L89-98
+- `function visibilityOf(node: Node): string | null`  L101-108
+- `function annotationNames(node: Node): string[]`  L111-120
+- `function annotationsIn(node: Node): string[]`  L123-137
+- `function typeNameOf(node: Node | null): string | null`  L145-163
+- `function signatureOf(source: string, node: Node, bodyTypes: readonly string[]): string`  L166-173
+- `interface KotlinState`  L179-192
+- `function uniqueName(state: KotlinState, name: string): string`  L199-211
+- `interface Scope`  L214-223
+- `const FILE_SCOPE: Scope = { prefix: "", parent: undefined, inType: false, visible: true }`  L225-225
+- `interface DeclarationInput`  L227-235
+- `function addDeclaration(state: KotlinState, input: DeclarationInput): string`  L238-260
+- `function fileJvmName(root: Node): string | null`  L267-277
+- `function collectImports(state: KotlinState, root: Node): void`  L285-310
+- `function classKind(node: Node): { kind: DeclKind; annotation: boolean }`  L324-332
+- `function collectContainer(state: KotlinState, container: Node, scope: Scope): void`  L334-345
+- `function collectMember(state: KotlinState, node: Node, scope: Scope): string | null`  L351-399
+- `function isExported(node: Node): boolean`  L402-405
+- `function metaOf( state: KotlinState, node: Node, scope: Scope, extra: Readonly<Record<string, string>>, ): Record<string, string>`  L408-423
+- `function collectType(state: KotlinState, node: Node, scope: Scope): void`  L425-440
+- `function collectObject(state: KotlinState, node: Node, scope: Scope, forcedName: string | null): void`  L442-462
+- `function collectBody(state: KotlinState, node: Node, scope: Scope, owner: string, exported: boolean): void`  L465-478
+- `function collectConstructorProperties(state: KotlinState, constructor: Node, scope: Scope): void`  L485-502
+- `function bindingKeyword(node: Node): "val" | "var" | null`  L505-509
+- `function receiverOf(node: Node): string | null`  L512-519
+- `function collectFunction(state: KotlinState, node: Node, scope: Scope): void`  L521-546
+- `function collectProperty(state: KotlinState, node: Node, scope: Scope): string | null`  L548-580
+- `type ReceiverTypes = Map<string, string | null>`  L587-587
+- `interface CallContext`  L589-592
+- `function callContext(owner: Node, caller: string): CallContext`  L594-596
+- `function bind(types: ReceiverTypes, name: string, type: string | null): void`  L598-606
+- `function typeOfInitialiser(node: Node | null): string | null`  L615-622
+- `function receiverTypes(owner: Node): ReceiverTypes`  L625-651
+- `function calleeText(node: Node, ctx: CallContext): string | null`  L658-681
+- `function collectCalls(state: KotlinState, root: Node, ctx: CallContext): void`  L683-694
+- `function extractKotlin( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">`  L701-724
+
+**Calls:** `addDeclaration` → [`packages/core/src/extract/kotlin.ts#addDeclaration`](kotlin.ts.md) (high), `annotationNames` → [`packages/core/src/extract/kotlin.ts#annotationNames`](kotlin.ts.md) (high), `annotationsIn` → [`packages/core/src/extract/kotlin.ts#annotationsIn`](kotlin.ts.md) (high), `bind` → [`packages/core/src/extract/kotlin.ts#bind`](kotlin.ts.md) (high), `bindingKeyword` → [`packages/core/src/extract/kotlin.ts#bindingKeyword`](kotlin.ts.md) (high), `callContext` → [`packages/core/src/extract/kotlin.ts#callContext`](kotlin.ts.md) (high), `calleeText` → [`packages/core/src/extract/kotlin.ts#calleeText`](kotlin.ts.md) (high), `childrenOfType` → [`packages/core/src/extract/kotlin.ts#childrenOfType`](kotlin.ts.md) (high), `classKind` → [`packages/core/src/extract/kotlin.ts#classKind`](kotlin.ts.md) (high), `collectBody` → [`packages/core/src/extract/kotlin.ts#collectBody`](kotlin.ts.md) (high), `collectCalls` → [`packages/core/src/extract/kotlin.ts#collectCalls`](kotlin.ts.md) (high), `collectConstructorProperties` → [`packages/core/src/extract/kotlin.ts#collectConstructorProperties`](kotlin.ts.md) (high), `collectContainer` → [`packages/core/src/extract/kotlin.ts#collectContainer`](kotlin.ts.md) (high), `collectFunction` → [`packages/core/src/extract/kotlin.ts#collectFunction`](kotlin.ts.md) (high), `collectImports` → [`packages/core/src/extract/kotlin.ts#collectImports`](kotlin.ts.md) (high), `collectMember` → [`packages/core/src/extract/kotlin.ts#collectMember`](kotlin.ts.md) (high), `collectObject` → [`packages/core/src/extract/kotlin.ts#collectObject`](kotlin.ts.md) (high), `collectProperty` → [`packages/core/src/extract/kotlin.ts#collectProperty`](kotlin.ts.md) (high), `collectType` → [`packages/core/src/extract/kotlin.ts#collectType`](kotlin.ts.md) (high), `fileJvmName` → [`packages/core/src/extract/kotlin.ts#fileJvmName`](kotlin.ts.md) (high), `firstOfType` → [`packages/core/src/extract/kotlin.ts#firstOfType`](kotlin.ts.md) (high), `isExported` → [`packages/core/src/extract/kotlin.ts#isExported`](kotlin.ts.md) (high), `metaOf` → [`packages/core/src/extract/kotlin.ts#metaOf`](kotlin.ts.md) (high), `modifierWords` → [`packages/core/src/extract/kotlin.ts#modifierWords`](kotlin.ts.md) (high), `modifiersOf` → [`packages/core/src/extract/kotlin.ts#modifiersOf`](kotlin.ts.md) (high), `receiverOf` → [`packages/core/src/extract/kotlin.ts#receiverOf`](kotlin.ts.md) (high), `receiverTypes` → [`packages/core/src/extract/kotlin.ts#receiverTypes`](kotlin.ts.md) (high), `signatureOf` → [`packages/core/src/extract/kotlin.ts#signatureOf`](kotlin.ts.md) (high), `typeNameOf` → [`packages/core/src/extract/kotlin.ts#typeNameOf`](kotlin.ts.md) (high), `typeOfInitialiser` → [`packages/core/src/extract/kotlin.ts#typeOfInitialiser`](kotlin.ts.md) (high), `uniqueName` → [`packages/core/src/extract/kotlin.ts#uniqueName`](kotlin.ts.md) (high), `visibilityOf` → [`packages/core/src/extract/kotlin.ts#visibilityOf`](kotlin.ts.md) (high), `clip` → [`packages/core/src/extract/ts-signature.ts#clip`](ts-signature.ts.md) (high), `lineOf` → [`packages/core/src/extract/ts-signature.ts#lineOf`](ts-signature.ts.md) (high), `spanOf` → [`packages/core/src/extract/ts-signature.ts#spanOf`](ts-signature.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)
