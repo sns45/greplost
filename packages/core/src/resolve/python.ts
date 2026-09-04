@@ -137,10 +137,54 @@ function declaredRoots(dir: string, text: string | null): string[] {
     const joined = joinRelative(dir, cleaned);
     if (!out.includes(joined)) out.push(joined);
   };
-  // `package-dir = { "" = "src" }`, on one line or spread over several.
-  for (const match of text.matchAll(/^\s*""\s*=\s*(["'][^"']*["'])/gmu)) add(match[1] ?? "");
-  // `packages = [{ include = "pkg", from = "src" }]`
-  for (const match of text.matchAll(/\bfrom\s*=\s*(["'][^"']*["'])/gu)) add(match[1] ?? "");
+
+  // Only these tables may declare an import root. Scoping matters: `from = "docs"` under
+  // some unrelated tool's table is not a package root, and a pattern that ignored the
+  // section would silently make one, which then outranks the repo root for every import.
+  let section = "";
+  let pending = "";
+  for (const raw of text.split(/\r?\n/u)) {
+    const line = raw.replace(/(^|\s)#.*$/u, "").trim();
+    if (line === "") continue;
+    const header = /^\[\[?([^\]]+)\]\]?$/u.exec(line);
+    if (header !== null) {
+      section = (header[1] ?? "").trim().replace(/["']/gu, "");
+      pending = "";
+      continue;
+    }
+    // A `package-dir`/`packages` value may span several lines; gather until it balances.
+    const continued = pending !== "" ? `${pending} ${line}` : line;
+    const opens = (continued.match(/[[{]/gu) ?? []).length;
+    const closes = (continued.match(/[\]}]/gu) ?? []).length;
+    if (opens > closes) {
+      pending = continued;
+      continue;
+    }
+    pending = "";
+
+    if (section === "tool.setuptools.package-dir") {
+      // `"" = "lib"`, the root package's directory.
+      const root = /^""\s*=\s*(["'][^"']*["'])/u.exec(continued);
+      if (root !== null) add(root[1] ?? "");
+      continue;
+    }
+    if (section === "tool.setuptools" && /^package-dir\s*=/u.test(continued)) {
+      // `package-dir = { "" = "lib" }`, the inline-table spelling of the same thing.
+      const root = /""\s*=\s*(["'][^"']*["'])/u.exec(continued);
+      if (root !== null) add(root[1] ?? "");
+      continue;
+    }
+    if (section === "tool.poetry" && /^packages\s*=/u.test(continued)) {
+      // `packages = [{ include = "pkg", from = "src" }, …]`
+      for (const match of continued.matchAll(/\bfrom\s*=\s*(["'][^"']*["'])/gu)) add(match[1] ?? "");
+      continue;
+    }
+    if (section === "tool.poetry.packages" && /^from\s*=/u.test(continued)) {
+      // The `[[tool.poetry.packages]]` array-of-tables spelling.
+      const root = /^from\s*=\s*(["'][^"']*["'])/u.exec(continued);
+      if (root !== null) add(root[1] ?? "");
+    }
+  }
   return out;
 }
 
@@ -188,16 +232,35 @@ export function createPythonResolver(ctx: RepoContext): (fromFile: string, speci
     }
     // Deepest first, so `a/b/src` outranks `a/src` outranks the repo root.
     const byDepth = (a: string, b: string): number => b.split("/").length - a.split("/").length || compareStrings(a, b);
-    roots = [...declared.sort(byDepth), ...markers.sort(byDepth), ""];
+    // The repo root is always the last resort, and a marker directory at the repo root would
+    // otherwise put it in the list twice - harmless, but it makes every miss probe twice.
+    const ordered = [...declared.sort(byDepth), ...markers.sort(byDepth), ""];
+    roots = ordered.filter((root, index) => ordered.indexOf(root) === index);
     return roots;
   }
 
+  /**
+   * Every directory that holds an indexed file, at any depth, built once.
+   *
+   * A scan of `ctx.files` per question was fine while the only caller was root discovery;
+   * the namespace rule below asks it once per path component of every unresolved specifier,
+   * which on a large repo is the difference between a set lookup and a full sweep each time.
+   */
+  let directories: Set<string> | null = null;
   function hasFilesUnder(dir: string): boolean {
-    const prefix = `${dir}/`;
-    for (const file of ctx.files) {
-      if (file.startsWith(prefix)) return true;
+    if (dir === "") return ctx.files.size > 0;
+    if (directories === null) {
+      directories = new Set<string>();
+      for (const file of ctx.files) {
+        let parent = parentDir(file);
+        // Walk up until a directory is already known: everything above it must be too.
+        while (parent !== "" && !directories.has(parent)) {
+          directories.add(parent);
+          parent = parentDir(parent);
+        }
+      }
     }
-    return false;
+    return directories.has(dir);
   }
 
   /** The first indexed file a module directory-or-module candidate names, or null. */
@@ -235,6 +298,23 @@ export function createPythonResolver(ctx: RepoContext): (fromFile: string, speci
     for (const root of importRoots()) {
       const hit = probe(joinRelative(root, relative));
       if (hit !== null) return { type: "file", path: hit };
+    }
+
+    // A PEP 420 namespace package: a directory of the repo that holds indexed files but no
+    // `__init__.py`. It is not a distribution and calling it one would put a phantom
+    // `ext:pypi/<dir>` in the map for a directory the reader can open, so an in-repo path
+    // that resolves to no module file is `unresolved`, never external.
+    //
+    // Every ancestor prefix is tested, not just the full path: `ns.missing` where only
+    // `ns/mod.py` exists still names something inside `ns/`, and answering `ext:pypi/ns`
+    // would invent a distribution out of a typo. The walk stops at the specifier's first
+    // component and never reaches the root itself, so a `src/` layout does not make every
+    // unresolved import look in-repo.
+    const segments = relative.split("/");
+    for (const root of importRoots()) {
+      for (let count = segments.length; count >= 1; count -= 1) {
+        if (hasFilesUnder(joinRelative(root, segments.slice(0, count).join("/")))) return UNRESOLVED;
+      }
     }
 
     const head = specifier.split(".")[0] ?? specifier;

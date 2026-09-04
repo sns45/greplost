@@ -28,6 +28,11 @@ What the four sets mean, in greplost's id vocabulary (tech spec 5.3):
              specifier itself refers to: ``from pkg import sub`` is an edge to
              ``pkg/__init__.py``, because whether ``sub`` is a submodule or a name bound in
              ``__init__`` is a question no static reader can answer without executing it.
+             A file that imports itself is not an edge: a package's own ``__init__.py``
+             writing ``from pkg import sub`` is not a dependency between two files.
+             A literal ``importlib.import_module("x")`` is an edge too - it is the one
+             dynamic-import spelling Python has, and a string constant names a module as
+             plainly as an ``import`` statement does.
 ``exports``  file -> the module's public surface: the entries of a literal ``__all__`` when
              the module states one, otherwise the module-level names it *defines* (``def``,
              ``class``, assignment) that do not start with an underscore. Imported names are
@@ -41,6 +46,13 @@ What the four sets mean, in greplost's id vocabulary (tech spec 5.3):
 
 PEP 420 namespace packages (a directory with no ``__init__.py``) carry no module file, so an
 import of one resolves to nothing and is simply not an edge; that is disclosed in the notes.
+
+There is deliberately no external/unresolved distinction on this side to mirror the
+extractor's: ``ModuleTable.resolve`` answers a file or ``None``, and ``None`` means "not an
+edge". The extractor has to choose between ``ext:pypi/<name>`` and ``unresolved:`` because
+both appear in the map a reader looks at, but neither is a file id, so the scorer drops both
+before either side is compared. Nothing here needs the distinction, and inventing one would
+be a rule with no observable behaviour.
 """
 
 from __future__ import annotations
@@ -428,12 +440,41 @@ class CallSite:
     callee: str
 
 
+def class_body_bindings(node: ast.ClassDef) -> set[str]:
+    """Names a class body binds directly: valued assignments, methods and nested classes.
+
+    A class body runs in its own namespace, so ``class C: helper = 2; made = helper()`` calls
+    the attribute and never a module-level ``def helper``. An annotation with no value binds
+    nothing, so it is left out. The set stops at the class body, because Python's lookup skips
+    the class namespace inside a method.
+    """
+    bound: set[str] = set()
+
+    def visit(body: list[ast.stmt]) -> None:
+        for statement in body:
+            if isinstance(statement, DEFINITIONS):
+                bound.add(statement.name)
+            elif isinstance(statement, (ast.Assign, ast.AugAssign, ast.AnnAssign)):
+                if isinstance(statement, ast.AnnAssign) and statement.value is None:
+                    continue
+                targets = statement.targets if isinstance(statement, ast.Assign) else [statement.target]
+                for target in targets:
+                    bound.update(_assigned_names(target))
+            elif isinstance(statement, COMPOUND):
+                for block in _body_of(statement):
+                    visit(block)
+
+    visit(node.body)
+    return bound
+
+
 def collect_calls(
     body: list[ast.stmt],
     owner: str,
     scope: frozenset[str] | None,
     out: list[CallSite],
     inside_function: bool = False,
+    class_scope: frozenset[str] | None = None,
 ) -> None:
     """Call sites of one block, with the caller attributed to the nearest *named* definition.
 
@@ -441,41 +482,57 @@ def collect_calls(
     holds, so the calls in it belong to the definition that contains it - the same rule the
     Go oracle applies to a func literal. ``inside_function`` is what carries that: once a
     function body is entered, no further definition renames the caller.
+
+    ``scope`` and ``class_scope`` are the two namespaces a callee can be shadowed by, and only
+    one is ever consulted, because Python consults only one: entering a function replaces the
+    class namespace outright rather than nesting inside it.
     """
     for statement in body:
         if isinstance(statement, DEFINITIONS):
             for decorator in statement.decorator_list:
-                _expression_calls(decorator, owner, scope, out)
+                _expression_calls(decorator, owner, scope, out, class_scope)
             name = owner if inside_function else (statement.name if owner == "" else f"{owner}.{statement.name}")
             if isinstance(statement, ast.ClassDef):
                 # A base list or a metaclass argument is written inside the class statement,
-                # so its calls belong to the class.
+                # so its calls belong to the class - and they are evaluated *before* the class
+                # body runs, so they see the enclosing scope, not the class namespace.
                 for base in [*statement.bases, *statement.keywords]:
-                    _expression_calls(base, name, scope, out)
-                collect_calls(statement.body, name, scope, out, inside_function)
+                    _expression_calls(base, name, scope, out, class_scope)
+                inner_class = class_scope if scope is not None else frozenset(class_body_bindings(statement))
+                collect_calls(statement.body, name, scope, out, inside_function, inner_class)
                 continue
             # The outermost function scope owns the bindings of everything nested in it.
             inner = scope if scope is not None else frozenset(function_bindings(statement))
-            # Defaults and annotations are written inside the `def`, so they belong to it.
-            _expression_calls(statement.args, name, inner, out)
+            # Defaults and annotations are written inside the `def`, so they belong to it -
+            # and a method body never sees the class namespace it was written in.
+            _expression_calls(statement.args, name, inner, out, None)
             if statement.returns is not None:
-                _expression_calls(statement.returns, name, inner, out)
-            collect_calls(statement.body, name, inner, out, True)
+                _expression_calls(statement.returns, name, inner, out, None)
+            collect_calls(statement.body, name, inner, out, True, None)
             continue
         if isinstance(statement, COMPOUND):
             for node in ast.iter_child_nodes(statement):
                 if not isinstance(node, ast.stmt):
-                    _expression_calls(node, owner, scope, out)
+                    _expression_calls(node, owner, scope, out, class_scope)
             for handler in getattr(statement, "handlers", []) or []:
                 if handler.type is not None:
-                    _expression_calls(handler.type, owner, scope, out)
+                    _expression_calls(handler.type, owner, scope, out, class_scope)
             for block in _body_of(statement):
-                collect_calls(block, owner, scope, out, inside_function)
+                collect_calls(block, owner, scope, out, inside_function, class_scope)
             continue
-        _expression_calls(statement, owner, scope, out)
+        _expression_calls(statement, owner, scope, out, class_scope)
 
 
-def _expression_calls(node: ast.AST, owner: str, scope: frozenset[str] | None, out: list[CallSite]) -> None:
+def _expression_calls(
+    node: ast.AST,
+    owner: str,
+    scope: frozenset[str] | None,
+    out: list[CallSite],
+    class_scope: frozenset[str] | None = None,
+) -> None:
+    # A function scope replaces the class namespace rather than nesting inside it, so at most
+    # one of the two is ever in force.
+    shadowing = scope if scope is not None else class_scope
     for child in ast.walk(node):
         if not isinstance(child, ast.Call):
             continue
@@ -483,8 +540,8 @@ def _expression_calls(node: ast.AST, owner: str, scope: frozenset[str] | None, o
         if callee is None:
             continue
         head = callee.split(".", 1)[0]
-        if scope is not None and head != "self" and head in scope:
-            continue  # a local binding, not the module's definition
+        if shadowing is not None and head != "self" and head in shadowing:
+            continue  # a local or class-body binding, not the module's definition
         out.append(CallSite(owner, callee))
 
 
@@ -500,6 +557,31 @@ def callee_text(func: ast.expr) -> str | None:
 # ---------------------------------------------------------------------------
 # cross-module resolution
 # ---------------------------------------------------------------------------
+
+
+def literal_specifier(node: ast.Call) -> str | None:
+    """The module a literal ``import_module("x")`` names, or None when it names none.
+
+    ``importlib.import_module`` is the only dynamic-import *spelling* Python has, and a
+    string constant is the only argument a static reader can follow. Both spellings count -
+    ``importlib.import_module("x")`` and a bare ``import_module("x")`` after
+    ``from importlib import import_module`` - and a computed argument records nothing, which
+    is what the "never guess" rule requires.
+    """
+    func = node.func
+    name = func.id if isinstance(func, ast.Name) else func.attr if isinstance(func, ast.Attribute) else ""
+    if name != "import_module" or not node.args:
+        return None
+    first = node.args[0]
+    if isinstance(first, ast.Constant) and isinstance(first.value, str):
+        return first.value
+    return None
+
+
+def resolve_literal(table: ModuleTable, path: str, spec: str) -> str | None:
+    """A written specifier - absolute, or relative with its dots - resolved to a file."""
+    level = len(spec) - len(spec.lstrip("."))
+    return resolve_specifier(table, path, spec[level:], level)
 
 
 def resolve_specifier(table: ModuleTable, path: str, module: str, level: int) -> str | None:
@@ -561,17 +643,27 @@ class Truth:
 
     def imports(self) -> list[dict[str, str]]:
         edges: set[tuple[str, str]] = set()
+
+        def add(path: str, target: str | None) -> None:
+            # A file importing itself is not a dependency between files. A package's
+            # ``__init__.py`` writing ``from pkg import sub`` - which pydantic does twice -
+            # would otherwise put a self-loop in the import graph and add the file to its own
+            # fan-in and blast radius.
+            if target is not None and target != path:
+                edges.add((path, target))
+
         for path, facts in self.facts.items():
             for node in ast.walk(facts.tree):
                 if isinstance(node, ast.Import):
                     for alias in node.names:
-                        target = self.table.resolve(alias.name)
-                        if target is not None:
-                            edges.add((path, target))
+                        add(path, self.table.resolve(alias.name))
                 elif isinstance(node, ast.ImportFrom):
-                    target = resolve_specifier(self.table, path, node.module or "", node.level)
-                    if target is not None:
-                        edges.add((path, target))
+                    add(path, resolve_specifier(self.table, path, node.module or "", node.level))
+                elif isinstance(node, ast.Call):
+                    # A literal `importlib.import_module("x")` is a dynamic import, and it
+                    # names a module as plainly as an `import` statement does.
+                    spec = literal_specifier(node)
+                    add(path, None if spec is None else resolve_literal(self.table, path, spec))
         return [{"from": a, "to": b} for a, b in sorted(edges)]
 
     # -- exports ----------------------------------------------------------
@@ -752,6 +844,10 @@ def main(argv: list[str]) -> int:
         "cycles": truth.cycles(imports),
         "errors": truth.errors,
         "modules": len(truth.files),
+        # The interpreter that produced these numbers, major.minor, so a published result
+        # names the thing that measured it. A patch bump is not reported: it changes nothing
+        # this program reads, and churning every result file for one would be noise.
+        "python": "%d.%d" % sys.version_info[:2],
     }
     json.dump(document, sys.stdout, sort_keys=True)
     sys.stdout.write("\n")
