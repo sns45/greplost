@@ -6,15 +6,42 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `RustCallIndex (type)`, `createRustResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`, `resolveRustCall( file: FileRecord, _site: CallSite, _index: RustCallIndex, ): { to: string; confidence: Confidence } | null`
+**Exports:** `CargoManifest (interface)`, `RustCallIndex (interface)`, `buildRustCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): RustCallIndex`, `createRustResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`, `parseCargoManifest(text: string | null): CargoManifest`, `resolveRustCall( file: FileRecord, site: CallSite, index: RustCallIndex, ): { to: string; confidence: Confidence } | null`, `rustModuleName(path: string): string`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (CallSite, Confidence, FileRecord), [`./resolver.ts`](resolver.ts.md) (RepoContext, ResolvedTarget)
+**Imports:** [`../schema.ts`](../schema.ts.md) (CallSite, Confidence, FileRecord, ImportEdge, compareStrings, symbolId), [`./resolver.ts`](resolver.ts.md) (RepoContext, ResolvedTarget)
 
 **Imported by:** [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/resolver.ts`](resolver.ts.md)
 
 **Blast radius:** 64 files (`greplost impact packages/core/src/resolve/rust.ts`)
 
 **Key symbols:**
-- `type RustCallIndex = Readonly<Record<string, never>>`  L12-12
-- `function createRustResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`  L14-21
-- `function resolveRustCall( file: FileRecord, _site: CallSite, _index: RustCallIndex, ): { to: string; confidence: Confidence } | null`  L23-29
+- `const UNRESOLVED: ResolvedTarget = { type: "unresolved" }`  L31-31
+- `const MODULE_SEPARATOR = "::"`  L32-32
+- `const CRATE_PREFIX = "crate/"`  L34-34
+- `const AUTO_TARGET_DIRS = ["src/bin", "examples", "tests", "benches"] as const`  L37-37
+- `interface CargoManifest`  L44-51
+- `function stripComment(line: string): string`  L54-62
+- `function unquote(value: string): string`  L64-69
+- `function arrayStrings(text: string): string[]`  L72-76
+- `function parseCargoManifest(text: string | null): CargoManifest`  L85-136
+- `function parentDir(path: string): string`  L142-145
+- `function join(dir: string, rest: string): string`  L147-150
+- `function relativeTo(dir: string, path: string): string | null`  L153-157
+- `function rustModuleName(path: string): string`  L160-165
+- `interface Crate`  L171-178
+- `interface CrateIndex`  L180-187
+- `function createRustResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`  L189-372
+- `interface Binding`  L379-384
+- `interface RustCallIndex`  L386-406
+- `const EMPTY_INDEX: RustCallIndex = { items: new Map(), members: new Map(), bindings: new Map(), modules: new Map(), reexports: new Map(), }`  L408-414
+- `function nest<V>(map: Map<string, Map<string, V>>, key: string): Map<string, V>`  L416-422
+- `function push<V>(map: Map<string, V[]>, key: string, value: V, same: (a: V, b: V) => boolean): void`  L425-432
+- `function sameBinding(a: Binding, b: Binding): boolean`  L434-436
+- `function agreed( candidates: ReadonlyArray<{ to: string; confidence: Confidence } | null>, ): { to: string; confidence: Confidence } | null`  L444-458
+- `function buildRustCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): RustCallIndex`  L464-529
+- `function callable(kind: string | undefined): boolean`  L532-534
+- `function resolveRustCall( file: FileRecord, site: CallSite, index: RustCallIndex, ): { to: string; confidence: Confidence } | null`  L544-589
+- `function throughType( index: RustCallIndex, binding: Binding, member: string, ): { to: string; confidence: Confidence } | null`  L592-610
+- `function declared(index: RustCallIndex, module: string, name: string): { to: string; confidence: Confidence } | null`  L613-623
+
+**Calls:** `agreed` → [`packages/core/src/resolve/rust.ts#agreed`](rust.ts.md) (high), `arrayStrings` → [`packages/core/src/resolve/rust.ts#arrayStrings`](rust.ts.md) (high), `callable` → [`packages/core/src/resolve/rust.ts#callable`](rust.ts.md) (high), `declared` → [`packages/core/src/resolve/rust.ts#declared`](rust.ts.md) (high), `join` → [`packages/core/src/resolve/rust.ts#join`](rust.ts.md) (high), `nest` → [`packages/core/src/resolve/rust.ts#nest`](rust.ts.md) (high), `parentDir` → [`packages/core/src/resolve/rust.ts#parentDir`](rust.ts.md) (high), `parseCargoManifest` → [`packages/core/src/resolve/rust.ts#parseCargoManifest`](rust.ts.md) (high), `push` → [`packages/core/src/resolve/rust.ts#push`](rust.ts.md) (high), `relativeTo` → [`packages/core/src/resolve/rust.ts#relativeTo`](rust.ts.md) (high), `rustModuleName` → [`packages/core/src/resolve/rust.ts#rustModuleName`](rust.ts.md) (high), `stripComment` → [`packages/core/src/resolve/rust.ts#stripComment`](rust.ts.md) (high), `throughType` → [`packages/core/src/resolve/rust.ts#throughType`](rust.ts.md) (high), `unquote` → [`packages/core/src/resolve/rust.ts#unquote`](rust.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)

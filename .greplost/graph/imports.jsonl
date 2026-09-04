@@ -157,6 +157,11 @@
 {"confidence":"high","from":"bench/src/truth/registry.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
 {"confidence":"high","from":"bench/src/truth/registry.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["Edge","Lang"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/truth/rust.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
+{"confidence":"high","from":"bench/src/truth/rust.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["execFileSync"],"to":"ext:node:child_process"}
+{"confidence":"high","from":"bench/src/truth/rust.ts","importKind":"static","kind":"import","specifier":"node:crypto","symbols":["createHash"],"to":"ext:node:crypto"}
+{"confidence":"high","from":"bench/src/truth/rust.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["chmodSync","copyFileSync","existsSync","mkdirSync","readFileSync"],"to":"ext:node:fs"}
+{"confidence":"high","from":"bench/src/truth/rust.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
+{"confidence":"high","from":"bench/src/truth/rust.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["Edge"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/truth/signals-pulumi-go.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
 {"confidence":"high","from":"bench/src/truth/ts-calls.ts","importKind":"static","kind":"import","specifier":"typescript","symbols":["default"],"to":"ext:typescript"}
@@ -367,8 +372,10 @@
 {"confidence":"high","from":"packages/core/src/extract/kotlin.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","Lang"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/extract/python.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Tree"],"to":"ext:web-tree-sitter"}
 {"confidence":"high","from":"packages/core/src/extract/python.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","Lang"],"to":"packages/core/src/schema.ts"}
-{"confidence":"high","from":"packages/core/src/extract/rust.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Tree"],"to":"ext:web-tree-sitter"}
-{"confidence":"high","from":"packages/core/src/extract/rust.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","Lang"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/extract/rust.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Node","Tree"],"to":"ext:web-tree-sitter"}
+{"confidence":"high","from":"packages/core/src/extract/rust.ts","importKind":"static","kind":"import","specifier":"./ts-signature.ts","symbols":["clip","field","lineOf","spanOf"],"to":"packages/core/src/extract/ts-signature.ts"}
+{"confidence":"high","from":"packages/core/src/extract/rust.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","DeclKind","Declaration","ExportRecord","FileRecord","ImportRecord","ImportedSymbol","Lang"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/extract/rust.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["symbolId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/extract/ts-calls.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Node"],"to":"ext:web-tree-sitter"}
 {"confidence":"high","from":"packages/core/src/extract/ts-calls.ts","importKind":"static","kind":"import","specifier":"./ts-signature.ts","symbols":["field"],"to":"packages/core/src/extract/ts-signature.ts"}
 {"confidence":"high","from":"packages/core/src/extract/ts-calls.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["TsContext"],"to":"packages/core/src/extract/ts.ts"}
@@ -514,7 +521,8 @@
 {"confidence":"high","from":"packages/core/src/resolve/resolver.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["Lang","PackageInfo"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/resolve/resolver.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/resolve/rust.ts","importKind":"type","kind":"import","specifier":"./resolver.ts","symbols":["RepoContext","ResolvedTarget"],"to":"packages/core/src/resolve/resolver.ts"}
-{"confidence":"high","from":"packages/core/src/resolve/rust.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","Confidence","FileRecord"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/resolve/rust.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","Confidence","FileRecord","ImportEdge"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/resolve/rust.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings","symbolId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/resolve/yaml.ts","importKind":"type","kind":"import","specifier":"./resolver.ts","symbols":["RepoContext","ResolvedTarget"],"to":"packages/core/src/resolve/resolver.ts"}
 {"confidence":"high","from":"packages/core/src/resolve/yaml.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","Confidence","FileRecord"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/serialize/index.ts","importKind":"static","kind":"reexport","specifier":"./json.ts","symbols":["parseJsonl","toJson","toJsonl"],"to":"packages/core/src/serialize/json.ts"}

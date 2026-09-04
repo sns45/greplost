@@ -448,8 +448,9 @@
 
 ## bench/src/truth/rust.ts
 
-- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
-- `function generateTruth(root: string, files: string[]): Truth` L17-22
+- `const NOTES: readonly string[] = ["syn-item-tree", "cargo-metadata-roots", "no-trait-dispatch"]` L51-51
+- `function rustTruthTool(): string` L117-148
+- `function generateTruth(root: string, files: string[]): Truth` L198-247
 
 ## bench/src/truth/signals-pulumi-go.ts
 

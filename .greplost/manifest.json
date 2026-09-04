@@ -775,14 +775,15 @@
       "blast": 0,
       "exports": [
         "NOTES",
-        "generateTruth"
+        "generateTruth",
+        "rustTruthTool"
       ],
       "fanIn": 0,
-      "fanOut": 1,
+      "fanOut": 2,
       "lang": "ts",
-      "loc": 22,
+      "loc": 247,
       "pkg": "@greplost/bench",
-      "sha256": "056040f6fb4cd16f7bbe453120e7af255c4acdc47f7e1a2f2c1bb71a2ed3047e",
+      "sha256": "96a63b9749d6d4b203bb7d0158e17584a10d3ab10b4064fa1950f24dc1161171",
       "staleSummary": false
     },
     "bench/src/truth/signals-pulumi-go.ts": {
@@ -1403,14 +1404,15 @@
     "packages/core/src/extract/rust.ts": {
       "blast": 31,
       "exports": [
-        "extractRust"
+        "extractRust",
+        "visibilityOf"
       ],
       "fanIn": 1,
-      "fanOut": 1,
+      "fanOut": 2,
       "lang": "ts",
-      "loc": 18,
+      "loc": 606,
       "pkg": "@greplost/core",
-      "sha256": "8f5324249ac391d5a6c85af7de61c53cfbd92c49e56f1a9df5d125e3f482e9a9",
+      "sha256": "4920d3b67f50266a7a8fce673034d240a84221a58b879ff1bfc917d8ac8c7d96",
       "staleSummary": false
     },
     "packages/core/src/extract/ts-calls.ts": {
@@ -1445,7 +1447,7 @@
       "staleSummary": false
     },
     "packages/core/src/extract/ts-signature.ts": {
-      "blast": 35,
+      "blast": 36,
       "exports": [
         "BODY_VALUES",
         "FUNCTION_VALUES",
@@ -1467,7 +1469,7 @@
         "unwrapValue",
         "variableSignature"
       ],
-      "fanIn": 4,
+      "fanIn": 5,
       "fanOut": 0,
       "lang": "ts",
       "loc": 187,
@@ -2150,16 +2152,20 @@
     "packages/core/src/resolve/rust.ts": {
       "blast": 64,
       "exports": [
+        "CargoManifest",
         "RustCallIndex",
+        "buildRustCallIndex",
         "createRustResolver",
-        "resolveRustCall"
+        "parseCargoManifest",
+        "resolveRustCall",
+        "rustModuleName"
       ],
       "fanIn": 2,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 29,
+      "loc": 623,
       "pkg": "@greplost/core",
-      "sha256": "a68930598797525ccf54d70b437eeaf797caeb0add56063d0524b0c9264d574f",
+      "sha256": "328c13fd58bc6d1a17689ea9b2e32555ad620bdb5139ee880c177c5b5bdf67f3",
       "staleSummary": false
     },
     "packages/core/src/resolve/tsconfig.ts": {
@@ -2243,7 +2249,7 @@
         "symbolId",
         "unresolvedId"
       ],
-      "fanIn": 111,
+      "fanIn": 112,
       "fanOut": 0,
       "lang": "ts",
       "loc": 494,
@@ -3240,14 +3246,14 @@
         "@greplost/sync"
       ],
       "files": 47,
-      "loc": 18771,
+      "loc": 18996,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 61,
-      "loc": 7566,
+      "loc": 8748,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
@@ -3334,5 +3340,5 @@
       "rdeps": []
     }
   },
-  "version": "1"
+  "version": "2"
 }
