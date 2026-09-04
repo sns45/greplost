@@ -638,9 +638,9 @@
       "fanIn": 1,
       "fanOut": 7,
       "lang": "ts",
-      "loc": 1191,
+      "loc": 1198,
       "pkg": "@greplost/bench",
-      "sha256": "565701d781aeffced8e03718cf240ae9e18e9c329070ed65895e59ce04e55139",
+      "sha256": "9b5f390017c0324a5e3ee5a12cc1c22c4fdf9c4f70289fe3726bd00f4ab616e8",
       "staleSummary": false
     },
     "bench/src/tasks.ts": {
@@ -3319,7 +3319,7 @@
         "@greplost/sync"
       ],
       "files": 48,
-      "loc": 21222,
+      "loc": 21229,
       "path": "bench",
       "rdeps": []
     },
