@@ -256,3 +256,110 @@ Append-only. One line per event.
 - 2026-09-03 /promote run for the launch (Reddit r/programming, r/ClaudeAI, r/commandline; LinkedIn; poster prompt; media guide; schedule; metadata with per-channel UTM links to in8.sh/work/greplost, campaign greplost-launch) written to .promotions/2026-09-03/ (gitignored); dev.to and Medium excluded, other channels opt-in; G8 check against the article in progress
 - 2026-09-03 promote content finalised after the G8 pass (tagged-template detail, hotspot detail and default model name removed from posts); the in8.sh article's sync bullet now names the pre-commit hook (in8-home pushed, worker redeployed f064ccc4); LinkedIn + 3 Reddit posts + schedule sent to the user's phone
 - 2026-09-03 poster (1024x1536 original + 600x900 README copy) and landscape table image (3200x2000) added under assets/marketing, metadata stripped; poster embedded under the README title at width 420; LinkedIn post finalised with the human-readers line; committed and pushed
+
+---
+
+# Plan: greplost build 2 (languages, IaC, signals)
+
+Depth: tree 4   Mode: orchestrated
+Appended 2026-09-04. The sections above are build 1 and are not rewritten.
+
+Authority: `docs/greplost-tech-spec.md` (binding, with Appendix C), then
+`docs/superpowers/specs/2026-09-04-languages-iac-signals-design.md`, then
+`docs/superpowers/plans/2026-09-04-build-2-plan.md`, then this section.
+
+Scope approved by the owner 2026-09-04: Python, Rust, Java, Kotlin, Terraform (HCL),
+Kubernetes and Helm YAML, GitHub Actions workflows, Dockerfiles; a framework signal layer
+(React, TanStack Start, Next.js, Pulumi in TypeScript and in Go); render and CLI support for
+non-file nodes; benchmark coverage for every addition. The head-to-head suite (X1 to X10) is
+left unchanged and no competitor is run on a build-2 language; `RESULTS.md` says so.
+
+## Contract (build 2 additions to the contract above)
+
+- `packages/core/src/schema.ts` stays driver-owned. Build 2 needs exactly three further
+  amendments (`SCHEMA_VERSION = "2"`; `ReferenceRecord`/`RefKind`/`FileRecord.refs?`/
+  `NODE_KINDS`/`isNodeKind`/`nodeId`/`splitNodeId`; and the optional `GreplostConfig.signals`
+  key), landed by leaf 2.0 and by nobody else.
+- Node id for a non-file node is `<file>#<kind>.<name>`. Uniqueness within a file is forced by a
+  `#<0-based index>` suffix on the name. No artifact path ever contains `#`: a node's card is
+  `packages/<slug>/modules/<file>/<nodeSlug(kind, name)>.md`.
+- Reference edges live in `graph/references.jsonl` and are omitted entirely when there are none,
+  so an existing repo's artifact set does not change.
+- `DEFAULT_CONFIG.languages` stays `["ts","tsx","js","jsx"]`. New languages are opt-in through
+  `config.json`; `greplost init` adds one only when it finds that language's marker file.
+- Convention over registration: `extractFile` dispatches through one table written by leaf 2.0
+  with a throwing stub per language, and `bench/src/truth/registry.ts` loads
+  `bench/src/truth/<lang>.ts` by name. A language leaf therefore edits **no shared file**.
+- Truth generators must be independent of tree-sitter and of `packages/core`; each has an
+  `oracle independence` test asserting it imports neither.
+- Confidence on reference edges: `high` for a unique resolution, `med` for exactly one
+  documented hop, otherwise the edge is dropped. Never guessed.
+- Grammars are pinned exactly (spec 0.5). Three ship a wasm on npm (python, rust, java); four
+  are built with `bunx tree-sitter-cli@0.27 build --wasm` (kotlin, yaml, hcl, dockerfile), the
+  last two from pinned GitHub tags.
+- Corpus entries for build 2 are written once, by leaf 2.0, from the pinned list in spec 5.1.
+
+## Tree
+
+- 2 greplost build 2 .................. gates/root-2.md
+  - 2.0 seam ......................... gates/leaf-2.0.md    [wave 0]
+    Files: packages/core/src/schema.ts, packages/core/src/lang.ts, packages/core/src/parser.ts, packages/core/src/discover.ts, packages/core/src/unparsable.ts, packages/core/src/build.ts, packages/core/src/extract/index.ts, packages/core/src/extract/python.ts, packages/core/src/extract/rust.ts, packages/core/src/extract/java.ts, packages/core/src/extract/kotlin.ts, packages/core/src/extract/hcl.ts, packages/core/src/extract/yaml.ts, packages/core/src/extract/yaml-k8s.ts, packages/core/src/extract/yaml-helm.ts, packages/core/src/extract/yaml-actions.ts, packages/core/src/extract/dockerfile.ts, packages/core/src/resolve/resolver.ts, packages/core/src/resolve/python.ts, packages/core/src/resolve/rust.ts, packages/core/src/resolve/java.ts, packages/core/src/resolve/kotlin.ts, packages/core/src/resolve/hcl.ts, packages/core/src/resolve/yaml.ts, packages/core/src/resolve/dockerfile.ts, packages/core/src/references, packages/core/src/signals, packages/core/src/serialize/write.ts, packages/core/src/serialize/read.ts, packages/core/grammars, packages/core/test/lang.test.ts, packages/core/test/parser.test.ts, packages/core/test/references.test.ts, packages/core/test/golden, packages/render/test/golden, packages/sync/src/incremental.ts, packages/sync/src/parse-cache.ts, packages/sync/src/artifacts.ts, packages/sync/src/build.ts, packages/cli/src/commands/structure.ts, bench/src/fixtures.ts, bench/src/truth/registry.ts, bench/src/truth/python.ts, bench/src/truth/rust.ts, bench/src/truth/java.ts, bench/src/truth/kotlin.ts, bench/src/truth/hcl.ts, bench/src/truth/yaml.ts, bench/src/truth/yaml-k8s.ts, bench/src/truth/yaml-helm.ts, bench/src/truth/yaml-actions.ts, bench/src/truth/dockerfile.ts, bench/src/truth/signals-ts.ts, bench/src/truth/signals-pulumi-go.ts, bench/src/structural.ts, bench/src/corpus.ts, bench/corpus.json, bench/package.json, bench/test/registry.test.ts, scripts/vendor-grammars.ts, scripts/build-grammars.sh
+  - 2.1 languages .................... gates/node-2.1.md
+    - 2.1.1 python ................... gates/leaf-2.1.md    [wave 1]
+      Files: packages/core/src/extract/python.ts, packages/core/src/resolve/python.ts, packages/core/test/extract-python.test.ts, fixtures/tiny-python, bench/src/truth/python.ts, bench/truth/pytruth, bench/test/truth-python.test.ts
+    - 2.1.2 rust ..................... gates/leaf-2.4.md    [wave 1]
+      Files: packages/core/src/extract/rust.ts, packages/core/src/resolve/rust.ts, packages/core/test/extract-rust.test.ts, fixtures/tiny-rust, bench/src/truth/rust.ts, bench/truth/rusttruth, bench/test/truth-rust.test.ts
+    - 2.1.3 java ..................... gates/leaf-2.5.md    [wave 2]
+      Files: packages/core/src/extract/java.ts, packages/core/src/resolve/java.ts, packages/core/test/extract-java.test.ts, fixtures/tiny-java, bench/src/truth/java.ts, bench/truth/javatruth, bench/test/truth-java.test.ts
+    - 2.1.4 kotlin ................... gates/leaf-2.6.md    [wave 2]
+      Files: packages/core/src/extract/kotlin.ts, packages/core/src/resolve/kotlin.ts, packages/core/test/extract-kotlin.test.ts, fixtures/tiny-kotlin, bench/src/truth/kotlin.ts, bench/truth/kotlintruth, bench/test/truth-kotlin.test.ts
+  - 2.2 iac .......................... gates/node-2.2.md
+    - 2.2.1 terraform ................ gates/leaf-2.2.md    [wave 1]
+      Files: packages/core/src/extract/hcl.ts, packages/core/src/resolve/hcl.ts, packages/core/src/references/hcl.ts, packages/core/test/extract-hcl.test.ts, fixtures/tiny-terraform, bench/src/truth/hcl.ts, bench/truth/tfinspect, bench/test/truth-hcl.test.ts
+    - 2.2.2 k8s-helm ................. gates/leaf-2.8.md    [wave 2]
+      Files: packages/core/src/extract/yaml-k8s.ts, packages/core/src/extract/yaml-helm.ts, packages/core/src/references/yaml-k8s.ts, packages/core/test/extract-yaml-k8s.test.ts, fixtures/tiny-k8s, fixtures/tiny-helm, bench/src/truth/yaml-k8s.ts, bench/src/truth/yaml-helm.ts, bench/test/truth-yaml-k8s.test.ts
+    - 2.2.3 actions .................. gates/leaf-2.9.md    [wave 3]
+      Files: packages/core/src/extract/yaml-actions.ts, packages/core/src/references/yaml-actions.ts, packages/core/test/extract-yaml-actions.test.ts, fixtures/tiny-actions, bench/src/truth/yaml-actions.ts, bench/test/truth-yaml-actions.test.ts
+    - 2.2.4 dockerfile ............... gates/leaf-2.10.md   [wave 3]
+      Files: packages/core/src/extract/dockerfile.ts, packages/core/src/resolve/dockerfile.ts, packages/core/src/references/dockerfile.ts, packages/core/test/extract-dockerfile.test.ts, fixtures/tiny-docker, bench/src/truth/dockerfile.ts, bench/test/truth-dockerfile.test.ts
+  - 2.3 signals ...................... gates/node-2.3.md
+    - 2.3.1 signals-ts ............... gates/leaf-2.3.md    [wave 1]
+      Files: packages/core/src/signals/react.ts, packages/core/src/signals/tanstack.ts, packages/core/src/signals/next.ts, packages/core/src/signals/pulumi-ts.ts, packages/core/test/signals-ts.test.ts, fixtures/tiny-signals-ts, bench/src/truth/signals-ts.ts, bench/test/signals-ts.test.ts
+    - 2.3.2 signals-pulumi-go ........ gates/leaf-2.7.md    [wave 2]
+      Files: packages/core/src/signals/pulumi-go.ts, packages/core/test/signals-pulumi-go.test.ts, fixtures/tiny-pulumi-go, bench/src/truth/signals-pulumi-go.ts, bench/truth/pulumigotruth, bench/test/signals-pulumi-go.test.ts
+  - 2.4 render-and-cli ............... gates/node-2.4.md
+    - 2.4.1 nodes .................... gates/leaf-2.11.md   [wave 3]
+      Files: packages/render/src/slug.ts, packages/render/src/render.ts, packages/render/src/index.ts, packages/render/src/docs/card.ts, packages/render/src/docs/node-card.ts, packages/render/test/nodes.test.ts, packages/render/test/golden/tiny-terraform, packages/core/src/graph/query.ts, packages/cli/src/commands/query.ts, packages/cli/src/commands/impact.ts, packages/cli/src/commands/structure.ts, packages/cli/test/nodes.test.ts, packages/core/test/references.test.ts
+  - 2.5 bench-and-docs ............... gates/node-2.5.md
+    - 2.5.1 coverage-docs ............ gates/leaf-2.12.md   [wave 3]
+      Files: bench/src/results-md.ts, bench/src/report-payload.ts, bench/RESULTS.md, bench/test/structural-langs.test.ts, README.md, .github/workflows/ci.yml, docs/greplost-tech-spec.md, .greplost/config.json
+
+Leaf 2.0 is a driver-sanctioned edit of build-1 files: it is the only leaf that touches
+`schema.ts`, `parser.ts`, `build.ts`, `extract/index.ts`, `resolve/resolver.ts`,
+`serialize/*`, `sync/*`, `bench/structural.ts`, `bench/corpus.ts` and the build-1 goldens.
+Ownership of those files transfers from their build-1 owners to 2.0 at wave 0 and back to
+nobody afterwards: waves 1 to 3 create only the files they own. Leaf 2.11 takes ownership of
+`packages/render/src/{slug,render,index}.ts`, `docs/card.ts`, `graph/query.ts` and the three
+CLI command files at wave 3, when 1.2.2 and 1.4.1 are long finished.
+
+## Waves
+
+- wave 0: 2.0 seam — grammars, dispatch tables with stubs, signals registry, reference linker,
+  truth registry, corpus entries, schema 2, goldens. Everything else waits for it.
+- wave 1: 2.1.1 python, 2.1.2 rust, 2.2.1 terraform, 2.3.1 signals-ts — disjoint files, each
+  against the stubs 2.0 left.
+- wave 2: 2.1.3 java, 2.1.4 kotlin, 2.2.2 k8s-helm, 2.3.2 signals-pulumi-go — disjoint files.
+- wave 3: 2.2.3 actions, 2.2.4 dockerfile, 2.4.1 nodes, 2.5.1 coverage-docs — disjoint files;
+  2.4.1 needs 2.2.1's fixture for its golden, 2.5.1 needs every language's payload.
+- wave 4: driver integration — full corpus run, RESULTS.md and README regenerated from
+  payloads, CI green, dogfood map refreshed, root-2 ledger closed.
+
+## Status log (build 2)
+
+Append-only. One line per event.
+
+- 2026-09-04 build 2 planned: spec docs/superpowers/specs/2026-09-04-languages-iac-signals-design.md, plan docs/superpowers/plans/2026-09-04-build-2-plan.md, 13 leaves in 4 waves, 15 corpus repos pinned by commit
+- 2026-09-04 Ruling: Kotlin ships reported-only. No corpus-scale compiler oracle; a real kotlinc + `javap -v` classfile oracle covers `fixtures/tiny-kotlin` only, and the corpus gate is determinism plus parse health. Reason: kotlinc is absent from the machine, kotlin-compiler-embeddable's PSI/FIR APIs are internal and unstable, and compiling a Gradle multiplatform corpus outside Gradle is not reliable. Published as a loss in RESULTS.md.
+- 2026-09-04 Ruling: non-file nodes are Declarations in graph/symbols.jsonl, never manifest entries. Node id `<file>#<kind>.<name>`; the card lives at `packages/<slug>/modules/<file>/<nodeSlug>.md` so no artifact path contains `#` (a `#` in a Markdown link is a URL fragment and would silently break every inbound link).
+- 2026-09-04 Ruling: Helm templates are not valid YAML. Every `{{ ... }}` span is blanked in place with equal-length filler before parsing, so spans stay truthful; a templated name falls back to the document index and the raw template is kept in `meta.nameTemplate`. greplost never runs helm; the truth oracle does (`helm template`) and compares only kinds and per-file counts.
+- 2026-09-04 Ruling: head-to-head stays TypeScript and Go only. No competitor adapter is run on a build-2 language, and RESULTS.md carries the sentence stating it.
