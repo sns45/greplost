@@ -6,13 +6,42 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `extractYamlK8s( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`
+**Exports:** `K8sFlavour (type)`, `K8sInput (interface)`, `YamlParts (type)`, `extractK8sDocuments(input: K8sInput): YamlParts`, `extractYamlK8s(path: string, _lang: Lang, source: string, tree: Tree): YamlParts`, `labelKey(labels: ReadonlyMap<string, string>): string | null`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (FileRecord, Lang), `web-tree-sitter` (Tree)
+**Imports:** `web-tree-sitter` (Node, Tree), [`../schema.ts`](../schema.ts.md) (DeclKind, Declaration, ExportRecord, FileRecord, Lang, ReferenceRecord, compareStrings, nodeId), [`./ts-signature.ts`](ts-signature.ts.md) (clip, lineOf), [`./yaml-doc.ts`](yaml-doc.ts.md) (YamlValue, documentValue, mapPath, scalarMap, seqItems, walk, yamlDocuments)
 
-**Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md), [`packages/core/src/extract/yaml.ts`](yaml.ts.md)
+**Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md), [`packages/core/src/extract/yaml-helm.ts`](yaml-helm.ts.md), [`packages/core/src/extract/yaml.ts`](yaml.ts.md)
 
-**Blast radius:** 42 files (`greplost impact packages/core/src/extract/yaml-k8s.ts`)
+**Blast radius:** 44 files (`greplost impact packages/core/src/extract/yaml-k8s.ts`)
 
 **Key symbols:**
-- `function extractYamlK8s( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L12-19
+- `type K8sFlavour = "k8s" | "helm"`  L51-51
+- `const CONTAINER_KEYS: ReadonlySet<string> = new Set(["containers", "initContainers", "ephemeralContainers"])`  L54-54
+- `const CONFIG_REFS: Readonly<Record<string, { readonly nameKey: string; readonly kind: string }>> = { configMap: { nameKey: "name", kind: "ConfigMap" }, configMapKeyRef: { nameKey: "name", kind: "Conf…`  L64-71
+- `const SELECTOR_PATHS: Readonly<Record<string, readonly string[]>> = { NetworkPolicy: ["spec", "podSelector", "matchLabels"], Service: ["spec", "selector"], }`  L74-77
+- `const LABEL_SEPARATORS = /[,=]/u`  L86-86
+- `interface K8sInput`  L100-107
+- `interface K8sState`  L109-116
+- `function namesAreNames(state: K8sState): boolean`  L129-131
+- `function uniqueName(state: K8sState, kind: DeclKind, name: string): string`  L141-154
+- `function metaOf(entries: ReadonlyArray<readonly [string, string | null]>): Record<string, string> | undefined`  L157-163
+- `function addNode( state: K8sState, kind: DeclKind, rawName: string, signature: string, node: Node, meta: Record<string, string> | undefined, ): Declaration`  L171-193
+- `function addReference( state: K8sState, from: string, to: string, refKind: ReferenceRecord["refKind"], line: number, ): void`  L195-203
+- `function isTemplated(state: K8sState, node: Node): boolean`  L210-215
+- `function rawTextOf(state: K8sState, node: Node): string`  L222-224
+- `interface Reading`  L227-234
+- `const ABSENT: Reading = { text: null, templated: false, raw: null }`  L236-236
+- `function read(state: K8sState, value: YamlValue | null, ...keys: readonly string[]): Reading`  L238-247
+- `function trimmedSpan(state: K8sState, node: Node): [number, number]`  L257-267
+- `function usableName(text: string | null): text is string`  L270-272
+- `function labelKey(labels: ReadonlyMap<string, string>): string | null`  L279-287
+- `function podLabelsOf(document: YamlValue, kind: string): Map<string, string>`  L298-308
+- `function collectDocument(state: K8sState, document: Node, index: number): void`  L314-352
+- `function collectImages(state: K8sState, document: YamlValue, index: number): void`  L362-393
+- `function collectSelector(state: K8sState, document: YamlValue, kind: string, owner: string): void`  L396-409
+- `function collectConfigRefs(state: K8sState, document: YamlValue, owner: string): void`  L412-421
+- `type YamlParts = Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L428-428
+- `function extractK8sDocuments(input: K8sInput): YamlParts`  L436-458
+- `function extractYamlK8s(path: string, _lang: Lang, source: string, tree: Tree): YamlParts`  L464-466
+
+**Calls:** `clip` → [`packages/core/src/extract/ts-signature.ts#clip`](ts-signature.ts.md) (high), `lineOf` → [`packages/core/src/extract/ts-signature.ts#lineOf`](ts-signature.ts.md) (high), `documentValue` → [`packages/core/src/extract/yaml-doc.ts#documentValue`](yaml-doc.ts.md) (high), `mapPath` → [`packages/core/src/extract/yaml-doc.ts#mapPath`](yaml-doc.ts.md) (high), `scalarMap` → [`packages/core/src/extract/yaml-doc.ts#scalarMap`](yaml-doc.ts.md) (high), `seqItems` → [`packages/core/src/extract/yaml-doc.ts#seqItems`](yaml-doc.ts.md) (high), `walk` → [`packages/core/src/extract/yaml-doc.ts#walk`](yaml-doc.ts.md) (high), `yamlDocuments` → [`packages/core/src/extract/yaml-doc.ts#yamlDocuments`](yaml-doc.ts.md) (high), `addNode` → [`packages/core/src/extract/yaml-k8s.ts#addNode`](yaml-k8s.ts.md) (high), `addReference` → [`packages/core/src/extract/yaml-k8s.ts#addReference`](yaml-k8s.ts.md) (high), `collectConfigRefs` → [`packages/core/src/extract/yaml-k8s.ts#collectConfigRefs`](yaml-k8s.ts.md) (high), `collectDocument` → [`packages/core/src/extract/yaml-k8s.ts#collectDocument`](yaml-k8s.ts.md) (high), `collectImages` → [`packages/core/src/extract/yaml-k8s.ts#collectImages`](yaml-k8s.ts.md) (high), `collectSelector` → [`packages/core/src/extract/yaml-k8s.ts#collectSelector`](yaml-k8s.ts.md) (high), `extractK8sDocuments` → [`packages/core/src/extract/yaml-k8s.ts#extractK8sDocuments`](yaml-k8s.ts.md) (high), `isTemplated` → [`packages/core/src/extract/yaml-k8s.ts#isTemplated`](yaml-k8s.ts.md) (high), `labelKey` → [`packages/core/src/extract/yaml-k8s.ts#labelKey`](yaml-k8s.ts.md) (high), `metaOf` → [`packages/core/src/extract/yaml-k8s.ts#metaOf`](yaml-k8s.ts.md) (high), `namesAreNames` → [`packages/core/src/extract/yaml-k8s.ts#namesAreNames`](yaml-k8s.ts.md) (high), `podLabelsOf` → [`packages/core/src/extract/yaml-k8s.ts#podLabelsOf`](yaml-k8s.ts.md) (high), `rawTextOf` → [`packages/core/src/extract/yaml-k8s.ts#rawTextOf`](yaml-k8s.ts.md) (high), `read` → [`packages/core/src/extract/yaml-k8s.ts#read`](yaml-k8s.ts.md) (high), `trimmedSpan` → [`packages/core/src/extract/yaml-k8s.ts#trimmedSpan`](yaml-k8s.ts.md) (high), `uniqueName` → [`packages/core/src/extract/yaml-k8s.ts#uniqueName`](yaml-k8s.ts.md) (high), `usableName` → [`packages/core/src/extract/yaml-k8s.ts#usableName`](yaml-k8s.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `nodeId` → [`packages/core/src/schema.ts#nodeId`](../schema.ts.md) (high)

@@ -227,3 +227,21 @@ describe("pre-commit hook", () => {
     expect(post).toContain("& )");
   });
 });
+
+describe("upgrade", () => {
+  test("a hook carrying an older greplost block is rewritten to the current block", () => {
+    const root = gitRepo("stale-block");
+    installGitHooks(root);
+    const file = path.join(root, ".git", "hooks", "pre-commit");
+    const stale = `#!/bin/sh\n${HOOK_MARKER}\nGL="bunx greplost"\n( $GL update --quiet ) || :\n# kept by the user\n`;
+    writeFileSync(file, stale);
+    const result = installGitHooks(root);
+    expect(result.updated).toEqual(["pre-commit"]);
+    const after = readFileSync(file, "utf8");
+    expect(after).toContain("GL_LOCAL");
+    expect(after).not.toContain('GL="bunx greplost"\n( $GL update --quiet ) || :');
+    expect(after).toContain("# kept by the user");
+    expect(installGitHooks(root).updated).toEqual([]);
+  });
+});
+

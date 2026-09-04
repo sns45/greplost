@@ -13,12 +13,9 @@ import { compareReferenceEdges, linkReferences, referenceSource } from "../src/r
 import { createResolver } from "../src/resolve/index.ts";
 import { extractDockerfile } from "../src/extract/dockerfile.ts";
 import { extractHcl } from "../src/extract/hcl.ts";
-import { extractJava } from "../src/extract/java.ts";
 import { extractPython } from "../src/extract/python.ts";
 import { extractRust } from "../src/extract/rust.ts";
 import { extractYamlActions } from "../src/extract/yaml-actions.ts";
-import { extractYamlHelm } from "../src/extract/yaml-helm.ts";
-import { extractYamlK8s } from "../src/extract/yaml-k8s.ts";
 import { createDockerfileResolver } from "../src/resolve/dockerfile.ts";
 import { createHclResolver } from "../src/resolve/hcl.ts";
 import { createJavaResolver } from "../src/resolve/java.ts";
@@ -276,12 +273,14 @@ describe("references jsonl round trip", () => {
   });
 
   test("linkReferences refuses a reference from a language with no rules", () => {
-    // `ts` gained rules with leaf 2.3 (`references/ts.ts`); Go still has none, so it is the
-    // language that proves the guard is still armed.
-    const files = [record({ lang: "go", path: "a.go", refs: [ref({ refKind: "resource-input" })] })];
-    const ctx = emptyContext(["a.go"]);
+    // `ts` gained rules with leaf 2.3 (`references/ts.ts`) and `go` with leaf 2.7
+    // (`references/go.ts`); Python expresses every dependency it has as an import or a call and
+    // produces no `ReferenceRecord` at all, so it is the language that proves the guard is
+    // still armed.
+    const files = [record({ lang: "python", path: "a.py", refs: [ref({ refKind: "config" })] })];
+    const ctx = emptyContext(["a.py"]);
     expect(() => linkReferences(files, createResolver(ctx), ctx)).toThrow(
-      /greplost: a\.go produced 1 reference but there are no reference rules for "go"/,
+      /greplost: a\.py produced 1 reference but there are no reference rules for "python"/,
     );
   });
 });
@@ -293,13 +292,12 @@ describe("stubs", () => {
     // `python` left this list when leaf 2.1 implemented it; each language leaf removes its
     // own row, and the list is empty when build 2 is done.
     const cases: ReadonlyArray<readonly [string, (path: string) => unknown, RegExp]> = [
-      // python (leaf 2.1), rust (leaf 2.4) and kotlin (leaf 2.6) are no longer stubs: their own
-      // test files (extract-python.test.ts, extract-rust.test.ts, extract-kotlin.test.ts) hold
-      // them to the contract now.
-      ["A.java", (p) => extractJava(p, "java", "", NO_TREE), /java extractor .* build-2 leaf 2\.5/],
+      // python (leaf 2.1), rust (leaf 2.4), java (leaf 2.5) and kotlin (leaf 2.6) are no longer
+      // stubs: their own test files (extract-python/rust/java/kotlin.test.ts) hold them to the
+      // contract now.
       ["Dockerfile", (p) => extractDockerfile(p, "dockerfile", "", NO_TREE), /dockerfile extractor .* leaf 2\.10/],
-      ["deploy.yaml", (p) => extractYamlK8s(p, "yaml", "", NO_TREE), /yaml-k8s extractor .* build-2 leaf 2\.8/],
-      ["Chart.yaml", (p) => extractYamlHelm(p, "yaml", "", NO_TREE), /yaml-helm extractor .* build-2 leaf 2\.8/],
+      // yaml-k8s and yaml-helm (leaf 2.8) are no longer stubs: `extract-yaml-k8s.test.ts`
+      // holds them to the contract now.
       ["ci.yml", (p) => extractYamlActions(p, "yaml", "", NO_TREE), /yaml-actions extractor .* build-2 leaf 2\.9/],
     ];
     for (const [file, call, pattern] of cases) {
@@ -311,8 +309,7 @@ describe("stubs", () => {
 
   test("every unimplemented resolver builds for free and throws on the first specifier", () => {
     const ctx = emptyContext([]);
-    const cases: ReadonlyArray<readonly [ReturnType<typeof createJavaResolver>, RegExp]> = [
-      [createJavaResolver(ctx), /java resolver .* build-2 leaf 2\.5/],
+    const cases: ReadonlyArray<readonly [ReturnType<typeof createDockerfileResolver>, RegExp]> = [
       [createDockerfileResolver(ctx), /dockerfile resolver .* build-2 leaf 2\.10/],
     ];
     for (const [resolve, pattern] of cases) {
@@ -327,7 +324,16 @@ describe("stubs", () => {
     expect(resolve("src/lib.rs", "serde::Serialize")).toEqual({ type: "external", pkg: "crate/serde" });
   });
 
-  test("the Kotlin resolver is implemented: an import of an absent package is external", () => {
+  test("the Java resolver is implemented: an unknown package is external, not a throw", () => {
+    // Leaf 2.5 landed; `createJavaResolver` answers for every specifier and never throws.
+    const resolve = createJavaResolver(emptyContext(["src/main/java/tiny/App.java"]));
+    expect(resolve("src/main/java/tiny/App.java", "com.google.gson.Gson")).toEqual({
+      type: "external",
+      pkg: "maven/com.google:gson",
+    });
+  });
+
+  test("the Kotlin resolver is implemented: the standard library is external, not a throw", () => {
     // Leaf 2.6 landed. `extract-kotlin.test.ts` owns the rules; the one property this file
     // still needs is that the module answers instead of throwing.
     const resolve = createKotlinResolver(emptyContext(["src/tiny/App.kt"]));
@@ -351,9 +357,9 @@ describe("stubs", () => {
     // owns the assertions. An address that names nothing is dropped, never guessed, so the
     // one property this file still needs from it is that it never invents an edge.
     expect(resolveHclReferences(record(), ref(), ctx)).toBeNull();
-    expect(() => resolveYamlK8sReferences(record({ lang: "yaml" }), ref({ refKind: "selector" }), ctx)).toThrow(
-      /yaml-k8s reference resolution .* leaf 2\.8/,
-    );
+    // yaml-k8s landed with leaf 2.8 and behaves the same way: a selector nothing answers is
+    // dropped rather than guessed, and `extract-yaml-k8s.test.ts` owns the assertions.
+    expect(resolveYamlK8sReferences(record({ lang: "yaml" }), ref({ refKind: "selector" }), ctx)).toBeNull();
     expect(() =>
       resolveYamlActionsReferences(record({ lang: "yaml" }), ref({ refKind: "needs" }), ctx),
     ).toThrow(/yaml-actions reference resolution .* leaf 2\.9/);

@@ -6,14 +6,35 @@
 
 **Package:** `@greplost/bench` ([map](../../../MAP.md))
 
-**Exports:** `NOTES (const)`, `generateTruth(root: string, files: string[]): Truth`
+**Exports:** `NOTES (const)`, `generateTruth(root: string, files: string[]): Truth`, `javaTruthTool(): string`
 
-**Imports:** [`./ts.ts`](ts.ts.md) (Truth)
+**Imports:** `node:child_process` (execFileSync), `node:crypto` (createHash), `node:fs` (existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync), `node:os` (tmpdir), `node:path` (default), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Edge), [`./ts.ts`](ts.ts.md) (Truth)
 
 **Imported by:** None.
 
 **Blast radius:** 0 files (`greplost impact bench/src/truth/java.ts`)
 
 **Key symbols:**
-- `const NOTES: readonly string[] = ["not-implemented"]`  L15-15
-- `function generateTruth(root: string, files: string[]): Truth`  L17-22
+- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..", "..")`  L45-45
+- `const TOOL_SOURCE_DIR = path.join(REPO_ROOT, "bench", "truth", "javatruth")`  L47-47
+- `const TOOL_CACHE_DIR = path.join(REPO_ROOT, "bench", ".corpus", ".tools")`  L48-48
+- `const TOOL_SOURCES = ["Truth.java"] as const`  L50-50
+- `const MINIMUM_JDK = 21`  L52-52
+- `const BUILD_TIMEOUT_MS = 5 * 60 * 1000`  L53-53
+- `const RUN_TIMEOUT_MS = 15 * 60 * 1000`  L55-55
+- `const MAX_BUFFER = 512 * 1024 * 1024`  L56-56
+- `const NOTES: readonly string[] = ["javac-tree-api", "source-classpath-only", "unresolved-files-dropped"]`  L59-59
+- `interface JavaToolOutput`  L62-69
+- `function compare(a: string, b: string): number`  L76-78
+- `function compareEdge(a: Edge, b: Edge): number`  L80-82
+- `function stderrOf(cause: unknown): string`  L84-89
+- `function toolHash(): string`  L92-104
+- `function javacMajor(): number`  L114-136
+- `function javaTruthTool(): string`  L144-163
+- `function runTool(root: string, files: readonly string[]): JavaToolOutput`  L165-201
+- `function fileOf(id: string): string`  L204-207
+- `function edge(from: string, to: string, kind: Edge["kind"]): Edge`  L209-211
+- `function importCycles(nodes: readonly string[], edges: ReadonlyArray<{ from: string; to: string }>): string[][]`  L220-283
+- `function generateTruth(root: string, files: string[]): Truth`  L291-347
+
+**Calls:** `compare` → [`bench/src/truth/java.ts#compare`](java.ts.md) (high), `edge` → [`bench/src/truth/java.ts#edge`](java.ts.md) (high), `fileOf` → [`bench/src/truth/java.ts#fileOf`](java.ts.md) (high), `importCycles` → [`bench/src/truth/java.ts#importCycles`](java.ts.md) (high), `javaTruthTool` → [`bench/src/truth/java.ts#javaTruthTool`](java.ts.md) (high), `javacMajor` → [`bench/src/truth/java.ts#javacMajor`](java.ts.md) (high), `runTool` → [`bench/src/truth/java.ts#runTool`](java.ts.md) (high), `stderrOf` → [`bench/src/truth/java.ts#stderrOf`](java.ts.md) (high), `toolHash` → [`bench/src/truth/java.ts#toolHash`](java.ts.md) (high)

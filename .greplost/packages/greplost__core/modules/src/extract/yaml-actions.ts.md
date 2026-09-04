@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md), [`packages/core/src/extract/yaml.ts`](yaml.ts.md)
 
-**Blast radius:** 42 files (`greplost impact packages/core/src/extract/yaml-actions.ts`)
+**Blast radius:** 43 files (`greplost impact packages/core/src/extract/yaml-actions.ts`)
 
 **Key symbols:**
 - `function extractYamlActions( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L12-19

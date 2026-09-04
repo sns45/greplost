@@ -8,15 +8,15 @@
 
 **Exports:** `UnparsableFile (interface)`, `brokenRoot(source: string, lang: Lang, parser: ParserHandle): UnparsableFile["reason"] | null`, `findUnparsableFiles( root: string, files: readonly string[], opts?: { parser?: ParserHandle; grammarDir?: string }, ): Promise<UnparsableFile[]>`
 
-**Imports:** `node:fs` (readFileSync), `node:path` (isAbsolute, join), [`./parser.ts`](parser.ts.md) (ParserHandle, createParser), [`./schema.ts`](schema.ts.md) (Lang, compareStrings), [`./lang.ts`](lang.ts.md) (langOf)
+**Imports:** `node:fs` (readFileSync), `node:path` (isAbsolute, join), [`./parser.ts`](parser.ts.md) (ParserHandle, createParser), [`./schema.ts`](schema.ts.md) (Lang, compareStrings), [`./lang.ts`](lang.ts.md) (langOf), [`./extract/yaml.ts`](extract/yaml.ts.md) (isHelmPath), [`./extract/yaml-helm.ts`](extract/yaml-helm.ts.md) (blankTemplates)
 
 **Imported by:** [`packages/core/src/index.ts`](index.ts.md)
 
 **Blast radius:** 29 files (`greplost impact packages/core/src/unparsable.ts`)
 
 **Key symbols:**
-- `interface UnparsableFile`  L29-40
-- `async function findUnparsableFiles( root: string, files: readonly string[], opts?: { parser?: ParserHandle; grammarDir?: string }, ): Promise<UnparsableFile[]>`  L53-79
-- `function brokenRoot(source: string, lang: Lang, parser: ParserHandle): UnparsableFile["reason"] | null`  L89-103
+- `interface UnparsableFile`  L31-42
+- `async function findUnparsableFiles( root: string, files: readonly string[], opts?: { parser?: ParserHandle; grammarDir?: string }, ): Promise<UnparsableFile[]>`  L55-90
+- `function brokenRoot(source: string, lang: Lang, parser: ParserHandle): UnparsableFile["reason"] | null`  L100-114
 
-**Calls:** `langOf` → [`packages/core/src/lang.ts#langOf`](lang.ts.md) (high), `createParser` → [`packages/core/src/parser.ts#createParser`](parser.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high), `brokenRoot` → [`packages/core/src/unparsable.ts#brokenRoot`](unparsable.ts.md) (high)
+**Calls:** `blankTemplates` → [`packages/core/src/extract/yaml-helm.ts#blankTemplates`](extract/yaml-helm.ts.md) (high), `isHelmPath` → [`packages/core/src/extract/yaml.ts#isHelmPath`](extract/yaml.ts.md) (high), `langOf` → [`packages/core/src/lang.ts#langOf`](lang.ts.md) (high), `createParser` → [`packages/core/src/parser.ts#createParser`](parser.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high), `brokenRoot` → [`packages/core/src/unparsable.ts#brokenRoot`](unparsable.ts.md) (high)

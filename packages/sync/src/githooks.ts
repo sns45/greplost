@@ -57,13 +57,15 @@ const SHEBANG = "#!/bin/sh\n";
  * The block appended to each hook (sync spec "Git hooks", verbatim).
  *
  * `command -v` rather than a hard-coded path, `bunx` as the fallback, and an
- * empty `GL` when neither exists so the hook degrades to nothing. The update
+ * empty `GL` when none exists so the hook degrades to nothing. A checkout that links its own
+ * `node_modules/.bin/greplost` (a workspace, or a repo that pins greplost as a dev dependency)
+ * runs that binary first, so the map is always written by the version the repo declares. The update
  * runs in a background subshell with both streams discarded: git waits for the
  * hook, not for the subshell, so a commit stays instant even on a large repo.
  */
 const HOOK_BLOCK = [
   HOOK_MARKER,
-  'if command -v greplost >/dev/null 2>&1; then GL="greplost"; elif command -v bunx >/dev/null 2>&1; then GL="bunx greplost"; else GL=""; fi',
+  'GL_LOCAL="$(git rev-parse --show-toplevel 2>/dev/null)/node_modules/.bin/greplost"; if [ -x "$GL_LOCAL" ]; then GL="$GL_LOCAL"; elif command -v greplost >/dev/null 2>&1; then GL="greplost"; elif command -v bunx >/dev/null 2>&1; then GL="bunx greplost"; else GL=""; fi',
   // The trailing `|| :` is what makes "greplost is not installed here" a
   // no-op rather than a failed hook: without it the guard's own false is the
   // script's exit status, and husky (which runs hooks under `sh -e`) reports a
@@ -81,7 +83,7 @@ const HOOK_BLOCK = [
  */
 const PRE_COMMIT_BLOCK = [
   HOOK_MARKER,
-  'if command -v greplost >/dev/null 2>&1; then GL="greplost"; elif command -v bunx >/dev/null 2>&1; then GL="bunx greplost"; else GL=""; fi',
+  'GL_LOCAL="$(git rev-parse --show-toplevel 2>/dev/null)/node_modules/.bin/greplost"; if [ -x "$GL_LOCAL" ]; then GL="$GL_LOCAL"; elif command -v greplost >/dev/null 2>&1; then GL="greplost"; elif command -v bunx >/dev/null 2>&1; then GL="bunx greplost"; else GL=""; fi',
   '[ -n "$GL" ] && $GL update --incremental --quiet >/dev/null 2>&1 && git add -A .greplost >/dev/null 2>&1 || :',
   HOOK_END_MARKER,
   "",
@@ -96,6 +98,8 @@ export interface HookInstallResult {
   installed: string[];
   /** Where the hooks went: husky's directory, git's own, or nowhere. */
   mode: "husky" | "plain" | "none";
+  /** Hooks whose stale greplost block was replaced by the current one. */
+  updated: string[];
   /** Anything the caller should tell the user: skips, lefthook, no git. */
   notes: string[];
 }
@@ -119,7 +123,7 @@ export function installGitHooks(root: string): HookInstallResult {
   // then refuses to keep fresh.
   if (!isRepoRoot(absoluteRoot)) {
     notes.push("not a git repository root: no hooks installed");
-    return { installed: [], mode: "none", notes };
+    return { installed: [], updated: [], mode: "none", notes };
   }
 
   const husky = isDirectory(path.join(absoluteRoot, ".husky"));
@@ -140,12 +144,22 @@ export function installGitHooks(root: string): HookInstallResult {
   }
 
   const installed: string[] = [];
+  const updated: string[] = [];
   for (const hook of HOOK_NAMES) {
     const file = path.join(directory, hook);
     const existing = readIfPresent(file);
 
     if (existing !== undefined && existing.includes(HOOK_MARKER)) {
-      notes.push(`${hook} already has a greplost hook`);
+      const replaced = replaceBlock(existing, blockFor(hook));
+      if (replaced === existing) {
+        notes.push(`${hook} already has a greplost hook`);
+      } else {
+        // A block written by an older greplost is replaced in place, so an
+        // upgrade never leaves a hook running a CLI the repo no longer wants.
+        writeFileSync(file, replaced);
+        notes.push(`${hook} greplost hook updated`);
+        updated.push(hook);
+      }
       // Still worth ensuring: a hook that is not executable never runs, and
       // that is exactly the state a `chmod -R` or a fresh clone can leave.
       makeExecutable(file);
@@ -157,7 +171,30 @@ export function installGitHooks(root: string): HookInstallResult {
     installed.push(hook);
   }
 
-  return { installed, mode, notes };
+  return { installed, updated, mode, notes };
+}
+
+/**
+ * Swap the greplost block inside an existing hook for `block`: from the marker line
+ * through the block's last line (the update command). Returns the input unchanged when
+ * the block is already current, so callers can tell "updated" from "nothing to do".
+ */
+function replaceBlock(existing: string, wanted: string): string {
+  const start = existing.indexOf(HOOK_MARKER);
+  if (start === -1) return existing;
+  const block = wanted.replace(/\n+$/, "");
+  const lastLine = block.slice(block.lastIndexOf("\n") + 1);
+  const tail = existing.indexOf(lastLine, start);
+  let end = existing.length;
+  if (tail !== -1) end = tail + lastLine.length;
+  else {
+    // An older block ends with its own `|| :` guard line; stop there so text a user
+    // appended after the block survives the upgrade.
+    const guard = /\|\| :[ \t]*$/m.exec(existing.slice(start));
+    if (guard !== null) end = start + guard.index + guard[0].length;
+  }
+  if (existing.slice(start, end) === block) return existing;
+  return existing.slice(0, start) + block + existing.slice(end);
 }
 
 /**

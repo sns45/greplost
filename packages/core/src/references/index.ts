@@ -9,6 +9,7 @@ export { compareReferenceEdges, linkReferences, referenceSource } from "./link.t
 export type { ReferenceContext, ReferenceRule } from "./link.ts";
 
 export { resolveDockerfileReferences } from "./dockerfile.ts";
+export { resolveGoReferences } from "./go.ts";
 export { resolveHclReferences } from "./hcl.ts";
 export { resolveTsReferences } from "./ts.ts";
 export { resolveYamlReferences } from "./yaml.ts";

@@ -6,13 +6,32 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `extractYamlHelm( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`
+**Exports:** `blankTemplates(source: string): string`, `extractYamlHelm(path: string, _lang: Lang, source: string, tree: Tree): YamlParts`, `templateSpans(source: string): Array<[number, number]>`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (FileRecord, Lang), `web-tree-sitter` (Tree)
+**Imports:** `web-tree-sitter` (Tree), [`../schema.ts`](../schema.ts.md) (Lang), [`../parser.ts`](../parser.ts.md) (reparse), [`./ts-signature.ts`](ts-signature.ts.md) (clip), [`./yaml-doc.ts`](yaml-doc.ts.md) (documentValue, mapEntries, scalarAt, yamlDocuments), [`./yaml-k8s.ts`](yaml-k8s.ts.md) (K8sInput, YamlParts, extractK8sDocuments)
 
-**Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md), [`packages/core/src/extract/yaml.ts`](yaml.ts.md)
+**Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md), [`packages/core/src/extract/yaml.ts`](yaml.ts.md), [`packages/core/src/unparsable.ts`](../unparsable.ts.md)
 
-**Blast radius:** 42 files (`greplost impact packages/core/src/extract/yaml-helm.ts`)
+**Blast radius:** 43 files (`greplost impact packages/core/src/extract/yaml-helm.ts`)
 
 **Key symbols:**
-- `function extractYamlHelm( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L12-19
+- `const CHART_FILES: ReadonlySet<string> = new Set(["Chart.yaml", "Chart.yml"])`  L47-47
+- `const VALUES_FILES: ReadonlySet<string> = new Set(["values.yaml", "values.yml"])`  L48-48
+- `const VALUES_PATH = /\.Values((?:\.[A-Za-z_][A-Za-z0-9_-]*)+)/gu`  L57-57
+- `function basenameOf(path: string): string`  L59-62
+- `function templateSpans(source: string): Array<[number, number]>`  L77-97
+- `function blankTemplates(source: string): string`  L103-129
+- `function opensLine(source: string, start: number): boolean`  L132-134
+- `function apply(source: string, spans: ReadonlyArray<[number, number]>, fills: readonly string[]): string`  L136-147
+- `function blankSpan(source: string, start: number, end: number, fill: string): string`  L150-164
+- `function wholeValueColumn(source: string, [start, end]: readonly [number, number]): number | null`  L172-180
+- `function nextIndent(source: string, offset: number): number`  L183-194
+- `function nothing(): YamlParts`  L200-202
+- `function extractChart(path: string, tree: Tree): YamlParts`  L205-231
+- `function extractValues(path: string, tree: Tree): YamlParts`  L240-261
+- `function sortedMeta(meta: Record<string, string>): Record<string, string>`  L263-267
+- `function lineAt(source: string, offset: number): number`  L274-278
+- `function valuesReferences(source: string, parts: YamlParts): void`  L284-297
+- `function extractYamlHelm(path: string, _lang: Lang, source: string, tree: Tree): YamlParts`  L312-343
+
+**Calls:** `clip` → [`packages/core/src/extract/ts-signature.ts#clip`](ts-signature.ts.md) (high), `documentValue` → [`packages/core/src/extract/yaml-doc.ts#documentValue`](yaml-doc.ts.md) (high), `mapEntries` → [`packages/core/src/extract/yaml-doc.ts#mapEntries`](yaml-doc.ts.md) (high), `scalarAt` → [`packages/core/src/extract/yaml-doc.ts#scalarAt`](yaml-doc.ts.md) (high), `yamlDocuments` → [`packages/core/src/extract/yaml-doc.ts#yamlDocuments`](yaml-doc.ts.md) (high), `apply` → [`packages/core/src/extract/yaml-helm.ts#apply`](yaml-helm.ts.md) (high), `basenameOf` → [`packages/core/src/extract/yaml-helm.ts#basenameOf`](yaml-helm.ts.md) (high), `blankSpan` → [`packages/core/src/extract/yaml-helm.ts#blankSpan`](yaml-helm.ts.md) (high), `blankTemplates` → [`packages/core/src/extract/yaml-helm.ts#blankTemplates`](yaml-helm.ts.md) (high), `extractChart` → [`packages/core/src/extract/yaml-helm.ts#extractChart`](yaml-helm.ts.md) (high), `extractValues` → [`packages/core/src/extract/yaml-helm.ts#extractValues`](yaml-helm.ts.md) (high), `lineAt` → [`packages/core/src/extract/yaml-helm.ts#lineAt`](yaml-helm.ts.md) (high), `nextIndent` → [`packages/core/src/extract/yaml-helm.ts#nextIndent`](yaml-helm.ts.md) (high), `nothing` → [`packages/core/src/extract/yaml-helm.ts#nothing`](yaml-helm.ts.md) (high), `opensLine` → [`packages/core/src/extract/yaml-helm.ts#opensLine`](yaml-helm.ts.md) (high), `sortedMeta` → [`packages/core/src/extract/yaml-helm.ts#sortedMeta`](yaml-helm.ts.md) (high), `templateSpans` → [`packages/core/src/extract/yaml-helm.ts#templateSpans`](yaml-helm.ts.md) (high), `valuesReferences` → [`packages/core/src/extract/yaml-helm.ts#valuesReferences`](yaml-helm.ts.md) (high), `wholeValueColumn` → [`packages/core/src/extract/yaml-helm.ts#wholeValueColumn`](yaml-helm.ts.md) (high), `extractK8sDocuments` → [`packages/core/src/extract/yaml-k8s.ts#extractK8sDocuments`](yaml-k8s.ts.md) (high), `reparse` → [`packages/core/src/parser.ts#reparse`](../parser.ts.md) (high)

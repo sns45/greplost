@@ -263,6 +263,46 @@ export function createPythonResolver(ctx: RepoContext): (fromFile: string, speci
     return directories.has(dir);
   }
 
+  /**
+   * The names a `from <specifier> import …` statement in `fromFile` writes, per specifier.
+   *
+   * Read from the file rather than handed down, because `Resolver.resolve` is given a
+   * specifier and nothing else. That is enough here and cannot fabricate an edge: every name
+   * it recovers is used only to *look up a file in `ctx.files`*, so a line this misreads can
+   * lose a submodule edge but never invent one.
+   *
+   * Only consulted for a namespace directory, which is the one case where the specifier alone
+   * cannot decide the answer, so a normal repo never pays for it.
+   */
+  const importedNames = new Map<string, Map<string, string[]>>();
+  function namesImportedFrom(fromFile: string, specifier: string): string[] {
+    let bySpecifier = importedNames.get(fromFile);
+    if (bySpecifier === undefined) {
+      bySpecifier = new Map<string, string[]>();
+      importedNames.set(fromFile, bySpecifier);
+      const source = ctx.readFile(fromFile);
+      if (source !== null) {
+        // `from x import (a, b)` may span lines; join a parenthesised list back together.
+        const flattened = source.replace(/\(([^()]*)\)/gu, (_all, inner: string) => inner.replace(/\s+/gu, " "));
+        for (const line of flattened.split(/\r?\n/u)) {
+          const match = /^\s*from\s+([.\w]+)\s+import\s+(.+?)\s*$/u.exec(line);
+          if (match === null) continue;
+          const module = match[1] ?? "";
+          const names: string[] = [];
+          for (const part of (match[2] ?? "").split(",")) {
+            // `a as b` binds `b`, but names the submodule `a`.
+            const name = (part.trim().split(/\s+as\s+/u)[0] ?? "").trim();
+            if (/^\w+$/u.test(name)) names.push(name);
+          }
+          const existing = bySpecifier.get(module);
+          if (existing === undefined) bySpecifier.set(module, names);
+          else existing.push(...names);
+        }
+      }
+    }
+    return bySpecifier.get(specifier) ?? [];
+  }
+
   /** The first indexed file a module directory-or-module candidate names, or null. */
   function probe(candidate: string): string | null {
     if (candidate === "") return null;
@@ -295,21 +335,43 @@ export function createPythonResolver(ctx: RepoContext): (fromFile: string, speci
     }
 
     const relative = specifier.replace(/\./gu, "/");
+
+    // 1. The module or package the specifier names outright.
     for (const root of importRoots()) {
       const hit = probe(joinRelative(root, relative));
       if (hit !== null) return { type: "file", path: hit };
     }
 
-    // A PEP 420 namespace package: a directory of the repo that holds indexed files but no
-    // `__init__.py`. It is not a distribution and calling it one would put a phantom
-    // `ext:pypi/<dir>` in the map for a directory the reader can open, so an in-repo path
-    // that resolves to no module file is `unresolved`, never external.
+    // 2. A submodule of a PEP 420 namespace package. `from ns import mod`, where `ns/` holds
+    //    no `__init__.py`, names no module file through its specifier alone - the *imported
+    //    symbol* is the module. This is the one place the statement's names decide the
+    //    answer, so it is the one place they are read.
     //
-    // Every ancestor prefix is tested, not just the full path: `ns.missing` where only
-    // `ns/mod.py` exists still names something inside `ns/`, and answering `ext:pypi/ns`
-    // would invent a distribution out of a typo. The walk stops at the specifier's first
-    // component and never reaches the root itself, so a `src/` layout does not make every
-    // unresolved import look in-repo.
+    //    Exactly one candidate resolves, or none does: an import record carries a single
+    //    target, and `from ns import a, b` with both indexed offers two. Choosing one would
+    //    be the guess the structure layer never makes (tech spec 5.1), so it falls through
+    //    to `unresolved` below.
+    const submodules = new Set<string>();
+    for (const name of namesImportedFrom(fromFile, specifier)) {
+      for (const root of importRoots()) {
+        const hit = probe(joinRelative(root, `${relative}/${name}`));
+        if (hit !== null) submodules.add(hit);
+      }
+    }
+    if (submodules.size === 1) {
+      const [only] = submodules;
+      if (only !== undefined) return { type: "file", path: only };
+    }
+
+    // 3. Anything else inside the repo is `unresolved`, never external. A directory the
+    //    reader can open is not a distribution, and calling it one would put a phantom
+    //    `ext:pypi/<dir>` in the map.
+    //
+    //    Every ancestor prefix is tested, not just the full path: `ns.missing` where only
+    //    `ns/mod.py` exists still names something inside `ns/`, and answering `ext:pypi/ns`
+    //    would invent a distribution out of a typo. The walk stops at the specifier's first
+    //    component and never reaches the root itself, so a `src/` layout does not make every
+    //    unresolved import look in-repo.
     const segments = relative.split("/");
     for (const root of importRoots()) {
       for (let count = segments.length; count >= 1; count -= 1) {
@@ -317,8 +379,9 @@ export function createPythonResolver(ctx: RepoContext): (fromFile: string, speci
       }
     }
 
+    // 4. Outside the repo: the standard library is not a distribution, so it is not
+    //    namespaced under `pypi/`.
     const head = specifier.split(".")[0] ?? specifier;
-    // The standard library is not a distribution, so it is not namespaced under `pypi/`.
     return { type: "external", pkg: PY_STDLIB.has(head) ? head : `pypi/${head}` };
   };
 }

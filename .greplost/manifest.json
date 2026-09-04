@@ -720,14 +720,15 @@
       "blast": 0,
       "exports": [
         "NOTES",
-        "generateTruth"
+        "generateTruth",
+        "javaTruthTool"
       ],
       "fanIn": 0,
-      "fanOut": 1,
+      "fanOut": 2,
       "lang": "ts",
-      "loc": 22,
+      "loc": 347,
       "pkg": "@greplost/bench",
-      "sha256": "b54a6a795e1da5c9428e0ec1e6a00a83b4b9f1d07a0f269c20ef21c1fe8424d0",
+      "sha256": "dd3eccfbe75b977f1480eb5b9fdfe3e804161c8ef2da1e29733c9c9d94e4bfe5",
       "staleSummary": false
     },
     "bench/src/truth/kotlin.ts": {
@@ -890,28 +891,35 @@
       "blast": 1,
       "exports": [
         "NOTES",
-        "generateTruth"
+        "RenderedDocument",
+        "chartsOf",
+        "generateExtra",
+        "generateTruth",
+        "helmBinary",
+        "helmRender"
       ],
       "fanIn": 1,
-      "fanOut": 1,
+      "fanOut": 3,
       "lang": "ts",
-      "loc": 22,
+      "loc": 367,
       "pkg": "@greplost/bench",
-      "sha256": "d60b7670d95f5d430d696f66ac624199433478be511a173a3ec164a3f495574d",
+      "sha256": "e23fd181530d25224819a0ec13e0623a6d7e2512285905e6880000707a8e8da7",
       "staleSummary": false
     },
     "bench/src/truth/yaml-k8s.ts": {
-      "blast": 1,
+      "blast": 2,
       "exports": [
         "NOTES",
+        "ReferenceTruth",
+        "generateExtra",
         "generateTruth"
       ],
-      "fanIn": 1,
-      "fanOut": 1,
+      "fanIn": 2,
+      "fanOut": 2,
       "lang": "ts",
-      "loc": 22,
+      "loc": 413,
       "pkg": "@greplost/bench",
-      "sha256": "d983a03905176111c48e4443754b7cfdb99d01d5a1b1b0b2a294f5180426b7f2",
+      "sha256": "97fda47a85afb9c583a2e404a41bb4eec1ba6909e011be939fdb1c9dedf56359",
       "staleSummary": false
     },
     "bench/src/truth/yaml.ts": {
@@ -920,6 +928,7 @@
         "NOTES",
         "YamlFlavour",
         "flavourOf",
+        "generateExtra",
         "generateTruth",
         "groupByFlavour",
         "isHelmFile",
@@ -928,9 +937,9 @@
       "fanIn": 0,
       "fanOut": 5,
       "lang": "ts",
-      "loc": 128,
+      "loc": 164,
       "pkg": "@greplost/bench",
-      "sha256": "22bdfd50ce374e360091c245c805d2c7f8eff2df02718c082f3e80e5747cf6d7",
+      "sha256": "0c229fb51893c6fbe4647f959cf27c9e72e291cb8051197b6be174a3e9719f76",
       "staleSummary": false
     },
     "bench/truth/gocallgraph/main.go": {
@@ -1388,11 +1397,11 @@
         "extractJava"
       ],
       "fanIn": 1,
-      "fanOut": 1,
+      "fanOut": 2,
       "lang": "ts",
-      "loc": 18,
+      "loc": 618,
       "pkg": "@greplost/core",
-      "sha256": "8a70332f31157f3cdf5abb3746928ddaf9cb95f8bc1282e267bffc3c045ababb",
+      "sha256": "c5f1e686ec0ce12ba0988a05b3878d332fc8180f8b391054f3fc7cff999fc2c6",
       "staleSummary": false
     },
     "packages/core/src/extract/kotlin.ts": {
@@ -1466,7 +1475,7 @@
       "staleSummary": false
     },
     "packages/core/src/extract/ts-signature.ts": {
-      "blast": 55,
+      "blast": 60,
       "exports": [
         "BODY_VALUES",
         "FUNCTION_VALUES",
@@ -1488,7 +1497,7 @@
         "unwrapValue",
         "variableSignature"
       ],
-      "fanIn": 8,
+      "fanIn": 11,
       "fanOut": 0,
       "lang": "ts",
       "loc": 187,
@@ -1511,7 +1520,7 @@
       "staleSummary": false
     },
     "packages/core/src/extract/yaml-actions.ts": {
-      "blast": 42,
+      "blast": 43,
       "exports": [
         "extractYamlActions"
       ],
@@ -1523,34 +1532,67 @@
       "sha256": "602a21e3fe72cab4443ea9c27e6bffba7d204f198ab4b8579005ef6cdc652233",
       "staleSummary": false
     },
-    "packages/core/src/extract/yaml-helm.ts": {
-      "blast": 42,
+    "packages/core/src/extract/yaml-doc.ts": {
+      "blast": 45,
       "exports": [
-        "extractYamlHelm"
+        "YamlEntry",
+        "YamlValue",
+        "documentValue",
+        "findByKey",
+        "mapEntries",
+        "mapGet",
+        "mapPath",
+        "readValue",
+        "scalarAt",
+        "scalarMap",
+        "scalarText",
+        "seqItems",
+        "walk",
+        "yamlDocuments"
       ],
       "fanIn": 2,
-      "fanOut": 1,
+      "fanOut": 0,
       "lang": "ts",
-      "loc": 19,
+      "loc": 257,
       "pkg": "@greplost/core",
-      "sha256": "c284357d9a6178cbca96f58b12143d679ea376ae91a772f7a94ea8657a00ee58",
+      "sha256": "db37d2034c3714f5cdae4ee2c970d7dea617d393f8f37ae85bec5c8af42f90f6",
+      "staleSummary": false
+    },
+    "packages/core/src/extract/yaml-helm.ts": {
+      "blast": 43,
+      "exports": [
+        "blankTemplates",
+        "extractYamlHelm",
+        "templateSpans"
+      ],
+      "fanIn": 3,
+      "fanOut": 5,
+      "lang": "ts",
+      "loc": 343,
+      "pkg": "@greplost/core",
+      "sha256": "adca74d6e7365eeaad2271a784dd37e406bc39ba3119af936e72c5dc726e6f54",
       "staleSummary": false
     },
     "packages/core/src/extract/yaml-k8s.ts": {
-      "blast": 42,
+      "blast": 44,
       "exports": [
-        "extractYamlK8s"
+        "K8sFlavour",
+        "K8sInput",
+        "YamlParts",
+        "extractK8sDocuments",
+        "extractYamlK8s",
+        "labelKey"
       ],
-      "fanIn": 2,
-      "fanOut": 1,
+      "fanIn": 3,
+      "fanOut": 3,
       "lang": "ts",
-      "loc": 19,
+      "loc": 467,
       "pkg": "@greplost/core",
-      "sha256": "accedbd4e78f98326510521e707810c8317bb78e846bf84b236afef37df98b8a",
+      "sha256": "4bac36bc9e5b4128ba1cfc6f4630bec1b255f47510d9eabe6b01ac20a2a0766e",
       "staleSummary": false
     },
     "packages/core/src/extract/yaml.ts": {
-      "blast": 41,
+      "blast": 42,
       "exports": [
         "YamlFlavour",
         "classifyYamlDocument",
@@ -1560,7 +1602,7 @@
         "isHelmPath",
         "isWorkflowPath"
       ],
-      "fanIn": 2,
+      "fanIn": 3,
       "fanOut": 4,
       "lang": "ts",
       "loc": 162,
@@ -1642,11 +1684,11 @@
         "linkImports"
       ],
       "fanIn": 1,
-      "fanOut": 5,
+      "fanOut": 6,
       "lang": "ts",
-      "loc": 615,
+      "loc": 621,
       "pkg": "@greplost/core",
-      "sha256": "5710161f24375ab001ed498400f4163b3d77f80e13bd8e5e3642cc04fa7e5351",
+      "sha256": "9233f02f712c7daa8ddc86b38e018aaed442611a610f8d52425fe3020be47804",
       "staleSummary": false
     },
     "packages/core/src/graph/metrics.ts": {
@@ -1891,7 +1933,7 @@
       "staleSummary": false
     },
     "packages/core/src/parser.ts": {
-      "blast": 35,
+      "blast": 47,
       "exports": [
         "ParserHandle",
         "createParser",
@@ -1899,7 +1941,7 @@
         "grammarDir",
         "reparse"
       ],
-      "fanIn": 5,
+      "fanIn": 6,
       "fanOut": 1,
       "lang": "ts",
       "loc": 162,
@@ -2007,9 +2049,9 @@
       "fanIn": 2,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 21,
+      "loc": 196,
       "pkg": "@greplost/core",
-      "sha256": "7138b2550a3ef59bdc0a66771f3b4fe064c461abe4837fbfdd2e9feea785ed41",
+      "sha256": "abac806343558178345903c62ea294535db4881a2cb99cb5b77687c507d5cb18",
       "staleSummary": false
     },
     "packages/core/src/references/yaml.ts": {
@@ -2118,15 +2160,16 @@
       "blast": 66,
       "exports": [
         "JavaCallIndex",
+        "buildJavaCallIndex",
         "createJavaResolver",
         "resolveJavaCall"
       ],
-      "fanIn": 2,
+      "fanIn": 3,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 29,
+      "loc": 389,
       "pkg": "@greplost/core",
-      "sha256": "3b086f810029b579ab580d9b0ca409e305015f18c17cc7f98eb9581812a3dcf6",
+      "sha256": "c8732050336e9f23bbf30bb9fac0973e3466cb56f994633de8e6ccb8bfc4afca",
       "staleSummary": false
     },
     "packages/core/src/resolve/kotlin.ts": {
@@ -2172,9 +2215,9 @@
       "fanIn": 3,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 525,
+      "loc": 588,
       "pkg": "@greplost/core",
-      "sha256": "88075090c4fbc022cdf7a86b9efa102214a6fc1c243066426ecf42278a6baec7",
+      "sha256": "21801ec0c6fe554e348e1b5c5f697842df81bf4d21853c91df57c85e28d5c590",
       "staleSummary": false
     },
     "packages/core/src/resolve/resolver.ts": {
@@ -2290,7 +2333,7 @@
         "symbolId",
         "unresolvedId"
       ],
-      "fanIn": 117,
+      "fanIn": 120,
       "fanOut": 0,
       "lang": "ts",
       "loc": 498,
@@ -2484,11 +2527,11 @@
         "findUnparsableFiles"
       ],
       "fanIn": 1,
-      "fanOut": 3,
+      "fanOut": 5,
       "lang": "ts",
-      "loc": 103,
+      "loc": 114,
       "pkg": "@greplost/core",
-      "sha256": "6b17452a2ac38ecc7fa478918bde85670b0f4d3b5aa849ab3b2968598c03d9f2",
+      "sha256": "17539e4185947bb5f6719d77006f4f76d39f0d6a1c37e7dfe5d6e1ac3b30e8a7",
       "staleSummary": false
     },
     "packages/render/src/ascii.ts": {
@@ -2927,9 +2970,9 @@
       "fanIn": 2,
       "fanOut": 0,
       "lang": "ts",
-      "loc": 251,
+      "loc": 288,
       "pkg": "@greplost/sync",
-      "sha256": "7528ccfcb9afc8464772e2320b261237ba82b1b26dec41b3de2cca6474d373cf",
+      "sha256": "9eb94493e917a245db9b86c1bbd6ec2ed9577fb7c76147ef84d5f5ae2779856e",
       "staleSummary": false
     },
     "packages/sync/src/incremental.ts": {
@@ -3319,14 +3362,14 @@
         "@greplost/sync"
       ],
       "files": 48,
-      "loc": 21577,
+      "loc": 22674,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
-      "files": 63,
-      "loc": 12602,
+      "files": 64,
+      "loc": 14846,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
@@ -3370,7 +3413,7 @@
         "@greplost/render"
       ],
       "files": 12,
-      "loc": 3146,
+      "loc": 3183,
       "path": "packages/sync",
       "rdeps": [
         "@greplost/bench",

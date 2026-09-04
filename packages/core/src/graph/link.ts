@@ -16,6 +16,7 @@ import type {
 } from "../schema.ts";
 import { compareEdges, compareStrings, externalId, splitNodeId, symbolId, unresolvedId } from "../schema.ts";
 import { buildGoCallIndex, resolveGoCall } from "../resolve/go.ts";
+import { buildJavaCallIndex, resolveJavaCall } from "../resolve/java.ts";
 import { buildKotlinCallIndex, resolveKotlinCall } from "../resolve/kotlin.ts";
 import { buildPythonCallIndex, resolvePythonCall } from "../resolve/python.ts";
 import { buildRustCallIndex, resolveRustCall } from "../resolve/rust.ts";
@@ -499,9 +500,11 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
   // shared empty one, at no cost, when the repo holds no Go file.
   const goCalls = buildGoCallIndex(files, imports);
   // Build 2: each language with its own scoping rules resolves its own calls (leaves 2.1.1,
-  // 2.1.2, 2.1.4).
+  // 2.1.2, 2.1.3, 2.1.4). Every index is the shared empty one, at no cost, when the repo holds
+  // no file of that language.
   const rustCalls = buildRustCallIndex(files, imports);
   const pythonCalls = buildPythonCallIndex(files, imports);
+  const javaCalls = buildJavaCallIndex(files, imports);
   const kotlinCalls = buildKotlinCallIndex(files, imports);
 
   const isCallable = (id: string): boolean => {
@@ -526,9 +529,11 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
           ? resolveRustCall(file, site, rustCalls)
           : file.lang === "python"
             ? resolvePythonCall(file, site, pythonCalls)
-            : file.lang === "kotlin"
-            ? resolveKotlinCall(file, site, kotlinCalls)
-            : dot === -1
+            : file.lang === "java"
+              ? resolveJavaCall(file, site, javaCalls)
+              : file.lang === "kotlin"
+                ? resolveKotlinCall(file, site, kotlinCalls)
+                : dot === -1
           ? resolveName(callee, file.path, topLevel, bindings, index)
           : resolveMember(
               callee.slice(0, dot),

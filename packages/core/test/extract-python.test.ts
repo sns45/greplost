@@ -7,7 +7,8 @@
  * export index and the cycle detector are exercised together.
  */
 import { beforeAll, describe, expect, test } from "bun:test";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildSnapshot } from "../src/build.ts";
@@ -595,6 +596,67 @@ describe("tiny-python", () => {
       type: "file",
       path: "src/app/mod.py",
     });
+  });
+
+  test("a namespace package's submodule resolves through the `from` import that names it", async () => {
+    // The exact repo from the driver's probe, built the way `bench:structural` builds one.
+    // `ns/` is a PEP 420 namespace package: no `__init__.py`, so the specifier `ns` names no
+    // module file, and the only thing that can decide the edge is the imported symbol.
+    const root = mkdtempSync(join(tmpdir(), "greplost-ns-"));
+    try {
+      mkdirSync(join(root, "ns"), { recursive: true });
+      writeFileSync(join(root, "pyproject.toml"), '[project]\nname = "probe"\n');
+      writeFileSync(join(root, "ns", "mod.py"), "def go():\n    return 1\n");
+      writeFileSync(
+        join(root, "user.py"),
+        "from ns import mod\nfrom ns import missing\nimport requests\n",
+      );
+      const built = await buildSnapshot({ root, config: PYTHON_CONFIG });
+      // The edge *set* is what the map and S1 are about, and it is exact: the file imports
+      // `ns/mod.py` and `requests`, and nothing else.
+      expect([...new Set(built.imports.map((e) => `${e.from} -> ${e.to}`))].sort()).toEqual([
+        "user.py -> ext:pypi/requests",
+        "user.py -> ns/mod.py",
+      ]);
+      // No edge points at the namespace directory, and none was invented for a distribution
+      // that is really a directory of this repo.
+      expect(built.imports.some((e) => e.to === "unresolved:ns" || e.to === "ext:pypi/ns")).toBe(false);
+
+      // The limit, pinned so it is a decision rather than a surprise: both statements write
+      // the specifier `ns`, and `Resolver.resolve` is given a specifier and memoised per
+      // (lang, file, specifier) - so one answer serves both records, and the second line's
+      // `symbols` attribution is approximate. Per-statement precision needs `link.ts` to pass
+      // `record.symbols` through; see the leaf report.
+      const lines = built.imports
+        .filter((e) => e.specifier === "ns")
+        .map((e) => `${(e.symbols ?? []).join(",")} -> ${e.to}`)
+        .sort();
+      expect(lines).toEqual(["missing -> ns/mod.py", "mod -> ns/mod.py"]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("a namespace import that names nothing indexed stays unresolved", () => {
+    // The common case - a typo, or a submodule not written yet - must never become an edge.
+    const resolver = createResolver({
+      root: TINY_PYTHON,
+      files: new Set(["ns/mod.py", "user.py"]),
+      packages: [],
+      readFile: (rel) => (rel === "user.py" ? "from ns import missing\n" : null),
+    });
+    expect(resolver.resolve("user.py", "ns", "python")).toEqual({ type: "unresolved" });
+  });
+
+  test("two candidate submodules in one statement are ambiguous, so neither is guessed", () => {
+    const resolver = createResolver({
+      root: TINY_PYTHON,
+      files: new Set(["ns/mod.py", "ns/other.py", "user.py"]),
+      packages: [],
+      readFile: (rel) => (rel === "user.py" ? "from ns import mod, other\n" : null),
+    });
+    // One import record carries one target, and picking one of two would be a guess.
+    expect(resolver.resolve("user.py", "ns", "python")).toEqual({ type: "unresolved" });
   });
 
   test("the standard library and third-party distributions are external, never a file", () => {

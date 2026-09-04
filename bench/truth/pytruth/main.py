@@ -30,6 +30,9 @@ What the four sets mean, in greplost's id vocabulary (tech spec 5.3):
              ``__init__`` is a question no static reader can answer without executing it.
              A file that imports itself is not an edge: a package's own ``__init__.py``
              writing ``from pkg import sub`` is not a dependency between two files.
+             When the specifier names no module file at all - a PEP 420 namespace package,
+             which has no ``__init__.py`` to point at - each imported name is tried as a
+             submodule of it, because that is the only thing the statement can mean.
              A literal ``importlib.import_module("x")`` is an edge too - it is the one
              dynamic-import spelling Python has, and a string constant names a module as
              plainly as an ``import`` statement does.
@@ -658,7 +661,25 @@ class Truth:
                     for alias in node.names:
                         add(path, self.table.resolve(alias.name))
                 elif isinstance(node, ast.ImportFrom):
-                    add(path, resolve_specifier(self.table, path, node.module or "", node.level))
+                    target = resolve_specifier(self.table, path, node.module or "", node.level)
+                    if target is not None:
+                        add(path, target)
+                    else:
+                        # A PEP 420 namespace package names no module file through its
+                        # specifier: `from ns import mod`, with no `ns/__init__.py`, imports
+                        # the submodule `ns.mod`, and only the imported symbol says so.
+                        for alias in node.names:
+                            if alias.name == "*":
+                                continue
+                            add(
+                                path,
+                                resolve_specifier(
+                                    self.table,
+                                    path,
+                                    f"{node.module}.{alias.name}" if node.module else alias.name,
+                                    node.level,
+                                ),
+                            )
                 elif isinstance(node, ast.Call):
                     # A literal `importlib.import_module("x")` is a dynamic import, and it
                     # names a module as plainly as an `import` statement does.
