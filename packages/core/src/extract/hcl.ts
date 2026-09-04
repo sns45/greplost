@@ -213,13 +213,10 @@ function providerOfType(type: string): string {
 /** `meta` with sorted keys, or undefined when nothing was recorded. */
 function metaOf(entries: ReadonlyArray<readonly [string, string | null]>): Record<string, string> | undefined {
   const out: Record<string, string> = {};
-  let count = 0;
   for (const [key, value] of [...entries].sort((a, b) => compareStrings(a[0], b[0]))) {
-    if (value === null) continue;
-    out[key] = value;
-    count += 1;
+    if (value !== null) out[key] = value;
   }
-  return count === 0 ? undefined : out;
+  return Object.keys(out).length === 0 ? undefined : out;
 }
 
 // ---------------------------------------------------------------------------
@@ -361,8 +358,10 @@ function addReference(state: HclState, from: string, to: string, line: number): 
 /**
  * Every address inside one expression, attributed to `owner`.
  *
- * `bound` carries the names a `for` expression or a `dynamic` block put in scope; object keys
- * are skipped, because a bare identifier key in HCL is a literal name and not a reference.
+ * `bound` carries the names a `for` expression or a `dynamic` block put in scope. An address is
+ * found at its head — a `variable_expr` — wherever that head sits, so an operand of an operator
+ * and a value inside a template, a tuple, an object or a function call are all reached the same
+ * way and none of them needs its own case.
  */
 function walkExpression(state: HclState, owner: string, node: Node, bound: ReadonlySet<string>): void {
   let scope = bound;
