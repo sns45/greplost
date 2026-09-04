@@ -18,8 +18,6 @@ import { extractKotlin } from "../src/extract/kotlin.ts";
 import { extractPython } from "../src/extract/python.ts";
 import { extractRust } from "../src/extract/rust.ts";
 import { extractYamlActions } from "../src/extract/yaml-actions.ts";
-import { extractYamlHelm } from "../src/extract/yaml-helm.ts";
-import { extractYamlK8s } from "../src/extract/yaml-k8s.ts";
 import { createDockerfileResolver } from "../src/resolve/dockerfile.ts";
 import { createHclResolver } from "../src/resolve/hcl.ts";
 import { createJavaResolver } from "../src/resolve/java.ts";
@@ -299,8 +297,8 @@ describe("stubs", () => {
       ["A.java", (p) => extractJava(p, "java", "", NO_TREE), /java extractor .* build-2 leaf 2\.5/],
       ["A.kt", (p) => extractKotlin(p, "kotlin", "", NO_TREE), /kotlin extractor .* build-2 leaf 2\.6/],
       ["Dockerfile", (p) => extractDockerfile(p, "dockerfile", "", NO_TREE), /dockerfile extractor .* leaf 2\.10/],
-      ["deploy.yaml", (p) => extractYamlK8s(p, "yaml", "", NO_TREE), /yaml-k8s extractor .* build-2 leaf 2\.8/],
-      ["Chart.yaml", (p) => extractYamlHelm(p, "yaml", "", NO_TREE), /yaml-helm extractor .* build-2 leaf 2\.8/],
+      // yaml-k8s and yaml-helm (leaf 2.8) are no longer stubs: `extract-yaml-k8s.test.ts`
+      // holds them to the contract now.
       ["ci.yml", (p) => extractYamlActions(p, "yaml", "", NO_TREE), /yaml-actions extractor .* build-2 leaf 2\.9/],
     ];
     for (const [file, call, pattern] of cases) {
@@ -346,9 +344,9 @@ describe("stubs", () => {
     // owns the assertions. An address that names nothing is dropped, never guessed, so the
     // one property this file still needs from it is that it never invents an edge.
     expect(resolveHclReferences(record(), ref(), ctx)).toBeNull();
-    expect(() => resolveYamlK8sReferences(record({ lang: "yaml" }), ref({ refKind: "selector" }), ctx)).toThrow(
-      /yaml-k8s reference resolution .* leaf 2\.8/,
-    );
+    // yaml-k8s landed with leaf 2.8 and behaves the same way: a selector nothing answers is
+    // dropped rather than guessed, and `extract-yaml-k8s.test.ts` owns the assertions.
+    expect(resolveYamlK8sReferences(record({ lang: "yaml" }), ref({ refKind: "selector" }), ctx)).toBeNull();
     expect(() =>
       resolveYamlActionsReferences(record({ lang: "yaml" }), ref({ refKind: "needs" }), ctx),
     ).toThrow(/yaml-actions reference resolution .* leaf 2\.9/);
