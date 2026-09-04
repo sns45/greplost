@@ -34,13 +34,13 @@ import { REQUIRED_PROVIDER_PREFIX } from "../extract/hcl.ts";
 import { HCL_PROVIDER_NAMESPACE, hclDirectoryOf } from "../resolve/hcl.ts";
 
 /**
- * Declarations of one module (one directory), keyed by the name as *written*.
+ * Declarations of one module (one directory), keyed by the name as written.
  *
- * The key drops the `~<n>` uniqueness suffix `extractHcl` adds to a repeated name, because that
- * suffix belongs to the id and not to the address anybody writes: two `provider "aws"` blocks
- * in one file are two candidates for `aws`, and finding only the first would report an
- * ambiguous reference as a certain one. Only a suffix the extractor really added is dropped —
- * see `writtenName`.
+ * `Declaration.name` is already the name the file wrote — the `~<n>` uniqueness suffix lives in
+ * the id and nowhere else (driver ruling 2026-09-04) — so the key needs no unpicking. Two
+ * `provider "aws"` blocks in one file therefore land in one bucket and make `aws` genuinely
+ * ambiguous, which is the answer: finding only the first would report an ambiguous reference as
+ * a certain one.
  */
 type ModuleIndex = Map<string, Declaration[]>;
 
@@ -52,38 +52,14 @@ type ModuleIndex = Map<string, Declaration[]>;
  */
 const INDEX_BY_CONTEXT = new WeakMap<ReferenceContext, Map<string, ModuleIndex>>();
 
-/**
- * The name as *written*, undoing only a `~<n>` suffix `extractHcl` actually added.
- *
- * The suffix is added to the *second* and later declaration of a name in one file, so it was
- * added exactly when a sibling of the same kind, in the same file, holds the stripped base.
- * `claimed` is that set. Stripping unconditionally would rewrite a label somebody really wrote
- * as `queue~2` into `queue`, silently making two different blocks candidates for one address.
- */
-function writtenName(decl: Declaration, claimed: ReadonlySet<string>): string {
-  const match = /^(.*)~[1-9]\d*$/.exec(decl.name);
-  if (match === null) return decl.name;
-  const base = match[1] as string;
-  return claimed.has(`${decl.file}\u0000${decl.kind}\u0000${base}`) ? base : decl.name;
-}
-
 /** `<kind>.<name>` for a node, `const:<name>` for the `terraform` settings block. */
-function indexKey(decl: Declaration, claimed: ReadonlySet<string>): string {
-  const name = writtenName(decl, claimed);
-  return decl.kind === "const" ? `const:${name}` : `${decl.kind}.${name}`;
+function indexKey(decl: Declaration): string {
+  return decl.kind === "const" ? `const:${decl.name}` : `${decl.kind}.${decl.name}`;
 }
 
 function indexFor(ctx: ReferenceContext): Map<string, ModuleIndex> {
   const cached = INDEX_BY_CONTEXT.get(ctx);
   if (cached !== undefined) return cached;
-
-  // Every (file, kind, name) a declaration actually claims, so a `~<n>` suffix can be told
-  // apart from a name that merely ends in one.
-  const claimed = new Set<string>();
-  for (const record of ctx.recordByPath.values()) {
-    if (record.lang !== "hcl") continue;
-    for (const decl of record.decls) claimed.add(`${decl.file}\u0000${decl.kind}\u0000${decl.name}`);
-  }
 
   const byDirectory = new Map<string, ModuleIndex>();
   for (const record of ctx.recordByPath.values()) {
@@ -95,7 +71,7 @@ function indexFor(ctx: ReferenceContext): Map<string, ModuleIndex> {
       byDirectory.set(dir, module);
     }
     for (const decl of record.decls) {
-      const key = indexKey(decl, claimed);
+      const key = indexKey(decl);
       const bucket = module.get(key);
       if (bucket === undefined) module.set(key, [decl]);
       else bucket.push(decl);

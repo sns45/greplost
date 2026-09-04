@@ -40,9 +40,13 @@
 //	module    -> repo-relative directory ("modules/logs"), "." for the repo root, because
 //	             Terraform loads every .tf file in a directory as one module
 //	node      -> "<file>#<kind>.<name>" for resource, data, variable, output, provider, module
-//	const     -> "<file>#local.<name>" and "<file>#terraform" (a `locals` entry and the
-//	             `terraform` block are declarations, not nodes)
+//	             and local (a `locals` entry is a node named after its attribute)
+//	symbol    -> "<file>#terraform": the settings block is not a thing any address can name,
+//	             so it is a `const` and is left out of the node set S6 scores
 //	external  -> "ext:module/<source>", "ext:provider/<name>"
+//
+// A repeated name inside one file takes a "~<n>" suffix on its **id** and nowhere else; the
+// name stays as the file wrote it, so two blocks sharing a name are correctly ambiguous.
 //
 // Conservatism: a reference is emitted only when the address names exactly one block in the
 // caller's own module directory (or, for `module.M.O`, exactly one output in the directory the
@@ -165,7 +169,7 @@ func main() {
 type decl struct {
 	id     string
 	kind   string // resource | data | variable | output | provider | module | const
-	name   string // as written, without the ~<n> uniqueness suffix
+	name   string // as the file wrote it; the ~<n> uniqueness suffix lives in `id` only
 	file   string
 	alias  string // provider blocks only
 	source string // module blocks only
@@ -332,18 +336,21 @@ func attributesInOrder(body *hclsyntax.Body) []*hclsyntax.Attribute {
 	return attrs
 }
 
-// uniqueName makes a node name unique within one file: `aws`, then `aws~2`, then `aws~3`.
-func uniqueName(used map[string]bool, file, kind, name string) string {
-	if !used[nodeID(file, kind, name)] {
-		used[nodeID(file, kind, name)] = true
-		return name
+// uniqueID makes a declaration id unique within one file: `…#provider.aws`, then
+// `…#provider.aws~2`. The suffix lives in the id and nowhere else: the *name* stays as the file
+// wrote it, so two blocks sharing one name are correctly ambiguous to an address naming it.
+func uniqueID(used map[string]bool, file, kind, name string) string {
+	base := nodeID(file, kind, name)
+	if !used[base] {
+		used[base] = true
+		return base
 	}
 	for n := 2; ; n++ {
-		candidate := fmt.Sprintf("%s~%d", name, n)
-		if used[nodeID(file, kind, candidate)] {
+		candidate := fmt.Sprintf("%s~%d", base, n)
+		if used[candidate] {
 			continue
 		}
-		used[nodeID(file, kind, candidate)] = true
+		used[candidate] = true
 		return candidate
 	}
 }
@@ -499,9 +506,8 @@ func scanFile(parser *hclparse.Parser, absolute, rel string) ([]*decl, []rawRef,
 				// A `locals` entry is a node of kind `local` named after the attribute, so its id
 				// is `<file>#local.<name>` — the same bytes the dotted-const form produced, but an
 				// id that greplost's own `splitNodeId` reads back.
-				name := uniqueName(used, rel, "local", attr.Name)
-				owner := nodeID(rel, "local", name)
-				decls = append(decls, &decl{id: owner, kind: "local", name: name, file: rel})
+				owner := uniqueID(used, rel, "local", attr.Name)
+				decls = append(decls, &decl{id: owner, kind: "local", name: attr.Name, file: rel})
 				for _, address := range exprReferences(attr.Expr, nil) {
 					refs = append(refs, rawRef{fromID: owner, dir: dir, address: address, refKind: "hcl-ref"})
 				}
@@ -510,9 +516,8 @@ func scanFile(parser *hclparse.Parser, absolute, rel string) ([]*decl, []rawRef,
 			if len(block.Labels) != 0 {
 				continue
 			}
-			name := uniqueName(used, rel, "const", "terraform")
-			owner := nodeID(rel, "const", name)
-			decls = append(decls, &decl{id: owner, kind: "const", name: name, file: rel})
+			owner := uniqueID(used, rel, "const", "terraform")
+			decls = append(decls, &decl{id: owner, kind: "const", name: "terraform", file: rel})
 			for _, nested := range block.Body.Blocks {
 				if nested.Type != "required_providers" {
 					continue
@@ -531,9 +536,8 @@ func scanFile(parser *hclparse.Parser, absolute, rel string) ([]*decl, []rawRef,
 			if !ok || written == "" {
 				continue
 			}
-			name := uniqueName(used, rel, kind, written)
-			owner := nodeID(rel, kind, name)
-			made := &decl{id: owner, kind: kind, name: name, file: rel}
+			owner := uniqueID(used, rel, kind, written)
+			made := &decl{id: owner, kind: kind, name: written, file: rel}
 			if kind == "provider" {
 				if attr, has := block.Body.Attributes["alias"]; has {
 					made.alias = literalString(attr)

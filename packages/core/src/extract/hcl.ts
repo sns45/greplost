@@ -314,27 +314,33 @@ interface HclState {
   readonly refs: ReferenceRecord[];
   /** Declaration ids already used in this file, so a duplicate name can take a `~<n>` suffix. */
   readonly usedIds: Set<string>;
+  /** Exported names already recorded, so a repeated `output` name is one export record. */
+  readonly exportedNames: Set<string>;
 }
 
 /**
- * A node name made unique within the file: `aws`, then `aws~2`, then `aws~3`.
+ * A declaration id made unique within the file: `…#provider.aws`, then `…#provider.aws~2`.
  *
- * `~` rather than the `#<index>` spec 0.2 sketches, because `nodeId` refuses `#` in a name
- * (driver ruling 2026-09-04) and `~` cannot occur in a Terraform identifier, so a suffixed
- * name can never be mistaken for one somebody wrote.
+ * The suffix lives in the **id and nowhere else** (driver ruling 2026-09-04): `name` stays as
+ * the file wrote it, because it is what every address referring to the block writes and what
+ * the export index publishes — a suffixed name reached `FileEntry.exports` and advertised an
+ * export nobody had written. Two blocks with one name are then correctly *ambiguous* to the
+ * linker rather than silently distinguishable.
+ *
+ * `~` rather than the `#<index>` spec 0.2 sketches, because a `#` would make the id
+ * unparseable by `splitNodeId`, and `~` cannot occur in a Terraform identifier, so a suffixed
+ * id can never collide with one somebody wrote.
  */
-function uniqueName(state: HclState, kind: DeclKind, name: string, isNode: boolean): string {
-  const idFor = (candidate: string): string =>
-    isNode ? nodeId(state.path, kind, candidate) : symbolId(state.path, candidate);
-  if (!state.usedIds.has(idFor(name))) {
-    state.usedIds.add(idFor(name));
-    return name;
+function uniqueId(state: HclState, kind: DeclKind, name: string, isNode: boolean): string {
+  const base = isNode ? nodeId(state.path, kind, name) : symbolId(state.path, name);
+  if (!state.usedIds.has(base)) {
+    state.usedIds.add(base);
+    return base;
   }
   for (let n = 2; ; n += 1) {
-    const candidate = `${name}~${n}`;
-    const id = idFor(candidate);
-    if (state.usedIds.has(id)) continue;
-    state.usedIds.add(id);
+    const candidate = `${base}~${n}`;
+    if (state.usedIds.has(candidate)) continue;
+    state.usedIds.add(candidate);
     return candidate;
   }
 }
@@ -342,16 +348,14 @@ function uniqueName(state: HclState, kind: DeclKind, name: string, isNode: boole
 function addDeclaration(
   state: HclState,
   kind: DeclKind,
-  rawName: string,
+  name: string,
   signature: string,
   node: Node,
   meta: Record<string, string> | undefined,
 ): Declaration {
-  const isNode = kind !== "const";
-  const name = uniqueName(state, kind, rawName, isNode);
   const exported = EXPORTED_KINDS.has(kind);
   const declaration: Declaration = {
-    id: isNode ? nodeId(state.path, kind, name) : symbolId(state.path, name),
+    id: uniqueId(state, kind, name, kind !== "const"),
     file: state.path,
     name,
     kind,
@@ -361,8 +365,17 @@ function addDeclaration(
     ...(meta === undefined ? {} : { meta }),
   };
   state.decls.push(declaration);
-  if (exported) state.exports.push({ name, kind: "named" });
+  // One record per exported *name*: a repeated `output "dup"` is one export, not two.
+  if (exported && !state.exportedNames.has(name)) {
+    state.exportedNames.add(name);
+    state.exports.push({ name, kind: "named" });
+  }
   return declaration;
+}
+
+/** The part of a declaration's id after the `#`: what a `ReferenceRecord.from` must carry. */
+function localPath(state: HclState, declaration: Declaration): string {
+  return declaration.id.slice(state.path.length + 1);
 }
 
 function addReference(state: HclState, from: string, to: string, line: number): void {
@@ -504,7 +517,7 @@ function collectLocals(state: HclState, block: Node): void {
       attribute,
       undefined,
     );
-    walkExpression(state, `local.${declaration.name}`, parts.value, NO_BINDINGS);
+    walkExpression(state, localPath(state, declaration), parts.value, NO_BINDINGS);
   }
 }
 
@@ -600,7 +613,7 @@ function collectBlock(state: HclState, block: Node): void {
     block,
     metaForBlock(type, labels, body),
   );
-  const owner = `${kind}.${declaration.name}`;
+  const owner = localPath(state, declaration);
 
   if (type === "module") {
     const source = literalAttribute(body, "source");
@@ -677,6 +690,7 @@ export function extractHcl(
     exports: [],
     refs: [],
     usedIds: new Set<string>(),
+    exportedNames: new Set<string>(),
   };
 
   const body = childOfType(tree.rootNode, "body") ?? tree.rootNode;

@@ -49,6 +49,13 @@ function decl(record: FileRecord, name: string): Declaration {
   return found;
 }
 
+/** By id, for the cases where two declarations share a name and only the id tells them apart. */
+function byId(record: FileRecord, id: string): Declaration {
+  const found = record.decls.find((d) => d.id === id);
+  if (!found) throw new Error(`no declaration with id ${id} in [${record.decls.map((d) => d.id).join(", ")}]`);
+  return found;
+}
+
 const temporaryDirs: string[] = [];
 afterAll(() => {
   for (const dir of temporaryDirs) rmSync(dir, { recursive: true, force: true });
@@ -144,8 +151,11 @@ describe("blocks", () => {
       'provider "aws" {\n  region = "us-east-1"\n}\n\nprovider "aws" {\n  alias  = "west"\n  region = "us-west-2"\n}\n',
     );
     expect(out.decls.map((d) => d.id)).toEqual(["main.tf#provider.aws", "main.tf#provider.aws~2"]);
-    expect(decl(out, "aws").meta).toBeUndefined();
-    expect(decl(out, "aws~2").meta).toEqual({ alias: "west" });
+    // The uniqueness suffix belongs to the id; both blocks are named `aws`, because that is
+    // what the file says and what every address referring to them writes.
+    expect(out.decls.map((d) => d.name)).toEqual(["aws", "aws"]);
+    expect(byId(out, "main.tf#provider.aws").meta).toBeUndefined();
+    expect(byId(out, "main.tf#provider.aws~2").meta).toEqual({ alias: "west" });
   });
 
   test("a module carries its source and version", () => {
@@ -191,7 +201,7 @@ describe("blocks", () => {
     expect(out.decls.map((d) => d.id)).toEqual(["main.tf#resource.aws_instance.web"]);
   });
 
-  test("a duplicate node name in one file takes a ~<n> suffix, never a #<n> one", () => {
+  test("a duplicate node name in one file takes a ~<n> suffix on the id, never a #<n> one", () => {
     const out = run(
       "main.tf",
       'variable "a" {}\nvariable "a" {}\nvariable "a" {}\noutput "a" {}\n',
@@ -203,6 +213,20 @@ describe("blocks", () => {
       // A different kind is a different id already, so it is never suffixed.
       "main.tf#output.a",
     ]);
+    // The suffix is an id-uniqueness device and nothing more: every one of these is named `a`.
+    expect(out.decls.map((d) => d.name)).toEqual(["a", "a", "a", "a"]);
+  });
+
+  test("a suffixed id never reaches the export surface", () => {
+    // Terraform rejects a repeated `output` name, but a half-finished file has one, and a
+    // suffixed *name* would be published as an export nobody wrote (`dup~2`).
+    const out = run("outputs.tf", 'output "dup" {\n  value = 1\n}\n\noutput "dup" {\n  value = 2\n}\n');
+    expect(out.decls.map((d) => [d.id, d.name])).toEqual([
+      ["outputs.tf#output.dup", "dup"],
+      ["outputs.tf#output.dup~2", "dup"],
+    ]);
+    expect(out.exports).toEqual([{ name: "dup", kind: "named" }]);
+    for (const record of out.exports) expect(record.name).not.toContain("~");
   });
 
   test("exports are the variables and outputs, and nothing else", () => {
