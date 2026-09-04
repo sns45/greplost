@@ -784,9 +784,9 @@
       "fanIn": 0,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 247,
+      "loc": 268,
       "pkg": "@greplost/bench",
-      "sha256": "96a63b9749d6d4b203bb7d0158e17584a10d3ab10b4064fa1950f24dc1161171",
+      "sha256": "60db642612046d7f28dd86aad2a56438cadd90901b7f0fa69f42036ecece3f46",
       "staleSummary": false
     },
     "bench/src/truth/signals-pulumi-go.ts": {
@@ -1422,15 +1422,14 @@
     "packages/core/src/extract/rust.ts": {
       "blast": 31,
       "exports": [
-        "extractRust",
-        "visibilityOf"
+        "extractRust"
       ],
       "fanIn": 1,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 606,
+      "loc": 699,
       "pkg": "@greplost/core",
-      "sha256": "4920d3b67f50266a7a8fce673034d240a84221a58b879ff1bfc917d8ac8c7d96",
+      "sha256": "437aaa99e13a52cd5ba1757ffd9b07d17dabef280eff717f36a3d2589f101e74",
       "staleSummary": false
     },
     "packages/core/src/extract/ts-calls.ts": {
@@ -2195,20 +2194,17 @@
     "packages/core/src/resolve/rust.ts": {
       "blast": 66,
       "exports": [
-        "CargoManifest",
         "RustCallIndex",
         "buildRustCallIndex",
         "createRustResolver",
-        "parseCargoManifest",
-        "resolveRustCall",
-        "rustModuleName"
+        "resolveRustCall"
       ],
       "fanIn": 3,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 623,
+      "loc": 657,
       "pkg": "@greplost/core",
-      "sha256": "328c13fd58bc6d1a17689ea9b2e32555ad620bdb5139ee880c177c5b5bdf67f3",
+      "sha256": "f33738be5a42275f03519049a5f62d5849fad79218fc0a0dd980efa427f9d807",
       "staleSummary": false
     },
     "packages/core/src/resolve/tsconfig.ts": {
@@ -3321,14 +3317,14 @@
         "@greplost/sync"
       ],
       "files": 48,
-      "loc": 21394,
+      "loc": 21415,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 63,
-      "loc": 12257,
+      "loc": 12384,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
@@ -3415,5 +3411,5 @@
       "rdeps": []
     }
   },
-  "version": "1"
+  "version": "2"
 }

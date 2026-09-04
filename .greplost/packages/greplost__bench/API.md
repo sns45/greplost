@@ -451,9 +451,9 @@
 
 ## bench/src/truth/rust.ts
 
-- `const NOTES: readonly string[] = ["syn-item-tree", "cargo-metadata-roots", "no-trait-dispatch"]` L51-51
-- `function rustTruthTool(): string` L117-148
-- `function generateTruth(root: string, files: string[]): Truth` L198-247
+- `const NOTES: readonly string[] = [ "syn-item-tree", "cargo-metadata-roots", "no-trait-dispatch", // Disclosure, not a choice: `rusttruth` re-implements spec 1.3's rules on `syn`'s item tree //…` L58-66
+- `function rustTruthTool(): string` L132-163
+- `function generateTruth(root: string, files: string[]): Truth` L213-268
 
 ## bench/src/truth/signals-pulumi-go.ts
 

@@ -1505,12 +1505,14 @@
 {"confidence":"high","from":"packages/core/src/extract/python.ts#literalStringSequence","kind":"call","to":"packages/core/src/extract/python.ts#literalString"}
 {"confidence":"high","from":"packages/core/src/extract/python.ts#parameterNames","kind":"call","to":"packages/core/src/extract/ts-signature.ts#field"}
 {"confidence":"high","from":"packages/core/src/extract/python.ts#patternNames","kind":"call","to":"packages/core/src/extract/python.ts#patternNames"}
+{"confidence":"high","from":"packages/core/src/extract/rust.ts#addDeclaration","kind":"call","to":"packages/core/src/extract/rust.ts#uniqueName"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts#addDeclaration","kind":"call","to":"packages/core/src/extract/ts-signature.ts#spanOf"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts#addDeclaration","kind":"call","to":"packages/core/src/schema.ts#symbolId"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts#baseTypeName","kind":"call","to":"packages/core/src/extract/ts-signature.ts#field"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts#calleeText","kind":"call","to":"packages/core/src/extract/ts-signature.ts#field"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts#collectCalls","kind":"call","to":"packages/core/src/extract/rust.ts#calleeText"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts#collectCalls","kind":"call","to":"packages/core/src/extract/rust.ts#implName"}
+{"confidence":"high","from":"packages/core/src/extract/rust.ts#collectCalls","kind":"call","to":"packages/core/src/extract/rust.ts#nestedFunctionNames"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts#collectCalls","kind":"call","to":"packages/core/src/extract/rust.ts#receiverTypes"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts#collectCalls","kind":"call","to":"packages/core/src/extract/rust.ts#typeParameterNames"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts#collectCalls","kind":"call","to":"packages/core/src/extract/ts-signature.ts#lineOf"}
@@ -1534,6 +1536,7 @@
 {"confidence":"high","from":"packages/core/src/extract/rust.ts#extractRust","kind":"call","to":"packages/core/src/extract/rust.ts#collectItems"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts#implName","kind":"call","to":"packages/core/src/extract/rust.ts#baseTypeName"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts#implName","kind":"call","to":"packages/core/src/extract/ts-signature.ts#field"}
+{"confidence":"high","from":"packages/core/src/extract/rust.ts#nestedFunctionNames","kind":"call","to":"packages/core/src/extract/ts-signature.ts#field"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts#patternNames","kind":"call","to":"packages/core/src/extract/rust.ts#patternNames"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts#receiverTypes","kind":"call","to":"packages/core/src/extract/rust.ts#baseTypeName"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts#receiverTypes","kind":"call","to":"packages/core/src/extract/rust.ts#bind"}

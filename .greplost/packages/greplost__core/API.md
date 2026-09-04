@@ -65,8 +65,7 @@
 
 ## packages/core/src/extract/rust.ts
 
-- `function visibilityOf(node: Node): string | null` L90-95
-- `function extractRust( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L586-606
+- `function extractRust( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L665-699
 
 ## packages/core/src/extract/ts-calls.ts
 
@@ -341,13 +340,10 @@
 
 ## packages/core/src/resolve/rust.ts
 
-- `interface CargoManifest` L44-51
-- `function parseCargoManifest(text: string | null): CargoManifest` L85-136
-- `function rustModuleName(path: string): string` L160-165
 - `function createRustResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L189-372
-- `interface RustCallIndex` L386-406
-- `function buildRustCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): RustCallIndex` L464-529
-- `function resolveRustCall( file: FileRecord, site: CallSite, index: RustCallIndex, ): { to: string; confidence: Confidence } | null` L544-589
+- `interface RustCallIndex` L386-413
+- `function buildRustCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): RustCallIndex` L476-553
+- `function resolveRustCall( file: FileRecord, site: CallSite, index: RustCallIndex, ): { to: string; confidence: Confidence } | null` L571-623
 
 ## packages/core/src/resolve/tsconfig.ts
 
