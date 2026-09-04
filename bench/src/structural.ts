@@ -533,7 +533,6 @@ async function scoreTarget(target: Target, options: Options): Promise<RepoScores
 
   const { truth, na } = await truthFor(target, files, options);
   const scores = scoreAgainstTruth(target.name, snapshot, truth, target.lang);
-  scores.naMetrics = na;
 
   const unparsable = await findUnparsable(target.root, files);
   // The substitute gate is the *only* gate a target with no gated metric has, so it runs
@@ -542,7 +541,7 @@ async function scoreTarget(target: Target, options: Options): Promise<RepoScores
     ? await runSubstituteChecks(target, snapshot, files, unparsable)
     : null;
 
-  return { ...scores, unparsable, substitute };
+  return { ...scores, naMetrics: na, unparsable, substitute };
 }
 
 /**
