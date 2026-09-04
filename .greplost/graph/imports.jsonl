@@ -148,7 +148,7 @@
 {"confidence":"high","from":"bench/src/truth/go.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
 {"confidence":"high","from":"bench/src/truth/go.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["execFileSync"],"to":"ext:node:child_process"}
 {"confidence":"high","from":"bench/src/truth/go.ts","importKind":"static","kind":"import","specifier":"node:crypto","symbols":["createHash"],"to":"ext:node:crypto"}
-{"confidence":"high","from":"bench/src/truth/go.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","mkdirSync","readFileSync"],"to":"ext:node:fs"}
+{"confidence":"high","from":"bench/src/truth/go.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","mkdirSync","readFileSync","readdirSync"],"to":"ext:node:fs"}
 {"confidence":"high","from":"bench/src/truth/go.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
 {"confidence":"high","from":"bench/src/truth/go.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["Edge","compareEdges","compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/truth/hcl.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
@@ -180,6 +180,11 @@
 {"confidence":"high","from":"bench/src/truth/rust.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
 {"confidence":"high","from":"bench/src/truth/rust.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["Edge"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/truth/signals-pulumi-go.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
+{"confidence":"high","from":"bench/src/truth/signals-pulumi-go.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["execFileSync"],"to":"ext:node:child_process"}
+{"confidence":"high","from":"bench/src/truth/signals-pulumi-go.ts","importKind":"static","kind":"import","specifier":"node:crypto","symbols":["createHash"],"to":"ext:node:crypto"}
+{"confidence":"high","from":"bench/src/truth/signals-pulumi-go.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","mkdirSync","readFileSync"],"to":"ext:node:fs"}
+{"confidence":"high","from":"bench/src/truth/signals-pulumi-go.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
+{"confidence":"high","from":"bench/src/truth/signals-pulumi-go.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["ReferenceEdge","compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts","importKind":"static","kind":"import","specifier":"./ts-workspace.ts","symbols":["WorkspaceEntryMapper"],"to":"bench/src/truth/ts-workspace.ts"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","realpathSync"],"to":"ext:node:fs"}
@@ -232,6 +237,17 @@
 {"confidence":"high","from":"bench/truth/gocallgraph/main.go","importKind":"static","kind":"import","specifier":"sort","symbols":["*"],"to":"ext:sort"}
 {"confidence":"high","from":"bench/truth/gocallgraph/main.go","importKind":"static","kind":"import","specifier":"strconv","symbols":["*"],"to":"ext:strconv"}
 {"confidence":"high","from":"bench/truth/gocallgraph/main.go","importKind":"static","kind":"import","specifier":"strings","symbols":["*"],"to":"ext:strings"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"encoding/json","symbols":["*"],"to":"ext:encoding/json"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"flag","symbols":["*"],"to":"ext:flag"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"fmt","symbols":["*"],"to":"ext:fmt"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"go/ast","symbols":["*"],"to":"ext:go/ast"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"go/types","symbols":["*"],"to":"ext:go/types"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"golang.org/x/tools/go/packages","symbols":["*"],"to":"ext:golang.org/x/tools/go/packages"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"io/fs","symbols":["*"],"to":"ext:io/fs"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"os","symbols":["*"],"to":"ext:os"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"path/filepath","symbols":["*"],"to":"ext:path/filepath"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"sort","symbols":["*"],"to":"ext:sort"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"strings","symbols":["*"],"to":"ext:strings"}
 {"confidence":"high","from":"bench/truth/tfinspect/main.go","importKind":"static","kind":"import","specifier":"encoding/json","symbols":["*"],"to":"ext:encoding/json"}
 {"confidence":"high","from":"bench/truth/tfinspect/main.go","importKind":"static","kind":"import","specifier":"flag","symbols":["*"],"to":"ext:flag"}
 {"confidence":"high","from":"bench/truth/tfinspect/main.go","importKind":"static","kind":"import","specifier":"fmt","symbols":["*"],"to":"ext:fmt"}
@@ -519,6 +535,10 @@
 {"confidence":"high","from":"packages/core/src/parser.ts","importKind":"type","kind":"import","specifier":"./schema.ts","symbols":["Lang"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/references/dockerfile.ts","importKind":"type","kind":"import","specifier":"./link.ts","symbols":["ReferenceContext"],"to":"packages/core/src/references/link.ts"}
 {"confidence":"high","from":"packages/core/src/references/dockerfile.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","ReferenceEdge","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/references/go.ts","importKind":"type","kind":"import","specifier":"./link.ts","symbols":["ReferenceContext"],"to":"packages/core/src/references/link.ts"}
+{"confidence":"high","from":"packages/core/src/references/go.ts","importKind":"static","kind":"import","specifier":"./link.ts","symbols":["referenceSource"],"to":"packages/core/src/references/link.ts"}
+{"confidence":"high","from":"packages/core/src/references/go.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","ReferenceEdge","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/references/go.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["nodeId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/references/hcl.ts","importKind":"static","kind":"import","specifier":"../extract/hcl.ts","symbols":["REQUIRED_PROVIDER_PREFIX"],"to":"packages/core/src/extract/hcl.ts"}
 {"confidence":"high","from":"packages/core/src/references/hcl.ts","importKind":"type","kind":"import","specifier":"./link.ts","symbols":["ReferenceContext"],"to":"packages/core/src/references/link.ts"}
 {"confidence":"high","from":"packages/core/src/references/hcl.ts","importKind":"static","kind":"import","specifier":"./link.ts","symbols":["referenceSource"],"to":"packages/core/src/references/link.ts"}
@@ -526,6 +546,7 @@
 {"confidence":"high","from":"packages/core/src/references/hcl.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["Declaration","FileRecord","ReferenceEdge","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/references/hcl.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["externalId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/references/index.ts","importKind":"static","kind":"reexport","specifier":"./dockerfile.ts","symbols":["resolveDockerfileReferences"],"to":"packages/core/src/references/dockerfile.ts"}
+{"confidence":"high","from":"packages/core/src/references/index.ts","importKind":"static","kind":"reexport","specifier":"./go.ts","symbols":["resolveGoReferences"],"to":"packages/core/src/references/go.ts"}
 {"confidence":"high","from":"packages/core/src/references/index.ts","importKind":"static","kind":"reexport","specifier":"./hcl.ts","symbols":["resolveHclReferences"],"to":"packages/core/src/references/hcl.ts"}
 {"confidence":"high","from":"packages/core/src/references/index.ts","importKind":"type","kind":"reexport","specifier":"./link.ts","symbols":["ReferenceContext","ReferenceRule"],"to":"packages/core/src/references/link.ts"}
 {"confidence":"high","from":"packages/core/src/references/index.ts","importKind":"static","kind":"reexport","specifier":"./link.ts","symbols":["compareReferenceEdges","linkReferences","referenceSource"],"to":"packages/core/src/references/link.ts"}
@@ -534,6 +555,7 @@
 {"confidence":"high","from":"packages/core/src/references/index.ts","importKind":"static","kind":"reexport","specifier":"./yaml-k8s.ts","symbols":["resolveYamlK8sReferences"],"to":"packages/core/src/references/yaml-k8s.ts"}
 {"confidence":"high","from":"packages/core/src/references/index.ts","importKind":"static","kind":"reexport","specifier":"./yaml.ts","symbols":["resolveYamlReferences"],"to":"packages/core/src/references/yaml.ts"}
 {"confidence":"high","from":"packages/core/src/references/link.ts","importKind":"static","kind":"import","specifier":"./dockerfile.ts","symbols":["resolveDockerfileReferences"],"to":"packages/core/src/references/dockerfile.ts"}
+{"confidence":"high","from":"packages/core/src/references/link.ts","importKind":"static","kind":"import","specifier":"./go.ts","symbols":["resolveGoReferences"],"to":"packages/core/src/references/go.ts"}
 {"confidence":"high","from":"packages/core/src/references/link.ts","importKind":"static","kind":"import","specifier":"./hcl.ts","symbols":["resolveHclReferences"],"to":"packages/core/src/references/hcl.ts"}
 {"confidence":"high","from":"packages/core/src/references/link.ts","importKind":"static","kind":"import","specifier":"./ts.ts","symbols":["resolveTsReferences"],"to":"packages/core/src/references/ts.ts"}
 {"confidence":"high","from":"packages/core/src/references/link.ts","importKind":"static","kind":"import","specifier":"./yaml.ts","symbols":["resolveYamlReferences"],"to":"packages/core/src/references/yaml.ts"}
@@ -635,8 +657,10 @@
 {"confidence":"high","from":"packages/core/src/signals/next.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["Declaration","ExportRecord","Lang","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/signals/next.ts","importKind":"type","kind":"import","specifier":"./index.ts","symbols":["SignalInput","SignalOutput","SignalPass"],"to":"packages/core/src/signals/index.ts"}
 {"confidence":"high","from":"packages/core/src/signals/next.ts","importKind":"static","kind":"import","specifier":"./ts-nodes.ts","symbols":["NameAllocator","field","signalNode","spanOf","stringOf","topLevelBindings","unwrapValue"],"to":"packages/core/src/signals/ts-nodes.ts"}
-{"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["Lang"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Node"],"to":"ext:web-tree-sitter"}
+{"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["Declaration","ImportRecord","Lang","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts","importKind":"type","kind":"import","specifier":"./index.ts","symbols":["SignalInput","SignalOutput","SignalPass"],"to":"packages/core/src/signals/index.ts"}
+{"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts","importKind":"static","kind":"import","specifier":"./ts-nodes.ts","symbols":["NameAllocator","field","signalNode","spanOf","stringOf","walk"],"to":"packages/core/src/signals/ts-nodes.ts"}
 {"confidence":"high","from":"packages/core/src/signals/pulumi-ts.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Node"],"to":"ext:web-tree-sitter"}
 {"confidence":"high","from":"packages/core/src/signals/pulumi-ts.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["Declaration","Lang","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/signals/pulumi-ts.ts","importKind":"type","kind":"import","specifier":"./index.ts","symbols":["SignalInput","SignalOutput","SignalPass"],"to":"packages/core/src/signals/index.ts"}

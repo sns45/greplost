@@ -6,14 +6,33 @@
 
 **Package:** `@greplost/bench` ([map](../../../MAP.md))
 
-**Exports:** `NOTES (const)`, `generateTruth(root: string, files: string[]): Truth`
+**Exports:** `NOTES (const)`, `SignalExtra (interface)`, `generateExtra(root: string, files: string[]): SignalExtra`, `generateTruth(root: string, files: string[]): Truth`, `pulumiGoTruthTool(): string`
 
-**Imports:** [`./ts.ts`](ts.ts.md) (Truth)
+**Imports:** `node:child_process` (execFileSync), `node:crypto` (createHash), `node:fs` (existsSync, mkdirSync, readFileSync), `node:path` (default), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (ReferenceEdge, compareStrings), [`./ts.ts`](ts.ts.md) (Truth)
 
 **Imported by:** None.
 
 **Blast radius:** 0 files (`greplost impact bench/src/truth/signals-pulumi-go.ts`)
 
 **Key symbols:**
-- `const NOTES: readonly string[] = ["not-implemented"]`  L15-15
-- `function generateTruth(root: string, files: string[]): Truth`  L17-22
+- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..", "..")`  L34-34
+- `const TOOL_SOURCE_DIR = path.join(REPO_ROOT, "bench", "truth", "pulumigotruth")`  L36-36
+- `const TOOL_CACHE_DIR = path.join(REPO_ROOT, "bench", ".corpus", ".tools")`  L37-37
+- `const TOOL_SOURCES = ["go.mod", "go.sum", "main.go"] as const`  L39-39
+- `const LOAD_TIMEOUT_MS = 30 * 60 * 1000`  L41-41
+- `const MAX_BUFFER = 512 * 1024 * 1024`  L42-42
+- `const NOTES: readonly string[] = ["go-types-oracle", "types-implements-pulumi-resource"]`  L45-45
+- `const UNSUPPORTED = ["unsupported:S1", "unsupported:S2", "unsupported:S3", "unsupported:S4"] as const`  L52-52
+- `interface ToolOutput`  L55-63
+- `interface SignalExtra`  L66-69
+- `function generateExtra(root: string, files: string[]): SignalExtra`  L71-74
+- `function generateTruth(root: string, files: string[]): Truth`  L80-92
+- `function toolHash(): string`  L99-113
+- `function pulumiGoTruthTool(): string`  L121-139
+- `function stderrOf(cause: unknown): string`  L141-146
+- `function runTool(root: string): ToolOutput`  L148-178
+- `interface Scan`  L184-188
+- `function fileOf(id: string): string`  L191-194
+- `function analyse(root: string, files: string[]): Scan`  L196-248
+
+**Calls:** `analyse` → [`bench/src/truth/signals-pulumi-go.ts#analyse`](signals-pulumi-go.ts.md) (high), `fileOf` → [`bench/src/truth/signals-pulumi-go.ts#fileOf`](signals-pulumi-go.ts.md) (high), `pulumiGoTruthTool` → [`bench/src/truth/signals-pulumi-go.ts#pulumiGoTruthTool`](signals-pulumi-go.ts.md) (high), `runTool` → [`bench/src/truth/signals-pulumi-go.ts#runTool`](signals-pulumi-go.ts.md) (high), `stderrOf` → [`bench/src/truth/signals-pulumi-go.ts#stderrOf`](signals-pulumi-go.ts.md) (high), `toolHash` → [`bench/src/truth/signals-pulumi-go.ts#toolHash`](signals-pulumi-go.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high)

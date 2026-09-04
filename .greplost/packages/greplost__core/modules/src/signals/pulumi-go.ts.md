@@ -8,12 +8,31 @@
 
 **Exports:** `pulumiGoPass (const)`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (Lang), [`./index.ts`](index.ts.md) (SignalInput, SignalOutput, SignalPass)
+**Imports:** `web-tree-sitter` (Node), [`../schema.ts`](../schema.ts.md) (Declaration, ImportRecord, Lang, ReferenceRecord), [`./index.ts`](index.ts.md) (SignalInput, SignalOutput, SignalPass), [`./ts-nodes.ts`](ts-nodes.ts.md) (NameAllocator, field, signalNode, spanOf, stringOf, walk)
 
 **Imported by:** [`packages/core/src/signals/index.ts`](index.ts.md)
 
 **Blast radius:** 36 files (`greplost impact packages/core/src/signals/pulumi-go.ts`)
 
 **Key symbols:**
-- `const LANGS: ReadonlySet<Lang> = new Set<Lang>(["go"])`  L11-11
-- `const pulumiGoPass: SignalPass = { id: "pulumi-go", langs: LANGS, applies(_path: string, _source: string): boolean { return false; }, run(_input: SignalInput): SignalOutput { return { decls: […`  L13-22
+- `const LANGS: ReadonlySet<Lang> = new Set<Lang>(["go"])`  L41-41
+- `const PROVIDER_PREFIX = "github.com/pulumi/pulumi-"`  L44-44
+- `const CORE_SDK_PREFIX = "github.com/pulumi/pulumi/sdk"`  L46-46
+- `const CONSTRUCTOR = /^New[A-Z]/u`  L48-48
+- `const VERSION_SEGMENT = /^v[0-9]+$/u`  L50-50
+- `function applies(_path: string, source: string): boolean`  L58-64
+- `const pulumiGoPass: SignalPass = { id: "pulumi-go", langs: LANGS, applies, run(input: SignalInput): SignalOutput { const providers = providerImports(input.base.imports); if (providers.size ===…`  L66-123
+- `interface ProviderImport`  L130-135
+- `function providerImports(imports: readonly ImportRecord[]): Map<string, ProviderImport>`  L148-171
+- `function providerOf(specifier: string): ProviderImport | null`  L174-180
+- `function packageSegment(segments: readonly string[]): string`  L189-195
+- `interface ResourceCall`  L202-211
+- `function classify(call: Node, providers: ReadonlyMap<string, ProviderImport>): ResourceCall | null`  L221-245
+- `function bindingNameOf(call: Node): string | null`  L254-269
+- `function isSameNode(a: Node | null, b: Node | null): boolean`  L277-279
+- `function firstIdentifier(node: Node | null, fieldName?: string): string | null`  L287-296
+- `function firstStringArgument(args: Node): string | undefined`  L299-307
+- `function lowerFirst(name: string): string`  L309-311
+- `function resourceInputs( args: Node, resourceByBinding: ReadonlyMap<string, string>, self: string, ): ReferenceRecord[]`  L325-350
+
+**Calls:** `field` → [`packages/core/src/extract/ts-signature.ts#field`](../extract/ts-signature.ts.md) (med), `spanOf` → [`packages/core/src/extract/ts-signature.ts#spanOf`](../extract/ts-signature.ts.md) (med), `stringOf` → [`packages/core/src/extract/ts-signature.ts#stringOf`](../extract/ts-signature.ts.md) (med), `bindingNameOf` → [`packages/core/src/signals/pulumi-go.ts#bindingNameOf`](pulumi-go.ts.md) (high), `classify` → [`packages/core/src/signals/pulumi-go.ts#classify`](pulumi-go.ts.md) (high), `firstIdentifier` → [`packages/core/src/signals/pulumi-go.ts#firstIdentifier`](pulumi-go.ts.md) (high), `firstStringArgument` → [`packages/core/src/signals/pulumi-go.ts#firstStringArgument`](pulumi-go.ts.md) (high), `isSameNode` → [`packages/core/src/signals/pulumi-go.ts#isSameNode`](pulumi-go.ts.md) (high), `lowerFirst` → [`packages/core/src/signals/pulumi-go.ts#lowerFirst`](pulumi-go.ts.md) (high), `packageSegment` → [`packages/core/src/signals/pulumi-go.ts#packageSegment`](pulumi-go.ts.md) (high), `providerImports` → [`packages/core/src/signals/pulumi-go.ts#providerImports`](pulumi-go.ts.md) (high), `providerOf` → [`packages/core/src/signals/pulumi-go.ts#providerOf`](pulumi-go.ts.md) (high), `resourceInputs` → [`packages/core/src/signals/pulumi-go.ts#resourceInputs`](pulumi-go.ts.md) (high), `NameAllocator` → [`packages/core/src/signals/ts-nodes.ts#NameAllocator`](ts-nodes.ts.md) (high), `signalNode` → [`packages/core/src/signals/ts-nodes.ts#signalNode`](ts-nodes.ts.md) (high), `walk` → [`packages/core/src/signals/ts-nodes.ts#walk`](ts-nodes.ts.md) (high)

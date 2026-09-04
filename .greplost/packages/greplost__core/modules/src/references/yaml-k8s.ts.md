@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/references/index.ts`](index.ts.md), [`packages/core/src/references/yaml.ts`](yaml.ts.md)
 
-**Blast radius:** 39 files (`greplost impact packages/core/src/references/yaml-k8s.ts`)
+**Blast radius:** 40 files (`greplost impact packages/core/src/references/yaml-k8s.ts`)
 
 **Key symbols:**
 - `const VALUES_FILES: readonly string[] = ["values.yaml", "values.yml"]`  L38-38

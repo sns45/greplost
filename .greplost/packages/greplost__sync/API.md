@@ -76,12 +76,12 @@
 ## packages/sync/src/parse-cache.ts
 
 - `const PARSE_CACHE_PATH = "cache/parse.json"` L63-63
-- `const PARSE_CACHE_VERSION = "2"` L77-77
-- `const PARSE_CACHE_VERSION_KEY = "#version"` L80-80
-- `const PARSE_CACHE_STAMP = `${SCHEMA_VERSION}/${PARSE_CACHE_VERSION}`` L83-83
-- `function parseCacheStamp(signals?: readonly string[]): string` L100-103
-- `function parseCacheKey(sha256: string, lang: Lang): string` L106-108
-- `class FileParseCache implements ParseCache` L130-246
+- `const PARSE_CACHE_VERSION = "3"` L81-81
+- `const PARSE_CACHE_VERSION_KEY = "#version"` L84-84
+- `const PARSE_CACHE_STAMP = `${SCHEMA_VERSION}/${PARSE_CACHE_VERSION}`` L87-87
+- `function parseCacheStamp(signals?: readonly string[]): string` L104-107
+- `function parseCacheKey(sha256: string, lang: Lang): string` L110-112
+- `class FileParseCache implements ParseCache` L134-250
 
 ## packages/sync/src/state.ts
 

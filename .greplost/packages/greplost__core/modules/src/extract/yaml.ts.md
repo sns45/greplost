@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md), [`packages/core/src/references/yaml.ts`](../references/yaml.ts.md), [`packages/core/src/unparsable.ts`](../unparsable.ts.md)
 
-**Blast radius:** 42 files (`greplost impact packages/core/src/extract/yaml.ts`)
+**Blast radius:** 43 files (`greplost impact packages/core/src/extract/yaml.ts`)
 
 **Key symbols:**
 - `type YamlFlavour = "actions" | "helm" | "k8s" | "plain"`  L40-40

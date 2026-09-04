@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/references/index.ts`](index.ts.md), [`packages/core/src/references/link.ts`](link.ts.md)
 
-**Blast radius:** 39 files (`greplost impact packages/core/src/references/hcl.ts`)
+**Blast radius:** 40 files (`greplost impact packages/core/src/references/hcl.ts`)
 
 **Key symbols:**
 - `type ModuleIndex = Map<string, Declaration[]>`  L45-45

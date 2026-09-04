@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md), [`packages/core/src/extract/yaml-helm.ts`](yaml-helm.ts.md), [`packages/core/src/extract/yaml.ts`](yaml.ts.md)
 
-**Blast radius:** 44 files (`greplost impact packages/core/src/extract/yaml-k8s.ts`)
+**Blast radius:** 45 files (`greplost impact packages/core/src/extract/yaml-k8s.ts`)
 
 **Key symbols:**
 - `type K8sFlavour = "k8s" | "helm"`  L51-51

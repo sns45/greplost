@@ -16,21 +16,21 @@
 
 **Key symbols:**
 - `const PARSE_CACHE_PATH = "cache/parse.json"`  L63-63
-- `const PARSE_CACHE_VERSION = "2"`  L77-77
-- `const PARSE_CACHE_VERSION_KEY = "#version"`  L80-80
-- `const PARSE_CACHE_STAMP = `${SCHEMA_VERSION}/${PARSE_CACHE_VERSION}``  L83-83
-- `function parseCacheStamp(signals?: readonly string[]): string`  L100-103
-- `function parseCacheKey(sha256: string, lang: Lang): string`  L106-108
-- `const LANGS: ReadonlySet<string> = new Set<string>([ ...Object.values(LANG_BY_EXTENSION), ...Object.values(LANG_BY_BASENAME), ])`  L117-120
-- `class FileParseCache implements ParseCache`  L130-246
-- `FileParseCache.constructor(root: string, signals?: readonly string[])`  L141-145
-- `FileParseCache.size(): number`  L148-151
-- `FileParseCache.load(): void`  L159-192
-- `FileParseCache.get(sha256: string, lang: Lang): FileRecord | undefined`  L194-197
-- `FileParseCache.set(record: FileRecord): void`  L199-203
-- `FileParseCache.save(keep?: ReadonlySet<string>): void`  L215-241
-- `FileParseCache.ensureLoaded(): void`  L243-245
-- `function freezeRecord(record: FileRecord): FileRecord`  L254-260
-- `function isFileRecord(value: unknown): value is FileRecord`  L262-277
+- `const PARSE_CACHE_VERSION = "3"`  L81-81
+- `const PARSE_CACHE_VERSION_KEY = "#version"`  L84-84
+- `const PARSE_CACHE_STAMP = `${SCHEMA_VERSION}/${PARSE_CACHE_VERSION}``  L87-87
+- `function parseCacheStamp(signals?: readonly string[]): string`  L104-107
+- `function parseCacheKey(sha256: string, lang: Lang): string`  L110-112
+- `const LANGS: ReadonlySet<string> = new Set<string>([ ...Object.values(LANG_BY_EXTENSION), ...Object.values(LANG_BY_BASENAME), ])`  L121-124
+- `class FileParseCache implements ParseCache`  L134-250
+- `FileParseCache.constructor(root: string, signals?: readonly string[])`  L145-149
+- `FileParseCache.size(): number`  L152-155
+- `FileParseCache.load(): void`  L163-196
+- `FileParseCache.get(sha256: string, lang: Lang): FileRecord | undefined`  L198-201
+- `FileParseCache.set(record: FileRecord): void`  L203-207
+- `FileParseCache.save(keep?: ReadonlySet<string>): void`  L219-245
+- `FileParseCache.ensureLoaded(): void`  L247-249
+- `function freezeRecord(record: FileRecord): FileRecord`  L258-264
+- `function isFileRecord(value: unknown): value is FileRecord`  L266-281
 
 **Calls:** `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high), `ensureLoaded` → [`packages/sync/src/parse-cache.ts#FileParseCache.ensureLoaded`](parse-cache.ts.md) (high), `load` → [`packages/sync/src/parse-cache.ts#FileParseCache.load`](parse-cache.ts.md) (high), `freezeRecord` → [`packages/sync/src/parse-cache.ts#freezeRecord`](parse-cache.ts.md) (high), `isFileRecord` → [`packages/sync/src/parse-cache.ts#isFileRecord`](parse-cache.ts.md) (high), `parseCacheKey` → [`packages/sync/src/parse-cache.ts#parseCacheKey`](parse-cache.ts.md) (high), `parseCacheStamp` → [`packages/sync/src/parse-cache.ts#parseCacheStamp`](parse-cache.ts.md) (high), `safeWrite` → [`packages/sync/src/write.ts#safeWrite`](write.ts.md) (high)

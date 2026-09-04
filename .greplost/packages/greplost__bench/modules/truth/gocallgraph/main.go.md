@@ -19,19 +19,19 @@
 - `type output struct`  L54-72
 - `const rootDirID = "."`  L74-74
 - `func main()`  L76-99
-- `func run(root string) (*output, error)`  L101-199
-- `type funcSpan struct`  L202-205
-- `type repoIndex struct`  L207-211
-- `repoIndex.rel(name string) (string, bool)`  L215-224
-- `repoIndex.packageDir(pkg *packages.Package) (string, bool)`  L228-248
-- `repoIndex.indexFuncs(pkg *packages.Package, rel string, file *ast.File)`  L254-275
-- `repoIndex.callerID(fset *token.FileSet, pos token.Pos) (string, bool)`  L279-297
-- `repoIndex.calleeID(fset *token.FileSet, fn *ssa.Function) (string, bool)`  L301-328
-- `func receiverTypeName(pkg *packages.Package, fn *ast.FuncDecl) string`  L332-347
-- `func exprTypeName(expr ast.Expr) string`  L349-363
-- `func namedTypeName(t types.Type) string`  L365-383
-- `func exportedNames(file *ast.File) []string`  L387-413
-- `func sortedKeys(set map[string]bool) []string`  L415-422
-- `func sortedEdges(set map[edge]bool) []edge`  L424-436
+- `func run(root string) (*output, error)`  L101-207
+- `type funcSpan struct`  L210-213
+- `type repoIndex struct`  L215-219
+- `repoIndex.rel(name string) (string, bool)`  L223-232
+- `repoIndex.packageDir(pkg *packages.Package) (string, bool)`  L236-256
+- `repoIndex.indexFuncs(pkg *packages.Package, rel string, file *ast.File)`  L262-283
+- `repoIndex.callerID(fset *token.FileSet, pos token.Pos) (string, bool)`  L287-305
+- `repoIndex.calleeID(fset *token.FileSet, fn *ssa.Function) (string, bool)`  L309-336
+- `func receiverTypeName(pkg *packages.Package, fn *ast.FuncDecl) string`  L340-355
+- `func exprTypeName(expr ast.Expr) string`  L357-371
+- `func namedTypeName(t types.Type) string`  L373-391
+- `func exportedNames(file *ast.File) []string`  L395-421
+- `func sortedKeys(set map[string]bool) []string`  L423-430
+- `func sortedEdges(set map[edge]bool) []edge`  L432-444
 
 **Calls:** `exportedNames` → [`bench/truth/gocallgraph/main.go#exportedNames`](main.go.md) (high), `exprTypeName` → [`bench/truth/gocallgraph/main.go#exprTypeName`](main.go.md) (high), `namedTypeName` → [`bench/truth/gocallgraph/main.go#namedTypeName`](main.go.md) (high), `receiverTypeName` → [`bench/truth/gocallgraph/main.go#receiverTypeName`](main.go.md) (high), `rel` → [`bench/truth/gocallgraph/main.go#repoIndex.rel`](main.go.md) (high), `run` → [`bench/truth/gocallgraph/main.go#run`](main.go.md) (high), `sortedEdges` → [`bench/truth/gocallgraph/main.go#sortedEdges`](main.go.md) (high), `sortedKeys` → [`bench/truth/gocallgraph/main.go#sortedKeys`](main.go.md) (high)

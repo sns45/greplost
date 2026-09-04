@@ -8,20 +8,20 @@
 
 **Exports:** `ReferenceContext (interface)`, `ReferenceRule (type)`, `compareReferenceEdges(a: ReferenceEdge, b: ReferenceEdge): number`, `linkReferences( files: readonly FileRecord[], resolver: Resolver, ctx: RepoContext, ): ReferenceEdge[]`, `referenceSource(file: string, ref: ReferenceRecord): string`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (DeclKind, Declaration, FileRecord, Lang, ReferenceEdge, ReferenceRecord, compareStrings, isNodeKind, symbolId), [`../resolve/resolver.ts`](../resolve/resolver.ts.md) (RepoContext, Resolver), [`./dockerfile.ts`](dockerfile.ts.md) (resolveDockerfileReferences), [`./hcl.ts`](hcl.ts.md) (resolveHclReferences), [`./ts.ts`](ts.ts.md) (resolveTsReferences), [`./yaml.ts`](yaml.ts.md) (resolveYamlReferences)
+**Imports:** [`../schema.ts`](../schema.ts.md) (DeclKind, Declaration, FileRecord, Lang, ReferenceEdge, ReferenceRecord, compareStrings, isNodeKind, symbolId), [`../resolve/resolver.ts`](../resolve/resolver.ts.md) (RepoContext, Resolver), [`./dockerfile.ts`](dockerfile.ts.md) (resolveDockerfileReferences), [`./go.ts`](go.ts.md) (resolveGoReferences), [`./hcl.ts`](hcl.ts.md) (resolveHclReferences), [`./ts.ts`](ts.ts.md) (resolveTsReferences), [`./yaml.ts`](yaml.ts.md) (resolveYamlReferences)
 
-**Imported by:** [`packages/core/src/references/dockerfile.ts`](dockerfile.ts.md), [`packages/core/src/references/hcl.ts`](hcl.ts.md), [`packages/core/src/references/index.ts`](index.ts.md), [`packages/core/src/references/ts.ts`](ts.ts.md), [`packages/core/src/references/yaml-actions.ts`](yaml-actions.ts.md), [`packages/core/src/references/yaml-k8s.ts`](yaml-k8s.ts.md), [`packages/core/src/references/yaml.ts`](yaml.ts.md), [`packages/core/src/serialize/write.ts`](../serialize/write.ts.md)
+**Imported by:** [`packages/core/src/references/dockerfile.ts`](dockerfile.ts.md), [`packages/core/src/references/go.ts`](go.ts.md), [`packages/core/src/references/hcl.ts`](hcl.ts.md), [`packages/core/src/references/index.ts`](index.ts.md), [`packages/core/src/references/ts.ts`](ts.ts.md), [`packages/core/src/references/yaml-actions.ts`](yaml-actions.ts.md), [`packages/core/src/references/yaml-k8s.ts`](yaml-k8s.ts.md), [`packages/core/src/references/yaml.ts`](yaml.ts.md), [`packages/core/src/serialize/write.ts`](../serialize/write.ts.md)
 
-**Blast radius:** 39 files (`greplost impact packages/core/src/references/link.ts`)
+**Blast radius:** 40 files (`greplost impact packages/core/src/references/link.ts`)
 
 **Key symbols:**
-- `interface ReferenceContext`  L38-49
-- `type ReferenceRule = ( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ) => ReferenceEdge | null`  L52-56
-- `const REFERENCE_RULES: Readonly<Partial<Record<Lang, ReferenceRule>>> = { hcl: resolveHclReferences, yaml: resolveYamlReferences, dockerfile: resolveDockerfileReferences, // The four JavaScript diale…`  L65-75
-- `function referenceSource(file: string, ref: ReferenceRecord): string`  L85-87
-- `function compareReferenceEdges(a: ReferenceEdge, b: ReferenceEdge): number`  L90-97
-- `function linkReferences( files: readonly FileRecord[], resolver: Resolver, ctx: RepoContext, ): ReferenceEdge[]`  L106-140
-- `function dedupe(edges: readonly ReferenceEdge[]): ReferenceEdge[]`  L143-151
-- `function buildReferenceContext( files: readonly FileRecord[], resolver: Resolver, ctx: RepoContext, ): ReferenceContext`  L153-174
+- `interface ReferenceContext`  L39-50
+- `type ReferenceRule = ( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ) => ReferenceEdge | null`  L53-57
+- `const REFERENCE_RULES: Readonly<Partial<Record<Lang, ReferenceRule>>> = { go: resolveGoReferences, hcl: resolveHclReferences, yaml: resolveYamlReferences, dockerfile: resolveDockerfileReferences, // …`  L66-77
+- `function referenceSource(file: string, ref: ReferenceRecord): string`  L87-89
+- `function compareReferenceEdges(a: ReferenceEdge, b: ReferenceEdge): number`  L92-99
+- `function linkReferences( files: readonly FileRecord[], resolver: Resolver, ctx: RepoContext, ): ReferenceEdge[]`  L108-142
+- `function dedupe(edges: readonly ReferenceEdge[]): ReferenceEdge[]`  L145-153
+- `function buildReferenceContext( files: readonly FileRecord[], resolver: Resolver, ctx: RepoContext, ): ReferenceContext`  L155-176
 
 **Calls:** `buildReferenceContext` → [`packages/core/src/references/link.ts#buildReferenceContext`](link.ts.md) (high), `compareReferenceEdges` → [`packages/core/src/references/link.ts#compareReferenceEdges`](link.ts.md) (high), `dedupe` → [`packages/core/src/references/link.ts#dedupe`](link.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `isNodeKind` → [`packages/core/src/schema.ts#isNodeKind`](../schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)

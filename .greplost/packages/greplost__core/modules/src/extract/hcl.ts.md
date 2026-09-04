@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md), [`packages/core/src/references/hcl.ts`](../references/hcl.ts.md)
 
-**Blast radius:** 41 files (`greplost impact packages/core/src/extract/hcl.ts`)
+**Blast radius:** 42 files (`greplost impact packages/core/src/extract/hcl.ts`)
 
 **Key symbols:**
 - `const BLOCK_KIND: Readonly<Record<string, DeclKind>> = { data: "data", module: "module", output: "output", provider: "provider", resource: "resource", variable: "variable", }`  L44-51

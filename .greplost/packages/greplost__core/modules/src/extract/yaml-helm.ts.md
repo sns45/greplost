@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md), [`packages/core/src/extract/yaml.ts`](yaml.ts.md), [`packages/core/src/unparsable.ts`](../unparsable.ts.md)
 
-**Blast radius:** 43 files (`greplost impact packages/core/src/extract/yaml-helm.ts`)
+**Blast radius:** 44 files (`greplost impact packages/core/src/extract/yaml-helm.ts`)
 
 **Key symbols:**
 - `const CHART_FILES: ReadonlySet<string> = new Set(["Chart.yaml", "Chart.yml"])`  L47-47

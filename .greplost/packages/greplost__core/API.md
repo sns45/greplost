@@ -246,6 +246,10 @@
 
 - `function resolveDockerfileReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null` L11-20
 
+## packages/core/src/references/go.ts
+
+- `function resolveGoReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L27-54
+
 ## packages/core/src/references/hcl.ts
 
 - `function resolveHclReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L213-221
@@ -255,6 +259,7 @@
 - re-exports `compareReferenceEdges`, `linkReferences`, `referenceSource` from `./link.ts`
 - re-exports `ReferenceContext`, `ReferenceRule` from `./link.ts`
 - re-exports `resolveDockerfileReferences` from `./dockerfile.ts`
+- re-exports `resolveGoReferences` from `./go.ts`
 - re-exports `resolveHclReferences` from `./hcl.ts`
 - re-exports `resolveTsReferences` from `./ts.ts`
 - re-exports `resolveYamlReferences` from `./yaml.ts`
@@ -263,11 +268,11 @@
 
 ## packages/core/src/references/link.ts
 
-- `interface ReferenceContext` L38-49
-- `type ReferenceRule = ( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ) => ReferenceEdge | null` L52-56
-- `function referenceSource(file: string, ref: ReferenceRecord): string` L85-87
-- `function compareReferenceEdges(a: ReferenceEdge, b: ReferenceEdge): number` L90-97
-- `function linkReferences( files: readonly FileRecord[], resolver: Resolver, ctx: RepoContext, ): ReferenceEdge[]` L106-140
+- `interface ReferenceContext` L39-50
+- `type ReferenceRule = ( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ) => ReferenceEdge | null` L53-57
+- `function referenceSource(file: string, ref: ReferenceRecord): string` L87-89
+- `function compareReferenceEdges(a: ReferenceEdge, b: ReferenceEdge): number` L92-99
+- `function linkReferences( files: readonly FileRecord[], resolver: Resolver, ctx: RepoContext, ): ReferenceEdge[]` L108-142
 
 ## packages/core/src/references/ts.ts
 
@@ -476,7 +481,7 @@
 
 ## packages/core/src/signals/pulumi-go.ts
 
-- `const pulumiGoPass: SignalPass = { id: "pulumi-go", langs: LANGS, applies(_path: string, _source: string): boolean { return false; }, run(_input: SignalInput): SignalOutput { return { decls: […` L13-22
+- `const pulumiGoPass: SignalPass = { id: "pulumi-go", langs: LANGS, applies, run(input: SignalInput): SignalOutput { const providers = providerImports(input.base.imports); if (providers.size ===…` L66-123
 
 ## packages/core/src/signals/pulumi-ts.ts
 

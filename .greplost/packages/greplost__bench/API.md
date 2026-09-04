@@ -382,13 +382,13 @@
 - `interface SubstituteChecks` L210-219
 - `async function run(args: string[]): Promise<number>` L221-233
 - `function buildOptionsFor(target: Target): { root: string; config?: GreplostConfig }` L506-532
-- `function unsupportedMetrics(notes: readonly string[]): string[]` L625-633
-- `function scoredFiles(snapshot: Snapshot, lang: TruthLang): string[]` L719-729
-- `function scoreAgainstTruth( name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang, extra: { references: Edge[]; nodes: string[] } | null = null, ): RepoScores` L737-880
-- `function perLangSummary( targets: readonly Target[], scores: readonly RepoScores[], ): Record<string, { repos: string[]; gated: boolean; truthSource: string }>` L914-935
-- `function unparsableBucket( scores: readonly RepoScores[], ): { count: number; files: { repo: string; path: string; reason: string }[] }` L964-971
-- `function missedMetrics(scores: RepoScores): string[]` L983-1014
-- `function locate(snapshot: Snapshot, key: string, kind: "import" | "call" | "export"): string` L1068-1080
+- `function unsupportedMetrics(notes: readonly string[]): string[]` L634-642
+- `function scoredFiles(snapshot: Snapshot, lang: TruthLang): string[]` L728-738
+- `function scoreAgainstTruth( name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang, extra: { references: Edge[]; nodes: string[] } | null = null, ): RepoScores` L746-889
+- `function perLangSummary( targets: readonly Target[], scores: readonly RepoScores[], ): Record<string, { repos: string[]; gated: boolean; truthSource: string }>` L923-944
+- `function unparsableBucket( scores: readonly RepoScores[], ): { count: number; files: { repo: string; path: string; reason: string }[] }` L973-980
+- `function missedMetrics(scores: RepoScores): string[]` L992-1023
+- `function locate(snapshot: Snapshot, key: string, kind: "import" | "call" | "export"): string` L1077-1089
 
 ## bench/src/tasks.ts
 
@@ -418,7 +418,7 @@
 
 - `const GO_TRUTH_NOTES = [ "go-packages-per-file-imports", "cha-callgraph", "cha-over-approximation", ] as const` L66-70
 - `function goCallgraphTool(): string` L103-122
-- `function generateGoTruth(root: string, files: string[]): Truth` L180-235
+- `function generateGoTruth(root: string, files: string[]): Truth` L251-306
 
 ## bench/src/truth/hcl.ts
 
@@ -460,8 +460,11 @@
 
 ## bench/src/truth/signals-pulumi-go.ts
 
-- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
-- `function generateTruth(root: string, files: string[]): Truth` L17-22
+- `const NOTES: readonly string[] = ["go-types-oracle", "types-implements-pulumi-resource"]` L45-45
+- `interface SignalExtra` L66-69
+- `function generateExtra(root: string, files: string[]): SignalExtra` L71-74
+- `function generateTruth(root: string, files: string[]): Truth` L80-92
+- `function pulumiGoTruthTool(): string` L121-139
 
 ## bench/src/truth/signals-ts.ts
 

@@ -10,7 +10,7 @@
 
 **Imports:** `web-tree-sitter` (Node, Tree), [`../schema.ts`](../schema.ts.md) (DeclKind, Declaration, ImportRecord, nodeId), [`../extract/ts-signature.ts`](../extract/ts-signature.ts.md) (clip, field, functionValue, spanOf, stringOf, unwrapValue)
 
-**Imported by:** [`packages/core/src/signals/next.ts`](next.ts.md), [`packages/core/src/signals/pulumi-ts.ts`](pulumi-ts.ts.md), [`packages/core/src/signals/react.ts`](react.ts.md), [`packages/core/src/signals/tanstack.ts`](tanstack.ts.md)
+**Imported by:** [`packages/core/src/signals/next.ts`](next.ts.md), [`packages/core/src/signals/pulumi-go.ts`](pulumi-go.ts.md), [`packages/core/src/signals/pulumi-ts.ts`](pulumi-ts.ts.md), [`packages/core/src/signals/react.ts`](react.ts.md), [`packages/core/src/signals/tanstack.ts`](tanstack.ts.md)
 
 **Blast radius:** 37 files (`greplost impact packages/core/src/signals/ts-nodes.ts`)
 

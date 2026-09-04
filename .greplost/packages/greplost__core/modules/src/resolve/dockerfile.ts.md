@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/resolver.ts`](resolver.ts.md)
 
-**Blast radius:** 66 files (`greplost impact packages/core/src/resolve/dockerfile.ts`)
+**Blast radius:** 67 files (`greplost impact packages/core/src/resolve/dockerfile.ts`)
 
 **Key symbols:**
 - `type DockerfileCallIndex = Readonly<Record<string, never>>`  L12-12

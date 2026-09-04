@@ -8,7 +8,7 @@
 
 **Exports:** `GO_TRUTH_NOTES (const)`, `generateGoTruth(root: string, files: string[]): Truth`, `goCallgraphTool(): string`
 
-**Imports:** `node:child_process` (execFileSync), `node:crypto` (createHash), `node:fs` (existsSync, mkdirSync, readFileSync), `node:path` (default), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Edge, compareEdges, compareStrings), [`./ts.ts`](ts.ts.md) (Truth)
+**Imports:** `node:child_process` (execFileSync), `node:crypto` (createHash), `node:fs` (existsSync, mkdirSync, readFileSync, readdirSync), `node:path` (default), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Edge, compareEdges, compareStrings), [`./ts.ts`](ts.ts.md) (Truth)
 
 **Imported by:** None.
 
@@ -26,9 +26,11 @@
 - `function toolHash(): string`  L83-95
 - `function goCallgraphTool(): string`  L103-122
 - `function stderrOf(cause: unknown): string`  L124-129
-- `function runTool(root: string): GoToolOutput`  L131-160
-- `function fileOf(id: string): string`  L163-166
-- `function edge(from: string, to: string, kind: Edge["kind"]): Edge`  L168-170
-- `function generateGoTruth(root: string, files: string[]): Truth`  L180-235
+- `function runTool(root: string): GoToolOutput`  L142-177
+- `function moduleDirs(root: string): string[]`  L180-196
+- `function runToolIn(dir: string, prefix: string): GoToolOutput`  L199-231
+- `function fileOf(id: string): string`  L234-237
+- `function edge(from: string, to: string, kind: Edge["kind"]): Edge`  L239-241
+- `function generateGoTruth(root: string, files: string[]): Truth`  L251-306
 
-**Calls:** `edge` → [`bench/src/truth/go.ts#edge`](go.ts.md) (high), `fileOf` → [`bench/src/truth/go.ts#fileOf`](go.ts.md) (high), `goCallgraphTool` → [`bench/src/truth/go.ts#goCallgraphTool`](go.ts.md) (high), `runTool` → [`bench/src/truth/go.ts#runTool`](go.ts.md) (high), `stderrOf` → [`bench/src/truth/go.ts#stderrOf`](go.ts.md) (high), `toolHash` → [`bench/src/truth/go.ts#toolHash`](go.ts.md) (high)
+**Calls:** `edge` → [`bench/src/truth/go.ts#edge`](go.ts.md) (high), `fileOf` → [`bench/src/truth/go.ts#fileOf`](go.ts.md) (high), `goCallgraphTool` → [`bench/src/truth/go.ts#goCallgraphTool`](go.ts.md) (high), `moduleDirs` → [`bench/src/truth/go.ts#moduleDirs`](go.ts.md) (high), `runTool` → [`bench/src/truth/go.ts#runTool`](go.ts.md) (high), `runToolIn` → [`bench/src/truth/go.ts#runToolIn`](go.ts.md) (high), `stderrOf` → [`bench/src/truth/go.ts#stderrOf`](go.ts.md) (high), `toolHash` → [`bench/src/truth/go.ts#toolHash`](go.ts.md) (high)
