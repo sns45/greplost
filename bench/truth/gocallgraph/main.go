@@ -137,6 +137,14 @@ func run(root string) (*output, error) {
 
 	files := map[string]bool{}
 	for _, pkg := range pkgs {
+		// A package that did not type-check has no SSA and therefore no calls, and
+		// its exports are whatever the parser salvaged. Listing its files as
+		// "loaded" would make the harness score a prediction about them against an
+		// answer this program was structurally unable to give, so the package is
+		// left out of the covered universe entirely and disclosed through Errors.
+		if len(pkg.Errors) > 0 {
+			continue
+		}
 		for _, name := range pkg.GoFiles {
 			if rel, ok := repo.rel(name); ok {
 				files[rel] = true
