@@ -26,8 +26,8 @@
 - `const HOOK_MARKER = "# greplost-hook"` L43-43
 - `const HOOK_END_MARKER = "# end greplost-hook"` L46-46
 - `const HOOK_NAMES: readonly string[] = ["pre-commit", "post-commit", "post-merge", "post-checkout"]` L49-49
-- `interface HookInstallResult` L96-103
-- `function installGitHooks(root: string): HookInstallResult` L112-163
+- `interface HookInstallResult` L96-105
+- `function installGitHooks(root: string): HookInstallResult` L114-175
 
 ## packages/sync/src/incremental.ts
 

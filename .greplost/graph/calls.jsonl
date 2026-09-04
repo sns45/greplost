@@ -2402,6 +2402,7 @@
 {"confidence":"high","from":"packages/sync/src/githooks.ts#installGitHooks","kind":"call","to":"packages/sync/src/githooks.ts#makeExecutable"}
 {"confidence":"high","from":"packages/sync/src/githooks.ts#installGitHooks","kind":"call","to":"packages/sync/src/githooks.ts#readIfPresent"}
 {"confidence":"high","from":"packages/sync/src/githooks.ts#installGitHooks","kind":"call","to":"packages/sync/src/githooks.ts#reasonOf"}
+{"confidence":"high","from":"packages/sync/src/githooks.ts#installGitHooks","kind":"call","to":"packages/sync/src/githooks.ts#replaceBlock"}
 {"confidence":"high","from":"packages/sync/src/githooks.ts#installGitHooks","kind":"call","to":"packages/sync/src/githooks.ts#write"}
 {"confidence":"high","from":"packages/sync/src/githooks.ts#isRepoRoot","kind":"call","to":"packages/sync/src/githooks.ts#git"}
 {"confidence":"high","from":"packages/sync/src/githooks.ts#isRepoRoot","kind":"call","to":"packages/sync/src/githooks.ts#realpath"}

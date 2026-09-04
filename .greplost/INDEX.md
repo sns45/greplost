@@ -25,7 +25,7 @@
 | @greplost/core | packages/core | 64 | 13817 | 10 | 6 | 0 | [MAP](packages/greplost__core/MAP.md) |
 | @greplost/render | packages/render | 14 | 1833 | 1 | 4 | 1 | [MAP](packages/greplost__render/MAP.md) |
 | @greplost/semantic | packages/semantic | 5 | 1509 | 4 | 1 | 3 | [MAP](packages/greplost__semantic/MAP.md) |
-| @greplost/sync | packages/sync | 12 | 3148 | 4 | 4 | 2 | [MAP](packages/greplost__sync/MAP.md) |
+| @greplost/sync | packages/sync | 12 | 3182 | 4 | 4 | 2 | [MAP](packages/greplost__sync/MAP.md) |
 | @greplost/workspace | packages/workspace | 8 | 1903 | 2 | 1 | 3 | [MAP](packages/greplost__workspace/MAP.md) |
 
 ## Hotspots
