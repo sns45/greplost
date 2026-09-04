@@ -8,13 +8,13 @@
 
 **Exports:** `serializeSnapshot(snapshot: Snapshot): Map<string, string>`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (ARTIFACT_PATHS, Snapshot, compareDeclarations, compareEdges), [`./json.ts`](json.ts.md) (toJson, toJsonl)
+**Imports:** [`../schema.ts`](../schema.ts.md) (ARTIFACT_PATHS, Snapshot, compareDeclarations, compareEdges), [`../references/link.ts`](../references/link.ts.md) (compareReferenceEdges), [`./json.ts`](json.ts.md) (toJson, toJsonl)
 
 **Imported by:** [`packages/core/src/serialize/index.ts`](index.ts.md)
 
 **Blast radius:** 30 files (`greplost impact packages/core/src/serialize/write.ts`)
 
 **Key symbols:**
-- `function serializeSnapshot(snapshot: Snapshot): Map<string, string>`  L15-22
+- `function serializeSnapshot(snapshot: Snapshot): Map<string, string>`  L21-32
 
 **Calls:** `toJson` → [`packages/core/src/serialize/json.ts#toJson`](json.ts.md) (high), `toJsonl` → [`packages/core/src/serialize/json.ts#toJsonl`](json.ts.md) (high)

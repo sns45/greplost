@@ -49,7 +49,13 @@ import path from "node:path";
 
 import type { ParseCache } from "@greplost/core";
 import type { FileRecord, Lang } from "@greplost/core/schema";
-import { ARTIFACT_DIR, LANG_BY_EXTENSION, SCHEMA_VERSION, stableStringify } from "@greplost/core/schema";
+import {
+  ARTIFACT_DIR,
+  LANG_BY_BASENAME,
+  LANG_BY_EXTENSION,
+  SCHEMA_VERSION,
+  stableStringify,
+} from "@greplost/core/schema";
 
 import { safeWrite } from "./write.ts";
 
@@ -74,7 +80,17 @@ export function parseCacheKey(sha256: string, lang: Lang): string {
   return `${lang}:${sha256}`;
 }
 
-const LANGS: ReadonlySet<string> = new Set<string>(Object.values(LANG_BY_EXTENSION));
+/**
+ * Every `Lang` a discovered file can carry, for validating a record read back off disk.
+ *
+ * Both detection tables, not just the extension one: schema 2 added languages that are
+ * recognised by basename (`Dockerfile`), and a set built from extensions alone would
+ * throw away every cached Dockerfile record on load.
+ */
+const LANGS: ReadonlySet<string> = new Set<string>([
+  ...Object.values(LANG_BY_EXTENSION),
+  ...Object.values(LANG_BY_BASENAME),
+]);
 
 /**
  * A `ParseCache` backed by `.greplost/cache/parse.json`.

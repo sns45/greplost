@@ -124,9 +124,12 @@ describe("parser", () => {
     expect(extract(broken).decls.map((d) => d.name)).toContain("Kept");
   });
 
-  test("extractFile refuses a language with no extractor", () => {
+  test("extractFile refuses a language whose extractor is not implemented", () => {
+    // Schema 2 named every language up front and gave each a module, so the "no extractor"
+    // branch is gone: an unimplemented language now fails in its own module, by name, with
+    // the leaf that owns it (build-2 seam, leaf 2.0).
     expect(() => extract("x\n", "python" as Lang, "main.py")).toThrow(
-      /greplost: no extractor for language "python"/,
+      /greplost: the python extractor is not implemented yet \(main\.py\); see build-2 leaf 2\.1/,
     );
   });
 

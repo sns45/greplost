@@ -38,13 +38,12 @@ import type { Dirent } from "node:fs";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 
-import { discoverFiles, loadConfig, sha256Hex } from "@greplost/core";
+import { discoverFiles, langOf, loadConfig, sha256Hex } from "@greplost/core";
 import type { ParseCache } from "@greplost/core";
 import type { FileRecord, GreplostConfig, Lang, Snapshot } from "@greplost/core/schema";
 import {
   ARTIFACT_DIR,
   ARTIFACT_PATHS,
-  LANG_BY_EXTENSION,
   compareStrings,
   stableStringify,
 } from "@greplost/core/schema";
@@ -407,10 +406,7 @@ function isDirectory(target: string): boolean {
 
 /** Could a file with this name be indexed at all, given the configured languages? */
 function isIndexableName(rel: string, config: GreplostConfig): boolean {
-  const slash = rel.lastIndexOf("/");
-  const base = slash === -1 ? rel : rel.slice(slash + 1);
-  const dot = base.lastIndexOf(".");
-  const lang = dot <= 0 ? undefined : LANG_BY_EXTENSION[base.slice(dot)];
+  const lang = langOf(rel);
   return lang !== undefined && config.languages.includes(lang);
 }
 

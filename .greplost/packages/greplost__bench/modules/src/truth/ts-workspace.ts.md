@@ -12,7 +12,7 @@
 
 **Imported by:** [`bench/src/truth/ts.ts`](ts.ts.md)
 
-**Blast radius:** 6 files (`greplost impact bench/src/truth/ts-workspace.ts`)
+**Blast radius:** 19 files (`greplost impact bench/src/truth/ts-workspace.ts`)
 
 **Key symbols:**
 - `const SOURCE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts"] as const`  L42-42

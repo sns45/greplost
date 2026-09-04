@@ -18,11 +18,36 @@ import { machineProfile } from "../src/machine.ts";
 
 const SHA_RE = /^[0-9a-f]{40}$/;
 
+/** The seven build-1 pins. Build 2 appends fifteen more, all tier S. */
+const BUILD_1 = ["TypeScript", "anyq", "bubbletea", "gin", "grafana", "hono", "vite"];
+
+/** The fifteen build-2 pins from spec 5.1, added in one edit by leaf 2.0. */
+const BUILD_2 = [
+  "bitnami-charts",
+  "coroutines",
+  "docker-node",
+  "docker-python",
+  "gson",
+  "k8s-examples",
+  "next-app",
+  "pulumi-go",
+  "pulumi-ts",
+  "pydantic",
+  "ripgrep",
+  "starter-workflows",
+  "tanstack-start",
+  "tf-aws-eks",
+  "tf-aws-vpc",
+];
+
+/** Every `Lang`, so an entry can never carry a language greplost has no extractor for. */
+const LANGS = ["ts", "tsx", "js", "jsx", "go", "python", "rust", "java", "kotlin", "hcl", "yaml", "dockerfile"];
+
 describe("corpus.json", () => {
   const corpus = loadCorpus();
 
-  test("has exactly 7 pinned repos", () => {
-    expect(corpus.repos.length).toBe(7);
+  test("has exactly 22 pinned repos: 7 from build 1 and 15 from build 2", () => {
+    expect(corpus.repos.length).toBe(BUILD_1.length + BUILD_2.length);
   });
 
   test("has a pinnedAt date", () => {
@@ -41,7 +66,7 @@ describe("corpus.json", () => {
       expect(repo.name.length).toBeGreaterThan(0);
       expect(repo.url).toMatch(/^https:\/\/github\.com\//);
       expect(["S", "M", "L", "XL"]).toContain(repo.tier);
-      expect(["ts", "go"]).toContain(repo.lang);
+      expect(LANGS).toContain(repo.lang);
       expect(typeof repo.defaultBranch).toBe("string");
       expect(repo.defaultBranch.length).toBeGreaterThan(0);
       expect(typeof repo.notes).toBe("string");
@@ -50,9 +75,7 @@ describe("corpus.json", () => {
 
   test("includes the expected repo names", () => {
     const names = corpus.repos.map((r) => r.name).sort();
-    expect(names).toEqual(
-      ["TypeScript", "anyq", "bubbletea", "gin", "grafana", "hono", "vite"].sort(),
-    );
+    expect(names).toEqual([...BUILD_1, ...BUILD_2].sort());
   });
 
   test("tiers match the spec", () => {
@@ -64,6 +87,62 @@ describe("corpus.json", () => {
     expect(byName["vite"]?.tier).toBe("L");
     expect(byName["grafana"]?.tier).toBe("L");
     expect(byName["TypeScript"]?.tier).toBe("XL");
+  });
+
+  test("every build-2 entry resolves", () => {
+    const byName = new Map(corpus.repos.map((r) => [r.name, r]));
+    for (const name of BUILD_2) {
+      const repo = byName.get(name);
+      expect(repo, `${name} is missing from corpus.json`).toBeDefined();
+      const entry = repo as NonNullable<typeof repo>;
+      expect(entry.sha, `${name} sha`).toMatch(SHA_RE);
+      expect(LANGS, `${name} lang`).toContain(entry.lang);
+      expect(entry.tier, `${name} tier`).toBe("S");
+      expect(entry.url, `${name} url`).toMatch(/^https:\/\/github\.com\/[^/]+\/[^/]+$/);
+      expect(entry.defaultBranch.length, `${name} defaultBranch`).toBeGreaterThan(0);
+      expect(entry.notes, `${name} notes`).toContain("build 2");
+    }
+  });
+
+  test("the build-2 languages are all covered, and pulumi shares one checkout at one sha", () => {
+    const byName = new Map(corpus.repos.map((r) => [r.name, r]));
+    const build2Langs = new Set<string>();
+    for (const name of BUILD_2) {
+      const lang = byName.get(name)?.lang;
+      if (lang !== undefined) build2Langs.add(lang);
+    }
+    for (const lang of ["python", "rust", "java", "kotlin", "hcl", "yaml", "dockerfile", "ts", "go", "tsx"]) {
+      expect(build2Langs.has(lang), `no build-2 corpus entry for ${lang}`).toBe(true);
+    }
+    // Two entries, one upstream repo: the subsets are what keep them from measuring each other.
+    expect(byName.get("pulumi-ts")?.url).toBe(byName.get("pulumi-go")?.url);
+    expect(byName.get("pulumi-ts")?.sha).toBe(byName.get("pulumi-go")?.sha);
+    expect(byName.get("pulumi-ts")?.subset).not.toBe(byName.get("pulumi-go")?.subset);
+  });
+
+  test("subset patterns", () => {
+    const byName = new Map(corpus.repos.map((r) => [r.name, r]));
+    // Every build-2 entry declares a subset, so what is scored is a property of the pin and
+    // not something a human has to remember.
+    for (const name of BUILD_2) {
+      const subset = byName.get(name)?.subset;
+      expect(typeof subset, `${name} subset`).toBe("string");
+      expect((subset as string).length, `${name} subset`).toBeGreaterThan(0);
+      // A picomatch pattern, posix, never absolute and never escaping the checkout.
+      expect(subset as string, `${name} subset`).not.toContain("..");
+      expect((subset as string).startsWith("/"), `${name} subset`).toBe(false);
+      expect(subset as string, `${name} subset`).not.toContain("\\");
+    }
+    expect(byName.get("pydantic")?.subset).toBe("pydantic/**");
+    expect(byName.get("ripgrep")?.subset).toBe("crates/**");
+    expect(byName.get("gson")?.subset).toBe("**/src/main/**");
+    expect(byName.get("pulumi-ts")?.subset).toBe("aws-ts-*/**");
+    expect(byName.get("pulumi-go")?.subset).toBe("*-go-*/**");
+    expect(byName.get("next-app")?.subset).toBe("examples/*/app/**");
+    // A whole-repo pin still says so explicitly rather than leaving the field out.
+    expect(byName.get("tf-aws-vpc")?.subset).toBe("**");
+    // Build-1 entries carry none: their pins predate the field and are scored whole.
+    for (const name of BUILD_1) expect(byName.get(name)?.subset, name).toBeUndefined();
   });
 
   test("grafana notes the pkg/ subset and TypeScript notes perf only", () => {
@@ -88,7 +167,7 @@ describe("corpusRoot and repoDir", () => {
 describe("selectRepos", () => {
   test("defaults to tier S when no filter is given", () => {
     const repos = selectRepos([]);
-    expect(repos.map((r) => r.name).sort()).toEqual(["anyq", "gin"]);
+    expect(repos.map((r) => r.name).sort()).toEqual(["anyq", "gin", ...BUILD_2].sort());
   });
 
   test("filters by --tier", () => {
@@ -108,7 +187,7 @@ describe("selectRepos", () => {
 
   test("--all selects every repo", () => {
     const repos = selectRepos(["--all"]);
-    expect(repos.length).toBe(7);
+    expect(repos.length).toBe(BUILD_1.length + BUILD_2.length);
   });
 
   test("throws on an unknown --repo", () => {

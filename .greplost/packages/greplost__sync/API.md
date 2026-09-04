@@ -31,9 +31,9 @@
 
 ## packages/sync/src/incremental.ts
 
-- `interface UpdateOptions` L59-66
-- `interface UpdateResult` L68-84
-- `async function update(root: string, opts: UpdateOptions): Promise<UpdateResult>` L94-108
+- `interface UpdateOptions` L58-65
+- `interface UpdateResult` L67-83
+- `async function update(root: string, opts: UpdateOptions): Promise<UpdateResult>` L93-107
 
 ## packages/sync/src/index.ts
 
@@ -75,12 +75,12 @@
 
 ## packages/sync/src/parse-cache.ts
 
-- `const PARSE_CACHE_PATH = "cache/parse.json"` L57-57
-- `const PARSE_CACHE_VERSION = "1"` L64-64
-- `const PARSE_CACHE_VERSION_KEY = "#version"` L67-67
-- `const PARSE_CACHE_STAMP = `${SCHEMA_VERSION}/${PARSE_CACHE_VERSION}`` L70-70
-- `function parseCacheKey(sha256: string, lang: Lang): string` L73-75
-- `class FileParseCache implements ParseCache` L87-197
+- `const PARSE_CACHE_PATH = "cache/parse.json"` L63-63
+- `const PARSE_CACHE_VERSION = "1"` L70-70
+- `const PARSE_CACHE_VERSION_KEY = "#version"` L73-73
+- `const PARSE_CACHE_STAMP = `${SCHEMA_VERSION}/${PARSE_CACHE_VERSION}`` L76-76
+- `function parseCacheKey(sha256: string, lang: Lang): string` L79-81
+- `class FileParseCache implements ParseCache` L103-213
 
 ## packages/sync/src/state.ts
 

@@ -16,18 +16,18 @@
 
 **Key symbols:**
 - `interface ParserHandle`  L15-17
-- `const GRAMMAR_FILE: Readonly<Partial<Record<Lang, string>>> = { ts: "tree-sitter-typescript.wasm", js: "tree-sitter-typescript.wasm", tsx: "tree-sitter-tsx.wasm", jsx: "tree-sitter-tsx.wasm", go: "tr…`  L24-30
-- `const RUNTIME_FILE = "web-tree-sitter.wasm"`  L33-33
-- `function grammarDir(): string`  L36-40
-- `let runtimeInit: Promise<void> | null = null`  L47-47
-- `function initRuntime(dir: string): Promise<void>`  L49-57
-- `const languages = new Map<string, Promise<Language>>()`  L60-60
-- `function loadLanguage(file: string): Promise<Language>`  L62-71
-- `function message(cause: unknown): string`  L73-75
-- `async function createParser(opts?: { grammarDir?: string }): Promise<ParserHandle>`  L83-113
-- `let spare: Parser | null = null`  L125-125
-- `let spareLanguage: Language | null = null`  L126-126
-- `function reparse(language: Language, source: string): Tree | null`  L136-143
-- `function disposeSpareParser(): void`  L146-151
+- `const GRAMMAR_FILE: Readonly<Partial<Record<Lang, string>>> = { ts: "tree-sitter-typescript.wasm", js: "tree-sitter-typescript.wasm", tsx: "tree-sitter-tsx.wasm", jsx: "tree-sitter-tsx.wasm", go: "tr…`  L28-41
+- `const RUNTIME_FILE = "web-tree-sitter.wasm"`  L44-44
+- `function grammarDir(): string`  L47-51
+- `let runtimeInit: Promise<void> | null = null`  L58-58
+- `function initRuntime(dir: string): Promise<void>`  L60-68
+- `const languages = new Map<string, Promise<Language>>()`  L71-71
+- `function loadLanguage(file: string): Promise<Language>`  L73-82
+- `function message(cause: unknown): string`  L84-86
+- `async function createParser(opts?: { grammarDir?: string }): Promise<ParserHandle>`  L94-124
+- `let spare: Parser | null = null`  L136-136
+- `let spareLanguage: Language | null = null`  L137-137
+- `function reparse(language: Language, source: string): Tree | null`  L147-154
+- `function disposeSpareParser(): void`  L157-162
 
 **Calls:** `grammarDir` → [`packages/core/src/parser.ts#grammarDir`](parser.ts.md) (high), `initRuntime` → [`packages/core/src/parser.ts#initRuntime`](parser.ts.md) (high), `loadLanguage` → [`packages/core/src/parser.ts#loadLanguage`](parser.ts.md) (high), `message` → [`packages/core/src/parser.ts#message`](parser.ts.md) (high)

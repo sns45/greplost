@@ -10,9 +10,9 @@
 
 **Imports:** `node:fs` (existsSync, readdirSync, realpathSync), `node:path` (default), `typescript` (default), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Edge, compareEdges, compareStrings), [`./ts-calls.ts`](ts-calls.ts.md) (CallLike, resolveCallEdge), [`./ts-workspace.ts`](ts-workspace.ts.md) (WorkspaceEntryMapper)
 
-**Imported by:** [`bench/src/agent.ts`](../agent.ts.md), [`bench/src/headtohead.ts`](../headtohead.ts.md), [`bench/src/structural.ts`](../structural.ts.md), [`bench/src/tasks.ts`](../tasks.ts.md), [`bench/src/truth/go.ts`](go.ts.md)
+**Imported by:** [`bench/src/agent.ts`](../agent.ts.md), [`bench/src/headtohead.ts`](../headtohead.ts.md), [`bench/src/structural.ts`](../structural.ts.md), [`bench/src/tasks.ts`](../tasks.ts.md), [`bench/src/truth/dockerfile.ts`](dockerfile.ts.md), [`bench/src/truth/go.ts`](go.ts.md), [`bench/src/truth/hcl.ts`](hcl.ts.md), [`bench/src/truth/java.ts`](java.ts.md), [`bench/src/truth/kotlin.ts`](kotlin.ts.md), [`bench/src/truth/python.ts`](python.ts.md), [`bench/src/truth/registry.ts`](registry.ts.md), [`bench/src/truth/rust.ts`](rust.ts.md), [`bench/src/truth/signals-pulumi-go.ts`](signals-pulumi-go.ts.md), [`bench/src/truth/signals-ts.ts`](signals-ts.ts.md), [`bench/src/truth/yaml-actions.ts`](yaml-actions.ts.md), [`bench/src/truth/yaml-helm.ts`](yaml-helm.ts.md), [`bench/src/truth/yaml-k8s.ts`](yaml-k8s.ts.md), [`bench/src/truth/yaml.ts`](yaml.ts.md)
 
-**Blast radius:** 5 files (`greplost impact bench/src/truth/ts.ts`)
+**Blast radius:** 18 files (`greplost impact bench/src/truth/ts.ts`)
 
 **Key symbols:**
 - `interface Truth`  L46-67

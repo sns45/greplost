@@ -8,28 +8,28 @@
 
 **Exports:** `BuildOptions (interface)`, `ParseCache (interface)`, `buildSnapshot(opts: BuildOptions): Promise<Snapshot>`
 
-**Imports:** `node:fs` (readFileSync), `node:fs/promises` (readFile), `node:path` (default), [`./schema.ts`](schema.ts.md) (Declaration, FileEntry, FileRecord, GreplostConfig, Lang, Manifest, SCHEMA_VERSION, Snapshot, SummaryCache, compareDeclarations, compareEdges, compareStrings, symbolId), [`./config.ts`](config.ts.md) (loadConfig), [`./discover.ts`](discover.ts.md) (DiscoveredFile, discoverFiles), [`./hash.ts`](hash.ts.md) (sha256Hex), [`./parser.ts`](parser.ts.md) (ParserHandle, createParser), [`./extract/index.ts`](extract/index.ts.md) (extractFile), [`./resolve/index.ts`](resolve/index.ts.md) (createResolver, detectPackages), [`./graph/index.ts`](graph/index.ts.md) (buildExportIndex, computeMetrics, exportNames, linkCalls, linkImports)
+**Imports:** `node:fs` (readFileSync), `node:fs/promises` (readFile), `node:path` (default), [`./schema.ts`](schema.ts.md) (Declaration, FileEntry, FileRecord, GreplostConfig, Lang, Manifest, SCHEMA_VERSION, Snapshot, SummaryCache, compareDeclarations, compareEdges, compareStrings, symbolId), [`./config.ts`](config.ts.md) (loadConfig), [`./discover.ts`](discover.ts.md) (DiscoveredFile, discoverFiles), [`./hash.ts`](hash.ts.md) (sha256Hex), [`./parser.ts`](parser.ts.md) (ParserHandle, createParser), [`./extract/index.ts`](extract/index.ts.md) (extractFile), [`./signals/index.ts`](signals/index.ts.md) (SignalPassId), [`./resolve/index.ts`](resolve/index.ts.md) (createResolver, detectPackages), [`./graph/index.ts`](graph/index.ts.md) (buildExportIndex, computeMetrics, exportNames, linkCalls, linkImports), [`./references/index.ts`](references/index.ts.md) (linkReferences)
 
 **Imported by:** [`packages/core/src/index.ts`](index.ts.md)
 
 **Blast radius:** 29 files (`greplost impact packages/core/src/build.ts`)
 
 **Key symbols:**
-- `interface ParseCache`  L55-58
-- `interface BuildOptions`  L60-71
-- `const READ_CONCURRENCY = 32`  L74-74
-- `interface SourceFile extends DiscoveredFile`  L76-79
-- `async function buildSnapshot(opts: BuildOptions): Promise<Snapshot>`  L81-140
-- `async function readSources(discovered: DiscoveredFile[]): Promise<SourceFile[]>`  L143-151
-- `async function readOne(file: DiscoveredFile): Promise<SourceFile>`  L153-165
-- `async function extractAll(sources: SourceFile[], opts: BuildOptions): Promise<FileRecord[]>`  L183-230
-- `function recordKey(source: SourceFile): string`  L233-235
-- `function extract(source: SourceFile, parser: ParserHandle): FileRecord`  L241-251
-- `function freezeRecord(record: FileRecord): FileRecord`  L259-265
-- `function restamp(record: FileRecord, filePath: string): FileRecord`  L275-282
-- `function repoReader(root: string): (rel: string) => string | null`  L289-303
-- `interface SummaryIndex`  L309-314
-- `function indexSummaries(summaries: SummaryCache | undefined): SummaryIndex | null`  L316-334
-- `function summaryFor( filePath: string, sha256: string, summaries: SummaryIndex | null, ): { hash?: string; stale: boolean }`  L343-352
+- `interface ParseCache`  L57-60
+- `interface BuildOptions`  L62-73
+- `const READ_CONCURRENCY = 32`  L76-76
+- `interface SourceFile extends DiscoveredFile`  L78-81
+- `async function buildSnapshot(opts: BuildOptions): Promise<Snapshot>`  L83-148
+- `async function readSources(discovered: DiscoveredFile[]): Promise<SourceFile[]>`  L151-159
+- `async function readOne(file: DiscoveredFile): Promise<SourceFile>`  L161-173
+- `async function extractAll( sources: SourceFile[], opts: BuildOptions, signals: readonly SignalPassId[] | undefined, ): Promise<FileRecord[]>`  L191-242
+- `function recordKey(source: SourceFile): string`  L245-247
+- `function extract(source: SourceFile, parser: ParserHandle, signals: readonly SignalPassId[] | undefined): FileRecord`  L253-269
+- `function freezeRecord(record: FileRecord): FileRecord`  L277-284
+- `function restamp(record: FileRecord, filePath: string): FileRecord`  L294-301
+- `function repoReader(root: string): (rel: string) => string | null`  L308-322
+- `interface SummaryIndex`  L328-333
+- `function indexSummaries(summaries: SummaryCache | undefined): SummaryIndex | null`  L335-353
+- `function summaryFor( filePath: string, sha256: string, summaries: SummaryIndex | null, ): { hash?: string; stale: boolean }`  L362-371
 
-**Calls:** `extract` → [`packages/core/src/build.ts#extract`](build.ts.md) (high), `extractAll` → [`packages/core/src/build.ts#extractAll`](build.ts.md) (high), `freezeRecord` → [`packages/core/src/build.ts#freezeRecord`](build.ts.md) (high), `indexSummaries` → [`packages/core/src/build.ts#indexSummaries`](build.ts.md) (high), `readOne` → [`packages/core/src/build.ts#readOne`](build.ts.md) (high), `readSources` → [`packages/core/src/build.ts#readSources`](build.ts.md) (high), `recordKey` → [`packages/core/src/build.ts#recordKey`](build.ts.md) (high), `repoReader` → [`packages/core/src/build.ts#repoReader`](build.ts.md) (high), `restamp` → [`packages/core/src/build.ts#restamp`](build.ts.md) (high), `summaryFor` → [`packages/core/src/build.ts#summaryFor`](build.ts.md) (high), `loadConfig` → [`packages/core/src/config.ts#loadConfig`](config.ts.md) (high), `discoverFiles` → [`packages/core/src/discover.ts#discoverFiles`](discover.ts.md) (high), `extractFile` → [`packages/core/src/extract/index.ts#extractFile`](extract/index.ts.md) (high), `buildExportIndex` → [`packages/core/src/graph/link.ts#buildExportIndex`](graph/link.ts.md) (med), `exportNames` → [`packages/core/src/graph/link.ts#exportNames`](graph/link.ts.md) (med), `linkCalls` → [`packages/core/src/graph/link.ts#linkCalls`](graph/link.ts.md) (med), `linkImports` → [`packages/core/src/graph/link.ts#linkImports`](graph/link.ts.md) (med), `computeMetrics` → [`packages/core/src/graph/metrics.ts#computeMetrics`](graph/metrics.ts.md) (med), `sha256Hex` → [`packages/core/src/hash.ts#sha256Hex`](hash.ts.md) (high), `createParser` → [`packages/core/src/parser.ts#createParser`](parser.ts.md) (high), `detectPackages` → [`packages/core/src/resolve/packages.ts#detectPackages`](resolve/packages.ts.md) (med), `createResolver` → [`packages/core/src/resolve/resolver.ts#createResolver`](resolve/resolver.ts.md) (med), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](schema.ts.md) (high)
+**Calls:** `extract` → [`packages/core/src/build.ts#extract`](build.ts.md) (high), `extractAll` → [`packages/core/src/build.ts#extractAll`](build.ts.md) (high), `freezeRecord` → [`packages/core/src/build.ts#freezeRecord`](build.ts.md) (high), `indexSummaries` → [`packages/core/src/build.ts#indexSummaries`](build.ts.md) (high), `readOne` → [`packages/core/src/build.ts#readOne`](build.ts.md) (high), `readSources` → [`packages/core/src/build.ts#readSources`](build.ts.md) (high), `recordKey` → [`packages/core/src/build.ts#recordKey`](build.ts.md) (high), `repoReader` → [`packages/core/src/build.ts#repoReader`](build.ts.md) (high), `restamp` → [`packages/core/src/build.ts#restamp`](build.ts.md) (high), `summaryFor` → [`packages/core/src/build.ts#summaryFor`](build.ts.md) (high), `loadConfig` → [`packages/core/src/config.ts#loadConfig`](config.ts.md) (high), `discoverFiles` → [`packages/core/src/discover.ts#discoverFiles`](discover.ts.md) (high), `extractFile` → [`packages/core/src/extract/index.ts#extractFile`](extract/index.ts.md) (high), `buildExportIndex` → [`packages/core/src/graph/link.ts#buildExportIndex`](graph/link.ts.md) (med), `exportNames` → [`packages/core/src/graph/link.ts#exportNames`](graph/link.ts.md) (med), `linkCalls` → [`packages/core/src/graph/link.ts#linkCalls`](graph/link.ts.md) (med), `linkImports` → [`packages/core/src/graph/link.ts#linkImports`](graph/link.ts.md) (med), `computeMetrics` → [`packages/core/src/graph/metrics.ts#computeMetrics`](graph/metrics.ts.md) (med), `sha256Hex` → [`packages/core/src/hash.ts#sha256Hex`](hash.ts.md) (high), `createParser` → [`packages/core/src/parser.ts#createParser`](parser.ts.md) (high), `linkReferences` → [`packages/core/src/references/link.ts#linkReferences`](references/link.ts.md) (med), `detectPackages` → [`packages/core/src/resolve/packages.ts#detectPackages`](resolve/packages.ts.md) (med), `createResolver` → [`packages/core/src/resolve/resolver.ts#createResolver`](resolve/resolver.ts.md) (med), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](schema.ts.md) (high)

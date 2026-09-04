@@ -12,7 +12,7 @@
 
 **Imported by:** [`bench/src/truth/ts.ts`](ts.ts.md)
 
-**Blast radius:** 6 files (`greplost impact bench/src/truth/ts-calls.ts`)
+**Blast radius:** 19 files (`greplost impact bench/src/truth/ts-calls.ts`)
 
 **Key symbols:**
 - `interface CallEndpoints`  L22-27

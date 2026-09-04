@@ -8,37 +8,39 @@
 
 **Exports:** `RepoContext (interface)`, `ResolvedTarget (type)`, `Resolver (interface)`, `createResolver(ctx: RepoContext): Resolver`
 
-**Imports:** `node:module` (builtinModules), [`./go.ts`](go.ts.md) (createGoResolver), [`./tsconfig.ts`](tsconfig.ts.md) (TsPaths, loadTsconfigPaths), [`../schema.ts`](../schema.ts.md) (Lang, PackageInfo, compareStrings)
+**Imports:** `node:module` (builtinModules), [`./go.ts`](go.ts.md) (createGoResolver), [`./tsconfig.ts`](tsconfig.ts.md) (TsPaths, loadTsconfigPaths), [`../schema.ts`](../schema.ts.md) (Lang, PackageInfo, compareStrings), [`./dockerfile.ts`](dockerfile.ts.md) (createDockerfileResolver), [`./hcl.ts`](hcl.ts.md) (createHclResolver), [`./java.ts`](java.ts.md) (createJavaResolver), [`./kotlin.ts`](kotlin.ts.md) (createKotlinResolver), [`./python.ts`](python.ts.md) (createPythonResolver), [`./rust.ts`](rust.ts.md) (createRustResolver), [`./yaml.ts`](yaml.ts.md) (createYamlResolver)
 
-**Imported by:** [`packages/core/src/resolve/index.ts`](index.ts.md)
+**Imported by:** [`packages/core/src/references/link.ts`](../references/link.ts.md), [`packages/core/src/resolve/dockerfile.ts`](dockerfile.ts.md), [`packages/core/src/resolve/hcl.ts`](hcl.ts.md), [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/java.ts`](java.ts.md), [`packages/core/src/resolve/kotlin.ts`](kotlin.ts.md), [`packages/core/src/resolve/python.ts`](python.ts.md), [`packages/core/src/resolve/rust.ts`](rust.ts.md), [`packages/core/src/resolve/yaml.ts`](yaml.ts.md)
 
-**Blast radius:** 48 files (`greplost impact packages/core/src/resolve/resolver.ts`)
+**Blast radius:** 64 files (`greplost impact packages/core/src/resolve/resolver.ts`)
 
 **Key symbols:**
-- `type ResolvedTarget = | { type: "file"; path: string } | { type: "external"; pkg: string } | { type: "unresolved" }`  L34-37
-- `interface RepoContext`  L39-47
-- `interface Resolver`  L49-56
-- `const UNRESOLVED: ResolvedTarget = { type: "unresolved" }`  L58-58
-- `const EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"] as const`  L61-61
-- `const JS_TO_TS: Readonly<Record<string, readonly string[]>> = { ".js": [".ts", ".tsx"], ".jsx": [".tsx"], ".mjs": [".mts"], ".cjs": [".cts"], }`  L64-69
-- `const EXPORT_CONDITIONS = ["bun", "source", "import", "default", "require", "types"] as const`  L72-72
-- `const BUILTINS: ReadonlySet<string> = new Set(builtinModules)`  L74-74
-- `function createResolver(ctx: RepoContext): Resolver`  L76-320
-- `function pathMappings(config: TsPaths, specifier: string): string[]`  L331-354
-- `function starPrefix(key: string): string`  L356-359
-- `function wildcardStar(key: string, specifier: string): string | null`  L362-370
-- `interface SubpathMatch`  L382-385
-- `const NO_MATCH: SubpathMatch = { targets: [], blocked: false }`  L387-387
-- `const BLOCKED: SubpathMatch = { targets: [], blocked: true }`  L388-388
-- `function matched(targets: string[]): SubpathMatch`  L390-392
-- `function exportsTargets(exportsField: unknown, key: string): SubpathMatch`  L395-411
-- `function importsTargets(importsField: unknown, key: string): SubpathMatch`  L414-420
-- `function subpathTargets(map: Record<string, unknown>, keys: string[], key: string): SubpathMatch`  L423-449
-- `function conditionTargets(value: unknown): SubpathMatch`  L455-482
-- `function splitBareSpecifier(specifier: string): { name: string; subpath: string }`  L489-497
-- `function normalizeRelative(p: string): string`  L499-501
-- `function parentDir(p: string): string`  L503-506
-- `function joinRelative(dir: string, name: string): string`  L508-510
-- `function normalizeJoin(dir: string, rest: string): string | null`  L513-525
+- `type ResolvedTarget = | { type: "file"; path: string } | { type: "external"; pkg: string } | { type: "unresolved" }`  L41-44
+- `interface RepoContext`  L46-54
+- `interface Resolver`  L56-63
+- `const UNRESOLVED: ResolvedTarget = { type: "unresolved" }`  L65-65
+- `const EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"] as const`  L68-68
+- `const JS_TO_TS: Readonly<Record<string, readonly string[]>> = { ".js": [".ts", ".tsx"], ".jsx": [".tsx"], ".mjs": [".mts"], ".cjs": [".cts"], }`  L71-76
+- `const EXPORT_CONDITIONS = ["bun", "source", "import", "default", "require", "types"] as const`  L79-79
+- `const BUILTINS: ReadonlySet<string> = new Set(builtinModules)`  L81-81
+- `type LanguageResolver = (fromFile: string, specifier: string) => ResolvedTarget`  L84-84
+- `const LANGUAGE_RESOLVERS: Readonly<Partial<Record<Lang, (ctx: RepoContext) => LanguageResolver>>> = { python: createPythonResolver, rust: createRustResolver, java: createJavaResolver, kotlin: createK…`  L94-102
+- `function createResolver(ctx: RepoContext): Resolver`  L104-373
+- `function pathMappings(config: TsPaths, specifier: string): string[]`  L384-407
+- `function starPrefix(key: string): string`  L409-412
+- `function wildcardStar(key: string, specifier: string): string | null`  L415-423
+- `interface SubpathMatch`  L435-438
+- `const NO_MATCH: SubpathMatch = { targets: [], blocked: false }`  L440-440
+- `const BLOCKED: SubpathMatch = { targets: [], blocked: true }`  L441-441
+- `function matched(targets: string[]): SubpathMatch`  L443-445
+- `function exportsTargets(exportsField: unknown, key: string): SubpathMatch`  L448-464
+- `function importsTargets(importsField: unknown, key: string): SubpathMatch`  L467-473
+- `function subpathTargets(map: Record<string, unknown>, keys: string[], key: string): SubpathMatch`  L476-502
+- `function conditionTargets(value: unknown): SubpathMatch`  L508-535
+- `function splitBareSpecifier(specifier: string): { name: string; subpath: string }`  L542-550
+- `function normalizeRelative(p: string): string`  L552-554
+- `function parentDir(p: string): string`  L556-559
+- `function joinRelative(dir: string, name: string): string`  L561-563
+- `function normalizeJoin(dir: string, rest: string): string | null`  L566-578
 
 **Calls:** `createGoResolver` → [`packages/core/src/resolve/go.ts#createGoResolver`](go.ts.md) (high), `conditionTargets` → [`packages/core/src/resolve/resolver.ts#conditionTargets`](resolver.ts.md) (high), `exportsTargets` → [`packages/core/src/resolve/resolver.ts#exportsTargets`](resolver.ts.md) (high), `importsTargets` → [`packages/core/src/resolve/resolver.ts#importsTargets`](resolver.ts.md) (high), `joinRelative` → [`packages/core/src/resolve/resolver.ts#joinRelative`](resolver.ts.md) (high), `matched` → [`packages/core/src/resolve/resolver.ts#matched`](resolver.ts.md) (high), `normalizeJoin` → [`packages/core/src/resolve/resolver.ts#normalizeJoin`](resolver.ts.md) (high), `normalizeRelative` → [`packages/core/src/resolve/resolver.ts#normalizeRelative`](resolver.ts.md) (high), `parentDir` → [`packages/core/src/resolve/resolver.ts#parentDir`](resolver.ts.md) (high), `pathMappings` → [`packages/core/src/resolve/resolver.ts#pathMappings`](resolver.ts.md) (high), `splitBareSpecifier` → [`packages/core/src/resolve/resolver.ts#splitBareSpecifier`](resolver.ts.md) (high), `starPrefix` → [`packages/core/src/resolve/resolver.ts#starPrefix`](resolver.ts.md) (high), `subpathTargets` → [`packages/core/src/resolve/resolver.ts#subpathTargets`](resolver.ts.md) (high), `wildcardStar` → [`packages/core/src/resolve/resolver.ts#wildcardStar`](resolver.ts.md) (high), `loadTsconfigPaths` → [`packages/core/src/resolve/tsconfig.ts#loadTsconfigPaths`](tsconfig.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high)

@@ -8,41 +8,41 @@
 
 **Exports:** `UpdateOptions (interface)`, `UpdateResult (interface)`, `update(root: string, opts: UpdateOptions): Promise<UpdateResult>`
 
-**Imports:** `node:child_process` (spawnSync), `node:fs` (Dirent, lstatSync, readFileSync, readdirSync, realpathSync, rmSync), `node:path` (default), `node:perf_hooks` (performance), [`@greplost/core`](../../../greplost__core/modules/src/index.ts.md) (ParseCache, discoverFiles, loadConfig, sha256Hex), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, FileRecord, GreplostConfig, LANG_BY_EXTENSION, Lang, Snapshot, compareStrings, stableStringify), [`./build.ts`](build.ts.md) (buildArtifacts), [`./dirty.ts`](dirty.ts.md) (appendDirty, readAndClearDirty, toRepoRelative), [`./lock.ts`](lock.ts.md) (withLock), [`./parse-cache.ts`](parse-cache.ts.md) (FileParseCache, parseCacheKey), [`./state.ts`](state.ts.md) (readState, writeState), [`./write.ts`](write.ts.md) (writeArtifacts)
+**Imports:** `node:child_process` (spawnSync), `node:fs` (Dirent, lstatSync, readFileSync, readdirSync, realpathSync, rmSync), `node:path` (default), `node:perf_hooks` (performance), [`@greplost/core`](../../../greplost__core/modules/src/index.ts.md) (ParseCache, discoverFiles, langOf, loadConfig, sha256Hex), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, FileRecord, GreplostConfig, Lang, Snapshot, compareStrings, stableStringify), [`./build.ts`](build.ts.md) (buildArtifacts), [`./dirty.ts`](dirty.ts.md) (appendDirty, readAndClearDirty, toRepoRelative), [`./lock.ts`](lock.ts.md) (withLock), [`./parse-cache.ts`](parse-cache.ts.md) (FileParseCache, parseCacheKey), [`./state.ts`](state.ts.md) (readState, writeState), [`./write.ts`](write.ts.md) (writeArtifacts)
 
 **Imported by:** [`packages/sync/src/index.ts`](index.ts.md), [`packages/sync/src/init.ts`](init.ts.md)
 
 **Blast radius:** 19 files (`greplost impact packages/sync/src/incremental.ts`)
 
 **Key symbols:**
-- `interface UpdateOptions`  L59-66
-- `interface UpdateResult`  L68-84
-- `async function update(root: string, opts: UpdateOptions): Promise<UpdateResult>`  L94-108
-- `async function runUpdate(root: string, opts: UpdateOptions, started: number): Promise<UpdateResult>`  L110-245
-- `class CountingCache implements ParseCache`  L256-275
-- `CountingCache.constructor( private readonly inner: FileParseCache, private readonly readable: boolean, )`  L260-263
-- `CountingCache.get(sha256: string, lang: Lang): FileRecord | undefined`  L265-270
-- `CountingCache.set(record: FileRecord): void`  L272-274
-- `function usedKeys(snapshot: Snapshot): Set<string>`  L278-282
-- `function empty(mode: "incremental" | "full", started: number): UpdateResult`  L284-286
-- `function elapsed(started: number): number`  L288-290
-- `function report(result: UpdateResult, quiet: boolean | undefined): UpdateResult`  L297-312
-- `interface GitContext`  L314-317
-- `function gitContext(root: string): GitContext | undefined`  L330-338
-- `async function keepIndexable( root: string, candidates: string[], config: GreplostConfig, precise: boolean, ): Promise<Set<string>>`  L367-398
-- `function isDirectory(target: string): boolean`  L400-406
-- `function isIndexableName(rel: string, config: GreplostConfig): boolean`  L409-415
-- `function indexedFiles(root: string): Set<string>`  L425-434
-- `const TEMPORARY = /^\..+\.(\d+)\.\d+\.tmp$/`  L437-437
-- `function sweepTemporaries(artifactDir: string): void`  L449-473
-- `function workingTreePaths(root: string): string[]`  L493-520
-- `function committedSince(root: string, indexed: string): string[]`  L523-527
-- `function commitExists(root: string, indexed: string): boolean`  L537-539
-- `function isCommitish(value: string | undefined): value is string`  L546-548
-- `function normalisePaths(root: string, paths: readonly string[]): string[]`  L550-557
-- `function uniqueSorted(paths: readonly string[]): string[]`  L559-561
-- `function samePath(a: string, b: string): boolean`  L563-568
-- `function realpath(target: string): string`  L570-576
-- `function runGit(root: string, args: string[]): string | undefined`  L579-587
+- `interface UpdateOptions`  L58-65
+- `interface UpdateResult`  L67-83
+- `async function update(root: string, opts: UpdateOptions): Promise<UpdateResult>`  L93-107
+- `async function runUpdate(root: string, opts: UpdateOptions, started: number): Promise<UpdateResult>`  L109-244
+- `class CountingCache implements ParseCache`  L255-274
+- `CountingCache.constructor( private readonly inner: FileParseCache, private readonly readable: boolean, )`  L259-262
+- `CountingCache.get(sha256: string, lang: Lang): FileRecord | undefined`  L264-269
+- `CountingCache.set(record: FileRecord): void`  L271-273
+- `function usedKeys(snapshot: Snapshot): Set<string>`  L277-281
+- `function empty(mode: "incremental" | "full", started: number): UpdateResult`  L283-285
+- `function elapsed(started: number): number`  L287-289
+- `function report(result: UpdateResult, quiet: boolean | undefined): UpdateResult`  L296-311
+- `interface GitContext`  L313-316
+- `function gitContext(root: string): GitContext | undefined`  L329-337
+- `async function keepIndexable( root: string, candidates: string[], config: GreplostConfig, precise: boolean, ): Promise<Set<string>>`  L366-397
+- `function isDirectory(target: string): boolean`  L399-405
+- `function isIndexableName(rel: string, config: GreplostConfig): boolean`  L408-411
+- `function indexedFiles(root: string): Set<string>`  L421-430
+- `const TEMPORARY = /^\..+\.(\d+)\.\d+\.tmp$/`  L433-433
+- `function sweepTemporaries(artifactDir: string): void`  L445-469
+- `function workingTreePaths(root: string): string[]`  L489-516
+- `function committedSince(root: string, indexed: string): string[]`  L519-523
+- `function commitExists(root: string, indexed: string): boolean`  L533-535
+- `function isCommitish(value: string | undefined): value is string`  L542-544
+- `function normalisePaths(root: string, paths: readonly string[]): string[]`  L546-553
+- `function uniqueSorted(paths: readonly string[]): string[]`  L555-557
+- `function samePath(a: string, b: string): boolean`  L559-564
+- `function realpath(target: string): string`  L566-572
+- `function runGit(root: string, args: string[]): string | undefined`  L575-583
 
-**Calls:** `loadConfig` → [`packages/core/src/config.ts#loadConfig`](../../../greplost__core/modules/src/config.ts.md) (med), `discoverFiles` → [`packages/core/src/discover.ts#discoverFiles`](../../../greplost__core/modules/src/discover.ts.md) (med), `sha256Hex` → [`packages/core/src/hash.ts#sha256Hex`](../../../greplost__core/modules/src/hash.ts.md) (med), `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high), `buildArtifacts` → [`packages/sync/src/build.ts#buildArtifacts`](build.ts.md) (high), `appendDirty` → [`packages/sync/src/dirty.ts#appendDirty`](dirty.ts.md) (high), `readAndClearDirty` → [`packages/sync/src/dirty.ts#readAndClearDirty`](dirty.ts.md) (high), `toRepoRelative` → [`packages/sync/src/dirty.ts#toRepoRelative`](dirty.ts.md) (high), `CountingCache` → [`packages/sync/src/incremental.ts#CountingCache`](incremental.ts.md) (high), `commitExists` → [`packages/sync/src/incremental.ts#commitExists`](incremental.ts.md) (high), `committedSince` → [`packages/sync/src/incremental.ts#committedSince`](incremental.ts.md) (high), `elapsed` → [`packages/sync/src/incremental.ts#elapsed`](incremental.ts.md) (high), `empty` → [`packages/sync/src/incremental.ts#empty`](incremental.ts.md) (high), `gitContext` → [`packages/sync/src/incremental.ts#gitContext`](incremental.ts.md) (high), `indexedFiles` → [`packages/sync/src/incremental.ts#indexedFiles`](incremental.ts.md) (high), `isCommitish` → [`packages/sync/src/incremental.ts#isCommitish`](incremental.ts.md) (high), `isDirectory` → [`packages/sync/src/incremental.ts#isDirectory`](incremental.ts.md) (high), `isIndexableName` → [`packages/sync/src/incremental.ts#isIndexableName`](incremental.ts.md) (high), `keepIndexable` → [`packages/sync/src/incremental.ts#keepIndexable`](incremental.ts.md) (high), `normalisePaths` → [`packages/sync/src/incremental.ts#normalisePaths`](incremental.ts.md) (high), `realpath` → [`packages/sync/src/incremental.ts#realpath`](incremental.ts.md) (high), `report` → [`packages/sync/src/incremental.ts#report`](incremental.ts.md) (high), `runGit` → [`packages/sync/src/incremental.ts#runGit`](incremental.ts.md) (high), `runUpdate` → [`packages/sync/src/incremental.ts#runUpdate`](incremental.ts.md) (high), `samePath` → [`packages/sync/src/incremental.ts#samePath`](incremental.ts.md) (high), `sweepTemporaries` → [`packages/sync/src/incremental.ts#sweepTemporaries`](incremental.ts.md) (high), `uniqueSorted` → [`packages/sync/src/incremental.ts#uniqueSorted`](incremental.ts.md) (high), `usedKeys` → [`packages/sync/src/incremental.ts#usedKeys`](incremental.ts.md) (high), `workingTreePaths` → [`packages/sync/src/incremental.ts#workingTreePaths`](incremental.ts.md) (high), `withLock` → [`packages/sync/src/lock.ts#withLock`](lock.ts.md) (high), `FileParseCache` → [`packages/sync/src/parse-cache.ts#FileParseCache`](parse-cache.ts.md) (high), `parseCacheKey` → [`packages/sync/src/parse-cache.ts#parseCacheKey`](parse-cache.ts.md) (high), `readState` → [`packages/sync/src/state.ts#readState`](state.ts.md) (high), `writeState` → [`packages/sync/src/state.ts#writeState`](state.ts.md) (high), `writeArtifacts` → [`packages/sync/src/write.ts#writeArtifacts`](write.ts.md) (high)
+**Calls:** `loadConfig` → [`packages/core/src/config.ts#loadConfig`](../../../greplost__core/modules/src/config.ts.md) (med), `discoverFiles` → [`packages/core/src/discover.ts#discoverFiles`](../../../greplost__core/modules/src/discover.ts.md) (med), `sha256Hex` → [`packages/core/src/hash.ts#sha256Hex`](../../../greplost__core/modules/src/hash.ts.md) (med), `langOf` → [`packages/core/src/lang.ts#langOf`](../../../greplost__core/modules/src/lang.ts.md) (med), `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high), `buildArtifacts` → [`packages/sync/src/build.ts#buildArtifacts`](build.ts.md) (high), `appendDirty` → [`packages/sync/src/dirty.ts#appendDirty`](dirty.ts.md) (high), `readAndClearDirty` → [`packages/sync/src/dirty.ts#readAndClearDirty`](dirty.ts.md) (high), `toRepoRelative` → [`packages/sync/src/dirty.ts#toRepoRelative`](dirty.ts.md) (high), `CountingCache` → [`packages/sync/src/incremental.ts#CountingCache`](incremental.ts.md) (high), `commitExists` → [`packages/sync/src/incremental.ts#commitExists`](incremental.ts.md) (high), `committedSince` → [`packages/sync/src/incremental.ts#committedSince`](incremental.ts.md) (high), `elapsed` → [`packages/sync/src/incremental.ts#elapsed`](incremental.ts.md) (high), `empty` → [`packages/sync/src/incremental.ts#empty`](incremental.ts.md) (high), `gitContext` → [`packages/sync/src/incremental.ts#gitContext`](incremental.ts.md) (high), `indexedFiles` → [`packages/sync/src/incremental.ts#indexedFiles`](incremental.ts.md) (high), `isCommitish` → [`packages/sync/src/incremental.ts#isCommitish`](incremental.ts.md) (high), `isDirectory` → [`packages/sync/src/incremental.ts#isDirectory`](incremental.ts.md) (high), `isIndexableName` → [`packages/sync/src/incremental.ts#isIndexableName`](incremental.ts.md) (high), `keepIndexable` → [`packages/sync/src/incremental.ts#keepIndexable`](incremental.ts.md) (high), `normalisePaths` → [`packages/sync/src/incremental.ts#normalisePaths`](incremental.ts.md) (high), `realpath` → [`packages/sync/src/incremental.ts#realpath`](incremental.ts.md) (high), `report` → [`packages/sync/src/incremental.ts#report`](incremental.ts.md) (high), `runGit` → [`packages/sync/src/incremental.ts#runGit`](incremental.ts.md) (high), `runUpdate` → [`packages/sync/src/incremental.ts#runUpdate`](incremental.ts.md) (high), `samePath` → [`packages/sync/src/incremental.ts#samePath`](incremental.ts.md) (high), `sweepTemporaries` → [`packages/sync/src/incremental.ts#sweepTemporaries`](incremental.ts.md) (high), `uniqueSorted` → [`packages/sync/src/incremental.ts#uniqueSorted`](incremental.ts.md) (high), `usedKeys` → [`packages/sync/src/incremental.ts#usedKeys`](incremental.ts.md) (high), `workingTreePaths` → [`packages/sync/src/incremental.ts#workingTreePaths`](incremental.ts.md) (high), `withLock` → [`packages/sync/src/lock.ts#withLock`](lock.ts.md) (high), `FileParseCache` → [`packages/sync/src/parse-cache.ts#FileParseCache`](parse-cache.ts.md) (high), `parseCacheKey` → [`packages/sync/src/parse-cache.ts#parseCacheKey`](parse-cache.ts.md) (high), `readState` → [`packages/sync/src/state.ts#readState`](state.ts.md) (high), `writeState` → [`packages/sync/src/state.ts#writeState`](state.ts.md) (high), `writeArtifacts` → [`packages/sync/src/write.ts#writeArtifacts`](write.ts.md) (high)

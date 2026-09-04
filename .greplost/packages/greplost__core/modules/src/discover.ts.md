@@ -8,21 +8,20 @@
 
 **Exports:** `DiscoveredFile (interface)`, `discoverCandidates(root: string, config: GreplostConfig): Promise<string[]>`, `discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]>`
 
-**Imports:** `node:child_process` (execFileSync), `node:fs` (existsSync, realpathSync), `node:path` (join, resolve, sep), `fast-glob` (default), `picomatch` (default), [`./schema.ts`](schema.ts.md) (ARTIFACT_DIR, GreplostConfig, LANG_BY_EXTENSION, Lang, compareStrings)
+**Imports:** `node:child_process` (execFileSync), `node:fs` (existsSync, realpathSync), `node:path` (join, resolve, sep), `fast-glob` (default), `picomatch` (default), [`./schema.ts`](schema.ts.md) (ARTIFACT_DIR, GreplostConfig, Lang, compareStrings), [`./lang.ts`](lang.ts.md) (langOf)
 
 **Imported by:** [`packages/core/src/build.ts`](build.ts.md), [`packages/core/src/index.ts`](index.ts.md)
 
 **Blast radius:** 30 files (`greplost impact packages/core/src/discover.ts`)
 
 **Key symbols:**
-- `interface DiscoveredFile`  L23-28
-- `const GIT_LS_FILES_MAX_BUFFER = 64 * 1024 * 1024`  L30-30
-- `function toPosix(p: string): string`  L32-34
-- `function extensionOf(path: string): string`  L36-41
-- `function isGitRepo(root: string): boolean`  L43-69
-- `function gitCandidates(root: string): string[]`  L71-87
-- `async function globCandidates(root: string, config: GreplostConfig): Promise<string[]>`  L89-105
-- `async function discoverCandidates(root: string, config: GreplostConfig): Promise<string[]>`  L117-132
-- `async function discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]>`  L134-147
+- `interface DiscoveredFile`  L24-29
+- `const GIT_LS_FILES_MAX_BUFFER = 64 * 1024 * 1024`  L31-31
+- `function toPosix(p: string): string`  L33-35
+- `function isGitRepo(root: string): boolean`  L37-63
+- `function gitCandidates(root: string): string[]`  L65-81
+- `async function globCandidates(root: string, config: GreplostConfig): Promise<string[]>`  L83-99
+- `async function discoverCandidates(root: string, config: GreplostConfig): Promise<string[]>`  L111-126
+- `async function discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]>`  L128-141
 
-**Calls:** `discoverCandidates` → [`packages/core/src/discover.ts#discoverCandidates`](discover.ts.md) (high), `extensionOf` → [`packages/core/src/discover.ts#extensionOf`](discover.ts.md) (high), `gitCandidates` → [`packages/core/src/discover.ts#gitCandidates`](discover.ts.md) (high), `globCandidates` → [`packages/core/src/discover.ts#globCandidates`](discover.ts.md) (high), `isGitRepo` → [`packages/core/src/discover.ts#isGitRepo`](discover.ts.md) (high), `toPosix` → [`packages/core/src/discover.ts#toPosix`](discover.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high)
+**Calls:** `discoverCandidates` → [`packages/core/src/discover.ts#discoverCandidates`](discover.ts.md) (high), `gitCandidates` → [`packages/core/src/discover.ts#gitCandidates`](discover.ts.md) (high), `globCandidates` → [`packages/core/src/discover.ts#globCandidates`](discover.ts.md) (high), `isGitRepo` → [`packages/core/src/discover.ts#isGitRepo`](discover.ts.md) (high), `toPosix` → [`packages/core/src/discover.ts#toPosix`](discover.ts.md) (high), `langOf` → [`packages/core/src/lang.ts#langOf`](lang.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high)

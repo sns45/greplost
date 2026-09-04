@@ -8,16 +8,15 @@
 
 **Exports:** `UnparsableFile (interface)`, `brokenRoot(source: string, lang: Lang, parser: ParserHandle): UnparsableFile["reason"] | null`, `findUnparsableFiles( root: string, files: readonly string[], opts?: { parser?: ParserHandle; grammarDir?: string }, ): Promise<UnparsableFile[]>`
 
-**Imports:** `node:fs` (readFileSync), `node:path` (isAbsolute, join), [`./parser.ts`](parser.ts.md) (ParserHandle, createParser), [`./schema.ts`](schema.ts.md) (LANG_BY_EXTENSION, Lang, compareStrings)
+**Imports:** `node:fs` (readFileSync), `node:path` (isAbsolute, join), [`./parser.ts`](parser.ts.md) (ParserHandle, createParser), [`./schema.ts`](schema.ts.md) (Lang, compareStrings), [`./lang.ts`](lang.ts.md) (langOf)
 
 **Imported by:** [`packages/core/src/index.ts`](index.ts.md)
 
 **Blast radius:** 29 files (`greplost impact packages/core/src/unparsable.ts`)
 
 **Key symbols:**
-- `interface UnparsableFile`  L28-39
-- `function langOf(path: string): Lang | null`  L42-48
-- `async function findUnparsableFiles( root: string, files: readonly string[], opts?: { parser?: ParserHandle; grammarDir?: string }, ): Promise<UnparsableFile[]>`  L61-87
-- `function brokenRoot(source: string, lang: Lang, parser: ParserHandle): UnparsableFile["reason"] | null`  L97-111
+- `interface UnparsableFile`  L29-40
+- `async function findUnparsableFiles( root: string, files: readonly string[], opts?: { parser?: ParserHandle; grammarDir?: string }, ): Promise<UnparsableFile[]>`  L53-79
+- `function brokenRoot(source: string, lang: Lang, parser: ParserHandle): UnparsableFile["reason"] | null`  L89-103
 
-**Calls:** `createParser` → [`packages/core/src/parser.ts#createParser`](parser.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high), `brokenRoot` → [`packages/core/src/unparsable.ts#brokenRoot`](unparsable.ts.md) (high), `langOf` → [`packages/core/src/unparsable.ts#langOf`](unparsable.ts.md) (high)
+**Calls:** `langOf` → [`packages/core/src/lang.ts#langOf`](lang.ts.md) (high), `createParser` → [`packages/core/src/parser.ts#createParser`](parser.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high), `brokenRoot` → [`packages/core/src/unparsable.ts#brokenRoot`](unparsable.ts.md) (high)

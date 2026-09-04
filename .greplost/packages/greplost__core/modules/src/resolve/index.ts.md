@@ -6,9 +6,9 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `RepoContext`, `ResolvedTarget`, `Resolver`, `TsPaths`, `createResolver`, `detectPackages`, `loadTsconfigPaths`, `packageOf`
+**Exports:** `RepoContext`, `ResolvedTarget`, `Resolver`, `TsPaths`, `createDockerfileResolver`, `createHclResolver`, `createJavaResolver`, `createKotlinResolver`, `createPythonResolver`, `createResolver`, `createRustResolver`, `createYamlResolver`, `detectPackages`, `loadTsconfigPaths`, `packageOf`, `resolveDockerfileCall`, `resolveHclCall`, `resolveJavaCall`, `resolveKotlinCall`, `resolvePythonCall`, `resolveRustCall`, `resolveYamlCall`
 
-**Imports:** [`./packages.ts`](packages.ts.md) (detectPackages, packageOf), [`./tsconfig.ts`](tsconfig.ts.md) (TsPaths, loadTsconfigPaths), [`./resolver.ts`](resolver.ts.md) (RepoContext, ResolvedTarget, Resolver, createResolver)
+**Imports:** [`./packages.ts`](packages.ts.md) (detectPackages, packageOf), [`./tsconfig.ts`](tsconfig.ts.md) (TsPaths, loadTsconfigPaths), [`./resolver.ts`](resolver.ts.md) (RepoContext, ResolvedTarget, Resolver, createResolver), [`./dockerfile.ts`](dockerfile.ts.md) (createDockerfileResolver, resolveDockerfileCall), [`./hcl.ts`](hcl.ts.md) (createHclResolver, resolveHclCall), [`./java.ts`](java.ts.md) (createJavaResolver, resolveJavaCall), [`./kotlin.ts`](kotlin.ts.md) (createKotlinResolver, resolveKotlinCall), [`./python.ts`](python.ts.md) (createPythonResolver, resolvePythonCall), [`./rust.ts`](rust.ts.md) (createRustResolver, resolveRustCall), [`./yaml.ts`](yaml.ts.md) (createYamlResolver, resolveYamlCall)
 
 **Imported by:** [`packages/core/src/build.ts`](../build.ts.md), [`packages/core/src/graph/metrics.ts`](../graph/metrics.ts.md), [`packages/core/src/index.ts`](../index.ts.md)
 

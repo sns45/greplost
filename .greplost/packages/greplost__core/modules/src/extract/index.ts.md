@@ -6,16 +6,19 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `ExtractInput (interface)`, `extractFile(input: ExtractInput, parser: ParserHandle): FileRecord`, `extractGo`, `extractTs`
+**Exports:** `ExtractInput (interface)`, `YamlFlavour`, `classifyYamlDocument`, `classifyYamlFile`, `extractDockerfile`, `extractFile(input: ExtractInput, parser: ParserHandle): FileRecord`, `extractGo`, `extractHcl`, `extractJava`, `extractKotlin`, `extractPython`, `extractRust`, `extractTs`, `extractYaml`, `extractYamlActions`, `extractYamlHelm`, `extractYamlK8s`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (FileRecord, Lang), [`../parser.ts`](../parser.ts.md) (ParserHandle), [`../hash.ts`](../hash.ts.md) (countLoc), [`./go.ts`](go.ts.md) (extractGo), [`./ts.ts`](ts.ts.md) (extractTs)
+**Imports:** [`../schema.ts`](../schema.ts.md) (Declaration, FileRecord, Lang, ReferenceRecord), [`../parser.ts`](../parser.ts.md) (ParserHandle), `web-tree-sitter` (Tree), [`../hash.ts`](../hash.ts.md) (countLoc), [`../signals/index.ts`](../signals/index.ts.md) (SignalPassId, runSignals), [`./dockerfile.ts`](dockerfile.ts.md) (extractDockerfile), [`./go.ts`](go.ts.md) (extractGo), [`./hcl.ts`](hcl.ts.md) (extractHcl), [`./java.ts`](java.ts.md) (extractJava), [`./kotlin.ts`](kotlin.ts.md) (extractKotlin), [`./python.ts`](python.ts.md) (extractPython), [`./rust.ts`](rust.ts.md) (extractRust), [`./ts.ts`](ts.ts.md) (extractTs), [`./yaml.ts`](yaml.ts.md) (YamlFlavour, classifyYamlDocument, classifyYamlFile, extractYaml), [`./yaml-actions.ts`](yaml-actions.ts.md) (extractYamlActions), [`./yaml-helm.ts`](yaml-helm.ts.md) (extractYamlHelm), [`./yaml-k8s.ts`](yaml-k8s.ts.md) (extractYamlK8s)
 
 **Imported by:** [`packages/core/src/build.ts`](../build.ts.md), [`packages/core/src/index.ts`](../index.ts.md)
 
 **Blast radius:** 30 files (`greplost impact packages/core/src/extract/index.ts`)
 
 **Key symbols:**
-- `interface ExtractInput`  L14-21
-- `function extractFile(input: ExtractInput, parser: ParserHandle): FileRecord`  L26-55
+- `interface ExtractInput`  L30-42
+- `type ExtractedParts = Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L59-59
+- `function extractByLang(input: ExtractInput, tree: Tree): ExtractedParts`  L62-87
+- `function extractFile(input: ExtractInput, parser: ParserHandle): FileRecord`  L89-140
+- `function mergeRefs( fromLanguage: readonly ReferenceRecord[] | undefined, fromSignals: readonly ReferenceRecord[], ): ReferenceRecord[] | undefined`  L146-153
 
-**Calls:** `extractGo` → [`packages/core/src/extract/go.ts#extractGo`](go.ts.md) (high), `extractTs` → [`packages/core/src/extract/ts.ts#extractTs`](ts.ts.md) (high), `countLoc` → [`packages/core/src/hash.ts#countLoc`](../hash.ts.md) (high)
+**Calls:** `extractDockerfile` → [`packages/core/src/extract/dockerfile.ts#extractDockerfile`](dockerfile.ts.md) (high), `extractGo` → [`packages/core/src/extract/go.ts#extractGo`](go.ts.md) (high), `extractHcl` → [`packages/core/src/extract/hcl.ts#extractHcl`](hcl.ts.md) (high), `extractByLang` → [`packages/core/src/extract/index.ts#extractByLang`](index.ts.md) (high), `mergeRefs` → [`packages/core/src/extract/index.ts#mergeRefs`](index.ts.md) (high), `extractJava` → [`packages/core/src/extract/java.ts#extractJava`](java.ts.md) (high), `extractKotlin` → [`packages/core/src/extract/kotlin.ts#extractKotlin`](kotlin.ts.md) (high), `extractPython` → [`packages/core/src/extract/python.ts#extractPython`](python.ts.md) (high), `extractRust` → [`packages/core/src/extract/rust.ts#extractRust`](rust.ts.md) (high), `extractTs` → [`packages/core/src/extract/ts.ts#extractTs`](ts.ts.md) (high), `extractYaml` → [`packages/core/src/extract/yaml.ts#extractYaml`](yaml.ts.md) (high), `countLoc` → [`packages/core/src/hash.ts#countLoc`](../hash.ts.md) (high), `runSignals` → [`packages/core/src/signals/index.ts#runSignals`](../signals/index.ts.md) (high)

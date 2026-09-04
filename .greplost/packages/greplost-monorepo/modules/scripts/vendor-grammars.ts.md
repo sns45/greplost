@@ -15,5 +15,5 @@
 **Blast radius:** 0 files (`greplost impact scripts/vendor-grammars.ts`)
 
 **Key symbols:**
-- `const nm = process.argv[2] ?? "node_modules"`  L6-6
-- `const out = join(import.meta.dir, "..", "packages", "core", "grammars")`  L7-7
+- `const nm = process.argv[2] ?? "node_modules"`  L11-11
+- `const out = join(import.meta.dir, "..", "packages", "core", "grammars")`  L12-12

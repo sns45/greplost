@@ -18,7 +18,7 @@
  *    in structure-layer output.
  */
 
-export const SCHEMA_VERSION = "1";
+export const SCHEMA_VERSION = "2";
 
 /** Artifact directory name, relative to the repo root. */
 export const ARTIFACT_DIR = ".greplost";

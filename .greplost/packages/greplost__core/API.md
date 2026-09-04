@@ -4,9 +4,9 @@
 
 ## packages/core/src/build.ts
 
-- `interface ParseCache` L55-58
-- `interface BuildOptions` L60-71
-- `async function buildSnapshot(opts: BuildOptions): Promise<Snapshot>` L81-140
+- `interface ParseCache` L57-60
+- `interface BuildOptions` L62-73
+- `async function buildSnapshot(opts: BuildOptions): Promise<Snapshot>` L83-148
 
 ## packages/core/src/config.ts
 
@@ -15,21 +15,56 @@
 
 ## packages/core/src/discover.ts
 
-- `interface DiscoveredFile` L23-28
-- `async function discoverCandidates(root: string, config: GreplostConfig): Promise<string[]>` L117-132
-- `async function discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]>` L134-147
+- `interface DiscoveredFile` L24-29
+- `async function discoverCandidates(root: string, config: GreplostConfig): Promise<string[]>` L111-126
+- `async function discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]>` L128-141
+
+## packages/core/src/extract/dockerfile.ts
+
+- `function extractDockerfile( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L11-18
 
 ## packages/core/src/extract/go.ts
 
 - `function isExportedName(name: string): boolean` L80-84
 - `function extractGo( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L368-412
 
+## packages/core/src/extract/hcl.ts
+
+- `function extractHcl( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L11-18
+
 ## packages/core/src/extract/index.ts
 
-- `interface ExtractInput` L14-21
-- `function extractFile(input: ExtractInput, parser: ParserHandle): FileRecord` L26-55
+- `interface ExtractInput` L30-42
+- `function extractFile(input: ExtractInput, parser: ParserHandle): FileRecord` L89-140
+- re-exports `extractDockerfile` from `./dockerfile.ts`
 - re-exports `extractGo` from `./go.ts`
+- re-exports `extractHcl` from `./hcl.ts`
+- re-exports `extractJava` from `./java.ts`
+- re-exports `extractKotlin` from `./kotlin.ts`
+- re-exports `extractPython` from `./python.ts`
+- re-exports `extractRust` from `./rust.ts`
 - re-exports `extractTs` from `./ts.ts`
+- re-exports `classifyYamlDocument`, `classifyYamlFile`, `extractYaml` from `./yaml.ts`
+- re-exports `YamlFlavour` from `./yaml.ts`
+- re-exports `extractYamlActions` from `./yaml-actions.ts`
+- re-exports `extractYamlHelm` from `./yaml-helm.ts`
+- re-exports `extractYamlK8s` from `./yaml-k8s.ts`
+
+## packages/core/src/extract/java.ts
+
+- `function extractJava( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L11-18
+
+## packages/core/src/extract/kotlin.ts
+
+- `function extractKotlin( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L11-18
+
+## packages/core/src/extract/python.ts
+
+- `function extractPython( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L14-21
+
+## packages/core/src/extract/rust.ts
+
+- `function extractRust( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L11-18
 
 ## packages/core/src/extract/ts-calls.ts
 
@@ -70,6 +105,28 @@
 
 - `interface TsContext` L59-77
 - `function extractTs( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L178-712
+
+## packages/core/src/extract/yaml-actions.ts
+
+- `function extractYamlActions( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L12-19
+
+## packages/core/src/extract/yaml-helm.ts
+
+- `function extractYamlHelm( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L12-19
+
+## packages/core/src/extract/yaml-k8s.ts
+
+- `function extractYamlK8s( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L12-19
+
+## packages/core/src/extract/yaml.ts
+
+- `type YamlFlavour = "actions" | "helm" | "k8s" | "plain"` L40-40
+- `function isWorkflowPath(path: string): boolean` L62-70
+- `function isHelmPath(path: string): boolean` L73-76
+- `function documentKeys(document: Node): string[]` L96-106
+- `function classifyYamlDocument(path: string, keys: readonly string[]): YamlFlavour` L123-128
+- `function classifyYamlFile(path: string, tree: Tree): YamlFlavour` L134-144
+- `function extractYaml( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L146-162
 
 ## packages/core/src/graph/blast.ts
 
@@ -136,22 +193,73 @@
 - re-exports * from `./config.ts`
 - re-exports * from `./discover.ts`
 - re-exports * from `./hash.ts`
+- re-exports * from `./lang.ts`
 - re-exports * from `./parser.ts`
 - re-exports * from `./unparsable.ts`
 - re-exports * from `./extract/index.ts`
 - re-exports * from `./resolve/index.ts`
 - re-exports * from `./graph/index.ts`
+- re-exports * from `./references/index.ts`
+- re-exports * from `./signals/index.ts`
 - re-exports * from `./graph/query.ts`
 - re-exports * from `./serialize/index.ts`
 - re-exports * from `./build.ts`
 
+## packages/core/src/lang.ts
+
+- `function langOf(path: string): Lang | undefined` L21-33
+
 ## packages/core/src/parser.ts
 
 - `interface ParserHandle` L15-17
-- `function grammarDir(): string` L36-40
-- `async function createParser(opts?: { grammarDir?: string }): Promise<ParserHandle>` L83-113
-- `function reparse(language: Language, source: string): Tree | null` L136-143
-- `function disposeSpareParser(): void` L146-151
+- `function grammarDir(): string` L47-51
+- `async function createParser(opts?: { grammarDir?: string }): Promise<ParserHandle>` L94-124
+- `function reparse(language: Language, source: string): Tree | null` L147-154
+- `function disposeSpareParser(): void` L157-162
+
+## packages/core/src/references/dockerfile.ts
+
+- `function resolveDockerfileReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null` L11-20
+
+## packages/core/src/references/hcl.ts
+
+- `function resolveHclReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null` L13-22
+
+## packages/core/src/references/index.ts
+
+- re-exports `compareReferenceEdges`, `linkReferences`, `referenceSource` from `./link.ts`
+- re-exports `ReferenceContext`, `ReferenceRule` from `./link.ts`
+- re-exports `resolveDockerfileReferences` from `./dockerfile.ts`
+- re-exports `resolveHclReferences` from `./hcl.ts`
+- re-exports `resolveYamlReferences` from `./yaml.ts`
+- re-exports `resolveYamlActionsReferences` from `./yaml-actions.ts`
+- re-exports `resolveYamlK8sReferences` from `./yaml-k8s.ts`
+
+## packages/core/src/references/link.ts
+
+- `interface ReferenceContext` L37-48
+- `type ReferenceRule = ( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ) => ReferenceEdge | null` L51-55
+- `function referenceSource(file: string, ref: ReferenceRecord): string` L78-80
+- `function compareReferenceEdges(a: ReferenceEdge, b: ReferenceEdge): number` L83-90
+- `function linkReferences( files: readonly FileRecord[], resolver: Resolver, ctx: RepoContext, ): ReferenceEdge[]` L99-133
+
+## packages/core/src/references/yaml-actions.ts
+
+- `function resolveYamlActionsReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null` L12-21
+
+## packages/core/src/references/yaml-k8s.ts
+
+- `function resolveYamlK8sReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null` L12-21
+
+## packages/core/src/references/yaml.ts
+
+- `function resolveYamlReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L24-32
+
+## packages/core/src/resolve/dockerfile.ts
+
+- `type DockerfileCallIndex = Readonly<Record<string, never>>` L12-12
+- `function createDockerfileResolver( ctx: RepoContext, ): (fromFile: string, specifier: string) => ResolvedTarget` L14-23
+- `function resolveDockerfileCall( file: FileRecord, _site: CallSite, _index: DockerfileCallIndex, ): { to: string; confidence: Confidence } | null` L25-33
 
 ## packages/core/src/resolve/go.ts
 
@@ -164,6 +272,12 @@
 - `function buildGoCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): GoCallIndex` L210-274
 - `function resolveGoCall( file: FileRecord, site: CallSite, index: GoCallIndex, ): { to: string; confidence: Confidence } | null` L297-331
 
+## packages/core/src/resolve/hcl.ts
+
+- `type HclCallIndex = Readonly<Record<string, never>>` L14-14
+- `function createHclResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L16-23
+- `function resolveHclCall( file: FileRecord, _site: CallSite, _index: HclCallIndex, ): { to: string; confidence: Confidence } | null` L25-31
+
 ## packages/core/src/resolve/index.ts
 
 - re-exports `detectPackages`, `packageOf` from `./packages.ts`
@@ -171,18 +285,49 @@
 - re-exports `TsPaths` from `./tsconfig.ts`
 - re-exports `createResolver` from `./resolver.ts`
 - re-exports `RepoContext`, `ResolvedTarget`, `Resolver` from `./resolver.ts`
+- re-exports `createDockerfileResolver`, `resolveDockerfileCall` from `./dockerfile.ts`
+- re-exports `createHclResolver`, `resolveHclCall` from `./hcl.ts`
+- re-exports `createJavaResolver`, `resolveJavaCall` from `./java.ts`
+- re-exports `createKotlinResolver`, `resolveKotlinCall` from `./kotlin.ts`
+- re-exports `createPythonResolver`, `resolvePythonCall` from `./python.ts`
+- re-exports `createRustResolver`, `resolveRustCall` from `./rust.ts`
+- re-exports `createYamlResolver`, `resolveYamlCall` from `./yaml.ts`
+
+## packages/core/src/resolve/java.ts
+
+- `type JavaCallIndex = Readonly<Record<string, never>>` L12-12
+- `function createJavaResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L14-21
+- `function resolveJavaCall( file: FileRecord, _site: CallSite, _index: JavaCallIndex, ): { to: string; confidence: Confidence } | null` L23-29
+
+## packages/core/src/resolve/kotlin.ts
+
+- `type KotlinCallIndex = Readonly<Record<string, never>>` L12-12
+- `function createKotlinResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L14-21
+- `function resolveKotlinCall( file: FileRecord, _site: CallSite, _index: KotlinCallIndex, ): { to: string; confidence: Confidence } | null` L23-29
 
 ## packages/core/src/resolve/packages.ts
 
 - `function detectPackages(root: string, files: string[], config: GreplostConfig): PackageInfo[]` L46-58
 - `function packageOf(filePath: string, packages: PackageInfo[]): PackageInfo` L61-79
 
+## packages/core/src/resolve/python.ts
+
+- `type PythonCallIndex = Readonly<Record<string, never>>` L14-14
+- `function createPythonResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L16-23
+- `function resolvePythonCall( file: FileRecord, _site: CallSite, _index: PythonCallIndex, ): { to: string; confidence: Confidence } | null` L25-33
+
 ## packages/core/src/resolve/resolver.ts
 
-- `type ResolvedTarget = | { type: "file"; path: string } | { type: "external"; pkg: string } | { type: "unresolved" }` L34-37
-- `interface RepoContext` L39-47
-- `interface Resolver` L49-56
-- `function createResolver(ctx: RepoContext): Resolver` L76-320
+- `type ResolvedTarget = | { type: "file"; path: string } | { type: "external"; pkg: string } | { type: "unresolved" }` L41-44
+- `interface RepoContext` L46-54
+- `interface Resolver` L56-63
+- `function createResolver(ctx: RepoContext): Resolver` L104-373
+
+## packages/core/src/resolve/rust.ts
+
+- `type RustCallIndex = Readonly<Record<string, never>>` L12-12
+- `function createRustResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L14-21
+- `function resolveRustCall( file: FileRecord, _site: CallSite, _index: RustCallIndex, ): { to: string; confidence: Confidence } | null` L23-29
 
 ## packages/core/src/resolve/tsconfig.ts
 
@@ -190,9 +335,14 @@
 - `function loadTsconfigPaths(root: string, fromFile: string, readFile: ReadFile): TsPaths | null` L59-68
 - `function parseJsonc(text: string): Record<string, unknown> | null` L192-199
 
+## packages/core/src/resolve/yaml.ts
+
+- `function createYamlResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L18-21
+- `function resolveYamlCall( _file: FileRecord, _site: CallSite, _index: unknown, ): { to: string; confidence: Confidence } | null` L23-29
+
 ## packages/core/src/schema.ts
 
-- `const SCHEMA_VERSION = "1"` L21-21
+- `const SCHEMA_VERSION = "2"` L21-21
 - `const ARTIFACT_DIR = ".greplost"` L24-24
 - `const ARTIFACT_PATHS = { index: "INDEX.md", manifest: "manifest.json", imports: "graph/imports.jsonl", calls: "graph/calls.jsonl", symbols: "graph/symbols.jsonl", /** Schema 2: references that…` L27-43
 - `type Lang = | "ts" | "tsx" | "js" | "jsx" | "go" | "python" | "rust" | "java" | "kotlin" | "hcl" | "yaml" | "dockerfile"` L45-57
@@ -256,15 +406,49 @@
 
 ## packages/core/src/serialize/read.ts
 
-- `interface Structure` L12-17
-- `function readStructure(artifactDir: string): Structure | null` L38-65
+- `interface Structure` L12-23
+- `function readStructure(artifactDir: string): Structure | null` L44-72
 
 ## packages/core/src/serialize/write.ts
 
-- `function serializeSnapshot(snapshot: Snapshot): Map<string, string>` L15-22
+- `function serializeSnapshot(snapshot: Snapshot): Map<string, string>` L21-32
+
+## packages/core/src/signals/index.ts
+
+- `type SignalPassId = "next" | "pulumi-go" | "pulumi-ts" | "react" | "tanstack"` L29-29
+- `interface SignalInput` L31-38
+- `interface SignalOutput` L40-43
+- `interface SignalPass` L45-52
+- `const SIGNAL_PASSES: readonly SignalPass[] = [ nextPass, pulumiGoPass, pulumiTsPass, reactPass, tanstackPass, ].sort((a, b) => compareStrings(a.id, b.id))` L55-61
+- `function runSignals(input: SignalInput, enabled?: readonly SignalPassId[]): SignalOutput` L83-106
+- re-exports `nextPass` from `./next.ts`
+- re-exports `pulumiGoPass` from `./pulumi-go.ts`
+- re-exports `pulumiTsPass` from `./pulumi-ts.ts`
+- re-exports `reactPass` from `./react.ts`
+- re-exports `tanstackPass` from `./tanstack.ts`
+
+## packages/core/src/signals/next.ts
+
+- `const nextPass: SignalPass = { id: "next", langs: LANGS, applies(_path: string, _source: string): boolean { return false; }, run(_input: SignalInput): SignalOutput { return { decls: [], refs: …` L13-22
+
+## packages/core/src/signals/pulumi-go.ts
+
+- `const pulumiGoPass: SignalPass = { id: "pulumi-go", langs: LANGS, applies(_path: string, _source: string): boolean { return false; }, run(_input: SignalInput): SignalOutput { return { decls: […` L13-22
+
+## packages/core/src/signals/pulumi-ts.ts
+
+- `const pulumiTsPass: SignalPass = { id: "pulumi-ts", langs: LANGS, applies(_path: string, _source: string): boolean { return false; }, run(_input: SignalInput): SignalOutput { return { decls: […` L13-22
+
+## packages/core/src/signals/react.ts
+
+- `const reactPass: SignalPass = { id: "react", langs: LANGS, applies(_path: string, _source: string): boolean { return false; }, run(_input: SignalInput): SignalOutput { return { decls: [], refs…` L17-26
+
+## packages/core/src/signals/tanstack.ts
+
+- `const tanstackPass: SignalPass = { id: "tanstack", langs: LANGS, applies(_path: string, _source: string): boolean { return false; }, run(_input: SignalInput): SignalOutput { return { decls: []…` L13-22
 
 ## packages/core/src/unparsable.ts
 
-- `interface UnparsableFile` L28-39
-- `async function findUnparsableFiles( root: string, files: readonly string[], opts?: { parser?: ParserHandle; grammarDir?: string }, ): Promise<UnparsableFile[]>` L61-87
-- `function brokenRoot(source: string, lang: Lang, parser: ParserHandle): UnparsableFile["reason"] | null` L97-111
+- `interface UnparsableFile` L29-40
+- `async function findUnparsableFiles( root: string, files: readonly string[], opts?: { parser?: ParserHandle; grammarDir?: string }, ): Promise<UnparsableFile[]>` L53-79
+- `function brokenRoot(source: string, lang: Lang, parser: ParserHandle): UnparsableFile["reason"] | null` L89-103

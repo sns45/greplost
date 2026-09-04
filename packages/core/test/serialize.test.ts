@@ -162,7 +162,9 @@ describe("round-trip", () => {
     expect(artifacts.get(ARTIFACT_PATHS.imports)).toBe("");
     expect(artifacts.get(ARTIFACT_PATHS.calls)).toBe("");
     expect(artifacts.get(ARTIFACT_PATHS.symbols)).toBe("");
-    expect(artifacts.get(ARTIFACT_PATHS.manifest)).toBe('{\n  "files": {},\n  "packages": {},\n  "version": "1"\n}\n');
+    expect(artifacts.get(ARTIFACT_PATHS.manifest)).toBe(
+      `{\n  "files": {},\n  "packages": {},\n  "version": "${SCHEMA_VERSION}"\n}\n`,
+    );
 
     const structure = readStructure(writeArtifacts(artifacts));
     expect(structure).toEqual({
@@ -170,6 +172,7 @@ describe("round-trip", () => {
       imports: [],
       calls: [],
       symbols: [],
+      references: [],
     });
   });
 

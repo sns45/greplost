@@ -5,7 +5,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import type { CallEdge, Declaration, ImportEdge, Manifest } from "../schema.ts";
+import type { CallEdge, Declaration, ImportEdge, Manifest, ReferenceEdge } from "../schema.ts";
 import { ARTIFACT_PATHS } from "../schema.ts";
 import { parseJsonl } from "./json.ts";
 
@@ -14,6 +14,12 @@ export interface Structure {
   imports: ImportEdge[];
   calls: CallEdge[];
   symbols: Declaration[];
+  /**
+   * Schema 2 reference edges. `[]` when `graph/references.jsonl` is absent, which is the
+   * normal case: the artifact is only written when a repo actually has references, so a
+   * schema-1 map and a schema-2 map of a repo with none are the same file set.
+   */
+  references: ReferenceEdge[];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -31,7 +37,7 @@ function isManifest(value: unknown): value is Manifest {
 }
 
 /**
- * Read the four structure artifacts from an artifact directory (usually
+ * Read the structure artifacts from an artifact directory (usually
  * `<repo>/.greplost`). Null when there is no manifest: that is "never built",
  * not an error. A missing or empty graph file reads as an empty collection.
  */
@@ -61,5 +67,6 @@ export function readStructure(artifactDir: string): Structure | null {
     imports: parseJsonl<ImportEdge>(read(ARTIFACT_PATHS.imports)),
     calls: parseJsonl<CallEdge>(read(ARTIFACT_PATHS.calls)),
     symbols: parseJsonl<Declaration>(read(ARTIFACT_PATHS.symbols)),
+    references: parseJsonl<ReferenceEdge>(read(ARTIFACT_PATHS.references)),
   };
 }
