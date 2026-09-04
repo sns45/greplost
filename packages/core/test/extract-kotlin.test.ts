@@ -343,6 +343,27 @@ import tiny.other.*
     });
   });
 
+  test("a package need not match its directory: the package header is what decides", () => {
+    // Kotlin, unlike Java, does not tie the two together, and the pinned corpus proves it:
+    // every file of `kotlinx.coroutines` sits directly in `kotlinx-coroutines-core/common/src`.
+    const sources = {
+      "core/common/src/pool.kt": "package tiny.util\n\nfun retry() {}\n",
+      "core/jvm/src/extra.kt": "package tiny.util\n\nfun warm() {}\n",
+      "core/common/src/App.kt": "package tiny\n\nimport tiny.util.warm\n",
+    };
+    expect(resolver(sources)("core/common/src/App.kt", "tiny.util.retry")).toEqual({
+      type: "file",
+      path: "core/common/src/pool.kt",
+    });
+    // The same package, a different source set, one directory further away: still the package.
+    expect(resolver(sources)("core/common/src/App.kt", "tiny.util.warm")).toEqual({
+      type: "file",
+      path: "core/jvm/src/extra.kt",
+    });
+    // And a star import of that package is unresolved, never `ext:tiny`.
+    expect(resolver(sources)("core/common/src/App.kt", "tiny.util")).toEqual({ type: "unresolved" });
+  });
+
   test("a source root is whatever prefix the layout puts before the package path", () => {
     const sources = {
       "core/src/main/kotlin/tiny/util/pool.kt": "package tiny.util\n\nfun retry() {}\n",

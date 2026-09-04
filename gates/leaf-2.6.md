@@ -13,12 +13,12 @@ Spec: `docs/superpowers/specs/2026-09-04-languages-iac-signals-design.md` sectio
 - [x] G1: the Kotlin extraction test file passes
   CHECK: bun test packages/core/test/extract-kotlin.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 62 expect() calls | Ran 42 tests across 1 file. [97.00ms]
+  EVIDENCE: 65 expect() calls | Ran 43 tests across 1 file. [94.00ms]
 
 - [x] G2: classes, data classes, objects, companions, suspend functions and properties, and the import rules; describe('declarations'), describe('imports')
   CHECK: bun test packages/core/test/extract-kotlin.test.ts -t "declarations|imports" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 36 expect() calls | Ran 20 tests across 1 file. [122.00ms] (20 pass, 22 filtered out)
+  EVIDENCE: 39 expect() calls | Ran 21 tests across 1 file. [87.00ms] (21 pass, 22 filtered out)
 
 - [x] G3: an extension function is named `<Receiver>.<name>` with the receiver as `parent`; describe('extensions')
   CHECK: bun test packages/core/test/extract-kotlin.test.ts -t extensions 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -68,7 +68,7 @@ Spec: `docs/superpowers/specs/2026-09-04-languages-iac-signals-design.md` sectio
 - [x] G12: the core and bench suites are green
   CHECK: bun test packages/core bench 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 5176 expect() calls | Ran 1238 tests across 34 files. [52.03s]; the whole suite after the merge of main is 1720 pass, 0 fail
+  EVIDENCE: 5179 expect() calls | Ran 1239 tests across 34 files. [60.66s]; the whole suite after the merge of main is 1720 pass, 0 fail
 
 - [x] G13: core and bench typecheck
   CHECK: bunx tsc -p packages/core/tsconfig.json --noEmit && bunx tsc -p bench/tsconfig.json --noEmit

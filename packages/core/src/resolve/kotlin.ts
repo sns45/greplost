@@ -58,6 +58,26 @@ function isKotlin(path: string): boolean {
 }
 
 /**
+ * The package one Kotlin source declares, or "" for the default package.
+ *
+ * Kotlin does not tie a package to a directory - `kotlinx.coroutines` lives in
+ * `kotlinx-coroutines-core/common/src/` in the pinned corpus, and more of the same package in
+ * `jvm/src/` - so the package header is the only thing that says which package a file is in.
+ */
+export function kotlinPackageOf(source: string): string {
+  for (const line of source.split("\n")) {
+    const match = /^\s*package\s+([A-Za-z_][\w.`]*)/u.exec(line);
+    if (match !== null) return (match[1] ?? "").replace(/`/gu, "");
+    // A package header may only follow file annotations and comments, so the first line that
+    // opens anything else settles it: this file is in the default package.
+    if (/^(?:import|class|interface|object|fun|val|var|typealias|enum|sealed|data|annotation)\b/u.test(line)) {
+      return "";
+    }
+  }
+  return "";
+}
+
+/**
  * The names one Kotlin source declares at its top level, read lexically.
  *
  * A top-level declaration starts at column 0; every member is indented. A declaration line is
@@ -91,40 +111,53 @@ export function kotlinTopLevelNames(source: string): Set<string> {
 /**
  * A Kotlin import resolver over the indexed file set.
  *
- * The package directory is matched by suffix, so `kotlinx.coroutines.channels` finds
- * `kotlinx-coroutines-core/common/src/channels` without anybody declaring a source root; the
- * name is then looked for in that directory's own files. A specifier that names a package
- * rather than a declaration (`import tiny.util.*`) resolves to no single file and is left
- * unresolved rather than turned into an external package, which would claim the dependency
- * leaves the repo when it does not.
+ * A file's package comes from its own `package` header, not from where it sits: Kotlin, unlike
+ * Java, does not require the two to agree, and the pinned corpus proves it (every file of
+ * `kotlinx.coroutines` lives in `kotlinx-coroutines-core/common/src/`, and more of the same
+ * package in `jvm/src/`). Matching the package path against a directory tail is kept as the
+ * fallback for a file with no header, where the directory is all there is.
+ *
+ * A specifier that names a package rather than a declaration (`import tiny.util.*`) resolves to
+ * no single file and is left unresolved rather than turned into an external package, which
+ * would claim the dependency leaves the repo when it does not. Naming *every* file of the
+ * package instead would be a guess about which one the star meant, and this layer never guesses
+ * (tech spec 5.1).
  */
 export function createKotlinResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget {
   const filesByDir = new Map<string, string[]>();
+  const filesByPackage = new Map<string, string[]>();
   const namesByFile = new Map<string, Set<string>>();
   const answers = new Map<string, ResolvedTarget>();
+  let indexed = false;
 
+  /** One read per indexed Kotlin file: its directory, its package header and its top-level names. */
   function index(): Map<string, string[]> {
-    if (filesByDir.size > 0) return filesByDir;
+    if (indexed) return filesByDir;
+    indexed = true;
     for (const file of [...ctx.files].sort(compareStrings)) {
       if (!isKotlin(file)) continue;
       const dir = parentDir(file);
-      const bucket = filesByDir.get(dir);
-      if (bucket === undefined) filesByDir.set(dir, [file]);
-      else bucket.push(file);
+      const byDir = filesByDir.get(dir);
+      if (byDir === undefined) filesByDir.set(dir, [file]);
+      else byDir.push(file);
+
+      const source = ctx.readFile(file);
+      if (source === null) continue;
+      namesByFile.set(file, kotlinTopLevelNames(source));
+      const declared = kotlinPackageOf(source);
+      const byPackage = filesByPackage.get(declared);
+      if (byPackage === undefined) filesByPackage.set(declared, [file]);
+      else byPackage.push(file);
     }
     return filesByDir;
   }
 
   function topLevelNames(file: string): Set<string> {
-    const cached = namesByFile.get(file);
-    if (cached !== undefined) return cached;
-    const source = ctx.readFile(file);
-    const names = source === null ? new Set<string>() : kotlinTopLevelNames(source);
-    namesByFile.set(file, names);
-    return names;
+    index();
+    return namesByFile.get(file) ?? new Set<string>();
   }
 
-  /** Indexed directories whose tail is the package path, most specific first. */
+  /** Indexed directories whose tail is the package path: the fallback for a file with no header. */
   function packageDirs(packagePath: string): string[] {
     const suffix = `/${packagePath}`;
     const out: string[] = [];
@@ -134,13 +167,23 @@ export function createKotlinResolver(ctx: RepoContext): (fromFile: string, speci
     return out.sort(compareStrings);
   }
 
+  /** Every indexed file that is in the named package: by its header, else by its directory. */
+  function packageFiles(packageName: string): string[] {
+    index();
+    const declared = filesByPackage.get(packageName) ?? [];
+    if (declared.length > 0) return declared;
+    const out: string[] = [];
+    for (const dir of packageDirs(packageName.replace(/\./gu, "/"))) {
+      for (const file of filesByDir.get(dir) ?? []) out.push(file);
+    }
+    return out;
+  }
+
   /** The one file in the target package that declares `name`, or null when it is not exactly one. */
-  function probe(packagePath: string, name: string): string | null {
+  function probe(packageName: string, name: string): string | null {
     const hits: string[] = [];
-    for (const dir of packageDirs(packagePath)) {
-      for (const file of index().get(dir) ?? []) {
-        if (topLevelNames(file).has(name)) hits.push(file);
-      }
+    for (const file of packageFiles(packageName)) {
+      if (topLevelNames(file).has(name)) hits.push(file);
     }
     return hits.length === 1 ? (hits[0] ?? null) : null;
   }
@@ -153,20 +196,20 @@ export function createKotlinResolver(ctx: RepoContext): (fromFile: string, speci
     // names one inside the type `C`, so the type's own file is the target.
     for (let cut = segments.length - 1; cut >= 1 && cut >= segments.length - 2; cut -= 1) {
       const name = segments[cut] ?? "";
-      const hit = probe(segments.slice(0, cut).join("/"), name);
+      const hit = probe(segments.slice(0, cut).join("."), name);
       if (hit !== null) return { type: "file", path: hit };
     }
 
     const head = segments[0] ?? specifier;
-    // The standard library is external whatever the repo's own directories are called: a
+    // The standard library is external whatever the repo's own packages are called: a
     // `src/main/kotlin` source root must not make `kotlin.Unit` look like an in-repo package.
     if (EXTERNAL_ROOTS.has(head)) return { type: "external", pkg: head };
 
     // `import a.b.*` names a package, not a declaration, and so does an import this leaf could
     // not pin to exactly one file. Neither is an edge - but `ext:a` would claim the dependency
     // leaves a repo that holds it, so an in-repo package is left unresolved instead.
-    for (const path of [segments.join("/"), segments.slice(0, -1).join("/")]) {
-      if (path !== "" && packageDirs(path).length > 0) return UNRESOLVED;
+    for (const name of [specifier, segments.slice(0, -1).join(".")]) {
+      if (name !== "" && packageFiles(name).length > 0) return UNRESOLVED;
     }
 
     // A Maven coordinate is the first two segments of a `com.`/`org.` group id (spec 1.4).
