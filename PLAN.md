@@ -374,3 +374,4 @@ Append-only. One line per event.
 - 2026-09-04 Ruling: the ~<n> duplicate suffix lives in Declaration.id only; Declaration.name stays as written (a suffixed name published normalize_path~2 as a ripgrep export, S2 fp). Applies to nodes and symbols in every language
 - 2026-09-04 signals fix round 1 re-reviewed (all addressed) and merged (4864eb3, map 5933584); leaf 2.3 complete. Re-review found validateConfig never read signals from config.json (seam gap, pre-existing): driver fixed it with validation and tests. Open for leaf 2.12: CommonJS handling of build 1 has no corpus coverage after the pulumi-ts subset narrowing; .js parsed with the TS grammar
 - 2026-09-04 rust fix round 1 re-reviewed (all addressed) and merged; leaf 2.4 complete (ripgrep S1 back to 1.000/1.000, ids unique with ~<n> in id only)
+- 2026-09-04 python fix round 2 (namespace ancestor walk, explicit skip) verified by driver probe and merged; leaf 2.1 complete
