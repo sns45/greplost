@@ -207,6 +207,8 @@ export interface FileRecord {
   imports: ImportRecord[];
   exports: ExportRecord[];
   calls: CallSite[];
+  /** Schema 2: references before resolution; every build-1 extractor leaves it undefined. */
+  refs?: ReferenceRecord[];
 }
 
 export type Confidence = "high" | "med";
@@ -227,6 +229,32 @@ export interface ImportEdge extends Edge {
   importKind: ImportKind;
 }
 
+/** Schema 2: the mechanism behind a reference edge (spec 2026-09-04, section 0.1). */
+export type RefKind =
+  | "hcl-ref"
+  | "selector"
+  | "config-ref"
+  | "needs"
+  | "uses"
+  | "from-image"
+  | "copy-from"
+  | "helm-values"
+  | "config"
+  | "resource-input"
+  | "route-handler";
+
+/**
+ * A reference as extracted from one file, before resolution: `to` is language-native text
+ * (a Terraform address, a Kubernetes selector, an action ref, a base image), never a node id.
+ * `from` is the local symbol path of the owning declaration, or "" for a file-level reference.
+ */
+export interface ReferenceRecord {
+  from: string;
+  to: string;
+  refKind: RefKind;
+  line: number;
+}
+
 /**
  * Schema 2: a non-import, non-call dependency between nodes. `from` and `to` are node ids
  * (files or `<file>#<symbol>`); `refKind` names the mechanism: `hcl-ref` (a Terraform expression
@@ -237,7 +265,7 @@ export interface ImportEdge extends Edge {
  */
 export interface ReferenceEdge extends Edge {
   kind: "reference";
-  refKind: string;
+  refKind: RefKind;
 }
 
 export interface CallEdge extends Edge {
@@ -301,6 +329,8 @@ export interface GreplostConfig {
   diagram: DiagramConfig;
   packages: { roots: string[] };
   semantic: { enabled: boolean; model: string };
+  /** Schema 2: framework signal passes to run; absent means every pass whose `applies` returns true. */
+  signals?: Array<"next" | "pulumi-go" | "pulumi-ts" | "react" | "tanstack">;
 }
 
 export const DEFAULT_CONFIG: GreplostConfig = {
@@ -401,6 +431,36 @@ export function externalId(pkg: string): string {
 
 export function unresolvedId(specifier: string): string {
   return `unresolved:${specifier}`;
+}
+
+/** DeclKinds that name a thing inside a file rather than the file itself (schema 2). */
+export const NODE_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>([
+  "resource", "data", "variable", "output", "provider", "module",
+  "job", "step", "stage", "image", "component", "route", "handler", "task",
+]);
+
+export function isNodeKind(kind: DeclKind): boolean {
+  return NODE_KINDS.has(kind);
+}
+
+/** `<file>#<kind>.<name>`; throws when `name` contains "#", a newline or NUL (schema 2). */
+export function nodeId(file: string, kind: DeclKind, name: string): string {
+  if (/[#\n\0]/.test(name)) throw new Error(`greplost: node name "${name}" may not contain "#", a newline or NUL`);
+  return `${file}#${kind}.${name}`;
+}
+
+/** Inverse of `nodeId`; null when `id` is not a node id (a plain symbol id is not). */
+export function splitNodeId(id: string): { file: string; kind: DeclKind; name: string } | null {
+  const hash = id.indexOf("#");
+  if (hash < 0) return null;
+  const file = id.slice(0, hash);
+  const rest = id.slice(hash + 1);
+  const dot = rest.indexOf(".");
+  if (dot < 0) return null;
+  const kind = rest.slice(0, dot) as DeclKind;
+  if (!NODE_KINDS.has(kind)) return null;
+  const name = rest.slice(dot + 1);
+  return name.length === 0 ? null : { file, kind, name };
 }
 
 export function isFileId(id: string): boolean {

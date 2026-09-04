@@ -53,7 +53,7 @@ graph LR
 | greplost-monorepo | . | 2 | 129 | none | [MAP](../packages/greplost-monorepo/MAP.md) |
 | @greplost/bench | bench | 33 | 17885 | @greplost/core, @greplost/sync | [MAP](../packages/greplost__bench/MAP.md) |
 | greplost | packages/cli | 18 | 1954 | @greplost/core, @greplost/render, @greplost/semantic, @greplost/sync, @greplost/workspace | [MAP](../packages/greplost/MAP.md) |
-| @greplost/core | packages/core | 30 | 6214 | none | [MAP](../packages/greplost__core/MAP.md) |
+| @greplost/core | packages/core | 30 | 6274 | none | [MAP](../packages/greplost__core/MAP.md) |
 | @greplost/render | packages/render | 14 | 1833 | @greplost/core | [MAP](../packages/greplost__render/MAP.md) |
 | @greplost/semantic | packages/semantic | 5 | 1509 | @greplost/core, @greplost/render, @greplost/sync | [MAP](../packages/greplost__semantic/MAP.md) |
 | @greplost/sync | packages/sync | 12 | 3098 | @greplost/core, @greplost/render | [MAP](../packages/greplost__sync/MAP.md) |
