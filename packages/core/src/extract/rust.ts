@@ -82,12 +82,22 @@ const BINDERS: ReadonlySet<string> = new Set([
 /** Where a symbol path crosses into an inline `mod`. */
 const MODULE_SEPARATOR = "::";
 
+/** The empty name set every context outside a function body shares. */
+const NO_NAMES: ReadonlySet<string> = new Set<string>();
+
 // ---------------------------------------------------------------------------
 // small node helpers
 // ---------------------------------------------------------------------------
 
-/** The `visibility_modifier` written on an item, collapsed (`pub`, `pub(crate)`, `pub(in a::b)`). */
-export function visibilityOf(node: Node): string | null {
+/**
+ * The `visibility_modifier` written on an item, collapsed (`pub`, `pub(crate)`, `pub(in a::b)`).
+ *
+ * Ruling: `pub(crate)` and `pub(in …)` count as **exported**. "Exported" in this schema means
+ * "visible beyond this file", not "visible beyond this crate": a `pub(crate)` item is what a
+ * sibling module calls, so hiding it would make the map's export surface useless inside the very
+ * crate a reader is navigating. `meta.visibility` keeps the distinction for anyone who needs it.
+ */
+function visibilityOf(node: Node): string | null {
   for (const child of node.children) {
     if (child !== null && child.type === "visibility_modifier") return clip(child.text);
   }
@@ -171,6 +181,40 @@ interface RustState {
   readonly calls: CallSite[];
   /** `function_item` node id -> symbol path, so caller attribution is by node identity. */
   readonly callerByNode: Map<number, string>;
+  /** Id paths already taken in this file, so a duplicate declaration can take a `~<n>` suffix. */
+  readonly usedNames: Set<string>;
+  /** Written type name -> the disambiguated path its declaration's id took. */
+  readonly typeNames: Map<string, string>;
+  /** One entry per `impl` body, so its members' `parent` can be fixed once the file is read. */
+  readonly implBodies: Array<{ from: number; to: number; owner: string; block: string }>;
+}
+
+/** Declaration kinds that name a type an `impl` block can belong to. */
+const TYPE_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>(["struct", "enum", "trait", "type"]);
+
+/**
+ * The symbol path a declaration's **id** takes: `Store`, then `Store~2`, then `Store~3`.
+ *
+ * Rust really does declare one name twice in one file: `pub struct Store;` with `impl Store {…}`
+ * (the commonest shape in the language), two trait impls each declaring `go`, and two
+ * `#[cfg]`-gated `pub fn normalize_path`s. Left alone all of those take one id, and
+ * `index.members` collapses to whichever came first - an arbitrary answer dressed up as a
+ * certain one. The suffix lands on the **id** only, exactly as leaf 2.0's ruling puts it: `name`
+ * stays the path as written, because that is the name a reader (and an importer) sees, and
+ * `normalize_path~2` is a name nobody can write. `~` cannot occur in a Rust identifier, so a
+ * suffixed id can never collide with one somebody wrote (driver ruling 2026-09-04).
+ */
+function uniqueName(state: RustState, name: string): string {
+  if (!state.usedNames.has(name)) {
+    state.usedNames.add(name);
+    return name;
+  }
+  for (let n = 2; ; n += 1) {
+    const candidate = `${name}~${n}`;
+    if (state.usedNames.has(candidate)) continue;
+    state.usedNames.add(candidate);
+    return candidate;
+  }
 }
 
 function addDeclaration(
@@ -182,11 +226,13 @@ function addDeclaration(
   visibility: string | null,
   parent: string | undefined,
   extraMeta?: Readonly<Record<string, string>>,
-): void {
+): string {
   const meta: Record<string, string> = { ...extraMeta };
   if (visibility !== null) meta["visibility"] = visibility;
+  const unique = uniqueName(state, name);
+  if (TYPE_KINDS.has(kind) && !state.typeNames.has(name)) state.typeNames.set(name, unique);
   state.decls.push({
-    id: symbolId(state.path, name),
+    id: symbolId(state.path, unique),
     file: state.path,
     name,
     kind,
@@ -199,6 +245,7 @@ function addDeclaration(
   // A file's export surface is its own `pub` items: an item inside an inline `mod`, an `impl`
   // or a `trait` belongs to that item, not to the file.
   if (visibility !== null && parent === undefined) state.exports.push({ name, kind: "named" });
+  return unique;
 }
 
 // ---------------------------------------------------------------------------
@@ -354,11 +401,13 @@ function collectItem(state: RustState, node: Node, kind: DeclKind, scope: Scope)
     const named = implName(node);
     if (named === null) return;
     const full = `${scope.prefix}${named.name}`;
-    addDeclaration(state, full, "impl", signatureOf(state.source, node), node, visibility, scope.parent);
+    const block = addDeclaration(state, full, "impl", signatureOf(state.source, node), node, visibility, scope.parent);
     const body = field(node, "body");
     if (body !== null) {
       const owner = `${scope.prefix}${named.type}`;
+      const from = state.decls.length;
       collectItems(state, body, { prefix: `${owner}.`, parent: owner, mods: scope.mods, typeBody: true });
+      state.implBodies.push({ from, to: state.decls.length, owner, block });
     }
     return;
   }
@@ -377,9 +426,9 @@ function collectItem(state: RustState, node: Node, kind: DeclKind, scope: Scope)
 
   const declKind =
     scope.typeBody && (node.type === "function_item" || node.type === "function_signature_item") ? "method" : kind;
-  addDeclaration(state, full, declKind, signatureOf(state.source, node), node, visibility, scope.parent);
+  const unique = addDeclaration(state, full, declKind, signatureOf(state.source, node), node, visibility, scope.parent);
 
-  if (node.type === "function_item") state.callerByNode.set(node.id, full);
+  if (node.type === "function_item") state.callerByNode.set(node.id, unique);
 
   if (node.type === "mod_item") {
     const body = field(node, "body");
@@ -496,6 +545,30 @@ function receiverTypes(fn: Node, selfType: string | null, generics: ReadonlySet<
   return types;
 }
 
+/**
+ * Every `fn` written **inside** a function body, at any depth.
+ *
+ * `collectItems` never descends into a body, so a block-scoped `fn helper` is not a declaration
+ * and `resolve/rust.ts` cannot see it. A bare `helper()` written next to it therefore looks like
+ * a call on the top-level `helper` and would resolve there at `high` - the wrong edge. The names
+ * are collected here so the call can be dropped instead (driver ruling 2026-09-04).
+ */
+function nestedFunctionNames(fn: Node): ReadonlySet<string> {
+  const names = new Set<string>();
+  const visit = (node: Node): void => {
+    for (const child of node.namedChildren) {
+      if (child === null) continue;
+      if (child.type === "function_item") {
+        const name = field(child, "name");
+        if (name !== null) names.add(name.text);
+      }
+      visit(child);
+    }
+  };
+  visit(fn);
+  return names;
+}
+
 /** The context one call site is written in. */
 interface CallContext {
   caller: string;
@@ -504,6 +577,8 @@ interface CallContext {
   generics: ReadonlySet<string>;
   /** Receiver types of the outermost enclosing function; null at file level. */
   types: ReceiverTypes | null;
+  /** Names of the `fn`s declared inside the outermost enclosing function's body. */
+  nested: ReadonlySet<string>;
 }
 
 /**
@@ -516,7 +591,9 @@ function calleeText(node: Node, ctx: CallContext): string | null {
   if (fn !== null && fn.type === "generic_function") fn = field(fn, "function");
   if (fn === null) return null;
 
-  if (fn.type === "identifier") return fn.text;
+  // A bare name that a `fn` in this body declares is that `fn`, which is not a declaration of
+  // the file; `self::helper()` is written module-qualified and is deliberately not shadowed.
+  if (fn.type === "identifier") return ctx.nested.has(fn.text) ? null : fn.text;
 
   if (fn.type === "scoped_identifier") {
     const path = field(fn, "path");
@@ -560,10 +637,12 @@ function collectCalls(state: RustState, root: Node): void {
       const caller = state.callerByNode.get(node.id) ?? next.caller;
       // The outermost function owns the bindings of everything nested in it, so a closure
       // inside a function reuses the function's set.
-      const types = next.types === null ? receiverTypes(node, next.selfType, next.generics) : next.types;
+      const outermost = next.types === null;
+      const types = outermost ? receiverTypes(node, next.selfType, next.generics) : next.types;
+      const nested = outermost ? nestedFunctionNames(node) : next.nested;
       const generics = new Set(next.generics);
       for (const name of typeParameterNames(node)) generics.add(name);
-      next = { caller, selfType: next.selfType, generics, types };
+      next = { caller, selfType: next.selfType, generics, types, nested };
     }
 
     if (node.type === "call_expression") {
@@ -575,7 +654,7 @@ function collectCalls(state: RustState, root: Node): void {
       if (child !== null) walk(child, next);
     }
   };
-  walk(root, { caller: "", selfType: null, generics: new Set<string>(), types: null });
+  walk(root, { caller: "", selfType: null, generics: new Set<string>(), types: null, nested: NO_NAMES });
 }
 
 // ---------------------------------------------------------------------------
@@ -597,9 +676,23 @@ export function extractRust(
     exports: [],
     calls: [],
     callerByNode: new Map<number, string>(),
+    usedNames: new Set<string>(),
+    typeNames: new Map<string, string>(),
+    implBodies: [],
   };
 
   collectItems(state, tree.rootNode, FILE_SCOPE);
+  // An impl member belongs to the **type**, which may be declared after the impl block or not in
+  // this file at all. Its `parent` is therefore the owner's *id* path - the struct's when the
+  // struct is declared here, else the impl block's own - and only a whole file settles which,
+  // so it is fixed once the file has been read (driver ruling 2026-09-04).
+  for (const body of state.implBodies) {
+    const parent = state.typeNames.get(body.owner) ?? body.block;
+    for (let i = body.from; i < body.to; i += 1) {
+      const member = state.decls[i];
+      if (member !== undefined && member.parent === body.owner) member.parent = parent;
+    }
+  }
   collectCalls(state, tree.rootNode);
 
   return { decls: state.decls, imports: state.imports, exports: state.exports, calls: state.calls };

@@ -40,6 +40,7 @@ export {
   FileParseCache,
   PARSE_CACHE_PATH,
   PARSE_CACHE_STAMP,
+  parseCacheStamp,
   PARSE_CACHE_VERSION,
   PARSE_CACHE_VERSION_KEY,
   parseCacheKey,
