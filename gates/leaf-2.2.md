@@ -53,37 +53,37 @@ this leaf's edges changed — only how many of them were in scope to be scored.
 - [x] G1: the HCL extraction test file passes
   CHECK: bun test packages/core/test/extract-hcl.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 154 expect() calls | Ran 47 tests across 1 file. [681.00ms]
+  EVIDENCE: 154 expect() calls | Ran 47 tests across 1 file. [367.00ms]
 
 - [x] G2: every top-level block becomes a node with the id `<file>#<kind>.<name>`, the header as its signature and the documented `meta`; describe('blocks')
   CHECK: bun test packages/core/test/extract-hcl.test.ts -t blocks 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 51 expect() calls | Ran 16 tests across 1 file. [68.00ms]
+  EVIDENCE: 51 expect() calls | Ran 16 tests across 1 file. [57.00ms]
 
 - [x] G3: only `module` blocks import, a local source targets a directory and a registry source becomes `ext:module/<source>`; describe('module imports')
   CHECK: bun test packages/core/test/extract-hcl.test.ts -t "module imports" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 17 expect() calls | Ran 7 tests across 1 file. [127.00ms]
+  EVIDENCE: 17 expect() calls | Ran 7 tests across 1 file. [78.00ms]
 
 - [x] G4: address chains become `hcl-ref` edges at the documented confidence, `each`/`count` are ignored and anything ambiguous is dropped; describe('references')
   CHECK: bun test packages/core/test/extract-hcl.test.ts -t references 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 73 expect() calls | Ran 18 tests across 1 file. [319.00ms]
+  EVIDENCE: 73 expect() calls | Ran 18 tests across 1 file. [254.00ms]
 
 - [x] G5: a `locals` block yields one `const` per attribute named `local.<name>`; describe('locals')
   CHECK: bun test packages/core/test/extract-hcl.test.ts -t locals 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 7 expect() calls | Ran 3 tests across 1 file. [59.00ms]
+  EVIDENCE: 7 expect() calls | Ran 3 tests across 1 file. [58.00ms]
 
 - [x] G6: the fixture builds with the expected nodes, the module import and the med-confidence module output reference; describe('tiny-terraform')
   CHECK: bun test packages/core/test/extract-hcl.test.ts -t tiny-terraform 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 7 expect() calls | Ran 4 tests across 1 file. [165.00ms]
+  EVIDENCE: 7 expect() calls | Ran 4 tests across 1 file. [173.00ms]
 
 - [x] G7: the truth generator test file passes
   CHECK: bun test bench/test/truth-hcl.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 67 expect() calls | Ran 16 tests across 1 file. [135.00ms]
+  EVIDENCE: 67 expect() calls | Ran 16 tests across 1 file. [132.00ms]
 
 - [x] G8: the oracle imports nothing from `packages/core` and its output tracks the fixture; describe('oracle independence')
   CHECK: bun test bench/test/truth-hcl.test.ts -t "oracle independence" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -108,7 +108,7 @@ this leaf's edges changed — only how many of them were in scope to be scored.
 - [x] G12: the core and bench suites are green
   CHECK: bun test packages/core bench 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 4973 expect() calls | Ran 1143 tests across 32 files. [66.13s]
+  EVIDENCE: 5033 expect() calls | Ran 1168 tests across 32 files. [54.94s]
 
 - [x] G13: core and bench typecheck
   CHECK: bunx tsc -p packages/core/tsconfig.json --noEmit && bunx tsc -p bench/tsconfig.json --noEmit
