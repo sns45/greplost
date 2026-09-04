@@ -426,6 +426,12 @@ describe("structural gate", () => {
     expect([whole.S6.tp, whole.S6.fp, whole.S6.fn]).toEqual([1, 1, 0]);
   });
 
+  test("S6 trusts the declaration kind: a method on a lowercase type named like a node kind is a symbol", () => {
+    const method = { id: "pipeline.ts#step.Run", file: "a.ts", name: "step.Run", kind: "method" as const, signature: "Run()", exported: true, span: [1, 2] as [number, number] };
+    const scores = scoreAgainstTruth("tiny", snapshotOf({ symbols: [method] }), truthOf(), "ts", { references: [], nodes: [] });
+    expect([scores.S6.tp, scores.S6.fp, scores.S6.fn]).toEqual([0, 0, 0]);
+  });
+
   test("a wrong import edge fails S1 and is located at the import line", () => {
     const scores = scoreAgainstTruth(
       "tiny",

@@ -170,7 +170,9 @@ function importBindings(file: FileRecord, specifiers: Map<string, string> | unde
  * below skips these, so a node can never shadow, collide with, or stand in for the symbol.
  */
 function isNodeDeclaration(decl: Declaration): boolean {
-  return splitNodeId(decl.id) !== null;
+  // The kind is authoritative: a method on a lowercase Go type named `step` has the id
+  // `pipeline.go#step.Run`, which parses like a node id but is a plain symbol.
+  return isNodeKind(decl.kind);
 }
 
 /** Names declared at the top level of a file (methods and schema-2 nodes excluded), with their kind. */
