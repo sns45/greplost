@@ -282,7 +282,6 @@ describe("stubs", () => {
       ["main.rs", (p) => extractRust(p, "rust", "", NO_TREE), /rust extractor .* build-2 leaf 2\.4/],
       ["A.java", (p) => extractJava(p, "java", "", NO_TREE), /java extractor .* build-2 leaf 2\.5/],
       ["A.kt", (p) => extractKotlin(p, "kotlin", "", NO_TREE), /kotlin extractor .* build-2 leaf 2\.6/],
-      ["main.tf", (p) => extractHcl(p, "hcl", "", NO_TREE), /hcl extractor .* build-2 leaf 2\.2/],
       ["Dockerfile", (p) => extractDockerfile(p, "dockerfile", "", NO_TREE), /dockerfile extractor .* leaf 2\.10/],
       ["deploy.yaml", (p) => extractYamlK8s(p, "yaml", "", NO_TREE), /yaml-k8s extractor .* build-2 leaf 2\.8/],
       ["Chart.yaml", (p) => extractYamlHelm(p, "yaml", "", NO_TREE), /yaml-helm extractor .* build-2 leaf 2\.8/],
@@ -302,7 +301,6 @@ describe("stubs", () => {
       [createRustResolver(ctx), /rust resolver .* build-2 leaf 2\.4/],
       [createJavaResolver(ctx), /java resolver .* build-2 leaf 2\.5/],
       [createKotlinResolver(ctx), /kotlin resolver .* build-2 leaf 2\.6/],
-      [createHclResolver(ctx), /hcl resolver .* build-2 leaf 2\.2/],
       [createDockerfileResolver(ctx), /dockerfile resolver .* build-2 leaf 2\.10/],
     ];
     for (const [resolve, pattern] of cases) {
@@ -323,9 +321,10 @@ describe("stubs", () => {
       resolver: createResolver(emptyContext([])),
       files: new Set<string>(),
     };
-    expect(() => resolveHclReferences(record(), ref(), ctx)).toThrow(
-      /hcl reference resolution .* \(infra\/main\.tf: hcl-ref -> aws_vpc\.main\).* leaf 2\.2/,
-    );
+    // hcl landed with leaf 2.2: its rule resolves or returns null, and `extract-hcl.test.ts`
+    // owns the assertions. An address that names nothing is dropped, never guessed, so the
+    // one property this file still needs from it is that it never invents an edge.
+    expect(resolveHclReferences(record(), ref(), ctx)).toBeNull();
     expect(() => resolveYamlK8sReferences(record({ lang: "yaml" }), ref({ refKind: "selector" }), ctx)).toThrow(
       /yaml-k8s reference resolution .* leaf 2\.8/,
     );

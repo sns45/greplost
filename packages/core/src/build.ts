@@ -26,7 +26,15 @@ import type {
   Snapshot,
   SummaryCache,
 } from "./schema.ts";
-import { SCHEMA_VERSION, compareDeclarations, compareEdges, compareStrings, symbolId } from "./schema.ts";
+import {
+  SCHEMA_VERSION,
+  compareDeclarations,
+  compareEdges,
+  compareStrings,
+  isNodeKind,
+  nodeId,
+  symbolId,
+} from "./schema.ts";
 import { loadConfig } from "./config.ts";
 import { discoverFiles } from "./discover.ts";
 import type { DiscoveredFile } from "./discover.ts";
@@ -288,6 +296,13 @@ function freezeRecord(record: FileRecord): FileRecord {
  * can live at two paths, and a `Declaration` carries the file it came from in
  * both `file` and `id`, so those move with the record.
  *
+ * Schema 2: a non-file node's id is `<file>#<kind>.<name>` and not
+ * `<file>#<name>`, so re-addressing has to ask which form the declaration
+ * takes. `symbolId` alone silently dropped the kind, which only shows up when
+ * two files have *identical bytes* — 727 of terraform-aws-vpc's 1,909
+ * declarations, because its per-example `outputs.tf` files are copies of one
+ * another.
+ *
  * The result is frozen either way: a foreign cache may hand back a record this
  * build never froze.
  */
@@ -296,7 +311,11 @@ function restamp(record: FileRecord, filePath: string): FileRecord {
   return freezeRecord({
     ...record,
     path: filePath,
-    decls: record.decls.map((decl) => ({ ...decl, file: filePath, id: symbolId(filePath, decl.name) })),
+    decls: record.decls.map((decl) => ({
+      ...decl,
+      file: filePath,
+      id: isNodeKind(decl.kind) ? nodeId(filePath, decl.kind, decl.name) : symbolId(filePath, decl.name),
+    })),
   });
 }
 
