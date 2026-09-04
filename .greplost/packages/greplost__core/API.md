@@ -53,7 +53,7 @@
 
 ## packages/core/src/extract/java.ts
 
-- `function extractJava( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L11-18
+- `function extractJava( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L587-618
 
 ## packages/core/src/extract/kotlin.ts
 
@@ -179,14 +179,14 @@
 
 ## packages/core/src/graph/link.ts
 
-- `type ResolvedTarget = | { type: "file"; path: string } | { type: "external"; pkg: string } | { type: "unresolved" }` L30-33
-- `interface Resolver` L36-38
-- `interface ExportTarget` L41-59
-- `type ExportIndex = Map<string, Map<string, ExportTarget>>` L62-62
-- `function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge[]` L82-124
-- `function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex` L228-461
-- `function exportNames(index: ExportIndex, file: string): string[]` L464-467
-- `function linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[]` L482-558
+- `type ResolvedTarget = | { type: "file"; path: string } | { type: "external"; pkg: string } | { type: "unresolved" }` L31-34
+- `interface Resolver` L37-39
+- `interface ExportTarget` L42-60
+- `type ExportIndex = Map<string, Map<string, ExportTarget>>` L63-63
+- `function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge[]` L83-125
+- `function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex` L229-462
+- `function exportNames(index: ExportIndex, file: string): string[]` L465-468
+- `function linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[]` L483-564
 
 ## packages/core/src/graph/metrics.ts
 
@@ -330,9 +330,10 @@
 
 ## packages/core/src/resolve/java.ts
 
-- `type JavaCallIndex = Readonly<Record<string, never>>` L12-12
-- `function createJavaResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L14-21
-- `function resolveJavaCall( file: FileRecord, _site: CallSite, _index: JavaCallIndex, ): { to: string; confidence: Confidence } | null` L23-29
+- `function createJavaResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L82-133
+- `interface JavaCallIndex` L148-161
+- `function buildJavaCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): JavaCallIndex` L203-253
+- `function resolveJavaCall( file: FileRecord, site: CallSite, index: JavaCallIndex, ): { to: string; confidence: Confidence } | null` L312-365
 
 ## packages/core/src/resolve/kotlin.ts
 

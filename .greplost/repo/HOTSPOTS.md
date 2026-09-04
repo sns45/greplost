@@ -6,11 +6,11 @@
 
 | File | Fan-in | Fan-out | Blast |
 |---|---|---|---|
-| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 119 | 0 | 151 |
+| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 120 | 0 | 151 |
 | [`bench/src/truth/ts.ts`](../packages/greplost__bench/modules/src/truth/ts.ts.md) | 18 | 3 | 18 |
 | [`packages/cli/src/args.ts`](../packages/greplost/modules/src/args.ts.md) | 14 | 1 | 14 |
 | [`packages/cli/src/output.ts`](../packages/greplost/modules/src/output.ts.md) | 11 | 2 | 13 |
-| [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 10 | 0 | 59 |
+| [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 11 | 0 | 60 |
 | [`packages/core/src/graph/index.ts`](../packages/greplost__core/modules/src/graph/index.ts.md) | 10 | 5 | 45 |
 | [`packages/core/src/index.ts`](../packages/greplost__core/modules/src/index.ts.md) | 10 | 15 | 28 |
 | [`packages/core/src/resolve/resolver.ts`](../packages/greplost__core/modules/src/resolve/resolver.ts.md) | 9 | 10 | 66 |
@@ -31,25 +31,25 @@
 
 | File | Fan-in | Fan-out | Blast |
 |---|---|---|---|
-| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 119 | 0 | 151 |
+| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 120 | 0 | 151 |
 | [`packages/core/src/resolve/go.ts`](../packages/greplost__core/modules/src/resolve/go.ts.md) | 2 | 1 | 67 |
 | [`packages/core/src/resolve/tsconfig.ts`](../packages/greplost__core/modules/src/resolve/tsconfig.ts.md) | 2 | 0 | 67 |
 | [`packages/core/src/resolve/dockerfile.ts`](../packages/greplost__core/modules/src/resolve/dockerfile.ts.md) | 2 | 2 | 66 |
 | [`packages/core/src/resolve/hcl.ts`](../packages/greplost__core/modules/src/resolve/hcl.ts.md) | 3 | 2 | 66 |
-| [`packages/core/src/resolve/java.ts`](../packages/greplost__core/modules/src/resolve/java.ts.md) | 2 | 2 | 66 |
+| [`packages/core/src/resolve/java.ts`](../packages/greplost__core/modules/src/resolve/java.ts.md) | 3 | 2 | 66 |
 | [`packages/core/src/resolve/kotlin.ts`](../packages/greplost__core/modules/src/resolve/kotlin.ts.md) | 2 | 2 | 66 |
 | [`packages/core/src/resolve/python.ts`](../packages/greplost__core/modules/src/resolve/python.ts.md) | 3 | 2 | 66 |
 | [`packages/core/src/resolve/resolver.ts`](../packages/greplost__core/modules/src/resolve/resolver.ts.md) | 9 | 10 | 66 |
 | [`packages/core/src/resolve/rust.ts`](../packages/greplost__core/modules/src/resolve/rust.ts.md) | 3 | 2 | 66 |
 | [`packages/core/src/resolve/yaml.ts`](../packages/greplost__core/modules/src/resolve/yaml.ts.md) | 2 | 2 | 66 |
-| [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 10 | 0 | 59 |
+| [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 11 | 0 | 60 |
 | [`packages/core/src/graph/tarjan.ts`](../packages/greplost__core/modules/src/graph/tarjan.ts.md) | 4 | 1 | 49 |
 | [`packages/core/src/graph/directories.ts`](../packages/greplost__core/modules/src/graph/directories.ts.md) | 3 | 1 | 48 |
 | [`packages/core/src/resolve/packages.ts`](../packages/greplost__core/modules/src/resolve/packages.ts.md) | 1 | 1 | 48 |
 | [`packages/core/src/graph/blast.ts`](../packages/greplost__core/modules/src/graph/blast.ts.md) | 2 | 2 | 47 |
 | [`packages/core/src/parser.ts`](../packages/greplost__core/modules/src/parser.ts.md) | 6 | 1 | 47 |
 | [`packages/core/src/resolve/index.ts`](../packages/greplost__core/modules/src/resolve/index.ts.md) | 3 | 10 | 47 |
-| [`packages/core/src/graph/link.ts`](../packages/greplost__core/modules/src/graph/link.ts.md) | 1 | 5 | 46 |
+| [`packages/core/src/graph/link.ts`](../packages/greplost__core/modules/src/graph/link.ts.md) | 1 | 6 | 46 |
 | [`packages/core/src/graph/metrics.ts`](../packages/greplost__core/modules/src/graph/metrics.ts.md) | 1 | 5 | 46 |
 
 ## Import cycles

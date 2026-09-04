@@ -6,13 +6,44 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `extractJava( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`
+**Exports:** `extractJava( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (FileRecord, Lang), `web-tree-sitter` (Tree)
+**Imports:** `web-tree-sitter` (Node, Tree), [`../schema.ts`](../schema.ts.md) (CallSite, DeclKind, Declaration, ExportRecord, FileRecord, ImportRecord, ImportedSymbol, Lang, compareStrings, symbolId), [`./ts-signature.ts`](ts-signature.ts.md) (clip, field, lineOf, spanOf)
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md)
 
 **Blast radius:** 31 files (`greplost impact packages/core/src/extract/java.ts`)
 
 **Key symbols:**
-- `function extractJava( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L11-18
+- `const TYPE_KIND: Readonly<Record<string, DeclKind>> = { annotation_type_declaration: "interface", class_declaration: "class", enum_declaration: "enum", interface_declaration: "interface", record_decl…`  L63-69
+- `const IMPLICITLY_PUBLIC_BODY: ReadonlySet<string> = new Set([ "annotation_type_declaration", "interface_declaration", ])`  L72-75
+- `function modifiersOf(node: Node): Node | null`  L82-87
+- `function keywordsOf(node: Node): ReadonlySet<string>`  L90-100
+- `function annotationsOf(node: Node): string`  L110-123
+- `function signatureOf(source: string, node: Node): string`  L126-130
+- `function baseTypeName(node: Node | null): string | null`  L140-160
+- `type BoundTypes = Map<string, string | null>`  L167-167
+- `interface JavaState`  L169-184
+- `function uniqueId(state: JavaState, name: string): string`  L192-204
+- `function addDeclaration( state: JavaState, name: string, kind: DeclKind, signature: string, node: Node, exported: boolean, parent: string | undefined, meta: Readonly<Record<string, string>>, ): void`  L206-230
+- `function metaOf(node: Node, extra?: Readonly<Record<string, string>>): Record<string, string>`  L232-235
+- `function bind(types: BoundTypes, name: string, type: string | null): void`  L244-250
+- `function collectImport(state: JavaState, node: Node): void`  L265-279
+- `interface Scope`  L286-293
+- `const FILE_SCOPE: Scope = { owner: undefined, visible: true, implicitlyPublic: false }`  L295-295
+- `function collectType(state: JavaState, node: Node, scope: Scope): void`  L297-315
+- `function collectMembers(state: JavaState, body: Node, scope: Scope): void`  L317-346
+- `function collectEnumConstant(state: JavaState, node: Node, scope: Scope): void`  L349-362
+- `function fieldSignature(source: string, node: Node, declarator: Node): string`  L365-369
+- `function collectField(state: JavaState, node: Node, scope: Scope): void`  L371-402
+- `function collectMethod(state: JavaState, node: Node, scope: Scope): void`  L404-414
+- `function localTypes(fn: Node): BoundTypes`  L428-476
+- `function boundNames(node: Node): string[]`  L479-489
+- `interface CallContext`  L499-508
+- `const NO_LOCALS: BoundTypes = new Map()`  L510-510
+- `function receiverType(state: JavaState, ctx: CallContext, name: string): string | null | undefined`  L516-525
+- `function calleeText(state: JavaState, node: Node, ctx: CallContext): string | null`  L533-550
+- `function collectCalls(state: JavaState, root: Node): void`  L552-580
+- `function extractJava( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">`  L587-618
+
+**Calls:** `addDeclaration` → [`packages/core/src/extract/java.ts#addDeclaration`](java.ts.md) (high), `annotationsOf` → [`packages/core/src/extract/java.ts#annotationsOf`](java.ts.md) (high), `baseTypeName` → [`packages/core/src/extract/java.ts#baseTypeName`](java.ts.md) (high), `bind` → [`packages/core/src/extract/java.ts#bind`](java.ts.md) (high), `boundNames` → [`packages/core/src/extract/java.ts#boundNames`](java.ts.md) (high), `calleeText` → [`packages/core/src/extract/java.ts#calleeText`](java.ts.md) (high), `collectCalls` → [`packages/core/src/extract/java.ts#collectCalls`](java.ts.md) (high), `collectEnumConstant` → [`packages/core/src/extract/java.ts#collectEnumConstant`](java.ts.md) (high), `collectField` → [`packages/core/src/extract/java.ts#collectField`](java.ts.md) (high), `collectImport` → [`packages/core/src/extract/java.ts#collectImport`](java.ts.md) (high), `collectMembers` → [`packages/core/src/extract/java.ts#collectMembers`](java.ts.md) (high), `collectMethod` → [`packages/core/src/extract/java.ts#collectMethod`](java.ts.md) (high), `collectType` → [`packages/core/src/extract/java.ts#collectType`](java.ts.md) (high), `fieldSignature` → [`packages/core/src/extract/java.ts#fieldSignature`](java.ts.md) (high), `keywordsOf` → [`packages/core/src/extract/java.ts#keywordsOf`](java.ts.md) (high), `localTypes` → [`packages/core/src/extract/java.ts#localTypes`](java.ts.md) (high), `metaOf` → [`packages/core/src/extract/java.ts#metaOf`](java.ts.md) (high), `modifiersOf` → [`packages/core/src/extract/java.ts#modifiersOf`](java.ts.md) (high), `receiverType` → [`packages/core/src/extract/java.ts#receiverType`](java.ts.md) (high), `signatureOf` → [`packages/core/src/extract/java.ts#signatureOf`](java.ts.md) (high), `uniqueId` → [`packages/core/src/extract/java.ts#uniqueId`](java.ts.md) (high), `clip` → [`packages/core/src/extract/ts-signature.ts#clip`](ts-signature.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](ts-signature.ts.md) (high), `lineOf` → [`packages/core/src/extract/ts-signature.ts#lineOf`](ts-signature.ts.md) (high), `spanOf` → [`packages/core/src/extract/ts-signature.ts#spanOf`](ts-signature.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)

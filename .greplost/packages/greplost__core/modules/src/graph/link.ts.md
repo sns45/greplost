@@ -8,31 +8,31 @@
 
 **Exports:** `ExportIndex (type)`, `ExportTarget (interface)`, `ResolvedTarget (type)`, `Resolver (interface)`, `buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex`, `exportNames(index: ExportIndex, file: string): string[]`, `linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[]`, `linkImports(files: FileRecord[], resolver: Resolver): ImportEdge[]`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (CallEdge, Confidence, DeclKind, Declaration, FileRecord, ImportEdge, Lang, compareEdges, compareStrings, externalId, splitNodeId, symbolId, unresolvedId), [`../resolve/go.ts`](../resolve/go.ts.md) (buildGoCallIndex, resolveGoCall), [`../resolve/python.ts`](../resolve/python.ts.md) (buildPythonCallIndex, resolvePythonCall), [`../resolve/rust.ts`](../resolve/rust.ts.md) (buildRustCallIndex, resolveRustCall), [`./tarjan.ts`](tarjan.ts.md) (sccComponents)
+**Imports:** [`../schema.ts`](../schema.ts.md) (CallEdge, Confidence, DeclKind, Declaration, FileRecord, ImportEdge, Lang, compareEdges, compareStrings, externalId, splitNodeId, symbolId, unresolvedId), [`../resolve/go.ts`](../resolve/go.ts.md) (buildGoCallIndex, resolveGoCall), [`../resolve/java.ts`](../resolve/java.ts.md) (buildJavaCallIndex, resolveJavaCall), [`../resolve/python.ts`](../resolve/python.ts.md) (buildPythonCallIndex, resolvePythonCall), [`../resolve/rust.ts`](../resolve/rust.ts.md) (buildRustCallIndex, resolveRustCall), [`./tarjan.ts`](tarjan.ts.md) (sccComponents)
 
 **Imported by:** [`packages/core/src/graph/index.ts`](index.ts.md)
 
 **Blast radius:** 46 files (`greplost impact packages/core/src/graph/link.ts`)
 
 **Key symbols:**
-- `type ResolvedTarget = | { type: "file"; path: string } | { type: "external"; pkg: string } | { type: "unresolved" }`  L30-33
-- `interface Resolver`  L36-38
-- `interface ExportTarget`  L41-59
-- `type ExportIndex = Map<string, Map<string, ExportTarget>>`  L62-62
-- `interface Binding`  L64-69
-- `function sortedUnique(values: string[]): string[]`  L71-73
-- `function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge[]`  L82-124
-- `function resolvedSpecifiers(files: FileRecord[], imports: ImportEdge[]): Map<string, Map<string, string>>`  L127-140
-- `function importBindings(file: FileRecord, specifiers: Map<string, string> | undefined): Map<string, Binding>`  L146-159
-- `function isNodeDeclaration(decl: Declaration): boolean`  L170-172
-- `function topLevelDeclarations(file: FileRecord): Map<string, DeclKind>`  L175-183
-- `type Sourcing = | { kind: "declared"; symbol: string } | { kind: "chain"; module: string; name: string } | { kind: "stars"; modules: string[] } | { kind: "unpinnable" }`  L189-193
-- `function exportedOnlyAsDefault(file: FileRecord, name: string): boolean`  L216-226
-- `function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex`  L228-461
-- `function exportNames(index: ExportIndex, file: string): string[]`  L464-467
-- `function targetOf(index: ExportIndex, module: string, name: string): { to: string; confidence: Confidence } | null`  L470-474
-- `function linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[]`  L482-558
-- `function resolveName( name: string, file: string, topLevel: Map<string, DeclKind>, bindings: Map<string, Binding>, index: ExportIndex, ): { to: string; confidence: Confidence } | null`  L560-574
-- `function resolveMember( object: string, member: string, caller: string, file: string, topLevel: Map<string, DeclKind>, bindings: Map<string, Binding>, index: ExportIndex, declKinds: Map<string, DeclK…`  L576-615
+- `type ResolvedTarget = | { type: "file"; path: string } | { type: "external"; pkg: string } | { type: "unresolved" }`  L31-34
+- `interface Resolver`  L37-39
+- `interface ExportTarget`  L42-60
+- `type ExportIndex = Map<string, Map<string, ExportTarget>>`  L63-63
+- `interface Binding`  L65-70
+- `function sortedUnique(values: string[]): string[]`  L72-74
+- `function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge[]`  L83-125
+- `function resolvedSpecifiers(files: FileRecord[], imports: ImportEdge[]): Map<string, Map<string, string>>`  L128-141
+- `function importBindings(file: FileRecord, specifiers: Map<string, string> | undefined): Map<string, Binding>`  L147-160
+- `function isNodeDeclaration(decl: Declaration): boolean`  L171-173
+- `function topLevelDeclarations(file: FileRecord): Map<string, DeclKind>`  L176-184
+- `type Sourcing = | { kind: "declared"; symbol: string } | { kind: "chain"; module: string; name: string } | { kind: "stars"; modules: string[] } | { kind: "unpinnable" }`  L190-194
+- `function exportedOnlyAsDefault(file: FileRecord, name: string): boolean`  L217-227
+- `function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex`  L229-462
+- `function exportNames(index: ExportIndex, file: string): string[]`  L465-468
+- `function targetOf(index: ExportIndex, module: string, name: string): { to: string; confidence: Confidence } | null`  L471-475
+- `function linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[]`  L483-564
+- `function resolveName( name: string, file: string, topLevel: Map<string, DeclKind>, bindings: Map<string, Binding>, index: ExportIndex, ): { to: string; confidence: Confidence } | null`  L566-580
+- `function resolveMember( object: string, member: string, caller: string, file: string, topLevel: Map<string, DeclKind>, bindings: Map<string, Binding>, index: ExportIndex, declKinds: Map<string, DeclK…`  L582-621
 
-**Calls:** `exportedOnlyAsDefault` → [`packages/core/src/graph/link.ts#exportedOnlyAsDefault`](link.ts.md) (high), `importBindings` → [`packages/core/src/graph/link.ts#importBindings`](link.ts.md) (high), `isNodeDeclaration` → [`packages/core/src/graph/link.ts#isNodeDeclaration`](link.ts.md) (high), `resolveMember` → [`packages/core/src/graph/link.ts#resolveMember`](link.ts.md) (high), `resolveName` → [`packages/core/src/graph/link.ts#resolveName`](link.ts.md) (high), `resolvedSpecifiers` → [`packages/core/src/graph/link.ts#resolvedSpecifiers`](link.ts.md) (high), `sortedUnique` → [`packages/core/src/graph/link.ts#sortedUnique`](link.ts.md) (high), `targetOf` → [`packages/core/src/graph/link.ts#targetOf`](link.ts.md) (high), `topLevelDeclarations` → [`packages/core/src/graph/link.ts#topLevelDeclarations`](link.ts.md) (high), `sccComponents` → [`packages/core/src/graph/tarjan.ts#sccComponents`](tarjan.ts.md) (high), `buildGoCallIndex` → [`packages/core/src/resolve/go.ts#buildGoCallIndex`](../resolve/go.ts.md) (high), `resolveGoCall` → [`packages/core/src/resolve/go.ts#resolveGoCall`](../resolve/go.ts.md) (high), `buildPythonCallIndex` → [`packages/core/src/resolve/python.ts#buildPythonCallIndex`](../resolve/python.ts.md) (high), `resolvePythonCall` → [`packages/core/src/resolve/python.ts#resolvePythonCall`](../resolve/python.ts.md) (high), `buildRustCallIndex` → [`packages/core/src/resolve/rust.ts#buildRustCallIndex`](../resolve/rust.ts.md) (high), `resolveRustCall` → [`packages/core/src/resolve/rust.ts#resolveRustCall`](../resolve/rust.ts.md) (high), `compareEdges` → [`packages/core/src/schema.ts#compareEdges`](../schema.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `externalId` → [`packages/core/src/schema.ts#externalId`](../schema.ts.md) (high), `splitNodeId` → [`packages/core/src/schema.ts#splitNodeId`](../schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high), `unresolvedId` → [`packages/core/src/schema.ts#unresolvedId`](../schema.ts.md) (high)
+**Calls:** `exportedOnlyAsDefault` → [`packages/core/src/graph/link.ts#exportedOnlyAsDefault`](link.ts.md) (high), `importBindings` → [`packages/core/src/graph/link.ts#importBindings`](link.ts.md) (high), `isNodeDeclaration` → [`packages/core/src/graph/link.ts#isNodeDeclaration`](link.ts.md) (high), `resolveMember` → [`packages/core/src/graph/link.ts#resolveMember`](link.ts.md) (high), `resolveName` → [`packages/core/src/graph/link.ts#resolveName`](link.ts.md) (high), `resolvedSpecifiers` → [`packages/core/src/graph/link.ts#resolvedSpecifiers`](link.ts.md) (high), `sortedUnique` → [`packages/core/src/graph/link.ts#sortedUnique`](link.ts.md) (high), `targetOf` → [`packages/core/src/graph/link.ts#targetOf`](link.ts.md) (high), `topLevelDeclarations` → [`packages/core/src/graph/link.ts#topLevelDeclarations`](link.ts.md) (high), `sccComponents` → [`packages/core/src/graph/tarjan.ts#sccComponents`](tarjan.ts.md) (high), `buildGoCallIndex` → [`packages/core/src/resolve/go.ts#buildGoCallIndex`](../resolve/go.ts.md) (high), `resolveGoCall` → [`packages/core/src/resolve/go.ts#resolveGoCall`](../resolve/go.ts.md) (high), `buildJavaCallIndex` → [`packages/core/src/resolve/java.ts#buildJavaCallIndex`](../resolve/java.ts.md) (high), `resolveJavaCall` → [`packages/core/src/resolve/java.ts#resolveJavaCall`](../resolve/java.ts.md) (high), `buildPythonCallIndex` → [`packages/core/src/resolve/python.ts#buildPythonCallIndex`](../resolve/python.ts.md) (high), `resolvePythonCall` → [`packages/core/src/resolve/python.ts#resolvePythonCall`](../resolve/python.ts.md) (high), `buildRustCallIndex` → [`packages/core/src/resolve/rust.ts#buildRustCallIndex`](../resolve/rust.ts.md) (high), `resolveRustCall` → [`packages/core/src/resolve/rust.ts#resolveRustCall`](../resolve/rust.ts.md) (high), `compareEdges` → [`packages/core/src/schema.ts#compareEdges`](../schema.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `externalId` → [`packages/core/src/schema.ts#externalId`](../schema.ts.md) (high), `splitNodeId` → [`packages/core/src/schema.ts#splitNodeId`](../schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high), `unresolvedId` → [`packages/core/src/schema.ts#unresolvedId`](../schema.ts.md) (high)

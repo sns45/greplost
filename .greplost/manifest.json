@@ -720,14 +720,15 @@
       "blast": 0,
       "exports": [
         "NOTES",
-        "generateTruth"
+        "generateTruth",
+        "javaTruthTool"
       ],
       "fanIn": 0,
-      "fanOut": 1,
+      "fanOut": 2,
       "lang": "ts",
-      "loc": 22,
+      "loc": 347,
       "pkg": "@greplost/bench",
-      "sha256": "b54a6a795e1da5c9428e0ec1e6a00a83b4b9f1d07a0f269c20ef21c1fe8424d0",
+      "sha256": "dd3eccfbe75b977f1480eb5b9fdfe3e804161c8ef2da1e29733c9c9d94e4bfe5",
       "staleSummary": false
     },
     "bench/src/truth/kotlin.ts": {
@@ -1396,11 +1397,11 @@
         "extractJava"
       ],
       "fanIn": 1,
-      "fanOut": 1,
+      "fanOut": 2,
       "lang": "ts",
-      "loc": 18,
+      "loc": 618,
       "pkg": "@greplost/core",
-      "sha256": "8a70332f31157f3cdf5abb3746928ddaf9cb95f8bc1282e267bffc3c045ababb",
+      "sha256": "c5f1e686ec0ce12ba0988a05b3878d332fc8180f8b391054f3fc7cff999fc2c6",
       "staleSummary": false
     },
     "packages/core/src/extract/kotlin.ts": {
@@ -1474,7 +1475,7 @@
       "staleSummary": false
     },
     "packages/core/src/extract/ts-signature.ts": {
-      "blast": 59,
+      "blast": 60,
       "exports": [
         "BODY_VALUES",
         "FUNCTION_VALUES",
@@ -1496,7 +1497,7 @@
         "unwrapValue",
         "variableSignature"
       ],
-      "fanIn": 10,
+      "fanIn": 11,
       "fanOut": 0,
       "lang": "ts",
       "loc": 187,
@@ -1683,11 +1684,11 @@
         "linkImports"
       ],
       "fanIn": 1,
-      "fanOut": 5,
+      "fanOut": 6,
       "lang": "ts",
-      "loc": 615,
+      "loc": 621,
       "pkg": "@greplost/core",
-      "sha256": "5710161f24375ab001ed498400f4163b3d77f80e13bd8e5e3642cc04fa7e5351",
+      "sha256": "9233f02f712c7daa8ddc86b38e018aaed442611a610f8d52425fe3020be47804",
       "staleSummary": false
     },
     "packages/core/src/graph/metrics.ts": {
@@ -2159,15 +2160,16 @@
       "blast": 66,
       "exports": [
         "JavaCallIndex",
+        "buildJavaCallIndex",
         "createJavaResolver",
         "resolveJavaCall"
       ],
-      "fanIn": 2,
+      "fanIn": 3,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 29,
+      "loc": 389,
       "pkg": "@greplost/core",
-      "sha256": "3b086f810029b579ab580d9b0ca409e305015f18c17cc7f98eb9581812a3dcf6",
+      "sha256": "c8732050336e9f23bbf30bb9fac0973e3466cb56f994633de8e6ccb8bfc4afca",
       "staleSummary": false
     },
     "packages/core/src/resolve/kotlin.ts": {
@@ -2331,7 +2333,7 @@
         "symbolId",
         "unresolvedId"
       ],
-      "fanIn": 119,
+      "fanIn": 120,
       "fanOut": 0,
       "lang": "ts",
       "loc": 498,
@@ -3360,14 +3362,14 @@
         "@greplost/sync"
       ],
       "files": 48,
-      "loc": 22349,
+      "loc": 22674,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 64,
-      "loc": 13817,
+      "loc": 14783,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
