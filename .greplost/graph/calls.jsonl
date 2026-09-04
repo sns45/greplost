@@ -1355,9 +1355,7 @@
 {"confidence":"high","from":"packages/core/src/build.ts#readSources","kind":"call","to":"packages/core/src/build.ts#readOne"}
 {"confidence":"high","from":"packages/core/src/build.ts#recordKey","kind":"call","to":"packages/core/src/signals/index.ts#signalPathKey"}
 {"confidence":"high","from":"packages/core/src/build.ts#restamp","kind":"call","to":"packages/core/src/build.ts#freezeRecord"}
-{"confidence":"high","from":"packages/core/src/build.ts#restamp","kind":"call","to":"packages/core/src/schema.ts#nodeId"}
-{"confidence":"high","from":"packages/core/src/build.ts#restamp","kind":"call","to":"packages/core/src/schema.ts#splitNodeId"}
-{"confidence":"high","from":"packages/core/src/build.ts#restamp","kind":"call","to":"packages/core/src/schema.ts#symbolId"}
+{"confidence":"high","from":"packages/core/src/build.ts#restamp","kind":"call","to":"packages/core/src/build.ts#moveId"}
 {"confidence":"high","from":"packages/core/src/config.ts#loadConfig","kind":"call","to":"packages/core/src/config.ts#invalid"}
 {"confidence":"high","from":"packages/core/src/config.ts#loadConfig","kind":"call","to":"packages/core/src/config.ts#validateConfig"}
 {"confidence":"high","from":"packages/core/src/config.ts#validateConfig","kind":"call","to":"packages/core/src/config.ts#cloneConfig"}

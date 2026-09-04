@@ -325,15 +325,21 @@ function restamp(record: FileRecord, filePath: string): FileRecord {
   return freezeRecord({
     ...record,
     path: filePath,
-    decls: record.decls.map((decl) => {
-      const parts = splitNodeId(decl.id);
-      return {
-        ...decl,
-        file: filePath,
-        id: parts === null ? symbolId(filePath, decl.name) : nodeId(filePath, parts.kind, parts.name),
-      };
-    }),
+    decls: record.decls.map((decl) => ({
+      ...decl,
+      file: filePath,
+      // Only the file segment of an id changes between byte-identical files: the rest
+      // (`#Store~2`, `#route./x`) is the declaration's identity and travels unchanged,
+      // including the `~<n>` suffix a duplicate name carries (ruling 2026-09-04).
+      id: moveId(decl.id, record.path, filePath),
+    })),
   });
+}
+
+/** Re-home an id (`<file>#<rest>`) from `from` to `to`; an id of another file is returned as is. */
+function moveId(id: string, from: string, to: string): string {
+  const prefix = `${from}#`;
+  return id.startsWith(prefix) ? `${to}#${id.slice(prefix.length)}` : id;
 }
 
 /**
