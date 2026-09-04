@@ -11,14 +11,14 @@ Build 2 (vendored 2026-09-04):
 tree-sitter-python.wasm: tree-sitter-python@0.25.0 npm, tarball ships the wasm; copied (ABI 15)
 tree-sitter-java.wasm: tree-sitter-java@0.23.5 npm, tarball ships the wasm; copied (ABI 14)
 tree-sitter-rust.wasm: tree-sitter-rust@0.24.0 npm, built from the tarball's src/ (ABI 15)
-tree-sitter-kotlin.wasm: tree-sitter-kotlin@0.3.8 npm, built from the tarball's src/ (ABI 14)
+tree-sitter-kotlin.wasm: fwcd/tree-sitter-kotlin 1852ea17b7f60fb3f9d84e0b1555d56b46b39fb1 (main after 0.3.8), built from the commit (ABI 14)
 tree-sitter-yaml.wasm: @tree-sitter-grammars/tree-sitter-yaml@0.7.1 npm, ships the wasm (ABI 14)
 tree-sitter-hcl.wasm: tree-sitter-grammars/tree-sitter-hcl v1.2.0 fad991865fee927dd1de5e172fb3f08ac674d914, built from the tag (ABI 15)
 tree-sitter-dockerfile.wasm: camdencheek/tree-sitter-dockerfile v0.2.0 868e44ce378deb68aac902a9db68ff82d2299dd0, built from the tag (ABI 14)
 
-Two departures from the pinned list in section 0.5 of
-docs/superpowers/specs/2026-09-04-languages-iac-signals-design.md, both forced, both recorded
-here with the reason (ruling, leaf 2.0, 2026-09-04):
+Three departures from the pinned list in section 0.5 of
+docs/superpowers/specs/2026-09-04-languages-iac-signals-design.md, all forced, all recorded
+here with the reason (rulings, leaf 2.0 and leaf 2.6, 2026-09-04):
 
   yaml   The pinned tree-sitter-yaml 0.5.0 (ikatyang) carries a C++ external scanner
          (src/scanner.cc). `tree-sitter build --wasm` cannot link a C++ scanner: it fails with
@@ -33,6 +33,24 @@ here with the reason (ruling, leaf 2.0, 2026-09-04):
          LANGUAGE_VERSION 15. Building from the tarball's own sources yields ABI 15, so the
          vendored artifact provably matches the pinned grammar. python and java were checked
          the same way and their shipped wasm agrees with their sources, so those are copied.
+
+  kotlin The pinned tree-sitter-kotlin **0.3.8 release** predates Kotlin 1.4's `fun interface`
+         and does not parse it. On the pinned corpus (kotlinx.coroutines, 163 files) 0.3.8 left
+         a root-level ERROR node in 7 files (4.3%), five of them on a `fun interface`, against
+         the 1% parse-health bound leaf 2.6 is gated on. The same repository's main branch has
+         fixed it (`choice("class", seq(optional("fun"), "interface"))`) and has not been
+         released, so the vendored artifact is built from a pinned commit of main rather than
+         from the tag: 0 of 163 files carry a root-level ERROR with it, and its node names are
+         0.3.8's, so `extract/kotlin.ts` reads the same tree either way (one addition: main
+         wraps an extension receiver in a `receiver_type` node).
+
+         The alternative considered and rejected: `@tree-sitter-grammars/tree-sitter-kotlin`
+         1.1.0, the fork under the tree-sitter-grammars org, which ships a wasm and parses
+         `fun interface` but leaves 2 of the 163 files with a root-level ERROR, silently
+         mis-parses an annotated `annotation class` as an expression, and renames every node
+         (`identifier` for both `simple_identifier` and `type_identifier`, `import` for
+         `import_header`). Recorded so the choice is not made again by coin flip (ruling,
+         leaf 2.6).
 
 Vendored so installs never need a C++ toolchain.
 Regenerate the three that ship a usable wasm with: bun scripts/vendor-grammars.ts <node_modules>

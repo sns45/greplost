@@ -14,7 +14,6 @@ import { createResolver } from "../src/resolve/index.ts";
 import { extractDockerfile } from "../src/extract/dockerfile.ts";
 import { extractHcl } from "../src/extract/hcl.ts";
 import { extractJava } from "../src/extract/java.ts";
-import { extractKotlin } from "../src/extract/kotlin.ts";
 import { extractPython } from "../src/extract/python.ts";
 import { extractRust } from "../src/extract/rust.ts";
 import { extractYamlActions } from "../src/extract/yaml-actions.ts";
@@ -294,10 +293,10 @@ describe("stubs", () => {
     // `python` left this list when leaf 2.1 implemented it; each language leaf removes its
     // own row, and the list is empty when build 2 is done.
     const cases: ReadonlyArray<readonly [string, (path: string) => unknown, RegExp]> = [
-      // python (leaf 2.1) and rust (leaf 2.4) are no longer stubs: their own test files
-      // (extract-python.test.ts, extract-rust.test.ts) hold them to the contract now.
+      // python (leaf 2.1), rust (leaf 2.4) and kotlin (leaf 2.6) are no longer stubs: their own
+      // test files (extract-python.test.ts, extract-rust.test.ts, extract-kotlin.test.ts) hold
+      // them to the contract now.
       ["A.java", (p) => extractJava(p, "java", "", NO_TREE), /java extractor .* build-2 leaf 2\.5/],
-      ["A.kt", (p) => extractKotlin(p, "kotlin", "", NO_TREE), /kotlin extractor .* build-2 leaf 2\.6/],
       ["Dockerfile", (p) => extractDockerfile(p, "dockerfile", "", NO_TREE), /dockerfile extractor .* leaf 2\.10/],
       ["deploy.yaml", (p) => extractYamlK8s(p, "yaml", "", NO_TREE), /yaml-k8s extractor .* build-2 leaf 2\.8/],
       ["Chart.yaml", (p) => extractYamlHelm(p, "yaml", "", NO_TREE), /yaml-helm extractor .* build-2 leaf 2\.8/],
@@ -314,7 +313,6 @@ describe("stubs", () => {
     const ctx = emptyContext([]);
     const cases: ReadonlyArray<readonly [ReturnType<typeof createJavaResolver>, RegExp]> = [
       [createJavaResolver(ctx), /java resolver .* build-2 leaf 2\.5/],
-      [createKotlinResolver(ctx), /kotlin resolver .* build-2 leaf 2\.6/],
       [createDockerfileResolver(ctx), /dockerfile resolver .* build-2 leaf 2\.10/],
     ];
     for (const [resolve, pattern] of cases) {
@@ -327,6 +325,13 @@ describe("stubs", () => {
     // exists, answers, and never throws.
     const resolve = createRustResolver(emptyContext(["src/lib.rs"]));
     expect(resolve("src/lib.rs", "serde::Serialize")).toEqual({ type: "external", pkg: "crate/serde" });
+  });
+
+  test("the Kotlin resolver is implemented: an import of an absent package is external", () => {
+    // Leaf 2.6 landed. `extract-kotlin.test.ts` owns the rules; the one property this file
+    // still needs is that the module answers instead of throwing.
+    const resolve = createKotlinResolver(emptyContext(["src/tiny/App.kt"]));
+    expect(resolve("src/tiny/App.kt", "kotlin.math.max")).toEqual({ type: "external", pkg: "kotlin" });
   });
 
   test("the YAML resolver is implemented: YAML has no imports, so nothing resolves", () => {
