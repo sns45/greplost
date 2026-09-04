@@ -137,10 +137,54 @@ function declaredRoots(dir: string, text: string | null): string[] {
     const joined = joinRelative(dir, cleaned);
     if (!out.includes(joined)) out.push(joined);
   };
-  // `package-dir = { "" = "src" }`, on one line or spread over several.
-  for (const match of text.matchAll(/^\s*""\s*=\s*(["'][^"']*["'])/gmu)) add(match[1] ?? "");
-  // `packages = [{ include = "pkg", from = "src" }]`
-  for (const match of text.matchAll(/\bfrom\s*=\s*(["'][^"']*["'])/gu)) add(match[1] ?? "");
+
+  // Only these tables may declare an import root. Scoping matters: `from = "docs"` under
+  // some unrelated tool's table is not a package root, and a pattern that ignored the
+  // section would silently make one, which then outranks the repo root for every import.
+  let section = "";
+  let pending = "";
+  for (const raw of text.split(/\r?\n/u)) {
+    const line = raw.replace(/(^|\s)#.*$/u, "").trim();
+    if (line === "") continue;
+    const header = /^\[\[?([^\]]+)\]\]?$/u.exec(line);
+    if (header !== null) {
+      section = (header[1] ?? "").trim().replace(/["']/gu, "");
+      pending = "";
+      continue;
+    }
+    // A `package-dir`/`packages` value may span several lines; gather until it balances.
+    const continued = pending !== "" ? `${pending} ${line}` : line;
+    const opens = (continued.match(/[[{]/gu) ?? []).length;
+    const closes = (continued.match(/[\]}]/gu) ?? []).length;
+    if (opens > closes) {
+      pending = continued;
+      continue;
+    }
+    pending = "";
+
+    if (section === "tool.setuptools.package-dir") {
+      // `"" = "lib"`, the root package's directory.
+      const root = /^""\s*=\s*(["'][^"']*["'])/u.exec(continued);
+      if (root !== null) add(root[1] ?? "");
+      continue;
+    }
+    if (section === "tool.setuptools" && /^package-dir\s*=/u.test(continued)) {
+      // `package-dir = { "" = "lib" }`, the inline-table spelling of the same thing.
+      const root = /""\s*=\s*(["'][^"']*["'])/u.exec(continued);
+      if (root !== null) add(root[1] ?? "");
+      continue;
+    }
+    if (section === "tool.poetry" && /^packages\s*=/u.test(continued)) {
+      // `packages = [{ include = "pkg", from = "src" }, …]`
+      for (const match of continued.matchAll(/\bfrom\s*=\s*(["'][^"']*["'])/gu)) add(match[1] ?? "");
+      continue;
+    }
+    if (section === "tool.poetry.packages" && /^from\s*=/u.test(continued)) {
+      // The `[[tool.poetry.packages]]` array-of-tables spelling.
+      const root = /^from\s*=\s*(["'][^"']*["'])/u.exec(continued);
+      if (root !== null) add(root[1] ?? "");
+    }
+  }
   return out;
 }
 
@@ -188,7 +232,10 @@ export function createPythonResolver(ctx: RepoContext): (fromFile: string, speci
     }
     // Deepest first, so `a/b/src` outranks `a/src` outranks the repo root.
     const byDepth = (a: string, b: string): number => b.split("/").length - a.split("/").length || compareStrings(a, b);
-    roots = [...declared.sort(byDepth), ...markers.sort(byDepth), ""];
+    // The repo root is always the last resort, and a marker directory at the repo root would
+    // otherwise put it in the list twice - harmless, but it makes every miss probe twice.
+    const ordered = [...declared.sort(byDepth), ...markers.sort(byDepth), ""];
+    roots = ordered.filter((root, index) => ordered.indexOf(root) === index);
     return roots;
   }
 
@@ -235,6 +282,14 @@ export function createPythonResolver(ctx: RepoContext): (fromFile: string, speci
     for (const root of importRoots()) {
       const hit = probe(joinRelative(root, relative));
       if (hit !== null) return { type: "file", path: hit };
+    }
+
+    // A PEP 420 namespace package: a directory of the repo that holds indexed files but no
+    // `__init__.py`. It is not a distribution and calling it one would put a phantom
+    // `ext:pypi/<dir>` in the map for a directory the reader can open, so an in-repo path
+    // that resolves to no module file is `unresolved`, never external.
+    for (const root of importRoots()) {
+      if (hasFilesUnder(joinRelative(root, relative))) return UNRESOLVED;
     }
 
     const head = specifier.split(".")[0] ?? specifier;

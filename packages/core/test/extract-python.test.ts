@@ -383,6 +383,34 @@ describe("calls", () => {
     expect(out.calls.map((c) => c.callee)).toEqual(["helper"]);
   });
 
+  test("a class body's own names shadow the module, but a method's body does not see them", () => {
+    const out = run(
+      "m.py",
+      [
+        "def helper():",
+        "    pass",
+        "",
+        "",
+        "class C:",
+        "    helper = 2",
+        "    made = helper()",
+        "",
+        "    def use(self):",
+        "        return helper()",
+        "",
+      ].join("\n"),
+    );
+    // `helper()` in the class body calls the class attribute; inside `use` the class
+    // namespace is not in scope, so that one really is the module-level `helper`.
+    expect(out.calls.map((c) => [c.caller, c.callee])).toEqual([["C.use", "helper"]]);
+  });
+
+  test("a class attribute with only an annotation binds nothing", () => {
+    const out = run("m.py", "def helper():\n    pass\n\n\nclass C:\n    helper: int\n    made = helper()\n");
+    // `helper: int` declares a type and binds no value, so the call is the module's.
+    expect(out.calls.map((c) => [c.caller, c.callee])).toEqual([["C", "helper"]]);
+  });
+
   test("a `global` name is not a local binding", () => {
     const out = run(
       "m.py",
@@ -415,17 +443,32 @@ describe("tiny-python", () => {
       .map((e) => e.to)
       .sort();
 
-  test("the fixture holds seven Python files and indexes six of them", () => {
+  test("the fixture holds eight Python files and indexes seven of them", () => {
     expect(snapshot.files.map((f) => f.path)).toEqual([
       "tiny/__init__.py",
       "tiny/app.py",
       "tiny/cycle_a.py",
       "tiny/cycle_b.py",
+      "tiny/plugins.py",
       "tiny/retry.py",
       "tiny/store.py",
     ]);
-    // The seventh file exists and is excluded by `DEFAULT_CONFIG.exclude`.
-    expect(existsSync(join(TINY_PYTHON, "tests/__tests__/test_store.py"))).toBe(true);
+    // The eighth file exists and is excluded by `DEFAULT_CONFIG.exclude`'s `**/test_*.py`.
+    expect(existsSync(join(TINY_PYTHON, "tests/test_store.py"))).toBe(true);
+  });
+
+  test("a literal importlib.import_module is a dynamic import edge, a computed one is not", () => {
+    const edges = snapshot.imports.filter((e) => e.from === "tiny/plugins.py");
+    // Two static edges to `importlib`: `import importlib` and `from importlib import
+    // import_module` are one specifier with two symbol sets, which `linkImports` keeps apart.
+    expect(edges.map((e) => [e.specifier, e.importKind, e.to, (e.symbols ?? []).join(",")]).sort()).toEqual([
+      ["importlib", "static", "ext:importlib", "*"],
+      ["importlib", "static", "ext:importlib", "import_module"],
+      ["tiny.retry", "dynamic", "tiny/retry.py", ""],
+      ["tiny.store", "dynamic", "tiny/store.py", ""],
+    ]);
+    // `import_module(name)` and `import_module(PLUGIN)` name no module a reader can follow.
+    expect(edges.some((e) => e.specifier === "name" || e.specifier === "PLUGIN")).toBe(false);
   });
 
   test("relative and absolute imports resolve inside the package", () => {
@@ -440,6 +483,12 @@ describe("tiny-python", () => {
     for (const other of snapshot.imports) {
       if (isFileId(other.to)) expect(other.to.endsWith(".py")).toBe(true);
     }
+  });
+
+  test("a package importing itself is not an edge", () => {
+    // `tiny/__init__.py` names the package it is; `from . import x` written there would
+    // resolve to itself, and a self-loop is not a dependency between files (leaf 2.3).
+    expect(snapshot.imports.some((e) => e.from === e.to)).toBe(false);
   });
 
   test("the one import cycle is found", () => {
@@ -495,6 +544,59 @@ describe("tiny-python", () => {
     ]);
   });
 
+  test("import roots come from the sections that declare them, and never repeat", () => {
+    // A `from = "..."` under some unrelated tool's table is not a package root, and a bare
+    // pattern match would have made `docs` one. `""` is the repo root and appears once.
+    const pyproject = [
+      "[project]",
+      'name = "app"',
+      "",
+      "[tool.setuptools.package-dir]",
+      '"" = "lib"',
+      "",
+      "[tool.towncrier]",
+      'from = "docs"',
+      "",
+      "[tool.mypy]",
+      'packages = ["app"]',
+      "",
+    ].join("\n");
+    const resolver = createResolver({
+      root: TINY_PYTHON,
+      files: new Set(["lib/app/__init__.py", "lib/app/mod.py", "docs/app/mod.py"]),
+      packages: [],
+      readFile: (rel) => (rel === "pyproject.toml" ? pyproject : null),
+    });
+    expect(resolver.resolve("lib/app/mod.py", "app.mod", "python")).toEqual({
+      type: "file",
+      path: "lib/app/mod.py",
+    });
+    // `docs` was never a root, so `app.mod` can only ever be the one under `lib`.
+    expect(resolver.resolve("lib/app/mod.py", "app", "python")).toEqual({
+      type: "file",
+      path: "lib/app/__init__.py",
+    });
+  });
+
+  test("a poetry src layout is read from its own table", () => {
+    const pyproject = [
+      "[tool.poetry]",
+      'name = "app"',
+      'packages = [{ include = "app", from = "src" }]',
+      "",
+    ].join("\n");
+    const resolver = createResolver({
+      root: TINY_PYTHON,
+      files: new Set(["src/app/__init__.py", "src/app/mod.py"]),
+      packages: [],
+      readFile: (rel) => (rel === "pyproject.toml" ? pyproject : null),
+    });
+    expect(resolver.resolve("src/app/mod.py", "app.mod", "python")).toEqual({
+      type: "file",
+      path: "src/app/mod.py",
+    });
+  });
+
   test("the standard library and third-party distributions are external, never a file", () => {
     const resolver = createResolver({
       root: TINY_PYTHON,
@@ -510,6 +612,29 @@ describe("tiny-python", () => {
     });
     // A relative specifier that names nothing indexed is unresolved, never invented.
     expect(resolver.resolve("tiny/app.py", ".nope", "python")).toEqual({ type: "unresolved" });
+    // A PEP 420 namespace package in the repo is never a pypi distribution: `ns` holds
+    // indexed files but no `__init__.py`, so it is unresolved, and `ns.mod` is the file.
+    const withNamespace = createResolver({
+      root: TINY_PYTHON,
+      files: new Set([...snapshot.files.map((f) => f.path), "ns/mod.py", "ns/deep/leaf.py"]),
+      packages: snapshot.packages,
+      readFile: () => null,
+    });
+    expect(withNamespace.resolve("tiny/app.py", "ns", "python")).toEqual({ type: "unresolved" });
+    expect(withNamespace.resolve("tiny/app.py", "ns.deep", "python")).toEqual({ type: "unresolved" });
+    expect(withNamespace.resolve("tiny/app.py", "ns.mod", "python")).toEqual({
+      type: "file",
+      path: "ns/mod.py",
+    });
+    expect(withNamespace.resolve("tiny/app.py", "ns.deep.leaf", "python")).toEqual({
+      type: "file",
+      path: "ns/deep/leaf.py",
+    });
+    // A name that only *prefixes* an indexed directory is still external.
+    expect(withNamespace.resolve("tiny/app.py", "n", "python")).toEqual({
+      type: "external",
+      pkg: "pypi/n",
+    });
     // The stdlib list is a committed literal, never read from the host interpreter.
     expect(PY_STDLIB.has("os")).toBe(true);
     expect(PY_STDLIB.has("tomllib")).toBe(true);

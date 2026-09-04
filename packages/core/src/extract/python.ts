@@ -738,19 +738,84 @@ function shadowed(callee: string, scope: ReadonlySet<string> | null): boolean {
   return head !== "this" && scope.has(head);
 }
 
+/**
+ * Names a class body binds directly: `x = 1`, and the `def`s and nested classes it holds.
+ *
+ * A class body executes in its own namespace, so `class C: helper = 2; made = helper()`
+ * calls the attribute, never a module-level `def helper`. An annotation with no value
+ * (`helper: int`) binds nothing and is deliberately not in the set.
+ *
+ * The set stops at the class body: Python's scope chain skips the class namespace when a
+ * method looks a name up, so `def use(self): return helper()` really is the module's.
+ */
+function classBodyNames(classNode: Node): ReadonlySet<string> {
+  const bound = new Set<string>();
+  const visit = (block: Node): void => {
+    for (const node of block.namedChildren) {
+      if (node.type === "function_definition" || node.type === "class_definition") {
+        const name = field(node, "name");
+        if (name !== null) bound.add(name.text);
+        continue;
+      }
+      if (node.type === "decorated_definition") {
+        const definition = field(node, "definition");
+        const name = definition === null ? null : field(definition, "name");
+        if (name !== null) bound.add(name.text);
+        continue;
+      }
+      if (node.type === "expression_statement") {
+        for (const child of node.namedChildren) {
+          if (child.type !== "assignment" && child.type !== "augmented_assignment") continue;
+          // An annotation with no value declares a type and binds no name.
+          if (field(child, "right") === null) continue;
+          const left = field(child, "left");
+          if (left !== null) patternNames(left, bound);
+        }
+        continue;
+      }
+      if (isBlockStatement(node)) {
+        for (const child of node.namedChildren) {
+          if (child.type === "block" || child.type.endsWith("_clause")) visit(child);
+        }
+      }
+    }
+  };
+  const body = field(classNode, "body");
+  if (body !== null) visit(body);
+  return bound;
+}
+
 function collectCalls(state: PyState, root: Node): void {
-  const walk = (node: Node, owner: string, scope: ReadonlySet<string> | null): void => {
+  /**
+   * `scope` is the enclosing function's bindings, `classScope` the enclosing class body's.
+   * Only one of them is ever consulted, because Python consults only one: inside a function
+   * the class namespace is invisible, and a function scope therefore replaces it outright.
+   */
+  const walk = (
+    node: Node,
+    owner: string,
+    scope: ReadonlySet<string> | null,
+    classScope: ReadonlySet<string> | null,
+  ): void => {
     const next = state.ownerByNode.get(node.id) ?? owner;
     // The outermost function scope owns the bindings of everything nested in it, so a
     // closure or comprehension inside a method reuses the method's set.
-    const inner = scope === null && FUNCTION_SCOPES.has(node.type) ? boundNames(node) : scope;
+    let innerScope = scope;
+    let innerClass = classScope;
+    if (scope === null && FUNCTION_SCOPES.has(node.type)) {
+      innerScope = boundNames(node);
+      // Entering a method leaves the class namespace behind, exactly as Python does.
+      innerClass = null;
+    } else if (scope === null && node.type === "class_definition") {
+      innerClass = classBodyNames(node);
+    }
     if (node.type === "call") {
       const callee = calleeText(node);
-      if (callee !== null && !shadowed(callee, inner)) {
+      if (callee !== null && !shadowed(callee, innerScope ?? innerClass)) {
         state.calls.push({ caller: next, callee, line: lineOf(node) });
       }
     }
-    for (const child of node.namedChildren) walk(child, next, inner);
+    for (const child of node.namedChildren) walk(child, next, innerScope, innerClass);
   };
-  walk(root, "", null);
+  walk(root, "", null, null);
 }
