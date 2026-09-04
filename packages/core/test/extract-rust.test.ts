@@ -610,15 +610,16 @@ describe("tiny-rust", () => {
     expect(snapshot.imports.some((e) => e.kind === "reexport" && e.to === "src/store.rs")).toBe(true);
   });
 
-  test("Store::new and s.put resolve; the module-qualified call does not reach the linker", () => {
+  test("Store::new, s.put and the module-qualified retry::run all resolve through the linker", () => {
     expect(snapshot.calls.map((e) => `${e.from} -> ${e.to} (${e.confidence})`)).toEqual([
+      "src/main.rs#main -> src/retry.rs#run (high)",
       "src/main.rs#main -> src/store.rs#Store.new (high)",
       "src/main.rs#main -> src/store.rs#Store.put (high)",
       "src/retry.rs#warm -> src/store.rs#Store.put (high)",
       "src/store.rs#Store.put -> src/store.rs#Store.record (high)",
     ]);
-    // `retry::run()` is written down as a call site and `resolveRustCall` resolves it; the
-    // shared linker has no Rust branch yet, which is a wiring gap reported to the driver.
+    // `retry::run()` is written down as a call site; the linker dispatches Rust files to
+    // `resolveRustCall` (wired by the driver after this leaf), and the direct call agrees.
     const { files, edges } = {
       files: snapshot.files,
       edges: snapshot.imports,
