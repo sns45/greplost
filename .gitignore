@@ -11,3 +11,4 @@ bench/.competitors/
 .claude/worktrees/
 .promotions/
 .idea/
+bench/truth/rusttruth/target/
