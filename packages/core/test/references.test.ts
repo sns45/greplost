@@ -292,9 +292,8 @@ describe("stubs", () => {
     // `python` left this list when leaf 2.1 implemented it; each language leaf removes its
     // own row, and the list is empty when build 2 is done.
     const cases: ReadonlyArray<readonly [string, (path: string) => unknown, RegExp]> = [
-      // python (leaf 2.1) and rust (leaf 2.4) are no longer stubs: their own test files
-      // (extract-python.test.ts, extract-rust.test.ts) hold them to the contract now.
-      ["A.java", (p) => extractJava(p, "java", "", NO_TREE), /java extractor .* build-2 leaf 2\.5/],
+      // python (leaf 2.1), rust (leaf 2.4) and java (leaf 2.5) are no longer stubs: their own
+      // test files (extract-python/rust/java.test.ts) hold them to the contract now.
       ["A.kt", (p) => extractKotlin(p, "kotlin", "", NO_TREE), /kotlin extractor .* build-2 leaf 2\.6/],
       ["Dockerfile", (p) => extractDockerfile(p, "dockerfile", "", NO_TREE), /dockerfile extractor .* leaf 2\.10/],
       // yaml-k8s and yaml-helm (leaf 2.8) are no longer stubs: `extract-yaml-k8s.test.ts`
@@ -310,8 +309,7 @@ describe("stubs", () => {
 
   test("every unimplemented resolver builds for free and throws on the first specifier", () => {
     const ctx = emptyContext([]);
-    const cases: ReadonlyArray<readonly [ReturnType<typeof createJavaResolver>, RegExp]> = [
-      [createJavaResolver(ctx), /java resolver .* build-2 leaf 2\.5/],
+    const cases: ReadonlyArray<readonly [ReturnType<typeof createKotlinResolver>, RegExp]> = [
       [createKotlinResolver(ctx), /kotlin resolver .* build-2 leaf 2\.6/],
       [createDockerfileResolver(ctx), /dockerfile resolver .* build-2 leaf 2\.10/],
     ];
@@ -325,6 +323,15 @@ describe("stubs", () => {
     // exists, answers, and never throws.
     const resolve = createRustResolver(emptyContext(["src/lib.rs"]));
     expect(resolve("src/lib.rs", "serde::Serialize")).toEqual({ type: "external", pkg: "crate/serde" });
+  });
+
+  test("the Java resolver is implemented: an unknown package is external, not a throw", () => {
+    // Leaf 2.5 landed; `createJavaResolver` answers for every specifier and never throws.
+    const resolve = createJavaResolver(emptyContext(["src/main/java/tiny/App.java"]));
+    expect(resolve("src/main/java/tiny/App.java", "com.google.gson.Gson")).toEqual({
+      type: "external",
+      pkg: "maven/com.google:gson",
+    });
   });
 
   test("the YAML resolver is implemented: YAML has no imports, so nothing resolves", () => {
