@@ -21,7 +21,7 @@ import { createParser } from "../src/parser.ts";
 import type { ParserHandle } from "../src/parser.ts";
 import { extractFile } from "../src/extract/index.ts";
 import { buildSnapshot } from "../src/build.ts";
-import { createHclResolver } from "../src/resolve/hcl.ts";
+import { createHclResolver, resolveHclCall } from "../src/resolve/hcl.ts";
 import type { ResolvedTarget } from "../src/resolve/resolver.ts";
 import { compareReferenceEdges } from "../src/references/index.ts";
 import { parseJsonl, serializeSnapshot } from "../src/serialize/index.ts";
@@ -321,6 +321,16 @@ describe("module imports", () => {
       pkg: "module/git::https://example.com/vpc.git//modules/a?ref=v1",
     });
     expect(resolve("main.tf", "")).toEqual({ type: "unresolved" });
+  });
+
+  test("HCL has no call edges, and the call resolver says so rather than answering", () => {
+    // Kept only so the language pipeline has the same shape as every other one (spec 0.4).
+    // `extractHcl` returns `calls: []` for every file, so a CallSite reaching it could only come
+    // from a bug, and a loud failure beats a quietly missing edge.
+    const file = { path: "main.tf", lang: "hcl" } as unknown as FileRecord;
+    expect(() => resolveHclCall(file, { caller: "", callee: "f", line: 1 }, {})).toThrow(
+      /greplost: HCL has no call edges, so main\.tf cannot have produced one/,
+    );
   });
 
   test("the module import edge lands on the directory end to end", async () => {
