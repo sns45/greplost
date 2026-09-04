@@ -1,0 +1,13 @@
+[package]
+name = "tiny"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "tiny"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tiny"
+path = "src/main.rs"
