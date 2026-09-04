@@ -68,7 +68,7 @@ Spec: `docs/superpowers/specs/2026-09-04-languages-iac-signals-design.md` sectio
 - [x] G12: the core and bench suites are green
   CHECK: bun test packages/core bench 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 5179 expect() calls | Ran 1239 tests across 34 files. [60.66s]; the whole suite after the merge of main is 1720 pass, 0 fail
+  EVIDENCE: 5495 expect() calls | Ran 1388 tests across 40 files. [93.26s]; the whole suite after the merge of main is 1871 pass, 0 fail
 
 - [x] G13: core and bench typecheck
   CHECK: bunx tsc -p packages/core/tsconfig.json --noEmit && bunx tsc -p bench/tsconfig.json --noEmit
