@@ -50,7 +50,7 @@ import { exportKeys, jaccardCycles, scoreEdges, scoreSet, type Score } from "./s
 import { writeResult } from "./results-io.ts";
 import { generateTsTruth, type Truth } from "./truth/ts.ts";
 import { FIXTURES, fixtureNames } from "./fixtures.ts";
-import { loadTruth, type TruthModule, type TruthTarget } from "./truth/registry.ts";
+import { loadTruth, type ExtraTruth, type TruthModule, type TruthTarget } from "./truth/registry.ts";
 import type { CorpusRepoEntry } from "./corpus.ts";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
@@ -595,7 +595,7 @@ async function extraFor(
   target: Target,
   snapshot: Snapshot,
   files: string[],
-): Promise<{ references: Edge[]; nodes: string[] } | null> {
+): Promise<ExtraTruth | null> {
   const scored = new Set(files);
   const predictedNodes = snapshot.symbols.some(
     (decl) => scored.has(decl.file) && decl.meta?.["signal"] !== undefined,
@@ -748,7 +748,7 @@ export function scoreAgainstTruth(
   snapshot: Snapshot,
   truth: Truth,
   lang: TruthLang,
-  extra: { references: Edge[]; nodes: string[] } | null = null,
+  extra: ExtraTruth | null = null,
 ): RepoScores {
   // The universe is what *both* sides could speak about: the snapshot's files for this
   // language, intersected with the files the truth generator actually covered. A file the
@@ -791,8 +791,9 @@ export function scoreAgainstTruth(
   // identity is `(from, to, refKind)` and `scoreEdges` does not know about `refKind`.
   // S6 counts every declaration whose id is a schema node id (`splitNodeId`), on both sides,
   // so IaC nodes and framework signal nodes are scored the same way (driver ruling 2026-09-04).
+  const nodeFiles = extra?.nodeFiles === undefined ? fileSet : new Set(extra.nodeFiles.filter((file) => fileSet.has(file)));
   const predNodes = snapshot.symbols
-    .filter((decl) => fileSet.has(decl.file) && splitNodeId(decl.id) !== null)
+    .filter((decl) => nodeFiles.has(decl.file) && splitNodeId(decl.id) !== null)
     .map((decl) => decl.id);
   // S5 identity is (from, to, refKind) when the oracle carries kinds; an oracle that scores
   // references by endpoints only (Terraform's) is compared by (from, to) on both sides.
@@ -805,7 +806,7 @@ export function scoreAgainstTruth(
     .filter((edge) => fileSet.has(fileOf(edge.from)) && coveredReferenceTarget(edge.to))
     .map(keyOf);
   // Both node sets are held to the schema's node-id shape so an oracle cannot publish an id the map cannot carry.
-  const truthNodes = extra === null ? [] : extra.nodes.filter((id) => fileSet.has(fileOf(id)) && splitNodeId(id) !== null);
+  const truthNodes = extra === null ? [] : extra.nodes.filter((id) => nodeFiles.has(fileOf(id)) && splitNodeId(id) !== null);
   const truthReferences =
     extra === null
       ? []
