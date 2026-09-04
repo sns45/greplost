@@ -134,12 +134,12 @@
 {"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"./fixtures.ts","symbols":["FIXTURES","fixtureNames"],"to":"bench/src/fixtures.ts"}
 {"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"./results-io.ts","symbols":["writeResult"],"to":"bench/src/results-io.ts"}
 {"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"./score.ts","symbols":["Score","exportKeys","jaccardCycles","scoreEdges","scoreSet"],"to":"bench/src/score.ts"}
-{"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"./truth/registry.ts","symbols":["TruthModule","TruthTarget","loadTruth"],"to":"bench/src/truth/registry.ts"}
+{"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"./truth/registry.ts","symbols":["ExtraTruth","TruthModule","TruthTarget","loadTruth"],"to":"bench/src/truth/registry.ts"}
 {"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"./truth/ts.ts","symbols":["Truth","generateTsTruth"],"to":"bench/src/truth/ts.ts"}
 {"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","readFileSync"],"to":"ext:node:fs"}
 {"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
 {"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["ARTIFACT_DIR","ARTIFACT_PATHS","DEFAULT_CONFIG","Edge","GreplostConfig","Lang","Snapshot","compareStrings","isFileId"],"to":"packages/core/src/schema.ts"}
-{"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["splitNodeId"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["isNodeKind","splitNodeId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/tasks.ts","importKind":"type","kind":"import","specifier":"./truth/ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
 {"confidence":"high","from":"bench/src/tasks.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","readFileSync"],"to":"ext:node:fs"}
 {"confidence":"high","from":"bench/src/tasks.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
@@ -507,7 +507,7 @@
 {"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../resolve/python.ts","symbols":["buildPythonCallIndex","resolvePythonCall"],"to":"packages/core/src/resolve/python.ts"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../resolve/rust.ts","symbols":["buildRustCallIndex","resolveRustCall"],"to":"packages/core/src/resolve/rust.ts"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallEdge","Confidence","DeclKind","Declaration","FileRecord","ImportEdge","Lang"],"to":"packages/core/src/schema.ts"}
-{"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareEdges","compareStrings","externalId","splitNodeId","symbolId","unresolvedId"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareEdges","compareStrings","externalId","isNodeKind","symbolId","unresolvedId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/graph/metrics.ts","importKind":"static","kind":"import","specifier":"./blast.ts","symbols":["blastRadius"],"to":"packages/core/src/graph/blast.ts"}
 {"confidence":"high","from":"packages/core/src/graph/metrics.ts","importKind":"static","kind":"import","specifier":"./directories.ts","symbols":["expandDirectoryTargets","resolvedImportTargets"],"to":"packages/core/src/graph/directories.ts"}
 {"confidence":"high","from":"packages/core/src/graph/metrics.ts","importKind":"static","kind":"import","specifier":"./tarjan.ts","symbols":["stronglyConnected"],"to":"packages/core/src/graph/tarjan.ts"}

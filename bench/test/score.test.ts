@@ -415,6 +415,23 @@ describe("structural gate", () => {
     expect(scores.S1.fn).toBe(0);
   });
 
+  test("S6 scores only the files the oracle names in nodeFiles, on both sides", () => {
+    const node = (file: string, name: string) => ({
+      id: `${file}#resource.${name}`, file, name, kind: "resource" as const, signature: `resource ${name}`, exported: false, span: [1, 2] as [number, number],
+    });
+    const snapshot = snapshotOf({ symbols: [node("a.ts", "x"), node("b.ts", "y")] });
+    const scoped = scoreAgainstTruth("tiny", snapshot, truthOf(), "ts", { references: [], nodes: ["a.ts#resource.x"], nodeFiles: ["a.ts"] });
+    expect([scoped.S6?.tp, scoped.S6?.fp, scoped.S6?.fn]).toEqual([1, 0, 0]);
+    const whole = scoreAgainstTruth("tiny", snapshot, truthOf(), "ts", { references: [], nodes: ["a.ts#resource.x"] });
+    expect([whole.S6?.tp, whole.S6?.fp, whole.S6?.fn]).toEqual([1, 1, 0]);
+  });
+
+  test("S6 trusts the declaration kind: a method on a lowercase type named like a node kind is a symbol", () => {
+    const method = { id: "pipeline.ts#step.Run", file: "a.ts", name: "step.Run", kind: "method" as const, signature: "Run()", exported: true, span: [1, 2] as [number, number] };
+    const scores = scoreAgainstTruth("tiny", snapshotOf({ symbols: [method] }), truthOf(), "ts", { references: [], nodes: [] });
+    expect([scores.S6?.tp, scores.S6?.fp, scores.S6?.fn]).toEqual([0, 0, 0]);
+  });
+
   test("a wrong import edge fails S1 and is located at the import line", () => {
     const scores = scoreAgainstTruth(
       "tiny",
