@@ -30,6 +30,8 @@ export const ARTIFACT_PATHS = {
   imports: "graph/imports.jsonl",
   calls: "graph/calls.jsonl",
   symbols: "graph/symbols.jsonl",
+  /** Schema 2: references that are neither imports nor calls (IaC references, config-to-code links). */
+  references: "graph/references.jsonl",
   repoMap: "repo/MAP.md",
   hotspots: "repo/HOTSPOTS.md",
   config: "config.json",
@@ -40,7 +42,19 @@ export const ARTIFACT_PATHS = {
   state: ".state.json",
 } as const;
 
-export type Lang = "ts" | "tsx" | "js" | "jsx" | "go";
+export type Lang =
+  | "ts"
+  | "tsx"
+  | "js"
+  | "jsx"
+  | "go"
+  | "python"
+  | "rust"
+  | "java"
+  | "kotlin"
+  | "hcl"
+  | "yaml"
+  | "dockerfile";
 
 export const LANG_BY_EXTENSION: Readonly<Record<string, Lang>> = {
   ".ts": "ts",
@@ -52,7 +66,27 @@ export const LANG_BY_EXTENSION: Readonly<Record<string, Lang>> = {
   ".cjs": "js",
   ".jsx": "jsx",
   ".go": "go",
+  ".py": "python",
+  ".pyi": "python",
+  ".rs": "rust",
+  ".java": "java",
+  ".kt": "kotlin",
+  ".kts": "kotlin",
+  ".tf": "hcl",
+  ".tfvars": "hcl",
+  ".hcl": "hcl",
+  ".yaml": "yaml",
+  ".yml": "yaml",
 };
+
+/** Languages keyed by exact basename, for files that have no extension (schema 2, ruling 2026-09-04). */
+export const LANG_BY_BASENAME: Readonly<Record<string, Lang>> = {
+  Dockerfile: "dockerfile",
+  Containerfile: "dockerfile",
+};
+
+/** Basename prefixes that also mean Dockerfile (`Dockerfile.dev`, `Dockerfile.ci`). */
+export const DOCKERFILE_PREFIX = "Dockerfile.";
 
 export type DeclKind =
   | "function"
@@ -65,7 +99,25 @@ export type DeclKind =
   | "var"
   | "method"
   | "struct"
-  | "namespace";
+  | "namespace"
+  /* schema 2 (ruling 2026-09-04): more languages, IaC and framework signals */
+  | "trait"
+  | "impl"
+  | "record"
+  | "module"
+  | "resource"
+  | "data"
+  | "variable"
+  | "output"
+  | "provider"
+  | "job"
+  | "step"
+  | "stage"
+  | "image"
+  | "component"
+  | "route"
+  | "handler"
+  | "task";
 
 /** One declaration. Persisted as a line of graph/symbols.jsonl. */
 export interface Declaration {
@@ -89,6 +141,12 @@ export interface Declaration {
   span: [number, number];
   /** Symbol path of the enclosing declaration (class name for methods). Absent for top-level. */
   parent?: string;
+  /**
+   * Language, IaC or framework attributes with no other home, sorted keys, string values only
+   * (schema 2): e.g. `{ type: "aws_s3_bucket" }` on a Terraform resource, `{ method: "GET", path: "/users" }`
+   * on a route, `{ provider: "aws" }` on a Pulumi resource, `{ base: "node:20" }` on an image.
+   */
+  meta?: Record<string, string>;
 }
 
 export type ImportKind = "static" | "dynamic" | "type" | "side-effect";
@@ -157,7 +215,7 @@ export type Confidence = "high" | "med";
 export interface Edge {
   from: string;
   to: string;
-  kind: "import" | "reexport" | "call";
+  kind: "import" | "reexport" | "call" | "reference";
   symbols?: string[];
   confidence: Confidence;
 }
@@ -167,6 +225,19 @@ export interface ImportEdge extends Edge {
   /** `from` is a file id; `to` is a file id, `ext:<pkg>`, or `unresolved:<specifier>`. */
   specifier: string;
   importKind: ImportKind;
+}
+
+/**
+ * Schema 2: a non-import, non-call dependency between nodes. `from` and `to` are node ids
+ * (files or `<file>#<symbol>`); `refKind` names the mechanism: `hcl-ref` (a Terraform expression
+ * naming a resource, variable, data source or module output), `selector` (a Kubernetes label
+ * selector), `needs` (a GitHub Actions job dependency), `from-image` (a Dockerfile base image),
+ * `config` (a config file naming a code entry point), `resource-input` (a Pulumi resource fed
+ * another's output).
+ */
+export interface ReferenceEdge extends Edge {
+  kind: "reference";
+  refKind: string;
 }
 
 export interface CallEdge extends Edge {
@@ -281,6 +352,8 @@ export interface Snapshot {
   imports: ImportEdge[];
   calls: CallEdge[];
   symbols: Declaration[];
+  /** Schema 2; absent on snapshots built before references existed. Sorted per the contract. */
+  references?: ReferenceEdge[];
   metrics: Metrics;
 }
 

@@ -148,10 +148,10 @@
 ## packages/core/src/parser.ts
 
 - `interface ParserHandle` L15-17
-- `function grammarDir(): string` L32-36
-- `async function createParser(opts?: { grammarDir?: string }): Promise<ParserHandle>` L79-106
-- `function reparse(language: Language, source: string): Tree | null` L129-136
-- `function disposeSpareParser(): void` L139-144
+- `function grammarDir(): string` L36-40
+- `async function createParser(opts?: { grammarDir?: string }): Promise<ParserHandle>` L83-113
+- `function reparse(language: Language, source: string): Tree | null` L136-143
+- `function disposeSpareParser(): void` L146-151
 
 ## packages/core/src/resolve/go.ts
 
@@ -194,43 +194,46 @@
 
 - `const SCHEMA_VERSION = "1"` L21-21
 - `const ARTIFACT_DIR = ".greplost"` L24-24
-- `const ARTIFACT_PATHS = { index: "INDEX.md", manifest: "manifest.json", imports: "graph/imports.jsonl", calls: "graph/calls.jsonl", symbols: "graph/symbols.jsonl", repoMap: "repo/MAP.md", hotsp…` L27-41
-- `type Lang = "ts" | "tsx" | "js" | "jsx" | "go"` L43-43
-- `const LANG_BY_EXTENSION: Readonly<Record<string, Lang>> = { ".ts": "ts", ".mts": "ts", ".cts": "ts", ".tsx": "tsx", ".js": "js", ".mjs": "js", ".cjs": "js", ".jsx": "jsx", ".go": "go", }` L45-55
-- `type DeclKind = | "function" | "class" | "interface" | "type" | "enum" | "const" | "let" | "var" | "method" | "struct" | "namespace"` L57-68
-- `interface Declaration` L71-92
-- `type ImportKind = "static" | "dynamic" | "type" | "side-effect"` L94-94
-- `interface ImportedSymbol` L96-101
-- `interface ImportRecord` L104-112
-- `interface ExportRecord` L114-122
-- `interface CallSite` L125-138
-- `interface FileRecord` L141-152
-- `type Confidence = "high" | "med"` L154-154
-- `interface Edge` L157-163
-- `interface ImportEdge extends Edge` L165-170
-- `interface CallEdge extends Edge` L172-176
-- `interface PackageInfo` L178-185
-- `interface PackageEntry` L187-195
-- `interface FileEntry` L197-213
-- `interface Manifest` L215-219
-- `interface DiagramConfig` L221-224
-- `interface GreplostConfig` L226-233
-- `const DEFAULT_CONFIG: GreplostConfig = { include: ["**"], exclude: [ "**/node_modules/**", "**/dist/**", "**/build/**", "**/.git/**", "**/.greplost/**", "**/*.d.ts", "**/*.test.*", "**/*.spec.…` L235-255
-- `interface PackageEdge` L257-262
-- `interface Metrics` L264-269
-- `interface Snapshot` L272-285
-- `interface SummaryEntry` L288-295
-- `type SummaryCache = Record<string, SummaryEntry>` L297-297
-- `function compareStrings(a: string, b: string): number` L300-302
-- `function compareEdges(a: Edge, b: Edge): number` L304-311
-- `function compareDeclarations(a: Declaration, b: Declaration): number` L313-315
-- `function symbolId(file: string, symbolPath: string): string` L317-319
-- `function packageId(name: string): string` L321-323
-- `function externalId(pkg: string): string` L325-327
-- `function unresolvedId(specifier: string): string` L329-331
-- `function isFileId(id: string): boolean` L333-335
-- `function packageSlug(name: string): string` L341-343
-- `function stableStringify(value: unknown, indent = 0): string` L346-348
+- `const ARTIFACT_PATHS = { index: "INDEX.md", manifest: "manifest.json", imports: "graph/imports.jsonl", calls: "graph/calls.jsonl", symbols: "graph/symbols.jsonl", /** Schema 2: references that…` L27-43
+- `type Lang = | "ts" | "tsx" | "js" | "jsx" | "go" | "python" | "rust" | "java" | "kotlin" | "hcl" | "yaml" | "dockerfile"` L45-57
+- `const LANG_BY_EXTENSION: Readonly<Record<string, Lang>> = { ".ts": "ts", ".mts": "ts", ".cts": "ts", ".tsx": "tsx", ".js": "js", ".mjs": "js", ".cjs": "js", ".jsx": "jsx", ".go": "go", ".py": …` L59-80
+- `const LANG_BY_BASENAME: Readonly<Record<string, Lang>> = { Dockerfile: "dockerfile", Containerfile: "dockerfile", }` L83-86
+- `const DOCKERFILE_PREFIX = "Dockerfile."` L89-89
+- `type DeclKind = | "function" | "class" | "interface" | "type" | "enum" | "const" | "let" | "var" | "method" | "struct" | "namespace" /* schema 2 (ruling 2026-09-04): more languages, IaC and fr…` L91-120
+- `interface Declaration` L123-150
+- `type ImportKind = "static" | "dynamic" | "type" | "side-effect"` L152-152
+- `interface ImportedSymbol` L154-159
+- `interface ImportRecord` L162-170
+- `interface ExportRecord` L172-180
+- `interface CallSite` L183-196
+- `interface FileRecord` L199-210
+- `type Confidence = "high" | "med"` L212-212
+- `interface Edge` L215-221
+- `interface ImportEdge extends Edge` L223-228
+- `interface ReferenceEdge extends Edge` L238-241
+- `interface CallEdge extends Edge` L243-247
+- `interface PackageInfo` L249-256
+- `interface PackageEntry` L258-266
+- `interface FileEntry` L268-284
+- `interface Manifest` L286-290
+- `interface DiagramConfig` L292-295
+- `interface GreplostConfig` L297-304
+- `const DEFAULT_CONFIG: GreplostConfig = { include: ["**"], exclude: [ "**/node_modules/**", "**/dist/**", "**/build/**", "**/.git/**", "**/.greplost/**", "**/*.d.ts", "**/*.test.*", "**/*.spec.…` L306-326
+- `interface PackageEdge` L328-333
+- `interface Metrics` L335-340
+- `interface Snapshot` L343-358
+- `interface SummaryEntry` L361-368
+- `type SummaryCache = Record<string, SummaryEntry>` L370-370
+- `function compareStrings(a: string, b: string): number` L373-375
+- `function compareEdges(a: Edge, b: Edge): number` L377-384
+- `function compareDeclarations(a: Declaration, b: Declaration): number` L386-388
+- `function symbolId(file: string, symbolPath: string): string` L390-392
+- `function packageId(name: string): string` L394-396
+- `function externalId(pkg: string): string` L398-400
+- `function unresolvedId(specifier: string): string` L402-404
+- `function isFileId(id: string): boolean` L406-408
+- `function packageSlug(name: string): string` L414-416
+- `function stableStringify(value: unknown, indent = 0): string` L419-421
 
 ## packages/core/src/serialize/index.ts
 

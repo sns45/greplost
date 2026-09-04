@@ -16,8 +16,12 @@ export interface ParserHandle {
   parse(source: string, lang: Lang): Tree;
 }
 
-/** Grammar file per language. ts/js share the TypeScript grammar; tsx/jsx share the TSX one. */
-const GRAMMAR_FILE: Readonly<Record<Lang, string>> = {
+/**
+ * Grammar file per language. ts/js share the TypeScript grammar; tsx/jsx share the TSX one.
+ * Schema 2 languages are listed in `Lang` before their grammar lands (build 2); asking for one
+ * of those is a clear error, never a silent skip.
+ */
+const GRAMMAR_FILE: Readonly<Partial<Record<Lang, string>>> = {
   ts: "tree-sitter-typescript.wasm",
   js: "tree-sitter-typescript.wasm",
   tsx: "tree-sitter-tsx.wasm",
@@ -92,6 +96,9 @@ export async function createParser(opts?: { grammarDir?: string }): Promise<Pars
   return {
     parse(source: string, lang: Lang): Tree {
       const file = GRAMMAR_FILE[lang];
+      if (file === undefined) {
+        throw new Error(`greplost: no grammar is vendored for "${lang}" yet (schema 2 language; see the build 2 plan)`);
+      }
       const language = byFile.get(file);
       if (language === undefined) throw new Error(`greplost: no grammar loaded for language "${lang}"`);
       if (current !== file) {
