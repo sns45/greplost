@@ -18,11 +18,13 @@ import type { Node } from "web-tree-sitter";
 import type { Declaration, Lang } from "../schema.ts";
 import { compareStrings } from "../schema.ts";
 import type { SignalInput, SignalOutput, SignalPass } from "./index.ts";
+import type { TopLevelBinding } from "./ts-nodes.ts";
 import {
   NameAllocator,
   bodyOf,
   calleeText,
   field,
+  importBindings,
   signalNode,
   spanOf,
   stopAtNestedFunctions,
@@ -30,8 +32,6 @@ import {
   unwrapValue,
   walk,
 } from "./ts-nodes.ts";
-import type { TopLevelBinding } from "./ts-nodes.ts";
-import { importBindings } from "./ts-nodes.ts";
 
 const LANGS: ReadonlySet<Lang> = new Set<Lang>(["ts", "tsx", "js", "jsx"]);
 
@@ -75,7 +75,7 @@ export const reactPass: SignalPass = {
           signal: "react",
           meta: {
             decl: binding.name,
-            hooks: body === null ? "" : hooksIn(body),
+            hooks: body === null ? undefined : hooksIn(body),
             props: propsTypeName(binding),
           },
         }),
@@ -187,8 +187,14 @@ function holdsJsx(expression: Node): boolean {
   return found;
 }
 
-/** The sorted, comma-joined `use*` calls in `body`, deduplicated; "" when there are none. */
-function hooksIn(body: Node): string {
+/**
+ * The sorted, comma-joined `use*` calls in `body`, deduplicated.
+ *
+ * `undefined` when there are none, so a hookless component carries no `hooks` key at all — the
+ * same shape `props` already had. `""` is not a fact about the component, and a meta key that is
+ * always present but usually empty is noise in every card and every golden.
+ */
+function hooksIn(body: Node): string | undefined {
   const hooks = new Set<string>();
   walk(
     body,
@@ -201,7 +207,7 @@ function hooksIn(body: Node): string {
     },
     stopAtNestedFunctions,
   );
-  return [...hooks].sort(compareStrings).join(",");
+  return hooks.size === 0 ? undefined : [...hooks].sort(compareStrings).join(",");
 }
 
 /** The first parameter's type name, when it is written as a plain type reference. */

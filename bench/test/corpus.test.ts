@@ -137,10 +137,14 @@ describe("corpus.json", () => {
     expect(byName.get("ripgrep")?.subset).toBe("crates/**");
     expect(byName.get("gson")?.subset).toBe("**/src/main/**");
     // The pin's own note says "122 .ts under aws-ts-*/", and so does the leaf-2.3 gate. The
-    // wider `aws-ts-*/**` also swept in 37 JavaScript files from the sample apps embedded in
-    // those examples (an Express server, a CRA client, `next.config.js`), which are not the
-    // Pulumi TypeScript corpus (build 2, leaf 2.3). The repo and sha are unchanged.
+    // wider `aws-ts-*/**` swept in 41 more source files from the sample apps embedded in those
+    // examples: 37 JavaScript (36 `.js` plus one `.mjs` Lambda handler — an Express server, a
+    // CRA client, `next.config.js`) **and 4 `.tsx`** (a Next.js demo app's `layout.tsx` and
+    // `page.tsx`, a React website's `App.tsx` and `main.tsx`). None of them is Pulumi
+    // TypeScript. The repo and sha are unchanged (build 2, leaf 2.3).
     expect(byName.get("pulumi-ts")?.subset).toBe("aws-ts-*/**/*.ts");
+    // The note has to say so too: `*.ts` is not "the TypeScript files", it is `.ts` only.
+    expect(byName.get("pulumi-ts")?.notes).toContain(".tsx");
     expect(byName.get("pulumi-go")?.subset).toBe("*-go-*/**");
     expect(byName.get("next-app")?.subset).toBe("examples/*/app/**");
     // A whole-repo pin still says so explicitly rather than leaving the field out.

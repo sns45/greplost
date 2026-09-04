@@ -41,6 +41,7 @@ import { init } from "../src/init.ts";
 import {
   FileParseCache,
   PARSE_CACHE_STAMP,
+  parseCacheStamp,
   PARSE_CACHE_VERSION,
   PARSE_CACHE_VERSION_KEY,
   parseCacheKey,
@@ -757,6 +758,38 @@ describe("parse cache", () => {
 
     expect(new FileParseCache(root).get("a".repeat(64), "ts")).toBeUndefined();
     expect(new FileParseCache(root).size).toBe(0);
+  });
+
+  test("a cache written under a different config.signals is not read back", () => {
+    // Extraction depends on which signal passes ran, and the `(lang, sha256)` key does not
+    // carry that. Two builds of one checkout under different `signals` settings would otherwise
+    // share entries and each inherit the other's nodes (leaf 2.3 review, minor 5).
+    expect(parseCacheStamp()).toBe(PARSE_CACHE_STAMP);
+    expect(parseCacheStamp(["react"])).not.toBe(PARSE_CACHE_STAMP);
+    expect(parseCacheStamp([])).not.toBe(parseCacheStamp(["react"]));
+    // The order a config lists them in is not a difference.
+    expect(parseCacheStamp(["react", "next"])).toBe(parseCacheStamp(["next", "react"]));
+
+    const root = copyFixture("cache-signals");
+    mkdirSync(artifact(root, "cache"), { recursive: true });
+    writeFileSync(
+      artifact(root, "cache/parse.json"),
+      stableStringify({
+        [PARSE_CACHE_VERSION_KEY]: PARSE_CACHE_STAMP,
+        [parseCacheKey("a".repeat(64), "ts")]: record(),
+      }),
+    );
+
+    expect(new FileParseCache(root).get("a".repeat(64), "ts")).toBeDefined();
+    expect(new FileParseCache(root, ["react"]).get("a".repeat(64), "ts")).toBeUndefined();
+    expect(new FileParseCache(root, []).size).toBe(0);
+
+    // And a cache saved under one setting is not read back under another.
+    const restricted = new FileParseCache(root, ["react"]);
+    restricted.set(record({ sha256: "b".repeat(64) }));
+    restricted.save();
+    expect(new FileParseCache(root, ["react"]).get("b".repeat(64), "ts")).toBeDefined();
+    expect(new FileParseCache(root).get("b".repeat(64), "ts")).toBeUndefined();
   });
 
   test("an update against a stale stamp reparses everything", async () => {

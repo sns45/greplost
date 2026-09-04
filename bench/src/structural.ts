@@ -43,6 +43,9 @@ import {
   type Snapshot,
 } from "@greplost/core/schema";
 import { splitNodeId } from "@greplost/core/schema";
+
+/** Languages whose import edges name a directory (a Go package, a Terraform module) rather than a file. */
+const DIRECTORY_IMPORT_LANGS: ReadonlySet<string> = new Set(["go", "hcl"]);
 import { exportKeys, jaccardCycles, scoreEdges, scoreSet, type Score } from "./score.ts";
 import { writeResult } from "./results-io.ts";
 import { generateTsTruth, type Truth } from "./truth/ts.ts";
@@ -759,7 +762,7 @@ export function scoreAgainstTruth(
   // (tech spec Appendix C). Those ids are not files and would otherwise be
   // filtered off both sides, turning S1 into a vacuous 1.000; the covered
   // universe therefore includes the directories the covered files live in.
-  const dirSet = lang === "go" ? new Set(files.map(directoryOf)) : new Set<string>();
+  const dirSet = DIRECTORY_IMPORT_LANGS.has(lang) ? new Set(files.map(directoryOf)) : new Set<string>();
   const coveredTarget = (id: string): boolean => fileSet.has(id) || dirSet.has(id);
 
   const predImports = snapshot.imports.filter((e) => isFileId(e.to) && fileSet.has(e.from) && coveredTarget(e.to));
@@ -786,24 +789,28 @@ export function scoreAgainstTruth(
   // every other metric: a node in a file the oracle never loaded is not a false positive.
   // `S5` is scored as a key set rather than with `scoreEdges` because a reference edge's
   // identity is `(from, to, refKind)` and `scoreEdges` does not know about `refKind`.
-  // S6 counts every non-file node the schema knows (`splitNodeId`), so IaC nodes and
-  // framework signal nodes are scored the same way (driver ruling 2026-09-04).
+  // S6 counts every declaration whose id is a schema node id (`splitNodeId`), on both sides,
+  // so IaC nodes and framework signal nodes are scored the same way (driver ruling 2026-09-04).
   const predNodes = snapshot.symbols
-    .filter((decl) => fileSet.has(decl.file) && (splitNodeId(decl.id) !== null || decl.meta?.["signal"] !== undefined))
+    .filter((decl) => fileSet.has(decl.file) && splitNodeId(decl.id) !== null)
     .map((decl) => decl.id);
   // S5 identity is (from, to, refKind) when the oracle carries kinds; an oracle that scores
   // references by endpoints only (Terraform's) is compared by (from, to) on both sides.
   const truthCarriesKinds = extra !== null && extra.references.every((edge) => typeof (edge as { refKind?: unknown }).refKind === "string");
   const keyOf = (edge: Edge): string => (truthCarriesKinds ? referenceKey(edge) : `${edge.from} -> ${edge.to}`);
+  // A reference target counts when it is a scored file, an `ext:` id, or a module directory in
+  // the universe; a source must be a scored file (driver ruling 2026-09-04, Terraform review).
+  const coveredReferenceTarget = (id: string): boolean => fileSet.has(fileOf(id)) || id.startsWith("ext:") || dirSet.has(id);
   const predReferences = (snapshot.references ?? [])
-    .filter((edge) => fileSet.has(fileOf(edge.from)) && fileSet.has(fileOf(edge.to)))
+    .filter((edge) => fileSet.has(fileOf(edge.from)) && coveredReferenceTarget(edge.to))
     .map(keyOf);
-  const truthNodes = extra === null ? [] : extra.nodes.filter((id) => fileSet.has(fileOf(id)));
+  // Both node sets are held to the schema's node-id shape so an oracle cannot publish an id the map cannot carry.
+  const truthNodes = extra === null ? [] : extra.nodes.filter((id) => fileSet.has(fileOf(id)) && splitNodeId(id) !== null);
   const truthReferences =
     extra === null
       ? []
       : extra.references
-          .filter((edge) => fileSet.has(fileOf(edge.from)) && fileSet.has(fileOf(edge.to)))
+          .filter((edge) => fileSet.has(fileOf(edge.from)) && coveredReferenceTarget(edge.to))
           .map(keyOf);
   const S5 = extra === null ? null : scoreSet(predReferences, truthReferences);
   const S6 = extra === null ? null : scoreSet(predNodes, truthNodes);

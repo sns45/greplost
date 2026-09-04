@@ -122,6 +122,22 @@ interface Scan {
   covered: string[];
   nodes: Set<string>;
   references: ReferenceEdge[];
+  /**
+   * `route-handler` records waiting for a target. They cannot be resolved while the files are
+   * being walked: the component a route names may live in a file that has not been visited yet.
+   */
+  pending: PendingHandler[];
+}
+
+/** A route that named a handler, before the name was resolved to a node or a declaration. */
+interface PendingHandler {
+  /** The route node id the reference leaves. */
+  from: string;
+  /** Repo-relative id of the file that wrote it. */
+  file: string;
+  sourceFile: ts.SourceFile;
+  /** The identifier as written (`component: Home`, `export default Page`). */
+  name: string;
 }
 
 function toPosix(p: string): string {
@@ -224,8 +240,11 @@ function analyse(root: string, files: string[]): Scan {
     );
   }
 
-  const scan: Scan = { covered: covered.map((entry) => entry.id), nodes: new Set(), references: [] };
+  const scan: Scan = { covered: covered.map((entry) => entry.id), nodes: new Set(), references: [], pending: [] };
   for (const { id, sourceFile } of covered) visitFile(id, sourceFile, checker, scan);
+  // Every file has contributed its nodes, so a route may now be pointed at one that lives in
+  // another file. Doing this inside the walk would make the answer depend on file order.
+  resolveRouteHandlers(scan, checker, absRoot);
   return scan;
 }
 
@@ -475,7 +494,7 @@ function tanstackNodes(file: string, sourceFile: ts.SourceFile, checker: ts.Type
   const visit = (node: ts.Node): void => {
     if (ts.isCallExpression(node)) {
       const route = tanstackRoute(node, checker);
-      if (route !== undefined) emitTanstackRoute(file, route, names, scan);
+      if (route !== undefined) emitTanstackRoute(file, sourceFile, route, names, scan);
     }
     ts.forEachChild(node, visit);
   };
@@ -517,7 +536,13 @@ function isTanstackCallee(expression: ts.Expression, checker: ts.TypeChecker): b
   return specifier !== undefined && (TANSTACK_PACKAGES as readonly string[]).includes(specifier);
 }
 
-function emitTanstackRoute(file: string, route: TanstackRoute, names: Names, scan: Scan): void {
+function emitTanstackRoute(
+  file: string,
+  sourceFile: ts.SourceFile,
+  route: TanstackRoute,
+  names: Names,
+  scan: Scan,
+): void {
   const routeName = names.take(route.routePath);
   scan.nodes.add(nodeIdOf(file, "route", routeName));
   if (route.options === undefined) return;
@@ -532,14 +557,143 @@ function emitTanstackRoute(file: string, route: TanstackRoute, names: Names, sca
     if (key !== "component") continue;
     const value = unwrap(property.initializer);
     if (!ts.isIdentifier(value)) continue;
-    // The linker resolves this to a node; the oracle records it against the component node the
-    // same file declares, which is the only form the fixture and the corpora produce.
-    scan.references.push(
-      reference(nodeIdOf(file, "route", routeName), nodeIdOf(file, "component", value.text), "route-handler", [
-        value.text,
-      ]),
-    );
+    // The target is resolved once every file has been walked: spec 3.4 allows the component
+    // node *or* the declaration, and the name may be imported. See `resolveRouteHandlers`.
+    scan.pending.push({ from: nodeIdOf(file, "route", routeName), file, sourceFile, name: value.text });
   }
+}
+
+// --------------------------------------------------- route-handler targets
+
+/** Kinds a `route-handler` may land on, most specific first (spec 3.4). */
+const HANDLER_KINDS = ["component", "handler"] as const;
+
+/** "This name resolves more than one way here", which is never an edge. */
+const AMBIGUOUS = Symbol("ambiguous");
+
+type Resolution = string | undefined | typeof AMBIGUOUS;
+
+/**
+ * Point every deferred `route-handler` at what the name actually denotes.
+ *
+ * Spec 3.4 lets the target be the referenced **component node or the declaration**, and the
+ * name may be imported: `references/ts.ts` looks in the file first and then through exactly one
+ * import record. The oracle used to hard-code a same-file `component.<name>`, which scored a
+ * rule greplost never implemented — every route whose component lives in another file was a
+ * false positive on one side and a false negative on the other. This resolves the name the same
+ * way, from the compiler's own bindings, and drops anything ambiguous rather than guessing.
+ */
+function resolveRouteHandlers(scan: Scan, checker: ts.TypeChecker, absRoot: string): void {
+  const covered = new Set(scan.covered);
+  const topLevelNames = new Map<ts.SourceFile, Set<string>>();
+  const namesOf = (sourceFile: ts.SourceFile): Set<string> => {
+    const cached = topLevelNames.get(sourceFile);
+    if (cached !== undefined) return cached;
+    const names = new Set(topLevelBindings(sourceFile).map((binding) => binding.name));
+    topLevelNames.set(sourceFile, names);
+    return names;
+  };
+
+  for (const item of scan.pending) {
+    const local = resolveHandlerIn(item.file, item.sourceFile, item.name, scan, namesOf);
+    if (local === AMBIGUOUS) continue;
+    const to =
+      local ?? resolveHandlerThroughImport(item.sourceFile, item.name, scan, checker, absRoot, covered, namesOf);
+    if (to === undefined) continue;
+    scan.references.push(reference(item.from, to, "route-handler", [item.name]));
+  }
+}
+
+/**
+ * The node or declaration `name` denotes inside one file: a `component` or `handler` node
+ * first, then the plain declaration.
+ *
+ * A file holding both `component.X` and `component.X~2` bound the name twice, so nothing may
+ * resolve to either — the same rule `references/ts.ts` applies.
+ */
+function resolveHandlerIn(
+  file: string,
+  sourceFile: ts.SourceFile,
+  name: string,
+  scan: Scan,
+  namesOf: (sourceFile: ts.SourceFile) => Set<string>,
+): Resolution {
+  for (const kind of HANDLER_KINDS) {
+    const id = nodeIdOf(file, kind, name);
+    if (!scan.nodes.has(id)) continue;
+    if (scan.nodes.has(nodeIdOf(file, kind, `${name}~2`))) return AMBIGUOUS;
+    return id;
+  }
+  return namesOf(sourceFile).has(name) ? `${file}#${name}` : undefined;
+}
+
+/**
+ * The target `name` denotes after exactly one import hop, or undefined.
+ *
+ * Literal, like the linker's: exactly one import clause may bind the name, its module must
+ * resolve to a file in the scored set, and that file must declare the name. A namespace import
+ * binds a module rather than a declaration and is never a target.
+ */
+function resolveHandlerThroughImport(
+  sourceFile: ts.SourceFile,
+  name: string,
+  scan: Scan,
+  checker: ts.TypeChecker,
+  absRoot: string,
+  covered: ReadonlySet<string>,
+  namesOf: (sourceFile: ts.SourceFile) => Set<string>,
+): string | undefined {
+  const matches = importBindingsFor(sourceFile, name);
+  const only = matches.length === 1 ? matches[0] : undefined;
+  if (only === undefined || only.exported === "*") return undefined;
+
+  const target = moduleSourceFile(only.declaration, checker);
+  if (target === undefined) return undefined;
+  const id = normalizeId(absRoot, target.fileName);
+  if (!covered.has(id)) return undefined;
+
+  const exported = only.exported === "default" ? defaultExportName(target) : only.exported;
+  if (exported === undefined) return undefined;
+  const resolved = resolveHandlerIn(id, target, exported, scan, namesOf);
+  return resolved === AMBIGUOUS ? undefined : resolved;
+}
+
+/** Every import clause of `sourceFile` that binds the local name `name`. */
+function importBindingsFor(
+  sourceFile: ts.SourceFile,
+  name: string,
+): Array<{ declaration: ts.ImportDeclaration; exported: string }> {
+  const out: Array<{ declaration: ts.ImportDeclaration; exported: string }> = [];
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement)) continue;
+    const clause = statement.importClause;
+    if (clause === undefined) continue;
+    if (clause.name?.text === name) out.push({ declaration: statement, exported: "default" });
+    const bindings = clause.namedBindings;
+    if (bindings === undefined) continue;
+    if (ts.isNamespaceImport(bindings)) {
+      if (bindings.name.text === name) out.push({ declaration: statement, exported: "*" });
+      continue;
+    }
+    for (const element of bindings.elements) {
+      if (element.name.text === name) {
+        out.push({ declaration: statement, exported: (element.propertyName ?? element.name).text });
+      }
+    }
+  }
+  return out;
+}
+
+/** The file an import declaration resolves to, through the program's own module resolution. */
+function moduleSourceFile(
+  declaration: ts.ImportDeclaration,
+  checker: ts.TypeChecker,
+): ts.SourceFile | undefined {
+  const symbol = checker.getSymbolAtLocation(declaration.moduleSpecifier);
+  for (const found of symbol?.declarations ?? []) {
+    if (ts.isSourceFile(found)) return found;
+  }
+  return undefined;
 }
 
 // -------------------------------------------------------------------- next
@@ -597,9 +751,7 @@ function nextNodes(file: string, sourceFile: ts.SourceFile, checker: ts.TypeChec
   if (kind !== "page") return;
   const component = defaultExportName(sourceFile);
   if (component === undefined) return;
-  scan.references.push(
-    reference(nodeIdOf(file, "route", routeName), nodeIdOf(file, "component", component), "route-handler", [component]),
-  );
+  scan.pending.push({ from: nodeIdOf(file, "route", routeName), file, sourceFile, name: component });
 }
 
 function declaresFunction(declaration: ts.Declaration): boolean {

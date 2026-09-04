@@ -85,6 +85,10 @@ struct FileFacts {
     /// Every `<Type>.<member>` symbol path this file declares.
     members: BTreeSet<String>,
     calls: Vec<CallSite>,
+    /// Symbol paths already taken in this file, so a duplicate can take a `~<n>` suffix.
+    used: HashSet<String>,
+    /// Member names two declarations both wanted: ambiguous, so they resolve to nothing.
+    ambiguous: BTreeSet<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -571,15 +575,45 @@ fn walk_items(items: &[syn::Item], scope: &Scope, facts: &mut FileFacts) {
     }
 }
 
-fn declare(facts: &mut FileFacts, scope: &Scope, name: &str, kind: &str, vis: &syn::Visibility) {
+/// The symbol path a declaration's **id** takes: `Store`, then `Store~2`, then `Store~3`.
+///
+/// Rust declares one name twice in one file constantly - `pub struct Store;` with
+/// `impl Store { … }`, two trait impls each declaring `go`, two `#[cfg]`-gated
+/// `pub fn normalize_path`s. Left alone they share one id and the member set collapses to
+/// whichever came first. The suffix lands on the **id** only: the exported name stays the name
+/// as written, because `normalize_path~2` is a name nobody can import. `~` cannot occur in a
+/// Rust identifier, so a suffixed id can never collide with one somebody wrote. The extractor
+/// applies the identical rule, which is what keeps exports and call ids comparable.
+fn unique_name(used: &mut HashSet<String>, name: &str) -> String {
+    if used.insert(name.to_string()) {
+        return name.to_string();
+    }
+    let mut n = 2u32;
+    loop {
+        let candidate = format!("{name}~{n}");
+        if used.insert(candidate.clone()) {
+            return candidate;
+        }
+        n += 1;
+    }
+}
+
+/// Record one declaration, and answer with the id path it took (the caller id of its body).
+fn declare_item(facts: &mut FileFacts, scope: &Scope, name: &str, kind: &str, vis: &syn::Visibility) -> String {
+    let unique = unique_name(&mut facts.used, name);
     if scope.top {
         facts.items.entry(name.to_string()).or_insert_with(|| kind.to_string());
         if is_pub(vis) {
             facts.exports.push(ExportRec::Named { name: name.to_string() });
         }
     } else if name.contains('.') {
-        facts.members.insert(name.to_string());
+        // A member name two declarations both want resolves to nothing at all, never to
+        // whichever came first.
+        if !facts.members.insert(name.to_string()) {
+            facts.ambiguous.insert(name.to_string());
+        }
     }
+    unique
 }
 
 fn walk_item(item: &syn::Item, scope: &Scope, facts: &mut FileFacts) {
@@ -619,7 +653,7 @@ fn walk_item(item: &syn::Item, scope: &Scope, facts: &mut FileFacts) {
         syn::Item::Mod(node) => {
             let name = node.ident.to_string();
             let full = format!("{}{}", scope.prefix, name);
-            declare(facts, scope, &full, "module", &node.vis);
+            declare_item(facts, scope, &full, "module", &node.vis);
             match &node.content {
                 None => {
                     let mut path = vec!["self".to_string()];
@@ -660,7 +694,7 @@ fn walk_item(item: &syn::Item, scope: &Scope, facts: &mut FileFacts) {
                 None => type_name.clone(),
             };
             let full = format!("{}{}", scope.prefix, display);
-            declare(facts, scope, &full, "impl", &syn::Visibility::Inherited);
+            declare_item(facts, scope, &full, "impl", &syn::Visibility::Inherited);
             let owner = format!("{}{}", scope.prefix, type_name);
             let mut generics = scope.generics.clone();
             generics.extend(generic_names(&node.generics));
@@ -676,17 +710,17 @@ fn walk_item(item: &syn::Item, scope: &Scope, facts: &mut FileFacts) {
                 match member {
                     syn::ImplItem::Fn(f) => {
                         let name = format!("{}{}", inner.prefix, f.sig.ident);
-                        declare(facts, &inner, &name, "method", &f.vis);
-                        collect_calls(&name, &inner, Some(&f.sig), Some(&f.block), facts);
+                        let unique = declare_item(facts, &inner, &name, "method", &f.vis);
+                        collect_calls(&unique, &inner, Some(&f.sig), Some(&f.block), facts);
                     }
                     syn::ImplItem::Const(c) => {
                         let name = format!("{}{}", inner.prefix, c.ident);
-                        declare(facts, &inner, &name, "const", &c.vis);
+                        declare_item(facts, &inner, &name, "const", &c.vis);
                         collect_expr_calls("", &inner, &c.expr, facts);
                     }
                     syn::ImplItem::Type(t) => {
                         let name = format!("{}{}", inner.prefix, t.ident);
-                        declare(facts, &inner, &name, "type", &t.vis);
+                        declare_item(facts, &inner, &name, "type", &t.vis);
                     }
                     _ => {}
                 }
@@ -695,7 +729,7 @@ fn walk_item(item: &syn::Item, scope: &Scope, facts: &mut FileFacts) {
         syn::Item::Trait(node) => {
             let name = node.ident.to_string();
             let full = format!("{}{}", scope.prefix, name);
-            declare(facts, scope, &full, "trait", &node.vis);
+            declare_item(facts, scope, &full, "trait", &node.vis);
             let mut generics = scope.generics.clone();
             generics.extend(generic_names(&node.generics));
             // `Self` inside a trait is the implementing type, which this file does not know.
@@ -711,12 +745,12 @@ fn walk_item(item: &syn::Item, scope: &Scope, facts: &mut FileFacts) {
                 match member {
                     syn::TraitItem::Fn(f) => {
                         let name = format!("{}{}", inner.prefix, f.sig.ident);
-                        declare(facts, &inner, &name, "method", &syn::Visibility::Inherited);
-                        collect_calls(&name, &inner, Some(&f.sig), f.default.as_ref(), facts);
+                        let unique = declare_item(facts, &inner, &name, "method", &syn::Visibility::Inherited);
+                        collect_calls(&unique, &inner, Some(&f.sig), f.default.as_ref(), facts);
                     }
                     syn::TraitItem::Const(c) => {
                         let name = format!("{}{}", inner.prefix, c.ident);
-                        declare(facts, &inner, &name, "const", &syn::Visibility::Inherited);
+                        declare_item(facts, &inner, &name, "const", &syn::Visibility::Inherited);
                     }
                     _ => {}
                 }
@@ -725,40 +759,40 @@ fn walk_item(item: &syn::Item, scope: &Scope, facts: &mut FileFacts) {
         syn::Item::Fn(node) => {
             let full = format!("{}{}", scope.prefix, node.sig.ident);
             let kind = if scope.type_body { "method" } else { "function" };
-            declare(facts, scope, &full, kind, &node.vis);
-            collect_calls(&full, scope, Some(&node.sig), Some(&node.block), facts);
+            let unique = declare_item(facts, scope, &full, kind, &node.vis);
+            collect_calls(&unique, scope, Some(&node.sig), Some(&node.block), facts);
         }
         syn::Item::Struct(node) => {
             let full = format!("{}{}", scope.prefix, node.ident);
-            declare(facts, scope, &full, "struct", &node.vis);
+            declare_item(facts, scope, &full, "struct", &node.vis);
         }
         syn::Item::Union(node) => {
             let full = format!("{}{}", scope.prefix, node.ident);
-            declare(facts, scope, &full, "struct", &node.vis);
+            declare_item(facts, scope, &full, "struct", &node.vis);
         }
         syn::Item::Enum(node) => {
             let full = format!("{}{}", scope.prefix, node.ident);
-            declare(facts, scope, &full, "enum", &node.vis);
+            declare_item(facts, scope, &full, "enum", &node.vis);
         }
         syn::Item::Type(node) => {
             let full = format!("{}{}", scope.prefix, node.ident);
-            declare(facts, scope, &full, "type", &node.vis);
+            declare_item(facts, scope, &full, "type", &node.vis);
         }
         syn::Item::Const(node) => {
             let full = format!("{}{}", scope.prefix, node.ident);
-            declare(facts, scope, &full, "const", &node.vis);
+            declare_item(facts, scope, &full, "const", &node.vis);
             collect_expr_calls("", scope, &node.expr, facts);
         }
         syn::Item::Static(node) => {
             let full = format!("{}{}", scope.prefix, node.ident);
-            declare(facts, scope, &full, "var", &node.vis);
+            declare_item(facts, scope, &full, "var", &node.vis);
             collect_expr_calls("", scope, &node.expr, facts);
         }
         syn::Item::Macro(node) => {
             // Only `macro_rules! name { … }` declares an item; a bare invocation does not.
             if let Some(ident) = node.ident.as_ref() {
                 let full = format!("{}{}", scope.prefix, ident);
-                declare(facts, scope, &full, "function", &syn::Visibility::Inherited);
+                declare_item(facts, scope, &full, "function", &syn::Visibility::Inherited);
             }
         }
         _ => {}
@@ -850,6 +884,8 @@ fn type_of_value(expr: &syn::Expr, self_ty: Option<&str>, generics: &HashSet<Str
 
 struct BinderCollector<'a> {
     types: Receivers,
+    /// Names of the `fn`s written inside this function's body, at any depth.
+    nested: HashSet<String>,
     self_ty: Option<String>,
     generics: &'a HashSet<String>,
 }
@@ -929,6 +965,9 @@ impl<'ast, 'a> Visit<'ast> for BinderCollector<'a> {
     /// pattern) binds its parameters into the same flattened set: its calls are attributed to
     /// the enclosing item, so its receivers have to be typed there too.
     fn visit_item_fn(&mut self, node: &'ast syn::ItemFn) {
+        // Its *name* also shadows anything the file declares under that name, so a bare call to
+        // it is not a call on the top-level item and must be dropped rather than guessed.
+        self.nested.insert(node.sig.ident.to_string());
         for input in node.sig.inputs.iter() {
             self.parameter(input);
         }
@@ -940,6 +979,9 @@ struct CallCollector<'a> {
     caller: String,
     self_ty: Option<String>,
     types: &'a Receivers,
+    /// `fn`s declared inside this body: a bare call to one of these names is not a call on the
+    /// file's item of that name, and nothing here can say which body it landed in.
+    nested: &'a HashSet<String>,
     out: Vec<CallSite>,
 }
 
@@ -957,7 +999,17 @@ impl<'a> CallCollector<'a> {
 impl<'ast, 'a> Visit<'ast> for CallCollector<'a> {
     fn visit_expr_call(&mut self, node: &'ast syn::ExprCall) {
         let callee = match &*node.func {
-            syn::Expr::Path(path) => path_callee(path, self.self_ty.as_deref()),
+            syn::Expr::Path(path) => {
+                // Only a *bare* name is shadowed; `self::helper()` is written module-qualified
+                // and names the module's item deliberately.
+                let bare = path.qself.is_none()
+                    && path.path.leading_colon.is_none()
+                    && path.path.segments.len() == 1;
+                match path_callee(path, self.self_ty.as_deref()) {
+                    Some(name) if bare && self.nested.contains(&name) => None,
+                    other => other,
+                }
+            }
             _ => None,
         };
         self.push(callee);
@@ -1029,6 +1081,7 @@ fn collect_calls(
     }
     let mut binder = BinderCollector {
         types: Receivers::new(),
+        nested: HashSet::new(),
         self_ty: scope.self_ty.clone(),
         generics: &generics,
     };
@@ -1043,6 +1096,7 @@ fn collect_calls(
         caller: caller.to_string(),
         self_ty: scope.self_ty.clone(),
         types: &binder.types,
+        nested: &binder.nested,
         out: Vec::new(),
     };
     collector.visit_block(block);
@@ -1052,10 +1106,12 @@ fn collect_calls(
 /// Calls written in a `const`/`static` initialiser: top-level code, so the caller is the file.
 fn collect_expr_calls(caller: &str, scope: &Scope, expr: &syn::Expr, facts: &mut FileFacts) {
     let empty = Receivers::new();
+    let no_names = HashSet::new();
     let mut collector = CallCollector {
         caller: caller.to_string(),
         self_ty: scope.self_ty.clone(),
         types: &empty,
+        nested: &no_names,
         out: Vec::new(),
     };
     collector.visit_expr(expr);
@@ -1212,6 +1268,13 @@ fn run(root: &Path) -> Output {
         };
         let mut file_facts = FileFacts::default();
         walk_items(&parsed.items, &scope, &mut file_facts);
+        // A member name two declarations both wanted (two traits each declaring `go` for one
+        // type) names two declarations, so it is dropped from the member set entirely: the
+        // second took a `~<n>` id, and neither of them is *the* answer to the bare name.
+        let ambiguous = file_facts.ambiguous.clone();
+        for name in ambiguous.iter() {
+            file_facts.members.remove(name);
+        }
         facts.insert(file.clone(), file_facts);
     }
     out.files = facts.keys().cloned().collect();
@@ -1305,11 +1368,15 @@ fn run(root: &Path) -> Output {
     let mut bindings: BTreeMap<String, HashMap<String, Vec<Binding>>> = BTreeMap::new();
     let mut reexports: BTreeMap<String, HashMap<String, Vec<Binding>>> = BTreeMap::new();
     let mut modules: BTreeMap<String, HashMap<String, Vec<String>>> = BTreeMap::new();
+    // Files a `use …::*` glob brings into scope, other than the file itself: a glob of one's own
+    // file (`mod tests { use super::*; }`) adds nothing the same-file rule does not cover.
+    let mut globs: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for (file, file_facts) in facts.iter() {
         let table = targets.get(file);
         let mut direct: HashMap<String, Vec<Binding>> = HashMap::new();
         let mut through: HashMap<String, Vec<Binding>> = HashMap::new();
         let mut by_module: HashMap<String, Vec<String>> = HashMap::new();
+        let mut glob_targets: Vec<String> = Vec::new();
         for record in file_facts.imports.iter() {
             let target = match table.and_then(|t| t.get(&record.specifier)) {
                 Some(target) => target.clone(),
@@ -1324,6 +1391,9 @@ fn run(root: &Path) -> Output {
             }
             for (name, local) in record.symbols.iter() {
                 if name == "*" {
+                    if target != *file && !glob_targets.contains(&target) {
+                        glob_targets.push(target.clone());
+                    }
                     continue;
                 }
                 if *name == last && module_name_of(&target) == last {
@@ -1343,6 +1413,7 @@ fn run(root: &Path) -> Output {
         bindings.insert(file.clone(), direct);
         reexports.insert(file.clone(), through);
         modules.insert(file.clone(), by_module);
+        globs.insert(file.clone(), glob_targets);
     }
 
     let declared = |module: &str, name: &str| -> Option<String> {
@@ -1373,6 +1444,7 @@ fn run(root: &Path) -> Output {
                 bindings.get(file),
                 &reexports,
                 modules.get(file),
+                globs.get(file).map(|list| list.as_slice()),
                 &declared,
             );
             let to = match target {
@@ -1436,6 +1508,7 @@ fn resolve_call(
     bindings: Option<&HashMap<String, Vec<Binding>>>,
     reexports: &BTreeMap<String, HashMap<String, Vec<Binding>>>,
     modules: Option<&HashMap<String, Vec<String>>>,
+    globs: Option<&[String]>,
     declared: &dyn Fn(&str, &str) -> Option<String>,
 ) -> Option<String> {
     let callee = site.callee.as_str();
@@ -1452,8 +1525,22 @@ fn resolve_call(
                 }
             }
             // 2. A name imported by exactly one `use` **whose target declares it**.
-            let candidates = bindings?.get(callee)?;
-            return agreed(candidates.iter().map(|b| declared(&b.module, &b.name)));
+            if let Some(candidates) = bindings.and_then(|b| b.get(callee)) {
+                if let Some(hit) = agreed(candidates.iter().map(|b| declared(&b.module, &b.name))) {
+                    return Some(hit);
+                }
+            }
+            // 6. A glob: `use crate::a::*` then `go()`. Only when exactly one glob is in scope
+            // and its target declares the name, so nothing is guessed between two `*`s.
+            let targets = globs?;
+            if targets.len() != 1 {
+                return None;
+            }
+            let module = &targets[0];
+            return match facts.get(module).and_then(|f| f.items.get(callee)) {
+                Some(kind) if kind != "type" => Some(format!("{module}#{callee}")),
+                _ => None,
+            };
         }
         Some(dot) => (&callee[..dot], &callee[dot + 1..]),
     };

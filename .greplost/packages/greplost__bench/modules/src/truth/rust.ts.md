@@ -15,24 +15,24 @@
 **Blast radius:** 0 files (`greplost impact bench/src/truth/rust.ts`)
 
 **Key symbols:**
-- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..", "..")`  L39-39
-- `const TOOL_SOURCE_DIR = path.join(REPO_ROOT, "bench", "truth", "rusttruth")`  L41-41
-- `const TOOL_CACHE_DIR = path.join(REPO_ROOT, "bench", ".corpus", ".tools")`  L42-42
-- `const TOOL_SOURCES = ["Cargo.toml", "Cargo.lock", "src/main.rs"] as const`  L44-44
-- `const BUILD_TIMEOUT_MS = 15 * 60 * 1000`  L46-46
-- `const RUN_TIMEOUT_MS = 10 * 60 * 1000`  L47-47
-- `const MAX_BUFFER = 512 * 1024 * 1024`  L48-48
-- `const NOTES: readonly string[] = ["syn-item-tree", "cargo-metadata-roots", "no-trait-dispatch"]`  L51-51
-- `interface RustToolOutput`  L54-62
-- `function compare(a: string, b: string): number`  L69-71
-- `function compareEdge(a: Edge, b: Edge): number`  L73-75
-- `function toolHash(): string`  L78-90
-- `function stderrOf(cause: unknown): string`  L92-97
-- `function cargo(args: string[]): void`  L99-107
-- `function rustTruthTool(): string`  L117-148
-- `function runTool(root: string): RustToolOutput`  L150-180
-- `function fileOf(id: string): string`  L183-186
-- `function edge(from: string, to: string, kind: Edge["kind"]): Edge`  L188-190
-- `function generateTruth(root: string, files: string[]): Truth`  L198-247
+- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..", "..")`  L46-46
+- `const TOOL_SOURCE_DIR = path.join(REPO_ROOT, "bench", "truth", "rusttruth")`  L48-48
+- `const TOOL_CACHE_DIR = path.join(REPO_ROOT, "bench", ".corpus", ".tools")`  L49-49
+- `const TOOL_SOURCES = ["Cargo.toml", "Cargo.lock", "src/main.rs"] as const`  L51-51
+- `const BUILD_TIMEOUT_MS = 15 * 60 * 1000`  L53-53
+- `const RUN_TIMEOUT_MS = 10 * 60 * 1000`  L54-54
+- `const MAX_BUFFER = 512 * 1024 * 1024`  L55-55
+- `const NOTES: readonly string[] = [ "syn-item-tree", "cargo-metadata-roots", "no-trait-dispatch", // Disclosure, not a choice: `rusttruth` re-implements spec 1.3's rules on `syn`'s item tree //…`  L58-66
+- `interface RustToolOutput`  L69-77
+- `function compare(a: string, b: string): number`  L84-86
+- `function compareEdge(a: Edge, b: Edge): number`  L88-90
+- `function toolHash(): string`  L93-105
+- `function stderrOf(cause: unknown): string`  L107-112
+- `function cargo(args: string[]): void`  L114-122
+- `function rustTruthTool(): string`  L132-163
+- `function runTool(root: string): RustToolOutput`  L165-195
+- `function fileOf(id: string): string`  L198-201
+- `function edge(from: string, to: string, kind: Edge["kind"]): Edge`  L203-205
+- `function generateTruth(root: string, files: string[]): Truth`  L213-268
 
 **Calls:** `cargo` → [`bench/src/truth/rust.ts#cargo`](rust.ts.md) (high), `compare` → [`bench/src/truth/rust.ts#compare`](rust.ts.md) (high), `edge` → [`bench/src/truth/rust.ts#edge`](rust.ts.md) (high), `fileOf` → [`bench/src/truth/rust.ts#fileOf`](rust.ts.md) (high), `runTool` → [`bench/src/truth/rust.ts#runTool`](rust.ts.md) (high), `rustTruthTool` → [`bench/src/truth/rust.ts#rustTruthTool`](rust.ts.md) (high), `stderrOf` → [`bench/src/truth/rust.ts#stderrOf`](rust.ts.md) (high), `toolHash` → [`bench/src/truth/rust.ts#toolHash`](rust.ts.md) (high)

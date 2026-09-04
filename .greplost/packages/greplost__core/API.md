@@ -10,8 +10,8 @@
 
 ## packages/core/src/config.ts
 
-- `function validateConfig(value: unknown): GreplostConfig` L105-119
-- `function loadConfig(root: string): GreplostConfig` L126-141
+- `function validateConfig(value: unknown): GreplostConfig` L105-120
+- `function loadConfig(root: string): GreplostConfig` L138-153
 
 ## packages/core/src/discover.ts
 
@@ -65,8 +65,7 @@
 
 ## packages/core/src/extract/rust.ts
 
-- `function visibilityOf(node: Node): string | null` L90-95
-- `function extractRust( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L586-606
+- `function extractRust( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L665-699
 
 ## packages/core/src/extract/ts-calls.ts
 
@@ -156,14 +155,14 @@
 
 ## packages/core/src/graph/link.ts
 
-- `type ResolvedTarget = | { type: "file"; path: string } | { type: "external"; pkg: string } | { type: "unresolved" }` L29-32
-- `interface Resolver` L35-37
-- `interface ExportTarget` L40-58
-- `type ExportIndex = Map<string, Map<string, ExportTarget>>` L61-61
-- `function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge[]` L81-123
-- `function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex` L213-445
-- `function exportNames(index: ExportIndex, file: string): string[]` L448-451
-- `function linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[]` L466-538
+- `type ResolvedTarget = | { type: "file"; path: string } | { type: "external"; pkg: string } | { type: "unresolved" }` L30-33
+- `interface Resolver` L36-38
+- `interface ExportTarget` L41-59
+- `type ExportIndex = Map<string, Map<string, ExportTarget>>` L62-62
+- `function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge[]` L82-124
+- `function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex` L228-461
+- `function exportNames(index: ExportIndex, file: string): string[]` L464-467
+- `function linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[]` L482-558
 
 ## packages/core/src/graph/metrics.ts
 
@@ -327,10 +326,10 @@
 - `const PY_STDLIB: ReadonlySet<string> = new Set([ "__future__", "_abc", "_aix_support", "_android_support", "_apple_support", "_ast", "_ast_unparse", "_asyncio", "_bisect", "_blake2", "_bz2", "…` L48-83
 - `type PythonTarget = ResolvedTarget` L94-94
 - `function pythonPackageDir(filePath: string): string` L111-113
-- `function createPythonResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L159-244
-- `interface PythonCallIndex` L257-266
-- `function buildPythonCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): PythonCallIndex` L289-367
-- `function resolvePythonCall( file: FileRecord, site: CallSite, index: PythonCallIndex, ): { to: string; confidence: Confidence } | null` L375-431
+- `function createPythonResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L203-324
+- `interface PythonCallIndex` L337-346
+- `function buildPythonCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): PythonCallIndex` L369-447
+- `function resolvePythonCall( file: FileRecord, site: CallSite, index: PythonCallIndex, ): { to: string; confidence: Confidence } | null` L455-511
 
 ## packages/core/src/resolve/resolver.ts
 
@@ -341,13 +340,10 @@
 
 ## packages/core/src/resolve/rust.ts
 
-- `interface CargoManifest` L44-51
-- `function parseCargoManifest(text: string | null): CargoManifest` L85-136
-- `function rustModuleName(path: string): string` L160-165
 - `function createRustResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L189-372
-- `interface RustCallIndex` L386-406
-- `function buildRustCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): RustCallIndex` L464-529
-- `function resolveRustCall( file: FileRecord, site: CallSite, index: RustCallIndex, ): { to: string; confidence: Confidence } | null` L544-589
+- `interface RustCallIndex` L386-413
+- `function buildRustCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): RustCallIndex` L476-553
+- `function resolveRustCall( file: FileRecord, site: CallSite, index: RustCallIndex, ): { to: string; confidence: Confidence } | null` L571-623
 
 ## packages/core/src/resolve/tsconfig.ts
 
@@ -435,12 +431,12 @@
 
 ## packages/core/src/signals/index.ts
 
-- `type SignalPassId = "next" | "pulumi-go" | "pulumi-ts" | "react" | "tanstack"` L29-29
-- `interface SignalInput` L31-38
-- `interface SignalOutput` L40-43
-- `interface SignalPass` L45-64
-- `const SIGNAL_PASSES: readonly SignalPass[] = [ nextPass, pulumiGoPass, pulumiTsPass, reactPass, tanstackPass, ].sort((a, b) => compareStrings(a.id, b.id))` L67-73
-- `function signalPathKey(path: string, lang: Lang, enabled?: readonly SignalPassId[]): string` L103-113
+- `type SignalPassId = "next" | "pulumi-go" | "pulumi-ts" | "react" | "tanstack"` L30-30
+- `interface SignalInput` L32-39
+- `interface SignalOutput` L41-44
+- `interface SignalPass` L46-65
+- `const SIGNAL_PASSES: readonly SignalPass[] = [ nextPass, pulumiGoPass, pulumiTsPass, reactPass, tanstackPass, ].sort((a, b) => compareStrings(a.id, b.id))` L68-74
+- `function signalPathKey(path: string, lang: Lang, enabled?: readonly SignalPassId[]): string` L90-100
 - `function runSignals(input: SignalInput, enabled?: readonly SignalPassId[]): SignalOutput` L115-138
 - re-exports `nextPass` from `./next.ts`
 - re-exports `pulumiGoPass` from `./pulumi-go.ts`
@@ -482,7 +478,7 @@
 - `function importBindings(imports: readonly ImportRecord[]): Map<string, ImportBinding>` L182-191
 - `class NameAllocator` L201-214
 - `interface SignalNodeInput` L217-226
-- `function signalNode(input: SignalNodeInput): Declaration` L238-255
+- `function signalNode(input: SignalNodeInput): Declaration` L238-259
 
 ## packages/core/src/unparsable.ts
 

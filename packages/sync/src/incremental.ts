@@ -185,7 +185,9 @@ async function runUpdate(root: string, opts: UpdateOptions, started: number): Pr
       return report({ ...empty(opts.mode, started), skipped: "clean" }, opts.quiet);
     }
 
-    const store = new FileParseCache(root);
+    // The signal config is part of the cache's stamp: extraction's output for the same bytes
+    // depends on which passes ran, and the `(lang, sha256)` key carries neither (leaf 2.3).
+    const store = new FileParseCache(root, config.signals);
     store.load();
     // A full update ignores the cache for reads but still fills it, so the
     // next incremental run starts warm. That is also what makes `--full` the

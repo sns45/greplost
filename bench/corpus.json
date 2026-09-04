@@ -181,7 +181,7 @@
       "tier": "S",
       "lang": "ts",
       "defaultBranch": "master",
-      "notes": "build 2; 122 .ts under aws-ts-*/; the subset is the TypeScript files the pin documents, not the sample apps embedded beside them",
+      "notes": "build 2; 122 .ts under aws-ts-*/; the subset is exactly those .ts files, and it drops the 41 other sources embedded beside them in sample apps: 37 JavaScript (36 .js plus one .mjs Lambda handler) and 4 .tsx (a Next.js demo app and a React website)",
       "subset": "aws-ts-*/**/*.ts"
     },
     {

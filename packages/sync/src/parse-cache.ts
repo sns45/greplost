@@ -79,8 +79,28 @@ export const PARSE_CACHE_VERSION = "2";
 /** Sentinel key. No real key can collide with it: `lang:sha256` has no `#`. */
 export const PARSE_CACHE_VERSION_KEY = "#version";
 
-/** What the sentinel must hold for a cache file to be usable. */
+/** What the sentinel must hold for a cache file to be usable, under the default signal config. */
 export const PARSE_CACHE_STAMP = `${SCHEMA_VERSION}/${PARSE_CACHE_VERSION}`;
+
+/**
+ * The sentinel a cache built under `signals` must carry.
+ *
+ * `config.signals` decides which signal passes run, and extraction's output for the same bytes
+ * differs with it: a `.tsx` file yields `component.*` nodes with the default (every pass) and
+ * none under `signals: []`. The `(lang, sha256)` key carries neither the config nor anything
+ * derived from it, so two builds of one checkout under different settings would share entries
+ * and each inherit the other's records. A version bump cannot fix that — a version is bumped
+ * once, and this differs between two *concurrent* configurations — so the setting goes into the
+ * stamp instead, and a cache written under a different one reads as empty.
+ *
+ * `undefined` is the default (every applicable pass runs) and keeps the bare stamp, so the
+ * overwhelmingly common case pays nothing and every existing cache stays valid. Ids are sorted,
+ * so the order a config happens to list them in is not a difference.
+ */
+export function parseCacheStamp(signals?: readonly string[]): string {
+  if (signals === undefined) return PARSE_CACHE_STAMP;
+  return `${PARSE_CACHE_STAMP}/signals=${[...signals].sort().join(",")}`;
+}
 
 /** The cache key for one extraction: language first, so a prefix scan groups by grammar. */
 export function parseCacheKey(sha256: string, lang: Lang): string {
@@ -110,12 +130,18 @@ const LANGS: ReadonlySet<string> = new Set<string>([
 export class FileParseCache implements ParseCache {
   private readonly root: string;
   private readonly file: string;
+  private readonly stamp: string;
   private readonly entries = new Map<string, FileRecord>();
   private loaded = false;
 
-  constructor(root: string) {
+  /**
+   * `signals` is `config.signals`: omit it for the default (every applicable pass runs), which
+   * is what every caller that has no config in hand should do. See `parseCacheStamp`.
+   */
+  constructor(root: string, signals?: readonly string[]) {
     this.root = path.resolve(root);
     this.file = path.join(this.root, ARTIFACT_DIR, PARSE_CACHE_PATH);
+    this.stamp = parseCacheStamp(signals);
   }
 
   /** Number of records currently held. */
@@ -152,7 +178,7 @@ export class FileParseCache implements ParseCache {
 
     // Written by a different extractor generation (or by something that is not
     // a parse cache at all): every record in it is suspect, so none are read.
-    if ((parsed as Record<string, unknown>)[PARSE_CACHE_VERSION_KEY] !== PARSE_CACHE_STAMP) return;
+    if ((parsed as Record<string, unknown>)[PARSE_CACHE_VERSION_KEY] !== this.stamp) return;
 
     for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
       if (key === PARSE_CACHE_VERSION_KEY) continue;
@@ -197,7 +223,7 @@ export class FileParseCache implements ParseCache {
       }
     }
 
-    const out: Record<string, FileRecord | string> = { [PARSE_CACHE_VERSION_KEY]: PARSE_CACHE_STAMP };
+    const out: Record<string, FileRecord | string> = { [PARSE_CACHE_VERSION_KEY]: this.stamp };
     for (const [key, value] of this.entries) out[key] = value;
 
     // `safeWrite`, not `mkdirSync` plus a write: it does the write-then-rename

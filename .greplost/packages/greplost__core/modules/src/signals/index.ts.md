@@ -15,12 +15,12 @@
 **Blast radius:** 36 files (`greplost impact packages/core/src/signals/index.ts`)
 
 **Key symbols:**
-- `type SignalPassId = "next" | "pulumi-go" | "pulumi-ts" | "react" | "tanstack"`  L29-29
-- `interface SignalInput`  L31-38
-- `interface SignalOutput`  L40-43
-- `interface SignalPass`  L45-64
-- `const SIGNAL_PASSES: readonly SignalPass[] = [ nextPass, pulumiGoPass, pulumiTsPass, reactPass, tanstackPass, ].sort((a, b) => compareStrings(a.id, b.id))`  L67-73
-- `function signalPathKey(path: string, lang: Lang, enabled?: readonly SignalPassId[]): string`  L103-113
+- `type SignalPassId = "next" | "pulumi-go" | "pulumi-ts" | "react" | "tanstack"`  L30-30
+- `interface SignalInput`  L32-39
+- `interface SignalOutput`  L41-44
+- `interface SignalPass`  L46-65
+- `const SIGNAL_PASSES: readonly SignalPass[] = [ nextPass, pulumiGoPass, pulumiTsPass, reactPass, tanstackPass, ].sort((a, b) => compareStrings(a.id, b.id))`  L68-74
+- `function signalPathKey(path: string, lang: Lang, enabled?: readonly SignalPassId[]): string`  L90-100
 - `function runSignals(input: SignalInput, enabled?: readonly SignalPassId[]): SignalOutput`  L115-138
 
 **Calls:** `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high)

@@ -24,7 +24,9 @@
 - `function validateDiagram(value: unknown, base: DiagramConfig): DiagramConfig`  L58-73
 - `function validatePackages(value: unknown, base: { roots: string[] }): { roots: string[] }`  L75-80
 - `function validateSemantic( value: unknown, base: { enabled: boolean; model: string }, ): { enabled: boolean; model: string }`  L82-97
-- `function validateConfig(value: unknown): GreplostConfig`  L105-119
-- `function loadConfig(root: string): GreplostConfig`  L126-141
+- `function validateConfig(value: unknown): GreplostConfig`  L105-120
+- `const SIGNAL_NAMES = new Set<string>(["next", "pulumi-go", "pulumi-ts", "react", "tanstack"])`  L123-123
+- `function validateSignals(value: unknown): NonNullable<GreplostConfig["signals"]>`  L125-131
+- `function loadConfig(root: string): GreplostConfig`  L138-153
 
-**Calls:** `cloneConfig` → [`packages/core/src/config.ts#cloneConfig`](config.ts.md) (high), `invalid` → [`packages/core/src/config.ts#invalid`](config.ts.md) (high), `isPlainObject` → [`packages/core/src/config.ts#isPlainObject`](config.ts.md) (high), `validateConfig` → [`packages/core/src/config.ts#validateConfig`](config.ts.md) (high), `validateDiagram` → [`packages/core/src/config.ts#validateDiagram`](config.ts.md) (high), `validateLanguages` → [`packages/core/src/config.ts#validateLanguages`](config.ts.md) (high), `validatePackages` → [`packages/core/src/config.ts#validatePackages`](config.ts.md) (high), `validateSemantic` → [`packages/core/src/config.ts#validateSemantic`](config.ts.md) (high), `validateStringArray` → [`packages/core/src/config.ts#validateStringArray`](config.ts.md) (high)
+**Calls:** `cloneConfig` → [`packages/core/src/config.ts#cloneConfig`](config.ts.md) (high), `invalid` → [`packages/core/src/config.ts#invalid`](config.ts.md) (high), `isPlainObject` → [`packages/core/src/config.ts#isPlainObject`](config.ts.md) (high), `validateConfig` → [`packages/core/src/config.ts#validateConfig`](config.ts.md) (high), `validateDiagram` → [`packages/core/src/config.ts#validateDiagram`](config.ts.md) (high), `validateLanguages` → [`packages/core/src/config.ts#validateLanguages`](config.ts.md) (high), `validatePackages` → [`packages/core/src/config.ts#validatePackages`](config.ts.md) (high), `validateSemantic` → [`packages/core/src/config.ts#validateSemantic`](config.ts.md) (high), `validateSignals` → [`packages/core/src/config.ts#validateSignals`](config.ts.md) (high), `validateStringArray` → [`packages/core/src/config.ts#validateStringArray`](config.ts.md) (high)
