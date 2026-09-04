@@ -67,9 +67,6 @@ const ITEM_KIND: Readonly<Record<string, DeclKind>> = {
   union_item: "struct",
 };
 
-/** Bodies whose items are members of a type rather than of a module. */
-const TYPE_BODIES: ReadonlySet<string> = new Set(["impl_item", "trait_item"]);
-
 /** Nodes that bind names; a bound name is only typed when its pattern is a bare identifier. */
 const BINDERS: ReadonlySet<string> = new Set([
   "closure_parameters",
