@@ -23,6 +23,13 @@
  * side does type inference. S3 recall over that class of call is therefore not measured by
  * either side, and `RESULTS.md` says so.
  *
+ * Second disclosure, `rule-agreement-oracle`: this oracle is a `syn` re-implementation of the
+ * same rules the extractor applies, not `rustc`. Its two implementations are independent (a
+ * different parser, a different language, no shared line of code) and they disagree freely, but
+ * a rule that is wrong in the *specification* is wrong on both sides, so S1 to S4 on Rust are
+ * rule agreement rather than compiler truth. `rustc` has no stable public name-resolution API,
+ * which is why the Go and TypeScript oracles get a compiler and this one does not.
+ *
  * The helper is compiled once into `bench/.corpus/.tools/`, named by a 16-hex hash of its own
  * sources - `Cargo.toml`, the vendored `Cargo.lock` and `src/main.rs` - so a pinned dependency
  * change rebuilds it and nothing else does. **The first build on a cold machine needs the
@@ -48,7 +55,15 @@ const RUN_TIMEOUT_MS = 10 * 60 * 1000;
 const MAX_BUFFER = 512 * 1024 * 1024;
 
 /** Oracle choices this generator applies, for `RESULTS.md` to disclose. */
-export const NOTES: readonly string[] = ["syn-item-tree", "cargo-metadata-roots", "no-trait-dispatch"];
+export const NOTES: readonly string[] = [
+  "syn-item-tree",
+  "cargo-metadata-roots",
+  "no-trait-dispatch",
+  // Disclosure, not a choice: `rusttruth` re-implements spec 1.3's rules on `syn`'s item tree
+  // rather than asking `rustc`, so S1 to S4 on Rust measure two independent implementations of
+  // one rule set agreeing, not agreement with the compiler's own name resolution.
+  "rule-agreement-oracle",
+];
 
 /** The document `rusttruth` prints. */
 interface RustToolOutput {
@@ -219,8 +234,14 @@ export function generateTruth(root: string, files: string[]): Truth {
     );
   }
 
+  // A file's import edge to itself is not an edge. Rust writes one constantly - `mod tests {
+  // use super::*; }` names the very file it sits in - and `graph/link.ts` drops a self-loop for
+  // every language (leaf 2.3), because it would put the file in its own fan-in, fan-out and
+  // blast radius. Truth has to agree: keeping them here scored 44 of ripgrep's `#[cfg(test)]`
+  // modules as misses and took S1 recall to 0.835. This retires the leaf's ruling R10, which had
+  // kept them on the grounds that both sides produced them; only one side does now.
   const imports = tool.imports
-    .filter((e) => coveredSet.has(e.from) && coveredSet.has(e.to))
+    .filter((e) => e.from !== e.to && coveredSet.has(e.from) && coveredSet.has(e.to))
     .map((e) => edge(e.from, e.to, "import"))
     .sort(compareEdge);
 

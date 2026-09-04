@@ -69,7 +69,12 @@ describe("rust tool", () => {
   });
 
   test("the oracle discloses how it was built", () => {
-    expect([...NOTES]).toEqual(["syn-item-tree", "cargo-metadata-roots", "no-trait-dispatch"]);
+    expect([...NOTES]).toEqual([
+      "syn-item-tree",
+      "cargo-metadata-roots",
+      "no-trait-dispatch",
+      "rule-agreement-oracle",
+    ]);
     expect(truth.notes).toEqual([...NOTES]);
   });
 });
@@ -89,6 +94,14 @@ describe("fixture truth", () => {
       "src/store.rs -> src/retry.rs",
     ]);
     expect(truth.imports.every((e) => e.kind === "import" && e.confidence === "high")).toBe(true);
+  });
+
+  test("a file's edge to itself is not an edge, on either side of the score", () => {
+    // `mod tests { use super::*; }` in `store.rs` names `store.rs`. `graph/link.ts` drops a
+    // file's import edge to itself for every language (leaf 2.3), so the oracle drops it too:
+    // an oracle that keeps it scores the map's whole `#[cfg(test)]` surface as a miss.
+    expect(keys(truth.imports)).not.toContain("src/store.rs -> src/store.rs");
+    expect(truth.imports.every((e) => e.from !== e.to)).toBe(true);
   });
 
   test("a std or external crate is never an edge target", () => {
@@ -118,6 +131,8 @@ describe("fixture truth", () => {
       "src/main.rs#main -> src/store.rs#Store.put",
       "src/retry.rs#warm -> src/store.rs#Store.put",
       "src/store.rs#Store.put -> src/store.rs#Store.record",
+      "src/store.rs#tests::puts_a_value -> src/store.rs#Store.new",
+      "src/store.rs#tests::puts_a_value -> src/store.rs#Store.put",
     ]);
     expect(truth.calls.every((e) => e.kind === "call")).toBe(true);
   });
@@ -145,8 +160,50 @@ describe("fixture truth", () => {
     expect(keys(narrowed.calls)).toEqual([
       "src/retry.rs#warm -> src/store.rs#Store.put",
       "src/store.rs#Store.put -> src/store.rs#Store.record",
+      "src/store.rs#tests::puts_a_value -> src/store.rs#Store.new",
+      "src/store.rs#tests::puts_a_value -> src/store.rs#Store.put",
     ]);
     expect(Object.keys(narrowed.exports)).toEqual(["src/retry.rs", "src/store.rs"]);
+  });
+
+  test("a block-scoped fn shadows the top-level one, so the call is dropped", () => {
+    const root = copyFixture();
+    writeFileSync(
+      path.join(root, "src", "retry.rs"),
+      "pub fn helper() -> i32 { 0 }\npub fn outer() -> i32 { fn helper() -> i32 { 42 } helper() }\n",
+    );
+    const after = generateTruth(root, ["src/retry.rs"]);
+    expect(keys(after.calls)).toEqual([]);
+  });
+
+  test("two declarations that would share an id take a ~<n> suffix, and the member is ambiguous", () => {
+    const root = copyFixture();
+    writeFileSync(
+      path.join(root, "src", "retry.rs"),
+      [
+        "pub struct Dup;",
+        "pub trait A { fn go(&self); }",
+        "pub trait B { fn go(&self); }",
+        "impl A for Dup { fn go(&self) {} }",
+        "impl B for Dup { fn go(&self) { self.only(); } }",
+        "impl Dup { fn only(&self) {} }",
+        "pub fn use_it(d: Dup) { d.go(); d.only(); }",
+        "",
+      ].join("\n"),
+    );
+    const after = generateTruth(root, ["src/retry.rs"]);
+    // The second `Dup.go` is a caller under its own id, so no edge is silently merged away.
+    expect(keys(after.calls)).toContain("src/retry.rs#Dup.go~2 -> src/retry.rs#Dup.only");
+    // `Dup.go` names two declarations, so the call to it resolves to nothing at all.
+    expect(keys(after.calls)).not.toContain("src/retry.rs#use_it -> src/retry.rs#Dup.go");
+    expect(keys(after.calls)).toContain("src/retry.rs#use_it -> src/retry.rs#Dup.only");
+  });
+
+  test("a call to a glob-imported function resolves when exactly one glob is in scope", () => {
+    const root = copyFixture();
+    writeFileSync(path.join(root, "src", "main.rs"), "mod retry;\nmod store;\nuse retry::*;\nfn main() { run(); }\n");
+    const after = generateTruth(root, FIXTURE_FILES);
+    expect(keys(after.calls)).toContain("src/main.rs#main -> src/retry.rs#run");
   });
 
   test("a file list the oracle never parsed is an error, not four perfect scores", () => {
@@ -165,16 +222,44 @@ describe("fixture truth", () => {
   });
 });
 
+/**
+ * Where an import specifier written in `fromFile` actually points, or null when it leaves the
+ * repo (a `node:` builtin or an npm package). Resolved through the workspace's own `exports`
+ * map rather than guessed from the string, so `@greplost/core/schema` is checked as the file it
+ * is and a new alias cannot slip a runtime dependency past the gate.
+ */
+function resolveSpecifier(specifier: string, fromFile: string): string | null {
+  if (specifier.startsWith(".")) return path.resolve(path.dirname(fromFile), specifier);
+  const scoped = /^@greplost\/([^/]+)(\/.*)?$/u.exec(specifier);
+  if (scoped === null) return null;
+  const packageDir = path.join(repoRoot, "packages", scoped[1] ?? "");
+  const manifest = JSON.parse(readFileSync(path.join(packageDir, "package.json"), "utf8")) as {
+    exports?: Record<string, string>;
+  };
+  const entry = manifest.exports?.[scoped[2] === undefined ? "." : `.${scoped[2]}`];
+  if (entry === undefined) throw new Error(`${specifier} is not in ${packageDir}/package.json exports`);
+  return path.resolve(packageDir, entry);
+}
+
 describe("oracle independence", () => {
   test("the generator's module graph carries no greplost code at runtime", () => {
-    const source = readFileSync(path.join(repoRoot, "bench", "src", "truth", "rust.ts"), "utf8");
-    // Any import of greplost's own code has to be a type-only import, which is erased.
+    const generator = path.join(repoRoot, "bench", "src", "truth", "rust.ts");
+    const source = readFileSync(generator, "utf8");
+    const coreDir = `${path.join(repoRoot, "packages", "core")}${path.sep}`;
+    const schema = path.join(repoRoot, "packages", "core", "src", "schema.ts");
+    let checked = 0;
     for (const match of source.matchAll(/^\s*import\s+(type\s+)?[^;]*?from\s+"([^"]+)"/gmu)) {
-      const isType = match[1] !== undefined;
-      const specifier = match[2] ?? "";
-      const greplost = specifier.startsWith("@greplost/") || specifier.endsWith("/ts.ts");
-      if (greplost) expect(isType).toBe(true);
+      const target = resolveSpecifier(match[2] ?? "", generator);
+      if (target === null || !target.startsWith(coreDir)) continue;
+      // Anything under `packages/core` other than the schema's *types* is the structure layer
+      // itself: importing it would let the oracle agree with the thing it scores by
+      // construction. The schema is admissible only as a type-only import, which is erased.
+      expect(target).toBe(schema);
+      expect(match[1] !== undefined).toBe(true);
+      checked += 1;
     }
+    // The check has to bite: the generator really does name the schema.
+    expect(checked).toBeGreaterThan(0);
     // And the oracle proper is a Rust program that cannot reach greplost's code at all: it
     // declares no path dependency, and it links no tree-sitter.
     const manifest = readFileSync(path.join(toolDir, "Cargo.toml"), "utf8");
