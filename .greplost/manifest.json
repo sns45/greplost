@@ -2215,9 +2215,9 @@
       "fanIn": 3,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 525,
+      "loc": 588,
       "pkg": "@greplost/core",
-      "sha256": "88075090c4fbc022cdf7a86b9efa102214a6fc1c243066426ecf42278a6baec7",
+      "sha256": "21801ec0c6fe554e348e1b5c5f697842df81bf4d21853c91df57c85e28d5c590",
       "staleSummary": false
     },
     "packages/core/src/resolve/resolver.ts": {
@@ -3369,7 +3369,7 @@
     "@greplost/core": {
       "deps": [],
       "files": 64,
-      "loc": 14783,
+      "loc": 14846,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",

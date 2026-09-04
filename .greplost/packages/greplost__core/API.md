@@ -351,10 +351,10 @@
 - `const PY_STDLIB: ReadonlySet<string> = new Set([ "__future__", "_abc", "_aix_support", "_android_support", "_apple_support", "_ast", "_ast_unparse", "_asyncio", "_bisect", "_blake2", "_bz2", "…` L48-83
 - `type PythonTarget = ResolvedTarget` L94-94
 - `function pythonPackageDir(filePath: string): string` L111-113
-- `function createPythonResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L203-324
-- `interface PythonCallIndex` L337-346
-- `function buildPythonCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): PythonCallIndex` L369-447
-- `function resolvePythonCall( file: FileRecord, site: CallSite, index: PythonCallIndex, ): { to: string; confidence: Confidence } | null` L455-511
+- `function createPythonResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L203-387
+- `interface PythonCallIndex` L400-409
+- `function buildPythonCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): PythonCallIndex` L432-510
+- `function resolvePythonCall( file: FileRecord, site: CallSite, index: PythonCallIndex, ): { to: string; confidence: Confidence } | null` L518-574
 
 ## packages/core/src/resolve/resolver.ts
 
