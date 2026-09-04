@@ -103,9 +103,25 @@ interface PyState {
 // text helpers
 // ---------------------------------------------------------------------------
 
-/** Text of a Python string literal without quotes or prefix; null when it is not one. */
+/**
+ * Text of a Python string literal without quotes or prefix; null when it is not one.
+ *
+ * Implicit concatenation (`"a" "b"`) is one literal to the interpreter, so it is one here
+ * too: a name written that way inside `__all__` must not turn the whole list unreadable.
+ */
 function literalString(node: Node | null): string | null {
-  if (node === null || node.type !== "string") return null;
+  if (node === null) return null;
+  if (node.type === "concatenated_string") {
+    const parts: string[] = [];
+    for (const child of node.namedChildren) {
+      if (child.type === "comment") continue;
+      const value = literalString(child);
+      if (value === null) return null;
+      parts.push(value);
+    }
+    return parts.join("");
+  }
+  if (node.type !== "string") return null;
   const parts: string[] = [];
   for (const child of node.namedChildren) {
     if (child.type === "string_content") parts.push(child.text);
@@ -238,21 +254,31 @@ function addClass(
 function addAssignment(state: PyState, statement: Node, parent: string | null): void {
   // A class body's assignments are attributes of the class, not declarations of their own.
   if (parent !== null) return;
-  for (const assignment of statement.namedChildren) {
-    if (assignment.type !== "assignment") continue;
-    const left = field(assignment, "left");
-    if (left === null || left.type !== "identifier") continue;
+  for (const child of statement.namedChildren) {
+    if (child.type === "assignment") addAssignmentTarget(state, child);
+  }
+}
+
+/** One `assignment` node, following the chain of `a = b = 1` to its right. */
+function addAssignmentTarget(state: PyState, assignment: Node): void {
+  const left = field(assignment, "left");
+  const right = field(assignment, "right");
+  if (left !== null && left.type === "identifier") {
     const name = left.text;
     // `__all__` is the *statement of* the module's surface, not a symbol of it: it is already
     // consumed into `exported` and `exports`, and `__all__ = [...]` followed by `__all__ +=
     // [...]` would otherwise emit the same symbol id twice.
-    if (name === ALL) continue;
-    const kind: DeclKind = SCREAMING_SNAKE.test(name) ? "const" : "var";
-    // The annotation is shape and belongs in the signature; the value is code and does not.
-    const type = field(assignment, "type");
-    const end = type === null ? left.endIndex : type.endIndex;
-    addDeclaration(state, name, kind, clip(state.source.slice(assignment.startIndex, end)), assignment, null, []);
+    if (name !== ALL) {
+      const kind: DeclKind = SCREAMING_SNAKE.test(name) ? "const" : "var";
+      // The annotation is shape and belongs in the signature; the value is code and does not.
+      const type = field(assignment, "type");
+      const end = type === null ? left.endIndex : type.endIndex;
+      addDeclaration(state, name, kind, clip(state.source.slice(assignment.startIndex, end)), assignment, null, []);
+    }
   }
+  // `a = b = 1` nests: the grammar makes `b = 1` the right-hand side of `a = …`, and Python
+  // binds both names.
+  if (right !== null && right.type === "assignment") addAssignmentTarget(state, right);
 }
 
 /** The decorators of a `decorated_definition`, in source order. */
@@ -290,21 +316,28 @@ function collectBlock(state: PyState, block: Node, parent: string | null): void 
         break;
       default:
         // `if TYPE_CHECKING:` and `try: ... except ImportError:` bodies are still this scope.
-        if (BLOCK_STATEMENTS.has(node.type)) collectNestedBlocks(state, node, parent);
+        if (isBlockStatement(node)) collectNestedBlocks(state, node, parent);
         break;
     }
   }
 }
 
-/** Every `block` directly under a compound statement, at the same scope as the statement. */
+/**
+ * A statement whose bodies stay in the enclosing scope.
+ *
+ * The `_clause` test covers everything a compound statement hangs its bodies off - `else`,
+ * `elif`, `except`, `finally`, `case` - without the module having to keep a list of clause
+ * names in step with the grammar.
+ */
+function isBlockStatement(node: Node): boolean {
+  return BLOCK_STATEMENTS.has(node.type) || node.type.endsWith("_clause");
+}
+
+/** Every `block` under a compound statement or one of its clauses, at the same scope. */
 function collectNestedBlocks(state: PyState, node: Node, parent: string | null): void {
   for (const child of node.namedChildren) {
     if (child.type === "block") collectBlock(state, child, parent);
-    else if (child.type === "else_clause" || child.type === "except_clause" || child.type === "elif_clause") {
-      collectNestedBlocks(state, child, parent);
-    } else if (child.type === "finally_clause" || child.type === "case_clause" || child.type === "except_group_clause") {
-      collectNestedBlocks(state, child, parent);
-    }
+    else if (child.type.endsWith("_clause")) collectNestedBlocks(state, child, parent);
   }
 }
 
@@ -319,14 +352,13 @@ function collectNestedBlocks(state: PyState, node: Node, parent: string | null):
  * assignment: `__all__` is conventionally written at the bottom of a module.
  */
 function findExportedNames(root: Node): Set<string> | null {
-  let names: Set<string> | null = null;
-  let usable = false;
+  /** Every module-level write to `__all__`, in source order. */
+  const writes: Array<{ augmented: boolean; listed: string[] | null }> = [];
   const visit = (block: Node): void => {
     for (const node of block.namedChildren) {
-      if (BLOCK_STATEMENTS.has(node.type)) {
+      if (isBlockStatement(node)) {
         for (const child of node.namedChildren) {
-          if (child.type === "block") visit(child);
-          else if (child.type.endsWith("_clause")) visit(child);
+          if (child.type === "block" || child.type.endsWith("_clause")) visit(child);
         }
         continue;
       }
@@ -334,24 +366,24 @@ function findExportedNames(root: Node): Set<string> | null {
       for (const statement of node.namedChildren) {
         const augmented = statement.type === "augmented_assignment";
         if (statement.type !== "assignment" && !augmented) continue;
-        const left = field(statement, "left");
-        if (left === null || left.text !== "__all__") continue;
-        usable = true;
-        const listed = literalStringSequence(field(statement, "right"));
-        if (listed === null) {
-          // A computed `__all__` is not a surface this extractor can read; the whole
-          // module falls back to the underscore rule rather than publishing a guess.
-          names = null;
-          usable = false;
-          return;
-        }
-        if (names === null || !augmented) names = new Set(listed);
-        else for (const name of listed) names.add(name);
+        if (field(statement, "left")?.text !== ALL) continue;
+        writes.push({ augmented, listed: literalStringSequence(field(statement, "right")) });
       }
     }
   };
   visit(root);
-  return usable ? names : null;
+
+  if (writes.length === 0) return null;
+  // One unreadable write makes the whole surface unreadable, wherever it is written: a
+  // module that computes part of its `__all__` falls back to the underscore rule rather
+  // than publishing the half this extractor happens to understand.
+  if (writes.some((write) => write.listed === null)) return null;
+  const names = new Set<string>();
+  for (const write of writes) {
+    if (!write.augmented) names.clear();
+    for (const name of write.listed ?? []) names.add(name);
+  }
+  return names;
 }
 
 // ---------------------------------------------------------------------------
@@ -480,8 +512,12 @@ function collectImports(state: PyState, node: Node, typeOnly: boolean): void {
         const symbol = importedSymbol(child);
         if (symbol !== null) symbols.push(symbol);
       }
+      // `from x import *` hangs the wildcard outside the `name` field, so it is picked up
+      // here; the guard keeps a grammar change that moves it into the field from doubling it.
       for (const child of node.namedChildren) {
-        if (child.type === "wildcard_import") symbols.push({ name: "*", local: "*" });
+        if (child.type === "wildcard_import" && !symbols.some((symbol) => symbol.name === "*")) {
+          symbols.push({ name: "*", local: "*" });
+        }
       }
       addImport(state, specifier, typeOnly ? "type" : "static", symbols, node);
       return;
@@ -653,13 +689,6 @@ function boundNames(scope: Node): ReadonlySet<string> {
         if (target !== null) patternNames(target, bound);
         break;
       }
-      case "except_clause": {
-        // `except E as err:` binds `err`; the grammar writes it as a bare identifier.
-        const children = node.namedChildren;
-        const identifier = children[1];
-        if (identifier !== undefined && identifier.type === "identifier") bound.add(identifier.text);
-        break;
-      }
       case "function_definition":
       case "class_definition": {
         const name = field(node, "name");
@@ -668,14 +697,17 @@ function boundNames(scope: Node): ReadonlySet<string> {
       }
       case "import_statement":
       case "import_from_statement": {
-        for (const child of node.namedChildren) {
+        // The `name` field holds only what the statement *binds*; the module path of a
+        // `from` import lives under `module_name` and binds nothing.
+        for (const child of node.childrenForFieldName("name")) {
           if (child.type === "aliased_import") {
             const alias = field(child, "alias");
             if (alias !== null) bound.add(alias.text);
-          } else if (child.type === "dotted_name" && child !== field(node, "module_name")) {
-            const first = child.namedChild(0);
-            if (first !== null) bound.add(first.text);
+            continue;
           }
+          // `import a.b` binds `a`; `from x import c` binds `c`.
+          const first = child.type === "dotted_name" ? child.namedChild(0) : child;
+          if (first !== null && first.type === "identifier") bound.add(first.text);
         }
         break;
       }

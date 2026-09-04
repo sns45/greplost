@@ -231,6 +231,32 @@ describe("fixture truth", () => {
     expect(Object.keys(narrowed.exports)).toEqual(["tiny/retry.py", "tiny/store.py"]);
   });
 
+  test("__all__ is read as a whole: comments, concatenation, +=, and one unreadable write", () => {
+    const root = scratchRepo({
+      "pyproject.toml": "[project]\nname = 'surface'\n",
+      "surface/__init__.py": "",
+      // A comment between entries and an implicitly concatenated name are both literal.
+      "surface/pinned.py": "def alpha():\n    pass\n\n\ndef beta():\n    pass\n\n\n__all__ = (\n    # the good one\n    'al' 'pha',\n)\n",
+      // `+=` widens the surface the first write opened.
+      "surface/widened.py": "def a():\n    pass\n\n\ndef b():\n    pass\n\n\n__all__ = ['a']\n__all__ += ['b']\n",
+      // One computed write makes the whole surface unreadable, whatever came before it.
+      "surface/computed.py": "def _private():\n    pass\n\n\ndef public():\n    pass\n\n\n__all__ = ['_private']\nif FLAG:\n    __all__ = compute()\n",
+      // A chained assignment binds both names at module level.
+      "surface/chained.py": "first = second = 1\n",
+    });
+    const out = generateTruth(root, [
+      "surface/__init__.py",
+      "surface/chained.py",
+      "surface/computed.py",
+      "surface/pinned.py",
+      "surface/widened.py",
+    ]);
+    expect(out.exports["surface/pinned.py"]).toEqual(["alpha"]);
+    expect(out.exports["surface/widened.py"]).toEqual(["a", "b"]);
+    expect(out.exports["surface/computed.py"]).toEqual(["public"]);
+    expect(out.exports["surface/chained.py"]).toEqual(["first", "second"]);
+  });
+
   test("a file that does not parse is dropped, and an empty run is an error", () => {
     const root = scratchRepo({ "pyproject.toml": "[project]\nname = 'x'\n", "bad.py": "def (:\n" });
     // The whole point of the guard (tech spec 10.1, principle 2): an empty truth set scores
@@ -273,8 +299,15 @@ describe("oracle independence", () => {
   });
 
   test("the oracle program knows nothing about greplost", () => {
+    // The binding check: it imports no parser and no part of greplost. Read with `ast`, so
+    // the module's own documentation cannot decide it either way.
+    const audit = auditTool();
+    for (const name of ["tree_sitter", "tree_sitter_python", "greplost"]) {
+      expect([name, audit.imports.includes(name)]).toEqual([name, false]);
+    }
+    // And it never reaches for greplost's own artifacts or sources by path.
     const source = readFileSync(pytruthScript(), "utf8");
-    for (const name of ["tree_sitter", "tree-sitter", ".greplost/", "packages/core"]) {
+    for (const name of [".greplost/", "packages/core", "web-tree-sitter"]) {
       expect([name, source.includes(name)]).toEqual([name, false]);
     }
   });

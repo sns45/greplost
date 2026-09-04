@@ -255,8 +255,8 @@ interface Binding {
 }
 
 export interface PythonCallIndex {
-  /** file -> top-level declaration name -> whether it can be a call target. */
-  topLevel: Map<string, Map<string, boolean>>;
+  /** file -> the names its module scope declares, which are the callable targets there. */
+  topLevel: Map<string, Set<string>>;
   /** file -> symbol path of every declaration, so `this.m` can be checked against one. */
   symbols: Map<string, Set<string>>;
   /** file -> local name -> what the import bound. */
@@ -302,14 +302,14 @@ export function buildPythonCallIndex(
   const paths = new Set(pythonFiles.map((file) => file.path));
 
   for (const file of pythonFiles) {
-    const topLevel = new Map<string, boolean>();
+    const topLevel = new Set<string>();
     const symbols = new Set<string>();
     for (const decl of file.decls) {
       symbols.add(decl.name);
       if (decl.parent !== undefined || decl.kind === "method") continue;
       // A class is callable in Python: `Store()` constructs one. A `const`/`var` is a name
       // the module bound, and calling it is the module's own business, so it stays a target.
-      if (!topLevel.has(decl.name)) topLevel.set(decl.name, true);
+      topLevel.add(decl.name);
     }
     index.topLevel.set(file.path, topLevel);
     index.symbols.set(file.path, symbols);
@@ -346,7 +346,7 @@ export function buildPythonCallIndex(
   // Exported name -> declaration, following at most one re-export hop.
   for (const file of pythonFiles) {
     const own = new Map<string, { file: string; symbol: string; hops: number }>();
-    const topLevel = index.topLevel.get(file.path) ?? new Map<string, boolean>();
+    const topLevel = index.topLevel.get(file.path) ?? new Set<string>();
     const specifiers = specifiersByFile.get(file.path);
     for (const record of file.exports) {
       if (record.kind !== "named") continue;

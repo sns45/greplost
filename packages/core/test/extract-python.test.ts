@@ -95,6 +95,28 @@ describe("declarations", () => {
     expect(out.decls.map((d) => d.name)).toEqual(["modern", "modern"]);
   });
 
+  test("a chained assignment declares every name it binds", () => {
+    const out = run("m.py", "a = b = 1\n");
+    expect(out.decls.map((d) => [d.name, d.kind])).toEqual([
+      ["a", "var"],
+      ["b", "var"],
+    ]);
+  });
+
+  test("every clause of a compound statement is the same scope", () => {
+    const out = run(
+      "m.py",
+      "try:\n    def in_try(): pass\nexcept OSError:\n    def in_except(): pass\nelse:\n    def in_else(): pass\nfinally:\n    def in_finally(): pass\n\nmatch kind:\n    case 1:\n        def in_case(): pass\n",
+    );
+    expect(out.decls.map((d) => d.name)).toEqual([
+      "in_try",
+      "in_except",
+      "in_else",
+      "in_finally",
+      "in_case",
+    ]);
+  });
+
   test("class-body assignments are attributes, not declarations", () => {
     const out = run("m.py", "class C:\n    field = 1\n    def m(self):\n        pass\n");
     expect(out.decls.map((d) => d.name)).toEqual(["C", "C.m"]);
@@ -245,6 +267,26 @@ describe("__all__", () => {
     expect(out.decls.map((d) => d.exported)).toEqual([true, true]);
   });
 
+  test("a comment between entries, and an implicitly concatenated name, still read", () => {
+    // Both forms are everywhere in real `__all__` blocks; either one silently turning the
+    // whole surface unreadable is how an export set goes wrong across a whole corpus.
+    const out = run(
+      "m.py",
+      "def alpha():\n    pass\n\n\ndef beta():\n    pass\n\n\n__all__ = (\n    # the good one\n    'al' 'pha',\n)\n",
+    );
+    expect(out.decls.map((d) => [d.name, d.exported])).toEqual([
+      ["alpha", true],
+      ["beta", false],
+    ]);
+  });
+
+  test("one unreadable write makes the whole surface unreadable, in any order", () => {
+    const later =
+      "def _private():\n    pass\n\n\n__all__ = ['_private']\nif FLAG:\n    __all__ = compute()\n";
+    const out = run("m.py", later);
+    expect(out.decls.map((d) => [d.name, d.exported])).toEqual([["_private", false]]);
+  });
+
   test("a computed __all__ falls back to the underscore rule rather than guessing", () => {
     const out = run(
       "m.py",
@@ -303,6 +345,42 @@ describe("calls", () => {
     );
     // `helper` and `fn` are locals; `store` is a local, so `store.put` is not a module call.
     expect(out.calls.map((c) => c.callee)).toEqual(["Store"]);
+  });
+
+  test("every binding form shadows: as-clauses, comprehensions, walruses and local imports", () => {
+    const out = run(
+      "m.py",
+      [
+        "def handler():",
+        "    pass",
+        "",
+        "",
+        "def f(items):",
+        "    try:",
+        "        pass",
+        "    except OSError as handler:",
+        "        handler()",
+        "    with open('x') as opener:",
+        "        opener()",
+        "    picked = [p for p in items]",
+        "    picked()",
+        "    if (walrus := 1):",
+        "        walrus()",
+        "    from .late import shadowed",
+        "    shadowed()",
+        "    return None",
+        "",
+      ].join("\n"),
+    );
+    // Every callee written against a bound name is withheld; `open(...)` is the one call
+    // that names nothing local, and the linker drops it as a builtin later.
+    expect(out.calls.map((c) => c.callee)).toEqual(["open"]);
+  });
+
+  test("the module path of a `from` import binds nothing and never shadows", () => {
+    const out = run("m.py", "def f():\n    from helper import thing\n    helper()\n    return thing\n");
+    // `helper` is the module path, not a name the statement bound: the call stays.
+    expect(out.calls.map((c) => c.callee)).toEqual(["helper"]);
   });
 
   test("a `global` name is not a local binding", () => {

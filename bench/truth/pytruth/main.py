@@ -251,6 +251,17 @@ def _assigned_names(target: ast.expr) -> list[str]:
     return []
 
 
+def _chained_targets(targets: list[ast.expr], statement: ast.stmt) -> list[ast.expr]:
+    """Assignment targets, with ``a = b = 1``'s second name included.
+
+    ``ast`` already flattens a chain into ``targets``, so this only has to hand them back;
+    it exists so the rule has one name, and so the difference from a parser that nests the
+    chain instead of flattening it is written down rather than assumed.
+    """
+    del statement
+    return list(targets)
+
+
 def _body_of(node: ast.stmt) -> list[list[ast.stmt]]:
     """The statement blocks a compound statement owns, all at the statement's own scope."""
     blocks: list[list[ast.stmt]] = []
@@ -285,30 +296,27 @@ def walk_scope(body: list[ast.stmt], parent: str, facts: ModuleFacts) -> None:
                 walk_scope(statement.body, name, facts)
             continue
         if isinstance(statement, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+            if parent != "":
+                continue  # a class body's assignments are its attributes, not module names
             targets = statement.targets if isinstance(statement, ast.Assign) else [statement.target]
-            for target in targets:
-                for name in _assigned_names(target):
-                    if parent != "" or name == "__all__":
-                        continue
-                    facts.defined.setdefault(name, "value")
+            # Only a *plain identifier* target is a declaration. A tuple unpacking
+            # (`a, b = f()`) does bind module names, but it declares no single thing with a
+            # signature, so neither side of the comparison treats it as one.
+            for target in _chained_targets(targets, statement):
+                if isinstance(target, ast.Name) and target.id != "__all__":
+                    facts.defined.setdefault(target.id, "value")
             continue
         if isinstance(statement, COMPOUND):
             for block in _body_of(statement):
                 walk_scope(block, parent, facts)
 
 
-def collect_all(body: list[ast.stmt], facts: ModuleFacts) -> None:
-    """The module's ``__all__``, when it is a literal sequence of strings.
-
-    A computed ``__all__`` leaves ``all_names`` None: a surface that cannot be read is not a
-    surface to guess at, and the underscore convention takes over.
-    """
-    usable = False
-    names: list[str] | None = None
+def _all_writes(body: list[ast.stmt], out: list[tuple[bool, list[str] | None]]) -> None:
+    """Every module-level write to ``__all__``, in source order, as (augmented, literal)."""
     for statement in body:
         if isinstance(statement, COMPOUND):
             for block in _body_of(statement):
-                collect_all(block, facts)
+                _all_writes(block, out)
             continue
         target: ast.expr | None = None
         value: ast.expr | None = None
@@ -318,18 +326,28 @@ def collect_all(body: list[ast.stmt], facts: ModuleFacts) -> None:
             target, value = statement.target, statement.value
         if not isinstance(target, ast.Name) or target.id != "__all__" or value is None:
             continue
-        usable = True
-        listed = _literal_sequence(value)
-        if listed is None:
-            facts.all_names = None
-            facts.__dict__["_all_unusable"] = True
-            return
-        if names is None or isinstance(statement, ast.Assign):
-            names = list(listed)
-        else:
-            names.extend(n for n in listed if n not in names)
-    if usable and not facts.__dict__.get("_all_unusable") and names is not None:
-        facts.all_names = names
+        out.append((isinstance(statement, ast.AugAssign), _literal_sequence(value)))
+
+
+def collect_all(body: list[ast.stmt], facts: ModuleFacts) -> None:
+    """The module's ``__all__``, when every write to it is a literal sequence of strings.
+
+    One unreadable write, wherever it is, leaves ``all_names`` None: a surface that cannot be
+    read is not a surface to guess at, and the underscore convention takes over.
+    """
+    writes: list[tuple[bool, list[str] | None]] = []
+    _all_writes(body, writes)
+    if not writes or any(listed is None for _, listed in writes):
+        facts.all_names = None
+        return
+    names: list[str] = []
+    for augmented, listed in writes:
+        if not augmented:
+            names = []
+        for name in listed or []:
+            if name not in names:
+                names.append(name)
+    facts.all_names = names
 
 
 def collect_bindings(tree: ast.Module, facts: ModuleFacts) -> None:
