@@ -486,6 +486,29 @@ describe("fixture truth", () => {
     expect(keys(out.imports)).toEqual([]);
   });
 
+  test("a namespace package's submodule is an edge on this side too", () => {
+    // The driver's probe repo. `ns/` has no `__init__.py`, so `from ns import mod` names its
+    // module through the imported symbol; the oracle sees the symbol directly, and must reach
+    // the same edge the extractor does or every one of them is a scoring disagreement.
+    const root = scratchRepo({
+      "pyproject.toml": "[project]\nname = 'probe'\n",
+      "ns/mod.py": "def go():\n    return 1\n",
+      "user.py": "from ns import mod\nfrom ns import missing\nimport requests\n",
+    });
+    const out = generateTruth(root, ["ns/mod.py", "user.py"]);
+    expect(keys(out.imports)).toEqual(["user.py -> ns/mod.py"]);
+  });
+
+  test("a namespace import naming nothing indexed is not an edge", () => {
+    const root = scratchRepo({
+      "pyproject.toml": "[project]\nname = 'probe2'\n",
+      "ns/mod.py": "def go():\n    return 1\n",
+      "user.py": "from ns import missing\n",
+    });
+    const out = generateTruth(root, ["ns/mod.py", "user.py"]);
+    expect(keys(out.imports)).toEqual([]);
+  });
+
   test("a file that does not parse is dropped, and an empty run is an error", () => {
     const root = scratchRepo({ "pyproject.toml": "[project]\nname = 'x'\n", "bad.py": "def (:\n" });
     // The whole point of the guard (tech spec 10.1, principle 2): an empty truth set scores
