@@ -46,6 +46,13 @@ What the four sets mean, in greplost's id vocabulary (tech spec 5.3):
 
 PEP 420 namespace packages (a directory with no ``__init__.py``) carry no module file, so an
 import of one resolves to nothing and is simply not an edge; that is disclosed in the notes.
+
+There is deliberately no external/unresolved distinction on this side to mirror the
+extractor's: ``ModuleTable.resolve`` answers a file or ``None``, and ``None`` means "not an
+edge". The extractor has to choose between ``ext:pypi/<name>`` and ``unresolved:`` because
+both appear in the map a reader looks at, but neither is a file id, so the scorer drops both
+before either side is compared. Nothing here needs the distinction, and inventing one would
+be a rule with no observable behaviour.
 """
 
 from __future__ import annotations

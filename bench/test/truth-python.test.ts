@@ -42,6 +42,47 @@ const FIXTURE_FILES = [
 
 const truth: Truth = generateTruth(fixtureRoot, FIXTURE_FILES);
 
+/** The `major.minor` an interpreter reports, or "" when it cannot be run. */
+function interpreterVersion(executable: string): string {
+  try {
+    return execFileSync(executable, ["-c", "import sys; print('%d.%d' % sys.version_info[:2])"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * A second installed interpreter reporting a *different* version, for the cross-interpreter
+ * checks.
+ *
+ * Selected by the version it reports rather than by its path: `/opt/homebrew/bin/python3.14`
+ * and a bare `python3` can be the same interpreter under two names, and comparing one against
+ * itself proves nothing while looking like it proves everything.
+ *
+ * Version independence is a claim about the oracle, so it is compared rather than asserted -
+ * but a machine with one interpreter cannot compare anything. Those two cases are then
+ * *skipped*, loudly and by name: a bare `return` would report them green while proving
+ * nothing, which is the failure mode this whole suite exists to prevent.
+ */
+const PRIMARY_VERSION = interpreterVersion(pythonExecutable());
+const SECOND_PYTHON: string | undefined = ["python3.14", "python3.13", "python3.12", "python3.11"]
+  .map((name) => `/opt/homebrew/bin/${name}`)
+  .find((candidate) => {
+    if (!existsSync(candidate)) return false;
+    const version = interpreterVersion(candidate);
+    return version !== "" && version !== PRIMARY_VERSION;
+  });
+
+if (SECOND_PYTHON === undefined) {
+  console.error("truth-python: cross-interpreter check skipped, no second python3.x on PATH");
+}
+
+/** Skips the two cross-interpreter cases, by name, when the machine has only one. */
+const crossInterpreterTest = test.skipIf(SECOND_PYTHON === undefined);
+
 const keys = (edges: { from: string; to: string }[]): string[] => edges.map(edgeKey);
 
 const temps: string[] = [];
@@ -160,17 +201,15 @@ describe("python tool", () => {
     expect(reported).toMatch(/^truth-python: \d+ file\(s\) parsed by python \d+\.\d+ /);
     // No note is a *version*; `python>=3.11` is the floor, which is a property of the program.
     expect(truth.notes.filter((note) => /^python\d/.test(note))).toEqual([]);
+  });
 
-    // The property that actually matters: a second interpreter yields the same payload, so
-    // two machines' `bench/results/*.json` can be compared. Skipped when there is only one.
-    const other = ["python3.13", "python3.12", "python3.11"]
-      .map((name) => `/opt/homebrew/bin/${name}`)
-      .find((candidate) => existsSync(candidate) && candidate !== pythonExecutable());
-    if (other === undefined) return;
+  crossInterpreterTest("a second interpreter produces an identical payload", () => {
+    // The property that actually matters: two machines' `bench/results/*.json` are
+    // comparable only if the payload does not move with the interpreter.
     const before = process.env["GREPLOST_PYTHON"];
     let elsewhere: Truth;
     try {
-      process.env["GREPLOST_PYTHON"] = other;
+      process.env["GREPLOST_PYTHON"] = SECOND_PYTHON;
       elsewhere = generateTruth(fixtureRoot, FIXTURE_FILES);
     } finally {
       if (before === undefined) delete process.env["GREPLOST_PYTHON"];
@@ -311,16 +350,11 @@ describe("fixture truth", () => {
     expect(truth.notes).toEqual([...NOTES]);
   });
 
-  test("a second interpreter at or above the floor produces the same document", () => {
+  crossInterpreterTest("a second interpreter at or above the floor produces the same document", () => {
     // The floor is only honest if the oracle really is version-independent, so this compares
-    // two interpreters when a second one is installed rather than asserting it in prose.
-    // Skipped, not failed, when the machine has only one: a missing interpreter is a fact
-    // about the machine, and a green run that quietly proved nothing would be worse.
-    const others = ["python3.13", "python3.12", "python3.11"]
-      .map((name) => `/opt/homebrew/bin/${name}`)
-      .filter((candidate) => existsSync(candidate) && candidate !== pythonExecutable());
-    const other = others[0];
-    if (other === undefined) return;
+    // two interpreters rather than asserting it in prose. Skipped by name, never silently,
+    // when the machine has only one - see `SECOND_PYTHON`.
+    const other = SECOND_PYTHON as string;
 
     const listFile = path.join(scratchRepo({ "list.txt": `${FIXTURE_FILES.join("\n")}\n` }), "list.txt");
     const run = (interpreter: string): Record<string, unknown> =>

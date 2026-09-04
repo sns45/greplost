@@ -239,12 +239,28 @@ export function createPythonResolver(ctx: RepoContext): (fromFile: string, speci
     return roots;
   }
 
+  /**
+   * Every directory that holds an indexed file, at any depth, built once.
+   *
+   * A scan of `ctx.files` per question was fine while the only caller was root discovery;
+   * the namespace rule below asks it once per path component of every unresolved specifier,
+   * which on a large repo is the difference between a set lookup and a full sweep each time.
+   */
+  let directories: Set<string> | null = null;
   function hasFilesUnder(dir: string): boolean {
-    const prefix = `${dir}/`;
-    for (const file of ctx.files) {
-      if (file.startsWith(prefix)) return true;
+    if (dir === "") return ctx.files.size > 0;
+    if (directories === null) {
+      directories = new Set<string>();
+      for (const file of ctx.files) {
+        let parent = parentDir(file);
+        // Walk up until a directory is already known: everything above it must be too.
+        while (parent !== "" && !directories.has(parent)) {
+          directories.add(parent);
+          parent = parentDir(parent);
+        }
+      }
     }
-    return false;
+    return directories.has(dir);
   }
 
   /** The first indexed file a module directory-or-module candidate names, or null. */
@@ -288,8 +304,17 @@ export function createPythonResolver(ctx: RepoContext): (fromFile: string, speci
     // `__init__.py`. It is not a distribution and calling it one would put a phantom
     // `ext:pypi/<dir>` in the map for a directory the reader can open, so an in-repo path
     // that resolves to no module file is `unresolved`, never external.
+    //
+    // Every ancestor prefix is tested, not just the full path: `ns.missing` where only
+    // `ns/mod.py` exists still names something inside `ns/`, and answering `ext:pypi/ns`
+    // would invent a distribution out of a typo. The walk stops at the specifier's first
+    // component and never reaches the root itself, so a `src/` layout does not make every
+    // unresolved import look in-repo.
+    const segments = relative.split("/");
     for (const root of importRoots()) {
-      if (hasFilesUnder(joinRelative(root, relative))) return UNRESOLVED;
+      for (let count = segments.length; count >= 1; count -= 1) {
+        if (hasFilesUnder(joinRelative(root, segments.slice(0, count).join("/")))) return UNRESOLVED;
+      }
     }
 
     const head = specifier.split(".")[0] ?? specifier;

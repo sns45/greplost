@@ -630,10 +630,24 @@ describe("tiny-python", () => {
       type: "file",
       path: "ns/deep/leaf.py",
     });
+    // A submodule of the namespace package that does not exist is still *in the repo*: the
+    // reader can open `ns/`, so naming a pypi distribution for it would be a fabrication.
+    expect(withNamespace.resolve("tiny/app.py", "ns.missing", "python")).toEqual({ type: "unresolved" });
+    expect(withNamespace.resolve("tiny/app.py", "ns.deep.gone", "python")).toEqual({ type: "unresolved" });
+    expect(withNamespace.resolve("tiny/app.py", "ns.a.b.c.d", "python")).toEqual({ type: "unresolved" });
     // A name that only *prefixes* an indexed directory is still external.
     expect(withNamespace.resolve("tiny/app.py", "n", "python")).toEqual({
       type: "external",
       pkg: "pypi/n",
+    });
+    expect(withNamespace.resolve("tiny/app.py", "n.missing", "python")).toEqual({
+      type: "external",
+      pkg: "pypi/n",
+    });
+    // And a real distribution whose name matches no directory is untouched.
+    expect(withNamespace.resolve("tiny/app.py", "numpy.linalg.norm", "python")).toEqual({
+      type: "external",
+      pkg: "pypi/numpy",
     });
     // The stdlib list is a committed literal, never read from the host interpreter.
     expect(PY_STDLIB.has("os")).toBe(true);
