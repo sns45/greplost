@@ -27,9 +27,9 @@
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
-import { compareEdges, compareStrings, type Confidence, type Edge } from "@greplost/core/schema";
+import { compareEdges, compareStrings, splitNodeId, type Confidence, type Edge } from "@greplost/core/schema";
 import type { Truth } from "./ts.ts";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..", "..");
@@ -48,8 +48,21 @@ const MAX_BUFFER = 512 * 1024 * 1024;
  * `terraform graph -type=plan` transitively reduces its own output, so it omits real direct
  * references and would score correct greplost edges as false positives. The measurement and
  * the ruling are in `bench/truth/tfinspect/main.go`.
+ *
+ * `same-rules-different-parser` states the residual plainly, because the two halves of this
+ * oracle are not equally independent. `imports` and `exports` (S1, S2) come out of
+ * terraform-config-inspect's own module model, which nobody here wrote. `references` and
+ * `nodes` (S5, S6) come from a **re-implementation of spec 2.2's rules** over hclsyntax's
+ * traversals: a different parser and a separately written resolver, but the same rules, so
+ * they measure "does the tree-sitter extractor see what HashiCorp's parser sees" rather than
+ * "are spec 2.2's rules the right rules".
  */
-export const NOTES: readonly string[] = ["terraform-config-inspect", "no-call-edges", "hclsyntax-traversals"];
+export const NOTES: readonly string[] = [
+  "terraform-config-inspect",
+  "no-call-edges",
+  "hclsyntax-traversals",
+  "same-rules-different-parser",
+];
 
 /**
  * S3 is not a miss for Terraform, it is unmeasurable: HCL has no call edges at all, so there is
@@ -118,15 +131,7 @@ function stderrOf(cause: unknown): string {
   return text.length > 2000 ? `${text.slice(0, 2000)}…` : text;
 }
 
-/**
- * One run of the helper, per call.
- *
- * Deliberately not memoised by root: `headtohead` and `replay` check the *same* root out at
- * several commits inside one process, so a root-keyed cache would hand the second commit the
- * first one's truth. The read costs 0.09s on the largest pinned Terraform repo (87 files), so
- * there is nothing to buy and a correctness hazard to avoid.
- */
-function runTool(root: string): TfToolOutput {
+function runToolUncached(root: string): TfToolOutput {
   const binary = tfinspectTool();
   let stdout: string;
   try {
@@ -161,12 +166,48 @@ function runTool(root: string): TfToolOutput {
 }
 
 /**
+ * One helper run per target, memoised so `generateTruth` and `generateExtra` — two views of the
+ * same read, both of which the structural runner calls — do not parse the repository twice.
+ *
+ * The key is the root, the requested file list, and a fingerprint of those files' size and
+ * mtime. The fingerprint is what makes the memo safe: `headtohead` and `replay` check the
+ * *same* root out at several commits inside one process, and without it the second commit
+ * would be handed the first one's truth. Stat-ing 90 files costs far less than the 0.09s run
+ * it saves, and a checkout that changed anything the tool reads gets a new key.
+ */
+const RUN_CACHE = new Map<string, TfToolOutput>();
+
+function runKey(root: string, files: readonly string[]): string {
+  const parts = [root];
+  for (const file of files) {
+    let stamp = "-";
+    try {
+      const info = statSync(path.join(root, file));
+      stamp = `${info.size}:${info.mtimeMs}`;
+    } catch {
+      // A requested file the tool will not find either; its absence is part of the identity.
+    }
+    parts.push(`${file}=${stamp}`);
+  }
+  return createHash("sha256").update(parts.join("\u0000")).digest("hex");
+}
+
+function runTool(root: string, files: readonly string[]): TfToolOutput {
+  const key = runKey(root, files);
+  const cached = RUN_CACHE.get(key);
+  if (cached !== undefined) return cached;
+  const result = runToolUncached(root);
+  RUN_CACHE.set(key, result);
+  return result;
+}
+
+/**
  * The tool's read of `root`, with the integrity guards that stop an empty truth from scoring as
  * a perfect one (tech spec 10.1, principle 2).
  */
 function coveredRun(root: string, files: string[]): { tool: TfToolOutput; covered: string[] } {
   const absRoot = path.resolve(root);
-  const tool = runTool(absRoot);
+  const tool = runTool(absRoot, files);
   const requested = new Set(files);
   const covered = tool.files.filter((file) => requested.has(file)).sort(compareStrings);
 
@@ -264,6 +305,13 @@ export function generateExtra(root: string, files: string[]): { references: Edge
     }))
     .sort(compareEdges);
 
-  const nodes = tool.nodes.filter((id) => inScope(id)).sort(compareStrings);
+  // S6 scores *node ids*, so an id the schema cannot read back is not truth about a node — it
+  // is a key greplost could never produce, and every one of them would be counted as a miss.
+  // `main.go` already stops emitting the one case there is (`<file>#terraform`, the `terraform`
+  // settings block, which is a symbol and not a node); this is the standing guard, so a future
+  // declaration kind cannot reintroduce the same silent 19-per-repo penalty.
+  const nodes = tool.nodes
+    .filter((id) => inScope(id) && splitNodeId(id) !== null)
+    .sort(compareStrings);
   return { references, nodes };
 }

@@ -376,3 +376,4 @@ Append-only. One line per event.
 - 2026-09-04 rust fix round 1 re-reviewed (all addressed) and merged; leaf 2.4 complete (ripgrep S1 back to 1.000/1.000, ids unique with ~<n> in id only)
 - 2026-09-04 python fix round 2 (namespace ancestor walk, explicit skip) verified by driver probe and merged; leaf 2.1 complete
 - 2026-09-04 python round 2 regressed 'from ns import mod' (namespace dir) to unresolved:ns, caught by driver probe after merge; fix round 3 sent, leaf 2.1 reopened until it lands
+- 2026-09-04 terraform fix round 1 re-reviewed (all addressed) and merged; leaf 2.2 complete (both corpora S1/S2/S5/S6 1.000, fn 0)

@@ -34,12 +34,13 @@ import { REQUIRED_PROVIDER_PREFIX } from "../extract/hcl.ts";
 import { HCL_PROVIDER_NAMESPACE, hclDirectoryOf } from "../resolve/hcl.ts";
 
 /**
- * Declarations of one module (one directory), keyed by the name as *written*.
+ * Declarations of one module (one directory), keyed by the name as written.
  *
- * The key drops the `~<n>` uniqueness suffix `extractHcl` adds to a repeated name, because that
- * suffix belongs to the id and not to the address anybody writes: two `provider "aws"` blocks
- * in one file are two candidates for `aws`, and finding only the first would report an
- * ambiguous reference as a certain one.
+ * `Declaration.name` is already the name the file wrote — the `~<n>` uniqueness suffix lives in
+ * the id and nowhere else (driver ruling 2026-09-04) — so the key needs no unpicking. Two
+ * `provider "aws"` blocks in one file therefore land in one bucket and make `aws` genuinely
+ * ambiguous, which is the answer: finding only the first would report an ambiguous reference as
+ * a certain one.
  */
 type ModuleIndex = Map<string, Declaration[]>;
 
@@ -51,15 +52,9 @@ type ModuleIndex = Map<string, Declaration[]>;
  */
 const INDEX_BY_CONTEXT = new WeakMap<ReferenceContext, Map<string, ModuleIndex>>();
 
-/** `aws~2` -> `aws`; a `~` cannot occur in a Terraform identifier, so this is unambiguous. */
-function writtenName(name: string): string {
-  const match = /^(.*)~\d+$/.exec(name);
-  return match === null ? name : (match[1] as string);
-}
-
-/** `<kind>.<name>` for a node, `const:<name>` for a `locals` entry or the `terraform` block. */
+/** `<kind>.<name>` for a node, `const:<name>` for the `terraform` settings block. */
 function indexKey(decl: Declaration): string {
-  return decl.kind === "const" ? `const:${writtenName(decl.name)}` : `${decl.kind}.${writtenName(decl.name)}`;
+  return decl.kind === "const" ? `const:${decl.name}` : `${decl.kind}.${decl.name}`;
 }
 
 function indexFor(ctx: ReferenceContext): Map<string, ModuleIndex> {
@@ -175,8 +170,8 @@ function resolveAddress(file: FileRecord, ref: ReferenceRecord, ctx: ReferenceCo
       return variable === null ? null : edge(file, ref, variable.id, "high");
     }
     case "local": {
-      const constant = only(index, directory, `const:local.${segments[1] as string}`);
-      return constant === null ? null : edge(file, ref, constant.id, "high");
+      const entry = only(index, directory, `local.${segments[1] as string}`);
+      return entry === null ? null : edge(file, ref, entry.id, "high");
     }
     case "data": {
       // `data.<type>.<name>`: three segments at the very least.

@@ -422,10 +422,10 @@
 
 ## bench/src/truth/hcl.ts
 
-- `const NOTES: readonly string[] = ["terraform-config-inspect", "no-call-edges", "hclsyntax-traversals"]` L52-52
-- `function tfinspectTool(): string` L94-112
-- `function generateTruth(root: string, files: string[]): Truth` L198-229
-- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L238-269
+- `const NOTES: readonly string[] = [ "terraform-config-inspect", "no-call-edges", "hclsyntax-traversals", "same-rules-different-parser", ]` L60-65
+- `function tfinspectTool(): string` L107-125
+- `function generateTruth(root: string, files: string[]): Truth` L239-270
+- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L279-317
 
 ## bench/src/truth/java.ts
 

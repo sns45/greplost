@@ -30,8 +30,8 @@
 
 ## packages/core/src/extract/hcl.ts
 
-- `const REQUIRED_PROVIDER_PREFIX = "provider/"` L77-77
-- `function extractHcl( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L602-629
+- `const REQUIRED_PROVIDER_PREFIX = "provider/"` L79-79
+- `function extractHcl( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L679-707
 
 ## packages/core/src/extract/index.ts
 
@@ -224,7 +224,7 @@
 
 ## packages/core/src/references/hcl.ts
 
-- `function resolveHclReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L218-226
+- `function resolveHclReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L213-221
 
 ## packages/core/src/references/index.ts
 

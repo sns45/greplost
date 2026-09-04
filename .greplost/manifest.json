@@ -711,9 +711,9 @@
       "fanIn": 0,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 269,
+      "loc": 317,
       "pkg": "@greplost/bench",
-      "sha256": "3a983de5aef763313999ec52a581ba47cea8963038ac999e1fe01f67070893e1",
+      "sha256": "0bb5a154ac53cac6993c6c2855a6c412e178b7a8780f1f2f885567fe306d7eff",
       "staleSummary": false
     },
     "bench/src/truth/java.ts": {
@@ -950,9 +950,9 @@
       "fanIn": 0,
       "fanOut": 0,
       "lang": "go",
-      "loc": 827,
+      "loc": 882,
       "pkg": "@greplost/bench",
-      "sha256": "6bb0276a43c3b2473892c90196d78c53dbf4907560c38b64ff1b0279f006eb00",
+      "sha256": "2504ede6190d1f13c7cf70bd346edf5d76ea2ab1985761026c6e4aca50ad17c1",
       "staleSummary": false
     },
     "packages/cli/bin/greplost.js": {
@@ -1348,9 +1348,9 @@
       "fanIn": 2,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 629,
+      "loc": 707,
       "pkg": "@greplost/core",
-      "sha256": "1818a53f9a7b2e568338f542376acdc45128ff366792589f9ef109632f7b5594",
+      "sha256": "3950b122208248a39fb8080477522e25035222aaccb32c331aa20f8ba29c9a1d",
       "staleSummary": false
     },
     "packages/core/src/extract/index.ts": {
@@ -1928,9 +1928,9 @@
       "fanIn": 2,
       "fanOut": 4,
       "lang": "ts",
-      "loc": 226,
+      "loc": 221,
       "pkg": "@greplost/core",
-      "sha256": "87b677e5506d48de0bc93112567c722523f231843719ced2d4be6ba1c08b9930",
+      "sha256": "f92f62cb1fd3206448efbca90187981e5a2c7c41d8129d5730938b66b8d19aba",
       "staleSummary": false
     },
     "packages/core/src/references/index.ts": {
@@ -3319,14 +3319,14 @@
         "@greplost/sync"
       ],
       "files": 48,
-      "loc": 21474,
+      "loc": 21577,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 63,
-      "loc": 12529,
+      "loc": 12602,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
@@ -3413,5 +3413,5 @@
       "rdeps": []
     }
   },
-  "version": "1"
+  "version": "2"
 }
