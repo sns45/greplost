@@ -12,9 +12,14 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { ARTIFACT_DIR, ARTIFACT_PATHS, DEFAULT_CONFIG } from "./schema.ts";
+import { LANG_BY_BASENAME, LANG_BY_EXTENSION } from "./schema.ts";
 import type { DiagramConfig, GreplostConfig, Lang } from "./schema.ts";
 
-const KNOWN_LANGS: ReadonlySet<string> = new Set<Lang>(["ts", "tsx", "js", "jsx", "go"]);
+/** Every language the schema names (build 2: derived, so a new language never has to be listed twice). */
+const KNOWN_LANGS: ReadonlySet<string> = new Set<string>([
+  ...Object.values(LANG_BY_EXTENSION),
+  ...Object.values(LANG_BY_BASENAME),
+]);
 
 function invalid(what: string): never {
   throw new Error(`greplost: invalid config: ${what}`);

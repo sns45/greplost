@@ -8,23 +8,23 @@
 
 **Exports:** `loadConfig(root: string): GreplostConfig`, `validateConfig(value: unknown): GreplostConfig`
 
-**Imports:** `node:fs` (existsSync, readFileSync), `node:path` (join), [`./schema.ts`](schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, DEFAULT_CONFIG, DiagramConfig, GreplostConfig, Lang)
+**Imports:** `node:fs` (existsSync, readFileSync), `node:path` (join), [`./schema.ts`](schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, DEFAULT_CONFIG, DiagramConfig, GreplostConfig, LANG_BY_BASENAME, LANG_BY_EXTENSION, Lang)
 
 **Imported by:** [`packages/core/src/build.ts`](build.ts.md), [`packages/core/src/index.ts`](index.ts.md)
 
 **Blast radius:** 30 files (`greplost impact packages/core/src/config.ts`)
 
 **Key symbols:**
-- `const KNOWN_LANGS: ReadonlySet<string> = new Set<Lang>(["ts", "tsx", "js", "jsx", "go"])`  L17-17
-- `function invalid(what: string): never`  L19-21
-- `function isPlainObject(value: unknown): value is Record<string, unknown>`  L23-25
-- `function cloneConfig(config: GreplostConfig): GreplostConfig`  L27-36
-- `function validateStringArray(value: unknown, field: string): string[]`  L38-43
-- `function validateLanguages(value: unknown): Lang[]`  L45-51
-- `function validateDiagram(value: unknown, base: DiagramConfig): DiagramConfig`  L53-68
-- `function validatePackages(value: unknown, base: { roots: string[] }): { roots: string[] }`  L70-75
-- `function validateSemantic( value: unknown, base: { enabled: boolean; model: string }, ): { enabled: boolean; model: string }`  L77-92
-- `function validateConfig(value: unknown): GreplostConfig`  L100-114
-- `function loadConfig(root: string): GreplostConfig`  L121-136
+- `const KNOWN_LANGS: ReadonlySet<string> = new Set<string>([ ...Object.values(LANG_BY_EXTENSION), ...Object.values(LANG_BY_BASENAME), ])`  L19-22
+- `function invalid(what: string): never`  L24-26
+- `function isPlainObject(value: unknown): value is Record<string, unknown>`  L28-30
+- `function cloneConfig(config: GreplostConfig): GreplostConfig`  L32-41
+- `function validateStringArray(value: unknown, field: string): string[]`  L43-48
+- `function validateLanguages(value: unknown): Lang[]`  L50-56
+- `function validateDiagram(value: unknown, base: DiagramConfig): DiagramConfig`  L58-73
+- `function validatePackages(value: unknown, base: { roots: string[] }): { roots: string[] }`  L75-80
+- `function validateSemantic( value: unknown, base: { enabled: boolean; model: string }, ): { enabled: boolean; model: string }`  L82-97
+- `function validateConfig(value: unknown): GreplostConfig`  L105-119
+- `function loadConfig(root: string): GreplostConfig`  L126-141
 
 **Calls:** `cloneConfig` → [`packages/core/src/config.ts#cloneConfig`](config.ts.md) (high), `invalid` → [`packages/core/src/config.ts#invalid`](config.ts.md) (high), `isPlainObject` → [`packages/core/src/config.ts#isPlainObject`](config.ts.md) (high), `validateConfig` → [`packages/core/src/config.ts#validateConfig`](config.ts.md) (high), `validateDiagram` → [`packages/core/src/config.ts#validateDiagram`](config.ts.md) (high), `validateLanguages` → [`packages/core/src/config.ts#validateLanguages`](config.ts.md) (high), `validatePackages` → [`packages/core/src/config.ts#validatePackages`](config.ts.md) (high), `validateSemantic` → [`packages/core/src/config.ts#validateSemantic`](config.ts.md) (high), `validateStringArray` → [`packages/core/src/config.ts#validateStringArray`](config.ts.md) (high)

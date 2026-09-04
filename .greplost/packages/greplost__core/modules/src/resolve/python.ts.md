@@ -10,9 +10,9 @@
 
 **Imports:** [`../schema.ts`](../schema.ts.md) (CallSite, Confidence, FileRecord, ImportEdge, compareStrings, symbolId), [`./resolver.ts`](resolver.ts.md) (RepoContext, ResolvedTarget)
 
-**Imported by:** [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/resolver.ts`](resolver.ts.md)
+**Imported by:** [`packages/core/src/graph/link.ts`](../graph/link.ts.md), [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/resolver.ts`](resolver.ts.md)
 
-**Blast radius:** 64 files (`greplost impact packages/core/src/resolve/python.ts`)
+**Blast radius:** 65 files (`greplost impact packages/core/src/resolve/python.ts`)
 
 **Key symbols:**
 - `const PY_STDLIB: ReadonlySet<string> = new Set([ "__future__", "_abc", "_aix_support", "_android_support", "_apple_support", "_ast", "_ast_unparse", "_asyncio", "_bisect", "_blake2", "_bz2", "…`  L48-83

@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/resolver.ts`](resolver.ts.md)
 
-**Blast radius:** 64 files (`greplost impact packages/core/src/resolve/kotlin.ts`)
+**Blast radius:** 65 files (`greplost impact packages/core/src/resolve/kotlin.ts`)
 
 **Key symbols:**
 - `type KotlinCallIndex = Readonly<Record<string, never>>`  L12-12

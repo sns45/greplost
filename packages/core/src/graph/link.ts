@@ -15,6 +15,8 @@ import type {
 } from "../schema.ts";
 import { compareEdges, compareStrings, externalId, symbolId, unresolvedId } from "../schema.ts";
 import { buildGoCallIndex, resolveGoCall } from "../resolve/go.ts";
+import { buildPythonCallIndex, resolvePythonCall } from "../resolve/python.ts";
+import { buildRustCallIndex, resolveRustCall } from "../resolve/rust.ts";
 import { sccComponents } from "./tarjan.ts";
 
 /**
@@ -443,6 +445,9 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
   // Go resolves calls through its own scope rules (leaf 1.8); the index is the
   // shared empty one, at no cost, when the repo holds no Go file.
   const goCalls = buildGoCallIndex(files, imports);
+  // Build 2: each language with its own scoping rules resolves its own calls (leaves 2.1.1, 2.1.2).
+  const rustCalls = buildRustCallIndex(files, imports);
+  const pythonCalls = buildPythonCallIndex(files, imports);
 
   const isCallable = (id: string): boolean => {
     const kind = declKinds.get(id);
@@ -462,7 +467,11 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
         ? // Package scope, import aliases and method receivers: none of the
           // TypeScript rules below apply to a Go file. See resolve/go.ts.
           resolveGoCall(file, site, goCalls)
-        : dot === -1
+        : file.lang === "rust"
+          ? resolveRustCall(file, site, rustCalls)
+          : file.lang === "python"
+            ? resolvePythonCall(file, site, pythonCalls)
+            : dot === -1
           ? resolveName(callee, file.path, topLevel, bindings, index)
           : resolveMember(
               callee.slice(0, dot),

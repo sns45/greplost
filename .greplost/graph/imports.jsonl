@@ -327,6 +327,7 @@
 {"confidence":"high","from":"packages/core/src/config.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["join"],"to":"ext:node:path"}
 {"confidence":"high","from":"packages/core/src/config.ts","importKind":"static","kind":"import","specifier":"./schema.ts","symbols":["ARTIFACT_DIR","ARTIFACT_PATHS","DEFAULT_CONFIG"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/config.ts","importKind":"type","kind":"import","specifier":"./schema.ts","symbols":["DiagramConfig","GreplostConfig","Lang"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/config.ts","importKind":"static","kind":"import","specifier":"./schema.ts","symbols":["LANG_BY_BASENAME","LANG_BY_EXTENSION"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/discover.ts","importKind":"static","kind":"import","specifier":"fast-glob","symbols":["default"],"to":"ext:fast-glob"}
 {"confidence":"high","from":"packages/core/src/discover.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["execFileSync"],"to":"ext:node:child_process"}
 {"confidence":"high","from":"packages/core/src/discover.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","realpathSync"],"to":"ext:node:fs"}
@@ -424,6 +425,8 @@
 {"confidence":"high","from":"packages/core/src/graph/index.ts","importKind":"static","kind":"reexport","specifier":"./tarjan.ts","symbols":["stronglyConnected"],"to":"packages/core/src/graph/tarjan.ts"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"./tarjan.ts","symbols":["sccComponents"],"to":"packages/core/src/graph/tarjan.ts"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../resolve/go.ts","symbols":["buildGoCallIndex","resolveGoCall"],"to":"packages/core/src/resolve/go.ts"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../resolve/python.ts","symbols":["buildPythonCallIndex","resolvePythonCall"],"to":"packages/core/src/resolve/python.ts"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../resolve/rust.ts","symbols":["buildRustCallIndex","resolveRustCall"],"to":"packages/core/src/resolve/rust.ts"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallEdge","Confidence","DeclKind","FileRecord","ImportEdge","Lang"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareEdges","compareStrings","externalId","symbolId","unresolvedId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/graph/metrics.ts","importKind":"static","kind":"import","specifier":"./blast.ts","symbols":["blastRadius"],"to":"packages/core/src/graph/blast.ts"}

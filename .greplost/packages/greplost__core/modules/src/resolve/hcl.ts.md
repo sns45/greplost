@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/resolver.ts`](resolver.ts.md)
 
-**Blast radius:** 64 files (`greplost impact packages/core/src/resolve/hcl.ts`)
+**Blast radius:** 65 files (`greplost impact packages/core/src/resolve/hcl.ts`)
 
 **Key symbols:**
 - `type HclCallIndex = Readonly<Record<string, never>>`  L14-14

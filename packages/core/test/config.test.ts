@@ -121,7 +121,7 @@ describe("loadConfig", () => {
 
   test("throws when languages contains an unknown value", () => {
     const dir = tempDir();
-    writeConfig(dir, JSON.stringify({ languages: ["ts", "rust"] }));
+    writeConfig(dir, JSON.stringify({ languages: ["ts", "cobol"] }));
     expect(() => loadConfig(dir)).toThrow(/^greplost: invalid config: /);
   });
 

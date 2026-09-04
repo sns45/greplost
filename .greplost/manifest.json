@@ -1274,9 +1274,9 @@
       "fanIn": 2,
       "fanOut": 1,
       "lang": "ts",
-      "loc": 136,
+      "loc": 141,
       "pkg": "@greplost/core",
-      "sha256": "130b42fa13895419a391b46be323aa1df454a20ce0aaa6a691c986e8b5d088ba",
+      "sha256": "deffd974a911024db8bc129419d87b35cb225a4e46339c649f51cccb72fa72b1",
       "staleSummary": false
     },
     "packages/core/src/discover.ts": {
@@ -1624,11 +1624,11 @@
         "linkImports"
       ],
       "fanIn": 1,
-      "fanOut": 3,
+      "fanOut": 5,
       "lang": "ts",
-      "loc": 554,
+      "loc": 563,
       "pkg": "@greplost/core",
-      "sha256": "c1e9c0d2fff5871ad6f46a82b9c13e33bf4a385995fd796f8af53542a020eda3",
+      "sha256": "75eb56f34b1e390e2e03c9417f0197a7b551645e7c65b6799ce87a72586c33fa",
       "staleSummary": false
     },
     "packages/core/src/graph/metrics.ts": {
@@ -1992,7 +1992,7 @@
       "staleSummary": false
     },
     "packages/core/src/resolve/dockerfile.ts": {
-      "blast": 64,
+      "blast": 65,
       "exports": [
         "DockerfileCallIndex",
         "createDockerfileResolver",
@@ -2027,7 +2027,7 @@
       "staleSummary": false
     },
     "packages/core/src/resolve/hcl.ts": {
-      "blast": 64,
+      "blast": 65,
       "exports": [
         "HclCallIndex",
         "createHclResolver",
@@ -2076,7 +2076,7 @@
       "staleSummary": false
     },
     "packages/core/src/resolve/java.ts": {
-      "blast": 64,
+      "blast": 65,
       "exports": [
         "JavaCallIndex",
         "createJavaResolver",
@@ -2091,7 +2091,7 @@
       "staleSummary": false
     },
     "packages/core/src/resolve/kotlin.ts": {
-      "blast": 64,
+      "blast": 65,
       "exports": [
         "KotlinCallIndex",
         "createKotlinResolver",
@@ -2120,7 +2120,7 @@
       "staleSummary": false
     },
     "packages/core/src/resolve/python.ts": {
-      "blast": 64,
+      "blast": 65,
       "exports": [
         "PY_STDLIB",
         "PythonCallIndex",
@@ -2130,7 +2130,7 @@
         "pythonPackageDir",
         "resolvePythonCall"
       ],
-      "fanIn": 2,
+      "fanIn": 3,
       "fanOut": 2,
       "lang": "ts",
       "loc": 445,
@@ -2139,7 +2139,7 @@
       "staleSummary": false
     },
     "packages/core/src/resolve/resolver.ts": {
-      "blast": 64,
+      "blast": 65,
       "exports": [
         "RepoContext",
         "ResolvedTarget",
@@ -2155,7 +2155,7 @@
       "staleSummary": false
     },
     "packages/core/src/resolve/rust.ts": {
-      "blast": 64,
+      "blast": 65,
       "exports": [
         "CargoManifest",
         "RustCallIndex",
@@ -2165,7 +2165,7 @@
         "resolveRustCall",
         "rustModuleName"
       ],
-      "fanIn": 2,
+      "fanIn": 3,
       "fanOut": 2,
       "lang": "ts",
       "loc": 623,
@@ -2174,7 +2174,7 @@
       "staleSummary": false
     },
     "packages/core/src/resolve/tsconfig.ts": {
-      "blast": 65,
+      "blast": 66,
       "exports": [
         "TsPaths",
         "loadTsconfigPaths",
@@ -2189,7 +2189,7 @@
       "staleSummary": false
     },
     "packages/core/src/resolve/yaml.ts": {
-      "blast": 64,
+      "blast": 65,
       "exports": [
         "createYamlResolver",
         "resolveYamlCall"
@@ -2257,9 +2257,9 @@
       "fanIn": 113,
       "fanOut": 0,
       "lang": "ts",
-      "loc": 494,
+      "loc": 497,
       "pkg": "@greplost/core",
-      "sha256": "03046fa88ec60724729c7050fdc4cbf1f83f101816045dea2ad4fb3ab341d940",
+      "sha256": "027b394eba45fe82f1276281f82c9da241b03f255c228b278eefb0dda3126d2b",
       "staleSummary": false
     },
     "packages/core/src/serialize/index.ts": {
@@ -3258,7 +3258,7 @@
     "@greplost/core": {
       "deps": [],
       "files": 61,
-      "loc": 9895,
+      "loc": 9912,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
@@ -3345,5 +3345,5 @@
       "rdeps": []
     }
   },
-  "version": "2"
+  "version": "1"
 }

@@ -1424,6 +1424,10 @@
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#topLevelDeclarations"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/resolve/go.ts#buildGoCallIndex"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/resolve/go.ts#resolveGoCall"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/resolve/python.ts#buildPythonCallIndex"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/resolve/python.ts#resolvePythonCall"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/resolve/rust.ts#buildRustCallIndex"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/resolve/rust.ts#resolveRustCall"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/schema.ts#symbolId"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkImports","kind":"call","to":"packages/core/src/graph/link.ts#sortedUnique"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkImports","kind":"call","to":"packages/core/src/schema.ts#compareEdges"}
