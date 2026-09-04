@@ -128,15 +128,25 @@ function treeBlock(ctx: DocContext, options: IndexOptions): string | undefined {
 function tableBlocks(ctx: DocContext, options: IndexOptions): string[] {
   const total = ctx.packages.length;
   const shown = topPackagesByLoc(ctx, options.topK);
-  const lines = [
-    "| Package | Path | Files | LOC | Deps | Fan-in | Fan-out | Map |",
-    "|---|---|---|---|---|---|---|---|",
-  ];
+  // Schema 2: one extra column, and only for a repo that actually has non-file
+  // nodes. A repo with none renders the table build 1 rendered, byte for byte,
+  // so the M1 token budget is unaffected for every existing user (spec 4.4).
+  const withNodes = ctx.nodesOf.size > 0;
+  const lines = withNodes
+    ? [
+        "| Package | Path | Files | LOC | Nodes | Deps | Fan-in | Fan-out | Map |",
+        "|---|---|---|---|---|---|---|---|---|",
+      ]
+    : [
+        "| Package | Path | Files | LOC | Deps | Fan-in | Fan-out | Map |",
+        "|---|---|---|---|---|---|---|---|",
+      ];
   for (const pkg of shown) {
     const entry = ctx.packageEntry(pkg.name);
     const link = relLink(INDEX_ARTIFACT, `${packageDir(pkg.name)}/MAP.md`);
+    const nodes = withNodes ? `${nodeCount(ctx, pkg.name)} | ` : "";
     lines.push(
-      `| ${pkg.name} | ${pkg.path} | ${entry?.files ?? 0} | ${entry?.loc ?? 0} | ` +
+      `| ${pkg.name} | ${pkg.path} | ${entry?.files ?? 0} | ${entry?.loc ?? 0} | ${nodes}` +
         `${ctx.externalsOf.get(pkg.name)?.length ?? 0} | ${entry?.rdeps.length ?? 0} | ` +
         `${entry?.deps.length ?? 0} | [MAP](${link}) |`,
     );
@@ -146,6 +156,13 @@ function tableBlocks(ctx: DocContext, options: IndexOptions): string[] {
     blocks.push(`… and ${total - shown.length} more packages, see repo/MAP.md`);
   }
   return blocks;
+}
+
+/** Non-file nodes declared across one package's files. */
+function nodeCount(ctx: DocContext, pkgName: string): number {
+  let total = 0;
+  for (const file of ctx.filesByPackage.get(pkgName) ?? []) total += (ctx.nodesOf.get(file) ?? []).length;
+  return total;
 }
 
 /** The `topK` packages by LOC (ties by path), listed back in path order. */

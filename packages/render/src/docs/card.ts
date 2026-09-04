@@ -10,7 +10,7 @@
  */
 
 import type { CallEdge, Confidence, ImportRecord } from "@greplost/core/schema";
-import { compareStrings } from "@greplost/core/schema";
+import { compareStrings, isNodeKind } from "@greplost/core/schema";
 
 import type { DocContext } from "../render.ts";
 import { packageDir, relLink } from "../slug.ts";
@@ -24,6 +24,12 @@ const KEY_SYMBOL_CAP = 50;
  * list, and one card could otherwise carry hundreds of links.
  */
 const IMPORTER_CAP = 50;
+/**
+ * Non-file nodes listed on a file card before the tail (spec 4.4). A Terraform
+ * file with forty resources appears once, here, and never again under Key
+ * symbols: listing the same forty declarations twice is pure token cost.
+ */
+const NODE_CAP = 50;
 
 const NO_SUMMARY = "No summary yet; run `greplost refresh`.";
 
@@ -52,6 +58,8 @@ export function buildCard(ctx: DocContext, file: string): string {
   const blast = `${entry.blast} file${entry.blast === 1 ? "" : "s"}`;
   blocks.push(`**Blast radius:** ${blast} (\`greplost impact ${file}\`)`);
   blocks.push(`**Key symbols:**${keySymbolsField(ctx, file)}`);
+  const nodes = nodesField(ctx, file, link);
+  if (nodes !== undefined) blocks.push(`**Nodes:**${nodes}`);
   const calls = callsField(ctx, file, link);
   if (calls !== undefined) blocks.push(`**Calls:** ${calls}`);
 
@@ -174,8 +182,38 @@ function importersField(
   return importers.length > shown.length ? `${listed}, … ${importers.length - shown.length} more` : listed;
 }
 
+/**
+ * The file's non-file nodes, span-sorted, one bullet each, linked to the node
+ * card that sits in a directory named after this file. Undefined — so the whole
+ * block is omitted — when the file declares none, which is every file of every
+ * repo greplost indexed before schema 2.
+ *
+ * The label is the node id's `<kind>.<name>` half rather than the bare name: it
+ * is unique within a file by construction (the `~<n>` suffix lives in the id),
+ * so no two bullets can ever read the same.
+ */
+function nodesField(
+  ctx: DocContext,
+  file: string,
+  link: (target: string | undefined) => string | undefined,
+): string | undefined {
+  const nodes = ctx.nodesOf.get(file) ?? [];
+  if (nodes.length === 0) return undefined;
+  const shown = nodes.slice(0, NODE_CAP);
+  const lines = shown.map((node) => {
+    const label = node.id.slice(node.id.indexOf("#") + 1);
+    const card = ctx.nodeCardPathOf(node.id);
+    const body = card === undefined ? `\`${label}\`` : `[\`${label}\`](${link(card)})`;
+    return `- ${body}  L${node.span[0]}-${node.span[1]}`;
+  });
+  if (nodes.length > shown.length) lines.push(`- … ${nodes.length - shown.length} more`);
+  return `\n${lines.join("\n")}`;
+}
+
 function keySymbolsField(ctx: DocContext, file: string): string {
-  const decls = ctx.declsOf.get(file) ?? [];
+  // Nodes have their own block and their own cards; listing them here as well
+  // would put a Terraform file's forty resources on one card twice.
+  const decls = (ctx.declsOf.get(file) ?? []).filter((decl) => !isNodeKind(decl.kind));
   if (decls.length === 0) return " None.";
   const shown = decls.slice(0, KEY_SYMBOL_CAP);
   const lines = shown.map((d) => `- \`${keySymbol(d)}\`  L${d.span[0]}-${d.span[1]}`);
