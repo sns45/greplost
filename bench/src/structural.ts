@@ -835,8 +835,13 @@ export function scoreAgainstTruth(
         `(check the repo root and .greplost/config.json "languages")`,
     );
   }
+  // A reported-only target (Kotlin's corpus by ruling) offers no compiler truth on purpose; that is
+  // not an empty oracle, so the banner and the payload's `truthEmpty` stay quiet for it.
+  const reportedOnly = truth.notes.includes("reported-only");
   const truthEmpty =
-    offered > 0 && (files.length === 0 || (truthImports.length === 0 && exportKeys(truthExports).length === 0));
+    !reportedOnly &&
+    offered > 0 &&
+    (files.length === 0 || (truthImports.length === 0 && exportKeys(truthExports).length === 0));
   if (truthEmpty) {
     console.error(
       `${SUITE}: compiler truth for ${name} is empty across ${offered} files ` +
