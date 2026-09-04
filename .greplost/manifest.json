@@ -748,15 +748,17 @@
       "blast": 0,
       "exports": [
         "NOTES",
+        "PYTHON_FLOOR",
         "generateTruth",
+        "pythonExecutable",
         "pytruthScript"
       ],
       "fanIn": 0,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 175,
+      "loc": 234,
       "pkg": "@greplost/bench",
-      "sha256": "f00b7fbf78a7d272d8ce55c4425d4e18f64266a226cbfee17c82dea1d5079c35",
+      "sha256": "7fc96bf867fcd8fad653d3047d7ba307767bb69fd2625b021269f6d136b9a171",
       "staleSummary": false
     },
     "bench/src/truth/registry.ts": {
@@ -1414,9 +1416,9 @@
       "fanIn": 1,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 756,
+      "loc": 821,
       "pkg": "@greplost/core",
-      "sha256": "4057b9fea60b6f45babb3c38e1111b7aa47606af410f9839729afe9df70d981a",
+      "sha256": "4e6159d286971be090fa6cf4108cfcb567d6781504d8ad8d2cde7b62df6a0829",
       "staleSummary": false
     },
     "packages/core/src/extract/rust.ts": {
@@ -2170,9 +2172,9 @@
       "fanIn": 3,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 445,
+      "loc": 525,
       "pkg": "@greplost/core",
-      "sha256": "d4627a9b495a40e602c7a5c3ddeba7ae336713f6d51cfc0a2ef3363e3b76a5c9",
+      "sha256": "88075090c4fbc022cdf7a86b9efa102214a6fc1c243066426ecf42278a6baec7",
       "staleSummary": false
     },
     "packages/core/src/resolve/resolver.ts": {
@@ -3317,14 +3319,14 @@
         "@greplost/sync"
       ],
       "files": 48,
-      "loc": 21415,
+      "loc": 21474,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 63,
-      "loc": 12384,
+      "loc": 12529,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
@@ -3411,5 +3413,5 @@
       "rdeps": []
     }
   },
-  "version": "1"
+  "version": "2"
 }

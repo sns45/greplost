@@ -439,9 +439,11 @@
 
 ## bench/src/truth/python.ts
 
-- `const NOTES: readonly string[] = ["ast-only", "no-import-execution", "pep420-namespace-packages"]` L44-44
-- `function pytruthScript(): string` L47-49
-- `function generateTruth(root: string, files: string[]): Truth` L130-175
+- `function pythonExecutable(): string` L42-45
+- `const PYTHON_FLOOR: readonly [number, number] = [3, 11]` L57-57
+- `const NOTES: readonly string[] = [ "ast-only", "no-import-execution", "pep420-namespace-packages", "python>=3.11", ]` L70-75
+- `function pytruthScript(): string` L78-80
+- `function generateTruth(root: string, files: string[]): Truth` L183-234
 
 ## bench/src/truth/registry.ts
 
