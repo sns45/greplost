@@ -277,12 +277,14 @@ describe("references jsonl round trip", () => {
   });
 
   test("linkReferences refuses a reference from a language with no rules", () => {
-    // `ts` gained rules with leaf 2.3 (`references/ts.ts`); Go still has none, so it is the
-    // language that proves the guard is still armed.
-    const files = [record({ lang: "go", path: "a.go", refs: [ref({ refKind: "resource-input" })] })];
-    const ctx = emptyContext(["a.go"]);
+    // `ts` gained rules with leaf 2.3 (`references/ts.ts`) and `go` with leaf 2.7
+    // (`references/go.ts`); Python expresses every dependency it has as an import or a call and
+    // produces no `ReferenceRecord` at all, so it is the language that proves the guard is
+    // still armed.
+    const files = [record({ lang: "python", path: "a.py", refs: [ref({ refKind: "config" })] })];
+    const ctx = emptyContext(["a.py"]);
     expect(() => linkReferences(files, createResolver(ctx), ctx)).toThrow(
-      /greplost: a\.go produced 1 reference but there are no reference rules for "go"/,
+      /greplost: a\.py produced 1 reference but there are no reference rules for "python"/,
     );
   });
 });
