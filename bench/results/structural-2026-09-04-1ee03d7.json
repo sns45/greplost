@@ -1,0 +1,165 @@
+{
+  "corpus": [
+    {
+      "name": "next-app",
+      "sha": "1b5400c92633ca56c81c4c0a670e3416992ef64e"
+    }
+  ],
+  "date": "2026-09-04",
+  "gate": {
+    "missed": [],
+    "passed": true
+  },
+  "greplostSha": "1ee03d7",
+  "machine": {
+    "arch": "arm64",
+    "bun": "1.2.21",
+    "cores": 16,
+    "cpu": "Apple M4 Max",
+    "go": "go version go1.25.3 darwin/arm64",
+    "greplostSha": "1ee03d7",
+    "greplostVersion": "0.0.2",
+    "memoryGB": 128,
+    "node": "24.3.0",
+    "os": "Darwin 25.5.0"
+  },
+  "perLang": {
+    "tsx": {
+      "gated": true,
+      "repos": [
+        "next-app"
+      ],
+      "truthSource": "bench/src/truth/ts.ts"
+    }
+  },
+  "recordedAt": "2026-09-04T14:35:52.974Z",
+  "repos": {
+    "next-app": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 116
+      },
+      "S2": {
+        "f1": 0.9988974641675854,
+        "fn": 1,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9977973568281938,
+        "tp": 453
+      },
+      "S3": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 27
+      },
+      "S4": 1,
+      "S5": {
+        "f1": 0.9583333333333334,
+        "fn": 6,
+        "fp": 6,
+        "precision": 0.9583333333333334,
+        "recall": 0.9583333333333334,
+        "tp": 138
+      },
+      "S6": {
+        "f1": 0.9974511469838573,
+        "fn": 3,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9949152542372881,
+        "tp": 587
+      },
+      "callsAllConfidences": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 27
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [
+          "examples/cms-sanity/app/api/draft-mode/enable/route.ts:1 (examples/cms-sanity/app/api/draft-mode/enable/route.ts#GET)"
+        ],
+        "S3": [],
+        "S4": [],
+        "S5": [
+          "examples/cms-payload/app/(site)/page.tsx:1 (examples/cms-payload/app/(site)/page.tsx#route./ -route-handler-> examples/cms-payload/app/(site)/page.tsx#component.Page)",
+          "examples/reproduction-template/app/page.tsx:1 (examples/reproduction-template/app/page.tsx#route./ -route-handler-> examples/reproduction-template/app/page.tsx#component.Home)",
+          "examples/with-facebook-pixel/app/about/page.js:1 (examples/with-facebook-pixel/app/about/page.js#route./about -route-handler-> examples/with-facebook-pixel/app/about/page.js#component.About)",
+          "examples/with-facebook-pixel/app/page.js:1 (examples/with-facebook-pixel/app/page.js#route./ -route-handler-> examples/with-facebook-pixel/app/page.js#component.Home)",
+          "examples/with-next-translate/app/[lang]/page.js:1 (examples/with-next-translate/app/[lang]/page.js#route./[lang] -route-handler-> examples/with-next-translate/app/[lang]/page.js#component.Home)",
+          "examples/with-strict-csp/app/page.js:1 (examples/with-strict-csp/app/page.js#route./ -route-handler-> examples/with-strict-csp/app/page.js#component.Page)"
+        ],
+        "S6": [
+          "examples/with-facebook-pixel/app/components/FacebookPixel.js:1 (examples/with-facebook-pixel/app/components/FacebookPixel.js#component.FacebookPixel)",
+          "examples/with-three-js/app/_components/Bird.js:1 (examples/with-three-js/app/_components/Bird.js#component.Bird)",
+          "examples/with-three-js/app/_components/Box.js:1 (examples/with-three-js/app/_components/Box.js#component.Box)"
+        ]
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [
+          "examples/cms-payload/app/(site)/page.tsx:1 (examples/cms-payload/app/(site)/page.tsx#route./ -route-handler-> examples/cms-payload/app/(site)/[slug]/page.tsx#component.Page)",
+          "examples/reproduction-template/app/page.tsx:1 (examples/reproduction-template/app/page.tsx#route./ -route-handler-> examples/reproduction-template/app/page.tsx#Home)",
+          "examples/with-facebook-pixel/app/about/page.js:1 (examples/with-facebook-pixel/app/about/page.js#route./about -route-handler-> examples/with-facebook-pixel/app/about/page.js#About)",
+          "examples/with-facebook-pixel/app/page.js:1 (examples/with-facebook-pixel/app/page.js#route./ -route-handler-> examples/with-facebook-pixel/app/page.js#Home)",
+          "examples/with-next-translate/app/[lang]/page.js:1 (examples/with-next-translate/app/[lang]/page.js#route./[lang] -route-handler-> examples/with-next-translate/app/[lang]/page.js#Home)",
+          "examples/with-strict-csp/app/page.js:1 (examples/with-strict-csp/app/page.js#route./ -route-handler-> examples/with-strict-csp/app/page.js#Page)"
+        ],
+        "S6": []
+      },
+      "files": 341,
+      "naMetrics": [],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    }
+  },
+  "suite": "structural",
+  "targets": {
+    "S1": [
+      0.99,
+      0.97
+    ],
+    "S2": [
+      0.99,
+      0.99
+    ],
+    "S3": 0.95,
+    "S4": 1,
+    "S5": 0.95,
+    "S6": 0.95
+  },
+  "truth": {
+    "notes": [
+      "nearest-tsconfig-resolution"
+    ]
+  },
+  "unparsable": {
+    "count": 2,
+    "files": [
+      {
+        "path": "examples/with-next-translate/app/[lang]/page.js",
+        "reason": "error-root",
+        "repo": "next-app"
+      },
+      {
+        "path": "examples/with-next-translate/app/layout.js",
+        "reason": "error-root",
+        "repo": "next-app"
+      }
+    ]
+  }
+}
