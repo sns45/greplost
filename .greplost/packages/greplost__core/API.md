@@ -111,13 +111,37 @@
 
 - `function extractYamlActions( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L12-19
 
+## packages/core/src/extract/yaml-doc.ts
+
+- `type YamlValue = | { readonly shape: "map"; readonly node: Node; readonly entries: readonly YamlEntry[] } | { readonly shape: "seq"; readonly node: Node; readonly items: readonly YamlValue[] }…` L28-32
+- `interface YamlEntry` L35-39
+- `function yamlDocuments(root: Node): Node[]` L59-61
+- `function documentValue(document: Node): YamlValue` L64-70
+- `function readValue(node: Node): YamlValue` L89-106
+- `function scalarText(node: Node): string` L150-160
+- `function mapGet(value: YamlValue | null, key: string): YamlValue | null` L185-189
+- `function mapPath(value: YamlValue | null, ...keys: readonly string[]): YamlValue | null` L192-196
+- `function scalarAt(value: YamlValue | null, ...keys: readonly string[]): string | null` L199-202
+- `function seqItems(value: YamlValue | null): readonly YamlValue[]` L205-207
+- `function mapEntries(value: YamlValue | null): readonly YamlEntry[]` L210-212
+- `function scalarMap(value: YamlValue | null): Map<string, string>` L220-226
+- `function findByKey(value: YamlValue, key: string): YamlValue[]` L237-243
+- `function walk(value: YamlValue, visit: (entry: YamlEntry) => void): void` L246-257
+
 ## packages/core/src/extract/yaml-helm.ts
 
-- `function extractYamlHelm( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L12-19
+- `function templateSpans(source: string): Array<[number, number]>` L77-97
+- `function blankTemplates(source: string): string` L103-129
+- `function extractYamlHelm(path: string, _lang: Lang, source: string, tree: Tree): YamlParts` L312-343
 
 ## packages/core/src/extract/yaml-k8s.ts
 
-- `function extractYamlK8s( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L12-19
+- `type K8sFlavour = "k8s" | "helm"` L51-51
+- `interface K8sInput` L100-107
+- `function labelKey(labels: ReadonlyMap<string, string>): string | null` L279-287
+- `type YamlParts = Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L428-428
+- `function extractK8sDocuments(input: K8sInput): YamlParts` L436-458
+- `function extractYamlK8s(path: string, _lang: Lang, source: string, tree: Tree): YamlParts` L464-466
 
 ## packages/core/src/extract/yaml.ts
 
@@ -255,7 +279,7 @@
 
 ## packages/core/src/references/yaml-k8s.ts
 
-- `function resolveYamlK8sReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null` L12-21
+- `function resolveYamlK8sReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L179-196
 
 ## packages/core/src/references/yaml.ts
 
@@ -482,6 +506,6 @@
 
 ## packages/core/src/unparsable.ts
 
-- `interface UnparsableFile` L29-40
-- `async function findUnparsableFiles( root: string, files: readonly string[], opts?: { parser?: ParserHandle; grammarDir?: string }, ): Promise<UnparsableFile[]>` L53-79
-- `function brokenRoot(source: string, lang: Lang, parser: ParserHandle): UnparsableFile["reason"] | null` L89-103
+- `interface UnparsableFile` L31-42
+- `async function findUnparsableFiles( root: string, files: readonly string[], opts?: { parser?: ParserHandle; grammarDir?: string }, ): Promise<UnparsableFile[]>` L55-90
+- `function brokenRoot(source: string, lang: Lang, parser: ParserHandle): UnparsableFile["reason"] | null` L100-114

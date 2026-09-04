@@ -500,20 +500,28 @@
 
 ## bench/src/truth/yaml-helm.ts
 
-- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
-- `function generateTruth(root: string, files: string[]): Truth` L17-22
+- `const NOTES: readonly string[] = [ "js-yaml-oracle", "helm-template-render", "names-not-compared-for-templates", ]` L48-52
+- `function helmBinary(): string` L86-100
+- `interface RenderedDocument` L103-108
+- `function helmRender(chartDir: string): RenderedDocument[] | null` L117-154
+- `function chartsOf(root: string, files: readonly string[]): Chart[]` L175-204
+- `function generateTruth(root: string, files: string[]): Truth` L298-314
+- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L323-367
 
 ## bench/src/truth/yaml-k8s.ts
 
-- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
-- `function generateTruth(root: string, files: string[]): Truth` L17-22
+- `const NOTES: readonly string[] = ["js-yaml-oracle"]` L45-45
+- `type ReferenceTruth = Edge & { readonly refKind: string }` L310-310
+- `function generateTruth(root: string, files: string[]): Truth` L323-337
+- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L347-402
 
 ## bench/src/truth/yaml.ts
 
 - `const NOTES: readonly string[] = ["yaml-flavour-dispatch"]` L21-21
 - `type YamlFlavour = "yaml-actions" | "yaml-helm" | "yaml-k8s"` L26-26
-- `function isWorkflowFile(file: string): boolean` L47-54
-- `function isHelmFile(file: string): boolean` L57-60
-- `function flavourOf(file: string): YamlFlavour` L69-73
-- `function groupByFlavour(files: readonly string[]): Array<[YamlFlavour, string[]]>` L76-88
-- `function generateTruth(root: string, files: string[]): Truth` L90-96
+- `function isWorkflowFile(file: string): boolean` L67-74
+- `function isHelmFile(file: string): boolean` L77-80
+- `function flavourOf(file: string): YamlFlavour` L89-93
+- `function groupByFlavour(files: readonly string[]): Array<[YamlFlavour, string[]]>` L96-108
+- `function generateTruth(root: string, files: string[]): Truth` L110-116
+- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L119-132

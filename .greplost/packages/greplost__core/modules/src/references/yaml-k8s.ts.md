@@ -6,13 +6,27 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `resolveYamlK8sReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null`
+**Exports:** `resolveYamlK8sReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (FileRecord, ReferenceEdge, ReferenceRecord), [`./link.ts`](link.ts.md) (ReferenceContext)
+**Imports:** [`../schema.ts`](../schema.ts.md) (Declaration, FileRecord, ReferenceEdge, ReferenceRecord, externalId, nodeId), [`./link.ts`](link.ts.md) (ReferenceContext, referenceSource)
 
 **Imported by:** [`packages/core/src/references/index.ts`](index.ts.md), [`packages/core/src/references/yaml.ts`](yaml.ts.md)
 
 **Blast radius:** 39 files (`greplost impact packages/core/src/references/yaml-k8s.ts`)
 
 **Key symbols:**
-- `function resolveYamlK8sReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null`  L12-21
+- `const VALUES_FILES: readonly string[] = ["values.yaml", "values.yml"]`  L38-38
+- `const WORKLOADS_BY_CONTEXT = new WeakMap<ReferenceContext, readonly Workload[]>()`  L46-46
+- `const RESOURCES_BY_CONTEXT = new WeakMap<ReferenceContext, ReadonlyMap<string, readonly Declaration[]>>()`  L47-47
+- `interface Workload`  L49-52
+- `function parseLabels(text: string): Map<string, string> | null`  L55-63
+- `function workloadsFor(ctx: ReferenceContext): readonly Workload[]`  L65-78
+- `function resourcesFor(ctx: ReferenceContext): ReadonlyMap<string, readonly Declaration[]>`  L81-93
+- `function edge( file: FileRecord, ref: ReferenceRecord, to: string, confidence: ReferenceEdge["confidence"], ): ReferenceEdge`  L95-110
+- `function resolveSelector(file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext): ReferenceEdge | null`  L113-132
+- `function resolveConfigRef(file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext): ReferenceEdge | null`  L135-142
+- `function chartValuesFile(from: string, ctx: ReferenceContext): string | null`  L150-160
+- `function resolveHelmValues(file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext): ReferenceEdge | null`  L163-173
+- `function resolveYamlK8sReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null`  L179-196
+
+**Calls:** `referenceSource` → [`packages/core/src/references/link.ts#referenceSource`](link.ts.md) (high), `chartValuesFile` → [`packages/core/src/references/yaml-k8s.ts#chartValuesFile`](yaml-k8s.ts.md) (high), `edge` → [`packages/core/src/references/yaml-k8s.ts#edge`](yaml-k8s.ts.md) (high), `parseLabels` → [`packages/core/src/references/yaml-k8s.ts#parseLabels`](yaml-k8s.ts.md) (high), `resolveConfigRef` → [`packages/core/src/references/yaml-k8s.ts#resolveConfigRef`](yaml-k8s.ts.md) (high), `resolveHelmValues` → [`packages/core/src/references/yaml-k8s.ts#resolveHelmValues`](yaml-k8s.ts.md) (high), `resolveSelector` → [`packages/core/src/references/yaml-k8s.ts#resolveSelector`](yaml-k8s.ts.md) (high), `resourcesFor` → [`packages/core/src/references/yaml-k8s.ts#resourcesFor`](yaml-k8s.ts.md) (high), `workloadsFor` → [`packages/core/src/references/yaml-k8s.ts#workloadsFor`](yaml-k8s.ts.md) (high), `externalId` → [`packages/core/src/schema.ts#externalId`](../schema.ts.md) (high), `nodeId` → [`packages/core/src/schema.ts#nodeId`](../schema.ts.md) (high)

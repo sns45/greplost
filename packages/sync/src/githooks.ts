@@ -57,13 +57,15 @@ const SHEBANG = "#!/bin/sh\n";
  * The block appended to each hook (sync spec "Git hooks", verbatim).
  *
  * `command -v` rather than a hard-coded path, `bunx` as the fallback, and an
- * empty `GL` when neither exists so the hook degrades to nothing. The update
+ * empty `GL` when none exists so the hook degrades to nothing. A checkout that links its own
+ * `node_modules/.bin/greplost` (a workspace, or a repo that pins greplost as a dev dependency)
+ * runs that binary first, so the map is always written by the version the repo declares. The update
  * runs in a background subshell with both streams discarded: git waits for the
  * hook, not for the subshell, so a commit stays instant even on a large repo.
  */
 const HOOK_BLOCK = [
   HOOK_MARKER,
-  'if command -v greplost >/dev/null 2>&1; then GL="greplost"; elif command -v bunx >/dev/null 2>&1; then GL="bunx greplost"; else GL=""; fi',
+  'GL_LOCAL="$(git rev-parse --show-toplevel 2>/dev/null)/node_modules/.bin/greplost"; if [ -x "$GL_LOCAL" ]; then GL="$GL_LOCAL"; elif command -v greplost >/dev/null 2>&1; then GL="greplost"; elif command -v bunx >/dev/null 2>&1; then GL="bunx greplost"; else GL=""; fi',
   // The trailing `|| :` is what makes "greplost is not installed here" a
   // no-op rather than a failed hook: without it the guard's own false is the
   // script's exit status, and husky (which runs hooks under `sh -e`) reports a
@@ -81,7 +83,7 @@ const HOOK_BLOCK = [
  */
 const PRE_COMMIT_BLOCK = [
   HOOK_MARKER,
-  'if command -v greplost >/dev/null 2>&1; then GL="greplost"; elif command -v bunx >/dev/null 2>&1; then GL="bunx greplost"; else GL=""; fi',
+  'GL_LOCAL="$(git rev-parse --show-toplevel 2>/dev/null)/node_modules/.bin/greplost"; if [ -x "$GL_LOCAL" ]; then GL="$GL_LOCAL"; elif command -v greplost >/dev/null 2>&1; then GL="greplost"; elif command -v bunx >/dev/null 2>&1; then GL="bunx greplost"; else GL=""; fi',
   '[ -n "$GL" ] && $GL update --incremental --quiet >/dev/null 2>&1 && git add -A .greplost >/dev/null 2>&1 || :',
   HOOK_END_MARKER,
   "",
