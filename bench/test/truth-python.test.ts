@@ -137,9 +137,46 @@ describe("python tool", () => {
       version,
       true,
     ]);
-    // Whichever one ran is recorded in the notes, so a published number names its source.
-    expect(truth.notes).toContain(`python${version}`);
+    // The floor is a note because it is a property of the program. The version that ran is
+    // *not*: it goes to stderr, so a payload stays byte-identical across machines.
     expect(truth.notes).toContain(`python>=${PYTHON_FLOOR.join(".")}`);
+    expect(truth.notes.some((note) => /^python\d+\.\d+$/.test(note))).toBe(false);
+  });
+
+  test("the interpreter that ran is printed, never carried in the payload", () => {
+    // `notes` reaches `bench/results/*.json`; a host toolchain version in there would make
+    // two machines' result files differ for a reason that has nothing to do with the map.
+    const lines: string[] = [];
+    const original = console.error;
+    console.error = (...args: unknown[]): void => {
+      lines.push(args.map(String).join(" "));
+    };
+    try {
+      generateTruth(fixtureRoot, FIXTURE_FILES);
+    } finally {
+      console.error = original;
+    }
+    const reported = lines.find((line) => line.startsWith("truth-python: "));
+    expect(reported).toMatch(/^truth-python: \d+ file\(s\) parsed by python \d+\.\d+ /);
+    // No note is a *version*; `python>=3.11` is the floor, which is a property of the program.
+    expect(truth.notes.filter((note) => /^python\d/.test(note))).toEqual([]);
+
+    // The property that actually matters: a second interpreter yields the same payload, so
+    // two machines' `bench/results/*.json` can be compared. Skipped when there is only one.
+    const other = ["python3.13", "python3.12", "python3.11"]
+      .map((name) => `/opt/homebrew/bin/${name}`)
+      .find((candidate) => existsSync(candidate) && candidate !== pythonExecutable());
+    if (other === undefined) return;
+    const before = process.env["GREPLOST_PYTHON"];
+    let elsewhere: Truth;
+    try {
+      process.env["GREPLOST_PYTHON"] = other;
+      elsewhere = generateTruth(fixtureRoot, FIXTURE_FILES);
+    } finally {
+      if (before === undefined) delete process.env["GREPLOST_PYTHON"];
+      else process.env["GREPLOST_PYTHON"] = before;
+    }
+    expect(stableStringify(elsewhere)).toBe(stableStringify(truth));
   });
 
   test("it prints one JSON document with the agreed key set", () => {
@@ -270,10 +307,8 @@ describe("fixture truth", () => {
   });
 
   test("the oracle discloses how it was built", () => {
-    // The fixed notes, plus the interpreter that actually ran.
-    expect(truth.notes.slice(0, NOTES.length)).toEqual([...NOTES]);
-    expect(truth.notes).toHaveLength(NOTES.length + 1);
-    expect(truth.notes[NOTES.length]).toMatch(/^python\d+\.\d+$/);
+    // A fixed tag list: every entry is a property of the oracle, not of the machine.
+    expect(truth.notes).toEqual([...NOTES]);
   });
 
   test("a second interpreter at or above the floor produces the same document", () => {

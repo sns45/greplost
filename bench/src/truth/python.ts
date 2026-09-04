@@ -62,9 +62,10 @@ const MAX_BUFFER = 512 * 1024 * 1024;
 /**
  * Oracle choices this generator applies, for `RESULTS.md` to disclose.
  *
- * `python>=3.11` is the interpreter floor, not the pin: the numbers a run publishes came from
- * whatever interpreter `pythonExecutable()` found, and `truth.notes` records that exact
- * version alongside these so a published number names the thing that produced it.
+ * Every tag is a property of *this program* and is byte-identical on every machine, which is
+ * the rule for anything that reaches `bench/results/*.json` (ruling 2026-09-04).
+ * `python>=3.11` is therefore the floor the oracle is checked against, never the version that
+ * happened to run: that one is enforced by `assertFloor` and printed to stderr.
  */
 export const NOTES: readonly string[] = [
   "ast-only",
@@ -224,8 +225,10 @@ export function generateTruth(root: string, files: string[]): Truth {
     );
   }
 
-  // The floor is a note; the version that actually ran is a note too, so a number in
-  // `RESULTS.md` can always be traced back to the interpreter that produced it.
-  const notes = [...NOTES, `python${tool.python}`];
-  return { files: covered, imports, exports, calls, cycles, notes };
+  // The interpreter that ran goes to stderr, never into the payload: `notes` reaches
+  // `bench/results/*.json`, and a result file that differs between a 3.13 and a 3.14 machine
+  // could not be compared across machines at all (ruling 2026-09-04). The floor is a fixed
+  // tag in `NOTES` because it is a property of the program, identical everywhere.
+  console.error(`truth-python: ${covered.length} file(s) parsed by python ${tool.python} in ${absRoot}`);
+  return { files: covered, imports, exports, calls, cycles, notes: [...NOTES] };
 }
