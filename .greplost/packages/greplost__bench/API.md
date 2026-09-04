@@ -382,13 +382,13 @@
 - `interface SubstituteChecks` L205-214
 - `async function run(args: string[]): Promise<number>` L216-228
 - `function buildOptionsFor(target: Target): { root: string; config?: GreplostConfig }` L501-527
-- `function unsupportedMetrics(notes: readonly string[]): string[]` L578-586
-- `function scoredFiles(snapshot: Snapshot, lang: TruthLang): string[]` L672-682
-- `function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang): RepoScores` L690-793
-- `function perLangSummary( targets: readonly Target[], scores: readonly RepoScores[], ): Record<string, { repos: string[]; gated: boolean; truthSource: string }>` L807-828
-- `function unparsableBucket( scores: readonly RepoScores[], ): { count: number; files: { repo: string; path: string; reason: string }[] }` L857-864
-- `function missedMetrics(scores: RepoScores): string[]` L876-907
-- `function locate(snapshot: Snapshot, key: string, kind: "import" | "call" | "export"): string` L961-973
+- `function unsupportedMetrics(notes: readonly string[]): string[]` L577-585
+- `function scoredFiles(snapshot: Snapshot, lang: TruthLang): string[]` L671-681
+- `function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang): RepoScores` L689-792
+- `function perLangSummary( targets: readonly Target[], scores: readonly RepoScores[], ): Record<string, { repos: string[]; gated: boolean; truthSource: string }>` L806-827
+- `function unparsableBucket( scores: readonly RepoScores[], ): { count: number; files: { repo: string; path: string; reason: string }[] }` L856-863
+- `function missedMetrics(scores: RepoScores): string[]` L875-906
+- `function locate(snapshot: Snapshot, key: string, kind: "import" | "call" | "export"): string` L960-972
 
 ## bench/src/tasks.ts
 
