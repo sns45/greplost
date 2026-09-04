@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "preserve",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": [],
+    "baseUrl": ".",
+    "paths": {
+      "react": ["./types/react.d.ts"],
+      "@tanstack/react-start": ["./types/tanstack-react-start.d.ts"],
+      "@pulumi/pulumi": ["./types/pulumi-pulumi.d.ts"],
+      "@pulumi/aws": ["./types/pulumi-aws.d.ts"]
+    }
+  }
+}

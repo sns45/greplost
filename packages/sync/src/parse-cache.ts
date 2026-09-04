@@ -66,8 +66,15 @@ export const PARSE_CACHE_PATH = "cache/parse.json";
  * Extractor generation. Bump by hand when a greplost change would give
  * unchanged bytes a different `FileRecord`; every existing cache is then
  * discarded on load rather than mixed with fresh records.
+ *
+ * Generation 2 (build 2, leaf 2.3): the TypeScript signal passes are live, so a `.tsx` file
+ * whose bytes have not moved now yields `component.*`, `route.*`, `handler.*` and `resource.*`
+ * nodes it did not yield before, plus `FileRecord.refs`. A cache written by generation 1 holds
+ * the pre-signal records for exactly those files and must not be mixed with fresh ones.
+ * Extraction also depends on `config.signals`, which the `(lang, sha256)` key does not carry;
+ * see the note on `runSignals` for why that is a wider problem than a version bump can solve.
  */
-export const PARSE_CACHE_VERSION = "1";
+export const PARSE_CACHE_VERSION = "2";
 
 /** Sentinel key. No real key can collide with it: `lang:sha256` has no `#`. */
 export const PARSE_CACHE_VERSION_KEY = "#version";

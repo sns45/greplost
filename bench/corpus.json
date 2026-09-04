@@ -181,8 +181,8 @@
       "tier": "S",
       "lang": "ts",
       "defaultBranch": "master",
-      "notes": "build 2; 122 .ts under aws-ts-*/",
-      "subset": "aws-ts-*/**"
+      "notes": "build 2; 122 .ts under aws-ts-*/; the subset is the TypeScript files the pin documents, not the sample apps embedded beside them",
+      "subset": "aws-ts-*/**/*.ts"
     },
     {
       "name": "pulumi-go",

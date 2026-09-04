@@ -13,7 +13,7 @@ import type {
   ImportEdge,
   Lang,
 } from "../schema.ts";
-import { compareEdges, compareStrings, externalId, symbolId, unresolvedId } from "../schema.ts";
+import { compareEdges, compareStrings, externalId, isNodeKind, symbolId, unresolvedId } from "../schema.ts";
 import { buildGoCallIndex, resolveGoCall } from "../resolve/go.ts";
 import { sccComponents } from "./tarjan.ts";
 
@@ -87,6 +87,11 @@ export function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge
           : target.type === "external"
             ? externalId(target.pkg)
             : unresolvedId(record.specifier);
+      // A file importing itself (`iam.ts` writing `import * as iam from "./iam"`, which the
+      // pinned pulumi corpus really does) is not a dependency between files. Kept, it would
+      // add the file to its own fan-in, fan-out and blast radius, and put a self-loop in the
+      // import graph. The compiler agrees: `tsc` reports no such edge (build 2, leaf 2.3).
+      if (to === file.path) continue;
       edges.push({
         from: file.path,
         to,
@@ -185,6 +190,24 @@ type Sourcing =
  *    a missing name, runs into a cycle, or when the paths into it disagree
  *    about which declaration the name means.
  */
+/**
+ * True when the only export record naming this declaration is `export default`.
+ *
+ * `export function Page() {}` plus `export default Page` exports both names and is not this
+ * case; `export default function Page() {}` exports only `default`.
+ */
+function exportedOnlyAsDefault(file: FileRecord, name: string): boolean {
+  let asDefault = false;
+  for (const record of file.exports) {
+    if (record.kind === "default") {
+      if (record.local === name) asDefault = true;
+      continue;
+    }
+    if (record.name === name) return false;
+  }
+  return asDefault;
+}
+
 export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex {
   const specifiersByFile = resolvedSpecifiers(files, imports);
 
@@ -200,6 +223,15 @@ export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): Ex
     for (const decl of file.decls) {
       if (decl.parent !== undefined || decl.kind === "method") continue;
       if (!decl.exported) continue;
+      // A non-file node (schema 2: a route, a resource, a component) lives *inside* a module
+      // and is never one of the names the module exports.
+      if (isNodeKind(decl.kind)) continue;
+      // `export default function Page() {}` marks the declaration exported, because it is —
+      // but the name it is exported under is `default`, not `Page`. The compiler reports one
+      // export here and greplost used to report two, which cost S2 precision on every App
+      // Router page in the corpus. The export record is the only thing that knows the
+      // difference, so it decides (build 2, leaf 2.3).
+      if (exportedOnlyAsDefault(file, decl.name)) continue;
       if (!map.has(decl.name)) map.set(decl.name, { kind: "declared", symbol: decl.name });
     }
     for (const record of file.exports) {

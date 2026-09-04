@@ -352,9 +352,14 @@ describe("declarations", () => {
       "tsx",
       "src/a.tsx",
     );
+    // The language declarations, and then the `component` nodes the react signal pass adds
+    // alongside them (build 2, leaf 2.3): a signal node never replaces a declaration.
     expect(shape(r)).toEqual([
       ["Panel", "function", true],
       ["App", "function", true],
+      // A signal node is never a name the module exports, so `exported` is false on both.
+      ["component.Panel", "component", false],
+      ["component.App", "component", false],
     ]);
   });
 

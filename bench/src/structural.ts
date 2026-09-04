@@ -37,6 +37,7 @@ import {
   DEFAULT_CONFIG,
   compareStrings,
   isFileId,
+  type Edge,
   type GreplostConfig,
   type Lang,
   type Snapshot,
@@ -532,7 +533,8 @@ async function scoreTarget(target: Target, options: Options): Promise<RepoScores
   const files = scoredFiles(snapshot, target.lang);
 
   const { truth, na } = await truthFor(target, files, options);
-  const scores = scoreAgainstTruth(target.name, snapshot, truth, target.lang);
+  const extra = await extraFor(target, snapshot, files);
+  const scores = scoreAgainstTruth(target.name, snapshot, truth, target.lang, extra);
 
   const unparsable = await findUnparsable(target.root, files);
   // The substitute gate is the *only* gate a target with no gated metric has, so it runs
@@ -565,6 +567,48 @@ async function truthFor(
   const module: TruthModule = await loadTruth(truthTargetFor(target.lang));
   const truth = module.generateTruth(target.root, files);
   return { truth, na: unsupportedMetrics([...(module.NOTES ?? []), ...truth.notes]) };
+}
+
+/**
+ * The reference and node sets S5 and S6 are scored against, or null when nothing measures them.
+ *
+ * Two questions, in this order, and both of them cheap:
+ *
+ *  1. Did greplost predict anything at all? A repo with no signal node and no reference has
+ *     nothing whose precision could be wrong, and asking a second compiler program about it
+ *     would cost a whole extra build for a guaranteed empty answer. `null` is `n/a`, which is
+ *     neither a pass nor a fail — the same contract every other unmeasured metric has.
+ *  2. Does this target's oracle offer a `generateExtra`? For the TypeScript family that is
+ *     `truth/signals-ts.ts` (S1 to S4 stay with `truth/ts.ts`, which is a different oracle for
+ *     a different question); every other language asks its own truth module.
+ *
+ * Consequence worth stating plainly: S6 recall is only reported when greplost predicted at
+ * least one node. That is deliberate — spec section 3.7 gates precision and reports recall —
+ * but it does mean a pass that silently stopped emitting shows as `n/a` rather than as 0.000.
+ * The fixture gate is what stands against that: `tiny-signals-ts` has known nodes.
+ */
+async function extraFor(
+  target: Target,
+  snapshot: Snapshot,
+  files: string[],
+): Promise<{ references: Edge[]; nodes: string[] } | null> {
+  const scored = new Set(files);
+  const predictedNodes = snapshot.symbols.some(
+    (decl) => scored.has(decl.file) && decl.meta?.["signal"] !== undefined,
+  );
+  const predictedRefs = (snapshot.references ?? []).some((edge) => scored.has(fileOf(edge.from)));
+  if (!predictedNodes && !predictedRefs) return null;
+
+  const target_: TruthTarget = isTsFamily(target.lang) ? "signals-ts" : truthTargetFor(target.lang);
+  let module: TruthModule;
+  try {
+    module = await loadTruth(target_);
+  } catch {
+    // No oracle for this target's signals: unmeasured, which is `n/a`, not a failure.
+    return null;
+  }
+  if (module.generateExtra === undefined) return null;
+  return module.generateExtra(target.root, files);
 }
 
 /**
@@ -686,7 +730,13 @@ export function scoredFiles(snapshot: Snapshot, lang: TruthLang): string[] {
  * Both sides are cut down to the same file universe first, so a metric never punishes
  * greplost for an edge the truth generator was structurally unable to produce.
  */
-export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang): RepoScores {
+export function scoreAgainstTruth(
+  name: string,
+  snapshot: Snapshot,
+  truth: Truth,
+  lang: TruthLang,
+  extra: { references: Edge[]; nodes: string[] } | null = null,
+): RepoScores {
   // The universe is what *both* sides could speak about: the snapshot's files for this
   // language, intersected with the files the truth generator actually covered. A file the
   // compiler could not load would otherwise be scored as "exports nothing".
@@ -721,6 +771,26 @@ export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth
   );
   const callsAll = scoreEdges(predCalls, truthCalls);
   const S4 = jaccardCycles(predCycles, truth.cycles);
+
+  // S5 and S6 (schema 2). Both sides are cut to the same file universe first, exactly like
+  // every other metric: a node in a file the oracle never loaded is not a false positive.
+  // `S5` is scored as a key set rather than with `scoreEdges` because a reference edge's
+  // identity is `(from, to, refKind)` and `scoreEdges` does not know about `refKind`.
+  const predNodes = snapshot.symbols
+    .filter((decl) => fileSet.has(decl.file) && decl.meta?.["signal"] !== undefined)
+    .map((decl) => decl.id);
+  const predReferences = (snapshot.references ?? [])
+    .filter((edge) => fileSet.has(fileOf(edge.from)) && fileSet.has(fileOf(edge.to)))
+    .map(referenceKey);
+  const truthNodes = extra === null ? [] : extra.nodes.filter((id) => fileSet.has(fileOf(id)));
+  const truthReferences =
+    extra === null
+      ? []
+      : extra.references
+          .filter((edge) => fileSet.has(fileOf(edge.from)) && fileSet.has(fileOf(edge.to)))
+          .map(referenceKey);
+  const S5 = extra === null ? null : scoreSet(predReferences, truthReferences);
+  const S6 = extra === null ? null : scoreSet(predNodes, truthNodes);
 
   // Integrity guard (tech spec 10.1, principle 2). An empty truth set scores an empty
   // prediction as a perfect 1.000 across the board, so a truth generator that quietly
@@ -760,8 +830,8 @@ export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth
     S4,
     // S5 and S6 need a reference and a node set from the oracle (`generateExtra`), which no
     // build-1 truth generator has. Unmeasured is `n/a`, and `n/a` is neither a pass nor a fail.
-    S5: null,
-    S6: null,
+    S5,
+    S6,
     naMetrics: [],
     // Filled by `scoreTarget`, the only caller that can afford a second build.
     substitute: null,
@@ -778,6 +848,8 @@ export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth
         .filter((cycle) => !truth.cycles.some((expected) => sameCycle(expected, cycle)))
         .slice(0, MAX_REPORTED_FALSE_POSITIVES)
         .map((cycle) => `${cycle[0] ?? "?"}:1 (cycle ${cycle.join(" -> ")})`),
+      S5: keysWithLocation(snapshot, S5?.falsePositives ?? []),
+      S6: keysWithLocation(snapshot, S6?.falsePositives ?? []),
     },
     falseNegatives: {
       S1: locateAll(snapshot, S1.falseNegatives, "import"),
@@ -787,8 +859,30 @@ export function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth
         .filter((cycle) => !predCycles.some((predicted) => sameCycle(predicted, cycle)))
         .slice(0, MAX_REPORTED_FALSE_POSITIVES)
         .map((cycle) => `${cycle[0] ?? "?"}:1 (cycle ${cycle.join(" -> ")})`),
+      S5: keysWithLocation(snapshot, S5?.falseNegatives ?? []),
+      S6: keysWithLocation(snapshot, S6?.falseNegatives ?? []),
     },
   };
+}
+
+/**
+ * `<from> -<refKind>-> <to>`: a reference edge's identity, for scoring it as a key set.
+ *
+ * `refKind` is optional on the type because the registry declares `generateExtra` in terms of
+ * `Edge`; every reference edge in practice carries one, and `kind` ("reference") is the honest
+ * fallback for one that does not.
+ */
+function referenceKey(edge: Edge & { refKind?: string }): string {
+  return `${edge.from} -${edge.refKind ?? edge.kind}-> ${edge.to}`;
+}
+
+/** `file:line (key)` for a node or reference key, so an S5/S6 miss is as actionable as an S1. */
+function keysWithLocation(snapshot: Snapshot, keys: readonly string[]): string[] {
+  return keys.slice(0, MAX_REPORTED_FALSE_POSITIVES).map((key) => {
+    const id = (key.split(" -")[0] ?? key).trim();
+    const declaration = snapshot.symbols.find((decl) => decl.id === id);
+    return `${fileOf(id)}:${declaration?.span[0] ?? 1} (${key})`;
+  });
 }
 
 /**

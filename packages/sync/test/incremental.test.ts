@@ -31,7 +31,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { ARTIFACT_DIR, DEFAULT_CONFIG, stableStringify } from "@greplost/core/schema";
+import { ARTIFACT_DIR, DEFAULT_CONFIG, SCHEMA_VERSION, stableStringify } from "@greplost/core/schema";
 import type { FileRecord, GreplostConfig } from "@greplost/core/schema";
 
 import { appendDirty, readAndClearDirty } from "../src/dirty.ts";
@@ -41,6 +41,7 @@ import { init } from "../src/init.ts";
 import {
   FileParseCache,
   PARSE_CACHE_STAMP,
+  PARSE_CACHE_VERSION,
   PARSE_CACHE_VERSION_KEY,
   parseCacheKey,
 } from "../src/parse-cache.ts";
@@ -734,6 +735,28 @@ describe("parse cache", () => {
     cache.set(record({ sha256: "b".repeat(64) }));
     cache.save();
     expect(Object.keys(storedRecords(root))).toEqual([parseCacheKey("b".repeat(64), "ts")]);
+  });
+
+  test("a cache written under the previous extractor generation is ignored", () => {
+    // Build 2 leaf 2.3 turned the TypeScript signal passes on, so unchanged bytes now yield
+    // `component.*` / `route.*` / `resource.*` nodes and `refs` that generation 1 never wrote.
+    // A generation-1 cache is therefore wrong rather than merely old, and must be discarded.
+    expect(PARSE_CACHE_VERSION).not.toBe("1");
+    const previous = `${SCHEMA_VERSION}/1`;
+    expect(PARSE_CACHE_STAMP).not.toBe(previous);
+
+    const root = copyFixture("cache-previous-generation");
+    mkdirSync(artifact(root, "cache"), { recursive: true });
+    writeFileSync(
+      artifact(root, "cache/parse.json"),
+      stableStringify({
+        [PARSE_CACHE_VERSION_KEY]: previous,
+        [parseCacheKey("a".repeat(64), "ts")]: record(),
+      }),
+    );
+
+    expect(new FileParseCache(root).get("a".repeat(64), "ts")).toBeUndefined();
+    expect(new FileParseCache(root).size).toBe(0);
   });
 
   test("an update against a stale stamp reparses everything", async () => {
