@@ -1,0 +1,172 @@
+{
+  "corpus": [
+    {
+      "name": "pydantic",
+      "sha": "c23cb86ef197693fc016437614f174252a3d189a"
+    }
+  ],
+  "date": "2026-09-04",
+  "gate": {
+    "missed": [
+      "S2"
+    ],
+    "passed": false
+  },
+  "greplostSha": "f530349",
+  "machine": {
+    "arch": "arm64",
+    "bun": "1.2.21",
+    "cores": 16,
+    "cpu": "Apple M4 Max",
+    "go": "go version go1.25.3 darwin/arm64",
+    "greplostSha": "f530349",
+    "greplostVersion": "0.0.2",
+    "memoryGB": 128,
+    "node": "24.3.0",
+    "os": "Darwin 25.5.0"
+  },
+  "perLang": {
+    "python": {
+      "gated": true,
+      "repos": [
+        "pydantic"
+      ],
+      "truthSource": "bench/src/truth/python.ts"
+    }
+  },
+  "recordedAt": "2026-09-04T14:32:15.276Z",
+  "repos": {
+    "pydantic": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 459
+      },
+      "S2": {
+        "f1": 0.8961352657004831,
+        "fn": 245,
+        "fp": 13,
+        "precision": 0.9884547069271759,
+        "recall": 0.8195876288659794,
+        "tp": 1113
+      },
+      "S3": {
+        "f1": 0.9948420373952289,
+        "fn": 16,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9897370109044259,
+        "tp": 1543
+      },
+      "S4": 1,
+      "S5": null,
+      "S6": null,
+      "callsAllConfidences": {
+        "f1": 0.9948420373952289,
+        "fn": 16,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9897370109044259,
+        "tp": 1543
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [
+          "pydantic/__init__.py:1 (pydantic/__init__.py#AfterValidator)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#AliasChoices)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#AliasGenerator)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#AliasPath)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#AllowInfNan)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#AmqpDsn)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#AnyHttpUrl)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#AnyUrl)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#AnyWebsocketUrl)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#AwareDatetime)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#Base64Bytes)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#Base64Encoder)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#Base64Str)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#Base64UrlBytes)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#Base64UrlStr)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#BaseConfig)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#BaseModel)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#BeforeValidator)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#ByteSize)",
+          "pydantic/__init__.py:1 (pydantic/__init__.py#ClickHouseDsn)"
+        ],
+        "S3": [
+          "pydantic/__init__.py:1 (pydantic/__init__.py -> pydantic/version.py#_ensure_pydantic_core_version)",
+          "pydantic/_internal/_generate_schema.py:274 (pydantic/_internal/_generate_schema.py#_add_custom_serialization_from_json_encoders -> pydantic/version.py#version_short)",
+          "pydantic/_internal/_model_construction.py:89 (pydantic/_internal/_model_construction.py#ModelMetaclass.__new__ -> pydantic/warnings.py#GenericBeforeBaseModelWarning)",
+          "pydantic/_internal/_typing_extra.py:346 (pydantic/_internal/_typing_extra.py#eval_type -> pydantic/version.py#version_short)",
+          "pydantic/_migration.py:252 (pydantic/_migration.py#getattr_migration -> pydantic/version.py#version_short)",
+          "pydantic/errors.py:1 (pydantic/errors.py -> pydantic/version.py#version_short)",
+          "pydantic/functional_validators.py:650 (pydantic/functional_validators.py#model_validator -> pydantic/version.py#version_short)",
+          "pydantic/main.py:270 (pydantic/main.py#BaseModel.__init__ -> pydantic/version.py#version_short)",
+          "pydantic/mypy.py:1 (pydantic/mypy.py -> pydantic/version.py#parse_mypy_version)",
+          "pydantic/root_model.py:100 (pydantic/root_model.py#RootModel.__copy__ -> pydantic/main.py#_object_setattr)",
+          "pydantic/root_model.py:110 (pydantic/root_model.py#RootModel.__deepcopy__ -> pydantic/main.py#_object_setattr)",
+          "pydantic/root_model.py:96 (pydantic/root_model.py#RootModel.__setstate__ -> pydantic/main.py#_object_setattr)",
+          "pydantic/v1/decorator.py:208 (pydantic/v1/decorator.py#ValidatedFunction.create_model -> pydantic/v1/class_validators.py#validator)",
+          "pydantic/v1/fields.py:393 (pydantic/v1/fields.py#ModelField.__init__ -> pydantic/v1/typing.py#convert_generics)",
+          "pydantic/v1/validators.py:699 (pydantic/v1/validators.py#find_validators -> pydantic/v1/typing.py#get_class)",
+          "pydantic/warnings.py:46 (pydantic/warnings.py#PydanticDeprecationWarning.__str__ -> pydantic/version.py#version_short)"
+        ],
+        "S4": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [
+          "pydantic/v1/utils.py:110 (pydantic/v1/utils.py#BUILTIN_COLLECTIONS)",
+          "pydantic/v1/utils.py:87 (pydantic/v1/utils.py#IMMUTABLE_NON_COLLECTIONS_TYPES)",
+          "pydantic/v1/utils.py:211 (pydantic/v1/utils.py#KeyType)",
+          "pydantic/v1/utils.py:673 (pydantic/v1/utils.py#Obj)",
+          "pydantic/v1/utils.py:54 (pydantic/v1/utils.py#RichReprResult)",
+          "pydantic/v1/utils.py:325 (pydantic/v1/utils.py#T)",
+          "pydantic/v1/utils.py:724 (pydantic/v1/utils.py#all_identical)",
+          "pydantic/v1/utils.py:740 (pydantic/v1/utils.py#assert_never)",
+          "pydantic/v1/utils.py:236 (pydantic/v1/utils.py#generate_model_signature)",
+          "pydantic/v1/utils.py:717 (pydantic/v1/utils.py#is_valid_private_name)",
+          "pydantic/v1/utils.py:649 (pydantic/v1/utils.py#path_types)",
+          "pydantic/v1/utils.py:141 (pydantic/v1/utils.py#truncate)",
+          "pydantic/v1/utils.py:328 (pydantic/v1/utils.py#unique_list)"
+        ],
+        "S3": [],
+        "S4": []
+      },
+      "files": 105,
+      "naMetrics": [],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    }
+  },
+  "suite": "structural",
+  "targets": {
+    "S1": [
+      0.99,
+      0.97
+    ],
+    "S2": [
+      0.99,
+      0.99
+    ],
+    "S3": 0.95,
+    "S4": 1,
+    "S5": 0.95,
+    "S6": 0.95
+  },
+  "truth": {
+    "notes": [
+      "ast-only",
+      "no-import-execution",
+      "pep420-namespace-packages"
+    ]
+  },
+  "unparsable": {
+    "count": 0,
+    "files": []
+  }
+}
