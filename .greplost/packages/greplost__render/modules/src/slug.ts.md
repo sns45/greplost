@@ -6,18 +6,20 @@
 
 **Package:** `@greplost/render` ([map](../../MAP.md))
 
-**Exports:** `cardPath(pkg: PackageInfo, file: string): string`, `packageDir(pkgName: string): string`, `relLink(fromArtifact: string, toArtifact: string): string`
+**Exports:** `cardPath(pkg: PackageInfo, file: string): string`, `nodeCardPath(pkg: PackageInfo, id: string): string`, `nodeSlug(kind: DeclKind, name: string): string`, `packageDir(pkgName: string): string`, `relLink(fromArtifact: string, toArtifact: string): string`
 
-**Imports:** `node:path` (posix), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (PackageInfo, packageSlug)
+**Imports:** `node:path` (posix), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (DeclKind, PackageInfo, packageSlug, splitNodeId)
 
-**Imported by:** [`packages/render/src/docs/card.ts`](docs/card.ts.md), [`packages/render/src/docs/hotspots.ts`](docs/hotspots.ts.md), [`packages/render/src/docs/index-doc.ts`](docs/index-doc.ts.md), [`packages/render/src/docs/package-map.ts`](docs/package-map.ts.md), [`packages/render/src/docs/repo-map.ts`](docs/repo-map.ts.md), [`packages/render/src/index.ts`](index.ts.md), [`packages/render/src/render.ts`](render.ts.md)
+**Imported by:** [`packages/render/src/docs/card.ts`](docs/card.ts.md), [`packages/render/src/docs/hotspots.ts`](docs/hotspots.ts.md), [`packages/render/src/docs/index-doc.ts`](docs/index-doc.ts.md), [`packages/render/src/docs/node-card.ts`](docs/node-card.ts.md), [`packages/render/src/docs/package-map.ts`](docs/package-map.ts.md), [`packages/render/src/docs/repo-map.ts`](docs/repo-map.ts.md), [`packages/render/src/index.ts`](index.ts.md), [`packages/render/src/render.ts`](render.ts.md)
 
-**Blast radius:** 38 files (`greplost impact packages/render/src/slug.ts`)
+**Blast radius:** 39 files (`greplost impact packages/render/src/slug.ts`)
 
 **Key symbols:**
 - `function packageDir(pkgName: string): string`  L13-15
 - `function cardPath(pkg: PackageInfo, file: string): string`  L23-26
 - `function stripPackagePrefix(file: string, pkgPath: string): string`  L28-31
-- `function relLink(fromArtifact: string, toArtifact: string): string`  L41-45
+- `function nodeSlug(kind: DeclKind, name: string): string`  L44-46
+- `function nodeCardPath(pkg: PackageInfo, id: string): string`  L61-66
+- `function relLink(fromArtifact: string, toArtifact: string): string`  L76-80
 
-**Calls:** `packageSlug` → [`packages/core/src/schema.ts#packageSlug`](../../../greplost__core/modules/src/schema.ts.md) (high), `packageDir` → [`packages/render/src/slug.ts#packageDir`](slug.ts.md) (high), `stripPackagePrefix` → [`packages/render/src/slug.ts#stripPackagePrefix`](slug.ts.md) (high)
+**Calls:** `packageSlug` → [`packages/core/src/schema.ts#packageSlug`](../../../greplost__core/modules/src/schema.ts.md) (high), `splitNodeId` → [`packages/core/src/schema.ts#splitNodeId`](../../../greplost__core/modules/src/schema.ts.md) (high), `nodeSlug` → [`packages/render/src/slug.ts#nodeSlug`](slug.ts.md) (high), `packageDir` → [`packages/render/src/slug.ts#packageDir`](slug.ts.md) (high), `stripPackagePrefix` → [`packages/render/src/slug.ts#stripPackagePrefix`](slug.ts.md) (high)
