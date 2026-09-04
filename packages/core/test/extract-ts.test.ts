@@ -128,11 +128,11 @@ describe("parser", () => {
     // Schema 2 named every language up front and gave each a module, so the "no extractor"
     // branch is gone: an unimplemented language now fails in its own module, by name, with
     // the leaf that owns it (build-2 seam, leaf 2.0).
-    // `python` was the example here until leaf 2.1 implemented it, and `java` until leaf 2.5;
-    // `kotlin` is the next
-    // still-stubbed one (leaf 2.5, wave 2). Each language leaf moves this to the next stub.
-    expect(() => extract("x\n", "kotlin" as Lang, "Main.kt")).toThrow(
-      /greplost: the kotlin extractor is not implemented yet \(Main\.kt\); see build-2 leaf 2\.6/,
+    // `python` was the example here until leaf 2.1 implemented it, `java` until leaf 2.5 and
+    // `kotlin` until leaf 2.6; `dockerfile` is the next still-stubbed one (leaf 2.10, wave 3).
+    // Each language leaf moves this to the next stub.
+    expect(() => extract("FROM node:20\n", "dockerfile" as Lang, "Dockerfile")).toThrow(
+      /greplost: the dockerfile extractor is not implemented yet \(Dockerfile\); see build-2 leaf 2\.10/,
     );
   });
 

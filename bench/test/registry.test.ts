@@ -45,12 +45,12 @@ describe("loadTruth", () => {
   });
 
   test("an unimplemented oracle throws a sentence naming its file and its leaf", async () => {
-    // `python` was the example here until leaf 2.1 implemented it, and `java` until leaf 2.5;
-    // `kotlin` is the next
-    // still-stubbed one (leaf 2.5, wave 2). Each language leaf moves this to the next stub.
-    const mod = await loadTruth("kotlin");
-    expect(() => mod.generateTruth("/repo", ["A.kt"])).toThrow(
-      /greplost: the kotlin truth generator is not implemented yet .* build-2 leaf 2\.6/,
+    // `python` was the example here until leaf 2.1 implemented it, `java` until leaf 2.5 and
+    // `kotlin` until leaf 2.6; `dockerfile` is the next still-stubbed one (leaf 2.10, wave 3).
+    // Each language leaf moves this to the next stub.
+    const mod = await loadTruth("dockerfile");
+    expect(() => mod.generateTruth("/repo", ["Dockerfile"])).toThrow(
+      /greplost: the dockerfile truth generator is not implemented yet .* build-2 leaf 2\.10/,
     );
   });
 
