@@ -11,29 +11,40 @@ fail; S5 (reference precision) is gated at 0.95 with recall reported.
 Spec: `docs/superpowers/specs/2026-09-04-languages-iac-signals-design.md` sections 0, 2.1, 2.2,
 2.6, 5.1.
 
-**Where S1 and S5 are actually measured (read this before trusting G9 to G11).** No gate below
-was changed, but two of the numbers `bench:structural` prints for HCL are structurally vacuous
-today, and both are `bench/src/structural.ts`, which leaf 2.0 owns and three wave-1 leaves
-share, so this leaf reported them instead of editing it:
+**What the harness actually measures for HCL (fix round 1, 2026-09-04).** S5 and S6 are now
+scored by `bench:structural` itself: leaf 2.0's `generateExtra` wiring landed on main, so the
+numbers below are the harness's, not this leaf's own arithmetic. No gate criterion here was
+changed.
 
-- **S1 prints `1.000` over `tp 0`.** `scoreAgainstTruth` keeps *directory* import targets in the
-  scored universe only for `lang === "go"` (`const dirSet = lang === "go" ? … : new Set()`), and
-  a Terraform module is a directory, so every HCL import edge is filtered off both sides. The
-  fix is to widen that condition to any language whose imports name directories.
-- **S5 prints `n/a`.** `scoreAgainstTruth` returns `S5: null` unconditionally and never calls
-  `TruthModule.generateExtra`, which this leaf is the first oracle to implement (leaf 2.0's
-  report, concern 10, hands that wiring to exactly this leaf).
+What round 1 moved, measured before and after on the same checkouts:
 
-Both are therefore measured here, from this leaf's own oracle, with the harness's own
-`scoreEdges`/`scoreSet` and at the thresholds stated above. `bench/test/truth-hcl.test.ts`
-(`fixture truth`) asserts them on the fixture and is enforced by G7 and G12; the pinned corpus
-numbers, measured over the same covered universe `scoreAgainstTruth` uses, are:
+| target | metric | before | after |
+|---|---|---|---|
+| tf-aws-vpc | S6 node precision | 1.000, tp 1890, **fn 19** | 1.000, tp 1890, **fn 0** |
+| tf-aws-eks | S6 node precision | 1.000, tp 1246, **fn 19** | 1.000, tp 1246, **fn 0** |
+| tf-aws-vpc | S5 reference precision | 1.000, tp 2431, fn 0 | 1.000, tp 2431, fn 0 |
+| tf-aws-eks | S5 reference precision | 1.000, tp 1876, fn 0 | 1.000, tp 1876, fn 0 |
 
-| target | files | S1 imports | S2 exports | S5 references | node set |
-|---|---|---|---|---|---|
-| tiny-terraform | 5 | 1.000 / 1.000 (tp 1) | 1.000 / 1.000 (tp 6) | 1.000 / 1.000 (tp 15) | 1.000 / 1.000 (tp 14) |
-| tf-aws-vpc | 77 | 1.000 / 1.000 (tp 18) | 1.000 / 1.000 (tp 1591) | 1.000 / 1.000 (tp 2497) | 1.000 / 1.000 (tp 1909) |
-| tf-aws-eks | 87 | 1.000 / 1.000 (tp 20) | 1.000 / 1.000 (tp 759) | 1.000 / 1.000 (tp 1989) | 1.000 / 1.000 (tp 1265) |
+Every one of those 19 misses per repo was manufactured by the oracle, not missed by greplost: it
+published `<file>#terraform` into its node set, an id `splitNodeId` refuses, so greplost could
+never have produced it. The `terraform` settings block is a `const` symbol on both sides now,
+and `bench/src/truth/hcl.ts` filters the node set to ids the schema reads back so no future
+declaration kind can reintroduce the penalty.
+
+The full table on the three targets, as `bench:structural` prints it:
+
+| target | files | S1 imports | S2 exports | S3 | S4 | S5 references | S6 nodes |
+|---|---|---|---|---|---|---|---|
+| tiny-terraform | 5 | 1.000 / 1.000 | 1.000 / 1.000 (tp 6) | n/a | 1.000 | 1.000 (tp 13) | 1.000 (tp 13) |
+| tf-aws-vpc | 77 | 1.000 / 1.000 | 1.000 / 1.000 (tp 1591) | n/a | 1.000 | 1.000 (tp 2431) | 1.000 (tp 1890) |
+| tf-aws-eks | 87 | 1.000 / 1.000 | 1.000 / 1.000 (tp 759) | n/a | 1.000 | 1.000 (tp 1876) | 1.000 (tp 1246) |
+
+Two columns depend on what the scorer admits into the universe rather than on this leaf: S1's
+true positives need *directory* import targets (a Terraform module always is one), and S5's
+count changes by whether `ext:` and module-directory targets are in scope — the fixture's
+`ext:provider/aws` and its `module.logs -> modules/logs` edge are the two that come and go
+between 13 and 15. The evidence lines below carry the run that produced the numbers above, so
+each is read against the scorer that was on main at the time.
 
 - [x] G1: the HCL extraction test file passes
   CHECK: bun test packages/core/test/extract-hcl.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'

@@ -26,7 +26,7 @@ import type { ResolvedTarget } from "../src/resolve/resolver.ts";
 import { compareReferenceEdges } from "../src/references/index.ts";
 import { parseJsonl, serializeSnapshot } from "../src/serialize/index.ts";
 import type { Confidence, Declaration, FileRecord, GreplostConfig, ReferenceEdge, Snapshot } from "../src/schema.ts";
-import { ARTIFACT_PATHS, DEFAULT_CONFIG } from "../src/schema.ts";
+import { ARTIFACT_PATHS, DEFAULT_CONFIG, splitNodeId } from "../src/schema.ts";
 
 const ZERO_SHA = "0".repeat(64);
 const REPO_ROOT = fileURLToPath(new URL("../../..", import.meta.url));
@@ -114,6 +114,19 @@ describe("blocks", () => {
   test("a non-literal default is not recorded, and a type expression always is", () => {
     const out = run("variables.tf", 'variable "tags" {\n  type    = map(string)\n  default = var.other\n}\n');
     expect(decl(out, "tags").meta).toEqual({ type: "map(string)" });
+  });
+
+  test("a negated number is still a literal default", () => {
+    // `-1` is a unary operation over a numeric literal, not a `literal_value`, so the naive
+    // shape test dropped every negative default a module declares.
+    const out = run(
+      "variables.tf",
+      'variable "a" {\n  default = -1\n}\n\nvariable "b" {\n  default = -1.5\n}\n\nvariable "c" {\n  default = !var.x\n}\n',
+    );
+    expect(decl(out, "a").meta).toEqual({ default: "-1" });
+    expect(decl(out, "b").meta).toEqual({ default: "-1.5" });
+    // A unary operator over anything but a number is still not a literal.
+    expect(decl(out, "c").meta).toBeUndefined();
   });
 
   test("an output is exported and carries sensitivity", () => {
@@ -215,14 +228,17 @@ describe("blocks", () => {
 // ---------------------------------------------------------------------------
 
 describe("locals", () => {
-  test("a locals block yields one const per attribute, named local.<name>", () => {
+  test("a locals block yields one local node per attribute, named after the attribute", () => {
     const out = run("main.tf", 'locals {\n  name = "demo"\n  tags = { Env = "dev" }\n}\n');
-    expect(out.decls.map((d) => [d.id, d.kind, d.exported])).toEqual([
-      ["main.tf#local.name", "const", false],
-      ["main.tf#local.tags", "const", false],
+    expect(out.decls.map((d) => [d.id, d.kind, d.name, d.exported])).toEqual([
+      ["main.tf#local.name", "local", "name", false],
+      ["main.tf#local.tags", "local", "tags", false],
     ]);
-    expect(decl(out, "local.name").signature).toBe('name = "demo"');
-    expect(decl(out, "local.name").span).toEqual([2, 2]);
+    // `local` is a schema-2 node kind, so the id reads back as the node it names. The id is
+    // byte-identical to the `const`-with-a-dotted-name form it replaces.
+    expect(splitNodeId("main.tf#local.name")).toEqual({ file: "main.tf", kind: "local", name: "name" });
+    expect(decl(out, "name").signature).toBe('name = "demo"');
+    expect(decl(out, "name").span).toEqual([2, 2]);
   });
 
   test("two locals blocks merge, and a repeated attribute name takes the ~<n> suffix", () => {
@@ -433,6 +449,42 @@ describe("references", () => {
     // `aws_lb.value` is a real resource in this file, and it is *still* not the target: both
     // writings of it are bound names, so neither is emitted at all.
     expect(edgesFrom(snapshot, "main.tf#resource.aws_security_group.sg")).toEqual([]);
+  });
+
+  test("a dynamic block binds its iterator, not its label, and never inside its own for_each", async () => {
+    const snapshot = await snapshotOf({
+      "main.tf": [
+        'resource "aws_lb" "main" {}',
+        'resource "aws_sg" "a" {',
+        '  dynamic "aws_lb" {',
+        // The label is bound in `content`, so `aws_lb.value` is the iterator and not the
+        // resource — but `for_each` is evaluated in the *parent* scope, where `aws_lb.main`
+        // is the resource and nothing else.
+        "    for_each = aws_lb.main.subnets",
+        "    content {",
+        "      id = aws_lb.value",
+        "    }",
+        "  }",
+        "}",
+        'resource "aws_sg" "b" {',
+        '  dynamic "rule" {',
+        "    for_each = []",
+        // `iterator` renames the binding: `rule` is now free, and `aws_lb` is bound instead.
+        "    iterator = aws_lb",
+        "    content {",
+        "      id    = aws_lb.value",
+        "      other = rule.value",
+        "    }",
+        "  }",
+        "}",
+      ].join("\n"),
+    });
+    expect(edgesFrom(snapshot, "main.tf#resource.aws_sg.a")).toEqual([
+      ["main.tf#resource.aws_lb.main", "aws_lb.main.subnets", "high"],
+    ]);
+    // In `b` the iterator is `aws_lb`, so `aws_lb.value` is bound and names nothing; `rule` is
+    // no longer bound, but `rule.value` names no block either, so it is dropped as usual.
+    expect(edgesFrom(snapshot, "main.tf#resource.aws_sg.b")).toEqual([]);
   });
 
   test("an operand of an operator is an address like any other", async () => {
@@ -663,8 +715,8 @@ describe("tiny-terraform", () => {
     expect(snapshot.symbols.map((d) => [d.id, d.kind, d.exported])).toEqual([
       ["main.tf#terraform", "const", false],
       ["main.tf#provider.aws", "provider", false],
-      ["main.tf#local.name", "const", false],
-      ["main.tf#local.tags", "const", false],
+      ["main.tf#local.name", "local", false],
+      ["main.tf#local.tags", "local", false],
       ["main.tf#resource.aws_vpc.main", "resource", false],
       ["main.tf#resource.aws_subnet.a", "resource", false],
       ["main.tf#module.logs", "module", false],

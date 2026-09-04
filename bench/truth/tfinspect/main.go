@@ -193,8 +193,8 @@ func nodeID(file, kind, name string) string {
 	return file + "#" + kind + "." + name
 }
 
-// indexKey is the key an address is looked up by: "<kind>.<name>", or "const:<name>" for a
-// `locals` entry and the `terraform` block.
+// indexKey is the key an address is looked up by: "<kind>.<name>", or "const:<name>" for the
+// `terraform` settings block, the one declaration that is a symbol rather than a node.
 func indexKey(kind, name string) string {
 	if kind == "const" {
 		return "const:" + name
@@ -398,7 +398,7 @@ func providerOfType(resourceType string) string {
 }
 
 // walkBody records every reference inside one block body, attributed to `fromID`. Nested blocks
-// belong to the block that contains them; a `dynamic` block binds its label.
+// belong to the block that contains them; a `dynamic` block is handled by walkDynamicBlock.
 func walkBody(body *hclsyntax.Body, fromID, dir string, bound map[string]bool, topLevel bool, refs *[]rawRef) {
 	for _, attr := range attributesInOrder(body) {
 		// The `provider` meta-argument names a provider configuration and is handled by the
@@ -413,15 +413,56 @@ func walkBody(body *hclsyntax.Body, fromID, dir string, bound map[string]bool, t
 		}
 	}
 	for _, nested := range body.Blocks {
-		scope := bound
-		if nested.Type == "dynamic" && len(nested.Labels) == 1 {
-			scope = make(map[string]bool, len(bound)+1)
-			for name := range bound {
-				scope[name] = true
-			}
-			scope[nested.Labels[0]] = true
+		if nested.Type == "dynamic" {
+			walkDynamicBlock(nested, fromID, dir, bound, refs)
+			continue
 		}
-		walkBody(nested.Body, fromID, dir, scope, false, refs)
+		walkBody(nested.Body, fromID, dir, bound, false, refs)
+	}
+}
+
+// walkDynamicBlock applies Terraform's two rules for a `dynamic` block: the bound name is the
+// `iterator` argument when there is one and the label otherwise, and `for_each` is evaluated in
+// the *parent* scope, so the binding must not reach it.
+func walkDynamicBlock(block *hclsyntax.Block, fromID, dir string, bound map[string]bool, refs *[]rawRef) {
+	iterator := ""
+	if attr, has := block.Body.Attributes["iterator"]; has {
+		if traversal, diags := hcl.AbsTraversalForExpr(attr.Expr); !diags.HasErrors() && len(traversal) == 1 {
+			iterator = traversal.RootName()
+		}
+	}
+	if iterator == "" && len(block.Labels) == 1 {
+		iterator = block.Labels[0]
+	}
+
+	inner := bound
+	if iterator != "" {
+		inner = make(map[string]bool, len(bound)+1)
+		for name := range bound {
+			inner[name] = true
+		}
+		inner[iterator] = true
+	}
+
+	for _, attr := range attributesInOrder(block.Body) {
+		// `iterator` names the binding; it is not an expression that references anything.
+		if attr.Name == "iterator" {
+			continue
+		}
+		scope := inner
+		if attr.Name == "for_each" {
+			scope = bound
+		}
+		for _, address := range exprReferences(attr.Expr, scope) {
+			*refs = append(*refs, rawRef{fromID: fromID, dir: dir, address: address, refKind: "hcl-ref"})
+		}
+	}
+	for _, nested := range block.Body.Blocks {
+		if nested.Type == "dynamic" {
+			walkDynamicBlock(nested, fromID, dir, inner, refs)
+			continue
+		}
+		walkBody(nested.Body, fromID, dir, inner, false, refs)
 	}
 }
 
@@ -455,9 +496,12 @@ func scanFile(parser *hclparse.Parser, absolute, rel string) ([]*decl, []rawRef,
 				continue
 			}
 			for _, attr := range attributesInOrder(block.Body) {
-				name := uniqueName(used, rel, "const", "local."+attr.Name)
-				owner := nodeID(rel, "const", name)
-				decls = append(decls, &decl{id: owner, kind: "const", name: name, file: rel})
+				// A `locals` entry is a node of kind `local` named after the attribute, so its id
+				// is `<file>#local.<name>` — the same bytes the dotted-const form produced, but an
+				// id that greplost's own `splitNodeId` reads back.
+				name := uniqueName(used, rel, "local", attr.Name)
+				owner := nodeID(rel, "local", name)
+				decls = append(decls, &decl{id: owner, kind: "local", name: name, file: rel})
 				for _, address := range exprReferences(attr.Expr, nil) {
 					refs = append(refs, rawRef{fromID: owner, dir: dir, address: address, refKind: "hcl-ref"})
 				}
@@ -625,7 +669,7 @@ func resolve(modules map[string]*module, ref rawRef) (refEdge, bool) {
 			return made(found.id, "high")
 		}
 	case "local":
-		if found := only(modules, ref.dir, indexKey("const", "local."+segments[1])); found != nil {
+		if found := only(modules, ref.dir, indexKey("local", segments[1])); found != nil {
 			return made(found.id, "high")
 		}
 	case "data":
@@ -702,7 +746,14 @@ func run(root string) (*output, error) {
 		for _, made := range decls {
 			key := indexKey(made.kind, made.name)
 			mod.byKey[key] = append(mod.byKey[key], made)
-			out.Nodes = append(out.Nodes, made.id)
+			// `nodes` is the *node* set S6 is scored against, and a `const` is a symbol rather
+			// than a node: the `terraform` settings block is not a thing any address can name,
+			// and its id `<file>#terraform` is one greplost's `splitNodeId` refuses. Publishing
+			// it made every one of them an S6 miss greplost could not have made. It stays in the
+			// module index, because a reference still has to be able to come *from* it.
+			if made.kind != "const" {
+				out.Nodes = append(out.Nodes, made.id)
+			}
 		}
 		refs = append(refs, fileRefs...)
 		out.Files = append(out.Files, rel)

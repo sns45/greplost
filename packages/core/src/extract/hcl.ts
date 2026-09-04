@@ -11,8 +11,10 @@
  *  - **Declarations.** One node per top-level block, by its first label. `resource`/`data` need
  *    exactly two labels and every other block exactly one; a block with the wrong number is not
  *    a node, because guessing which label is the name is how a wrong id gets into the map.
- *    `locals` is the exception: it yields one `const` per attribute, named `local.<name>`, and
- *    `terraform` yields a single `const` named `terraform`.
+ *    `locals` is the exception: it yields one `local` node per attribute, named after the
+ *    attribute, so its id is `<file>#local.<name>`. `terraform` yields a single `const` named
+ *    `terraform` — it is a settings block, not a thing anything can address, so it is a symbol
+ *    and not a node (which is what keeps `splitNodeId` from having to read `<file>#terraform`).
  *  - **Imports.** Only a `module` block imports, and its specifier is the `source` string as
  *    written. `resolve/hcl.ts` turns that into a directory id or an `ext:module/<source>`.
  *  - **References.** Every address chain inside an attribute value (`var.x`, `local.y`,
@@ -190,13 +192,29 @@ function attributeValue(body: Node | null, name: string): Node | null {
  * that only Terraform can evaluate, and `meta` may not carry a guess at one.
  */
 function literalScalar(expression: Node | null): string | null {
-  if (expression === null) return null;
+  if (expression === null || expression.namedChildCount !== 1) return null;
   const value = expression.namedChild(0);
-  if (value === null || value.type !== "literal_value" || expression.namedChildCount !== 1) return null;
+  if (value === null) return null;
+  // A negated number is a unary operation over a numeric literal, not a `literal_value`. It is
+  // still as much a literal as `1` is, and `default = -1` is ordinary in a Terraform module.
+  if (value.type === "operation") return negatedNumber(value);
+  if (value.type !== "literal_value") return null;
   const inner = value.namedChild(0);
   if (inner === null) return null;
   if (inner.type === "string_lit") return plainString(inner);
   return inner.text;
+}
+
+/** `-1` / `-1.5` written as a unary operation, or null for any other operation. */
+function negatedNumber(operation: Node): string | null {
+  const unary = operation.namedChild(0);
+  if (unary === null || unary.type !== "unary_operation" || operation.namedChildCount !== 1) return null;
+  const minus = childOfType(unary, "-");
+  if (minus === null) return null;
+  const operand = unary.namedChild(0);
+  if (operand === null || operand.type !== "literal_value" || unary.namedChildCount !== 1) return null;
+  const numeric = childOfType(operand, "numeric_lit");
+  return numeric === null ? null : `-${numeric.text}`;
 }
 
 /** The named attribute as a scalar literal, or null. */
@@ -412,14 +430,57 @@ function walkBody(
     walkExpression(state, owner, parts.value, bound);
   }
   for (const block of blocksOf(body)) {
-    let scope = bound;
     if (blockType(block) === "dynamic") {
-      const labels = blockLabels(block);
-      const label = labels === null ? undefined : labels[0];
-      if (label !== undefined) scope = new Set([...bound, label]);
+      walkDynamicBlock(state, owner, block, bound);
+      continue;
     }
-    walkBody(state, owner, bodyOf(block), scope, false);
+    walkBody(state, owner, bodyOf(block), bound, false);
   }
+}
+
+/**
+ * A `dynamic` block, whose iterator is bound to *part* of its own body.
+ *
+ * Terraform's rules, and both matter for precision and for recall:
+ *
+ *  - the bound name is the `iterator` argument when there is one, and the block's label
+ *    otherwise. `dynamic "rule" { iterator = ing … }` binds `ing`, and leaves `rule` free;
+ *  - `for_each` (and `iterator` itself) are evaluated in the **parent** scope, so the binding
+ *    must not reach them. `dynamic "aws_lb" { for_each = aws_lb.main.subnets }` really does
+ *    name the resource `aws_lb.main`, and binding the label over the whole block hid it.
+ *
+ * `content` and any further nested block see the binding, which is what stops `ing.value` from
+ * being read as a managed resource address.
+ */
+function walkDynamicBlock(state: HclState, owner: string, block: Node, bound: ReadonlySet<string>): void {
+  const body = bodyOf(block);
+  const labels = blockLabels(block);
+  const iterator = bareIdentifier(attributeValue(body, "iterator")) ?? (labels === null ? undefined : labels[0]);
+  const inner = iterator === undefined || iterator === "" ? bound : new Set([...bound, iterator]);
+
+  for (const attribute of attributesOf(body)) {
+    const parts = attributeParts(attribute);
+    if (parts === null) continue;
+    // `iterator` names the binding; it is not an expression that references anything.
+    if (parts.name === "iterator") continue;
+    walkExpression(state, owner, parts.value, parts.name === "for_each" ? bound : inner);
+  }
+  for (const nested of blocksOf(body)) {
+    if (blockType(nested) === "dynamic") {
+      walkDynamicBlock(state, owner, nested, inner);
+      continue;
+    }
+    walkBody(state, owner, bodyOf(nested), inner, false);
+  }
+}
+
+/** A bare `name` expression (the shape `iterator = ing` takes), or null. */
+function bareIdentifier(expression: Node | null): string | null {
+  if (expression === null || expression.namedChildCount !== 1) return null;
+  const head = expression.namedChild(0);
+  if (head === null || head.type !== "variable_expr") return null;
+  const identifier = childOfType(head, "identifier");
+  return identifier === null ? null : identifier.text;
 }
 
 // ---------------------------------------------------------------------------
@@ -432,15 +493,18 @@ function collectLocals(state: HclState, block: Node): void {
   for (const attribute of attributesOf(bodyOf(block))) {
     const parts = attributeParts(attribute);
     if (parts === null) continue;
+    // A `locals` entry is a node of kind `local` named after the attribute, so its id is
+    // `<file>#local.<name>` through `nodeId` — byte-identical to the id the `const`-with-a-
+    // dotted-name form produced, but one that `splitNodeId` can actually read back.
     const declaration = addDeclaration(
       state,
-      "const",
-      `local.${parts.name}`,
+      "local",
+      parts.name,
       clip(state.source.slice(attribute.startIndex, attribute.endIndex)),
       attribute,
       undefined,
     );
-    walkExpression(state, declaration.name, parts.value, NO_BINDINGS);
+    walkExpression(state, `local.${declaration.name}`, parts.value, NO_BINDINGS);
   }
 }
 

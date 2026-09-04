@@ -39,7 +39,8 @@ import { HCL_PROVIDER_NAMESPACE, hclDirectoryOf } from "../resolve/hcl.ts";
  * The key drops the `~<n>` uniqueness suffix `extractHcl` adds to a repeated name, because that
  * suffix belongs to the id and not to the address anybody writes: two `provider "aws"` blocks
  * in one file are two candidates for `aws`, and finding only the first would report an
- * ambiguous reference as a certain one.
+ * ambiguous reference as a certain one. Only a suffix the extractor really added is dropped —
+ * see `writtenName`.
  */
 type ModuleIndex = Map<string, Declaration[]>;
 
@@ -51,20 +52,38 @@ type ModuleIndex = Map<string, Declaration[]>;
  */
 const INDEX_BY_CONTEXT = new WeakMap<ReferenceContext, Map<string, ModuleIndex>>();
 
-/** `aws~2` -> `aws`; a `~` cannot occur in a Terraform identifier, so this is unambiguous. */
-function writtenName(name: string): string {
-  const match = /^(.*)~\d+$/.exec(name);
-  return match === null ? name : (match[1] as string);
+/**
+ * The name as *written*, undoing only a `~<n>` suffix `extractHcl` actually added.
+ *
+ * The suffix is added to the *second* and later declaration of a name in one file, so it was
+ * added exactly when a sibling of the same kind, in the same file, holds the stripped base.
+ * `claimed` is that set. Stripping unconditionally would rewrite a label somebody really wrote
+ * as `queue~2` into `queue`, silently making two different blocks candidates for one address.
+ */
+function writtenName(decl: Declaration, claimed: ReadonlySet<string>): string {
+  const match = /^(.*)~[1-9]\d*$/.exec(decl.name);
+  if (match === null) return decl.name;
+  const base = match[1] as string;
+  return claimed.has(`${decl.file}\u0000${decl.kind}\u0000${base}`) ? base : decl.name;
 }
 
-/** `<kind>.<name>` for a node, `const:<name>` for a `locals` entry or the `terraform` block. */
-function indexKey(decl: Declaration): string {
-  return decl.kind === "const" ? `const:${writtenName(decl.name)}` : `${decl.kind}.${writtenName(decl.name)}`;
+/** `<kind>.<name>` for a node, `const:<name>` for the `terraform` settings block. */
+function indexKey(decl: Declaration, claimed: ReadonlySet<string>): string {
+  const name = writtenName(decl, claimed);
+  return decl.kind === "const" ? `const:${name}` : `${decl.kind}.${name}`;
 }
 
 function indexFor(ctx: ReferenceContext): Map<string, ModuleIndex> {
   const cached = INDEX_BY_CONTEXT.get(ctx);
   if (cached !== undefined) return cached;
+
+  // Every (file, kind, name) a declaration actually claims, so a `~<n>` suffix can be told
+  // apart from a name that merely ends in one.
+  const claimed = new Set<string>();
+  for (const record of ctx.recordByPath.values()) {
+    if (record.lang !== "hcl") continue;
+    for (const decl of record.decls) claimed.add(`${decl.file}\u0000${decl.kind}\u0000${decl.name}`);
+  }
 
   const byDirectory = new Map<string, ModuleIndex>();
   for (const record of ctx.recordByPath.values()) {
@@ -76,7 +95,7 @@ function indexFor(ctx: ReferenceContext): Map<string, ModuleIndex> {
       byDirectory.set(dir, module);
     }
     for (const decl of record.decls) {
-      const key = indexKey(decl);
+      const key = indexKey(decl, claimed);
       const bucket = module.get(key);
       if (bucket === undefined) module.set(key, [decl]);
       else bucket.push(decl);
@@ -175,8 +194,8 @@ function resolveAddress(file: FileRecord, ref: ReferenceRecord, ctx: ReferenceCo
       return variable === null ? null : edge(file, ref, variable.id, "high");
     }
     case "local": {
-      const constant = only(index, directory, `const:local.${segments[1] as string}`);
-      return constant === null ? null : edge(file, ref, constant.id, "high");
+      const entry = only(index, directory, `local.${segments[1] as string}`);
+      return entry === null ? null : edge(file, ref, entry.id, "high");
     }
     case "data": {
       // `data.<type>.<name>`: three segments at the very least.
