@@ -451,9 +451,9 @@
       "fanIn": 1,
       "fanOut": 4,
       "lang": "ts",
-      "loc": 562,
+      "loc": 567,
       "pkg": "@greplost/bench",
-      "sha256": "34d0258f96c652f33d92d690539f60a35779e38d15b6f1c93765f1e1cb716a75",
+      "sha256": "434b406cf6c3a3a72ab6c3f80cf98b350a7f5592a4deffd9b23f9f28b46ef3fb",
       "staleSummary": false
     },
     "bench/src/report-payload.ts": {
@@ -815,9 +815,9 @@
       "fanIn": 0,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 839,
+      "loc": 991,
       "pkg": "@greplost/bench",
-      "sha256": "771f903ea5e3ffb3b0ab8e5578913d4c1adeacef10ebbbadacad53f4c5bbaabe",
+      "sha256": "aba2ee5a754860b13e7c12985d1624000d739e3ec6c77d098859712dd2e7ec7d",
       "staleSummary": false
     },
     "bench/src/truth/ts-calls.ts": {
@@ -865,9 +865,9 @@
       "fanIn": 18,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 683,
+      "loc": 691,
       "pkg": "@greplost/bench",
-      "sha256": "32d66c4d549198380b909954435f434b805552c4a9939669d1d5de4d5b09649c",
+      "sha256": "02468dd8b247f27595b77b269c1c8ae546de3909e96fe3fc28cafaf1998ea291",
       "staleSummary": false
     },
     "bench/src/truth/yaml-actions.ts": {
@@ -1276,9 +1276,9 @@
       "fanIn": 1,
       "fanOut": 10,
       "lang": "ts",
-      "loc": 398,
+      "loc": 407,
       "pkg": "@greplost/core",
-      "sha256": "b0d84d317468f85df10baf7e70275d6db490a71e2bb32c0bc65095b9d8b808e6",
+      "sha256": "3b6f4e0c658e15dffa3d9ff24833f9c2959f7a3b0cb56ba5267b06d93896d9c6",
       "staleSummary": false
     },
     "packages/core/src/config.ts": {
@@ -1643,9 +1643,9 @@
       "fanIn": 1,
       "fanOut": 5,
       "lang": "ts",
-      "loc": 595,
+      "loc": 615,
       "pkg": "@greplost/core",
-      "sha256": "2620189f8ac3438959806cb01317078b266b839fc6b06e3c3b4f170281f7fcac",
+      "sha256": "5710161f24375ab001ed498400f4163b3d77f80e13bd8e5e3642cc04fa7e5351",
       "staleSummary": false
     },
     "packages/core/src/graph/metrics.ts": {
@@ -2381,7 +2381,7 @@
       "lang": "ts",
       "loc": 138,
       "pkg": "@greplost/core",
-      "sha256": "0336c36cc18dedeb04025023fd4deca4cbd5cb0813d23723f0c8fb9ed4c5aa1c",
+      "sha256": "3db66f087b6a0c1fffe8a3c1d57fb84dac4cf6a00c9a9cd390a274d5d5e4a5ff",
       "staleSummary": false
     },
     "packages/core/src/signals/next.ts": {
@@ -2432,9 +2432,9 @@
       "fanIn": 1,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 242,
+      "loc": 248,
       "pkg": "@greplost/core",
-      "sha256": "040cdd918e7e5a9d2bd3d9a8494fa1f180aaf020395184b474b181fbe336f285",
+      "sha256": "9432a98b06fb83ea9d8e4ae915db0212cbcd9427ca4ea57924f273d72ed7bc28",
       "staleSummary": false
     },
     "packages/core/src/signals/tanstack.ts": {
@@ -2473,9 +2473,9 @@
       "fanIn": 4,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 255,
+      "loc": 259,
       "pkg": "@greplost/core",
-      "sha256": "e4fa53891bd074a2e74c1ea6560803ff8933690ae94cf08883cb23d640b07b03",
+      "sha256": "47846b2b1a6d9cd039a529d10b0b4a351dd17850ac94ffd0a8b8a7711f0e45b2",
       "staleSummary": false
     },
     "packages/core/src/unparsable.ts": {
@@ -2852,7 +2852,7 @@
       "lang": "ts",
       "loc": 777,
       "pkg": "@greplost/semantic",
-      "sha256": "7bc1030527c8fb3929391419cfb29d4f45abc1d4c88e6dccdd83cfcbcd1c6474",
+      "sha256": "9bd50530cc5561da2e117afcdb85b55ece462019314532a54bdee153fff92ff4",
       "staleSummary": false
     },
     "packages/semantic/src/runner.ts": {
@@ -2944,9 +2944,9 @@
       "fanIn": 2,
       "fanOut": 8,
       "lang": "ts",
-      "loc": 583,
+      "loc": 585,
       "pkg": "@greplost/sync",
-      "sha256": "c23475be22e1ed25fe00b25eadc12d48ca11e2ce97c00cdb3d40881dba3d85fd",
+      "sha256": "86bc89531681ae203c9aff536c33a168d2bac61e2472be92b6326020bb35efe6",
       "staleSummary": false
     },
     "packages/sync/src/index.ts": {
@@ -2985,6 +2985,7 @@
         "isStructurePath",
         "listStructurePaths",
         "parseCacheKey",
+        "parseCacheStamp",
         "readAndClearDirty",
         "readState",
         "readSummaries",
@@ -2999,9 +3000,9 @@
       "fanIn": 9,
       "fanOut": 11,
       "lang": "ts",
-      "loc": 49,
+      "loc": 50,
       "pkg": "@greplost/sync",
-      "sha256": "ab3859c7d115d0f2fe8ea013f73ac68d7fdcb803371aa39ad8bf6bac371685f7",
+      "sha256": "676d01f3b654fbf589f097f21610875aad7aef582dee33deb3c802241b1f4ee7",
       "staleSummary": false
     },
     "packages/sync/src/init.ts": {
@@ -3046,14 +3047,15 @@
         "PARSE_CACHE_STAMP",
         "PARSE_CACHE_VERSION",
         "PARSE_CACHE_VERSION_KEY",
-        "parseCacheKey"
+        "parseCacheKey",
+        "parseCacheStamp"
       ],
       "fanIn": 3,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 251,
+      "loc": 277,
       "pkg": "@greplost/sync",
-      "sha256": "63b4ec3b9c2dc2acb17043243126b467e8bd963c8d4b855f3e41918cef1c4c5a",
+      "sha256": "d14e44d1af69ad10fbecd43b24f2e907f41f931cfa7dde5f1dc9114d22ebf3b9",
       "staleSummary": false
     },
     "packages/sync/src/state.ts": {
@@ -3319,14 +3321,14 @@
         "@greplost/sync"
       ],
       "files": 48,
-      "loc": 21229,
+      "loc": 21394,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 63,
-      "loc": 12206,
+      "loc": 12245,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
@@ -3370,7 +3372,7 @@
         "@greplost/render"
       ],
       "files": 12,
-      "loc": 3117,
+      "loc": 3146,
       "path": "packages/sync",
       "rdeps": [
         "@greplost/bench",
@@ -3413,5 +3415,5 @@
       "rdeps": []
     }
   },
-  "version": "1"
+  "version": "2"
 }

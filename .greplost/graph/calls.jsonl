@@ -906,6 +906,7 @@
 {"confidence":"high","from":"bench/src/truth/rust.ts#rustTruthTool","kind":"call","to":"bench/src/truth/rust.ts#toolHash"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#analyse","kind":"call","to":"bench/src/truth/signals-ts.ts#normalizeId"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#analyse","kind":"call","to":"bench/src/truth/signals-ts.ts#readCompilerOptions"}
+{"confidence":"high","from":"bench/src/truth/signals-ts.ts#analyse","kind":"call","to":"bench/src/truth/signals-ts.ts#resolveRouteHandlers"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#analyse","kind":"call","to":"bench/src/truth/signals-ts.ts#toPosix"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#analyse","kind":"call","to":"bench/src/truth/signals-ts.ts#visitFile"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#analyse","kind":"call","to":"bench/src/truth/ts-workspace.ts#WorkspaceEntryMapper.load"}
@@ -918,7 +919,6 @@
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#defaultExportName","kind":"call","to":"bench/src/truth/signals-ts.ts#unwrap"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#emitTanstackRoute","kind":"call","to":"bench/src/truth/signals-ts.ts#nodeIdOf"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#emitTanstackRoute","kind":"call","to":"bench/src/truth/signals-ts.ts#propertyName"}
-{"confidence":"high","from":"bench/src/truth/signals-ts.ts#emitTanstackRoute","kind":"call","to":"bench/src/truth/signals-ts.ts#reference"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#emitTanstackRoute","kind":"call","to":"bench/src/truth/signals-ts.ts#unwrap"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#expressionTailName","kind":"call","to":"bench/src/truth/signals-ts.ts#expressionTailName"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#expressionTailName","kind":"call","to":"bench/src/truth/signals-ts.ts#unwrap"}
@@ -957,7 +957,6 @@
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#nextNodes","kind":"call","to":"bench/src/truth/signals-ts.ts#appRoutePath"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#nextNodes","kind":"call","to":"bench/src/truth/signals-ts.ts#defaultExportName"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#nextNodes","kind":"call","to":"bench/src/truth/signals-ts.ts#nodeIdOf"}
-{"confidence":"high","from":"bench/src/truth/signals-ts.ts#nextNodes","kind":"call","to":"bench/src/truth/signals-ts.ts#reference"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#normalizeId","kind":"call","to":"bench/src/truth/signals-ts.ts#toPosix"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#objectArgument","kind":"call","to":"bench/src/truth/signals-ts.ts#unwrap"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#pulumiNodes","kind":"call","to":"bench/src/truth/signals-ts.ts#Names"}
@@ -971,6 +970,16 @@
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#reactNodes","kind":"call","to":"bench/src/truth/signals-ts.ts#nodeIdOf"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#reactNodes","kind":"call","to":"bench/src/truth/signals-ts.ts#reactApplies"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#reactNodes","kind":"call","to":"bench/src/truth/signals-ts.ts#topLevelBindings"}
+{"confidence":"high","from":"bench/src/truth/signals-ts.ts#resolveHandlerIn","kind":"call","to":"bench/src/truth/signals-ts.ts#nodeIdOf"}
+{"confidence":"high","from":"bench/src/truth/signals-ts.ts#resolveHandlerThroughImport","kind":"call","to":"bench/src/truth/signals-ts.ts#defaultExportName"}
+{"confidence":"high","from":"bench/src/truth/signals-ts.ts#resolveHandlerThroughImport","kind":"call","to":"bench/src/truth/signals-ts.ts#importBindingsFor"}
+{"confidence":"high","from":"bench/src/truth/signals-ts.ts#resolveHandlerThroughImport","kind":"call","to":"bench/src/truth/signals-ts.ts#moduleSourceFile"}
+{"confidence":"high","from":"bench/src/truth/signals-ts.ts#resolveHandlerThroughImport","kind":"call","to":"bench/src/truth/signals-ts.ts#normalizeId"}
+{"confidence":"high","from":"bench/src/truth/signals-ts.ts#resolveHandlerThroughImport","kind":"call","to":"bench/src/truth/signals-ts.ts#resolveHandlerIn"}
+{"confidence":"high","from":"bench/src/truth/signals-ts.ts#resolveRouteHandlers","kind":"call","to":"bench/src/truth/signals-ts.ts#reference"}
+{"confidence":"high","from":"bench/src/truth/signals-ts.ts#resolveRouteHandlers","kind":"call","to":"bench/src/truth/signals-ts.ts#resolveHandlerIn"}
+{"confidence":"high","from":"bench/src/truth/signals-ts.ts#resolveRouteHandlers","kind":"call","to":"bench/src/truth/signals-ts.ts#resolveHandlerThroughImport"}
+{"confidence":"high","from":"bench/src/truth/signals-ts.ts#resolveRouteHandlers","kind":"call","to":"bench/src/truth/signals-ts.ts#topLevelBindings"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#rootIdentifier","kind":"call","to":"bench/src/truth/signals-ts.ts#unwrap"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#stringArgument","kind":"call","to":"bench/src/truth/signals-ts.ts#unwrap"}
 {"confidence":"high","from":"bench/src/truth/signals-ts.ts#tanstackNodes","kind":"call","to":"bench/src/truth/signals-ts.ts#Names"}
@@ -1261,8 +1270,8 @@
 {"confidence":"high","from":"packages/core/src/build.ts#readSources","kind":"call","to":"packages/core/src/build.ts#readOne"}
 {"confidence":"high","from":"packages/core/src/build.ts#recordKey","kind":"call","to":"packages/core/src/signals/index.ts#signalPathKey"}
 {"confidence":"high","from":"packages/core/src/build.ts#restamp","kind":"call","to":"packages/core/src/build.ts#freezeRecord"}
-{"confidence":"high","from":"packages/core/src/build.ts#restamp","kind":"call","to":"packages/core/src/schema.ts#isNodeKind"}
 {"confidence":"high","from":"packages/core/src/build.ts#restamp","kind":"call","to":"packages/core/src/schema.ts#nodeId"}
+{"confidence":"high","from":"packages/core/src/build.ts#restamp","kind":"call","to":"packages/core/src/schema.ts#splitNodeId"}
 {"confidence":"high","from":"packages/core/src/build.ts#restamp","kind":"call","to":"packages/core/src/schema.ts#symbolId"}
 {"confidence":"high","from":"packages/core/src/config.ts#loadConfig","kind":"call","to":"packages/core/src/config.ts#invalid"}
 {"confidence":"high","from":"packages/core/src/config.ts#loadConfig","kind":"call","to":"packages/core/src/config.ts#validateConfig"}
@@ -1636,11 +1645,13 @@
 {"confidence":"high","from":"packages/core/src/graph/directories.ts#resolvedImportTargets","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#buildExportIndex","kind":"call","to":"packages/core/src/graph/link.ts#exportedOnlyAsDefault"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#buildExportIndex","kind":"call","to":"packages/core/src/graph/link.ts#importBindings"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts#buildExportIndex","kind":"call","to":"packages/core/src/graph/link.ts#isNodeDeclaration"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#buildExportIndex","kind":"call","to":"packages/core/src/graph/link.ts#resolvedSpecifiers"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#buildExportIndex","kind":"call","to":"packages/core/src/graph/link.ts#topLevelDeclarations"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#buildExportIndex","kind":"call","to":"packages/core/src/graph/tarjan.ts#sccComponents"}
-{"confidence":"high","from":"packages/core/src/graph/link.ts#buildExportIndex","kind":"call","to":"packages/core/src/schema.ts#isNodeKind"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts#isNodeDeclaration","kind":"call","to":"packages/core/src/schema.ts#splitNodeId"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#importBindings"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#isNodeDeclaration"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#resolveMember"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#resolveName"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#resolvedSpecifiers"}
@@ -1662,6 +1673,7 @@
 {"confidence":"high","from":"packages/core/src/graph/link.ts#resolveName","kind":"call","to":"packages/core/src/graph/link.ts#targetOf"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#resolveName","kind":"call","to":"packages/core/src/schema.ts#symbolId"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#targetOf","kind":"call","to":"packages/core/src/schema.ts#symbolId"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts#topLevelDeclarations","kind":"call","to":"packages/core/src/graph/link.ts#isNodeDeclaration"}
 {"confidence":"high","from":"packages/core/src/graph/metrics.ts#computeMetrics","kind":"call","to":"packages/core/src/graph/blast.ts#blastRadius"}
 {"confidence":"high","from":"packages/core/src/graph/metrics.ts#computeMetrics","kind":"call","to":"packages/core/src/graph/directories.ts#expandDirectoryTargets"}
 {"confidence":"high","from":"packages/core/src/graph/metrics.ts#computeMetrics","kind":"call","to":"packages/core/src/graph/directories.ts#resolvedImportTargets"}
@@ -2285,6 +2297,7 @@
 {"confidence":"high","from":"packages/sync/src/lock.ts#withLock","kind":"call","to":"packages/sync/src/lock.ts#lockPath"}
 {"confidence":"high","from":"packages/sync/src/lock.ts#withLock","kind":"call","to":"packages/sync/src/lock.ts#refresh"}
 {"confidence":"high","from":"packages/sync/src/lock.ts#withLock","kind":"call","to":"packages/sync/src/lock.ts#release"}
+{"confidence":"high","from":"packages/sync/src/parse-cache.ts#FileParseCache.constructor","kind":"call","to":"packages/sync/src/parse-cache.ts#parseCacheStamp"}
 {"confidence":"high","from":"packages/sync/src/parse-cache.ts#FileParseCache.ensureLoaded","kind":"call","to":"packages/sync/src/parse-cache.ts#FileParseCache.load"}
 {"confidence":"high","from":"packages/sync/src/parse-cache.ts#FileParseCache.get","kind":"call","to":"packages/sync/src/parse-cache.ts#FileParseCache.ensureLoaded"}
 {"confidence":"high","from":"packages/sync/src/parse-cache.ts#FileParseCache.get","kind":"call","to":"packages/sync/src/parse-cache.ts#parseCacheKey"}

@@ -31,6 +31,6 @@
 - `class NameAllocator`  L201-214
 - `NameAllocator.take(name: string): string`  L204-213
 - `interface SignalNodeInput`  L217-226
-- `function signalNode(input: SignalNodeInput): Declaration`  L238-255
+- `function signalNode(input: SignalNodeInput): Declaration`  L238-259
 
 **Calls:** `clip` → [`packages/core/src/extract/ts-signature.ts#clip`](../extract/ts-signature.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](../extract/ts-signature.ts.md) (high), `functionValue` → [`packages/core/src/extract/ts-signature.ts#functionValue`](../extract/ts-signature.ts.md) (high), `unwrapValue` → [`packages/core/src/extract/ts-signature.ts#unwrapValue`](../extract/ts-signature.ts.md) (high), `nodeId` → [`packages/core/src/schema.ts#nodeId`](../schema.ts.md) (high), `collectBinding` → [`packages/core/src/signals/ts-nodes.ts#collectBinding`](ts-nodes.ts.md) (high), `memberPath` → [`packages/core/src/signals/ts-nodes.ts#memberPath`](ts-nodes.ts.md) (high)

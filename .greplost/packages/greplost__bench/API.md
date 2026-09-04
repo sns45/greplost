@@ -269,11 +269,11 @@
 ## bench/src/report-evals.ts
 
 - `function eval1Section(payload: Payload | null, assetsRel = "docs/assets"): EvalSection` L47-126
-- `function eval2Section(payload: Payload | null): EvalSection` L184-239
-- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection` L252-357
-- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection` L363-450
-- `function eval5Section(payload: Payload | null): EvalSection` L474-502
-- `function mapqualitySection(payload: Payload | null): EvalSection` L504-562
+- `function eval2Section(payload: Payload | null): EvalSection` L189-244
+- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection` L257-362
+- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection` L368-455
+- `function eval5Section(payload: Payload | null): EvalSection` L479-507
+- `function mapqualitySection(payload: Payload | null): EvalSection` L509-567
 
 ## bench/src/report-payload.ts
 
@@ -466,7 +466,7 @@
 - `interface SignalExtra` L84-87
 - `function generateExtra(root: string, files: string[]): SignalExtra` L89-97
 - `function generateTruth(root: string, files: string[]): Truth` L103-115
-- `function appRoutePath(file: string): string | undefined` L553-564
+- `function appRoutePath(file: string): string | undefined` L707-718
 
 ## bench/src/truth/ts-calls.ts
 
@@ -486,10 +486,10 @@
 
 ## bench/src/truth/ts.ts
 
-- `interface Truth` L46-67
-- `function listTypeScriptFiles(root: string): string[]` L79-97
-- `interface TruthOptions` L100-111
-- `function generateTsTruth(root: string, files: string[], options: TruthOptions = {}): Truth` L191-400
+- `interface Truth` L46-75
+- `function listTypeScriptFiles(root: string): string[]` L87-105
+- `interface TruthOptions` L108-119
+- `function generateTsTruth(root: string, files: string[], options: TruthOptions = {}): Truth` L199-408
 
 ## bench/src/truth/yaml-actions.ts
 

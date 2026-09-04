@@ -53,7 +53,7 @@
 - re-exports `InitOptions`, `InitResult` from `./init.ts`
 - re-exports `LOCK_HEARTBEAT_MS`, `LOCK_STALE_MS`, `isLocked`, `isStaleLock`, `withLock` from `./lock.ts`
 - re-exports `LockInfo`, `WithLockOptions` from `./lock.ts`
-- re-exports `FileParseCache`, `PARSE_CACHE_PATH`, `PARSE_CACHE_STAMP`, `PARSE_CACHE_VERSION`, `PARSE_CACHE_VERSION_KEY`, `parseCacheKey` from `./parse-cache.ts`
+- re-exports `FileParseCache`, `PARSE_CACHE_PATH`, `PARSE_CACHE_STAMP`, `PARSE_CACHE_VERSION`, `PARSE_CACHE_VERSION_KEY`, `parseCacheKey`, `parseCacheStamp` from `./parse-cache.ts`
 - re-exports `readState`, `writeState` from `./state.ts`
 - re-exports `SyncState` from `./state.ts`
 
@@ -79,8 +79,9 @@
 - `const PARSE_CACHE_VERSION = "2"` L77-77
 - `const PARSE_CACHE_VERSION_KEY = "#version"` L80-80
 - `const PARSE_CACHE_STAMP = `${SCHEMA_VERSION}/${PARSE_CACHE_VERSION}`` L83-83
-- `function parseCacheKey(sha256: string, lang: Lang): string` L86-88
-- `class FileParseCache implements ParseCache` L110-220
+- `function parseCacheStamp(signals?: readonly string[]): string` L100-103
+- `function parseCacheKey(sha256: string, lang: Lang): string` L106-108
+- `class FileParseCache implements ParseCache` L130-246
 
 ## packages/sync/src/state.ts
 
