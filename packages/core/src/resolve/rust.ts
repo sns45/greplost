@@ -41,7 +41,7 @@ const AUTO_TARGET_DIRS = ["src/bin", "examples", "tests", "benches"] as const;
 // ---------------------------------------------------------------------------
 
 /** The handful of Cargo.toml facts the module tree needs. */
-export interface CargoManifest {
+interface CargoManifest {
   /** `[package] name`, `-` normalised to `_`; "" when the manifest declares none. */
   name: string;
   /** `[lib] path`, `[[bin]] path`, `[[example]] path`, … relative to the manifest's directory. */
@@ -82,7 +82,7 @@ function arrayStrings(text: string): string[] {
  * bare string or a string array, and a manifest it cannot understand degrades to "no crate
  * name, no explicit targets", which falls back on the conventional layout rather than guessing.
  */
-export function parseCargoManifest(text: string | null): CargoManifest {
+function parseCargoManifest(text: string | null): CargoManifest {
   const manifest: CargoManifest = { name: "", targetPaths: [], members: [] };
   if (text === null) return manifest;
 
@@ -157,7 +157,7 @@ function relativeTo(dir: string, path: string): string | null {
 }
 
 /** The module name a file contributes: `a/b.rs` -> `b`, `a/b/mod.rs` -> `b`. */
-export function rustModuleName(path: string): string {
+function rustModuleName(path: string): string {
   const base = path.slice(path.lastIndexOf("/") + 1).replace(/\.rs$/u, "");
   if (base !== "mod") return base;
   const dir = parentDir(path);
@@ -403,15 +403,27 @@ export interface RustCallIndex {
   modules: Map<string, Map<string, string[]>>;
   /** file -> re-exported name -> every `pub use` that supplies it. */
   reexports: Map<string, Map<string, Binding[]>>;
+  /**
+   * file -> the repo files a `use …::*` glob brings into scope, other than the file itself.
+   *
+   * A glob of one's own file (`mod tests { use super::*; }`) adds nothing the same-file rule
+   * does not already cover, so it never counts towards "exactly one glob in scope".
+   */
+  globs: Map<string, string[]>;
 }
 
-const EMPTY_INDEX: RustCallIndex = {
-  items: new Map(),
-  members: new Map(),
-  bindings: new Map(),
-  modules: new Map(),
-  reexports: new Map(),
-};
+/**
+ * The index a repo with no Rust file gets. Frozen, because it is shared by every such call and a
+ * consumer that wrote into it would poison the next one.
+ */
+const EMPTY_INDEX: RustCallIndex = Object.freeze({
+  items: Object.freeze(new Map()),
+  members: Object.freeze(new Map()),
+  bindings: Object.freeze(new Map()),
+  modules: Object.freeze(new Map()),
+  reexports: Object.freeze(new Map()),
+  globs: Object.freeze(new Map()),
+});
 
 function nest<V>(map: Map<string, Map<string, V>>, key: string): Map<string, V> {
   const existing = map.get(key);
@@ -471,19 +483,28 @@ export function buildRustCallIndex(files: readonly FileRecord[], imports: readon
     bindings: new Map(),
     modules: new Map(),
     reexports: new Map(),
+    globs: new Map(),
   };
   const paths = new Set(rustFiles.map((file) => file.path));
 
   for (const file of rustFiles) {
     const items = nest(index.items, file.path);
     const members = nest(index.members, file.path);
+    // A member name two impls both declare (two traits each with a `go` for one type) is
+    // ambiguous: `extract` gives the second declaration the id `<Type>.go~2`, and the *name*
+    // now points at two of them, so it resolves to **nothing** rather than to whichever
+    // happened to come first (driver ruling 2026-09-04).
+    const ambiguous = new Set<string>();
     for (const decl of file.decls) {
       if (decl.parent === undefined) {
         if (!items.has(decl.name)) items.set(decl.name, decl.kind);
-      } else if (decl.name.includes(".") && !members.has(decl.name)) {
-        members.set(decl.name, decl.kind);
+        continue;
       }
+      if (!decl.name.includes(".")) continue;
+      if (members.has(decl.name)) ambiguous.add(decl.name);
+      else members.set(decl.name, decl.kind);
     }
+    for (const name of ambiguous) members.delete(name);
   }
 
   // file -> specifier -> the repo file it resolved to. Only a repo file can carry a call.
@@ -514,7 +535,10 @@ export function buildRustCallIndex(files: readonly FileRecord[], imports: readon
         continue;
       }
       for (const symbol of record.symbols) {
-        if (symbol.name === "*") continue;
+        if (symbol.name === "*") {
+          if (target !== file.path) push(index.globs, file.path, target, (a, b) => a === b);
+          continue;
+        }
         // `use crate::retry;` binds a module, not a name inside one.
         if (symbol.name === last && rustModuleName(target) === last) {
           push(modules, symbol.local, target, (a, b) => a === b);
@@ -540,6 +564,9 @@ function callable(kind: string | undefined): boolean {
  * `Type::method` where the impl declaring `method` is reachable; `this.method` inside an impl;
  * a module-qualified `module::function`.
  * `med`: a name reached through exactly one `pub use`.
+ *
+ * A bare name no `use` supplies falls through to the glob rule: exactly one `use …::*` in scope
+ * and exactly one target declaring the name is a unique resolution, so it is `high` too.
  */
 export function resolveRustCall(
   file: FileRecord,
@@ -556,7 +583,14 @@ export function resolveRustCall(
     if (callable(items?.get(callee))) return { to: symbolId(file.path, callee), confidence: "high" };
     // 2. A name imported by exactly one `use` **whose target declares it**.
     const candidates = index.bindings.get(file.path)?.get(callee) ?? [];
-    return agreed(candidates.map((binding) => declared(index, binding.module, binding.name)));
+    const imported = agreed(candidates.map((binding) => declared(index, binding.module, binding.name)));
+    if (imported !== null) return imported;
+    // 6. A glob: `use crate::a::*` then `go()`. Only when exactly one glob is in scope and its
+    // target declares the name, so nothing is guessed between two `*`s.
+    const globs = index.globs.get(file.path) ?? [];
+    const only = globs.length === 1 ? globs[0] : undefined;
+    if (only === undefined) return null;
+    return callable(index.items.get(only)?.get(callee)) ? { to: symbolId(only, callee), confidence: "high" } : null;
   }
 
   const object = callee.slice(0, dot);

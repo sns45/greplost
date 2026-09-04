@@ -34,14 +34,45 @@ import type { Truth } from "./ts.ts";
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..", "..");
 /** The vendored oracle. A script, so there is nothing to build and nothing to cache. */
 const TOOL_SOURCE = path.join(REPO_ROOT, "bench", "truth", "pytruth", "main.py");
-/** The interpreter the oracle is pinned to (`GREPLOST_PYTHON` overrides it in CI). */
-const PYTHON = process.env["GREPLOST_PYTHON"] ?? "python3";
+/**
+ * The interpreter the oracle runs on. `GREPLOST_PYTHON` overrides it, and every place that
+ * spawns the oracle - this module and its tests - must go through `pythonExecutable()`, so a
+ * run can never audit one interpreter and measure with another.
+ */
+export function pythonExecutable(): string {
+  const override = process.env["GREPLOST_PYTHON"];
+  return override === undefined || override === "" ? "python3" : override;
+}
+
+/**
+ * The oldest interpreter this oracle runs on: `tomllib` arrived in 3.11 and so did
+ * `ast.TryStar`, which it needs to walk an `except*` body.
+ *
+ * The pin in spec 0.5 is 3.14 and that is what the numbers in `RESULTS.md` were measured on,
+ * but the program is byte-identical on anything from 3.11 up: nothing it uses changed. Saying
+ * 3.11 rather than 3.14 is what lets the truth tests run on a stock `ubuntu-latest` (3.12)
+ * with no setup step, and the version actually used is recorded in the notes so a number can
+ * always be traced to the interpreter that produced it.
+ */
+export const PYTHON_FLOOR: readonly [number, number] = [3, 11];
 /** Parsing a large corpus is fast, but a cold filesystem on CI is not. */
 const RUN_TIMEOUT_MS = 15 * 60 * 1000;
 const MAX_BUFFER = 512 * 1024 * 1024;
 
-/** Oracle choices this generator applies, for `RESULTS.md` to disclose. */
-export const NOTES: readonly string[] = ["ast-only", "no-import-execution", "pep420-namespace-packages"];
+/**
+ * Oracle choices this generator applies, for `RESULTS.md` to disclose.
+ *
+ * Every tag is a property of *this program* and is byte-identical on every machine, which is
+ * the rule for anything that reaches `bench/results/*.json` (ruling 2026-09-04).
+ * `python>=3.11` is therefore the floor the oracle is checked against, never the version that
+ * happened to run: that one is enforced by `assertFloor` and printed to stderr.
+ */
+export const NOTES: readonly string[] = [
+  "ast-only",
+  "no-import-execution",
+  "pep420-namespace-packages",
+  "python>=3.11",
+];
 
 /** Absolute path of the oracle program. Exported so a test can name what it ran. */
 export function pytruthScript(): string {
@@ -57,6 +88,8 @@ interface PyToolOutput {
   cycles: string[][];
   errors: string[];
   modules: number;
+  /** The interpreter that produced the document, `major.minor`. */
+  python: string;
 }
 
 function stderrOf(cause: unknown): string {
@@ -78,7 +111,7 @@ function runTool(root: string, files: string[]): PyToolOutput {
   let stdout: string;
   try {
     writeFileSync(listFile, `${files.join("\n")}\n`, "utf8");
-    stdout = execFileSync(PYTHON, [TOOL_SOURCE, "--root", root, "--files", listFile], {
+    stdout = execFileSync(pythonExecutable(), [TOOL_SOURCE, "--root", root, "--files", listFile], {
       cwd: root,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
@@ -87,7 +120,8 @@ function runTool(root: string, files: string[]): PyToolOutput {
     });
   } catch (cause) {
     throw new Error(
-      `greplost: pytruth failed on ${root} (needs ${PYTHON} 3.14 with tomllib): ${stderrOf(cause)}`,
+      `greplost: pytruth failed on ${root} (needs ${pythonExecutable()} ` +
+        `${PYTHON_FLOOR.join(".")} or newer, for tomllib and ast.TryStar): ${stderrOf(cause)}`,
     );
   } finally {
     rmSync(scratch, { recursive: true, force: true });
@@ -108,7 +142,26 @@ function runTool(root: string, files: string[]): PyToolOutput {
     cycles: value.cycles ?? [],
     errors: value.errors ?? [],
     modules: value.modules ?? 0,
+    python: value.python ?? "",
   };
+}
+
+/**
+ * Refuse an interpreter older than the floor, rather than publishing whatever it produced.
+ *
+ * In practice a 3.10 interpreter never gets this far - the tool's `import tomllib` fails
+ * first, and `runTool` names the floor in that error - but an oracle that silently measured
+ * on an interpreter it was never checked against is exactly the kind of unverified number
+ * this suite exists to prevent.
+ */
+function assertFloor(version: string, root: string): void {
+  const [major = 0, minor = 0] = version.split(".").map((part) => Number.parseInt(part, 10) || 0);
+  const [floorMajor, floorMinor] = PYTHON_FLOOR;
+  if (major > floorMajor || (major === floorMajor && minor >= floorMinor)) return;
+  throw new Error(
+    `greplost: pytruth ran on python ${version || "?"} for ${root}, below the ` +
+      `${PYTHON_FLOOR.join(".")} floor this oracle is checked against (set GREPLOST_PYTHON)`,
+  );
 }
 
 /** The file part of a node id: `a/b.py#Sym` -> `a/b.py`. */
@@ -131,6 +184,7 @@ export function generateTruth(root: string, files: string[]): Truth {
   const absRoot = path.resolve(root);
   const requested = new Set(files);
   const tool = runTool(absRoot, files);
+  assertFloor(tool.python, absRoot);
 
   const covered = tool.files.filter((file) => requested.has(file)).sort(compareStrings);
   const coveredSet = new Set(covered);
@@ -171,5 +225,10 @@ export function generateTruth(root: string, files: string[]): Truth {
     );
   }
 
+  // The interpreter that ran goes to stderr, never into the payload: `notes` reaches
+  // `bench/results/*.json`, and a result file that differs between a 3.13 and a 3.14 machine
+  // could not be compared across machines at all (ruling 2026-09-04). The floor is a fixed
+  // tag in `NOTES` because it is a property of the program, identical everywhere.
+  console.error(`truth-python: ${covered.length} file(s) parsed by python ${tool.python} in ${absRoot}`);
   return { files: covered, imports, exports, calls, cycles, notes: [...NOTES] };
 }

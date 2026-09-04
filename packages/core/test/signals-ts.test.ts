@@ -3,9 +3,10 @@
  *
  * `describe` names are fixed by the spec and by `gates/leaf-2.3.md`; do not rename them.
  */
-import { beforeAll, describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createParser } from "../src/parser.ts";
 import type { ParserHandle } from "../src/parser.ts";
@@ -17,7 +18,7 @@ import { pulumiTsPass } from "../src/signals/pulumi-ts.ts";
 import { buildSnapshot } from "../src/build.ts";
 import type { SignalOutput, SignalPass } from "../src/signals/index.ts";
 import type { Declaration, Lang, ReferenceRecord, Snapshot } from "../src/schema.ts";
-import { compareDeclarations, stableStringify } from "../src/schema.ts";
+import { compareDeclarations, splitNodeId, stableStringify } from "../src/schema.ts";
 
 const ZERO_SHA = "0".repeat(64);
 const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
@@ -82,8 +83,10 @@ function refs(out: SignalOutput): Array<[string, string, string]> {
 describe("react components", () => {
   test("an upper-case function returning JSX becomes a component node", () => {
     const out = signals("src/Button.tsx", "tsx", "export function Button() { return <button/>; }\n");
+    // A component that calls no hook carries no `hooks` key at all, the same way it carries no
+    // `props` key: an empty string is not a fact about the component.
     expect(out.decls.map((d) => [d.id, d.kind, d.meta])).toEqual([
-      ["src/Button.tsx#component.Button", "component", { decl: "Button", hooks: "", signal: "react" }],
+      ["src/Button.tsx#component.Button", "component", { decl: "Button", signal: "react" }],
     ]);
   });
 
@@ -591,5 +594,107 @@ describe("tiny-signals-ts", () => {
     const again = await buildSnapshot({ root: FIXTURE, parser });
     expect(stableStringify(again.symbols)).toBe(stableStringify(snapshot.symbols));
     expect(stableStringify(again.references ?? [])).toBe(stableStringify(snapshot.references ?? []));
+  });
+});
+
+// ------------------------------------------------- byte-identical twins
+
+const temporaryDirs: string[] = [];
+afterAll(() => {
+  for (const dir of temporaryDirs) rmSync(dir, { recursive: true, force: true });
+});
+
+/** Build a snapshot over a throwaway repo written from `files` (repo-relative path -> text). */
+async function snapshotOf(files: Readonly<Record<string, string>>): Promise<Snapshot> {
+  const dir = mkdtempSync(join(tmpdir(), "greplost-signals-ts-"));
+  temporaryDirs.push(dir);
+  for (const [relative, text] of Object.entries(files)) {
+    const file = join(dir, relative);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, text);
+  }
+  return buildSnapshot({ root: dir, parser });
+}
+
+const TWIN_ROUTE =
+  'import { createFileRoute } from "@tanstack/react-start";\n' +
+  'export const Route = createFileRoute("/x")({});\n';
+
+const TWIN_INFRA =
+  'import * as aws from "@pulumi/aws";\n' +
+  'export const bucket = new aws.s3.Bucket("logs");\n';
+
+/**
+ * `extractAll` keys extraction by `(lang, sha256)` and re-stamps the shared record onto the
+ * second path, so a node id is rebuilt outside the pass that made it. `Declaration.id` is the
+ * canonical form (driver ruling 2026-09-04) and re-derivation goes through `splitNodeId`;
+ * `Declaration.name` is the bare node name, as the HCL nodes already are.
+ */
+describe("byte-identical files", () => {
+  let snapshot: Snapshot;
+
+  beforeAll(async () => {
+    snapshot = await snapshotOf({
+      "a/routes/x.tsx": TWIN_ROUTE,
+      "b/routes/x.tsx": TWIN_ROUTE,
+      "infra1/index.ts": TWIN_INFRA,
+      "infra2/index.ts": TWIN_INFRA,
+    });
+  });
+
+  test("both twins are indexed and share their bytes", () => {
+    expect(snapshot.files.map((f) => f.path)).toEqual([
+      "a/routes/x.tsx",
+      "b/routes/x.tsx",
+      "infra1/index.ts",
+      "infra2/index.ts",
+    ]);
+    expect(snapshot.files[0]?.sha256).toBe(snapshot.files[1]?.sha256 ?? "");
+    expect(snapshot.files[2]?.sha256).toBe(snapshot.files[3]?.sha256 ?? "");
+  });
+
+  test("a re-stamped node keeps its kind in the id and its bare name", () => {
+    const nodes = snapshot.symbols
+      .filter((d) => d.meta?.["signal"] !== undefined)
+      .map((d) => [d.id, d.name, d.kind]);
+    expect(nodes).toEqual([
+      ["a/routes/x.tsx#route./x", "/x", "route"],
+      ["b/routes/x.tsx#route./x", "/x", "route"],
+      ["infra1/index.ts#resource.bucket", "bucket", "resource"],
+      ["infra2/index.ts#resource.bucket", "bucket", "resource"],
+    ]);
+  });
+
+  test("every node id round-trips through splitNodeId", () => {
+    for (const decl of snapshot.symbols) {
+      if (decl.meta?.["signal"] === undefined) continue;
+      const parts = splitNodeId(decl.id);
+      expect(parts).not.toBeNull();
+      expect(parts?.file).toBe(decl.file);
+      expect(parts?.kind).toBe(decl.kind);
+      expect(parts?.name).toBe(decl.name);
+    }
+  });
+
+  test("a component node never shadows the function it names", async () => {
+    const shadow = await snapshotOf({
+      "src/Button.tsx":
+        "export function Button() { return <button/>; }\n",
+      "src/App.tsx":
+        'import { Button } from "./Button.tsx";\n' +
+        "export function App() { return <Button/>; }\n" +
+        "export const used = Button();\n",
+    });
+    const button = shadow.files.find((f) => f.path === "src/Button.tsx");
+    expect(button?.decls.map((d) => [d.id, d.name])).toEqual([
+      ["src/Button.tsx#Button", "Button"],
+      ["src/Button.tsx#component.Button", "Button"],
+    ]);
+    // The export index reports the function, not the node, and the call lands on the function.
+    expect(button?.exports.map((e) => e.name)).toEqual(["Button"]);
+    expect(shadow.manifest.files["src/Button.tsx"]?.exports).toEqual(["Button"]);
+    expect(shadow.calls.map((c) => [c.from, c.to])).toEqual([
+      ["src/App.tsx", "src/Button.tsx#Button"],
+    ]);
   });
 });

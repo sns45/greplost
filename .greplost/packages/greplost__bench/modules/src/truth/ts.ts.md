@@ -15,33 +15,33 @@
 **Blast radius:** 18 files (`greplost impact bench/src/truth/ts.ts`)
 
 **Key symbols:**
-- `interface Truth`  L46-67
-- `const SOURCE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts"] as const`  L70-70
-- `const CANDIDATE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"] as const`  L72-72
-- `const SKIP_DIRECTORIES = new Set([".git", "node_modules", "dist", "build", ".greplost"])`  L73-73
-- `function listTypeScriptFiles(root: string): string[]`  L79-97
-- `interface TruthOptions`  L100-111
-- `function diagnosticsEnabled(options: TruthOptions): boolean`  L114-117
-- `class ProjectOptions`  L140-189
-- `ProjectOptions.constructor( private readonly absRoot: string, private readonly canonical: (p: string) => string, )`  L143-146
-- `ProjectOptions.resolve(specifier: string, containingFile: string): string | undefined`  L149-154
-- `ProjectOptions.forFile(containingFile: string): { options: ts.CompilerOptions; cache: ts.ModuleResolutionCache } | null`  L156-180
-- `ProjectOptions.load(configPath: string, dir: string): { options: ts.CompilerOptions; cache: ts.ModuleResolutionCache } | null`  L182-188
-- `function generateTsTruth(root: string, files: string[], options: TruthOptions = {}): Truth`  L191-400
-- `function readCompilerOptions(absRoot: string): { options: ts.CompilerOptions; configErrors: ts.Diagnostic[] }`  L406-432
-- `function reportDiagnostics( program: ts.Program, configErrors: ts.Diagnostic[], coveredCount: number, missing: string[], diagnostics: boolean, ): void`  L444-466
-- `function moduleExportNames(checker: ts.TypeChecker, moduleSymbol: ts.Symbol): string[]`  L484-488
-- `function importedNames(clause: ts.ImportClause | undefined): string[]`  L491-501
-- `function reexportedNames(clause: ts.NamedExportBindings | undefined): string[]`  L504-508
-- `function importTypeName(qualifier: ts.EntityName | undefined): string`  L514-519
-- `function moduleLoadSpecifier(node: ts.CallExpression): ts.Expression | undefined`  L522-528
-- `function findCycles(nodes: string[], edges: Edge[]): string[][]`  L534-594
-- `class EdgeSet`  L607-640
-- `EdgeSet.add(from: string, to: string, kind: Edge["kind"], symbols: string[]): void`  L610-627
-- `EdgeSet.toArray(): Edge[]`  L629-639
-- `function extensionOf(file: string): ts.Extension`  L643-656
-- `function toPosix(p: string): string`  L658-660
-- `function normalizeId(absRoot: string, file: string): string`  L663-666
-- `function sourceCandidates(fileName: string): string[]`  L673-683
+- `interface Truth`  L46-75
+- `const SOURCE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts"] as const`  L78-78
+- `const CANDIDATE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"] as const`  L80-80
+- `const SKIP_DIRECTORIES = new Set([".git", "node_modules", "dist", "build", ".greplost"])`  L81-81
+- `function listTypeScriptFiles(root: string): string[]`  L87-105
+- `interface TruthOptions`  L108-119
+- `function diagnosticsEnabled(options: TruthOptions): boolean`  L122-125
+- `class ProjectOptions`  L148-197
+- `ProjectOptions.constructor( private readonly absRoot: string, private readonly canonical: (p: string) => string, )`  L151-154
+- `ProjectOptions.resolve(specifier: string, containingFile: string): string | undefined`  L157-162
+- `ProjectOptions.forFile(containingFile: string): { options: ts.CompilerOptions; cache: ts.ModuleResolutionCache } | null`  L164-188
+- `ProjectOptions.load(configPath: string, dir: string): { options: ts.CompilerOptions; cache: ts.ModuleResolutionCache } | null`  L190-196
+- `function generateTsTruth(root: string, files: string[], options: TruthOptions = {}): Truth`  L199-408
+- `function readCompilerOptions(absRoot: string): { options: ts.CompilerOptions; configErrors: ts.Diagnostic[] }`  L414-440
+- `function reportDiagnostics( program: ts.Program, configErrors: ts.Diagnostic[], coveredCount: number, missing: string[], diagnostics: boolean, ): void`  L452-474
+- `function moduleExportNames(checker: ts.TypeChecker, moduleSymbol: ts.Symbol): string[]`  L492-496
+- `function importedNames(clause: ts.ImportClause | undefined): string[]`  L499-509
+- `function reexportedNames(clause: ts.NamedExportBindings | undefined): string[]`  L512-516
+- `function importTypeName(qualifier: ts.EntityName | undefined): string`  L522-527
+- `function moduleLoadSpecifier(node: ts.CallExpression): ts.Expression | undefined`  L530-536
+- `function findCycles(nodes: string[], edges: Edge[]): string[][]`  L542-602
+- `class EdgeSet`  L615-648
+- `EdgeSet.add(from: string, to: string, kind: Edge["kind"], symbols: string[]): void`  L618-635
+- `EdgeSet.toArray(): Edge[]`  L637-647
+- `function extensionOf(file: string): ts.Extension`  L651-664
+- `function toPosix(p: string): string`  L666-668
+- `function normalizeId(absRoot: string, file: string): string`  L671-674
+- `function sourceCandidates(fileName: string): string[]`  L681-691
 
 **Calls:** `resolveCallEdge` → [`bench/src/truth/ts-calls.ts#resolveCallEdge`](ts-calls.ts.md) (high), `load` → [`bench/src/truth/ts-workspace.ts#WorkspaceEntryMapper.load`](ts-workspace.ts.md) (high), `EdgeSet` → [`bench/src/truth/ts.ts#EdgeSet`](ts.ts.md) (high), `ProjectOptions` → [`bench/src/truth/ts.ts#ProjectOptions`](ts.ts.md) (high), `forFile` → [`bench/src/truth/ts.ts#ProjectOptions.forFile`](ts.ts.md) (high), `load` → [`bench/src/truth/ts.ts#ProjectOptions.load`](ts.ts.md) (high), `diagnosticsEnabled` → [`bench/src/truth/ts.ts#diagnosticsEnabled`](ts.ts.md) (high), `extensionOf` → [`bench/src/truth/ts.ts#extensionOf`](ts.ts.md) (high), `findCycles` → [`bench/src/truth/ts.ts#findCycles`](ts.ts.md) (high), `importTypeName` → [`bench/src/truth/ts.ts#importTypeName`](ts.ts.md) (high), `importedNames` → [`bench/src/truth/ts.ts#importedNames`](ts.ts.md) (high), `moduleExportNames` → [`bench/src/truth/ts.ts#moduleExportNames`](ts.ts.md) (high), `moduleLoadSpecifier` → [`bench/src/truth/ts.ts#moduleLoadSpecifier`](ts.ts.md) (high), `normalizeId` → [`bench/src/truth/ts.ts#normalizeId`](ts.ts.md) (high), `readCompilerOptions` → [`bench/src/truth/ts.ts#readCompilerOptions`](ts.ts.md) (high), `reexportedNames` → [`bench/src/truth/ts.ts#reexportedNames`](ts.ts.md) (high), `reportDiagnostics` → [`bench/src/truth/ts.ts#reportDiagnostics`](ts.ts.md) (high), `sourceCandidates` → [`bench/src/truth/ts.ts#sourceCandidates`](ts.ts.md) (high), `toPosix` → [`bench/src/truth/ts.ts#toPosix`](ts.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high)

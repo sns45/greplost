@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `extractRust( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">`, `visibilityOf(node: Node): string | null`
+**Exports:** `extractRust( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">`
 
 **Imports:** `web-tree-sitter` (Node, Tree), [`../schema.ts`](../schema.ts.md) (CallSite, DeclKind, Declaration, ExportRecord, FileRecord, ImportRecord, ImportedSymbol, Lang, symbolId), [`./ts-signature.ts`](ts-signature.ts.md) (clip, field, lineOf, spanOf)
 
@@ -18,31 +18,35 @@
 - `const ITEM_KIND: Readonly<Record<string, DeclKind>> = { const_item: "const", enum_item: "enum", function_item: "function", function_signature_item: "function", impl_item: "impl", macro_definition: "f…`  L55-68
 - `const BINDERS: ReadonlySet<string> = new Set([ "closure_parameters", "for_expression", "if_let_expression", "let_condition", "let_declaration", "match_arm", "parameter", "while_let_expression", ])`  L71-80
 - `const MODULE_SEPARATOR = "::"`  L83-83
-- `function visibilityOf(node: Node): string | null`  L90-95
-- `function segmentsOf(node: Node | null): string[]`  L98-102
-- `function baseTypeName(node: Node | null): string | null`  L109-129
-- `function implName(node: Node): { name: string; type: string } | null`  L132-137
-- `function signatureOf(source: string, node: Node): string`  L140-144
-- `function typeParameterNames(node: Node): string[]`  L147-159
-- `interface RustState`  L165-174
-- `function addDeclaration( state: RustState, name: string, kind: DeclKind, signature: string, node: Node, visibility: string | null, parent: string | undefined, extraMeta?: Readonly<Record<string, stri…`  L176-202
-- `interface UseLeaf`  L209-216
-- `function useLeaves(node: Node, prefix: string[], out: UseLeaf[]): void`  L219-262
-- `function rebase(path: string[], mods: readonly string[]): string[]`  L272-291
-- `function collectUse(state: RustState, node: Node, mods: readonly string[]): void`  L293-310
-- `interface Scope`  L317-326
-- `const FILE_SCOPE: Scope = { prefix: "", parent: undefined, mods: [], typeBody: false }`  L328-328
-- `function collectItems(state: RustState, container: Node, scope: Scope): void`  L330-348
-- `function collectItem(state: RustState, node: Node, kind: DeclKind, scope: Scope): void`  L350-407
-- `type ReceiverTypes = Map<string, string | null>`  L414-414
-- `function patternNames(node: Node | null, out: string[]): void`  L417-426
-- `function bind(types: ReceiverTypes, name: string, type: string | null): void`  L428-436
-- `function typeOfValue(value: Node | null, selfType: string | null, generics: ReadonlySet<string>): string | null`  L439-453
-- `function normaliseType(name: string | null, selfType: string | null, generics: ReadonlySet<string>): string | null`  L455-460
-- `function receiverTypes(fn: Node, selfType: string | null, generics: ReadonlySet<string>): ReceiverTypes`  L469-497
-- `interface CallContext`  L500-507
-- `function calleeText(node: Node, ctx: CallContext): string | null`  L514-543
-- `function collectCalls(state: RustState, root: Node): void`  L545-579
-- `function extractRust( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">`  L586-606
+- `const NO_NAMES: ReadonlySet<string> = new Set<string>()`  L86-86
+- `function visibilityOf(node: Node): string | null`  L100-105
+- `function segmentsOf(node: Node | null): string[]`  L108-112
+- `function baseTypeName(node: Node | null): string | null`  L119-139
+- `function implName(node: Node): { name: string; type: string } | null`  L142-147
+- `function signatureOf(source: string, node: Node): string`  L150-154
+- `function typeParameterNames(node: Node): string[]`  L157-169
+- `interface RustState`  L175-190
+- `const TYPE_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>(["struct", "enum", "trait", "type"])`  L193-193
+- `function uniqueName(state: RustState, name: string): string`  L207-218
+- `function addDeclaration( state: RustState, name: string, kind: DeclKind, signature: string, node: Node, visibility: string | null, parent: string | undefined, extraMeta?: Readonly<Record<string, stri…`  L220-249
+- `interface UseLeaf`  L256-263
+- `function useLeaves(node: Node, prefix: string[], out: UseLeaf[]): void`  L266-309
+- `function rebase(path: string[], mods: readonly string[]): string[]`  L319-338
+- `function collectUse(state: RustState, node: Node, mods: readonly string[]): void`  L340-357
+- `interface Scope`  L364-373
+- `const FILE_SCOPE: Scope = { prefix: "", parent: undefined, mods: [], typeBody: false }`  L375-375
+- `function collectItems(state: RustState, container: Node, scope: Scope): void`  L377-395
+- `function collectItem(state: RustState, node: Node, kind: DeclKind, scope: Scope): void`  L397-456
+- `type ReceiverTypes = Map<string, string | null>`  L463-463
+- `function patternNames(node: Node | null, out: string[]): void`  L466-475
+- `function bind(types: ReceiverTypes, name: string, type: string | null): void`  L477-485
+- `function typeOfValue(value: Node | null, selfType: string | null, generics: ReadonlySet<string>): string | null`  L488-502
+- `function normaliseType(name: string | null, selfType: string | null, generics: ReadonlySet<string>): string | null`  L504-509
+- `function receiverTypes(fn: Node, selfType: string | null, generics: ReadonlySet<string>): ReceiverTypes`  L518-546
+- `function nestedFunctionNames(fn: Node): ReadonlySet<string>`  L556-570
+- `interface CallContext`  L573-582
+- `function calleeText(node: Node, ctx: CallContext): string | null`  L589-620
+- `function collectCalls(state: RustState, root: Node): void`  L622-658
+- `function extractRust( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">`  L665-699
 
-**Calls:** `addDeclaration` → [`packages/core/src/extract/rust.ts#addDeclaration`](rust.ts.md) (high), `baseTypeName` → [`packages/core/src/extract/rust.ts#baseTypeName`](rust.ts.md) (high), `bind` → [`packages/core/src/extract/rust.ts#bind`](rust.ts.md) (high), `calleeText` → [`packages/core/src/extract/rust.ts#calleeText`](rust.ts.md) (high), `collectCalls` → [`packages/core/src/extract/rust.ts#collectCalls`](rust.ts.md) (high), `collectItem` → [`packages/core/src/extract/rust.ts#collectItem`](rust.ts.md) (high), `collectItems` → [`packages/core/src/extract/rust.ts#collectItems`](rust.ts.md) (high), `collectUse` → [`packages/core/src/extract/rust.ts#collectUse`](rust.ts.md) (high), `implName` → [`packages/core/src/extract/rust.ts#implName`](rust.ts.md) (high), `normaliseType` → [`packages/core/src/extract/rust.ts#normaliseType`](rust.ts.md) (high), `patternNames` → [`packages/core/src/extract/rust.ts#patternNames`](rust.ts.md) (high), `rebase` → [`packages/core/src/extract/rust.ts#rebase`](rust.ts.md) (high), `receiverTypes` → [`packages/core/src/extract/rust.ts#receiverTypes`](rust.ts.md) (high), `segmentsOf` → [`packages/core/src/extract/rust.ts#segmentsOf`](rust.ts.md) (high), `signatureOf` → [`packages/core/src/extract/rust.ts#signatureOf`](rust.ts.md) (high), `typeOfValue` → [`packages/core/src/extract/rust.ts#typeOfValue`](rust.ts.md) (high), `typeParameterNames` → [`packages/core/src/extract/rust.ts#typeParameterNames`](rust.ts.md) (high), `useLeaves` → [`packages/core/src/extract/rust.ts#useLeaves`](rust.ts.md) (high), `visibilityOf` → [`packages/core/src/extract/rust.ts#visibilityOf`](rust.ts.md) (high), `clip` → [`packages/core/src/extract/ts-signature.ts#clip`](ts-signature.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](ts-signature.ts.md) (high), `lineOf` → [`packages/core/src/extract/ts-signature.ts#lineOf`](ts-signature.ts.md) (high), `spanOf` → [`packages/core/src/extract/ts-signature.ts#spanOf`](ts-signature.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)
+**Calls:** `addDeclaration` → [`packages/core/src/extract/rust.ts#addDeclaration`](rust.ts.md) (high), `baseTypeName` → [`packages/core/src/extract/rust.ts#baseTypeName`](rust.ts.md) (high), `bind` → [`packages/core/src/extract/rust.ts#bind`](rust.ts.md) (high), `calleeText` → [`packages/core/src/extract/rust.ts#calleeText`](rust.ts.md) (high), `collectCalls` → [`packages/core/src/extract/rust.ts#collectCalls`](rust.ts.md) (high), `collectItem` → [`packages/core/src/extract/rust.ts#collectItem`](rust.ts.md) (high), `collectItems` → [`packages/core/src/extract/rust.ts#collectItems`](rust.ts.md) (high), `collectUse` → [`packages/core/src/extract/rust.ts#collectUse`](rust.ts.md) (high), `implName` → [`packages/core/src/extract/rust.ts#implName`](rust.ts.md) (high), `nestedFunctionNames` → [`packages/core/src/extract/rust.ts#nestedFunctionNames`](rust.ts.md) (high), `normaliseType` → [`packages/core/src/extract/rust.ts#normaliseType`](rust.ts.md) (high), `patternNames` → [`packages/core/src/extract/rust.ts#patternNames`](rust.ts.md) (high), `rebase` → [`packages/core/src/extract/rust.ts#rebase`](rust.ts.md) (high), `receiverTypes` → [`packages/core/src/extract/rust.ts#receiverTypes`](rust.ts.md) (high), `segmentsOf` → [`packages/core/src/extract/rust.ts#segmentsOf`](rust.ts.md) (high), `signatureOf` → [`packages/core/src/extract/rust.ts#signatureOf`](rust.ts.md) (high), `typeOfValue` → [`packages/core/src/extract/rust.ts#typeOfValue`](rust.ts.md) (high), `typeParameterNames` → [`packages/core/src/extract/rust.ts#typeParameterNames`](rust.ts.md) (high), `uniqueName` → [`packages/core/src/extract/rust.ts#uniqueName`](rust.ts.md) (high), `useLeaves` → [`packages/core/src/extract/rust.ts#useLeaves`](rust.ts.md) (high), `visibilityOf` → [`packages/core/src/extract/rust.ts#visibilityOf`](rust.ts.md) (high), `clip` → [`packages/core/src/extract/ts-signature.ts#clip`](ts-signature.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](ts-signature.ts.md) (high), `lineOf` → [`packages/core/src/extract/ts-signature.ts#lineOf`](ts-signature.ts.md) (high), `spanOf` → [`packages/core/src/extract/ts-signature.ts#spanOf`](ts-signature.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)

@@ -135,6 +135,11 @@ const TRUTH_NOTES: Record<string, string> = {
     "the TypeScript truth generator emulated the installed-and-built state of workspace packages (package " +
     "manifests plus tsconfig `outDir`/`rootDir`) so cross-package imports and calls resolve on a corpus " +
     "checkout that was never installed or built (Appendix C ruling on 10.3).",
+  "nearest-tsconfig-resolution":
+    "the TypeScript truth generator resolved a specifier with the compiler options of the nearest `tsconfig.json` " +
+    "above the importing file, and only after standard resolution from the repo root had failed to land on a file " +
+    "already in the scored set; a corpus of independent example apps (TanStack `examples/`, Next.js `examples/`) " +
+    "keeps its path aliases there and the root config knows none of them (leaf 2.3 ruling).",
   "cha-callgraph":
     "the Go oracle built its call graph by class-hierarchy analysis rather than by pointer analysis.",
   "cha-over-approximation":

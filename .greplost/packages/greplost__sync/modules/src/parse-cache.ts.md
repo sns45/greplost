@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/sync` ([map](../../MAP.md))
 
-**Exports:** `FileParseCache (class)`, `PARSE_CACHE_PATH (const)`, `PARSE_CACHE_STAMP (const)`, `PARSE_CACHE_VERSION (const)`, `PARSE_CACHE_VERSION_KEY (const)`, `parseCacheKey(sha256: string, lang: Lang): string`
+**Exports:** `FileParseCache (class)`, `PARSE_CACHE_PATH (const)`, `PARSE_CACHE_STAMP (const)`, `PARSE_CACHE_VERSION (const)`, `PARSE_CACHE_VERSION_KEY (const)`, `parseCacheKey(sha256: string, lang: Lang): string`, `parseCacheStamp(signals?: readonly string[]): string`
 
 **Imports:** `node:fs` (readFileSync), `node:path` (default), [`@greplost/core`](../../../greplost__core/modules/src/index.ts.md) (ParseCache), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, FileRecord, LANG_BY_BASENAME, LANG_BY_EXTENSION, Lang, SCHEMA_VERSION, stableStringify), [`./write.ts`](write.ts.md) (safeWrite)
 
@@ -19,17 +19,18 @@
 - `const PARSE_CACHE_VERSION = "2"`  L77-77
 - `const PARSE_CACHE_VERSION_KEY = "#version"`  L80-80
 - `const PARSE_CACHE_STAMP = `${SCHEMA_VERSION}/${PARSE_CACHE_VERSION}``  L83-83
-- `function parseCacheKey(sha256: string, lang: Lang): string`  L86-88
-- `const LANGS: ReadonlySet<string> = new Set<string>([ ...Object.values(LANG_BY_EXTENSION), ...Object.values(LANG_BY_BASENAME), ])`  L97-100
-- `class FileParseCache implements ParseCache`  L110-220
-- `FileParseCache.constructor(root: string)`  L116-119
-- `FileParseCache.size(): number`  L122-125
-- `FileParseCache.load(): void`  L133-166
-- `FileParseCache.get(sha256: string, lang: Lang): FileRecord | undefined`  L168-171
-- `FileParseCache.set(record: FileRecord): void`  L173-177
-- `FileParseCache.save(keep?: ReadonlySet<string>): void`  L189-215
-- `FileParseCache.ensureLoaded(): void`  L217-219
-- `function freezeRecord(record: FileRecord): FileRecord`  L228-234
-- `function isFileRecord(value: unknown): value is FileRecord`  L236-251
+- `function parseCacheStamp(signals?: readonly string[]): string`  L100-103
+- `function parseCacheKey(sha256: string, lang: Lang): string`  L106-108
+- `const LANGS: ReadonlySet<string> = new Set<string>([ ...Object.values(LANG_BY_EXTENSION), ...Object.values(LANG_BY_BASENAME), ])`  L117-120
+- `class FileParseCache implements ParseCache`  L130-246
+- `FileParseCache.constructor(root: string, signals?: readonly string[])`  L141-145
+- `FileParseCache.size(): number`  L148-151
+- `FileParseCache.load(): void`  L159-192
+- `FileParseCache.get(sha256: string, lang: Lang): FileRecord | undefined`  L194-197
+- `FileParseCache.set(record: FileRecord): void`  L199-203
+- `FileParseCache.save(keep?: ReadonlySet<string>): void`  L215-241
+- `FileParseCache.ensureLoaded(): void`  L243-245
+- `function freezeRecord(record: FileRecord): FileRecord`  L254-260
+- `function isFileRecord(value: unknown): value is FileRecord`  L262-277
 
-**Calls:** `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high), `ensureLoaded` → [`packages/sync/src/parse-cache.ts#FileParseCache.ensureLoaded`](parse-cache.ts.md) (high), `load` → [`packages/sync/src/parse-cache.ts#FileParseCache.load`](parse-cache.ts.md) (high), `freezeRecord` → [`packages/sync/src/parse-cache.ts#freezeRecord`](parse-cache.ts.md) (high), `isFileRecord` → [`packages/sync/src/parse-cache.ts#isFileRecord`](parse-cache.ts.md) (high), `parseCacheKey` → [`packages/sync/src/parse-cache.ts#parseCacheKey`](parse-cache.ts.md) (high), `safeWrite` → [`packages/sync/src/write.ts#safeWrite`](write.ts.md) (high)
+**Calls:** `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high), `ensureLoaded` → [`packages/sync/src/parse-cache.ts#FileParseCache.ensureLoaded`](parse-cache.ts.md) (high), `load` → [`packages/sync/src/parse-cache.ts#FileParseCache.load`](parse-cache.ts.md) (high), `freezeRecord` → [`packages/sync/src/parse-cache.ts#freezeRecord`](parse-cache.ts.md) (high), `isFileRecord` → [`packages/sync/src/parse-cache.ts#isFileRecord`](parse-cache.ts.md) (high), `parseCacheKey` → [`packages/sync/src/parse-cache.ts#parseCacheKey`](parse-cache.ts.md) (high), `parseCacheStamp` → [`packages/sync/src/parse-cache.ts#parseCacheStamp`](parse-cache.ts.md) (high), `safeWrite` → [`packages/sync/src/write.ts#safeWrite`](write.ts.md) (high)

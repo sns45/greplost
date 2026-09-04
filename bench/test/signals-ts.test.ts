@@ -4,7 +4,7 @@
  * `describe` names are fixed by the spec and by `gates/leaf-2.3.md`.
  */
 import { afterAll, describe, expect, test } from "bun:test";
-import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -43,6 +43,23 @@ function copyFixture(label: string): string {
   const root = path.join(dir, "repo");
   cpSync(FIXTURE, root, { recursive: true });
   return root;
+}
+
+/** A throwaway repo written from `files` (repo-relative path -> text); returns its root. */
+function repoOf(label: string, files: Readonly<Record<string, string>>): string {
+  const dir = mkdtempSync(path.join(tmpdir(), `greplost-signals-${label}-`));
+  temporaries.push(dir);
+  for (const [relative, text] of Object.entries(files)) {
+    const file = path.join(dir, relative);
+    mkdirSync(path.dirname(file), { recursive: true });
+    writeFileSync(file, text);
+  }
+  return dir;
+}
+
+/** `[from, to, refKind]` for every reference the oracle reports over `files`. */
+function edgesOf(root: string, files: string[]): Array<[string, string, string]> {
+  return generateExtra(root, files).references.map((e) => [e.from, e.to, e.refKind] as [string, string, string]);
 }
 
 describe("checker oracle", () => {
@@ -121,6 +138,67 @@ describe("checker oracle", () => {
 
   test("an empty file list is not an error", () => {
     expect(generateExtra(FIXTURE, [])).toEqual({ nodes: [], references: [] });
+  });
+
+  // Spec 3.4 lets a `route-handler` land on the referenced component node *or* on the
+  // declaration, and `references/ts.ts` follows exactly one import to reach either. An oracle
+  // that always names a same-file component node scores a rule greplost never implemented.
+
+  test("a route-handler follows one import to the component node in the imported file", () => {
+    const root = repoOf("import-hop", {
+      "src/Home.tsx": "export function Home() {\n  return <div/>;\n}\n",
+      "src/routes/index.tsx":
+        'import { createFileRoute } from "@tanstack/react-router";\n' +
+        'import { Home } from "../Home.tsx";\n' +
+        'export const Route = createFileRoute("/")({ component: Home });\n',
+    });
+    expect(edgesOf(root, ["src/Home.tsx", "src/routes/index.tsx"])).toEqual([
+      ["src/routes/index.tsx#route./", "src/Home.tsx#component.Home", "route-handler"],
+    ]);
+  });
+
+  test("a route-handler falls back to the declaration when no component node names it", () => {
+    const root = repoOf("decl-fallback", {
+      "src/routes/index.tsx":
+        'import { createFileRoute } from "@tanstack/react-router";\n' +
+        'import { wrap } from "../wrap.ts";\n' +
+        "const Home = wrap(1);\n" +
+        'export const Route = createFileRoute("/")({ component: Home });\n',
+      "src/wrap.ts": "export function wrap(n: number): number {\n  return n;\n}\n",
+    });
+    expect(edgesOf(root, ["src/routes/index.tsx", "src/wrap.ts"])).toEqual([
+      ["src/routes/index.tsx#route./", "src/routes/index.tsx#Home", "route-handler"],
+    ]);
+  });
+
+  test("a route-handler naming nothing the program declares is dropped, never guessed", () => {
+    const root = repoOf("unresolved", {
+      "src/routes/index.tsx":
+        'import { createFileRoute } from "@tanstack/react-router";\n' +
+        'export const Route = createFileRoute("/")({ component: Missing });\n',
+    });
+    expect(edgesOf(root, ["src/routes/index.tsx"])).toEqual([]);
+  });
+
+  test("an App Router page whose default export is imported resolves through that import", () => {
+    const root = repoOf("next-import", {
+      "app/page.tsx": 'import Home from "../src/Home.tsx";\nexport default Home;\n',
+      "src/Home.tsx": "export default function Home() {\n  return <main/>;\n}\n",
+    });
+    expect(edgesOf(root, ["app/page.tsx", "src/Home.tsx"])).toEqual([
+      ["app/page.tsx#route./", "src/Home.tsx#component.Home", "route-handler"],
+    ]);
+  });
+
+  test("a target file outside the scored set is not a reference", () => {
+    const root = repoOf("outside", {
+      "src/Home.tsx": "export function Home() {\n  return <div/>;\n}\n",
+      "src/routes/index.tsx":
+        'import { createFileRoute } from "@tanstack/react-router";\n' +
+        'import { Home } from "../Home.tsx";\n' +
+        'export const Route = createFileRoute("/")({ component: Home });\n',
+    });
+    expect(edgesOf(root, ["src/routes/index.tsx"])).toEqual([]);
   });
 });
 
