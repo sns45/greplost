@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the thing
+        run: bun run scripts/x.ts
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push'
+    steps:
+      - uses: ./.github/actions/setup

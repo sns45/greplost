@@ -1,0 +1,27 @@
+{
+  "diagram": {
+    "maxNodes": 25,
+    "splitBy": "directory"
+  },
+  "exclude": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.git/**",
+    "**/.greplost/**"
+  ],
+  "include": [
+    "**"
+  ],
+  "languages": [
+    "js",
+    "ts",
+    "yaml"
+  ],
+  "packages": {
+    "roots": []
+  },
+  "semantic": {
+    "enabled": true,
+    "model": "claude-sonnet-5"
+  }
+}
