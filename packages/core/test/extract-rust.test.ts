@@ -129,6 +129,64 @@ impl Backoff for Store { fn next(&self) -> u64 { 0 } }
     expect(decl(record, "tests::b").parent).toBe("tests");
   });
 
+  test("two declarations that would share an id take a ~<n> suffix on the id, in source order", () => {
+    const record = extract(`pub struct Store;
+impl Store { pub fn new() -> Self { Store } }
+pub trait A { fn go(&self); }
+pub trait B { fn go(&self); }
+impl A for Store { fn go(&self) {} }
+impl B for Store { fn go(&self) {} }
+`);
+    expect(record.decls.map((d) => d.id)).toEqual([
+      "src/lib.rs#Store",
+      "src/lib.rs#Store~2",
+      "src/lib.rs#Store.new",
+      "src/lib.rs#A",
+      "src/lib.rs#A.go",
+      "src/lib.rs#B",
+      "src/lib.rs#B.go",
+      "src/lib.rs#A for Store",
+      "src/lib.rs#Store.go",
+      "src/lib.rs#B for Store",
+      "src/lib.rs#Store.go~2",
+    ]);
+    expect(new Set(record.decls.map((d) => d.id)).size).toBe(record.decls.length);
+    // The suffix lands on the **id**. `name` stays the path as written, so the export surface
+    // still reads `Store` and no reader is offered a name nobody can import.
+    expect(record.decls.map((d) => d.name)).toEqual([
+      "Store",
+      "Store",
+      "Store.new",
+      "A",
+      "A.go",
+      "B",
+      "B.go",
+      "A for Store",
+      "Store.go",
+      "B for Store",
+      "Store.go",
+    ]);
+    expect(record.exports).toEqual([
+      { name: "Store", kind: "named" },
+      { name: "A", kind: "named" },
+      { name: "B", kind: "named" },
+    ]);
+    // Both impls' methods hang off the struct, because the struct is declared in this file.
+    expect(record.decls.filter((d) => d.name === "Store.go").map((d) => d.parent)).toEqual(["Store", "Store"]);
+  });
+
+  test("an impl block's own id is the parent when the type is declared elsewhere", () => {
+    const record = extract("impl Store { pub fn put(&self) {} }\nimpl Store { fn also(&self) {} }\n");
+    expect(record.decls.map((d) => d.id)).toEqual([
+      "src/lib.rs#Store",
+      "src/lib.rs#Store.put",
+      "src/lib.rs#Store~2",
+      "src/lib.rs#Store.also",
+    ]);
+    expect(decl(record, "Store.put").parent).toBe("Store");
+    expect(decl(record, "Store.also").parent).toBe("Store~2");
+  });
+
   test("generics and where clauses stay in the signature", () => {
     const record = extract(`pub fn run<T: Backoff>(t: T) -> u64 where T: Clone { 0 }
 impl<T: Send> Store<T> { }
@@ -550,6 +608,80 @@ fn g(s: S) { let s = other(); s.go(); }
     ).toEqual(["go -> (dropped)"]);
   });
 
+  test("a block-scoped fn shadows the top-level one, so the call is dropped", () => {
+    // `helper()` inside `outer` names the `fn helper` declared in `outer`'s own body, not the
+    // top-level one. The extractor never descends into a body, so it cannot say which item the
+    // call lands on - and a guess here would be a wrong `high` edge.
+    expect(
+      resolveCalls(
+        {
+          "Cargo.toml": CARGO,
+          "src/lib.rs":
+            "pub fn helper() -> i32 { 0 }\npub fn outer() -> i32 { fn helper() -> i32 { 42 } helper() }\n",
+        },
+        "src/lib.rs",
+      ),
+    ).toEqual([]);
+  });
+
+  test("an explicitly module-qualified call is not shadowed by a block-scoped fn", () => {
+    expect(
+      resolveCalls(
+        {
+          "Cargo.toml": CARGO,
+          "src/lib.rs": "pub fn helper() {}\npub fn outer() { fn helper() {} self::helper() }\n",
+        },
+        "src/lib.rs",
+      ),
+    ).toEqual(["helper -> src/lib.rs#helper (high)"]);
+  });
+
+  test("a member name declared twice in one file resolves to nothing", () => {
+    expect(
+      resolveCalls(
+        {
+          "Cargo.toml": CARGO,
+          "src/lib.rs": `pub struct S;
+pub trait A { fn go(&self); }
+pub trait B { fn go(&self); }
+impl A for S { fn go(&self) {} }
+impl B for S { fn go(&self) {} }
+impl S { fn only(&self) {} }
+fn f(s: S) { s.go(); s.only(); }
+`,
+        },
+        "src/lib.rs",
+      ),
+    ).toEqual(["S.go -> (dropped)", "S.only -> src/lib.rs#S.only (high)"]);
+  });
+
+  test("a glob-imported function resolves at high confidence when one glob is in scope", () => {
+    expect(
+      resolveCalls(
+        {
+          "Cargo.toml": CARGO,
+          "src/lib.rs": "mod a;\nuse crate::a::*;\nfn f() { go(); }\n",
+          "src/a.rs": "pub fn go() {}\n",
+        },
+        "src/lib.rs",
+      ),
+    ).toEqual(["go -> src/a.rs#go (high)"]);
+  });
+
+  test("two globs in scope are ambiguous, so the call is dropped", () => {
+    expect(
+      resolveCalls(
+        {
+          "Cargo.toml": CARGO,
+          "src/lib.rs": "mod a;\nmod b;\nuse crate::a::*;\nuse crate::b::*;\nfn f() { go(); }\n",
+          "src/a.rs": "pub fn go() {}\n",
+          "src/b.rs": "pub fn other() {}\n",
+        },
+        "src/lib.rs",
+      ),
+    ).toEqual(["go -> (dropped)"]);
+  });
+
   test("a trait-dispatched call is absent from the fixture's call graph", async () => {
     const snapshot: Snapshot = await buildSnapshot({ root: TINY_RUST, config: RUST_CONFIG });
     expect(snapshot.calls.filter((c) => c.to.endsWith("#Backoff.next"))).toEqual([]);
@@ -597,6 +729,13 @@ describe("tiny-rust", () => {
     ]);
   });
 
+  test("the `mod tests { use super::*; }` self-import is not an edge", () => {
+    expect(snapshot.imports.filter((e) => e.from === e.to)).toEqual([]);
+    // The record is still written down: it is the linker that drops the self-loop.
+    const store = snapshot.files.find((f) => f.path === "src/store.rs");
+    expect(store?.imports.map((i) => i.specifier)).toContain("self");
+  });
+
   test("the pub use re-export carries the store's name into the lib crate", () => {
     expect(snapshot.manifest.files["src/lib.rs"]?.exports).toEqual([
       "Backoff",
@@ -617,6 +756,8 @@ describe("tiny-rust", () => {
       "src/main.rs#main -> src/store.rs#Store.put (high)",
       "src/retry.rs#warm -> src/store.rs#Store.put (high)",
       "src/store.rs#Store.put -> src/store.rs#Store.record (high)",
+      "src/store.rs#tests::puts_a_value -> src/store.rs#Store.new (high)",
+      "src/store.rs#tests::puts_a_value -> src/store.rs#Store.put (high)",
     ]);
     // `retry::run()` is written down as a call site; the linker dispatches Rust files to
     // `resolveRustCall` (wired by the driver after this leaf), and the direct call agrees.

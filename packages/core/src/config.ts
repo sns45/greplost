@@ -114,8 +114,20 @@ export function validateConfig(value: unknown): GreplostConfig {
   if ("diagram" in value) result.diagram = validateDiagram(value.diagram, DEFAULT_CONFIG.diagram);
   if ("packages" in value) result.packages = validatePackages(value.packages, DEFAULT_CONFIG.packages);
   if ("semantic" in value) result.semantic = validateSemantic(value.semantic, DEFAULT_CONFIG.semantic);
+  if ("signals" in value) result.signals = validateSignals(value.signals);
 
   return result;
+}
+
+/** Signal passes a config may name; absent `signals` means every pass whose `applies` says yes. */
+const SIGNAL_NAMES = new Set<string>(["next", "pulumi-go", "pulumi-ts", "react", "tanstack"]);
+
+function validateSignals(value: unknown): NonNullable<GreplostConfig["signals"]> {
+  const names = validateStringArray(value, "signals");
+  for (const name of names) {
+    if (!SIGNAL_NAMES.has(name)) invalid(`unknown signal pass "${name}" (known: ${[...SIGNAL_NAMES].sort().join(", ")})`);
+  }
+  return [...new Set(names)].sort() as NonNullable<GreplostConfig["signals"]>;
 }
 
 /**

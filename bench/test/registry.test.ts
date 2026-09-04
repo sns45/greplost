@@ -57,7 +57,12 @@ describe("loadTruth", () => {
   test("an implemented oracle is reachable and discloses its notes", async () => {
     const mod = await loadTruth("python");
     expect(typeof mod.generateTruth).toBe("function");
-    expect(mod.NOTES).toEqual(["ast-only", "no-import-execution", "pep420-namespace-packages"]);
+    expect(mod.NOTES).toEqual([
+      "ast-only",
+      "no-import-execution",
+      "pep420-namespace-packages",
+      "python>=3.11",
+    ]);
   });
 
   test("every truth module in the directory is reachable through the registry", async () => {

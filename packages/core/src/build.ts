@@ -31,8 +31,8 @@ import {
   compareDeclarations,
   compareEdges,
   compareStrings,
-  isNodeKind,
   nodeId,
+  splitNodeId,
   symbolId,
 } from "./schema.ts";
 import { loadConfig } from "./config.ts";
@@ -311,6 +311,12 @@ function freezeRecord(record: FileRecord): FileRecord {
  * declarations, because its per-example `outputs.tf` files are copies of one
  * another.
  *
+ * `Declaration.id` is the canonical form and nothing re-derives it from the
+ * kind and the name (driver ruling 2026-09-04): `splitNodeId` reads the kind
+ * and the name back out of the id the producer wrote, so a producer whose
+ * `name` is not what its id holds cannot double-stamp the kind
+ * (`#route.route./x`, 42 false positives on next-app before this).
+ *
  * The result is frozen either way: a foreign cache may hand back a record this
  * build never froze.
  */
@@ -319,11 +325,14 @@ function restamp(record: FileRecord, filePath: string): FileRecord {
   return freezeRecord({
     ...record,
     path: filePath,
-    decls: record.decls.map((decl) => ({
-      ...decl,
-      file: filePath,
-      id: isNodeKind(decl.kind) ? nodeId(filePath, decl.kind, decl.name) : symbolId(filePath, decl.name),
-    })),
+    decls: record.decls.map((decl) => {
+      const parts = splitNodeId(decl.id);
+      return {
+        ...decl,
+        file: filePath,
+        id: parts === null ? symbolId(filePath, decl.name) : nodeId(filePath, parts.kind, parts.name),
+      };
+    }),
   });
 }
 

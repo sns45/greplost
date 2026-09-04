@@ -360,9 +360,16 @@ describe("declarations", () => {
     expect(shape(r)).toEqual([
       ["Panel", "function", true],
       ["App", "function", true],
-      // A signal node is never a name the module exports, so `exported` is false on both.
-      ["component.Panel", "component", false],
-      ["component.App", "component", false],
+      // A signal node carries the bare node name, exactly as the HCL nodes do (driver ruling
+      // 2026-09-04); the kind lives in the id, which is what keeps the two `Panel`s apart.
+      ["Panel", "component", false],
+      ["App", "component", false],
+    ]);
+    expect(r.decls.map((d) => d.id)).toEqual([
+      "src/a.tsx#Panel",
+      "src/a.tsx#App",
+      "src/a.tsx#component.Panel",
+      "src/a.tsx#component.App",
     ]);
   });
 

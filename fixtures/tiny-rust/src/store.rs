@@ -24,3 +24,16 @@ impl Backoff for Store {
         0
     }
 }
+
+/// Rust's commonest self-import: `use super::*` inside a `#[cfg(test)]` child module names the
+/// very file it is written in. The map drops a file's edge to itself, so truth must too.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn puts_a_value() {
+        let s = Store::new();
+        s.put(1);
+    }
+}

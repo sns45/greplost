@@ -16,17 +16,17 @@
 
 **Key symbols:**
 - `function eval1Section(payload: Payload | null, assetsRel = "docs/assets"): EvalSection`  L47-126
-- `const TRUTH_NOTES: Record<string, string> = { "workspace-entry-mapping": "the TypeScript truth generator emulated the installed-and-built state of workspace packages (package " + "manifests plus tsco…`  L133-143
-- `function scoreRow(id: string, metric: string, target: string, score: Record<string, unknown> | null): EvalRow`  L145-155
-- `function callRow(high: Record<string, unknown> | null, all: Record<string, unknown> | null): EvalRow`  L157-171
-- `function counts(score: Record<string, unknown> | null): string`  L173-178
-- `function eval2Section(payload: Payload | null): EvalSection`  L184-239
-- `function runOfScenario(scenario: { repo: string | null; files: number | null } | undefined): { run?: RunTarget }`  L246-250
-- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection`  L252-357
-- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection`  L363-450
-- `function meanOver( categories: Map<string, Map<string, ConditionStats>>, condition: string, pick: (stats: ConditionStats) => number | null, ): number | null`  L452-464
-- `function pct(ratio: number | null): string | null`  L466-468
-- `function eval5Section(payload: Payload | null): EvalSection`  L474-502
-- `function mapqualitySection(payload: Payload | null): EvalSection`  L504-562
+- `const TRUTH_NOTES: Record<string, string> = { "workspace-entry-mapping": "the TypeScript truth generator emulated the installed-and-built state of workspace packages (package " + "manifests plus tsco…`  L133-148
+- `function scoreRow(id: string, metric: string, target: string, score: Record<string, unknown> | null): EvalRow`  L150-160
+- `function callRow(high: Record<string, unknown> | null, all: Record<string, unknown> | null): EvalRow`  L162-176
+- `function counts(score: Record<string, unknown> | null): string`  L178-183
+- `function eval2Section(payload: Payload | null): EvalSection`  L189-244
+- `function runOfScenario(scenario: { repo: string | null; files: number | null } | undefined): { run?: RunTarget }`  L251-255
+- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection`  L257-362
+- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection`  L368-455
+- `function meanOver( categories: Map<string, Map<string, ConditionStats>>, condition: string, pick: (stats: ConditionStats) => number | null, ): number | null`  L457-469
+- `function pct(ratio: number | null): string | null`  L471-473
+- `function eval5Section(payload: Payload | null): EvalSection`  L479-507
+- `function mapqualitySection(payload: Payload | null): EvalSection`  L509-567
 
 **Calls:** `boxChart` → [`bench/src/charts.ts#boxChart`](charts.ts.md) (high), `groupedBarChart` → [`bench/src/charts.ts#groupedBarChart`](charts.ts.md) (high), `lineChart` → [`bench/src/charts.ts#lineChart`](charts.ts.md) (high), `mermaidXy` → [`bench/src/charts.ts#mermaidXy`](charts.ts.md) (high), `structuralAccuracyChart` → [`bench/src/report-charts.ts#structuralAccuracyChart`](report-charts.ts.md) (high), `callRow` → [`bench/src/report-evals.ts#callRow`](report-evals.ts.md) (high), `counts` → [`bench/src/report-evals.ts#counts`](report-evals.ts.md) (high), `meanOver` → [`bench/src/report-evals.ts#meanOver`](report-evals.ts.md) (high), `pct` → [`bench/src/report-evals.ts#pct`](report-evals.ts.md) (high), `runOfScenario` → [`bench/src/report-evals.ts#runOfScenario`](report-evals.ts.md) (high), `scoreRow` → [`bench/src/report-evals.ts#scoreRow`](report-evals.ts.md) (high), `agentCategories` → [`bench/src/report-payload.ts#agentCategories`](report-payload.ts.md) (high), `arr` → [`bench/src/report-payload.ts#arr`](report-payload.ts.md) (high), `firstNum` → [`bench/src/report-payload.ts#firstNum`](report-payload.ts.md) (high), `firstStr` → [`bench/src/report-payload.ts#firstStr`](report-payload.ts.md) (high), `fmt` → [`bench/src/report-payload.ts#fmt`](report-payload.ts.md) (high), `num` → [`bench/src/report-payload.ts#num`](report-payload.ts.md) (high), `provenanceOf` → [`bench/src/report-payload.ts#provenanceOf`](report-payload.ts.md) (high), `rec` → [`bench/src/report-payload.ts#rec`](report-payload.ts.md) (high), `replayF1` → [`bench/src/report-payload.ts#replayF1`](report-payload.ts.md) (high), `replayF2` → [`bench/src/report-payload.ts#replayF2`](report-payload.ts.md) (high), `runFor` → [`bench/src/report-payload.ts#runFor`](report-payload.ts.md) (high), `scenariosOf` → [`bench/src/report-payload.ts#scenariosOf`](report-payload.ts.md) (high), `targetOf` → [`bench/src/report-payload.ts#targetOf`](report-payload.ts.md) (high), `emptySection` → [`bench/src/results-md.ts#emptySection`](results-md.ts.md) (high)
