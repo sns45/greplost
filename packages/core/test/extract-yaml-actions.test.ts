@@ -190,7 +190,11 @@ describe("steps", () => {
 
   test("a step carries meta.uses or meta.run, and its display name when it has one", () => {
     const out = run(CI, CI_YML);
-    expect(decl(out, "build.~0").meta).toEqual({ flavour: "actions", uses: "actions/checkout@v4" });
+    expect(decl(out, "build.~0").meta).toEqual({
+      flavour: "actions",
+      uses: "actions/checkout@v4",
+      usesRef: "v4",
+    });
     expect(decl(out, "build.~1").meta).toEqual({
       flavour: "actions",
       name: "Build the thing",
@@ -302,9 +306,11 @@ describe("uses", () => {
     expect(out.refs).toEqual([]);
   });
 
-  test("a docker:// action is not a repository and is dropped", () => {
-    const out = run(CI, "on: push\njobs:\n  j:\n    steps:\n      - uses: docker://alpine:3.18\n");
-    expect(out.refs).toEqual([]);
+  test("a docker:// action is not a repository and draws no edge", async () => {
+    const snapshot = await snapshotOf({
+      [CI]: "on: push\njobs:\n  j:\n    steps:\n      - uses: docker://alpine:3.18\n",
+    });
+    expect(references(snapshot)).toEqual([]);
   });
 });
 
