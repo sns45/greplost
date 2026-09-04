@@ -6,7 +6,7 @@
  * is filtered by any file that no longer exists on disk). Outside a git work
  * tree, candidates come from a fast-glob walk of `config.include`. Either
  * way, `config.include`/`config.exclude` are re-applied uniformly with
- * picomatch, extensions are mapped through LANG_BY_EXTENSION, and only
+ * picomatch, paths are mapped to a language by `langOf`, and only
  * `config.languages` survive. Files under `.greplost/` are never returned.
  */
 
@@ -17,8 +17,9 @@ import { join, resolve, sep } from "node:path";
 import fg from "fast-glob";
 import picomatch from "picomatch";
 
-import { ARTIFACT_DIR, LANG_BY_EXTENSION, compareStrings } from "./schema.ts";
+import { ARTIFACT_DIR, compareStrings } from "./schema.ts";
 import type { GreplostConfig, Lang } from "./schema.ts";
+import { langOf } from "./lang.ts";
 
 export interface DiscoveredFile {
   /** Repo-relative, posix, no leading "./". */
@@ -31,13 +32,6 @@ const GIT_LS_FILES_MAX_BUFFER = 64 * 1024 * 1024;
 
 function toPosix(p: string): string {
   return p.split("\\").join("/");
-}
-
-function extensionOf(path: string): string {
-  const slash = path.lastIndexOf("/");
-  const base = slash === -1 ? path : path.slice(slash + 1);
-  const dot = base.lastIndexOf(".");
-  return dot <= 0 ? "" : base.slice(dot);
 }
 
 function isGitRepo(root: string): boolean {
@@ -135,7 +129,7 @@ export async function discoverFiles(root: string, config: GreplostConfig): Promi
   const results: DiscoveredFile[] = [];
 
   for (const relPath of await discoverCandidates(root, config)) {
-    const lang = LANG_BY_EXTENSION[extensionOf(relPath)];
+    const lang = langOf(relPath);
     if (!lang) continue;
     if (!config.languages.includes(lang)) continue;
 

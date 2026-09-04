@@ -30,6 +30,13 @@ import { loadTsconfigPaths } from "./tsconfig.ts";
 import type { TsPaths } from "./tsconfig.ts";
 import { compareStrings } from "../schema.ts";
 import type { Lang, PackageInfo } from "../schema.ts";
+import { createDockerfileResolver } from "./dockerfile.ts";
+import { createHclResolver } from "./hcl.ts";
+import { createJavaResolver } from "./java.ts";
+import { createKotlinResolver } from "./kotlin.ts";
+import { createPythonResolver } from "./python.ts";
+import { createRustResolver } from "./rust.ts";
+import { createYamlResolver } from "./yaml.ts";
 
 export type ResolvedTarget =
   | { type: "file"; path: string }
@@ -73,6 +80,27 @@ const EXPORT_CONDITIONS = ["bun", "source", "import", "default", "require", "typ
 
 const BUILTINS: ReadonlySet<string> = new Set(builtinModules);
 
+/** A per-language resolver: schema 2 languages answer on the *file*, not on its directory. */
+type LanguageResolver = (fromFile: string, specifier: string) => ResolvedTarget;
+
+/**
+ * Schema 2 languages resolve through their own module (spec 2026-09-04 section 0.4).
+ *
+ * The table is `Partial` because ts/tsx/js/jsx and go do not belong in it: the four
+ * JavaScript dialects share the rules in this file, and Go's resolver is directory-based and
+ * predates the convention. Everything else gets one module per language, so a language leaf
+ * replaces one file and edits nothing shared.
+ */
+const LANGUAGE_RESOLVERS: Readonly<Partial<Record<Lang, (ctx: RepoContext) => LanguageResolver>>> = {
+  python: createPythonResolver,
+  rust: createRustResolver,
+  java: createJavaResolver,
+  kotlin: createKotlinResolver,
+  hcl: createHclResolver,
+  yaml: createYamlResolver,
+  dockerfile: createDockerfileResolver,
+};
+
 export function createResolver(ctx: RepoContext): Resolver {
   const files = ctx.files;
   const tsconfigByDir = new Map<string, TsPaths | null>();
@@ -90,6 +118,24 @@ export function createResolver(ctx: RepoContext): Resolver {
   // Go import paths are module paths, not file paths: leaf 1.8's rules live in
   // `resolve/go.ts` and share this context's indexed file set and reader.
   const resolveGo = createGoResolver(ctx);
+
+  /**
+   * Schema 2 language resolvers, built on first use.
+   *
+   * Lazily, because a repo indexes one or two languages and building all seven eagerly would
+   * make every TypeScript build pay for them; and because an unimplemented language's module
+   * is allowed to be expensive or absent-minded about a context it will never read.
+   */
+  const languageResolvers = new Map<Lang, LanguageResolver>();
+  function languageResolver(lang: Lang): LanguageResolver | undefined {
+    const cached = languageResolvers.get(lang);
+    if (cached !== undefined) return cached;
+    const factory = LANGUAGE_RESOLVERS[lang];
+    if (factory === undefined) return undefined;
+    const made = factory(ctx);
+    languageResolvers.set(lang, made);
+    return made;
+  }
 
   /**
    * A repo whose root package.json has a name may import itself by that name
@@ -308,11 +354,18 @@ export function createResolver(ctx: RepoContext): Resolver {
 
   return {
     resolve(fromFile: string, specifier: string, lang: Lang): ResolvedTarget {
-      const fromDir = parentDir(normalizeRelative(fromFile));
+      const normalized = normalizeRelative(fromFile);
+      const byLanguage = languageResolver(lang);
+      // A schema 2 language answers on the file, not on its directory: its own module decides
+      // what the right unit even is (a Python package is a directory, a Rust crate is a
+      // manifest). The memo key below carries whichever of the two the answer depends on, so
+      // the cache can never hand one file another file's answer.
+      const fromDir = byLanguage === undefined ? parentDir(normalized) : normalized;
       const key = `${lang}\u0000${fromDir}\u0000${specifier}`;
       const cached = resultByKey.get(key);
       if (cached) return cached;
-      const result = resolveUncached(fromDir, specifier, lang);
+      const result =
+        byLanguage === undefined ? resolveUncached(fromDir, specifier, lang) : byLanguage(normalized, specifier);
       resultByKey.set(key, result);
       return result;
     },

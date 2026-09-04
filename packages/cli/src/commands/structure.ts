@@ -13,11 +13,11 @@
 
 import path from "node:path";
 
-import { readStructure } from "@greplost/core";
+import { langOf, readStructure } from "@greplost/core";
 import type { Structure } from "@greplost/core";
 import { expandDirectoryTargets, resolvedImportTargets } from "@greplost/core/graph";
 import type { Manifest, PackageInfo } from "@greplost/core/schema";
-import { ARTIFACT_DIR, LANG_BY_EXTENSION, compareStrings } from "@greplost/core/schema";
+import { ARTIFACT_DIR, compareStrings } from "@greplost/core/schema";
 import { cardPath } from "@greplost/render";
 
 /** The committed structure at `root`, or a "not indexed" error. */
@@ -41,11 +41,15 @@ export function toRepoRelative(root: string, argument: string): string {
   return normalised.replace(/\/+$/, "");
 }
 
-/** True when an argument reads like a file path rather than a symbol name. */
+/**
+ * True when an argument reads like a file path rather than a symbol name.
+ *
+ * `langOf` is the same rule discovery indexes by, so a bare `Dockerfile` reads as a path
+ * for the same reason `retry.ts` does: it is a name the map can actually hold.
+ */
 export function looksLikePath(candidate: string): boolean {
   if (candidate.includes("/")) return true;
-  const extension = candidate.slice(candidate.lastIndexOf("."));
-  return candidate.includes(".") && Object.hasOwn(LANG_BY_EXTENSION, extension);
+  return langOf(candidate) !== undefined;
 }
 
 /**

@@ -34,8 +34,10 @@ import { sha256Hex } from "./hash.ts";
 import { createParser } from "./parser.ts";
 import type { ParserHandle } from "./parser.ts";
 import { extractFile } from "./extract/index.ts";
+import type { SignalPassId } from "./signals/index.ts";
 import { createResolver, detectPackages } from "./resolve/index.ts";
 import { buildExportIndex, computeMetrics, exportNames, linkCalls, linkImports } from "./graph/index.ts";
+import { linkReferences } from "./references/index.ts";
 
 /**
  * Content-addressed extraction cache (tech spec 8), keyed by `(lang, sha256)`.
@@ -47,9 +49,9 @@ import { buildExportIndex, computeMetrics, exportNames, linkCalls, linkImports }
  * language, is never re-parsed; `buildSnapshot` re-stamps the path onto the hit.
  *
  * Records crossing this boundary are immutable: `buildSnapshot` shallow-freezes
- * every record and its `decls`/`imports`/`exports`/`calls` arrays before handing
- * it to `set` and before putting it in the snapshot, so an implementation may
- * store and hand back the same object without any defensive copying. Nothing
+ * every record and its `decls`/`imports`/`exports`/`calls`/`refs` arrays before
+ * handing it to `set` and before putting it in the snapshot, so an implementation
+ * may store and hand back the same object without any defensive copying. Nothing
  * downstream may mutate a `FileRecord`.
  */
 export interface ParseCache {
@@ -87,16 +89,18 @@ export async function buildSnapshot(opts: BuildOptions): Promise<Snapshot> {
   const discovered = [...(await discoverFiles(root, config))].sort((a, b) => compareStrings(a.path, b.path));
   const sources = await readSources(discovered);
 
-  const files = await extractAll(sources, opts);
+  const files = await extractAll(sources, opts, config.signals);
 
   const paths = files.map((file) => file.path);
   const packages = detectPackages(root, paths, config);
   const readRepoFile = repoReader(root);
-  const resolver = createResolver({ root, files: new Set(paths), packages, readFile: readRepoFile });
+  const repoContext = { root, files: new Set(paths), packages, readFile: readRepoFile };
+  const resolver = createResolver(repoContext);
 
   const imports = linkImports(files, resolver);
   const exportIndex = buildExportIndex(files, imports);
   const calls = linkCalls(files, imports, exportIndex);
+  const references = linkReferences(files, resolver, repoContext);
   const { manifestFiles, manifestPackages, metrics } = computeMetrics(files, packages, imports);
 
   const summaries = indexSummaries(opts.summaries);
@@ -136,6 +140,10 @@ export async function buildSnapshot(opts: BuildOptions): Promise<Snapshot> {
     calls: [...calls].sort(compareEdges),
     symbols,
     metrics,
+    // Always present, `[]` when nothing produced one, so a consumer never has to ask whether
+    // this snapshot predates schema 2. `serializeSnapshot` is what decides not to write the
+    // artifact for an empty list, so an existing repo's artifact set does not change.
+    references,
   };
 }
 
@@ -180,7 +188,11 @@ async function readOne(file: DiscoveredFile): Promise<SourceFile> {
  *
  * Every record leaving this function is frozen (see `freezeRecord`).
  */
-async function extractAll(sources: SourceFile[], opts: BuildOptions): Promise<FileRecord[]> {
+async function extractAll(
+  sources: SourceFile[],
+  opts: BuildOptions,
+  signals: readonly SignalPassId[] | undefined,
+): Promise<FileRecord[]> {
   const cache = opts.cache;
   const files = new Array<FileRecord | undefined>(sources.length);
   /** Index of the first file to claim each (language, hash): the one that is parsed. */
@@ -211,7 +223,7 @@ async function extractAll(sources: SourceFile[], opts: BuildOptions): Promise<Fi
     const parser = opts.parser ?? (await createParser());
     for (const i of misses) {
       const source = sources[i] as SourceFile;
-      const record = freezeRecord(extract(source, parser));
+      const record = freezeRecord(extract(source, parser, signals));
       cache?.set(record);
       files[i] = record;
       for (const twin of twins.get(recordKey(source)) ?? []) {
@@ -238,10 +250,16 @@ function recordKey(source: SourceFile): string {
  * One file's extraction. A grammar failure names the file it happened on: the
  * raw parser error says only what went wrong, never where.
  */
-function extract(source: SourceFile, parser: ParserHandle): FileRecord {
+function extract(source: SourceFile, parser: ParserHandle, signals: readonly SignalPassId[] | undefined): FileRecord {
   try {
     return extractFile(
-      { path: source.path, lang: source.lang, source: source.source, sha256: source.sha256 },
+      {
+        path: source.path,
+        lang: source.lang,
+        source: source.source,
+        sha256: source.sha256,
+        ...(signals === undefined ? {} : { signals }),
+      },
       parser,
     );
   } catch (cause) {
@@ -261,6 +279,7 @@ function freezeRecord(record: FileRecord): FileRecord {
   Object.freeze(record.imports);
   Object.freeze(record.exports);
   Object.freeze(record.calls);
+  if (record.refs !== undefined) Object.freeze(record.refs);
   return Object.freeze(record);
 }
 

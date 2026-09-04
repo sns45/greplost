@@ -1,5 +1,5 @@
 {
-  "pinnedAt": "2026-09-02",
+  "pinnedAt": "2026-09-04",
   "repos": [
     {
       "name": "anyq",
@@ -63,6 +63,156 @@
       "lang": "ts",
       "defaultBranch": "main",
       "notes": "perf only"
+    },
+    {
+      "name": "pydantic",
+      "url": "https://github.com/pydantic/pydantic",
+      "sha": "c23cb86ef197693fc016437614f174252a3d189a",
+      "tier": "S",
+      "lang": "python",
+      "defaultBranch": "main",
+      "notes": "build 2; 105 .py under pydantic/",
+      "subset": "pydantic/**"
+    },
+    {
+      "name": "ripgrep",
+      "url": "https://github.com/BurntSushi/ripgrep",
+      "sha": "3fce3b5bb0236da2df6d99672afb8a719642eca7",
+      "tier": "S",
+      "lang": "rust",
+      "defaultBranch": "master",
+      "notes": "build 2; 95 .rs under crates/",
+      "subset": "crates/**"
+    },
+    {
+      "name": "gson",
+      "url": "https://github.com/google/gson",
+      "sha": "b3f4ca20087f9066de4c340522ff84e0558e1ad1",
+      "tier": "S",
+      "lang": "java",
+      "defaultBranch": "main",
+      "notes": "build 2; 122 .java under **/src/main/",
+      "subset": "**/src/main/**"
+    },
+    {
+      "name": "coroutines",
+      "url": "https://github.com/Kotlin/kotlinx.coroutines",
+      "sha": "f63a04bacb8beeafcc9d49199b1e4bb08931b7eb",
+      "tier": "S",
+      "lang": "kotlin",
+      "defaultBranch": "master",
+      "notes": "build 2; 163 .kt; reported-only, no corpus oracle (ruling 2026-09-04)",
+      "subset": "kotlinx-coroutines-core/{common,jvm}/src/**"
+    },
+    {
+      "name": "tf-aws-vpc",
+      "url": "https://github.com/terraform-aws-modules/terraform-aws-vpc",
+      "sha": "cf0e3ca46fd51f47bf095957f2a6ac6127c89045",
+      "tier": "S",
+      "lang": "hcl",
+      "defaultBranch": "master",
+      "notes": "build 2; 77 .tf, whole repo",
+      "subset": "**"
+    },
+    {
+      "name": "tf-aws-eks",
+      "url": "https://github.com/terraform-aws-modules/terraform-aws-eks",
+      "sha": "48a429f63cf96361ea2f4b42677d0cc8a9a656e0",
+      "tier": "S",
+      "lang": "hcl",
+      "defaultBranch": "master",
+      "notes": "build 2; 87 .tf, whole repo",
+      "subset": "**"
+    },
+    {
+      "name": "k8s-examples",
+      "url": "https://github.com/kubernetes/examples",
+      "sha": "d6b8cd27eacb51e651a1aa6f7c190a28713eff6e",
+      "tier": "S",
+      "lang": "yaml",
+      "defaultBranch": "master",
+      "notes": "build 2; 250 .yaml plain manifests, whole repo",
+      "subset": "**"
+    },
+    {
+      "name": "bitnami-charts",
+      "url": "https://github.com/bitnami/charts",
+      "sha": "8f8032ba37888cdeb20b35a2136fb1e8b5557e97",
+      "tier": "S",
+      "lang": "yaml",
+      "defaultBranch": "main",
+      "notes": "build 2; 130 .yaml Helm; APACHE-2.0 in LICENSE.md, checked by hand",
+      "subset": "bitnami/{wordpress,kafka,postgresql,redis}/**"
+    },
+    {
+      "name": "starter-workflows",
+      "url": "https://github.com/actions/starter-workflows",
+      "sha": "e3c451d60f119b71caebf13c98ac45da6e15b4b7",
+      "tier": "S",
+      "lang": "yaml",
+      "defaultBranch": "main",
+      "notes": "build 2; 187 workflow .yml, whole repo; plain MIT LICENSE, checked by hand",
+      "subset": "**"
+    },
+    {
+      "name": "docker-python",
+      "url": "https://github.com/docker-library/python",
+      "sha": "8f2cb2e1c9cae4d8f772fe61f1427c96acea3257",
+      "tier": "S",
+      "lang": "dockerfile",
+      "defaultBranch": "master",
+      "notes": "build 2; 44 Dockerfiles, whole repo; below the tier-S band, labelled in RESULTS.md",
+      "subset": "**"
+    },
+    {
+      "name": "docker-node",
+      "url": "https://github.com/nodejs/docker-node",
+      "sha": "b6ff152e7276a8ab650533769b8cc099883cdffa",
+      "tier": "S",
+      "lang": "dockerfile",
+      "defaultBranch": "main",
+      "notes": "build 2; 21 Dockerfiles, whole repo; below the tier-S band, labelled in RESULTS.md",
+      "subset": "**"
+    },
+    {
+      "name": "pulumi-ts",
+      "url": "https://github.com/pulumi/examples",
+      "sha": "2d507c12f836f67323fb1ba80454035eac082b27",
+      "tier": "S",
+      "lang": "ts",
+      "defaultBranch": "master",
+      "notes": "build 2; 122 .ts under aws-ts-*/",
+      "subset": "aws-ts-*/**"
+    },
+    {
+      "name": "pulumi-go",
+      "url": "https://github.com/pulumi/examples",
+      "sha": "2d507c12f836f67323fb1ba80454035eac082b27",
+      "tier": "S",
+      "lang": "go",
+      "defaultBranch": "master",
+      "notes": "build 2; 85 .go under *-go-*/",
+      "subset": "*-go-*/**"
+    },
+    {
+      "name": "tanstack-start",
+      "url": "https://github.com/TanStack/router",
+      "sha": "650acb4a894f7bf36bd3591de65d10bca9594254",
+      "tier": "S",
+      "lang": "tsx",
+      "defaultBranch": "main",
+      "notes": "build 2; 391 .ts/.tsx under examples/react/start-*/",
+      "subset": "examples/react/start-*/**"
+    },
+    {
+      "name": "next-app",
+      "url": "https://github.com/vercel/next.js",
+      "sha": "1b5400c92633ca56c81c4c0a670e3416992ef64e",
+      "tier": "S",
+      "lang": "tsx",
+      "defaultBranch": "canary",
+      "notes": "build 2; 338 .ts/.tsx App Router files across 82 apps",
+      "subset": "examples/*/app/**"
     }
   ]
 }

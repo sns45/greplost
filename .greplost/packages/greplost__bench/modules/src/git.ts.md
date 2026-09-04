@@ -12,7 +12,7 @@
 
 **Imported by:** [`bench/src/corpus.ts`](corpus.ts.md), [`bench/src/perf.ts`](perf.ts.md), [`bench/src/replay.ts`](replay.ts.md)
 
-**Blast radius:** 6 files (`greplost impact bench/src/git.ts`)
+**Blast radius:** 7 files (`greplost impact bench/src/git.ts`)
 
 **Key symbols:**
 - `const GIT_TIMEOUT_MS = 300_000`  L25-25

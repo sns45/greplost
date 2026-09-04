@@ -104,18 +104,24 @@
 
 ## bench/src/corpus.ts
 
-- `type Tier = "S" | "M" | "L" | "XL"` L13-13
-- `type CorpusLang = "ts" | "go"` L14-14
-- `interface CorpusRepoEntry` L18-26
-- `interface Corpus` L28-31
-- `function corpusRoot(): string` L50-64
-- `function loadCorpus(): Corpus` L66-70
-- `function repoDir(name: string): string` L72-74
-- `function selectRepos(args: string[]): CorpusRepoEntry[]` L84-116
-- `function fetchAndCheckout(entry: CorpusRepoEntry, depth: number = HISTORY_DEPTH): void` L197-211
-- `function deepenHistory(entry: CorpusRepoEntry): void` L219-227
-- `function setupRepo(entry: CorpusRepoEntry, opts: { depth?: number } = {}): void` L235-238
-- `async function run(args: string[]): Promise<number>` L249-272
+- `type Tier = "S" | "M" | "L" | "XL"` L14-14
+- `type CorpusLang = Lang` L19-19
+- `interface CorpusRepoEntry` L23-40
+- `interface Corpus` L42-45
+- `function corpusRoot(): string` L64-78
+- `function loadCorpus(): Corpus` L80-84
+- `function repoDir(name: string): string` L86-88
+- `function selectRepos(args: string[]): CorpusRepoEntry[]` L98-130
+- `function fetchAndCheckout(entry: CorpusRepoEntry, depth: number = HISTORY_DEPTH): void` L211-225
+- `function deepenHistory(entry: CorpusRepoEntry): void` L233-241
+- `function setupRepo(entry: CorpusRepoEntry, opts: { depth?: number } = {}): void` L249-252
+- `async function run(args: string[]): Promise<number>` L263-286
+
+## bench/src/fixtures.ts
+
+- `interface FixtureEntry` L19-24
+- `const FIXTURES: Readonly<Record<string, FixtureEntry>> = { "tiny-ts": fixture("tiny-ts", "ts"), "tiny-go": fixture("tiny-go", "go"), "tiny-python": fixture("tiny-python", "python"), "tiny-rust…` L30-44
+- `function fixtureNames(): string[]` L47-49
 
 ## bench/src/git.ts
 
@@ -368,16 +374,21 @@
 
 ## bench/src/structural.ts
 
-- `function resultSuite(fixture: boolean): string` L49-51
-- `const TARGETS = { S1: [0.99, 0.97], S2: [0.99, 0.99], S3: 0.95, S4: 1.0 } as const` L54-54
-- `type TruthLang = "ts" | "go"` L62-62
-- `interface RepoScores` L86-129
-- `async function run(args: string[]): Promise<number>` L131-143
-- `function scoredFiles(snapshot: Snapshot, lang: TruthLang): string[]` L407-416
-- `function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang): RepoScores` L424-520
-- `function unparsableBucket( scores: readonly RepoScores[], ): { count: number; files: { repo: string; path: string; reason: string }[] }` L535-542
-- `function missedMetrics(scores: RepoScores): string[]` L554-565
-- `function locate(snapshot: Snapshot, key: string, kind: "import" | "call" | "export"): string` L615-627
+- `function resultSuite(fixture: boolean): string` L64-66
+- `const TARGETS = { S1: [0.99, 0.97], S2: [0.99, 0.99], S3: 0.95, S4: 1.0, S5: 0.95, S6: 0.95 } as const` L73-73
+- `type TruthLang = Lang` L90-90
+- `function truthTargetFor(lang: Lang): TruthTarget` L101-103
+- `interface RepoScores` L133-195
+- `interface SubstituteChecks` L205-214
+- `async function run(args: string[]): Promise<number>` L216-228
+- `function buildOptionsFor(target: Target): { root: string; config?: GreplostConfig }` L501-527
+- `function unsupportedMetrics(notes: readonly string[]): string[]` L578-586
+- `function scoredFiles(snapshot: Snapshot, lang: TruthLang): string[]` L672-682
+- `function scoreAgainstTruth(name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang): RepoScores` L690-793
+- `function perLangSummary( targets: readonly Target[], scores: readonly RepoScores[], ): Record<string, { repos: string[]; gated: boolean; truthSource: string }>` L807-828
+- `function unparsableBucket( scores: readonly RepoScores[], ): { count: number; files: { repo: string; path: string; reason: string }[] }` L857-864
+- `function missedMetrics(scores: RepoScores): string[]` L876-907
+- `function locate(snapshot: Snapshot, key: string, kind: "import" | "call" | "export"): string` L961-973
 
 ## bench/src/tasks.ts
 
@@ -398,11 +409,57 @@
 - `function loadOrientationTasks(repo: string, dir?: string): Task[]` L508-510
 - `function loadTasks( repo: string, truth: Truth, n: number, seed: number = 1, categories?: readonly TaskCategory[], ): Task[]` L519-536
 
+## bench/src/truth/dockerfile.ts
+
+- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
+- `function generateTruth(root: string, files: string[]): Truth` L17-22
+
 ## bench/src/truth/go.ts
 
 - `const GO_TRUTH_NOTES = [ "go-packages-per-file-imports", "cha-callgraph", "cha-over-approximation", ] as const` L66-70
 - `function goCallgraphTool(): string` L103-122
 - `function generateGoTruth(root: string, files: string[]): Truth` L180-235
+
+## bench/src/truth/hcl.ts
+
+- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
+- `function generateTruth(root: string, files: string[]): Truth` L17-22
+
+## bench/src/truth/java.ts
+
+- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
+- `function generateTruth(root: string, files: string[]): Truth` L17-22
+
+## bench/src/truth/kotlin.ts
+
+- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
+- `function generateTruth(root: string, files: string[]): Truth` L17-22
+
+## bench/src/truth/python.ts
+
+- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
+- `function generateTruth(root: string, files: string[]): Truth` L17-22
+
+## bench/src/truth/registry.ts
+
+- `type TruthTarget = | Lang | "yaml-k8s" | "yaml-helm" | "yaml-actions" | "signals-ts" | "signals-pulumi-go"` L21-27
+- `interface TruthModule` L29-34
+- `async function loadTruth(lang: TruthTarget): Promise<TruthModule>` L48-75
+
+## bench/src/truth/rust.ts
+
+- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
+- `function generateTruth(root: string, files: string[]): Truth` L17-22
+
+## bench/src/truth/signals-pulumi-go.ts
+
+- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
+- `function generateTruth(root: string, files: string[]): Truth` L17-22
+
+## bench/src/truth/signals-ts.ts
+
+- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
+- `function generateTruth(root: string, files: string[]): Truth` L17-22
 
 ## bench/src/truth/ts-calls.ts
 
@@ -426,3 +483,28 @@
 - `function listTypeScriptFiles(root: string): string[]` L79-97
 - `interface TruthOptions` L100-111
 - `function generateTsTruth(root: string, files: string[], options: TruthOptions = {}): Truth` L128-319
+
+## bench/src/truth/yaml-actions.ts
+
+- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
+- `function generateTruth(root: string, files: string[]): Truth` L17-22
+
+## bench/src/truth/yaml-helm.ts
+
+- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
+- `function generateTruth(root: string, files: string[]): Truth` L17-22
+
+## bench/src/truth/yaml-k8s.ts
+
+- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
+- `function generateTruth(root: string, files: string[]): Truth` L17-22
+
+## bench/src/truth/yaml.ts
+
+- `const NOTES: readonly string[] = ["yaml-flavour-dispatch"]` L21-21
+- `type YamlFlavour = "yaml-actions" | "yaml-helm" | "yaml-k8s"` L26-26
+- `function isWorkflowFile(file: string): boolean` L47-54
+- `function isHelmFile(file: string): boolean` L57-60
+- `function flavourOf(file: string): YamlFlavour` L69-73
+- `function groupByFlavour(files: readonly string[]): Array<[YamlFlavour, string[]]>` L76-88
+- `function generateTruth(root: string, files: string[]): Truth` L90-96

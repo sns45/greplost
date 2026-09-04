@@ -16,12 +16,15 @@ export * from "./schema.ts";
 export * from "./config.ts";
 export * from "./discover.ts";
 export * from "./hash.ts";
+export * from "./lang.ts";
 export * from "./parser.ts";
 export * from "./unparsable.ts";
 
 export * from "./extract/index.ts";
 export * from "./resolve/index.ts";
 export * from "./graph/index.ts";
+export * from "./references/index.ts";
+export * from "./signals/index.ts";
 export * from "./graph/query.ts";
 export * from "./serialize/index.ts";
 

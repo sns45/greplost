@@ -72,11 +72,11 @@
 
 - `function loadStructure(root: string): Structure` L24-30
 - `function toRepoRelative(root: string, argument: string): string` L37-42
-- `function looksLikePath(candidate: string): boolean` L45-49
-- `function resolveFile(manifest: Manifest, candidate: string): string | undefined` L59-67
-- `function cardOf(manifest: Manifest, file: string): string` L83-88
-- `function importPairs(structure: Structure): Array<readonly [string, string]>` L97-99
-- `function importsOfFile(structure: Structure, file: string): string[]` L111-117
+- `function looksLikePath(candidate: string): boolean` L50-53
+- `function resolveFile(manifest: Manifest, candidate: string): string | undefined` L63-71
+- `function cardOf(manifest: Manifest, file: string): string` L87-92
+- `function importPairs(structure: Structure): Array<readonly [string, string]>` L101-103
+- `function importsOfFile(structure: Structure, file: string): string[]` L115-121
 
 ## packages/cli/src/commands/update.ts
 

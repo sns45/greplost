@@ -21,8 +21,9 @@ import { readFileSync } from "node:fs";
 import { isAbsolute, join } from "node:path";
 
 import { createParser, type ParserHandle } from "./parser.ts";
-import { LANG_BY_EXTENSION, compareStrings } from "./schema.ts";
+import { compareStrings } from "./schema.ts";
 import type { Lang } from "./schema.ts";
+import { langOf } from "./lang.ts";
 
 /** One file the grammar could not make a program of. */
 export interface UnparsableFile {
@@ -36,15 +37,6 @@ export interface UnparsableFile {
    * node — a run of top-level source the grammar could not place.
    */
   reason: "error-root" | "error-child";
-}
-
-/** The file extension's language, or null when greplost has no grammar for it. */
-function langOf(path: string): Lang | null {
-  const slash = path.lastIndexOf("/");
-  const base = slash === -1 ? path : path.slice(slash + 1);
-  const dot = base.lastIndexOf(".");
-  if (dot <= 0) return null;
-  return LANG_BY_EXTENSION[base.slice(dot)] ?? null;
 }
 
 /**
@@ -65,7 +57,7 @@ export async function findUnparsableFiles(
 ): Promise<UnparsableFile[]> {
   const candidates = files
     .map((path) => ({ path, lang: langOf(path) }))
-    .filter((entry): entry is { path: string; lang: Lang } => entry.lang !== null);
+    .filter((entry): entry is { path: string; lang: Lang } => entry.lang !== undefined);
   if (candidates.length === 0) return [];
 
   const parser =

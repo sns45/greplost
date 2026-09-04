@@ -6,12 +6,17 @@
 // selectRepos for the other bench suites to reuse (see "Shared conventions"
 // in docs/superpowers/specs/2026-09-02-bench-design.md).
 
+import type { Lang } from "@greplost/core/schema";
 import { BACKFILL_TIMEOUT_MS, GIT_TIMEOUT_MS, git as sharedGit, type GitResult } from "./git.ts";
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 export type Tier = "S" | "M" | "L" | "XL";
-export type CorpusLang = "ts" | "go";
+/**
+ * Every language greplost indexes (schema 2). Build 1 pinned this to `"ts" | "go"`, which
+ * meant a build-2 corpus entry would have been silently scored as TypeScript.
+ */
+export type CorpusLang = Lang;
 
 const TIERS: readonly Tier[] = ["S", "M", "L", "XL"];
 
@@ -23,6 +28,15 @@ export interface CorpusRepoEntry {
   lang: CorpusLang;
   defaultBranch: string;
   notes: string;
+  /**
+   * A picomatch pattern limiting which of the repo's files are indexed and scored, applied by
+   * the harness when it writes the per-repo `.greplost/config.json` include list.
+   *
+   * A subset is a property of the pin, not a thing a human remembers: `pulumi/examples` is
+   * both the TypeScript and the Go Pulumi corpus, and scoring either against the whole
+   * checkout would measure the other language's files as unindexed.
+   */
+  subset?: string;
 }
 
 export interface Corpus {

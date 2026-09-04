@@ -17,9 +17,13 @@ export interface ParserHandle {
 }
 
 /**
- * Grammar file per language. ts/js share the TypeScript grammar; tsx/jsx share the TSX one.
- * Schema 2 languages are listed in `Lang` before their grammar lands (build 2); asking for one
- * of those is a clear error, never a silent skip.
+ * Grammar file per language. ts/js share the TypeScript grammar; tsx/jsx share the TSX one;
+ * every YAML flavour (plain, Kubernetes, Helm, GitHub Actions) shares the YAML grammar, since
+ * a flavour is a property of the document, not of the syntax.
+ *
+ * The type stays `Partial` on purpose: a language may be named in `Lang` before its grammar is
+ * vendored, and asking for one of those must be a clear error rather than a silent skip. As of
+ * schema 2 the table is complete, so the error path below is a guard, not a normal outcome.
  */
 const GRAMMAR_FILE: Readonly<Partial<Record<Lang, string>>> = {
   ts: "tree-sitter-typescript.wasm",
@@ -27,6 +31,13 @@ const GRAMMAR_FILE: Readonly<Partial<Record<Lang, string>>> = {
   tsx: "tree-sitter-tsx.wasm",
   jsx: "tree-sitter-tsx.wasm",
   go: "tree-sitter-go.wasm",
+  python: "tree-sitter-python.wasm",
+  rust: "tree-sitter-rust.wasm",
+  java: "tree-sitter-java.wasm",
+  kotlin: "tree-sitter-kotlin.wasm",
+  hcl: "tree-sitter-hcl.wasm",
+  yaml: "tree-sitter-yaml.wasm",
+  dockerfile: "tree-sitter-dockerfile.wasm",
 };
 
 /** The runtime WASM the emscripten module loads through `locateFile`. */
@@ -97,7 +108,7 @@ export async function createParser(opts?: { grammarDir?: string }): Promise<Pars
     parse(source: string, lang: Lang): Tree {
       const file = GRAMMAR_FILE[lang];
       if (file === undefined) {
-        throw new Error(`greplost: no grammar is vendored for "${lang}" yet (schema 2 language; see the build 2 plan)`);
+        throw new Error(`greplost: no grammar is vendored for "${lang}" (see packages/core/grammars/VERSIONS.txt)`);
       }
       const language = byFile.get(file);
       if (language === undefined) throw new Error(`greplost: no grammar loaded for language "${lang}"`);
