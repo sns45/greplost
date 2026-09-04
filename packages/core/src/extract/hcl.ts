@@ -11,8 +11,10 @@
  *  - **Declarations.** One node per top-level block, by its first label. `resource`/`data` need
  *    exactly two labels and every other block exactly one; a block with the wrong number is not
  *    a node, because guessing which label is the name is how a wrong id gets into the map.
- *    `locals` is the exception: it yields one `const` per attribute, named `local.<name>`, and
- *    `terraform` yields a single `const` named `terraform`.
+ *    `locals` is the exception: it yields one `local` node per attribute, named after the
+ *    attribute, so its id is `<file>#local.<name>`. `terraform` yields a single `const` named
+ *    `terraform` — it is a settings block, not a thing anything can address, so it is a symbol
+ *    and not a node (which is what keeps `splitNodeId` from having to read `<file>#terraform`).
  *  - **Imports.** Only a `module` block imports, and its specifier is the `source` string as
  *    written. `resolve/hcl.ts` turns that into a directory id or an `ext:module/<source>`.
  *  - **References.** Every address chain inside an attribute value (`var.x`, `local.y`,
@@ -190,13 +192,29 @@ function attributeValue(body: Node | null, name: string): Node | null {
  * that only Terraform can evaluate, and `meta` may not carry a guess at one.
  */
 function literalScalar(expression: Node | null): string | null {
-  if (expression === null) return null;
+  if (expression === null || expression.namedChildCount !== 1) return null;
   const value = expression.namedChild(0);
-  if (value === null || value.type !== "literal_value" || expression.namedChildCount !== 1) return null;
+  if (value === null) return null;
+  // A negated number is a unary operation over a numeric literal, not a `literal_value`. It is
+  // still as much a literal as `1` is, and `default = -1` is ordinary in a Terraform module.
+  if (value.type === "operation") return negatedNumber(value);
+  if (value.type !== "literal_value") return null;
   const inner = value.namedChild(0);
   if (inner === null) return null;
   if (inner.type === "string_lit") return plainString(inner);
   return inner.text;
+}
+
+/** `-1` / `-1.5` written as a unary operation, or null for any other operation. */
+function negatedNumber(operation: Node): string | null {
+  const unary = operation.namedChild(0);
+  if (unary === null || unary.type !== "unary_operation" || operation.namedChildCount !== 1) return null;
+  const minus = childOfType(unary, "-");
+  if (minus === null) return null;
+  const operand = unary.namedChild(0);
+  if (operand === null || operand.type !== "literal_value" || unary.namedChildCount !== 1) return null;
+  const numeric = childOfType(operand, "numeric_lit");
+  return numeric === null ? null : `-${numeric.text}`;
 }
 
 /** The named attribute as a scalar literal, or null. */
@@ -296,27 +314,33 @@ interface HclState {
   readonly refs: ReferenceRecord[];
   /** Declaration ids already used in this file, so a duplicate name can take a `~<n>` suffix. */
   readonly usedIds: Set<string>;
+  /** Exported names already recorded, so a repeated `output` name is one export record. */
+  readonly exportedNames: Set<string>;
 }
 
 /**
- * A node name made unique within the file: `aws`, then `aws~2`, then `aws~3`.
+ * A declaration id made unique within the file: `…#provider.aws`, then `…#provider.aws~2`.
  *
- * `~` rather than the `#<index>` spec 0.2 sketches, because `nodeId` refuses `#` in a name
- * (driver ruling 2026-09-04) and `~` cannot occur in a Terraform identifier, so a suffixed
- * name can never be mistaken for one somebody wrote.
+ * The suffix lives in the **id and nowhere else** (driver ruling 2026-09-04): `name` stays as
+ * the file wrote it, because it is what every address referring to the block writes and what
+ * the export index publishes — a suffixed name reached `FileEntry.exports` and advertised an
+ * export nobody had written. Two blocks with one name are then correctly *ambiguous* to the
+ * linker rather than silently distinguishable.
+ *
+ * `~` rather than the `#<index>` spec 0.2 sketches, because a `#` would make the id
+ * unparseable by `splitNodeId`, and `~` cannot occur in a Terraform identifier, so a suffixed
+ * id can never collide with one somebody wrote.
  */
-function uniqueName(state: HclState, kind: DeclKind, name: string, isNode: boolean): string {
-  const idFor = (candidate: string): string =>
-    isNode ? nodeId(state.path, kind, candidate) : symbolId(state.path, candidate);
-  if (!state.usedIds.has(idFor(name))) {
-    state.usedIds.add(idFor(name));
-    return name;
+function uniqueId(state: HclState, kind: DeclKind, name: string, isNode: boolean): string {
+  const base = isNode ? nodeId(state.path, kind, name) : symbolId(state.path, name);
+  if (!state.usedIds.has(base)) {
+    state.usedIds.add(base);
+    return base;
   }
   for (let n = 2; ; n += 1) {
-    const candidate = `${name}~${n}`;
-    const id = idFor(candidate);
-    if (state.usedIds.has(id)) continue;
-    state.usedIds.add(id);
+    const candidate = `${base}~${n}`;
+    if (state.usedIds.has(candidate)) continue;
+    state.usedIds.add(candidate);
     return candidate;
   }
 }
@@ -324,16 +348,14 @@ function uniqueName(state: HclState, kind: DeclKind, name: string, isNode: boole
 function addDeclaration(
   state: HclState,
   kind: DeclKind,
-  rawName: string,
+  name: string,
   signature: string,
   node: Node,
   meta: Record<string, string> | undefined,
 ): Declaration {
-  const isNode = kind !== "const";
-  const name = uniqueName(state, kind, rawName, isNode);
   const exported = EXPORTED_KINDS.has(kind);
   const declaration: Declaration = {
-    id: isNode ? nodeId(state.path, kind, name) : symbolId(state.path, name),
+    id: uniqueId(state, kind, name, kind !== "const"),
     file: state.path,
     name,
     kind,
@@ -343,8 +365,17 @@ function addDeclaration(
     ...(meta === undefined ? {} : { meta }),
   };
   state.decls.push(declaration);
-  if (exported) state.exports.push({ name, kind: "named" });
+  // One record per exported *name*: a repeated `output "dup"` is one export, not two.
+  if (exported && !state.exportedNames.has(name)) {
+    state.exportedNames.add(name);
+    state.exports.push({ name, kind: "named" });
+  }
   return declaration;
+}
+
+/** The part of a declaration's id after the `#`: what a `ReferenceRecord.from` must carry. */
+function localPath(state: HclState, declaration: Declaration): string {
+  return declaration.id.slice(state.path.length + 1);
 }
 
 function addReference(state: HclState, from: string, to: string, line: number): void {
@@ -412,14 +443,57 @@ function walkBody(
     walkExpression(state, owner, parts.value, bound);
   }
   for (const block of blocksOf(body)) {
-    let scope = bound;
     if (blockType(block) === "dynamic") {
-      const labels = blockLabels(block);
-      const label = labels === null ? undefined : labels[0];
-      if (label !== undefined) scope = new Set([...bound, label]);
+      walkDynamicBlock(state, owner, block, bound);
+      continue;
     }
-    walkBody(state, owner, bodyOf(block), scope, false);
+    walkBody(state, owner, bodyOf(block), bound, false);
   }
+}
+
+/**
+ * A `dynamic` block, whose iterator is bound to *part* of its own body.
+ *
+ * Terraform's rules, and both matter for precision and for recall:
+ *
+ *  - the bound name is the `iterator` argument when there is one, and the block's label
+ *    otherwise. `dynamic "rule" { iterator = ing … }` binds `ing`, and leaves `rule` free;
+ *  - `for_each` (and `iterator` itself) are evaluated in the **parent** scope, so the binding
+ *    must not reach them. `dynamic "aws_lb" { for_each = aws_lb.main.subnets }` really does
+ *    name the resource `aws_lb.main`, and binding the label over the whole block hid it.
+ *
+ * `content` and any further nested block see the binding, which is what stops `ing.value` from
+ * being read as a managed resource address.
+ */
+function walkDynamicBlock(state: HclState, owner: string, block: Node, bound: ReadonlySet<string>): void {
+  const body = bodyOf(block);
+  const labels = blockLabels(block);
+  const iterator = bareIdentifier(attributeValue(body, "iterator")) ?? (labels === null ? undefined : labels[0]);
+  const inner = iterator === undefined || iterator === "" ? bound : new Set([...bound, iterator]);
+
+  for (const attribute of attributesOf(body)) {
+    const parts = attributeParts(attribute);
+    if (parts === null) continue;
+    // `iterator` names the binding; it is not an expression that references anything.
+    if (parts.name === "iterator") continue;
+    walkExpression(state, owner, parts.value, parts.name === "for_each" ? bound : inner);
+  }
+  for (const nested of blocksOf(body)) {
+    if (blockType(nested) === "dynamic") {
+      walkDynamicBlock(state, owner, nested, inner);
+      continue;
+    }
+    walkBody(state, owner, bodyOf(nested), inner, false);
+  }
+}
+
+/** A bare `name` expression (the shape `iterator = ing` takes), or null. */
+function bareIdentifier(expression: Node | null): string | null {
+  if (expression === null || expression.namedChildCount !== 1) return null;
+  const head = expression.namedChild(0);
+  if (head === null || head.type !== "variable_expr") return null;
+  const identifier = childOfType(head, "identifier");
+  return identifier === null ? null : identifier.text;
 }
 
 // ---------------------------------------------------------------------------
@@ -432,15 +506,18 @@ function collectLocals(state: HclState, block: Node): void {
   for (const attribute of attributesOf(bodyOf(block))) {
     const parts = attributeParts(attribute);
     if (parts === null) continue;
+    // A `locals` entry is a node of kind `local` named after the attribute, so its id is
+    // `<file>#local.<name>` through `nodeId` — byte-identical to the id the `const`-with-a-
+    // dotted-name form produced, but one that `splitNodeId` can actually read back.
     const declaration = addDeclaration(
       state,
-      "const",
-      `local.${parts.name}`,
+      "local",
+      parts.name,
       clip(state.source.slice(attribute.startIndex, attribute.endIndex)),
       attribute,
       undefined,
     );
-    walkExpression(state, declaration.name, parts.value, NO_BINDINGS);
+    walkExpression(state, localPath(state, declaration), parts.value, NO_BINDINGS);
   }
 }
 
@@ -536,7 +613,7 @@ function collectBlock(state: HclState, block: Node): void {
     block,
     metaForBlock(type, labels, body),
   );
-  const owner = `${kind}.${declaration.name}`;
+  const owner = localPath(state, declaration);
 
   if (type === "module") {
     const source = literalAttribute(body, "source");
@@ -613,6 +690,7 @@ export function extractHcl(
     exports: [],
     refs: [],
     usedIds: new Set<string>(),
+    exportedNames: new Set<string>(),
   };
 
   const body = childOfType(tree.rootNode, "body") ?? tree.rootNode;

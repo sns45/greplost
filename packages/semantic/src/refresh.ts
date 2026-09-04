@@ -169,7 +169,7 @@ export async function refresh(root: string, opts: RefreshOptions = {}): Promise<
   // Read-only use of the parse cache `update` maintains: never `save`d from
   // here, so a dry run still writes nothing, but a warm cache means a refresh
   // does not re-parse a repository the last update already parsed.
-  const parseCache = new FileParseCache(absoluteRoot);
+  const parseCache = new FileParseCache(absoluteRoot, config.signals);
   parseCache.load();
   const snapshot = await buildSnapshot({ root: absoluteRoot, config, summaries: cache, cache: parseCache });
   // Resolved before anything is asked, so a typo in a package name costs

@@ -19,7 +19,7 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { DEFAULT_CONFIG, type GreplostConfig } from "@greplost/core/schema";
+import { DEFAULT_CONFIG, splitNodeId, type GreplostConfig } from "@greplost/core/schema";
 import { NOTES, generateExtra, generateTruth, tfinspectTool } from "../src/truth/hcl.ts";
 import { edgeKey, exportKeys, scoreEdges, scoreSet } from "../src/score.ts";
 import { loadTruth } from "../src/truth/registry.ts";
@@ -74,7 +74,15 @@ describe("tf tool", () => {
     expect(typeof module.generateTruth).toBe("function");
     expect(typeof module.generateExtra).toBe("function");
     expect(module.NOTES).toEqual(NOTES);
-    expect(NOTES).toEqual(["terraform-config-inspect", "no-call-edges", "hclsyntax-traversals"]);
+    expect(NOTES).toEqual([
+      "terraform-config-inspect",
+      "no-call-edges",
+      "hclsyntax-traversals",
+      // The two halves of this oracle are not equally independent, and the note says so:
+      // imports and exports are terraform-config-inspect's own model, while references and
+      // nodes are a re-implementation of spec 2.2's rules over a different parser.
+      "same-rules-different-parser",
+    ]);
     expect(FIXTURES["tiny-terraform"]?.lang).toBe("hcl");
   });
 });
@@ -107,7 +115,7 @@ describe("fixture truth", () => {
     expect(truth.notes).toContain("hclsyntax-traversals");
   });
 
-  test("the node set is every declaration the fixture makes", () => {
+  test("the node set is every node the fixture declares, and only ids the schema can read back", () => {
     expect(extra.nodes).toEqual([
       "main.tf#local.name",
       "main.tf#local.tags",
@@ -115,7 +123,6 @@ describe("fixture truth", () => {
       "main.tf#provider.aws",
       "main.tf#resource.aws_subnet.a",
       "main.tf#resource.aws_vpc.main",
-      "main.tf#terraform",
       "modules/logs/main.tf#resource.aws_s3_bucket.logs",
       "modules/logs/main.tf#variable.bucket",
       "modules/logs/outputs.tf#output.arn",
@@ -124,6 +131,15 @@ describe("fixture truth", () => {
       "variables.tf#variable.cidr",
       "variables.tf#variable.region",
     ]);
+  });
+
+  test("the node set holds no id splitNodeId rejects — S6 compares node ids, not declarations", () => {
+    // `<file>#terraform` is a *symbol*: the `terraform` settings block is not a thing any
+    // address can name, so it is a `const` and not a node. Publishing it here put an id in the
+    // truth set that `splitNodeId` refuses, and every one of them was scored as an S6 miss
+    // greplost could not have made (19 per corpus repo).
+    expect(extra.nodes.filter((id) => splitNodeId(id) === null)).toEqual([]);
+    expect(extra.nodes).not.toContain("main.tf#terraform");
   });
 
   test("the reference set carries the module hop at med and everything else at high", () => {
@@ -185,8 +201,14 @@ describe("fixture truth", () => {
     expect(S5.tp).toBe(extra.references.length);
 
     // The node set is scored the same way: every node the oracle found, and no invented one.
-    const declared = snapshot.symbols.map((decl) => decl.id).sort();
+    // Both sides are the *node* ids, which is what `scoreAgainstTruth` compares for S6 — the
+    // `terraform` settings block is a `const` symbol on both sides and belongs to neither set.
+    const declared = snapshot.symbols
+      .filter((decl) => splitNodeId(decl.id) !== null)
+      .map((decl) => decl.id)
+      .sort();
     expect(declared).toEqual(extra.nodes);
+    expect(snapshot.symbols.some((decl) => decl.id === "main.tf#terraform" && decl.kind === "const")).toBe(true);
   });
 });
 

@@ -24,14 +24,14 @@
 - `function joinRelative(dir: string, rest: string): string`  L105-108
 - `function pythonPackageDir(filePath: string): string`  L111-113
 - `function relativeLevel(specifier: string): number`  L116-120
-- `function declaredRoots(dir: string, text: string | null): string[]`  L131-145
-- `function createPythonResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`  L159-244
-- `interface Binding`  L251-255
-- `interface PythonCallIndex`  L257-266
-- `const EMPTY_INDEX: PythonCallIndex = { topLevel: new Map(), symbols: new Map(), bindings: new Map(), exports: new Map(), }`  L268-273
-- `function bindsValues(kind: string): boolean`  L276-278
-- `function buildPythonCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): PythonCallIndex`  L289-367
-- `function resolvePythonCall( file: FileRecord, site: CallSite, index: PythonCallIndex, ): { to: string; confidence: Confidence } | null`  L375-431
-- `function throughExports( index: PythonCallIndex, module: string, name: string, ): { to: string; confidence: Confidence } | null`  L434-445
+- `function declaredRoots(dir: string, text: string | null): string[]`  L131-189
+- `function createPythonResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`  L203-324
+- `interface Binding`  L331-335
+- `interface PythonCallIndex`  L337-346
+- `const EMPTY_INDEX: PythonCallIndex = { topLevel: new Map(), symbols: new Map(), bindings: new Map(), exports: new Map(), }`  L348-353
+- `function bindsValues(kind: string): boolean`  L356-358
+- `function buildPythonCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): PythonCallIndex`  L369-447
+- `function resolvePythonCall( file: FileRecord, site: CallSite, index: PythonCallIndex, ): { to: string; confidence: Confidence } | null`  L455-511
+- `function throughExports( index: PythonCallIndex, module: string, name: string, ): { to: string; confidence: Confidence } | null`  L514-525
 
 **Calls:** `bindsValues` → [`packages/core/src/resolve/python.ts#bindsValues`](python.ts.md) (high), `declaredRoots` → [`packages/core/src/resolve/python.ts#declaredRoots`](python.ts.md) (high), `joinRelative` → [`packages/core/src/resolve/python.ts#joinRelative`](python.ts.md) (high), `parentDir` → [`packages/core/src/resolve/python.ts#parentDir`](python.ts.md) (high), `pythonPackageDir` → [`packages/core/src/resolve/python.ts#pythonPackageDir`](python.ts.md) (high), `relativeLevel` → [`packages/core/src/resolve/python.ts#relativeLevel`](python.ts.md) (high), `throughExports` → [`packages/core/src/resolve/python.ts#throughExports`](python.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)

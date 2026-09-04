@@ -59,9 +59,17 @@ export interface Truth {
   /** Tarjan SCCs of size > 1 over the import graph; each cycle sorted, the list sorted. */
   cycles: string[][];
   /**
-   * Emulations the truth generator applied, for `RESULTS.md` to disclose. Currently only
-   * `workspace-entry-mapping` (see `truth/ts-workspace.ts`), present when at least one edge
-   * came from it.
+   * Emulations the truth generator applied, for `RESULTS.md` to disclose. Two of them, each
+   * present only when at least one edge actually came from it:
+   *
+   *  - `workspace-entry-mapping` — the installed-and-built state a corpus clone does not have
+   *    (see `truth/ts-workspace.ts`).
+   *  - `nearest-tsconfig-resolution` — the specifier was resolved with the compiler options of
+   *    the nearest `tsconfig.json` above the importing file, and only after standard resolution
+   *    from the repo root failed to land on a file already in the scored set. A corpus of
+   *    independent example apps keeps its `paths` aliases there, not at the root (leaf 2.3).
+   *
+   * `bench/src/report-evals.ts` carries the one-line gloss RESULTS.md prints for each.
    */
   notes: string[];
 }

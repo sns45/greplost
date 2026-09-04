@@ -9,11 +9,12 @@ import type {
   CallEdge,
   Confidence,
   DeclKind,
+  Declaration,
   FileRecord,
   ImportEdge,
   Lang,
 } from "../schema.ts";
-import { compareEdges, compareStrings, externalId, isNodeKind, symbolId, unresolvedId } from "../schema.ts";
+import { compareEdges, compareStrings, externalId, splitNodeId, symbolId, unresolvedId } from "../schema.ts";
 import { buildGoCallIndex, resolveGoCall } from "../resolve/go.ts";
 import { buildKotlinCallIndex, resolveKotlinCall } from "../resolve/kotlin.ts";
 import { buildPythonCallIndex, resolvePythonCall } from "../resolve/python.ts";
@@ -158,11 +159,25 @@ function importBindings(file: FileRecord, specifiers: Map<string, string> | unde
   return bindings;
 }
 
-/** Names declared at the top level of a file (methods excluded), with their kind. */
+/**
+ * True when this declaration is a schema-2 node (a route, a resource, a component) rather than
+ * a symbol the language binds.
+ *
+ * The id decides, never the kind and never the name: `Declaration.name` is the bare node name
+ * (`/x`, `bucket`, `Button`), so a `component.Button` node and the `function Button` beside it
+ * share a name and differ only in their id (driver ruling 2026-09-04). Every symbol-name index
+ * below skips these, so a node can never shadow, collide with, or stand in for the symbol.
+ */
+function isNodeDeclaration(decl: Declaration): boolean {
+  return splitNodeId(decl.id) !== null;
+}
+
+/** Names declared at the top level of a file (methods and schema-2 nodes excluded), with their kind. */
 function topLevelDeclarations(file: FileRecord): Map<string, DeclKind> {
   const names = new Map<string, DeclKind>();
   for (const decl of file.decls) {
     if (decl.parent !== undefined || decl.kind === "method") continue;
+    if (isNodeDeclaration(decl)) continue;
     if (!names.has(decl.name)) names.set(decl.name, decl.kind);
   }
   return names;
@@ -227,8 +242,9 @@ export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): Ex
       if (decl.parent !== undefined || decl.kind === "method") continue;
       if (!decl.exported) continue;
       // A non-file node (schema 2: a route, a resource, a component) lives *inside* a module
-      // and is never one of the names the module exports.
-      if (isNodeKind(decl.kind)) continue;
+      // and is never one of the names the module exports. The id says so, not the kind: a
+      // language declaration may legitimately carry a node kind's name.
+      if (isNodeDeclaration(decl)) continue;
       // `export default function Page() {}` marks the declaration exported, because it is —
       // but the name it is exported under is `default`, not `Page`. The compiler reports one
       // export here and greplost used to report two, which cost S2 precision on every App
@@ -469,6 +485,10 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
   const topLevelByFile = new Map<string, Map<string, DeclKind>>();
   for (const file of files) {
     for (const decl of file.decls) {
+      // A node is not a call target and must not claim the symbol id its bare name would make:
+      // `component.Button` would otherwise register `<file>#Button` as kind `component` and
+      // shadow the `function Button` a call actually lands on.
+      if (isNodeDeclaration(decl)) continue;
       const id = symbolId(file.path, decl.name);
       if (!declKinds.has(id)) declKinds.set(id, decl.kind);
     }

@@ -8,7 +8,7 @@
 
 **Exports:** `NOTES (const)`, `generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }`, `generateTruth(root: string, files: string[]): Truth`, `tfinspectTool(): string`
 
-**Imports:** `node:child_process` (execFileSync), `node:crypto` (createHash), `node:fs` (existsSync, mkdirSync, readFileSync), `node:path` (default), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Confidence, Edge, compareEdges, compareStrings), [`./ts.ts`](ts.ts.md) (Truth)
+**Imports:** `node:child_process` (execFileSync), `node:crypto` (createHash), `node:fs` (existsSync, mkdirSync, readFileSync, statSync), `node:path` (default), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Confidence, Edge, compareEdges, compareStrings, splitNodeId), [`./ts.ts`](ts.ts.md) (Truth)
 
 **Imported by:** None.
 
@@ -21,16 +21,19 @@
 - `const TOOL_SOURCES = ["go.mod", "go.sum", "main.go"] as const`  L40-40
 - `const RUN_TIMEOUT_MS = 15 * 60 * 1000`  L41-41
 - `const MAX_BUFFER = 512 * 1024 * 1024`  L42-42
-- `const NOTES: readonly string[] = ["terraform-config-inspect", "no-call-edges", "hclsyntax-traversals"]`  L52-52
-- `const UNSUPPORTED = ["unsupported:S3"] as const`  L59-59
-- `interface TfToolOutput`  L62-71
-- `function toolHash(): string`  L74-86
-- `function tfinspectTool(): string`  L94-112
-- `function stderrOf(cause: unknown): string`  L114-119
-- `function runTool(root: string): TfToolOutput`  L129-161
-- `function coveredRun(root: string, files: string[]): { tool: TfToolOutput; covered: string[] }`  L167-186
-- `function edge(from: string, to: string, kind: Edge["kind"]): Edge`  L188-190
-- `function generateTruth(root: string, files: string[]): Truth`  L198-229
-- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }`  L238-269
+- `const NOTES: readonly string[] = [ "terraform-config-inspect", "no-call-edges", "hclsyntax-traversals", "same-rules-different-parser", ]`  L60-65
+- `const UNSUPPORTED = ["unsupported:S3"] as const`  L72-72
+- `interface TfToolOutput`  L75-84
+- `function toolHash(): string`  L87-99
+- `function tfinspectTool(): string`  L107-125
+- `function stderrOf(cause: unknown): string`  L127-132
+- `function runToolUncached(root: string): TfToolOutput`  L134-166
+- `const RUN_CACHE = new Map<string, TfToolOutput>()`  L178-178
+- `function runKey(root: string, files: readonly string[]): string`  L180-193
+- `function runTool(root: string, files: readonly string[]): TfToolOutput`  L195-202
+- `function coveredRun(root: string, files: string[]): { tool: TfToolOutput; covered: string[] }`  L208-227
+- `function edge(from: string, to: string, kind: Edge["kind"]): Edge`  L229-231
+- `function generateTruth(root: string, files: string[]): Truth`  L239-270
+- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }`  L279-317
 
-**Calls:** `coveredRun` → [`bench/src/truth/hcl.ts#coveredRun`](hcl.ts.md) (high), `edge` → [`bench/src/truth/hcl.ts#edge`](hcl.ts.md) (high), `runTool` → [`bench/src/truth/hcl.ts#runTool`](hcl.ts.md) (high), `stderrOf` → [`bench/src/truth/hcl.ts#stderrOf`](hcl.ts.md) (high), `tfinspectTool` → [`bench/src/truth/hcl.ts#tfinspectTool`](hcl.ts.md) (high), `toolHash` → [`bench/src/truth/hcl.ts#toolHash`](hcl.ts.md) (high)
+**Calls:** `coveredRun` → [`bench/src/truth/hcl.ts#coveredRun`](hcl.ts.md) (high), `edge` → [`bench/src/truth/hcl.ts#edge`](hcl.ts.md) (high), `runKey` → [`bench/src/truth/hcl.ts#runKey`](hcl.ts.md) (high), `runTool` → [`bench/src/truth/hcl.ts#runTool`](hcl.ts.md) (high), `runToolUncached` → [`bench/src/truth/hcl.ts#runToolUncached`](hcl.ts.md) (high), `stderrOf` → [`bench/src/truth/hcl.ts#stderrOf`](hcl.ts.md) (high), `tfinspectTool` → [`bench/src/truth/hcl.ts#tfinspectTool`](hcl.ts.md) (high), `toolHash` → [`bench/src/truth/hcl.ts#toolHash`](hcl.ts.md) (high), `splitNodeId` → [`packages/core/src/schema.ts#splitNodeId`](../../../../greplost__core/modules/src/schema.ts.md) (high)

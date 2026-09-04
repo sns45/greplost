@@ -15,39 +15,40 @@
 **Blast radius:** 0 files (`greplost impact bench/truth/tfinspect/main.go`)
 
 **Key symbols:**
-- `type edge struct`  L71-74
-- `type refEdge struct`  L78-84
-- `type output struct`  L87-107
-- `const rootDirID = "."`  L109-109
-- `var skipDirs = map[string]bool{ ".git": true, ".greplost": true, ".terraform": true, "build": true, "dist": true, "node_modules": true, "testdata": true, "vendor": true, }`  L112-121
-- `var ignoredHeads = map[string]bool{ "count": true, "each": true, "path": true, "self": true, "terraform": true, }`  L124-130
-- `const requiredProviderPrefix = "provider/"`  L134-134
-- `func main()`  L136-158
-- `type decl struct`  L165-172
-- `type rawRef struct`  L175-180
-- `type module struct`  L183-187
-- `func nodeID(file, kind, name string) string`  L189-194
-- `func indexKey(kind, name string) string`  L198-203
-- `func dirOf(file string) string`  L206-212
-- `func isLocalSource(source string) bool`  L216-219
-- `func joinRelative(dir, rest string) (string, bool)`  L223-245
-- `func terraformFiles(root string) ([]string, error)`  L252-284
-- `func blockName(blockType string, labels []string) (kind string, name string, ok bool)`  L293-308
-- `func literalString(attr *hclsyntax.Attribute) string`  L311-320
-- `func attributesInOrder(body *hclsyntax.Body) []*hclsyntax.Attribute`  L324-333
-- `func uniqueName(used map[string]bool, file, kind, name string) string`  L336-349
-- `func addressOf(traversal hcl.Traversal) string`  L353-369
-- `func exprReferences(expr hclsyntax.Expression, bound map[string]bool) []string`  L375-389
-- `func providerOfType(resourceType string) string`  L393-398
-- `func walkBody(body *hclsyntax.Body, fromID, dir string, bound map[string]bool, topLevel bool, refs *[]rawRef)`  L402-426
-- `func scanFile(parser *hclparse.Parser, absolute, rel string) ([]*decl, []rawRef, []string)`  L430-517
-- `func providerReferences(block *hclsyntax.Block, kind, owner, dir string) []rawRef`  L521-546
-- `func only(modules map[string]*module, dir, key string) *decl`  L553-563
-- `func providerConfig(modules map[string]*module, dir, name, alias string) *decl`  L567-582
-- `func resolve(modules map[string]*module, ref rawRef) (refEdge, bool)`  L585-666
-- `func run(root string) (*output, error)`  L672-769
-- `func relativePos(root, filename string) string`  L773-785
-- `func sortOutput(out *output)`  L787-814
-- `func dedupeStrings(values []string) []string`  L816-827
+- `type edge struct`  L75-78
+- `type refEdge struct`  L82-88
+- `type output struct`  L91-111
+- `const rootDirID = "."`  L113-113
+- `var skipDirs = map[string]bool{ ".git": true, ".greplost": true, ".terraform": true, "build": true, "dist": true, "node_modules": true, "testdata": true, "vendor": true, }`  L116-125
+- `var ignoredHeads = map[string]bool{ "count": true, "each": true, "path": true, "self": true, "terraform": true, }`  L128-134
+- `const requiredProviderPrefix = "provider/"`  L138-138
+- `func main()`  L140-162
+- `type decl struct`  L169-176
+- `type rawRef struct`  L179-184
+- `type module struct`  L187-191
+- `func nodeID(file, kind, name string) string`  L193-198
+- `func indexKey(kind, name string) string`  L202-207
+- `func dirOf(file string) string`  L210-216
+- `func isLocalSource(source string) bool`  L220-223
+- `func joinRelative(dir, rest string) (string, bool)`  L227-249
+- `func terraformFiles(root string) ([]string, error)`  L256-288
+- `func blockName(blockType string, labels []string) (kind string, name string, ok bool)`  L297-312
+- `func literalString(attr *hclsyntax.Attribute) string`  L315-324
+- `func attributesInOrder(body *hclsyntax.Body) []*hclsyntax.Attribute`  L328-337
+- `func uniqueID(used map[string]bool, file, kind, name string) string`  L342-356
+- `func addressOf(traversal hcl.Traversal) string`  L360-376
+- `func exprReferences(expr hclsyntax.Expression, bound map[string]bool) []string`  L382-396
+- `func providerOfType(resourceType string) string`  L400-405
+- `func walkBody(body *hclsyntax.Body, fromID, dir string, bound map[string]bool, topLevel bool, refs *[]rawRef)`  L409-429
+- `func walkDynamicBlock(block *hclsyntax.Block, fromID, dir string, bound map[string]bool, refs *[]rawRef)`  L434-474
+- `func scanFile(parser *hclparse.Parser, absolute, rel string) ([]*decl, []rawRef, []string)`  L478-565
+- `func providerReferences(block *hclsyntax.Block, kind, owner, dir string) []rawRef`  L569-594
+- `func only(modules map[string]*module, dir, key string) *decl`  L601-611
+- `func providerConfig(modules map[string]*module, dir, name, alias string) *decl`  L615-630
+- `func resolve(modules map[string]*module, ref rawRef) (refEdge, bool)`  L633-714
+- `func run(root string) (*output, error)`  L720-824
+- `func relativePos(root, filename string) string`  L828-840
+- `func sortOutput(out *output)`  L842-869
+- `func dedupeStrings(values []string) []string`  L871-882
 
-**Calls:** `addressOf` → [`bench/truth/tfinspect/main.go#addressOf`](main.go.md) (high), `attributesInOrder` → [`bench/truth/tfinspect/main.go#attributesInOrder`](main.go.md) (high), `blockName` → [`bench/truth/tfinspect/main.go#blockName`](main.go.md) (high), `dedupeStrings` → [`bench/truth/tfinspect/main.go#dedupeStrings`](main.go.md) (high), `dirOf` → [`bench/truth/tfinspect/main.go#dirOf`](main.go.md) (high), `exprReferences` → [`bench/truth/tfinspect/main.go#exprReferences`](main.go.md) (high), `indexKey` → [`bench/truth/tfinspect/main.go#indexKey`](main.go.md) (high), `isLocalSource` → [`bench/truth/tfinspect/main.go#isLocalSource`](main.go.md) (high), `joinRelative` → [`bench/truth/tfinspect/main.go#joinRelative`](main.go.md) (high), `literalString` → [`bench/truth/tfinspect/main.go#literalString`](main.go.md) (high), `nodeID` → [`bench/truth/tfinspect/main.go#nodeID`](main.go.md) (high), `only` → [`bench/truth/tfinspect/main.go#only`](main.go.md) (high), `providerConfig` → [`bench/truth/tfinspect/main.go#providerConfig`](main.go.md) (high), `providerOfType` → [`bench/truth/tfinspect/main.go#providerOfType`](main.go.md) (high), `providerReferences` → [`bench/truth/tfinspect/main.go#providerReferences`](main.go.md) (high), `relativePos` → [`bench/truth/tfinspect/main.go#relativePos`](main.go.md) (high), `resolve` → [`bench/truth/tfinspect/main.go#resolve`](main.go.md) (high), `run` → [`bench/truth/tfinspect/main.go#run`](main.go.md) (high), `scanFile` → [`bench/truth/tfinspect/main.go#scanFile`](main.go.md) (high), `sortOutput` → [`bench/truth/tfinspect/main.go#sortOutput`](main.go.md) (high), `terraformFiles` → [`bench/truth/tfinspect/main.go#terraformFiles`](main.go.md) (high), `uniqueName` → [`bench/truth/tfinspect/main.go#uniqueName`](main.go.md) (high), `walkBody` → [`bench/truth/tfinspect/main.go#walkBody`](main.go.md) (high)
+**Calls:** `addressOf` → [`bench/truth/tfinspect/main.go#addressOf`](main.go.md) (high), `attributesInOrder` → [`bench/truth/tfinspect/main.go#attributesInOrder`](main.go.md) (high), `blockName` → [`bench/truth/tfinspect/main.go#blockName`](main.go.md) (high), `dedupeStrings` → [`bench/truth/tfinspect/main.go#dedupeStrings`](main.go.md) (high), `dirOf` → [`bench/truth/tfinspect/main.go#dirOf`](main.go.md) (high), `exprReferences` → [`bench/truth/tfinspect/main.go#exprReferences`](main.go.md) (high), `indexKey` → [`bench/truth/tfinspect/main.go#indexKey`](main.go.md) (high), `isLocalSource` → [`bench/truth/tfinspect/main.go#isLocalSource`](main.go.md) (high), `joinRelative` → [`bench/truth/tfinspect/main.go#joinRelative`](main.go.md) (high), `literalString` → [`bench/truth/tfinspect/main.go#literalString`](main.go.md) (high), `nodeID` → [`bench/truth/tfinspect/main.go#nodeID`](main.go.md) (high), `only` → [`bench/truth/tfinspect/main.go#only`](main.go.md) (high), `providerConfig` → [`bench/truth/tfinspect/main.go#providerConfig`](main.go.md) (high), `providerOfType` → [`bench/truth/tfinspect/main.go#providerOfType`](main.go.md) (high), `providerReferences` → [`bench/truth/tfinspect/main.go#providerReferences`](main.go.md) (high), `relativePos` → [`bench/truth/tfinspect/main.go#relativePos`](main.go.md) (high), `resolve` → [`bench/truth/tfinspect/main.go#resolve`](main.go.md) (high), `run` → [`bench/truth/tfinspect/main.go#run`](main.go.md) (high), `scanFile` → [`bench/truth/tfinspect/main.go#scanFile`](main.go.md) (high), `sortOutput` → [`bench/truth/tfinspect/main.go#sortOutput`](main.go.md) (high), `terraformFiles` → [`bench/truth/tfinspect/main.go#terraformFiles`](main.go.md) (high), `uniqueID` → [`bench/truth/tfinspect/main.go#uniqueID`](main.go.md) (high), `walkBody` → [`bench/truth/tfinspect/main.go#walkBody`](main.go.md) (high), `walkDynamicBlock` → [`bench/truth/tfinspect/main.go#walkDynamicBlock`](main.go.md) (high)

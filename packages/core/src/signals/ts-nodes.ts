@@ -245,7 +245,11 @@ export function signalNode(input: SignalNodeInput): Declaration {
   return {
     id: nodeId(input.path, input.kind, input.name),
     file: input.path,
-    name: `${input.kind}.${input.name}`,
+    // The bare node name, the same convention the HCL nodes use (driver ruling 2026-09-04).
+    // Collision safety lives in the id, not in the name: `component.Button` and
+    // `function Button` are two ids and one name, and `graph/link.ts` keeps the node out of
+    // every symbol-name index so the function is the one a call or an export resolves to.
+    name: input.name,
     kind: input.kind,
     signature: clip(input.signature),
     exported: false,

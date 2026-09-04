@@ -269,11 +269,11 @@
 ## bench/src/report-evals.ts
 
 - `function eval1Section(payload: Payload | null, assetsRel = "docs/assets"): EvalSection` L47-126
-- `function eval2Section(payload: Payload | null): EvalSection` L184-239
-- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection` L252-357
-- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection` L363-450
-- `function eval5Section(payload: Payload | null): EvalSection` L474-502
-- `function mapqualitySection(payload: Payload | null): EvalSection` L504-562
+- `function eval2Section(payload: Payload | null): EvalSection` L189-244
+- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection` L257-362
+- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection` L368-455
+- `function eval5Section(payload: Payload | null): EvalSection` L479-507
+- `function mapqualitySection(payload: Payload | null): EvalSection` L509-567
 
 ## bench/src/report-payload.ts
 
@@ -374,21 +374,21 @@
 
 ## bench/src/structural.ts
 
-- `function resultSuite(fixture: boolean): string` L66-68
-- `const TARGETS = { S1: [0.99, 0.97], S2: [0.99, 0.99], S3: 0.95, S4: 1.0, S5: 0.95, S6: 0.95 } as const` L75-75
-- `type TruthLang = Lang` L92-92
-- `function truthTargetFor(lang: Lang): TruthTarget` L103-105
-- `interface RepoScores` L135-197
-- `interface SubstituteChecks` L207-216
-- `async function run(args: string[]): Promise<number>` L218-230
-- `function buildOptionsFor(target: Target): { root: string; config?: GreplostConfig }` L503-529
-- `function unsupportedMetrics(notes: readonly string[]): string[]` L622-630
-- `function scoredFiles(snapshot: Snapshot, lang: TruthLang): string[]` L716-726
-- `function scoreAgainstTruth( name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang, extra: { references: Edge[]; nodes: string[] } | null = null, ): RepoScores` L734-873
-- `function perLangSummary( targets: readonly Target[], scores: readonly RepoScores[], ): Record<string, { repos: string[]; gated: boolean; truthSource: string }>` L907-928
-- `function unparsableBucket( scores: readonly RepoScores[], ): { count: number; files: { repo: string; path: string; reason: string }[] }` L957-964
-- `function missedMetrics(scores: RepoScores): string[]` L976-1007
-- `function locate(snapshot: Snapshot, key: string, kind: "import" | "call" | "export"): string` L1061-1073
+- `function resultSuite(fixture: boolean): string` L69-71
+- `const TARGETS = { S1: [0.99, 0.97], S2: [0.99, 0.99], S3: 0.95, S4: 1.0, S5: 0.95, S6: 0.95 } as const` L78-78
+- `type TruthLang = Lang` L95-95
+- `function truthTargetFor(lang: Lang): TruthTarget` L106-108
+- `interface RepoScores` L138-200
+- `interface SubstituteChecks` L210-219
+- `async function run(args: string[]): Promise<number>` L221-233
+- `function buildOptionsFor(target: Target): { root: string; config?: GreplostConfig }` L506-532
+- `function unsupportedMetrics(notes: readonly string[]): string[]` L625-633
+- `function scoredFiles(snapshot: Snapshot, lang: TruthLang): string[]` L719-729
+- `function scoreAgainstTruth( name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang, extra: { references: Edge[]; nodes: string[] } | null = null, ): RepoScores` L737-880
+- `function perLangSummary( targets: readonly Target[], scores: readonly RepoScores[], ): Record<string, { repos: string[]; gated: boolean; truthSource: string }>` L914-935
+- `function unparsableBucket( scores: readonly RepoScores[], ): { count: number; files: { repo: string; path: string; reason: string }[] }` L964-971
+- `function missedMetrics(scores: RepoScores): string[]` L983-1014
+- `function locate(snapshot: Snapshot, key: string, kind: "import" | "call" | "export"): string` L1068-1080
 
 ## bench/src/tasks.ts
 
@@ -422,10 +422,10 @@
 
 ## bench/src/truth/hcl.ts
 
-- `const NOTES: readonly string[] = ["terraform-config-inspect", "no-call-edges", "hclsyntax-traversals"]` L52-52
-- `function tfinspectTool(): string` L94-112
-- `function generateTruth(root: string, files: string[]): Truth` L198-229
-- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L238-269
+- `const NOTES: readonly string[] = [ "terraform-config-inspect", "no-call-edges", "hclsyntax-traversals", "same-rules-different-parser", ]` L60-65
+- `function tfinspectTool(): string` L107-125
+- `function generateTruth(root: string, files: string[]): Truth` L239-270
+- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L279-317
 
 ## bench/src/truth/java.ts
 
@@ -439,9 +439,11 @@
 
 ## bench/src/truth/python.ts
 
-- `const NOTES: readonly string[] = ["ast-only", "no-import-execution", "pep420-namespace-packages"]` L44-44
-- `function pytruthScript(): string` L47-49
-- `function generateTruth(root: string, files: string[]): Truth` L130-175
+- `function pythonExecutable(): string` L42-45
+- `const PYTHON_FLOOR: readonly [number, number] = [3, 11]` L57-57
+- `const NOTES: readonly string[] = [ "ast-only", "no-import-execution", "pep420-namespace-packages", "python>=3.11", ]` L70-75
+- `function pytruthScript(): string` L78-80
+- `function generateTruth(root: string, files: string[]): Truth` L183-234
 
 ## bench/src/truth/registry.ts
 
@@ -451,9 +453,9 @@
 
 ## bench/src/truth/rust.ts
 
-- `const NOTES: readonly string[] = ["syn-item-tree", "cargo-metadata-roots", "no-trait-dispatch"]` L51-51
-- `function rustTruthTool(): string` L117-148
-- `function generateTruth(root: string, files: string[]): Truth` L198-247
+- `const NOTES: readonly string[] = [ "syn-item-tree", "cargo-metadata-roots", "no-trait-dispatch", // Disclosure, not a choice: `rusttruth` re-implements spec 1.3's rules on `syn`'s item tree //…` L58-66
+- `function rustTruthTool(): string` L132-163
+- `function generateTruth(root: string, files: string[]): Truth` L213-268
 
 ## bench/src/truth/signals-pulumi-go.ts
 
@@ -466,7 +468,7 @@
 - `interface SignalExtra` L84-87
 - `function generateExtra(root: string, files: string[]): SignalExtra` L89-97
 - `function generateTruth(root: string, files: string[]): Truth` L103-115
-- `function appRoutePath(file: string): string | undefined` L553-564
+- `function appRoutePath(file: string): string | undefined` L707-718
 
 ## bench/src/truth/ts-calls.ts
 
@@ -486,10 +488,10 @@
 
 ## bench/src/truth/ts.ts
 
-- `interface Truth` L46-67
-- `function listTypeScriptFiles(root: string): string[]` L79-97
-- `interface TruthOptions` L100-111
-- `function generateTsTruth(root: string, files: string[], options: TruthOptions = {}): Truth` L191-400
+- `interface Truth` L46-75
+- `function listTypeScriptFiles(root: string): string[]` L87-105
+- `interface TruthOptions` L108-119
+- `function generateTsTruth(root: string, files: string[], options: TruthOptions = {}): Truth` L199-408
 
 ## bench/src/truth/yaml-actions.ts
 
