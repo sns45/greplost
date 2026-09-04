@@ -168,16 +168,28 @@ describe("absent references file", () => {
     expect(linkReferences(files, createResolver(ctx), ctx)).toEqual([]);
   });
 
-  test("the inert signal layer contributes nothing to any file", () => {
+  test("the signal layer is complete and only the implemented passes apply", () => {
     expect(SIGNAL_PASSES.map((pass) => pass.id)).toEqual(["next", "pulumi-go", "pulumi-ts", "react", "tanstack"]);
-    for (const pass of SIGNAL_PASSES) expect(pass.applies("a.tsx", 'import "react";')).toBe(false);
-    const out = runSignals({
-      path: "a.tsx",
-      lang: "tsx",
-      source: "export const A = () => null;\n",
-      tree: NO_TREE,
-      base: { decls: [], imports: [], exports: [], calls: [] },
-    });
+    // Leaf 2.3 landed the four TypeScript passes, so `react` now answers for a `.tsx` file;
+    // `next`, `pulumi-ts`, `tanstack` want a path or text this source does not have, and
+    // `pulumi-go` is still the inert stub leaf 2.7 owns.
+    const applies = SIGNAL_PASSES.filter((pass) => pass.applies("a.tsx", 'import "react";')).map((pass) => pass.id);
+    expect(applies).toEqual(["react"]);
+  });
+
+  test("a pass that does not apply is never given the tree", () => {
+    const out = runSignals(
+      {
+        path: "a.tsx",
+        lang: "tsx",
+        source: "export const A = () => null;\n",
+        tree: NO_TREE,
+        base: { decls: [], imports: [], exports: [], calls: [] },
+      },
+      // Every pass turned off: `config.signals: []` is how a repo opts out (spec 3.1), and it
+      // is the one setting under which no pass may touch the (here unusable) tree.
+      [],
+    );
     expect(out).toEqual({ decls: [], refs: [] });
   });
 });
@@ -265,10 +277,12 @@ describe("references jsonl round trip", () => {
   });
 
   test("linkReferences refuses a reference from a language with no rules", () => {
-    const files = [record({ lang: "ts", path: "a.ts", refs: [ref({ refKind: "route-handler" })] })];
-    const ctx = emptyContext(["a.ts"]);
+    // `ts` gained rules with leaf 2.3 (`references/ts.ts`); Go still has none, so it is the
+    // language that proves the guard is still armed.
+    const files = [record({ lang: "go", path: "a.go", refs: [ref({ refKind: "resource-input" })] })];
+    const ctx = emptyContext(["a.go"]);
     expect(() => linkReferences(files, createResolver(ctx), ctx)).toThrow(
-      /greplost: a\.ts produced 1 reference but there are no reference rules for "ts"/,
+      /greplost: a\.go produced 1 reference but there are no reference rules for "go"/,
     );
   });
 });

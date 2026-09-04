@@ -35,6 +35,7 @@ import { createParser } from "./parser.ts";
 import type { ParserHandle } from "./parser.ts";
 import { extractFile } from "./extract/index.ts";
 import type { SignalPassId } from "./signals/index.ts";
+import { signalPathKey } from "./signals/index.ts";
 import { createResolver, detectPackages } from "./resolve/index.ts";
 import { buildExportIndex, computeMetrics, exportNames, linkCalls, linkImports } from "./graph/index.ts";
 import { linkReferences } from "./references/index.ts";
@@ -203,9 +204,12 @@ async function extractAll(
 
   for (let i = 0; i < sources.length; i++) {
     const source = sources[i] as SourceFile;
-    const key = recordKey(source);
+    const key = recordKey(source, signals);
     const hit = cache?.get(source.sha256, source.lang);
-    if (hit !== undefined) {
+    // A cached record is only re-stampable onto another path while nothing in it came from
+    // the path it was extracted at. The signal layer says what it reads (`signalPathKey`);
+    // when the two paths disagree, the hit is not this file's record and it is re-extracted.
+    if (hit !== undefined && signalPathKey(hit.path, hit.lang, signals) === signalPathKey(source.path, source.lang, signals)) {
       files[i] = restamp(hit, source.path);
       continue;
     }
@@ -226,7 +230,7 @@ async function extractAll(
       const record = freezeRecord(extract(source, parser, signals));
       cache?.set(record);
       files[i] = record;
-      for (const twin of twins.get(recordKey(source)) ?? []) {
+      for (const twin of twins.get(recordKey(source, signals)) ?? []) {
         files[twin] = restamp(record, (sources[twin] as SourceFile).path);
       }
     }
@@ -241,9 +245,13 @@ async function extractAll(
   });
 }
 
-/** Identity of an extraction result: the same bytes read as two languages are two records. */
-function recordKey(source: SourceFile): string {
-  return `${source.lang}:${source.sha256}`;
+/**
+ * Identity of an extraction result: the same bytes read as two languages are two records, and
+ * so are the same bytes at two paths the signal layer would name differently (schema 2).
+ */
+function recordKey(source: SourceFile, signals: readonly SignalPassId[] | undefined): string {
+  const fromPath = signalPathKey(source.path, source.lang, signals);
+  return fromPath === "" ? `${source.lang}:${source.sha256}` : `${source.lang}:${source.sha256}:${fromPath}`;
 }
 
 /**

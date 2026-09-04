@@ -10,6 +10,7 @@ export type { ReferenceContext, ReferenceRule } from "./link.ts";
 
 export { resolveDockerfileReferences } from "./dockerfile.ts";
 export { resolveHclReferences } from "./hcl.ts";
+export { resolveTsReferences } from "./ts.ts";
 export { resolveYamlReferences } from "./yaml.ts";
 export { resolveYamlActionsReferences } from "./yaml-actions.ts";
 export { resolveYamlK8sReferences } from "./yaml-k8s.ts";

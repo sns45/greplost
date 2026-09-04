@@ -396,20 +396,22 @@ describe("linkImports", () => {
     ]);
   });
 
-  test("keeps a self-import as an edge without inventing a target", () => {
+  test("drops a self-import rather than making a file depend on itself", () => {
+    // Build 1 kept this edge (the rule was "resolve it, never invent a target"). Build 2's
+    // pulumi corpus contains a real one — `iam.ts` writing `import * as iam from "./iam"` —
+    // and keeping it puts the file in its own fan-in, fan-out and blast radius, and a
+    // self-loop in the import graph. `tsc` reports no such edge, so the compiler truth
+    // scored greplost's as a false positive. Dropping it is the answer both agree on
+    // (build 2, leaf 2.3; the resolution itself is unchanged).
     const a = file("src/a.ts", { imports: [imp("./a", ["x"])] });
-    const edges = linkImports([a], resolver(["src/a.ts"]));
-    expect(edges).toEqual([
-      {
-        from: "src/a.ts",
-        to: "src/a.ts",
-        kind: "import",
-        symbols: ["x"],
-        confidence: "high",
-        specifier: "./a",
-        importKind: "static",
-      },
-    ]);
+    expect(linkImports([a], resolver(["src/a.ts"]))).toEqual([]);
+  });
+
+  test("a self-import does not stop the file's other imports being linked", () => {
+    const a = file("src/a.ts", { imports: [imp("./a", ["x"]), imp("./b", ["y"])] });
+    const b = file("src/b.ts", {});
+    const edges = linkImports([a, b], resolver(["src/a.ts", "src/b.ts"]));
+    expect(edges.map((e) => `${e.from}|${e.to}`)).toEqual(["src/a.ts|src/b.ts"]);
   });
 
   test("linking does not depend on the order the files arrive in", () => {

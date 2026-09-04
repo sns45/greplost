@@ -125,6 +125,69 @@ function diagnosticsEnabled(options: TruthOptions): boolean {
  * is not trustworthy, and silence would hide that. The far more expensive semantic
  * diagnostic count is opt-in (see `TruthOptions.diagnostics`).
  */
+/**
+ * Per-project module resolution, for a corpus that is many apps rather than one.
+ *
+ * `vercel/next.js/examples` and `TanStack/router/examples` are each dozens of independent
+ * projects, and every one of them declares its own `paths` aliases in its own `tsconfig.json`.
+ * A single program built from the repo-root config resolves none of them, so the truth set is
+ * missing every aliased import and every call through one. This walks up from the importing
+ * file to the nearest `tsconfig.json` at or below the corpus root and resolves with *that*
+ * project's options, which is what the app's own toolchain does.
+ *
+ * Read lazily and cached per directory: a corpus with one tsconfig pays for one read.
+ */
+class ProjectOptions {
+  private readonly byDirectory = new Map<string, { options: ts.CompilerOptions; cache: ts.ModuleResolutionCache } | null>();
+
+  constructor(
+    private readonly absRoot: string,
+    private readonly canonical: (p: string) => string,
+  ) {}
+
+  /** The file a specifier resolves to under the nearest project's options, or undefined. */
+  resolve(specifier: string, containingFile: string): string | undefined {
+    const project = this.forFile(containingFile);
+    if (project === null) return undefined;
+    const resolved = ts.resolveModuleName(specifier, containingFile, project.options, ts.sys, project.cache);
+    return resolved.resolvedModule?.resolvedFileName;
+  }
+
+  private forFile(containingFile: string): { options: ts.CompilerOptions; cache: ts.ModuleResolutionCache } | null {
+    let dir = path.dirname(path.resolve(containingFile));
+    const seen: string[] = [];
+    for (let guard = 0; guard < 64; guard += 1) {
+      const cached = this.byDirectory.get(dir);
+      if (cached !== undefined) {
+        for (const visited of seen) this.byDirectory.set(visited, cached);
+        return cached;
+      }
+      seen.push(dir);
+      const configPath = path.join(dir, "tsconfig.json");
+      if (existsSync(configPath)) {
+        const loaded = this.load(configPath, dir);
+        for (const visited of seen) this.byDirectory.set(visited, loaded);
+        return loaded;
+      }
+      // Stop at the corpus root: a tsconfig above it belongs to some other checkout.
+      if (this.canonical(toPosix(dir)) === this.canonical(toPosix(this.absRoot))) break;
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+    for (const visited of seen) this.byDirectory.set(visited, null);
+    return null;
+  }
+
+  private load(configPath: string, dir: string): { options: ts.CompilerOptions; cache: ts.ModuleResolutionCache } | null {
+    const read = ts.readConfigFile(configPath, ts.sys.readFile);
+    if (read.error || !read.config) return null;
+    const parsed = ts.parseJsonConfigFileContent(read.config, ts.sys, dir);
+    const options: ts.CompilerOptions = { ...parsed.options, allowJs: true, noEmit: true };
+    return { options, cache: ts.createModuleResolutionCache(dir, this.canonical, options) };
+  }
+}
+
 export function generateTsTruth(root: string, files: string[], options: TruthOptions = {}): Truth {
   const absRoot = path.resolve(root);
   // Sorted, unique, normalised: the root file order reaches the program, and the program's
@@ -153,6 +216,8 @@ export function generateTsTruth(root: string, files: string[], options: TruthOpt
 
   const resolutionCache = ts.createModuleResolutionCache(absRoot, canonical, compilerOptions);
   let workspaceEdges = 0;
+  const projects = new ProjectOptions(absRoot, canonical);
+  let projectEdges = 0;
 
   /**
    * Resolve one specifier the way an installed, built workspace would. Falls back to
@@ -163,6 +228,19 @@ export function generateTsTruth(root: string, files: string[], options: TruthOpt
     const standard = ts.resolveModuleName(specifier, containingFile, compilerOptions, ts.sys, resolutionCache);
     const found = standard.resolvedModule?.resolvedFileName;
     if (found !== undefined && requestedByPath.has(canonical(toPosix(found)))) return found;
+
+    // A corpus of many independent apps has many tsconfigs, and the root one knows none of
+    // their `paths` aliases (`~/components/X`, `@/lib/y`). Resolving those with the *nearest*
+    // tsconfig is what a real toolchain does, and without it every aliased import is missing
+    // from the truth set — which scores greplost's correct edge as a false positive, and every
+    // call through it as one too. Only ever consulted after the standard resolution failed to
+    // land on a requested file, so a single-project repo behaves exactly as before.
+    const local = projects.resolve(specifier, containingFile);
+    if (local !== undefined && requestedByPath.has(canonical(toPosix(local)))) {
+      projectEdges += 1;
+      return local;
+    }
+
     if (!workspace.enabled) return found;
     const candidates =
       found !== undefined
@@ -314,7 +392,10 @@ export function generateTsTruth(root: string, files: string[], options: TruthOpt
       covered.map((entry) => entry.id),
       importEdges,
     ),
-    notes: workspaceEdges > 0 ? ["workspace-entry-mapping"] : [],
+    notes: [
+      ...(workspaceEdges > 0 ? ["workspace-entry-mapping"] : []),
+      ...(projectEdges > 0 ? ["nearest-tsconfig-resolution"] : []),
+    ],
   };
 }
 

@@ -31,6 +31,7 @@ import { compareStrings, isNodeKind, symbolId } from "../schema.ts";
 import type { RepoContext, Resolver } from "../resolve/resolver.ts";
 import { resolveDockerfileReferences } from "./dockerfile.ts";
 import { resolveHclReferences } from "./hcl.ts";
+import { resolveTsReferences } from "./ts.ts";
 import { resolveYamlReferences } from "./yaml.ts";
 
 /** What a per-language reference rule is allowed to look at. */
@@ -65,6 +66,12 @@ const REFERENCE_RULES: Readonly<Partial<Record<Lang, ReferenceRule>>> = {
   hcl: resolveHclReferences,
   yaml: resolveYamlReferences,
   dockerfile: resolveDockerfileReferences,
+  // The four JavaScript dialects share one rule module: the references they produce come from
+  // the signal passes (`route-handler`, `resource-input`), which run on all four (leaf 2.3).
+  ts: resolveTsReferences,
+  tsx: resolveTsReferences,
+  js: resolveTsReferences,
+  jsx: resolveTsReferences,
 };
 
 /**
