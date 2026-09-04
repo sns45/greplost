@@ -30,6 +30,7 @@ import type {
 import { compareStrings, isNodeKind, symbolId } from "../schema.ts";
 import type { RepoContext, Resolver } from "../resolve/resolver.ts";
 import { resolveDockerfileReferences } from "./dockerfile.ts";
+import { resolveGoReferences } from "./go.ts";
 import { resolveHclReferences } from "./hcl.ts";
 import { resolveTsReferences } from "./ts.ts";
 import { resolveYamlReferences } from "./yaml.ts";
@@ -63,6 +64,7 @@ export type ReferenceRule = (
  * mistake worth an error, not a silent drop — see `linkReferences`.
  */
 const REFERENCE_RULES: Readonly<Partial<Record<Lang, ReferenceRule>>> = {
+  go: resolveGoReferences,
   hcl: resolveHclReferences,
   yaml: resolveYamlReferences,
   dockerfile: resolveDockerfileReferences,

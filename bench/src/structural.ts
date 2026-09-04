@@ -600,7 +600,16 @@ async function extraFor(
   const predictedRefs = (snapshot.references ?? []).some((edge) => scored.has(fileOf(edge.from)));
   if (!predictedNodes && !predictedRefs) return null;
 
-  const target_: TruthTarget = isTsFamily(target.lang) ? "signals-ts" : truthTargetFor(target.lang);
+  // The signal oracle is a *different* oracle from the language one, for a different question,
+  // so the two languages that have signal passes name theirs here: `truth/signals-ts.ts` for
+  // the TypeScript family (S1 to S4 stay with `truth/ts.ts`) and `truth/signals-pulumi-go.ts`
+  // for Go (S1 to S4 stay with `truth/go.ts`). Every other language asks its own truth module,
+  // which is where the IaC node and reference sets live (leaf 2.7).
+  const target_: TruthTarget = isTsFamily(target.lang)
+    ? "signals-ts"
+    : target.lang === "go"
+      ? "signals-pulumi-go"
+      : truthTargetFor(target.lang);
   let module: TruthModule;
   try {
     module = await loadTruth(target_);

@@ -47,7 +47,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { compareEdges, compareStrings, type Edge } from "@greplost/core/schema";
 import type { Truth } from "./ts.ts";
@@ -128,32 +128,103 @@ function stderrOf(cause: unknown): string {
   return text.length > 2000 ? `${text.slice(0, 2000)}…` : text;
 }
 
+/**
+ * The tool's view of `root`, one module at a time.
+ *
+ * `go list ./...` is a *module* command: run from a directory that is not inside a module it
+ * matches nothing at all, and it never descends into a nested module. A repository that is one
+ * module (every build-1 Go corpus, and every Go fixture) is loaded exactly as it always was,
+ * from its own root. A repository that is a bag of modules — `pulumi/examples`, the pinned
+ * `pulumi-go` corpus, is fifty of them with nothing at the top — is loaded once per module and
+ * the ids are re-rooted onto the repository, so both sides of the score still speak repo paths
+ * (leaf 2.7).
+ */
 function runTool(root: string): GoToolOutput {
+  const dirs = moduleDirs(root);
+  if (dirs.length === 1 && dirs[0] === ".") return runToolIn(root, "");
+
+  const merged: GoToolOutput = { files: [], imports: [], exports: {}, calls: [], errors: [], packages: 0 };
+  const seenErrors = new Set<string>();
+  for (const dir of dirs) {
+    // One module the go command refuses to start on (an unbuildable `go.mod`, a missing
+    // `go.sum` entry) is a disclosed error, not a dead run: the other forty-nine still have
+    // something to say, and the emptiness guards below still catch a repo where none do.
+    let part: GoToolOutput;
+    try {
+      part = runToolIn(path.join(root, dir), `${dir}/`);
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : String(cause);
+      if (!seenErrors.has(message)) {
+        seenErrors.add(message);
+        merged.errors.push(message);
+      }
+      continue;
+    }
+    merged.files.push(...part.files);
+    merged.imports.push(...part.imports);
+    merged.calls.push(...part.calls);
+    merged.packages += part.packages;
+    for (const [file, names] of Object.entries(part.exports)) merged.exports[file] = names;
+    for (const message of part.errors) {
+      if (seenErrors.has(message)) continue;
+      seenErrors.add(message);
+      merged.errors.push(message);
+    }
+  }
+  merged.files.sort(compareStrings);
+  merged.errors.sort(compareStrings);
+  return merged;
+}
+
+/** Module directories under `root`, repo-relative and sorted; `["."]` when the root is one. */
+function moduleDirs(root: string): string[] {
+  if (existsSync(path.join(root, "go.mod"))) return ["."];
+  const out: string[] = [];
+  const walk = (dir: string, prefix: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        const name = entry.name;
+        if (name.startsWith(".") || name === "vendor" || name === "testdata" || name === "node_modules") continue;
+        walk(path.join(dir, name), prefix === "" ? name : `${prefix}/${name}`);
+        continue;
+      }
+      if (entry.name === "go.mod" && prefix !== "") out.push(prefix);
+    }
+  };
+  walk(root, "");
+  return out.sort(compareStrings);
+}
+
+/** One module's output, with every id re-rooted onto the repository by `prefix`. */
+function runToolIn(dir: string, prefix: string): GoToolOutput {
   const binary = goCallgraphTool();
   let stdout: string;
   try {
-    stdout = execFileSync(binary, ["-root", root], {
-      cwd: root,
+    stdout = execFileSync(binary, ["-root", dir], {
+      cwd: dir,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
       timeout: LOAD_TIMEOUT_MS,
       maxBuffer: MAX_BUFFER,
     });
   } catch (cause) {
-    throw new Error(`greplost: gocallgraph failed on ${root}: ${stderrOf(cause)}`);
+    throw new Error(`greplost: gocallgraph failed on ${dir}: ${stderrOf(cause)}`);
   }
   let parsed: unknown;
   try {
     parsed = JSON.parse(stdout);
   } catch {
-    throw new Error(`greplost: gocallgraph printed something that is not JSON for ${root}`);
+    throw new Error(`greplost: gocallgraph printed something that is not JSON for ${dir}`);
   }
   const value = parsed as Partial<GoToolOutput>;
+  const at = (id: string): string => (prefix === "" ? id : `${prefix}${id}`);
+  const exports: Record<string, string[]> = {};
+  for (const [file, names] of Object.entries(value.exports ?? {})) exports[at(file)] = names;
   return {
-    files: value.files ?? [],
-    imports: value.imports ?? [],
-    exports: value.exports ?? {},
-    calls: value.calls ?? [],
+    files: (value.files ?? []).map(at),
+    imports: (value.imports ?? []).map((e) => ({ from: at(e.from), to: at(e.to) })),
+    exports,
+    calls: (value.calls ?? []).map((e) => ({ from: at(e.from), to: at(e.to) })),
     errors: value.errors ?? [],
     packages: value.packages ?? 0,
   };
