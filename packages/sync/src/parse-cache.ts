@@ -73,8 +73,12 @@ export const PARSE_CACHE_PATH = "cache/parse.json";
  * the pre-signal records for exactly those files and must not be mixed with fresh ones.
  * Extraction also depends on `config.signals`, which the `(lang, sha256)` key does not carry;
  * see the note on `runSignals` for why that is a wider problem than a version bump can solve.
+ *
+ * Generation 3 (build 2, leaf 2.7): the `pulumi-go` pass is live, so a `.go` file whose bytes
+ * have not moved now yields `resource.*` nodes and `resource-input` references it did not yield
+ * before. Same reason, one language further on.
  */
-export const PARSE_CACHE_VERSION = "2";
+export const PARSE_CACHE_VERSION = "3";
 
 /** Sentinel key. No real key can collide with it: `lang:sha256` has no `#`. */
 export const PARSE_CACHE_VERSION_KEY = "#version";

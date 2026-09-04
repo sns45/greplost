@@ -13,8 +13,8 @@
  * is in `SignalInput`.
  *
  * The registry was complete on day one with an inert stub per pass (`applies` returns false), so
- * each leaf replaces exactly one module and edits nothing shared. The four TypeScript passes are
- * live (leaf 2.3); `pulumi-go` is still the stub (leaf 2.7).
+ * each leaf replaces exactly one module and edits nothing shared. All five passes are live: the
+ * four TypeScript ones (leaf 2.3) and `pulumi-go` (leaf 2.7).
  */
 
 import { compareDeclarations, compareStrings } from "../schema.ts";
