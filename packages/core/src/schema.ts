@@ -110,6 +110,7 @@ export type DeclKind =
   | "variable"
   | "output"
   | "provider"
+  | "local"
   | "job"
   | "step"
   | "stage"
@@ -438,7 +439,7 @@ export function unresolvedId(specifier: string): string {
 
 /** DeclKinds that name a thing inside a file rather than the file itself (schema 2). */
 export const NODE_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>([
-  "resource", "data", "variable", "output", "provider", "module",
+  "resource", "data", "variable", "output", "provider", "module", "local",
   "job", "step", "stage", "image", "component", "route", "handler", "task",
 ]);
 

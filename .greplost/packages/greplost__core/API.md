@@ -4,9 +4,9 @@
 
 ## packages/core/src/build.ts
 
-- `interface ParseCache` L58-61
-- `interface BuildOptions` L63-74
-- `async function buildSnapshot(opts: BuildOptions): Promise<Snapshot>` L84-149
+- `interface ParseCache` L66-69
+- `interface BuildOptions` L71-82
+- `async function buildSnapshot(opts: BuildOptions): Promise<Snapshot>` L92-157
 
 ## packages/core/src/config.ts
 
@@ -30,7 +30,8 @@
 
 ## packages/core/src/extract/hcl.ts
 
-- `function extractHcl( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L11-18
+- `const REQUIRED_PROVIDER_PREFIX = "provider/"` L77-77
+- `function extractHcl( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L602-629
 
 ## packages/core/src/extract/index.ts
 
@@ -224,7 +225,7 @@
 
 ## packages/core/src/references/hcl.ts
 
-- `function resolveHclReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null` L13-22
+- `function resolveHclReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L218-226
 
 ## packages/core/src/references/index.ts
 
@@ -280,9 +281,14 @@
 
 ## packages/core/src/resolve/hcl.ts
 
-- `type HclCallIndex = Readonly<Record<string, never>>` L14-14
-- `function createHclResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L16-23
-- `function resolveHclCall( file: FileRecord, _site: CallSite, _index: HclCallIndex, ): { to: string; confidence: Confidence } | null` L25-31
+- `const HCL_ROOT_DIR_ID = "."` L24-24
+- `const HCL_MODULE_NAMESPACE = "module/"` L27-27
+- `const HCL_PROVIDER_NAMESPACE = "provider/"` L30-30
+- `type HclCallIndex = Readonly<Record<string, never>>` L38-38
+- `function hclDirectoryOf(filePath: string): string` L41-44
+- `function isLocalModuleSource(source: string): boolean` L53-55
+- `function createHclResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L90-117
+- `function resolveHclCall( file: FileRecord, _site: CallSite, _index: HclCallIndex, ): { to: string; confidence: Confidence } | null` L125-131
 
 ## packages/core/src/resolve/index.ts
 
@@ -363,47 +369,47 @@
 - `const LANG_BY_EXTENSION: Readonly<Record<string, Lang>> = { ".ts": "ts", ".mts": "ts", ".cts": "ts", ".tsx": "tsx", ".js": "js", ".mjs": "js", ".cjs": "js", ".jsx": "jsx", ".go": "go", ".py": …` L59-80
 - `const LANG_BY_BASENAME: Readonly<Record<string, Lang>> = { Dockerfile: "dockerfile", Containerfile: "dockerfile", }` L83-86
 - `const DOCKERFILE_PREFIX = "Dockerfile."` L89-89
-- `type DeclKind = | "function" | "class" | "interface" | "type" | "enum" | "const" | "let" | "var" | "method" | "struct" | "namespace" /* schema 2 (ruling 2026-09-04): more languages, IaC and fr…` L91-120
-- `interface Declaration` L123-150
-- `type ImportKind = "static" | "dynamic" | "type" | "side-effect"` L152-152
-- `interface ImportedSymbol` L154-159
-- `interface ImportRecord` L162-170
-- `interface ExportRecord` L172-180
-- `interface CallSite` L183-196
-- `interface FileRecord` L199-212
-- `type Confidence = "high" | "med"` L214-214
-- `interface Edge` L217-223
-- `interface ImportEdge extends Edge` L225-230
-- `type RefKind = | "hcl-ref" | "selector" | "config-ref" | "needs" | "uses" | "from-image" | "copy-from" | "helm-values" | "config" | "resource-input" | "route-handler"` L233-244
-- `interface ReferenceRecord` L251-256
-- `interface ReferenceEdge extends Edge` L266-269
-- `interface CallEdge extends Edge` L271-275
-- `interface PackageInfo` L277-284
-- `interface PackageEntry` L286-294
-- `interface FileEntry` L296-312
-- `interface Manifest` L314-318
-- `interface DiagramConfig` L320-323
-- `interface GreplostConfig` L325-334
-- `const DEFAULT_CONFIG: GreplostConfig = { include: ["**"], exclude: [ "**/node_modules/**", "**/dist/**", "**/build/**", "**/.git/**", "**/.greplost/**", "**/*.d.ts", "**/*.test.*", "**/*.spec.…` L336-359
-- `interface PackageEdge` L361-366
-- `interface Metrics` L368-373
-- `interface Snapshot` L376-391
-- `interface SummaryEntry` L394-401
-- `type SummaryCache = Record<string, SummaryEntry>` L403-403
-- `function compareStrings(a: string, b: string): number` L406-408
-- `function compareEdges(a: Edge, b: Edge): number` L410-417
-- `function compareDeclarations(a: Declaration, b: Declaration): number` L419-421
-- `function symbolId(file: string, symbolPath: string): string` L423-425
-- `function packageId(name: string): string` L427-429
-- `function externalId(pkg: string): string` L431-433
-- `function unresolvedId(specifier: string): string` L435-437
-- `const NODE_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>([ "resource", "data", "variable", "output", "provider", "module", "job", "step", "stage", "image", "component", "route", "handler", …` L440-443
-- `function isNodeKind(kind: DeclKind): boolean` L445-447
-- `function nodeId(file: string, kind: DeclKind, name: string): string` L450-453
-- `function splitNodeId(id: string): { file: string; kind: DeclKind; name: string } | null` L456-467
-- `function isFileId(id: string): boolean` L469-471
-- `function packageSlug(name: string): string` L477-479
-- `function stableStringify(value: unknown, indent = 0): string` L482-484
+- `type DeclKind = | "function" | "class" | "interface" | "type" | "enum" | "const" | "let" | "var" | "method" | "struct" | "namespace" /* schema 2 (ruling 2026-09-04): more languages, IaC and fr…` L91-121
+- `interface Declaration` L124-151
+- `type ImportKind = "static" | "dynamic" | "type" | "side-effect"` L153-153
+- `interface ImportedSymbol` L155-160
+- `interface ImportRecord` L163-171
+- `interface ExportRecord` L173-181
+- `interface CallSite` L184-197
+- `interface FileRecord` L200-213
+- `type Confidence = "high" | "med"` L215-215
+- `interface Edge` L218-224
+- `interface ImportEdge extends Edge` L226-231
+- `type RefKind = | "hcl-ref" | "selector" | "config-ref" | "needs" | "uses" | "from-image" | "copy-from" | "helm-values" | "config" | "resource-input" | "route-handler"` L234-245
+- `interface ReferenceRecord` L252-257
+- `interface ReferenceEdge extends Edge` L267-270
+- `interface CallEdge extends Edge` L272-276
+- `interface PackageInfo` L278-285
+- `interface PackageEntry` L287-295
+- `interface FileEntry` L297-313
+- `interface Manifest` L315-319
+- `interface DiagramConfig` L321-324
+- `interface GreplostConfig` L326-335
+- `const DEFAULT_CONFIG: GreplostConfig = { include: ["**"], exclude: [ "**/node_modules/**", "**/dist/**", "**/build/**", "**/.git/**", "**/.greplost/**", "**/*.d.ts", "**/*.test.*", "**/*.spec.…` L337-360
+- `interface PackageEdge` L362-367
+- `interface Metrics` L369-374
+- `interface Snapshot` L377-392
+- `interface SummaryEntry` L395-402
+- `type SummaryCache = Record<string, SummaryEntry>` L404-404
+- `function compareStrings(a: string, b: string): number` L407-409
+- `function compareEdges(a: Edge, b: Edge): number` L411-418
+- `function compareDeclarations(a: Declaration, b: Declaration): number` L420-422
+- `function symbolId(file: string, symbolPath: string): string` L424-426
+- `function packageId(name: string): string` L428-430
+- `function externalId(pkg: string): string` L432-434
+- `function unresolvedId(specifier: string): string` L436-438
+- `const NODE_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>([ "resource", "data", "variable", "output", "provider", "module", "local", "job", "step", "stage", "image", "component", "route", "h…` L441-444
+- `function isNodeKind(kind: DeclKind): boolean` L446-448
+- `function nodeId(file: string, kind: DeclKind, name: string): string` L451-454
+- `function splitNodeId(id: string): { file: string; kind: DeclKind; name: string } | null` L457-468
+- `function isFileId(id: string): boolean` L470-472
+- `function packageSlug(name: string): string` L478-480
+- `function stableStringify(value: unknown, indent = 0): string` L483-485
 
 ## packages/core/src/serialize/index.ts
 

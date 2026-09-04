@@ -6,15 +6,26 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `HclCallIndex (type)`, `createHclResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`, `resolveHclCall( file: FileRecord, _site: CallSite, _index: HclCallIndex, ): { to: string; confidence: Confidence } | null`
+**Exports:** `HCL_MODULE_NAMESPACE (const)`, `HCL_PROVIDER_NAMESPACE (const)`, `HCL_ROOT_DIR_ID (const)`, `HclCallIndex (type)`, `createHclResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`, `hclDirectoryOf(filePath: string): string`, `isLocalModuleSource(source: string): boolean`, `resolveHclCall( file: FileRecord, _site: CallSite, _index: HclCallIndex, ): { to: string; confidence: Confidence } | null`
 
 **Imports:** [`../schema.ts`](../schema.ts.md) (CallSite, Confidence, FileRecord), [`./resolver.ts`](resolver.ts.md) (RepoContext, ResolvedTarget)
 
-**Imported by:** [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/resolver.ts`](resolver.ts.md)
+**Imported by:** [`packages/core/src/references/hcl.ts`](../references/hcl.ts.md), [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/resolver.ts`](resolver.ts.md)
 
 **Blast radius:** 66 files (`greplost impact packages/core/src/resolve/hcl.ts`)
 
 **Key symbols:**
-- `type HclCallIndex = Readonly<Record<string, never>>`  L14-14
-- `function createHclResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`  L16-23
-- `function resolveHclCall( file: FileRecord, _site: CallSite, _index: HclCallIndex, ): { to: string; confidence: Confidence } | null`  L25-31
+- `const HCL_ROOT_DIR_ID = "."`  L24-24
+- `const HCL_MODULE_NAMESPACE = "module/"`  L27-27
+- `const HCL_PROVIDER_NAMESPACE = "provider/"`  L30-30
+- `const MODULE_FILE_SUFFIX = ".tf"`  L33-33
+- `const UNRESOLVED: ResolvedTarget = { type: "unresolved" }`  L35-35
+- `type HclCallIndex = Readonly<Record<string, never>>`  L38-38
+- `function hclDirectoryOf(filePath: string): string`  L41-44
+- `function isLocalModuleSource(source: string): boolean`  L53-55
+- `function isAbsoluteModuleSource(source: string): boolean`  L63-65
+- `function normalizeJoin(dir: string, rest: string): string | null`  L68-80
+- `function createHclResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`  L90-117
+- `function resolveHclCall( file: FileRecord, _site: CallSite, _index: HclCallIndex, ): { to: string; confidence: Confidence } | null`  L125-131
+
+**Calls:** `hclDirectoryOf` → [`packages/core/src/resolve/hcl.ts#hclDirectoryOf`](hcl.ts.md) (high), `isAbsoluteModuleSource` → [`packages/core/src/resolve/hcl.ts#isAbsoluteModuleSource`](hcl.ts.md) (high), `isLocalModuleSource` → [`packages/core/src/resolve/hcl.ts#isLocalModuleSource`](hcl.ts.md) (high), `normalizeJoin` → [`packages/core/src/resolve/hcl.ts#normalizeJoin`](hcl.ts.md) (high)

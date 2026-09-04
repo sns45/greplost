@@ -42,6 +42,7 @@ import {
   type Lang,
   type Snapshot,
 } from "@greplost/core/schema";
+import { splitNodeId } from "@greplost/core/schema";
 import { exportKeys, jaccardCycles, scoreEdges, scoreSet, type Score } from "./score.ts";
 import { writeResult } from "./results-io.ts";
 import { generateTsTruth, type Truth } from "./truth/ts.ts";
@@ -776,19 +777,25 @@ export function scoreAgainstTruth(
   // every other metric: a node in a file the oracle never loaded is not a false positive.
   // `S5` is scored as a key set rather than with `scoreEdges` because a reference edge's
   // identity is `(from, to, refKind)` and `scoreEdges` does not know about `refKind`.
+  // S6 counts every non-file node the schema knows (`splitNodeId`), so IaC nodes and
+  // framework signal nodes are scored the same way (driver ruling 2026-09-04).
   const predNodes = snapshot.symbols
-    .filter((decl) => fileSet.has(decl.file) && decl.meta?.["signal"] !== undefined)
+    .filter((decl) => fileSet.has(decl.file) && (splitNodeId(decl.id) !== null || decl.meta?.["signal"] !== undefined))
     .map((decl) => decl.id);
+  // S5 identity is (from, to, refKind) when the oracle carries kinds; an oracle that scores
+  // references by endpoints only (Terraform's) is compared by (from, to) on both sides.
+  const truthCarriesKinds = extra !== null && extra.references.every((edge) => typeof (edge as { refKind?: unknown }).refKind === "string");
+  const keyOf = (edge: Edge): string => (truthCarriesKinds ? referenceKey(edge) : `${edge.from} -> ${edge.to}`);
   const predReferences = (snapshot.references ?? [])
     .filter((edge) => fileSet.has(fileOf(edge.from)) && fileSet.has(fileOf(edge.to)))
-    .map(referenceKey);
+    .map(keyOf);
   const truthNodes = extra === null ? [] : extra.nodes.filter((id) => fileSet.has(fileOf(id)));
   const truthReferences =
     extra === null
       ? []
       : extra.references
           .filter((edge) => fileSet.has(fileOf(edge.from)) && fileSet.has(fileOf(edge.to)))
-          .map(referenceKey);
+          .map(keyOf);
   const S5 = extra === null ? null : scoreSet(predReferences, truthReferences);
   const S6 = extra === null ? null : scoreSet(predNodes, truthNodes);
 

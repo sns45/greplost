@@ -6,13 +6,53 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `extractHcl( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`
+**Exports:** `REQUIRED_PROVIDER_PREFIX (const)`, `extractHcl( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (FileRecord, Lang), `web-tree-sitter` (Tree)
+**Imports:** `web-tree-sitter` (Node, Tree), [`../schema.ts`](../schema.ts.md) (DeclKind, Declaration, ExportRecord, FileRecord, ImportRecord, Lang, ReferenceRecord, compareStrings, nodeId, symbolId), [`./ts-signature.ts`](ts-signature.ts.md) (clip, lineOf, spanOf)
 
-**Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md)
+**Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md), [`packages/core/src/references/hcl.ts`](../references/hcl.ts.md)
 
-**Blast radius:** 31 files (`greplost impact packages/core/src/extract/hcl.ts`)
+**Blast radius:** 41 files (`greplost impact packages/core/src/extract/hcl.ts`)
 
 **Key symbols:**
-- `function extractHcl( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L11-18
+- `const BLOCK_KIND: Readonly<Record<string, DeclKind>> = { data: "data", module: "module", output: "output", provider: "provider", resource: "resource", variable: "variable", }`  L42-49
+- `const TWO_LABEL_BLOCKS: ReadonlySet<string> = new Set(["data", "resource"])`  L52-52
+- `const EXPORTED_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>(["output", "variable"])`  L55-55
+- `const IGNORED_HEADS: ReadonlySet<string> = new Set(["count", "each", "path", "self", "terraform"])`  L64-64
+- `const PROVIDER_ARGUMENT = "provider"`  L67-67
+- `const REQUIRED_PROVIDER_PREFIX = "provider/"`  L77-77
+- `function childOfType(node: Node, type: string): Node | null`  L83-86
+- `function namedChildrenOfType(node: Node, type: string): Node[]`  L88-90
+- `function plainString(node: Node): string | null`  L98-109
+- `function blockType(block: Node): string | null`  L112-115
+- `function usableLabel(text: string): boolean`  L125-127
+- `function blockLabels(block: Node): string[] | null`  L130-144
+- `function blockSignature(source: string, block: Node): string`  L147-151
+- `function bodyOf(block: Node): Node | null`  L154-156
+- `function attributeParts(attribute: Node): { name: string; value: Node } | null`  L159-164
+- `function attributesOf(body: Node | null): Node[]`  L167-169
+- `function blocksOf(body: Node | null): Node[]`  L172-174
+- `function attributeValue(body: Node | null, name: string): Node | null`  L177-183
+- `function literalScalar(expression: Node | null): string | null`  L192-200
+- `function literalAttribute(body: Node | null, name: string): string | null`  L203-205
+- `function providerOfType(type: string): string`  L208-211
+- `function metaOf(entries: ReadonlyArray<readonly [string, string | null]>): Record<string, string> | undefined`  L214-220
+- `function addressFrom(head: Node): { text: string; head: string } | null`  L242-255
+- `function addressOf(expression: Node): { text: string; head: string } | null`  L258-262
+- `const FOR_NODES: ReadonlySet<string> = new Set(["for_expr", "for_object_expr", "for_tuple_expr"])`  L265-265
+- `function forBindings(node: Node): string[]`  L276-284
+- `interface HclState`  L290-299
+- `function uniqueName(state: HclState, kind: DeclKind, name: string, isNode: boolean): string`  L308-322
+- `function addDeclaration( state: HclState, kind: DeclKind, rawName: string, signature: string, node: Node, meta: Record<string, string> | undefined, ): Declaration`  L324-348
+- `function addReference(state: HclState, from: string, to: string, line: number): void`  L350-352
+- `function walkExpression(state: HclState, owner: string, node: Node, bound: ReadonlySet<string>): void`  L366-388
+- `function walkBody( state: HclState, owner: string, body: Node | null, bound: ReadonlySet<string>, topLevel: boolean, ): void`  L396-423
+- `const NO_BINDINGS: ReadonlySet<string> = new Set<string>()`  L429-429
+- `function collectLocals(state: HclState, block: Node): void`  L431-445
+- `function collectTerraform(state: HclState, block: Node): void`  L447-472
+- `function metaForBlock(type: string, labels: readonly string[], body: Node | null): Record<string, string> | undefined`  L474-504
+- `function collectBlock(state: HclState, block: Node): void`  L506-560
+- `function collectProviderArgument( state: HclState, type: string, labels: readonly string[], owner: string, block: Node, body: Node | null, ): void`  L570-592
+- `function extractHcl( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L602-629
+
+**Calls:** `addDeclaration` → [`packages/core/src/extract/hcl.ts#addDeclaration`](hcl.ts.md) (high), `addReference` → [`packages/core/src/extract/hcl.ts#addReference`](hcl.ts.md) (high), `addressFrom` → [`packages/core/src/extract/hcl.ts#addressFrom`](hcl.ts.md) (high), `addressOf` → [`packages/core/src/extract/hcl.ts#addressOf`](hcl.ts.md) (high), `attributeParts` → [`packages/core/src/extract/hcl.ts#attributeParts`](hcl.ts.md) (high), `attributeValue` → [`packages/core/src/extract/hcl.ts#attributeValue`](hcl.ts.md) (high), `attributesOf` → [`packages/core/src/extract/hcl.ts#attributesOf`](hcl.ts.md) (high), `blockLabels` → [`packages/core/src/extract/hcl.ts#blockLabels`](hcl.ts.md) (high), `blockSignature` → [`packages/core/src/extract/hcl.ts#blockSignature`](hcl.ts.md) (high), `blockType` → [`packages/core/src/extract/hcl.ts#blockType`](hcl.ts.md) (high), `blocksOf` → [`packages/core/src/extract/hcl.ts#blocksOf`](hcl.ts.md) (high), `bodyOf` → [`packages/core/src/extract/hcl.ts#bodyOf`](hcl.ts.md) (high), `childOfType` → [`packages/core/src/extract/hcl.ts#childOfType`](hcl.ts.md) (high), `collectBlock` → [`packages/core/src/extract/hcl.ts#collectBlock`](hcl.ts.md) (high), `collectLocals` → [`packages/core/src/extract/hcl.ts#collectLocals`](hcl.ts.md) (high), `collectProviderArgument` → [`packages/core/src/extract/hcl.ts#collectProviderArgument`](hcl.ts.md) (high), `collectTerraform` → [`packages/core/src/extract/hcl.ts#collectTerraform`](hcl.ts.md) (high), `forBindings` → [`packages/core/src/extract/hcl.ts#forBindings`](hcl.ts.md) (high), `literalAttribute` → [`packages/core/src/extract/hcl.ts#literalAttribute`](hcl.ts.md) (high), `literalScalar` → [`packages/core/src/extract/hcl.ts#literalScalar`](hcl.ts.md) (high), `metaForBlock` → [`packages/core/src/extract/hcl.ts#metaForBlock`](hcl.ts.md) (high), `metaOf` → [`packages/core/src/extract/hcl.ts#metaOf`](hcl.ts.md) (high), `namedChildrenOfType` → [`packages/core/src/extract/hcl.ts#namedChildrenOfType`](hcl.ts.md) (high), `plainString` → [`packages/core/src/extract/hcl.ts#plainString`](hcl.ts.md) (high), `providerOfType` → [`packages/core/src/extract/hcl.ts#providerOfType`](hcl.ts.md) (high), `uniqueName` → [`packages/core/src/extract/hcl.ts#uniqueName`](hcl.ts.md) (high), `usableLabel` → [`packages/core/src/extract/hcl.ts#usableLabel`](hcl.ts.md) (high), `walkBody` → [`packages/core/src/extract/hcl.ts#walkBody`](hcl.ts.md) (high), `walkExpression` → [`packages/core/src/extract/hcl.ts#walkExpression`](hcl.ts.md) (high), `clip` → [`packages/core/src/extract/ts-signature.ts#clip`](ts-signature.ts.md) (high), `lineOf` → [`packages/core/src/extract/ts-signature.ts#lineOf`](ts-signature.ts.md) (high), `spanOf` → [`packages/core/src/extract/ts-signature.ts#spanOf`](ts-signature.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `nodeId` → [`packages/core/src/schema.ts#nodeId`](../schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)

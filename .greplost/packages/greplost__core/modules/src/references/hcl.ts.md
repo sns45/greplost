@@ -6,13 +6,26 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `resolveHclReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null`
+**Exports:** `resolveHclReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (FileRecord, ReferenceEdge, ReferenceRecord), [`./link.ts`](link.ts.md) (ReferenceContext)
+**Imports:** [`../schema.ts`](../schema.ts.md) (Declaration, FileRecord, ReferenceEdge, ReferenceRecord, externalId), [`./link.ts`](link.ts.md) (ReferenceContext, referenceSource), [`../extract/hcl.ts`](../extract/hcl.ts.md) (REQUIRED_PROVIDER_PREFIX), [`../resolve/hcl.ts`](../resolve/hcl.ts.md) (HCL_PROVIDER_NAMESPACE, hclDirectoryOf)
 
 **Imported by:** [`packages/core/src/references/index.ts`](index.ts.md), [`packages/core/src/references/link.ts`](link.ts.md)
 
 **Blast radius:** 39 files (`greplost impact packages/core/src/references/hcl.ts`)
 
 **Key symbols:**
-- `function resolveHclReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null`  L13-22
+- `type ModuleIndex = Map<string, Declaration[]>`  L44-44
+- `const INDEX_BY_CONTEXT = new WeakMap<ReferenceContext, Map<string, ModuleIndex>>()`  L52-52
+- `function writtenName(name: string): string`  L55-58
+- `function indexKey(decl: Declaration): string`  L61-63
+- `function indexFor(ctx: ReferenceContext): Map<string, ModuleIndex>`  L65-88
+- `function only(index: Map<string, ModuleIndex>, directory: string, key: string): Declaration | null`  L91-95
+- `function providerConfig( index: Map<string, ModuleIndex>, directory: string, name: string, alias: string | null, ): Declaration | null`  L104-113
+- `function moduleDirectory(file: FileRecord, call: Declaration, ctx: ReferenceContext): string | null`  L116-121
+- `function edge( file: FileRecord, ref: ReferenceRecord, to: string, confidence: ReferenceEdge["confidence"], ): ReferenceEdge`  L123-138
+- `function resolveUses(file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext): ReferenceEdge | null`  L144-149
+- `function resolveAddress(file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext): ReferenceEdge | null`  L151-210
+- `function resolveHclReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null`  L218-226
+
+**Calls:** `edge` → [`packages/core/src/references/hcl.ts#edge`](hcl.ts.md) (high), `indexFor` → [`packages/core/src/references/hcl.ts#indexFor`](hcl.ts.md) (high), `indexKey` → [`packages/core/src/references/hcl.ts#indexKey`](hcl.ts.md) (high), `moduleDirectory` → [`packages/core/src/references/hcl.ts#moduleDirectory`](hcl.ts.md) (high), `only` → [`packages/core/src/references/hcl.ts#only`](hcl.ts.md) (high), `providerConfig` → [`packages/core/src/references/hcl.ts#providerConfig`](hcl.ts.md) (high), `resolveAddress` → [`packages/core/src/references/hcl.ts#resolveAddress`](hcl.ts.md) (high), `resolveUses` → [`packages/core/src/references/hcl.ts#resolveUses`](hcl.ts.md) (high), `writtenName` → [`packages/core/src/references/hcl.ts#writtenName`](hcl.ts.md) (high), `referenceSource` → [`packages/core/src/references/link.ts#referenceSource`](link.ts.md) (high), `hclDirectoryOf` → [`packages/core/src/resolve/hcl.ts#hclDirectoryOf`](../resolve/hcl.ts.md) (high), `externalId` → [`packages/core/src/schema.ts#externalId`](../schema.ts.md) (high)
