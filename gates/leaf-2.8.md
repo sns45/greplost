@@ -17,15 +17,17 @@ S6 is `n/a` for a chart (a template's node ids carry document-index fallback nam
 
 | target | files | S1 imports | S2 exports | S5 references | S6 nodes |
 |---|---|---|---|---|---|
-| tiny-k8s | 3 | 1.000 / 1.000 (tp 0) | 1.000 / 1.000 (tp 7) | 1.000 / 1.000 (tp 2) | 1.000 / 1.000 (tp 7) |
+| tiny-k8s | 3 | 1.000 / 1.000 (tp 0) | 1.000 / 1.000 (tp 7) | 1.000 / 1.000 (tp 5) | 1.000 / 1.000 (tp 7) |
 | tiny-helm | 4 | 1.000 / 1.000 (tp 0) | 1.000 / 1.000 (tp 4) | 1.000 / 1.000 (tp 4) | n/a |
-| k8s-examples | 245 | 1.000 / 1.000 (tp 0) | 1.000 / 1.000 (tp 401) | 1.000 / 1.000 (tp 43) | 1.000 / 1.000 (tp 401) |
+| k8s-examples | 245 | 1.000 / 1.000 (tp 0) | 1.000 / 1.000 (tp 401) | 1.000 / 1.000 (tp 172) | 1.000 / 1.000 (tp 401) |
 | bitnami-charts | 130 | 1.000 / 1.000 (tp 0) | 1.000 / 1.000 (tp 216) | 1.000 / 1.000 (tp 694) | n/a |
 
 S1 is `tp 0` on both sides and not vacuous by accident: YAML has no import statements at all, and
 both the extractor and the oracle say so rather than failing to find any. S5's `tp` counts
-`(from, to, refKind)` keys after `scoreAgainstTruth` drops every edge whose target is not an
-indexed file, which is why the three `ext:image/…` edges of `tiny-k8s` are not in its 2.
+`(from, to, refKind)` keys over the universe `scoreAgainstTruth` scores: a source in a covered
+file, and a target that is a covered file or an `ext:` id. Numbers measured after `git merge
+main` at 028ad17, which brought the driver's Terraform-review change admitting `ext:` targets
+into S5 (it is what takes k8s-examples from 43 keys to 172: the `ext:image/<ref>` edges).
 
 Rulings this leaf made, in full, with reasons, are in the leaf report; the four that change what
 another leaf can assume are:
@@ -96,7 +98,7 @@ read from, which is the opposite of true). Both are commented at the change.
 - [x] G8: S1, S2, S4 and S5 pass on the Kubernetes fixture (S3 is `n/a`; a manifest has no calls)
   CHECK: bun run bench:structural --fixture tiny-k8s --lang yaml --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: structural: GATE PASS
-  EVIDENCE: tiny-k8s (3 files); S1 1.000/1.000, S2 1.000/1.000 (tp 7), S3 n/a, S4 1.000, S5 1.000 (tp 2), S6 1.000 (tp 7)
+  EVIDENCE: tiny-k8s (3 files); S1 1.000/1.000, S2 1.000/1.000 (tp 7), S3 n/a, S4 1.000, S5 1.000 (tp 5), S6 1.000 (tp 7)
 
 - [x] G9: the Helm fixture passes against `helm template`, on kinds, apiVersions and per-file node counts only
   CHECK: bun run bench:structural --fixture tiny-helm --lang yaml --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -113,7 +115,7 @@ read from, which is the opposite of true). Both are commented at the change.
   EXPECT: structural: GATE PASS
   EVIDENCE: k8s-examples (245 files covered of 250; js-yaml refuses 10 archived manifests for a
   duplicate mapping key or a complex key, and an uncovered file is scored on neither side);
-  S1 1.000/1.000, S2 1.000/1.000 (tp 401), S3 n/a, S4 1.000, S5 1.000 (tp 43), S6 1.000 (tp 401)
+  S1 1.000/1.000, S2 1.000/1.000 (tp 401), S3 n/a, S4 1.000, S5 1.000 (tp 172), S6 1.000 (tp 401)
 
 - [x] G11: the gate passes on the pinned Helm corpus repo (bitnami-charts, subset `bitnami/{wordpress,kafka,postgresql,redis}/`, 130 `.yaml`)
   CHECK: bun bench/src/cli.ts corpus setup --repo bitnami-charts >/dev/null && bun run bench:structural --repo bitnami-charts --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -127,7 +129,7 @@ read from, which is the opposite of true). Both are commented at the change.
 - [x] G12: the core and bench suites are green
   CHECK: bun test packages/core bench 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 1193 pass | 0 fail | 5095 expect() calls | Ran 1193 tests across 34 files. [54.37s]
+  EVIDENCE: 1231 pass | 0 fail | 5188 expect() calls | Ran 1231 tests across 34 files. [54.65s] (after `git merge main` at 028ad17)
 
 - [x] G13: core and bench typecheck
   CHECK: bunx tsc -p packages/core/tsconfig.json --noEmit && bunx tsc -p bench/tsconfig.json --noEmit
