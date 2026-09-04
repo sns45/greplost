@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/references/index.ts`](index.ts.md), [`packages/core/src/references/link.ts`](link.ts.md)
 
-**Blast radius:** 38 files (`greplost impact packages/core/src/references/dockerfile.ts`)
+**Blast radius:** 39 files (`greplost impact packages/core/src/references/dockerfile.ts`)
 
 **Key symbols:**
 - `function resolveDockerfileReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null`  L11-20

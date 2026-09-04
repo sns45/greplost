@@ -4,9 +4,9 @@
 
 ## packages/core/src/build.ts
 
-- `interface ParseCache` L57-60
-- `interface BuildOptions` L62-73
-- `async function buildSnapshot(opts: BuildOptions): Promise<Snapshot>` L83-148
+- `interface ParseCache` L58-61
+- `interface BuildOptions` L63-74
+- `async function buildSnapshot(opts: BuildOptions): Promise<Snapshot>` L84-149
 
 ## packages/core/src/config.ts
 
@@ -159,10 +159,10 @@
 - `interface Resolver` L35-37
 - `interface ExportTarget` L40-58
 - `type ExportIndex = Map<string, Map<string, ExportTarget>>` L61-61
-- `function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge[]` L81-118
-- `function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex` L190-413
-- `function exportNames(index: ExportIndex, file: string): string[]` L416-419
-- `function linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[]` L434-506
+- `function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge[]` L81-123
+- `function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex` L213-445
+- `function exportNames(index: ExportIndex, file: string): string[]` L448-451
+- `function linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[]` L466-538
 
 ## packages/core/src/graph/metrics.ts
 
@@ -232,17 +232,22 @@
 - re-exports `ReferenceContext`, `ReferenceRule` from `./link.ts`
 - re-exports `resolveDockerfileReferences` from `./dockerfile.ts`
 - re-exports `resolveHclReferences` from `./hcl.ts`
+- re-exports `resolveTsReferences` from `./ts.ts`
 - re-exports `resolveYamlReferences` from `./yaml.ts`
 - re-exports `resolveYamlActionsReferences` from `./yaml-actions.ts`
 - re-exports `resolveYamlK8sReferences` from `./yaml-k8s.ts`
 
 ## packages/core/src/references/link.ts
 
-- `interface ReferenceContext` L37-48
-- `type ReferenceRule = ( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ) => ReferenceEdge | null` L51-55
-- `function referenceSource(file: string, ref: ReferenceRecord): string` L78-80
-- `function compareReferenceEdges(a: ReferenceEdge, b: ReferenceEdge): number` L83-90
-- `function linkReferences( files: readonly FileRecord[], resolver: Resolver, ctx: RepoContext, ): ReferenceEdge[]` L99-133
+- `interface ReferenceContext` L38-49
+- `type ReferenceRule = ( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ) => ReferenceEdge | null` L52-56
+- `function referenceSource(file: string, ref: ReferenceRecord): string` L85-87
+- `function compareReferenceEdges(a: ReferenceEdge, b: ReferenceEdge): number` L90-97
+- `function linkReferences( files: readonly FileRecord[], resolver: Resolver, ctx: RepoContext, ): ReferenceEdge[]` L106-140
+
+## packages/core/src/references/ts.ts
+
+- `function resolveTsReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L31-51
 
 ## packages/core/src/references/yaml-actions.ts
 
@@ -427,9 +432,10 @@
 - `type SignalPassId = "next" | "pulumi-go" | "pulumi-ts" | "react" | "tanstack"` L29-29
 - `interface SignalInput` L31-38
 - `interface SignalOutput` L40-43
-- `interface SignalPass` L45-52
-- `const SIGNAL_PASSES: readonly SignalPass[] = [ nextPass, pulumiGoPass, pulumiTsPass, reactPass, tanstackPass, ].sort((a, b) => compareStrings(a.id, b.id))` L55-61
-- `function runSignals(input: SignalInput, enabled?: readonly SignalPassId[]): SignalOutput` L83-106
+- `interface SignalPass` L45-64
+- `const SIGNAL_PASSES: readonly SignalPass[] = [ nextPass, pulumiGoPass, pulumiTsPass, reactPass, tanstackPass, ].sort((a, b) => compareStrings(a.id, b.id))` L67-73
+- `function signalPathKey(path: string, lang: Lang, enabled?: readonly SignalPassId[]): string` L103-113
+- `function runSignals(input: SignalInput, enabled?: readonly SignalPassId[]): SignalOutput` L115-138
 - re-exports `nextPass` from `./next.ts`
 - re-exports `pulumiGoPass` from `./pulumi-go.ts`
 - re-exports `pulumiTsPass` from `./pulumi-ts.ts`
@@ -438,7 +444,8 @@
 
 ## packages/core/src/signals/next.ts
 
-- `const nextPass: SignalPass = { id: "next", langs: LANGS, applies(_path: string, _source: string): boolean { return false; }, run(_input: SignalInput): SignalOutput { return { decls: [], refs: …` L13-22
+- `function nextRoutePath(path: string): string` L67-72
+- `const nextPass: SignalPass = { id: "next", langs: LANGS, applies, /** * The route this file is, when it is one. `app/donate-with-checkout/result/page.tsx` and * `app/donate-with-embedded-check…` L93-177
 
 ## packages/core/src/signals/pulumi-go.ts
 
@@ -446,15 +453,30 @@
 
 ## packages/core/src/signals/pulumi-ts.ts
 
-- `const pulumiTsPass: SignalPass = { id: "pulumi-ts", langs: LANGS, applies(_path: string, _source: string): boolean { return false; }, run(_input: SignalInput): SignalOutput { return { decls: […` L13-22
+- `const pulumiTsPass: SignalPass = { id: "pulumi-ts", langs: LANGS, applies, run(input: SignalInput): SignalOutput { const imports = importBindings(input.base.imports); const localResourceClasse…` L66-122
 
 ## packages/core/src/signals/react.ts
 
-- `const reactPass: SignalPass = { id: "react", langs: LANGS, applies(_path: string, _source: string): boolean { return false; }, run(_input: SignalInput): SignalOutput { return { decls: [], refs…` L17-26
+- `const reactPass: SignalPass = { id: "react", langs: LANGS, applies, run(input: SignalInput): SignalOutput { const names = new NameAllocator(); const imports = importBindings(input.base.imports…` L54-87
 
 ## packages/core/src/signals/tanstack.ts
 
-- `const tanstackPass: SignalPass = { id: "tanstack", langs: LANGS, applies(_path: string, _source: string): boolean { return false; }, run(_input: SignalInput): SignalOutput { return { decls: []…` L13-22
+- `const tanstackPass: SignalPass = { id: "tanstack", langs: LANGS, applies, run(input: SignalInput): SignalOutput { const names = new NameAllocator(); const decls: Declaration[] = []; const refs…` L58-76
+
+## packages/core/src/signals/ts-nodes.ts
+
+- `interface TopLevelBinding` L23-34
+- `function topLevelBindings(tree: Tree): TopLevelBinding[]` L47-59
+- `function walk(root: Node, visit: (node: Node) => void, stop?: (node: Node) => boolean): void` L118-128
+- `function stopAtNestedFunctions(node: Node): boolean` L131-133
+- `function bodyOf(binding: TopLevelBinding): Node | null` L136-143
+- `function calleeText(call: Node): string | null` L146-150
+- `function memberPath(node: Node): string | null` L153-165
+- `interface ImportBinding` L168-173
+- `function importBindings(imports: readonly ImportRecord[]): Map<string, ImportBinding>` L182-191
+- `class NameAllocator` L201-214
+- `interface SignalNodeInput` L217-226
+- `function signalNode(input: SignalNodeInput): Declaration` L238-255
 
 ## packages/core/src/unparsable.ts
 

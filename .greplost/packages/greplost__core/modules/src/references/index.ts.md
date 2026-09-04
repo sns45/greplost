@@ -6,9 +6,9 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `ReferenceContext`, `ReferenceRule`, `compareReferenceEdges`, `linkReferences`, `referenceSource`, `resolveDockerfileReferences`, `resolveHclReferences`, `resolveYamlActionsReferences`, `resolveYamlK8sReferences`, `resolveYamlReferences`
+**Exports:** `ReferenceContext`, `ReferenceRule`, `compareReferenceEdges`, `linkReferences`, `referenceSource`, `resolveDockerfileReferences`, `resolveHclReferences`, `resolveTsReferences`, `resolveYamlActionsReferences`, `resolveYamlK8sReferences`, `resolveYamlReferences`
 
-**Imports:** [`./link.ts`](link.ts.md) (ReferenceContext, ReferenceRule, compareReferenceEdges, linkReferences, referenceSource), [`./dockerfile.ts`](dockerfile.ts.md) (resolveDockerfileReferences), [`./hcl.ts`](hcl.ts.md) (resolveHclReferences), [`./yaml.ts`](yaml.ts.md) (resolveYamlReferences), [`./yaml-actions.ts`](yaml-actions.ts.md) (resolveYamlActionsReferences), [`./yaml-k8s.ts`](yaml-k8s.ts.md) (resolveYamlK8sReferences)
+**Imports:** [`./link.ts`](link.ts.md) (ReferenceContext, ReferenceRule, compareReferenceEdges, linkReferences, referenceSource), [`./dockerfile.ts`](dockerfile.ts.md) (resolveDockerfileReferences), [`./hcl.ts`](hcl.ts.md) (resolveHclReferences), [`./ts.ts`](ts.ts.md) (resolveTsReferences), [`./yaml.ts`](yaml.ts.md) (resolveYamlReferences), [`./yaml-actions.ts`](yaml-actions.ts.md) (resolveYamlActionsReferences), [`./yaml-k8s.ts`](yaml-k8s.ts.md) (resolveYamlK8sReferences)
 
 **Imported by:** [`packages/core/src/build.ts`](../build.ts.md), [`packages/core/src/index.ts`](../index.ts.md)
 

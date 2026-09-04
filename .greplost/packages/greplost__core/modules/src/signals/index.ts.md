@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `SIGNAL_PASSES (const)`, `SignalInput (interface)`, `SignalOutput (interface)`, `SignalPass (interface)`, `SignalPassId (type)`, `nextPass`, `pulumiGoPass`, `pulumiTsPass`, `reactPass`, `runSignals(input: SignalInput, enabled?: readonly SignalPassId[]): SignalOutput`, `tanstackPass`
+**Exports:** `SIGNAL_PASSES (const)`, `SignalInput (interface)`, `SignalOutput (interface)`, `SignalPass (interface)`, `SignalPassId (type)`, `nextPass`, `pulumiGoPass`, `pulumiTsPass`, `reactPass`, `runSignals(input: SignalInput, enabled?: readonly SignalPassId[]): SignalOutput`, `signalPathKey(path: string, lang: Lang, enabled?: readonly SignalPassId[]): string`, `tanstackPass`
 
 **Imports:** [`../schema.ts`](../schema.ts.md) (Declaration, FileRecord, Lang, ReferenceRecord, compareDeclarations, compareStrings), `web-tree-sitter` (Tree), [`./next.ts`](next.ts.md) (nextPass), [`./pulumi-go.ts`](pulumi-go.ts.md) (pulumiGoPass), [`./pulumi-ts.ts`](pulumi-ts.ts.md) (pulumiTsPass), [`./react.ts`](react.ts.md) (reactPass), [`./tanstack.ts`](tanstack.ts.md) (tanstackPass)
 
@@ -18,8 +18,9 @@
 - `type SignalPassId = "next" | "pulumi-go" | "pulumi-ts" | "react" | "tanstack"`  L29-29
 - `interface SignalInput`  L31-38
 - `interface SignalOutput`  L40-43
-- `interface SignalPass`  L45-52
-- `const SIGNAL_PASSES: readonly SignalPass[] = [ nextPass, pulumiGoPass, pulumiTsPass, reactPass, tanstackPass, ].sort((a, b) => compareStrings(a.id, b.id))`  L55-61
-- `function runSignals(input: SignalInput, enabled?: readonly SignalPassId[]): SignalOutput`  L83-106
+- `interface SignalPass`  L45-64
+- `const SIGNAL_PASSES: readonly SignalPass[] = [ nextPass, pulumiGoPass, pulumiTsPass, reactPass, tanstackPass, ].sort((a, b) => compareStrings(a.id, b.id))`  L67-73
+- `function signalPathKey(path: string, lang: Lang, enabled?: readonly SignalPassId[]): string`  L103-113
+- `function runSignals(input: SignalInput, enabled?: readonly SignalPassId[]): SignalOutput`  L115-138
 
 **Calls:** `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high)

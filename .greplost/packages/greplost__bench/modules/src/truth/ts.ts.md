@@ -22,21 +22,26 @@
 - `function listTypeScriptFiles(root: string): string[]`  L79-97
 - `interface TruthOptions`  L100-111
 - `function diagnosticsEnabled(options: TruthOptions): boolean`  L114-117
-- `function generateTsTruth(root: string, files: string[], options: TruthOptions = {}): Truth`  L128-319
-- `function readCompilerOptions(absRoot: string): { options: ts.CompilerOptions; configErrors: ts.Diagnostic[] }`  L325-351
-- `function reportDiagnostics( program: ts.Program, configErrors: ts.Diagnostic[], coveredCount: number, missing: string[], diagnostics: boolean, ): void`  L363-385
-- `function moduleExportNames(checker: ts.TypeChecker, moduleSymbol: ts.Symbol): string[]`  L403-407
-- `function importedNames(clause: ts.ImportClause | undefined): string[]`  L410-420
-- `function reexportedNames(clause: ts.NamedExportBindings | undefined): string[]`  L423-427
-- `function importTypeName(qualifier: ts.EntityName | undefined): string`  L433-438
-- `function moduleLoadSpecifier(node: ts.CallExpression): ts.Expression | undefined`  L441-447
-- `function findCycles(nodes: string[], edges: Edge[]): string[][]`  L453-513
-- `class EdgeSet`  L526-559
-- `EdgeSet.add(from: string, to: string, kind: Edge["kind"], symbols: string[]): void`  L529-546
-- `EdgeSet.toArray(): Edge[]`  L548-558
-- `function extensionOf(file: string): ts.Extension`  L562-575
-- `function toPosix(p: string): string`  L577-579
-- `function normalizeId(absRoot: string, file: string): string`  L582-585
-- `function sourceCandidates(fileName: string): string[]`  L592-602
+- `class ProjectOptions`  L140-189
+- `ProjectOptions.constructor( private readonly absRoot: string, private readonly canonical: (p: string) => string, )`  L143-146
+- `ProjectOptions.resolve(specifier: string, containingFile: string): string | undefined`  L149-154
+- `ProjectOptions.forFile(containingFile: string): { options: ts.CompilerOptions; cache: ts.ModuleResolutionCache } | null`  L156-180
+- `ProjectOptions.load(configPath: string, dir: string): { options: ts.CompilerOptions; cache: ts.ModuleResolutionCache } | null`  L182-188
+- `function generateTsTruth(root: string, files: string[], options: TruthOptions = {}): Truth`  L191-400
+- `function readCompilerOptions(absRoot: string): { options: ts.CompilerOptions; configErrors: ts.Diagnostic[] }`  L406-432
+- `function reportDiagnostics( program: ts.Program, configErrors: ts.Diagnostic[], coveredCount: number, missing: string[], diagnostics: boolean, ): void`  L444-466
+- `function moduleExportNames(checker: ts.TypeChecker, moduleSymbol: ts.Symbol): string[]`  L484-488
+- `function importedNames(clause: ts.ImportClause | undefined): string[]`  L491-501
+- `function reexportedNames(clause: ts.NamedExportBindings | undefined): string[]`  L504-508
+- `function importTypeName(qualifier: ts.EntityName | undefined): string`  L514-519
+- `function moduleLoadSpecifier(node: ts.CallExpression): ts.Expression | undefined`  L522-528
+- `function findCycles(nodes: string[], edges: Edge[]): string[][]`  L534-594
+- `class EdgeSet`  L607-640
+- `EdgeSet.add(from: string, to: string, kind: Edge["kind"], symbols: string[]): void`  L610-627
+- `EdgeSet.toArray(): Edge[]`  L629-639
+- `function extensionOf(file: string): ts.Extension`  L643-656
+- `function toPosix(p: string): string`  L658-660
+- `function normalizeId(absRoot: string, file: string): string`  L663-666
+- `function sourceCandidates(fileName: string): string[]`  L673-683
 
-**Calls:** `resolveCallEdge` → [`bench/src/truth/ts-calls.ts#resolveCallEdge`](ts-calls.ts.md) (high), `load` → [`bench/src/truth/ts-workspace.ts#WorkspaceEntryMapper.load`](ts-workspace.ts.md) (high), `EdgeSet` → [`bench/src/truth/ts.ts#EdgeSet`](ts.ts.md) (high), `diagnosticsEnabled` → [`bench/src/truth/ts.ts#diagnosticsEnabled`](ts.ts.md) (high), `extensionOf` → [`bench/src/truth/ts.ts#extensionOf`](ts.ts.md) (high), `findCycles` → [`bench/src/truth/ts.ts#findCycles`](ts.ts.md) (high), `importTypeName` → [`bench/src/truth/ts.ts#importTypeName`](ts.ts.md) (high), `importedNames` → [`bench/src/truth/ts.ts#importedNames`](ts.ts.md) (high), `moduleExportNames` → [`bench/src/truth/ts.ts#moduleExportNames`](ts.ts.md) (high), `moduleLoadSpecifier` → [`bench/src/truth/ts.ts#moduleLoadSpecifier`](ts.ts.md) (high), `normalizeId` → [`bench/src/truth/ts.ts#normalizeId`](ts.ts.md) (high), `readCompilerOptions` → [`bench/src/truth/ts.ts#readCompilerOptions`](ts.ts.md) (high), `reexportedNames` → [`bench/src/truth/ts.ts#reexportedNames`](ts.ts.md) (high), `reportDiagnostics` → [`bench/src/truth/ts.ts#reportDiagnostics`](ts.ts.md) (high), `sourceCandidates` → [`bench/src/truth/ts.ts#sourceCandidates`](ts.ts.md) (high), `toPosix` → [`bench/src/truth/ts.ts#toPosix`](ts.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high)
+**Calls:** `resolveCallEdge` → [`bench/src/truth/ts-calls.ts#resolveCallEdge`](ts-calls.ts.md) (high), `load` → [`bench/src/truth/ts-workspace.ts#WorkspaceEntryMapper.load`](ts-workspace.ts.md) (high), `EdgeSet` → [`bench/src/truth/ts.ts#EdgeSet`](ts.ts.md) (high), `ProjectOptions` → [`bench/src/truth/ts.ts#ProjectOptions`](ts.ts.md) (high), `forFile` → [`bench/src/truth/ts.ts#ProjectOptions.forFile`](ts.ts.md) (high), `load` → [`bench/src/truth/ts.ts#ProjectOptions.load`](ts.ts.md) (high), `diagnosticsEnabled` → [`bench/src/truth/ts.ts#diagnosticsEnabled`](ts.ts.md) (high), `extensionOf` → [`bench/src/truth/ts.ts#extensionOf`](ts.ts.md) (high), `findCycles` → [`bench/src/truth/ts.ts#findCycles`](ts.ts.md) (high), `importTypeName` → [`bench/src/truth/ts.ts#importTypeName`](ts.ts.md) (high), `importedNames` → [`bench/src/truth/ts.ts#importedNames`](ts.ts.md) (high), `moduleExportNames` → [`bench/src/truth/ts.ts#moduleExportNames`](ts.ts.md) (high), `moduleLoadSpecifier` → [`bench/src/truth/ts.ts#moduleLoadSpecifier`](ts.ts.md) (high), `normalizeId` → [`bench/src/truth/ts.ts#normalizeId`](ts.ts.md) (high), `readCompilerOptions` → [`bench/src/truth/ts.ts#readCompilerOptions`](ts.ts.md) (high), `reexportedNames` → [`bench/src/truth/ts.ts#reexportedNames`](ts.ts.md) (high), `reportDiagnostics` → [`bench/src/truth/ts.ts#reportDiagnostics`](ts.ts.md) (high), `sourceCandidates` → [`bench/src/truth/ts.ts#sourceCandidates`](ts.ts.md) (high), `toPosix` → [`bench/src/truth/ts.ts#toPosix`](ts.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high)

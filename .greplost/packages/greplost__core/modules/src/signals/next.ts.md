@@ -6,14 +6,30 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `nextPass (const)`
+**Exports:** `nextPass (const)`, `nextRoutePath(path: string): string`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (Lang), [`./index.ts`](index.ts.md) (SignalInput, SignalOutput, SignalPass)
+**Imports:** `web-tree-sitter` (Node), [`../schema.ts`](../schema.ts.md) (Declaration, ExportRecord, Lang, ReferenceRecord), [`./index.ts`](index.ts.md) (SignalInput, SignalOutput, SignalPass), [`./ts-nodes.ts`](ts-nodes.ts.md) (NameAllocator, field, signalNode, spanOf, stringOf, topLevelBindings, unwrapValue)
 
 **Imported by:** [`packages/core/src/signals/index.ts`](index.ts.md)
 
 **Blast radius:** 36 files (`greplost impact packages/core/src/signals/next.ts`)
 
 **Key symbols:**
-- `const LANGS: ReadonlySet<Lang> = new Set<Lang>(["ts", "tsx", "js", "jsx"])`  L11-11
-- `const nextPass: SignalPass = { id: "next", langs: LANGS, applies(_path: string, _source: string): boolean { return false; }, run(_input: SignalInput): SignalOutput { return { decls: [], refs: …`  L13-22
+- `const LANGS: ReadonlySet<Lang> = new Set<Lang>(["ts", "tsx", "js", "jsx"])`  L22-22
+- `const SPECIAL_FILES: ReadonlySet<string> = new Set([ "page", "layout", "route", "loading", "error", "template", "default", ])`  L25-33
+- `const ROUTE_KIND: Readonly<Record<string, string>> = { page: "page", layout: "layout", route: "handler" }`  L36-36
+- `const EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const`  L38-38
+- `const METHODS: ReadonlySet<string> = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"])`  L41-41
+- `function specialFile(path: string): string | null`  L44-51
+- `function segmentsUnderApp(path: string): string[] | null`  L54-59
+- `function nextRoutePath(path: string): string`  L67-72
+- `function isGroup(segment: string): boolean`  L75-77
+- `function isSlot(segment: string): boolean`  L80-82
+- `function isDynamic(segment: string): boolean`  L85-87
+- `function applies(path: string, _source: string): boolean`  L89-91
+- `const nextPass: SignalPass = { id: "next", langs: LANGS, applies, /** * The route this file is, when it is one. `app/donate-with-checkout/result/page.tsx` and * `app/donate-with-embedded-check…`  L93-177
+- `function isFunctionBinding(node: Node, value: Node | null): boolean`  L180-185
+- `function runtimeOf(bindings: readonly { name: string; exported: boolean; value: Node | null }[]): string | undefined`  L188-195
+- `function defaultExportName(exports: readonly ExportRecord[]): string | null`  L204-210
+
+**Calls:** `spanOf` → [`packages/core/src/extract/ts-signature.ts#spanOf`](../extract/ts-signature.ts.md) (med), `stringOf` → [`packages/core/src/extract/ts-signature.ts#stringOf`](../extract/ts-signature.ts.md) (med), `unwrapValue` → [`packages/core/src/extract/ts-signature.ts#unwrapValue`](../extract/ts-signature.ts.md) (med), `defaultExportName` → [`packages/core/src/signals/next.ts#defaultExportName`](next.ts.md) (high), `isFunctionBinding` → [`packages/core/src/signals/next.ts#isFunctionBinding`](next.ts.md) (high), `isGroup` → [`packages/core/src/signals/next.ts#isGroup`](next.ts.md) (high), `isSlot` → [`packages/core/src/signals/next.ts#isSlot`](next.ts.md) (high), `nextRoutePath` → [`packages/core/src/signals/next.ts#nextRoutePath`](next.ts.md) (high), `runtimeOf` → [`packages/core/src/signals/next.ts#runtimeOf`](next.ts.md) (high), `segmentsUnderApp` → [`packages/core/src/signals/next.ts#segmentsUnderApp`](next.ts.md) (high), `specialFile` → [`packages/core/src/signals/next.ts#specialFile`](next.ts.md) (high), `NameAllocator` → [`packages/core/src/signals/ts-nodes.ts#NameAllocator`](ts-nodes.ts.md) (high), `signalNode` → [`packages/core/src/signals/ts-nodes.ts#signalNode`](ts-nodes.ts.md) (high), `topLevelBindings` → [`packages/core/src/signals/ts-nodes.ts#topLevelBindings`](ts-nodes.ts.md) (high)

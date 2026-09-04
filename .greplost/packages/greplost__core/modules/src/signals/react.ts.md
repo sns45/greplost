@@ -8,12 +8,26 @@
 
 **Exports:** `reactPass (const)`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (Lang), [`./index.ts`](index.ts.md) (SignalInput, SignalOutput, SignalPass)
+**Imports:** `web-tree-sitter` (Node), [`../schema.ts`](../schema.ts.md) (Declaration, Lang, compareStrings), [`./index.ts`](index.ts.md) (SignalInput, SignalOutput, SignalPass), [`./ts-nodes.ts`](ts-nodes.ts.md) (NameAllocator, TopLevelBinding, bodyOf, calleeText, field, importBindings, signalNode, spanOf, stopAtNestedFunctions, topLevelBindings, unwrapValue, walk)
 
 **Imported by:** [`packages/core/src/signals/index.ts`](index.ts.md)
 
 **Blast radius:** 36 files (`greplost impact packages/core/src/signals/react.ts`)
 
 **Key symbols:**
-- `const LANGS: ReadonlySet<Lang> = new Set<Lang>(["ts", "tsx", "js", "jsx"])`  L15-15
-- `const reactPass: SignalPass = { id: "react", langs: LANGS, applies(_path: string, _source: string): boolean { return false; }, run(_input: SignalInput): SignalOutput { return { decls: [], refs…`  L17-26
+- `const LANGS: ReadonlySet<Lang> = new Set<Lang>(["ts", "tsx", "js", "jsx"])`  L36-36
+- `const WRAPPERS: ReadonlySet<string> = new Set(["memo", "forwardRef"])`  L39-39
+- `const JSX_TYPES: ReadonlySet<string> = new Set(["jsx_element", "jsx_self_closing_element", "jsx_fragment"])`  L42-42
+- `function applies(path: string, source: string): boolean`  L49-52
+- `const reactPass: SignalPass = { id: "react", langs: LANGS, applies, run(input: SignalInput): SignalOutput { const names = new NameAllocator(); const imports = importBindings(input.base.imports…`  L54-87
+- `function componentBody(binding: TopLevelBinding): Node | null`  L95-106
+- `function wrappedFunction(value: Node | null): Node | null`  L109-121
+- `function isWrapped(binding: TopLevelBinding, imports: ReadonlyMap<string, { specifier: string }>): boolean`  L124-137
+- `function returnsJsx(body: Node): boolean`  L146-174
+- `function holdsJsx(expression: Node): boolean`  L177-188
+- `function hooksIn(body: Node): string`  L191-205
+- `function propsTypeName(binding: TopLevelBinding): string | undefined`  L208-226
+- `function functionNodeOf(binding: TopLevelBinding): Node | null`  L229-237
+- `function signatureOf(binding: TopLevelBinding): string`  L239-242
+
+**Calls:** `field` → [`packages/core/src/extract/ts-signature.ts#field`](../extract/ts-signature.ts.md) (med), `spanOf` → [`packages/core/src/extract/ts-signature.ts#spanOf`](../extract/ts-signature.ts.md) (med), `unwrapValue` → [`packages/core/src/extract/ts-signature.ts#unwrapValue`](../extract/ts-signature.ts.md) (med), `componentBody` → [`packages/core/src/signals/react.ts#componentBody`](react.ts.md) (high), `functionNodeOf` → [`packages/core/src/signals/react.ts#functionNodeOf`](react.ts.md) (high), `holdsJsx` → [`packages/core/src/signals/react.ts#holdsJsx`](react.ts.md) (high), `hooksIn` → [`packages/core/src/signals/react.ts#hooksIn`](react.ts.md) (high), `isWrapped` → [`packages/core/src/signals/react.ts#isWrapped`](react.ts.md) (high), `propsTypeName` → [`packages/core/src/signals/react.ts#propsTypeName`](react.ts.md) (high), `returnsJsx` → [`packages/core/src/signals/react.ts#returnsJsx`](react.ts.md) (high), `signatureOf` → [`packages/core/src/signals/react.ts#signatureOf`](react.ts.md) (high), `wrappedFunction` → [`packages/core/src/signals/react.ts#wrappedFunction`](react.ts.md) (high), `NameAllocator` → [`packages/core/src/signals/ts-nodes.ts#NameAllocator`](ts-nodes.ts.md) (high), `bodyOf` → [`packages/core/src/signals/ts-nodes.ts#bodyOf`](ts-nodes.ts.md) (high), `calleeText` → [`packages/core/src/signals/ts-nodes.ts#calleeText`](ts-nodes.ts.md) (high), `importBindings` → [`packages/core/src/signals/ts-nodes.ts#importBindings`](ts-nodes.ts.md) (high), `signalNode` → [`packages/core/src/signals/ts-nodes.ts#signalNode`](ts-nodes.ts.md) (high), `topLevelBindings` → [`packages/core/src/signals/ts-nodes.ts#topLevelBindings`](ts-nodes.ts.md) (high), `walk` → [`packages/core/src/signals/ts-nodes.ts#walk`](ts-nodes.ts.md) (high)

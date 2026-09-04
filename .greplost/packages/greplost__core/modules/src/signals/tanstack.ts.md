@@ -8,12 +8,27 @@
 
 **Exports:** `tanstackPass (const)`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (Lang), [`./index.ts`](index.ts.md) (SignalInput, SignalOutput, SignalPass)
+**Imports:** `web-tree-sitter` (Node), [`../schema.ts`](../schema.ts.md) (Declaration, Lang, ReferenceRecord), [`./index.ts`](index.ts.md) (SignalInput, SignalOutput, SignalPass), [`./ts-nodes.ts`](ts-nodes.ts.md) (NameAllocator, calleeText, field, signalNode, spanOf, stringOf, unwrapValue, walk)
 
 **Imported by:** [`packages/core/src/signals/index.ts`](index.ts.md)
 
 **Blast radius:** 36 files (`greplost impact packages/core/src/signals/tanstack.ts`)
 
 **Key symbols:**
-- `const LANGS: ReadonlySet<Lang> = new Set<Lang>(["ts", "tsx", "js", "jsx"])`  L11-11
-- `const tanstackPass: SignalPass = { id: "tanstack", langs: LANGS, applies(_path: string, _source: string): boolean { return false; }, run(_input: SignalInput): SignalOutput { return { decls: []…`  L13-22
+- `const LANGS: ReadonlySet<Lang> = new Set<Lang>(["ts", "tsx", "js", "jsx"])`  L34-34
+- `const HANDLER_KEYS: ReadonlySet<string> = new Set(["loader", "beforeLoad"])`  L37-37
+- `const COMPONENT_KEYS: ReadonlySet<string> = new Set(["component"])`  L39-39
+- `const METHODS: ReadonlySet<string> = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"])`  L41-41
+- `type Creator = "file" | "root" | "server"`  L44-44
+- `const CREATORS: Readonly<Record<string, Creator>> = { createFileRoute: "file", createRootRoute: "root", createRootRouteWithContext: "root", createServerFileRoute: "server", }`  L46-51
+- `function applies(_path: string, source: string): boolean`  L54-56
+- `const tanstackPass: SignalPass = { id: "tanstack", langs: LANGS, applies, run(input: SignalInput): SignalOutput { const names = new NameAllocator(); const decls: Declaration[] = []; const refs…`  L58-76
+- `interface RouteCall`  L79-85
+- `function routeCall(call: Node): RouteCall | null`  L95-119
+- `function isCallee(call: Node): boolean`  L122-126
+- `function creatorName(call: Node): string | null`  L129-132
+- `function literalPath(call: Node): string | null`  L135-141
+- `function firstObject(call: Node): Node | null`  L144-151
+- `function emit( input: SignalInput, route: RouteCall, names: NameAllocator, decls: Declaration[], refs: ReferenceRecord[], ): void`  L153-215
+
+**Calls:** `field` → [`packages/core/src/extract/ts-signature.ts#field`](../extract/ts-signature.ts.md) (med), `spanOf` → [`packages/core/src/extract/ts-signature.ts#spanOf`](../extract/ts-signature.ts.md) (med), `stringOf` → [`packages/core/src/extract/ts-signature.ts#stringOf`](../extract/ts-signature.ts.md) (med), `unwrapValue` → [`packages/core/src/extract/ts-signature.ts#unwrapValue`](../extract/ts-signature.ts.md) (med), `creatorName` → [`packages/core/src/signals/tanstack.ts#creatorName`](tanstack.ts.md) (high), `emit` → [`packages/core/src/signals/tanstack.ts#emit`](tanstack.ts.md) (high), `firstObject` → [`packages/core/src/signals/tanstack.ts#firstObject`](tanstack.ts.md) (high), `isCallee` → [`packages/core/src/signals/tanstack.ts#isCallee`](tanstack.ts.md) (high), `literalPath` → [`packages/core/src/signals/tanstack.ts#literalPath`](tanstack.ts.md) (high), `routeCall` → [`packages/core/src/signals/tanstack.ts#routeCall`](tanstack.ts.md) (high), `NameAllocator` → [`packages/core/src/signals/ts-nodes.ts#NameAllocator`](ts-nodes.ts.md) (high), `calleeText` → [`packages/core/src/signals/ts-nodes.ts#calleeText`](ts-nodes.ts.md) (high), `signalNode` → [`packages/core/src/signals/ts-nodes.ts#signalNode`](ts-nodes.ts.md) (high), `walk` → [`packages/core/src/signals/ts-nodes.ts#walk`](ts-nodes.ts.md) (high)

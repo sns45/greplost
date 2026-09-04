@@ -6,14 +6,65 @@
 
 **Package:** `@greplost/bench` ([map](../../../MAP.md))
 
-**Exports:** `NOTES (const)`, `generateTruth(root: string, files: string[]): Truth`
+**Exports:** `NOTES (const)`, `SignalExtra (interface)`, `appRoutePath(file: string): string | undefined`, `generateExtra(root: string, files: string[]): SignalExtra`, `generateTruth(root: string, files: string[]): Truth`
 
-**Imports:** [`./ts.ts`](ts.ts.md) (Truth)
+**Imports:** `node:fs` (existsSync, realpathSync), `node:path` (default), `typescript` (default), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (ReferenceEdge, compareStrings), [`./ts-workspace.ts`](ts-workspace.ts.md) (WorkspaceEntryMapper), [`./ts.ts`](ts.ts.md) (Truth)
 
 **Imported by:** None.
 
 **Blast radius:** 0 files (`greplost impact bench/src/truth/signals-ts.ts`)
 
 **Key symbols:**
-- `const NOTES: readonly string[] = ["not-implemented"]`  L15-15
-- `function generateTruth(root: string, files: string[]): Truth`  L17-22
+- `const NOTES: readonly string[] = ["tsc-checker-oracle", "base-type-chain-for-pulumi", "app-router-path-rules"]`  L45-45
+- `const UNSUPPORTED = ["unsupported:S1", "unsupported:S2", "unsupported:S3", "unsupported:S4"] as const`  L52-52
+- `const JSX_RETURN_TYPES: ReadonlySet<string> = new Set(["Element", "ReactElement", "ReactNode", "JSX.Element"])`  L55-55
+- `const REACT_WRAPPERS: ReadonlySet<string> = new Set(["memo", "forwardRef"])`  L57-57
+- `const TANSTACK_PACKAGES = ["@tanstack/react-start", "@tanstack/react-router"] as const`  L59-59
+- `const TANSTACK_CREATORS: Readonly<Record<string, "file" | "root" | "server">> = { createFileRoute: "file", createRootRoute: "root", createRootRouteWithContext: "root", createServerFileRoute: "server"…`  L61-66
+- `const HTTP_METHODS: ReadonlySet<string> = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"])`  L67-67
+- `const APP_ROUTE_FILES: Readonly<Record<string, string>> = { page: "page", layout: "layout", route: "handler" }`  L69-69
+- `const PULUMI_SCOPE = "@pulumi/"`  L71-71
+- `const PULUMI_CORE = "@pulumi/pulumi"`  L72-72
+- `const PULUMI_RESOURCE_BASES: ReadonlySet<string> = new Set([ "ComponentResource", "CustomResource", "ProviderResource", "Resource", ])`  L74-79
+- `const PULUMI_CORE_RESOURCES: ReadonlySet<string> = new Set([...PULUMI_RESOURCE_BASES, "StackReference"])`  L81-81
+- `interface SignalExtra`  L84-87
+- `function generateExtra(root: string, files: string[]): SignalExtra`  L89-97
+- `function generateTruth(root: string, files: string[]): Truth`  L103-115
+- `interface Scan`  L121-125
+- `function toPosix(p: string): string`  L127-129
+- `function normalizeId(absRoot: string, file: string): string`  L131-134
+- `function readCompilerOptions(absRoot: string): ts.CompilerOptions`  L143-158
+- `function analyse(root: string, files: string[]): Scan`  L160-230
+- `class Names`  L237-249
+- `Names.take(name: string): string`  L239-248
+- `function visitFile(id: string, sourceFile: ts.SourceFile, checker: ts.TypeChecker, scan: Scan): void`  L251-257
+- `function nodeIdOf(file: string, kind: string, name: string): string`  L259-261
+- `function reference( from: string, to: string, refKind: ReferenceEdge["refKind"], symbols: string[], ): ReferenceEdge`  L263-270
+- `function reactApplies(file: string, text: string): boolean`  L274-277
+- `function reactNodes( file: string, sourceFile: ts.SourceFile, checker: ts.TypeChecker, scan: Scan, text: string, ): void`  L279-293
+- `interface Binding`  L295-303
+- `function topLevelBindings(sourceFile: ts.SourceFile): Binding[]`  L305-328
+- `function hasModifier(node: ts.Node, kind: ts.SyntaxKind): boolean`  L330-332
+- `function unwrap(expression: ts.Expression): ts.Expression`  L334-348
+- `function isComponent(binding: Binding, checker: ts.TypeChecker): boolean`  L350-356
+- `function functionOf(binding: Binding): ts.SignatureDeclaration | undefined`  L358-365
+- `function wrappedFunction(value: ts.Expression): ts.SignatureDeclaration | undefined`  L368-378
+- `function isReactWrapped(value: ts.Expression | undefined, checker: ts.TypeChecker): boolean`  L381-397
+- `function returnTypeIsJsx(fn: ts.SignatureDeclaration, checker: ts.TypeChecker): boolean`  L399-408
+- `function functionReturnsJsx(fn: ts.SignatureDeclaration): boolean`  L410-415
+- `function classReturnsJsx(declaration: ts.ClassLikeDeclaration): boolean`  L417-423
+- `function blockReturnsJsx(block: ts.Block): boolean`  L426-439
+- `function isFunctionScope(node: ts.Node): boolean`  L441-449
+- `function holdsJsx(expression: ts.Node): boolean`  L451-465
+- `function isJsx(node: ts.Node): boolean`  L467-469
+- `function tanstackNodes(file: string, sourceFile: ts.SourceFile, checker: ts.TypeChecker, scan: Scan): void`  L473-483
+- `interface TanstackRoute`  L485-489
+- `function tanstackRoute(call: ts.CallExpression, checker: ts.TypeChecker): TanstackRoute | undefined`  L491-511
+- `function isTanstackCallee(expression: ts.Expression, checker: ts.TypeChecker): boolean`  L513-518
+- `function emitTanstackRoute(file: string, route: TanstackRoute, names: Names, scan: Scan): void`  L520-543
+- `function appRoutePath(file: string): string | undefined`  L553-564
+- `function appRouteFile(file: string): string | undefined`  L566-574
+- `function nextNodes(file: string, sourceFile: ts.SourceFile, checker: ts.TypeChecker, scan: Scan): void`  L576-603
+- … 17 more
+
+**Calls:** `Names` → [`bench/src/truth/signals-ts.ts#Names`](signals-ts.ts.md) (high), `analyse` → [`bench/src/truth/signals-ts.ts#analyse`](signals-ts.ts.md) (high), `appRouteFile` → [`bench/src/truth/signals-ts.ts#appRouteFile`](signals-ts.ts.md) (high), `appRoutePath` → [`bench/src/truth/signals-ts.ts#appRoutePath`](signals-ts.ts.md) (high), `blockReturnsJsx` → [`bench/src/truth/signals-ts.ts#blockReturnsJsx`](signals-ts.ts.md) (high), `classDeclarationOf` → [`bench/src/truth/signals-ts.ts#classDeclarationOf`](signals-ts.ts.md) (high), `classReturnsJsx` → [`bench/src/truth/signals-ts.ts#classReturnsJsx`](signals-ts.ts.md) (high), `defaultExportName` → [`bench/src/truth/signals-ts.ts#defaultExportName`](signals-ts.ts.md) (high), `emitTanstackRoute` → [`bench/src/truth/signals-ts.ts#emitTanstackRoute`](signals-ts.ts.md) (high), `expressionTailName` → [`bench/src/truth/signals-ts.ts#expressionTailName`](signals-ts.ts.md) (high), `extendsPulumiResource` → [`bench/src/truth/signals-ts.ts#extendsPulumiResource`](signals-ts.ts.md) (high), `fromPulumi` → [`bench/src/truth/signals-ts.ts#fromPulumi`](signals-ts.ts.md) (high), `functionOf` → [`bench/src/truth/signals-ts.ts#functionOf`](signals-ts.ts.md) (high), `functionReturnsJsx` → [`bench/src/truth/signals-ts.ts#functionReturnsJsx`](signals-ts.ts.md) (high), `hasModifier` → [`bench/src/truth/signals-ts.ts#hasModifier`](signals-ts.ts.md) (high), `holdsJsx` → [`bench/src/truth/signals-ts.ts#holdsJsx`](signals-ts.ts.md) (high), `identifierName` → [`bench/src/truth/signals-ts.ts#identifierName`](signals-ts.ts.md) (high), `importSpecifierOf` → [`bench/src/truth/signals-ts.ts#importSpecifierOf`](signals-ts.ts.md) (high), `isComponent` → [`bench/src/truth/signals-ts.ts#isComponent`](signals-ts.ts.md) (high), `isFunctionScope` → [`bench/src/truth/signals-ts.ts#isFunctionScope`](signals-ts.ts.md) (high), `isJsx` → [`bench/src/truth/signals-ts.ts#isJsx`](signals-ts.ts.md) (high), `isPulumiResource` → [`bench/src/truth/signals-ts.ts#isPulumiResource`](signals-ts.ts.md) (high), `isReactWrapped` → [`bench/src/truth/signals-ts.ts#isReactWrapped`](signals-ts.ts.md) (high), `isTanstackCallee` → [`bench/src/truth/signals-ts.ts#isTanstackCallee`](signals-ts.ts.md) (high), `newBindingName` → [`bench/src/truth/signals-ts.ts#newBindingName`](signals-ts.ts.md) (high), `nextNodes` → [`bench/src/truth/signals-ts.ts#nextNodes`](signals-ts.ts.md) (high), `nodeIdOf` → [`bench/src/truth/signals-ts.ts#nodeIdOf`](signals-ts.ts.md) (high), `normalizeId` → [`bench/src/truth/signals-ts.ts#normalizeId`](signals-ts.ts.md) (high), `objectArgument` → [`bench/src/truth/signals-ts.ts#objectArgument`](signals-ts.ts.md) (high), `propertyName` → [`bench/src/truth/signals-ts.ts#propertyName`](signals-ts.ts.md) (high), `pulumiNodes` → [`bench/src/truth/signals-ts.ts#pulumiNodes`](signals-ts.ts.md) (high), `reactApplies` → [`bench/src/truth/signals-ts.ts#reactApplies`](signals-ts.ts.md) (high), `reactNodes` → [`bench/src/truth/signals-ts.ts#reactNodes`](signals-ts.ts.md) (high), `readCompilerOptions` → [`bench/src/truth/signals-ts.ts#readCompilerOptions`](signals-ts.ts.md) (high), `reference` → [`bench/src/truth/signals-ts.ts#reference`](signals-ts.ts.md) (high), `resolveAlias` → [`bench/src/truth/signals-ts.ts#resolveAlias`](signals-ts.ts.md) (high), `resourceInputs` → [`bench/src/truth/signals-ts.ts#resourceInputs`](signals-ts.ts.md) (high), `returnTypeIsJsx` → [`bench/src/truth/signals-ts.ts#returnTypeIsJsx`](signals-ts.ts.md) (high), `rootIdentifier` → [`bench/src/truth/signals-ts.ts#rootIdentifier`](signals-ts.ts.md) (high), `stringArgument` → [`bench/src/truth/signals-ts.ts#stringArgument`](signals-ts.ts.md) (high), `tanstackNodes` → [`bench/src/truth/signals-ts.ts#tanstackNodes`](signals-ts.ts.md) (high), `tanstackRoute` → [`bench/src/truth/signals-ts.ts#tanstackRoute`](signals-ts.ts.md) (high), `toPosix` → [`bench/src/truth/signals-ts.ts#toPosix`](signals-ts.ts.md) (high), `topLevelBindings` → [`bench/src/truth/signals-ts.ts#topLevelBindings`](signals-ts.ts.md) (high), `unwrap` → [`bench/src/truth/signals-ts.ts#unwrap`](signals-ts.ts.md) (high), `visitFile` → [`bench/src/truth/signals-ts.ts#visitFile`](signals-ts.ts.md) (high), `wrappedFunction` → [`bench/src/truth/signals-ts.ts#wrappedFunction`](signals-ts.ts.md) (high), `load` → [`bench/src/truth/ts-workspace.ts#WorkspaceEntryMapper.load`](ts-workspace.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high)

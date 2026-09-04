@@ -10,7 +10,7 @@
 
 **Imports:** `node:fs` (existsSync, readFileSync), `node:path` (default), `fast-glob` (default), `typescript` (default)
 
-**Imported by:** [`bench/src/truth/ts.ts`](ts.ts.md)
+**Imported by:** [`bench/src/truth/signals-ts.ts`](signals-ts.ts.md), [`bench/src/truth/ts.ts`](ts.ts.md)
 
 **Blast radius:** 19 files (`greplost impact bench/src/truth/ts-workspace.ts`)
 

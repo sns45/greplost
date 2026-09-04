@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/references/link.ts`](../references/link.ts.md), [`packages/core/src/resolve/dockerfile.ts`](dockerfile.ts.md), [`packages/core/src/resolve/hcl.ts`](hcl.ts.md), [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/java.ts`](java.ts.md), [`packages/core/src/resolve/kotlin.ts`](kotlin.ts.md), [`packages/core/src/resolve/python.ts`](python.ts.md), [`packages/core/src/resolve/rust.ts`](rust.ts.md), [`packages/core/src/resolve/yaml.ts`](yaml.ts.md)
 
-**Blast radius:** 65 files (`greplost impact packages/core/src/resolve/resolver.ts`)
+**Blast radius:** 66 files (`greplost impact packages/core/src/resolve/resolver.ts`)
 
 **Key symbols:**
 - `type ResolvedTarget = | { type: "file"; path: string } | { type: "external"; pkg: string } | { type: "unresolved" }`  L41-44

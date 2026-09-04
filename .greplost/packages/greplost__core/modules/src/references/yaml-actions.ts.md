@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/references/index.ts`](index.ts.md), [`packages/core/src/references/yaml.ts`](yaml.ts.md)
 
-**Blast radius:** 38 files (`greplost impact packages/core/src/references/yaml-actions.ts`)
+**Blast radius:** 39 files (`greplost impact packages/core/src/references/yaml-actions.ts`)
 
 **Key symbols:**
 - `function resolveYamlActionsReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null`  L12-21
