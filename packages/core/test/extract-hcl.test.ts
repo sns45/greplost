@@ -471,6 +471,34 @@ describe("references", () => {
     ]);
   });
 
+  test("`provider` is a meta-argument only at the top level of a block", async () => {
+    const snapshot = await snapshotOf({
+      "main.tf": [
+        'provider "aws" {}',
+        'variable "key" { type = string }',
+        'resource "aws_instance" "web" {',
+        "  provider = aws",
+        "  root_block_device {",
+        "    provider   = var.key",
+        "  }",
+        "}",
+      ].join("\n"),
+    });
+    expect(edgesFrom(snapshot, "main.tf#resource.aws_instance.web")).toEqual([
+      // The meta-argument, named once.
+      ["main.tf#provider.aws", "aws", "high"],
+      // An attribute called `provider` inside a nested block is an ordinary argument.
+      ["main.tf#variable.key", "var.key", "high"],
+    ]);
+  });
+
+  test("a label that cannot be part of a node id makes the block a non-node, not a crash", () => {
+    // HCL parses `"a#b"` as a label; `nodeId` refuses "#" in a name (spec 0.2). Throwing here
+    // would fail the whole build over one file, so the block is simply not a node.
+    const out = run("main.tf", 'resource "aws_vpc" "a#b" {}\nresource "aws_vpc" "" {}\nresource "aws_vpc" "ok" {}\n');
+    expect(out.decls.map((d) => d.id)).toEqual(["main.tf#resource.aws_vpc.ok"]);
+  });
+
   test("byte-identical files keep their own node ids", async () => {
     // Two files with the same bytes are parsed once and the record is re-addressed onto the
     // second path. Re-addressing used to rebuild every id as `<file>#<name>`, which silently

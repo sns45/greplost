@@ -119,17 +119,14 @@ function stderrOf(cause: unknown): string {
 }
 
 /**
- * One run of the helper per repo root.
+ * One run of the helper, per call.
  *
- * `generateTruth` and `generateExtra` are two views of the same read, and the structural runner
- * calls both; without the memo the corpus would be parsed twice for one score.
+ * Deliberately not memoised by root: `headtohead` and `replay` check the *same* root out at
+ * several commits inside one process, so a root-keyed cache would hand the second commit the
+ * first one's truth. The read costs 0.09s on the largest pinned Terraform repo (87 files), so
+ * there is nothing to buy and a correctness hazard to avoid.
  */
-const CACHE = new Map<string, TfToolOutput>();
-
 function runTool(root: string): TfToolOutput {
-  const cached = CACHE.get(root);
-  if (cached !== undefined) return cached;
-
   const binary = tfinspectTool();
   let stdout: string;
   try {
@@ -160,7 +157,6 @@ function runTool(root: string): TfToolOutput {
     errors: value.errors ?? [],
     modules: value.modules ?? 0,
   };
-  CACHE.set(root, result);
   return result;
 }
 

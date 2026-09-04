@@ -399,11 +399,13 @@ func providerOfType(resourceType string) string {
 
 // walkBody records every reference inside one block body, attributed to `fromID`. Nested blocks
 // belong to the block that contains them; a `dynamic` block binds its label.
-func walkBody(body *hclsyntax.Body, fromID, dir string, bound map[string]bool, refs *[]rawRef) {
+func walkBody(body *hclsyntax.Body, fromID, dir string, bound map[string]bool, topLevel bool, refs *[]rawRef) {
 	for _, attr := range attributesInOrder(body) {
 		// The `provider` meta-argument names a provider configuration and is handled by the
-		// caller, so that a resource without one still records its implicit provider.
-		if attr.Name == "provider" {
+		// caller, so that a resource without one still records its implicit provider. It is a
+		// meta-argument only at the top level of a block: an attribute called `provider` inside
+		// a nested block is an ordinary argument and references what it names.
+		if topLevel && attr.Name == "provider" {
 			continue
 		}
 		for _, address := range exprReferences(attr.Expr, bound) {
@@ -419,7 +421,7 @@ func walkBody(body *hclsyntax.Body, fromID, dir string, bound map[string]bool, r
 			}
 			scope[nested.Labels[0]] = true
 		}
-		walkBody(nested.Body, fromID, dir, scope, refs)
+		walkBody(nested.Body, fromID, dir, scope, false, refs)
 	}
 }
 
@@ -507,7 +509,7 @@ func scanFile(parser *hclparse.Parser, absolute, rel string) ([]*decl, []rawRef,
 				}
 			}
 			decls = append(decls, made)
-			walkBody(block.Body, owner, dir, nil, &refs)
+			walkBody(block.Body, owner, dir, nil, true, &refs)
 			refs = append(refs, providerReferences(block, kind, owner, dir)...)
 		}
 	}

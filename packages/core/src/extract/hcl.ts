@@ -35,7 +35,7 @@ import type {
   Lang,
   ReferenceRecord,
 } from "../schema.ts";
-import { nodeId, symbolId } from "../schema.ts";
+import { compareStrings, nodeId, symbolId } from "../schema.ts";
 import { clip, lineOf, spanOf } from "./ts-signature.ts";
 
 /** Top-level block types that become a node, and the `DeclKind` each one takes. */
@@ -114,7 +114,19 @@ function blockType(block: Node): string | null {
   return identifier === null ? null : identifier.text;
 }
 
-/** Every label of a block, or null when one of them is not a plain string. */
+/**
+ * A label that can be part of a node id.
+ *
+ * `nodeId` throws on `#`, a newline or NUL (spec 0.2, "Name characters"), and an extractor that
+ * threw would fail the *whole build* over one file: HCL's grammar happily parses
+ * `resource "aws_s3_bucket" "a#b"` even though Terraform would reject the name. Such a block is
+ * simply not a node, which is the same answer a block with the wrong number of labels gets.
+ */
+function usableLabel(text: string): boolean {
+  return text !== "" && !/[#\n\0]/.test(text);
+}
+
+/** Every label of a block, or null when one of them cannot be part of a node id. */
 function blockLabels(block: Node): string[] | null {
   const labels: string[] = [];
   let seenType = false;
@@ -125,7 +137,7 @@ function blockLabels(block: Node): string[] | null {
       continue;
     }
     const text = plainString(child);
-    if (text === null) return null;
+    if (text === null || !usableLabel(text)) return null;
     labels.push(text);
   }
   return labels;
@@ -202,7 +214,7 @@ function providerOfType(type: string): string {
 function metaOf(entries: ReadonlyArray<readonly [string, string | null]>): Record<string, string> | undefined {
   const out: Record<string, string> = {};
   let count = 0;
-  for (const [key, value] of [...entries].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))) {
+  for (const [key, value] of [...entries].sort((a, b) => compareStrings(a[0], b[0]))) {
     if (value === null) continue;
     out[key] = value;
     count += 1;
@@ -382,14 +394,22 @@ function walkExpression(state: HclState, owner: string, node: Node, bound: Reado
  * Nested blocks are walked too — a `dynamic`, `lifecycle` or `provisioner` block belongs to the
  * resource that contains it — with any name the nested block binds added to the scope.
  */
-function walkBody(state: HclState, owner: string, body: Node | null, bound: ReadonlySet<string>): void {
+function walkBody(
+  state: HclState,
+  owner: string,
+  body: Node | null,
+  bound: ReadonlySet<string>,
+  topLevel: boolean,
+): void {
   if (body === null) return;
   for (const attribute of attributesOf(body)) {
     const parts = attributeParts(attribute);
     if (parts === null) continue;
     // The `provider` meta-argument names a provider *configuration*, and it is handled by the
-    // caller so that a resource without one still records its implicit provider.
-    if (parts.name === PROVIDER_ARGUMENT) continue;
+    // caller so that a resource without one still records its implicit provider. It is a
+    // meta-argument only at the top level of a block: an attribute called `provider` inside a
+    // nested block is an ordinary argument, and skipping those lost every reference in them.
+    if (topLevel && parts.name === PROVIDER_ARGUMENT) continue;
     walkExpression(state, owner, parts.value, bound);
   }
   for (const block of blocksOf(body)) {
@@ -399,7 +419,7 @@ function walkBody(state: HclState, owner: string, body: Node | null, bound: Read
       const label = labels === null ? undefined : labels[0];
       if (label !== undefined) scope = new Set([...bound, label]);
     }
-    walkBody(state, owner, bodyOf(block), scope);
+    walkBody(state, owner, bodyOf(block), scope, false);
   }
 }
 
@@ -508,8 +528,6 @@ function collectBlock(state: HclState, block: Node): void {
   const wanted = TWO_LABEL_BLOCKS.has(type) ? 2 : 1;
   if (labels.length !== wanted) return;
   const name = wanted === 2 ? `${labels[0] as string}.${labels[1] as string}` : (labels[0] as string);
-  if (name === "") return;
-
   const body = bodyOf(block);
   const declaration = addDeclaration(
     state,
@@ -538,7 +556,7 @@ function collectBlock(state: HclState, block: Node): void {
     }
   }
 
-  walkBody(state, owner, body, NO_BINDINGS);
+  walkBody(state, owner, body, NO_BINDINGS, true);
   collectProviderArgument(state, type, labels, owner, block, body);
 }
 
