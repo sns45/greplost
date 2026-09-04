@@ -10,7 +10,7 @@ and 5.2. Nothing in waves 1 to 3 may start until every box here is checked.
 - [x] G1: language detection covers extensions, basenames and the Dockerfile prefix; describe('langOf')
   CHECK: bun test packages/core/test/lang.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 42 expect() calls | Ran 7 tests across 1 file. [6.00ms]
+  EVIDENCE: 42 expect() calls | Ran 7 tests across 1 file. [7.00ms]
 
 - [x] G2: every vendored grammar loads and parses a one-liner with no root ERROR; describe('grammars')
   CHECK: bun test packages/core/test/parser.test.ts -t grammars 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -30,27 +30,27 @@ and 5.2. Nothing in waves 1 to 3 may start until every box here is checked.
 - [x] G5: a repo with no references writes no references.jsonl and an unchanged artifact set; describe('absent references file')
   CHECK: bun test packages/core/test/references.test.ts -t "absent references file" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 12 expect() calls | Ran 4 tests across 1 file. [78.00ms]
+  EVIDENCE: 12 expect() calls | Ran 4 tests across 1 file. [73.00ms]
 
 - [x] G6: every unimplemented language fails loudly, never silently; describe('stubs')
   CHECK: bun test packages/core/test/references.test.ts -t stubs 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 30 expect() calls | Ran 5 tests across 1 file. [30.00ms]
+  EVIDENCE: 30 expect() calls | Ran 5 tests across 1 file. [28.00ms]
 
 - [x] G7: the truth registry loads by convention and names the missing module in its error; describe('loadTruth')
   CHECK: bun test bench/test/registry.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 80 expect() calls | Ran 11 tests across 1 file. [112.00ms]
+  EVIDENCE: 80 expect() calls | Ran 11 tests across 1 file. [104.00ms]
 
 - [x] G8: every build-2 fixture name in FIXTURES has a language and a directory; describe('fixtures table')
   CHECK: bun test bench/test/registry.test.ts -t "fixtures table" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 55 expect() calls | Ran 4 tests across 1 file. [99.00ms]
+  EVIDENCE: 55 expect() calls | Ran 4 tests across 1 file. [100.00ms]
 
 - [x] G9: all 15 build-2 corpus entries parse, carry a 40-hex sha and a known lang
   CHECK: bun test bench/test/corpus.test.ts -t "every build-2 entry resolves" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 105 expect() calls | Ran 1 test across 1 file. [275.00ms]
+  EVIDENCE: 105 expect() calls | Ran 1 test across 1 file. [257.00ms]
 
 - [x] G10: the build-1 TypeScript structural gate still passes unchanged
   CHECK: bun run bench:structural --fixture --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -83,7 +83,7 @@ and 5.2. Nothing in waves 1 to 3 may start until every box here is checked.
 - [x] G14: the whole suite is green from a frozen install
   CHECK: bun install --frozen-lockfile >/dev/null && bun test 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 15039 expect() calls | Ran 1345 tests across 41 files. [56.15s]
+  EVIDENCE: 15039 expect() calls | Ran 1345 tests across 41 files. [57.96s]
 
 - [x] G15: every package typechecks
   CHECK: bun run typecheck
