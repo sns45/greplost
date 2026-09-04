@@ -12,8 +12,9 @@
  * may not read the filesystem, the clock or the environment — everything it is allowed to see
  * is in `SignalInput`.
  *
- * The registry is complete on day one with an inert stub per pass (`applies` returns false), so
- * leaves 2.3 and 2.7 each replace exactly one module and edit nothing shared.
+ * The registry was complete on day one with an inert stub per pass (`applies` returns false), so
+ * each leaf replaces exactly one module and edits nothing shared. The four TypeScript passes are
+ * live (leaf 2.3); `pulumi-go` is still the stub (leaf 2.7).
  */
 
 import { compareDeclarations, compareStrings } from "../schema.ts";
@@ -79,20 +80,6 @@ export { reactPass } from "./react.ts";
 export { tanstackPass } from "./tanstack.ts";
 
 /**
- * Run every applicable pass over one file and concatenate what they produce.
- *
- * `enabled` is `config.signals`: absent means every pass whose `applies` returns true (the
- * common case, needing no config at all), and `[]` turns the layer off entirely, which is how
- * a repo opts out. An id in `enabled` that no pass answers to is ignored rather than fatal:
- * config written against a newer greplost must not break an older one.
- *
- * Note for whoever bumps `PARSE_CACHE_VERSION`: this makes extraction depend on
- * `config.signals`, and the parse cache is keyed by `(lang, sha256)` alone. Two builds of the
- * same checkout under different `signals` settings would share cache entries. Every pass is
- * inert today, so nothing can differ yet; the first pass that produces a node has to be landed
- * together with a `PARSE_CACHE_VERSION` bump.
- */
-/**
  * Everything the signal layer reads from a path, for a file of this language: `""` when the
  * layer's output for these bytes cannot depend on where they live.
  *
@@ -112,6 +99,19 @@ export function signalPathKey(path: string, lang: Lang, enabled?: readonly Signa
   return parts.join(";");
 }
 
+/**
+ * Run every applicable pass over one file and concatenate what they produce.
+ *
+ * `enabled` is `config.signals`: absent means every pass whose `applies` returns true (the
+ * common case, needing no config at all), and `[]` turns the layer off entirely, which is how
+ * a repo opts out. An id in `enabled` that no pass answers to is ignored rather than fatal:
+ * config written against a newer greplost must not break an older one.
+ *
+ * `config.signals` therefore changes what extraction produces for the same bytes, so it is part
+ * of the parse cache's stamp (`parseCacheStamp` in `@greplost/sync`) rather than something a
+ * `PARSE_CACHE_VERSION` bump could stand in for: a version is bumped once, and this differs
+ * between two builds of the same checkout.
+ */
 export function runSignals(input: SignalInput, enabled?: readonly SignalPassId[]): SignalOutput {
   const decls: Declaration[] = [];
   const refs: ReferenceRecord[] = [];

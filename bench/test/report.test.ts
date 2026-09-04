@@ -1087,6 +1087,27 @@ describe("results-md", () => {
     expect(text).toMatch(/## Eval 2[\s\S]*not run/);
   });
 
+  test("every truth note RESULTS.md can print carries its own gloss", () => {
+    const dir = tempDir("truth-notes");
+    writeFileSync(
+      path.join(dir, "structural-2026-09-02-abc1234.json"),
+      JSON.stringify({
+        suite: "structural",
+        date: "2026-09-02",
+        greplostSha: "abc1234",
+        corpus: [{ name: "tanstack-start" }],
+        truth: { notes: ["workspace-entry-mapping", "nearest-tsconfig-resolution"] },
+        repos: { "tanstack-start": { files: 389, S4: 1 } },
+      }),
+    );
+    const text = renderResultsMd(buildModel({ resultsDir: dir }));
+    // A note without a gloss is printed with the "no gloss for it" pointer; a disclosed
+    // emulation must not reach RESULTS.md that way (leaf 2.3 review, Important 2).
+    expect(text).toContain("nearest-tsconfig-resolution");
+    expect(text).toContain("nearest `tsconfig.json`");
+    expect(text).not.toContain("no gloss for it");
+  });
+
   test("provenanceLine names the corpus, the file count and the walk length", () => {
     expect(
       provenanceLine("2026-09-02", "ac3bcd1", { repo: "tiny-ts", fixture: true, files: 12, commits: 24 }),
