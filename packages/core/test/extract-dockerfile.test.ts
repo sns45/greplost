@@ -328,15 +328,16 @@ describe("tiny-docker", () => {
   });
 
   test("every stage, the final image node and the constants are declared", () => {
+    // Sorted by (file, span start, id): the image node opens where its stage's `FROM` does.
     expect(snapshot.symbols.map((d) => `${d.kind} ${d.id}`)).toEqual([
       "const Dockerfile#arg.NODE_VERSION",
       "stage Dockerfile#stage.build",
-      "image Dockerfile#image.run",
       "const Dockerfile#env.NODE_ENV",
+      "image Dockerfile#image.run",
       "stage Dockerfile#stage.run",
       "const Dockerfile#env.PORT",
-      "stage Dockerfile.dev#stage.~0",
       "image Dockerfile.dev#image.~0",
+      "stage Dockerfile.dev#stage.~0",
       "const Dockerfile.dev#env.NODE_ENV",
     ]);
     expect(snapshot.symbols.find((d) => d.id === "Dockerfile#image.run")?.meta).toEqual({
@@ -374,14 +375,14 @@ describe("tiny-docker", () => {
 
   test("references are written to graph/references.jsonl and node ids to graph/symbols.jsonl", () => {
     const artifacts = serializeSnapshot(snapshot);
-    const references = parseJsonl(artifacts[ARTIFACT_PATHS.references] ?? "");
+    const references = parseJsonl(artifacts.get(ARTIFACT_PATHS.references) ?? "");
     expect(references.map((edge) => (edge as { to: string }).to)).toEqual([
       "ext:image/node:20",
       "Dockerfile#stage.build",
       "ext:image/gcr.io/distroless/nodejs20",
       "ext:image/node:20",
     ]);
-    const symbols = parseJsonl(artifacts[ARTIFACT_PATHS.symbols] ?? "");
+    const symbols = parseJsonl(artifacts.get(ARTIFACT_PATHS.symbols) ?? "");
     const ids = symbols.map((decl) => (decl as { id: string }).id);
     expect(ids).toContain("Dockerfile#stage.build");
     expect(ids).toContain("Dockerfile#image.run");

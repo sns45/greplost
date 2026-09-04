@@ -295,7 +295,8 @@ describe("stubs", () => {
       // python (leaf 2.1), rust (leaf 2.4), java (leaf 2.5) and kotlin (leaf 2.6) are no longer
       // stubs: their own test files (extract-python/rust/java/kotlin.test.ts) hold them to the
       // contract now.
-      ["Dockerfile", (p) => extractDockerfile(p, "dockerfile", "", NO_TREE), /dockerfile extractor .* leaf 2\.10/],
+      // dockerfile (leaf 2.10) is no longer a stub either: `extract-dockerfile.test.ts` holds
+      // it to the contract now.
       // yaml-k8s and yaml-helm (leaf 2.8) are no longer stubs: `extract-yaml-k8s.test.ts`
       // holds them to the contract now.
       ["ci.yml", (p) => extractYamlActions(p, "yaml", "", NO_TREE), /yaml-actions extractor .* build-2 leaf 2\.9/],
@@ -307,14 +308,12 @@ describe("stubs", () => {
     }
   });
 
-  test("every unimplemented resolver builds for free and throws on the first specifier", () => {
-    const ctx = emptyContext([]);
-    const cases: ReadonlyArray<readonly [ReturnType<typeof createDockerfileResolver>, RegExp]> = [
-      [createDockerfileResolver(ctx), /dockerfile resolver .* build-2 leaf 2\.10/],
-    ];
-    for (const [resolve, pattern] of cases) {
-      expect(() => resolve("a/b", "x")).toThrow(pattern);
-    }
+  test("the Dockerfile resolver is implemented: a COPY source nothing indexes is unresolved", () => {
+    // Leaf 2.10 landed, so no language resolver is a stub any more: the module answers for
+    // every specifier and never throws. `extract-dockerfile.test.ts` owns the rules.
+    const resolve = createDockerfileResolver(emptyContext(["Dockerfile"]));
+    expect(resolve("Dockerfile", "package.json")).toEqual({ type: "unresolved" });
+    expect(resolve("Dockerfile", "Dockerfile")).toEqual({ type: "file", path: "Dockerfile" });
   });
 
   test("the Rust resolver is implemented: a `use` of an absent crate is external, not a throw", () => {
@@ -363,9 +362,11 @@ describe("stubs", () => {
     expect(() =>
       resolveYamlActionsReferences(record({ lang: "yaml" }), ref({ refKind: "needs" }), ctx),
     ).toThrow(/yaml-actions reference resolution .* leaf 2\.9/);
-    expect(() =>
-      resolveDockerfileReferences(record({ lang: "dockerfile" }), ref({ refKind: "from-image" }), ctx),
-    ).toThrow(/dockerfile reference resolution .* leaf 2\.10/);
+    // dockerfile landed with leaf 2.10 and behaves the same way: a base image built from a
+    // build variable names no image, so it is dropped rather than turned into an `ext:` node.
+    expect(
+      resolveDockerfileReferences(record({ lang: "dockerfile" }), ref({ refKind: "from-image", to: "$BASE" }), ctx),
+    ).toBeNull();
   });
 
   test("a stub never returns: an empty answer would read as an empty file", () => {
