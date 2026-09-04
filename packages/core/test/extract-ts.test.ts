@@ -128,8 +128,10 @@ describe("parser", () => {
     // Schema 2 named every language up front and gave each a module, so the "no extractor"
     // branch is gone: an unimplemented language now fails in its own module, by name, with
     // the leaf that owns it (build-2 seam, leaf 2.0).
-    expect(() => extract("x\n", "python" as Lang, "main.py")).toThrow(
-      /greplost: the python extractor is not implemented yet \(main\.py\); see build-2 leaf 2\.1/,
+    // `python` was the example here until leaf 2.1 implemented it; `java` is the next
+    // still-stubbed one (leaf 2.5, wave 2). Each language leaf moves this to the next stub.
+    expect(() => extract("x\n", "java" as Lang, "Main.java")).toThrow(
+      /greplost: the java extractor is not implemented yet \(Main\.java\); see build-2 leaf 2\.5/,
     );
   });
 

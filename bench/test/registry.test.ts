@@ -45,10 +45,18 @@ describe("loadTruth", () => {
   });
 
   test("an unimplemented oracle throws a sentence naming its file and its leaf", async () => {
-    const mod = await loadTruth("python");
-    expect(() => mod.generateTruth("/repo", ["a.py"])).toThrow(
-      /greplost: the python truth generator is not implemented yet .* build-2 leaf 2\.1/,
+    // `python` was the example here until leaf 2.1 implemented it; `java` is the next
+    // still-stubbed one (leaf 2.5, wave 2). Each language leaf moves this to the next stub.
+    const mod = await loadTruth("java");
+    expect(() => mod.generateTruth("/repo", ["A.java"])).toThrow(
+      /greplost: the java truth generator is not implemented yet .* build-2 leaf 2\.5/,
     );
+  });
+
+  test("an implemented oracle is reachable and discloses its notes", async () => {
+    const mod = await loadTruth("python");
+    expect(typeof mod.generateTruth).toBe("function");
+    expect(mod.NOTES).toEqual(["ast-only", "no-import-execution", "pep420-namespace-packages"]);
   });
 
   test("every truth module in the directory is reachable through the registry", async () => {

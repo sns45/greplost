@@ -120,6 +120,9 @@ function literalStringSequence(node: Node | null): string[] | null {
   if (node.type !== "list" && node.type !== "tuple" && node.type !== "expression_list") return null;
   const out: string[] = [];
   for (const child of node.namedChildren) {
+    // tree-sitter keeps comments as named children, and a real `__all__` is nearly always
+    // written one name per line with comments between them.
+    if (child.type === "comment") continue;
     const value = literalString(child);
     if (value === null) return null;
     out.push(value);

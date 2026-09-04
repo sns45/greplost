@@ -277,8 +277,9 @@ describe("references jsonl round trip", () => {
 
 describe("stubs", () => {
   test("every unimplemented extractor throws, naming the file and its leaf", () => {
+    // `python` left this list when leaf 2.1 implemented it; each language leaf removes its
+    // own row, and the list is empty when build 2 is done.
     const cases: ReadonlyArray<readonly [string, (path: string) => unknown, RegExp]> = [
-      ["main.py", (p) => extractPython(p, "python", "", NO_TREE), /python extractor .* build-2 leaf 2\.1/],
       ["main.rs", (p) => extractRust(p, "rust", "", NO_TREE), /rust extractor .* build-2 leaf 2\.4/],
       ["A.java", (p) => extractJava(p, "java", "", NO_TREE), /java extractor .* build-2 leaf 2\.5/],
       ["A.kt", (p) => extractKotlin(p, "kotlin", "", NO_TREE), /kotlin extractor .* build-2 leaf 2\.6/],
@@ -297,8 +298,7 @@ describe("stubs", () => {
 
   test("every unimplemented resolver builds for free and throws on the first specifier", () => {
     const ctx = emptyContext([]);
-    const cases: ReadonlyArray<readonly [ReturnType<typeof createPythonResolver>, RegExp]> = [
-      [createPythonResolver(ctx), /python resolver .* build-2 leaf 2\.1/],
+    const cases: ReadonlyArray<readonly [ReturnType<typeof createRustResolver>, RegExp]> = [
       [createRustResolver(ctx), /rust resolver .* build-2 leaf 2\.4/],
       [createJavaResolver(ctx), /java resolver .* build-2 leaf 2\.5/],
       [createKotlinResolver(ctx), /kotlin resolver .* build-2 leaf 2\.6/],
@@ -342,7 +342,7 @@ describe("stubs", () => {
     // language gets a map full of files with no declarations and no warning anywhere.
     let returned = false;
     try {
-      extractPython("main.py", "python", "", NO_TREE);
+      extractYamlActions("ci.yml", "yaml", "", NO_TREE);
       returned = true;
     } catch {
       returned = false;
