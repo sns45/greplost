@@ -1,0 +1,119 @@
+{
+  "corpus": [
+    {
+      "name": "tiny-python"
+    }
+  ],
+  "date": "2026-09-04",
+  "gate": {
+    "missed": [],
+    "passed": true
+  },
+  "greplostSha": "9c3f39f",
+  "machine": {
+    "arch": "arm64",
+    "bun": "1.2.21",
+    "cores": 16,
+    "cpu": "Apple M4 Max",
+    "go": "go version go1.25.3 darwin/arm64",
+    "greplostSha": "9c3f39f",
+    "greplostVersion": "0.0.2",
+    "memoryGB": 128,
+    "node": "24.3.0",
+    "os": "Darwin 25.5.0"
+  },
+  "perLang": {
+    "python": {
+      "gated": true,
+      "repos": [
+        "tiny-python"
+      ],
+      "truthSource": "bench/src/truth/python.ts"
+    }
+  },
+  "recordedAt": "2026-09-04T14:30:44.571Z",
+  "repos": {
+    "tiny-python": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 7
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 10
+      },
+      "S3": {
+        "f1": 0.9090909090909091,
+        "fn": 1,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.8333333333333334,
+        "tp": 5
+      },
+      "S4": 1,
+      "S5": null,
+      "S6": null,
+      "callsAllConfidences": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 6
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [
+          "tiny/app.py:9 (tiny/app.py#main -> tiny/retry.py#retry)"
+        ],
+        "S4": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": []
+      },
+      "files": 6,
+      "naMetrics": [],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    }
+  },
+  "suite": "structural-fixture",
+  "targets": {
+    "S1": [
+      0.99,
+      0.97
+    ],
+    "S2": [
+      0.99,
+      0.99
+    ],
+    "S3": 0.95,
+    "S4": 1,
+    "S5": 0.95,
+    "S6": 0.95
+  },
+  "truth": {
+    "notes": [
+      "ast-only",
+      "no-import-execution",
+      "pep420-namespace-packages"
+    ]
+  },
+  "unparsable": {
+    "count": 0,
+    "files": []
+  }
+}

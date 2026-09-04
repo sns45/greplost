@@ -437,8 +437,9 @@
 
 ## bench/src/truth/python.ts
 
-- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
-- `function generateTruth(root: string, files: string[]): Truth` L17-22
+- `const NOTES: readonly string[] = ["ast-only", "no-import-execution", "pep420-namespace-packages"]` L44-44
+- `function pytruthScript(): string` L47-49
+- `function generateTruth(root: string, files: string[]): Truth` L130-175
 
 ## bench/src/truth/registry.ts
 

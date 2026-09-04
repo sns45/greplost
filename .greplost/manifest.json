@@ -746,14 +746,15 @@
       "blast": 0,
       "exports": [
         "NOTES",
-        "generateTruth"
+        "generateTruth",
+        "pytruthScript"
       ],
       "fanIn": 0,
-      "fanOut": 1,
+      "fanOut": 2,
       "lang": "ts",
-      "loc": 22,
+      "loc": 175,
       "pkg": "@greplost/bench",
-      "sha256": "6dcaaa35a02a36b92a505e965b1b808026ae5106dc1585680cf55a375ce36ff2",
+      "sha256": "f00b7fbf78a7d272d8ce55c4425d4e18f64266a226cbfee17c82dea1d5079c35",
       "staleSummary": false
     },
     "bench/src/truth/registry.ts": {
@@ -1394,11 +1395,11 @@
         "extractPython"
       ],
       "fanIn": 1,
-      "fanOut": 1,
+      "fanOut": 2,
       "lang": "ts",
-      "loc": 21,
+      "loc": 756,
       "pkg": "@greplost/core",
-      "sha256": "2d3768599a3b31576ee3479a36153f8e731e6341c413b406cdaa1c3823c791ae",
+      "sha256": "4057b9fea60b6f45babb3c38e1111b7aa47606af410f9839729afe9df70d981a",
       "staleSummary": false
     },
     "packages/core/src/extract/rust.ts": {
@@ -1447,7 +1448,7 @@
       "staleSummary": false
     },
     "packages/core/src/extract/ts-signature.ts": {
-      "blast": 36,
+      "blast": 37,
       "exports": [
         "BODY_VALUES",
         "FUNCTION_VALUES",
@@ -1469,7 +1470,7 @@
         "unwrapValue",
         "variableSignature"
       ],
-      "fanIn": 5,
+      "fanIn": 6,
       "fanOut": 0,
       "lang": "ts",
       "loc": 187,
@@ -2121,16 +2122,20 @@
     "packages/core/src/resolve/python.ts": {
       "blast": 64,
       "exports": [
+        "PY_STDLIB",
         "PythonCallIndex",
+        "PythonTarget",
+        "buildPythonCallIndex",
         "createPythonResolver",
+        "pythonPackageDir",
         "resolvePythonCall"
       ],
       "fanIn": 2,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 33,
+      "loc": 445,
       "pkg": "@greplost/core",
-      "sha256": "0392ac9480b92e965106a69ff9466ee0f41063f3add357a098bc4a5b08b48f95",
+      "sha256": "d4627a9b495a40e602c7a5c3ddeba7ae336713f6d51cfc0a2ef3363e3b76a5c9",
       "staleSummary": false
     },
     "packages/core/src/resolve/resolver.ts": {
@@ -2249,7 +2254,7 @@
         "symbolId",
         "unresolvedId"
       ],
-      "fanIn": 112,
+      "fanIn": 113,
       "fanOut": 0,
       "lang": "ts",
       "loc": 494,
@@ -3246,14 +3251,14 @@
         "@greplost/sync"
       ],
       "files": 47,
-      "loc": 18996,
+      "loc": 19149,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 61,
-      "loc": 8748,
+      "loc": 9895,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
@@ -3340,5 +3345,5 @@
       "rdeps": []
     }
   },
-  "version": "2"
+  "version": "1"
 }

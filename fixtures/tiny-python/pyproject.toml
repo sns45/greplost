@@ -1,0 +1,5 @@
+[project]
+name = "tiny"
+version = "0.1.0"
+description = "The smallest Python repo that exercises every extraction and resolution rule."
+requires-python = ">=3.10"

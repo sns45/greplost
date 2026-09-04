@@ -6,15 +6,32 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `PythonCallIndex (type)`, `createPythonResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`, `resolvePythonCall( file: FileRecord, _site: CallSite, _index: PythonCallIndex, ): { to: string; confidence: Confidence } | null`
+**Exports:** `PY_STDLIB (const)`, `PythonCallIndex (interface)`, `PythonTarget (type)`, `buildPythonCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): PythonCallIndex`, `createPythonResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`, `pythonPackageDir(filePath: string): string`, `resolvePythonCall( file: FileRecord, site: CallSite, index: PythonCallIndex, ): { to: string; confidence: Confidence } | null`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (CallSite, Confidence, FileRecord), [`./resolver.ts`](resolver.ts.md) (RepoContext, ResolvedTarget)
+**Imports:** [`../schema.ts`](../schema.ts.md) (CallSite, Confidence, FileRecord, ImportEdge, compareStrings, symbolId), [`./resolver.ts`](resolver.ts.md) (RepoContext, ResolvedTarget)
 
 **Imported by:** [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/resolver.ts`](resolver.ts.md)
 
 **Blast radius:** 64 files (`greplost impact packages/core/src/resolve/python.ts`)
 
 **Key symbols:**
-- `type PythonCallIndex = Readonly<Record<string, never>>`  L14-14
-- `function createPythonResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`  L16-23
-- `function resolvePythonCall( file: FileRecord, _site: CallSite, _index: PythonCallIndex, ): { to: string; confidence: Confidence } | null`  L25-33
+- `const PY_STDLIB: ReadonlySet<string> = new Set([ "__future__", "_abc", "_aix_support", "_android_support", "_apple_support", "_ast", "_ast_unparse", "_asyncio", "_bisect", "_blake2", "_bz2", "…`  L48-83
+- `const MODULE_EXTENSIONS = [".py", ".pyi"] as const`  L86-86
+- `const PROJECT_MARKERS = ["pyproject.toml", "setup.py", "setup.cfg"] as const`  L89-89
+- `const UNRESOLVED: ResolvedTarget = { type: "unresolved" }`  L91-91
+- `type PythonTarget = ResolvedTarget`  L94-94
+- `function parentDir(dir: string): string`  L100-103
+- `function joinRelative(dir: string, rest: string): string`  L105-108
+- `function pythonPackageDir(filePath: string): string`  L111-113
+- `function relativeLevel(specifier: string): number`  L116-120
+- `function declaredRoots(dir: string, text: string | null): string[]`  L131-145
+- `function createPythonResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`  L159-244
+- `interface Binding`  L251-255
+- `interface PythonCallIndex`  L257-266
+- `const EMPTY_INDEX: PythonCallIndex = { topLevel: new Map(), symbols: new Map(), bindings: new Map(), exports: new Map(), }`  L268-273
+- `function bindsValues(kind: string): boolean`  L276-278
+- `function buildPythonCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): PythonCallIndex`  L289-367
+- `function resolvePythonCall( file: FileRecord, site: CallSite, index: PythonCallIndex, ): { to: string; confidence: Confidence } | null`  L375-431
+- `function throughExports( index: PythonCallIndex, module: string, name: string, ): { to: string; confidence: Confidence } | null`  L434-445
+
+**Calls:** `bindsValues` → [`packages/core/src/resolve/python.ts#bindsValues`](python.ts.md) (high), `declaredRoots` → [`packages/core/src/resolve/python.ts#declaredRoots`](python.ts.md) (high), `joinRelative` → [`packages/core/src/resolve/python.ts#joinRelative`](python.ts.md) (high), `parentDir` → [`packages/core/src/resolve/python.ts#parentDir`](python.ts.md) (high), `pythonPackageDir` → [`packages/core/src/resolve/python.ts#pythonPackageDir`](python.ts.md) (high), `relativeLevel` → [`packages/core/src/resolve/python.ts#relativeLevel`](python.ts.md) (high), `throughExports` → [`packages/core/src/resolve/python.ts#throughExports`](python.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)

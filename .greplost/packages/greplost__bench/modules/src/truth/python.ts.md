@@ -6,14 +6,27 @@
 
 **Package:** `@greplost/bench` ([map](../../../MAP.md))
 
-**Exports:** `NOTES (const)`, `generateTruth(root: string, files: string[]): Truth`
+**Exports:** `NOTES (const)`, `generateTruth(root: string, files: string[]): Truth`, `pytruthScript(): string`
 
-**Imports:** [`./ts.ts`](ts.ts.md) (Truth)
+**Imports:** `node:child_process` (execFileSync), `node:fs` (mkdtempSync, rmSync, writeFileSync), `node:os` (tmpdir), `node:path` (default), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Edge, compareEdges, compareStrings), [`./ts.ts`](ts.ts.md) (Truth)
 
 **Imported by:** None.
 
 **Blast radius:** 0 files (`greplost impact bench/src/truth/python.ts`)
 
 **Key symbols:**
-- `const NOTES: readonly string[] = ["not-implemented"]`  L15-15
-- `function generateTruth(root: string, files: string[]): Truth`  L17-22
+- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..", "..")`  L34-34
+- `const TOOL_SOURCE = path.join(REPO_ROOT, "bench", "truth", "pytruth", "main.py")`  L36-36
+- `const PYTHON = process.env["GREPLOST_PYTHON"] ?? "python3"`  L38-38
+- `const RUN_TIMEOUT_MS = 15 * 60 * 1000`  L40-40
+- `const MAX_BUFFER = 512 * 1024 * 1024`  L41-41
+- `const NOTES: readonly string[] = ["ast-only", "no-import-execution", "pep420-namespace-packages"]`  L44-44
+- `function pytruthScript(): string`  L47-49
+- `interface PyToolOutput`  L52-60
+- `function stderrOf(cause: unknown): string`  L62-67
+- `function runTool(root: string, files: string[]): PyToolOutput`  L75-112
+- `function fileOf(id: string): string`  L115-118
+- `function edge(from: string, to: string, kind: Edge["kind"]): Edge`  L120-122
+- `function generateTruth(root: string, files: string[]): Truth`  L130-175
+
+**Calls:** `edge` → [`bench/src/truth/python.ts#edge`](python.ts.md) (high), `fileOf` → [`bench/src/truth/python.ts#fileOf`](python.ts.md) (high), `runTool` → [`bench/src/truth/python.ts#runTool`](python.ts.md) (high), `stderrOf` → [`bench/src/truth/python.ts#stderrOf`](python.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high)

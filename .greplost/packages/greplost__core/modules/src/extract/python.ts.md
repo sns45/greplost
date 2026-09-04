@@ -6,13 +6,51 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `extractPython( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`
+**Exports:** `extractPython( filePath: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (FileRecord, Lang), `web-tree-sitter` (Tree)
+**Imports:** `web-tree-sitter` (Node, Tree), [`../schema.ts`](../schema.ts.md) (CallSite, DeclKind, Declaration, ExportRecord, FileRecord, ImportKind, ImportRecord, ImportedSymbol, Lang, compareStrings, symbolId), [`./ts-signature.ts`](ts-signature.ts.md) (clip, field, lineOf, spanOf)
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md)
 
 **Blast radius:** 31 files (`greplost impact packages/core/src/extract/python.ts`)
 
 **Key symbols:**
-- `function extractPython( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L14-21
+- `const SCREAMING_SNAKE = /^[A-Z][A-Z0-9_]*$/`  L54-54
+- `const BLOCK_STATEMENTS: ReadonlySet<string> = new Set([ "for_statement", "if_statement", "match_statement", "try_statement", "while_statement", "with_statement", ])`  L64-71
+- `const FUNCTION_SCOPES: ReadonlySet<string> = new Set(["function_definition", "lambda"])`  L74-74
+- `const TYPE_CHECKING = "TYPE_CHECKING"`  L77-77
+- `const IMPORT_MODULE = "import_module"`  L80-80
+- `const ALL = "__all__"`  L83-83
+- `interface PyState`  L85-100
+- `function literalString(node: Node | null): string | null`  L112-131
+- `function literalStringSequence(node: Node | null): string[] | null`  L134-147
+- `function dottedText(node: Node | null): string`  L150-152
+- `function headerOf(source: string, node: Node): string`  L155-159
+- `function decoratorName(decorator: Node): string`  L165-170
+- `function isExportedName(state: PyState, simpleName: string, topLevel: boolean): boolean`  L183-186
+- `function addDeclaration( state: PyState, name: string, kind: DeclKind, signature: string, node: Node, parent: string | null, decorators: readonly string[], ): void`  L188-211
+- `function addFunction( state: PyState, node: Node, outer: Node, parent: string | null, decorators: readonly string[], ): void`  L217-233
+- `function addClass( state: PyState, node: Node, outer: Node, parent: string | null, decorators: readonly string[], ): void`  L235-251
+- `function addAssignment(state: PyState, statement: Node, parent: string | null): void`  L254-260
+- `function addAssignmentTarget(state: PyState, assignment: Node): void`  L263-282
+- `function decoratorsOf(node: Node): string[]`  L285-291
+- `function collectBlock(state: PyState, block: Node, parent: string | null): void`  L297-323
+- `function isBlockStatement(node: Node): boolean`  L332-334
+- `function collectNestedBlocks(state: PyState, node: Node, parent: string | null): void`  L337-342
+- `function findExportedNames(root: Node): Set<string> | null`  L354-387
+- `function extractPython( filePath: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">`  L397-423
+- `function fromSpecifier(node: Node): string`  L430-438
+- `function importedSymbol(node: Node): ImportedSymbol | null`  L441-452
+- `function addImport( state: PyState, specifier: string, kind: ImportKind, symbols: ImportedSymbol[], node: Node, ): void`  L454-468
+- `function collectImports(state: PyState, node: Node, typeOnly: boolean): void`  L478-541
+- `function isTypeCheckingGuard(node: Node): boolean`  L544-551
+- `function importModuleArgument(node: Node): string | null`  L554-562
+- `function collectExports(state: PyState): void`  L573-589
+- `function calleeText(node: Node): string | null`  L600-609
+- `function parameterNames(parameters: Node, into: Set<string>): void`  L612-630
+- `function patternNames(node: Node, into: Set<string>): void`  L633-647
+- `function boundNames(scope: Node): ReadonlySet<string>`  L659-730
+- `function shadowed(callee: string, scope: ReadonlySet<string> | null): boolean`  L733-739
+- `function collectCalls(state: PyState, root: Node): void`  L741-756
+
+**Calls:** `addAssignment` → [`packages/core/src/extract/python.ts#addAssignment`](python.ts.md) (high), `addAssignmentTarget` → [`packages/core/src/extract/python.ts#addAssignmentTarget`](python.ts.md) (high), `addClass` → [`packages/core/src/extract/python.ts#addClass`](python.ts.md) (high), `addDeclaration` → [`packages/core/src/extract/python.ts#addDeclaration`](python.ts.md) (high), `addFunction` → [`packages/core/src/extract/python.ts#addFunction`](python.ts.md) (high), `addImport` → [`packages/core/src/extract/python.ts#addImport`](python.ts.md) (high), `boundNames` → [`packages/core/src/extract/python.ts#boundNames`](python.ts.md) (high), `calleeText` → [`packages/core/src/extract/python.ts#calleeText`](python.ts.md) (high), `collectBlock` → [`packages/core/src/extract/python.ts#collectBlock`](python.ts.md) (high), `collectCalls` → [`packages/core/src/extract/python.ts#collectCalls`](python.ts.md) (high), `collectExports` → [`packages/core/src/extract/python.ts#collectExports`](python.ts.md) (high), `collectImports` → [`packages/core/src/extract/python.ts#collectImports`](python.ts.md) (high), `collectNestedBlocks` → [`packages/core/src/extract/python.ts#collectNestedBlocks`](python.ts.md) (high), `decoratorName` → [`packages/core/src/extract/python.ts#decoratorName`](python.ts.md) (high), `decoratorsOf` → [`packages/core/src/extract/python.ts#decoratorsOf`](python.ts.md) (high), `dottedText` → [`packages/core/src/extract/python.ts#dottedText`](python.ts.md) (high), `findExportedNames` → [`packages/core/src/extract/python.ts#findExportedNames`](python.ts.md) (high), `fromSpecifier` → [`packages/core/src/extract/python.ts#fromSpecifier`](python.ts.md) (high), `headerOf` → [`packages/core/src/extract/python.ts#headerOf`](python.ts.md) (high), `importModuleArgument` → [`packages/core/src/extract/python.ts#importModuleArgument`](python.ts.md) (high), `importedSymbol` → [`packages/core/src/extract/python.ts#importedSymbol`](python.ts.md) (high), `isBlockStatement` → [`packages/core/src/extract/python.ts#isBlockStatement`](python.ts.md) (high), `isExportedName` → [`packages/core/src/extract/python.ts#isExportedName`](python.ts.md) (high), `isTypeCheckingGuard` → [`packages/core/src/extract/python.ts#isTypeCheckingGuard`](python.ts.md) (high), `literalString` → [`packages/core/src/extract/python.ts#literalString`](python.ts.md) (high), `literalStringSequence` → [`packages/core/src/extract/python.ts#literalStringSequence`](python.ts.md) (high), `parameterNames` → [`packages/core/src/extract/python.ts#parameterNames`](python.ts.md) (high), `patternNames` → [`packages/core/src/extract/python.ts#patternNames`](python.ts.md) (high), `shadowed` → [`packages/core/src/extract/python.ts#shadowed`](python.ts.md) (high), `clip` → [`packages/core/src/extract/ts-signature.ts#clip`](ts-signature.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](ts-signature.ts.md) (high), `lineOf` → [`packages/core/src/extract/ts-signature.ts#lineOf`](ts-signature.ts.md) (high), `spanOf` → [`packages/core/src/extract/ts-signature.ts#spanOf`](ts-signature.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)

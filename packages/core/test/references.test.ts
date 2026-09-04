@@ -277,10 +277,11 @@ describe("references jsonl round trip", () => {
 
 describe("stubs", () => {
   test("every unimplemented extractor throws, naming the file and its leaf", () => {
+    // `python` left this list when leaf 2.1 implemented it; each language leaf removes its
+    // own row, and the list is empty when build 2 is done.
     const cases: ReadonlyArray<readonly [string, (path: string) => unknown, RegExp]> = [
-      ["main.py", (p) => extractPython(p, "python", "", NO_TREE), /python extractor .* build-2 leaf 2\.1/],
-      // rust is no longer a stub: leaf 2.4 landed `extract/rust.ts`, and its own test file
-      // (`extract-rust.test.ts`) is what holds it to the contract now.
+      // python (leaf 2.1) and rust (leaf 2.4) are no longer stubs: their own test files
+      // (extract-python.test.ts, extract-rust.test.ts) hold them to the contract now.
       ["A.java", (p) => extractJava(p, "java", "", NO_TREE), /java extractor .* build-2 leaf 2\.5/],
       ["A.kt", (p) => extractKotlin(p, "kotlin", "", NO_TREE), /kotlin extractor .* build-2 leaf 2\.6/],
       ["main.tf", (p) => extractHcl(p, "hcl", "", NO_TREE), /hcl extractor .* build-2 leaf 2\.2/],
@@ -298,8 +299,7 @@ describe("stubs", () => {
 
   test("every unimplemented resolver builds for free and throws on the first specifier", () => {
     const ctx = emptyContext([]);
-    const cases: ReadonlyArray<readonly [ReturnType<typeof createPythonResolver>, RegExp]> = [
-      [createPythonResolver(ctx), /python resolver .* build-2 leaf 2\.1/],
+    const cases: ReadonlyArray<readonly [ReturnType<typeof createJavaResolver>, RegExp]> = [
       [createJavaResolver(ctx), /java resolver .* build-2 leaf 2\.5/],
       [createKotlinResolver(ctx), /kotlin resolver .* build-2 leaf 2\.6/],
       [createHclResolver(ctx), /hcl resolver .* build-2 leaf 2\.2/],
@@ -349,7 +349,7 @@ describe("stubs", () => {
     // language gets a map full of files with no declarations and no warning anywhere.
     let returned = false;
     try {
-      extractPython("main.py", "python", "", NO_TREE);
+      extractYamlActions("ci.yml", "yaml", "", NO_TREE);
       returned = true;
     } catch {
       returned = false;

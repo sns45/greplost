@@ -154,6 +154,11 @@
 {"confidence":"high","from":"bench/src/truth/java.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
 {"confidence":"high","from":"bench/src/truth/kotlin.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
 {"confidence":"high","from":"bench/src/truth/python.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
+{"confidence":"high","from":"bench/src/truth/python.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["execFileSync"],"to":"ext:node:child_process"}
+{"confidence":"high","from":"bench/src/truth/python.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["mkdtempSync","rmSync","writeFileSync"],"to":"ext:node:fs"}
+{"confidence":"high","from":"bench/src/truth/python.ts","importKind":"static","kind":"import","specifier":"node:os","symbols":["tmpdir"],"to":"ext:node:os"}
+{"confidence":"high","from":"bench/src/truth/python.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
+{"confidence":"high","from":"bench/src/truth/python.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["Edge","compareEdges","compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/truth/registry.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
 {"confidence":"high","from":"bench/src/truth/registry.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["Edge","Lang"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/truth/rust.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
@@ -370,8 +375,10 @@
 {"confidence":"high","from":"packages/core/src/extract/java.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","Lang"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/extract/kotlin.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Tree"],"to":"ext:web-tree-sitter"}
 {"confidence":"high","from":"packages/core/src/extract/kotlin.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","Lang"],"to":"packages/core/src/schema.ts"}
-{"confidence":"high","from":"packages/core/src/extract/python.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Tree"],"to":"ext:web-tree-sitter"}
-{"confidence":"high","from":"packages/core/src/extract/python.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","Lang"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/extract/python.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Node","Tree"],"to":"ext:web-tree-sitter"}
+{"confidence":"high","from":"packages/core/src/extract/python.ts","importKind":"static","kind":"import","specifier":"./ts-signature.ts","symbols":["clip","field","lineOf","spanOf"],"to":"packages/core/src/extract/ts-signature.ts"}
+{"confidence":"high","from":"packages/core/src/extract/python.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","DeclKind","Declaration","ExportRecord","FileRecord","ImportKind","ImportRecord","ImportedSymbol","Lang"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/extract/python.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings","symbolId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Node","Tree"],"to":"ext:web-tree-sitter"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts","importKind":"static","kind":"import","specifier":"./ts-signature.ts","symbols":["clip","field","lineOf","spanOf"],"to":"packages/core/src/extract/ts-signature.ts"}
 {"confidence":"high","from":"packages/core/src/extract/rust.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","DeclKind","Declaration","ExportRecord","FileRecord","ImportRecord","ImportedSymbol","Lang"],"to":"packages/core/src/schema.ts"}
@@ -506,7 +513,8 @@
 {"confidence":"high","from":"packages/core/src/resolve/packages.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["GreplostConfig","PackageInfo"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/resolve/packages.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/resolve/python.ts","importKind":"type","kind":"import","specifier":"./resolver.ts","symbols":["RepoContext","ResolvedTarget"],"to":"packages/core/src/resolve/resolver.ts"}
-{"confidence":"high","from":"packages/core/src/resolve/python.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","Confidence","FileRecord"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/resolve/python.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","Confidence","FileRecord","ImportEdge"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/resolve/python.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings","symbolId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/resolve/resolver.ts","importKind":"static","kind":"import","specifier":"node:module","symbols":["builtinModules"],"to":"ext:node:module"}
 {"confidence":"high","from":"packages/core/src/resolve/resolver.ts","importKind":"static","kind":"import","specifier":"./dockerfile.ts","symbols":["createDockerfileResolver"],"to":"packages/core/src/resolve/dockerfile.ts"}
 {"confidence":"high","from":"packages/core/src/resolve/resolver.ts","importKind":"static","kind":"import","specifier":"./go.ts","symbols":["createGoResolver"],"to":"packages/core/src/resolve/go.ts"}
