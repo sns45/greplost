@@ -45,7 +45,7 @@ import type {
 import { compareStrings, nodeId } from "../schema.ts";
 import { clip, lineOf } from "./ts-signature.ts";
 import type { YamlValue } from "./yaml-doc.ts";
-import { documentValue, mapPath, scalarAt, scalarMap, seqItems, walk, yamlDocuments } from "./yaml-doc.ts";
+import { documentValue, mapPath, scalarMap, seqItems, walk, yamlDocuments } from "./yaml-doc.ts";
 
 /** Which YAML dialect produced a node; recorded on every declaration as `meta.flavour`. */
 export type K8sFlavour = "k8s" | "helm";
@@ -129,7 +129,6 @@ interface K8sState {
 function namesAreNames(state: K8sState): boolean {
   return state.input.flavour === "k8s";
 }
-
 
 /**
  * A node name made unique within the file: `web`, then `web~2`, then `web~3`.
@@ -466,5 +465,3 @@ export function extractYamlK8s(path: string, _lang: Lang, source: string, tree: 
   return extractK8sDocuments({ path, source, raw: source, tree, flavour: "k8s", blanks: [] });
 }
 
-/** Re-exported for `extract/yaml-helm.ts`; nothing else reads it. */
-export { scalarAt };
