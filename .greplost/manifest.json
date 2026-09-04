@@ -2968,9 +2968,9 @@
       "fanIn": 2,
       "fanOut": 0,
       "lang": "ts",
-      "loc": 287,
+      "loc": 288,
       "pkg": "@greplost/sync",
-      "sha256": "02f680bf9331185c61cda8e14e03d99abda447500a96001fe53e92ad10acc7b8",
+      "sha256": "9eb94493e917a245db9b86c1bbd6ec2ed9577fb7c76147ef84d5f5ae2779856e",
       "staleSummary": false
     },
     "packages/sync/src/incremental.ts": {
@@ -3411,7 +3411,7 @@
         "@greplost/render"
       ],
       "files": 12,
-      "loc": 3182,
+      "loc": 3183,
       "path": "packages/sync",
       "rdeps": [
         "@greplost/bench",
@@ -3454,5 +3454,5 @@
       "rdeps": []
     }
   },
-  "version": "1"
+  "version": "2"
 }

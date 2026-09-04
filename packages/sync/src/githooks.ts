@@ -179,9 +179,10 @@ export function installGitHooks(root: string): HookInstallResult {
  * through the block's last line (the update command). Returns the input unchanged when
  * the block is already current, so callers can tell "updated" from "nothing to do".
  */
-function replaceBlock(existing: string, block: string): string {
+function replaceBlock(existing: string, wanted: string): string {
   const start = existing.indexOf(HOOK_MARKER);
   if (start === -1) return existing;
+  const block = wanted.replace(/\n+$/, "");
   const lastLine = block.slice(block.lastIndexOf("\n") + 1);
   const tail = existing.indexOf(lastLine, start);
   let end = existing.length;

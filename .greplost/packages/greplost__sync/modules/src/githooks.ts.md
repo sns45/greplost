@@ -25,15 +25,15 @@
 - `function blockFor(hook: string): string`  L92-94
 - `interface HookInstallResult`  L96-105
 - `function installGitHooks(root: string): HookInstallResult`  L114-175
-- `function replaceBlock(existing: string, block: string): string`  L182-197
-- `function write(file: string, existing: string | undefined, block: string = HOOK_BLOCK): void`  L207-222
-- `function makeExecutable(file: string): void`  L224-231
-- `function readIfPresent(file: string): string | undefined`  L233-239
-- `function gitHooksDir(root: string): string`  L246-250
-- `function isRepoRoot(root: string): boolean`  L253-260
-- `function realpath(target: string): string`  L262-268
-- `function isDirectory(target: string): boolean`  L270-276
-- `function git(root: string, args: string[]): string | undefined`  L279-283
-- `function reasonOf(cause: unknown): string`  L285-287
+- `function replaceBlock(existing: string, wanted: string): string`  L182-198
+- `function write(file: string, existing: string | undefined, block: string = HOOK_BLOCK): void`  L208-223
+- `function makeExecutable(file: string): void`  L225-232
+- `function readIfPresent(file: string): string | undefined`  L234-240
+- `function gitHooksDir(root: string): string`  L247-251
+- `function isRepoRoot(root: string): boolean`  L254-261
+- `function realpath(target: string): string`  L263-269
+- `function isDirectory(target: string): boolean`  L271-277
+- `function git(root: string, args: string[]): string | undefined`  L280-284
+- `function reasonOf(cause: unknown): string`  L286-288
 
 **Calls:** `blockFor` → [`packages/sync/src/githooks.ts#blockFor`](githooks.ts.md) (high), `git` → [`packages/sync/src/githooks.ts#git`](githooks.ts.md) (high), `gitHooksDir` → [`packages/sync/src/githooks.ts#gitHooksDir`](githooks.ts.md) (high), `isDirectory` → [`packages/sync/src/githooks.ts#isDirectory`](githooks.ts.md) (high), `isRepoRoot` → [`packages/sync/src/githooks.ts#isRepoRoot`](githooks.ts.md) (high), `makeExecutable` → [`packages/sync/src/githooks.ts#makeExecutable`](githooks.ts.md) (high), `readIfPresent` → [`packages/sync/src/githooks.ts#readIfPresent`](githooks.ts.md) (high), `realpath` → [`packages/sync/src/githooks.ts#realpath`](githooks.ts.md) (high), `reasonOf` → [`packages/sync/src/githooks.ts#reasonOf`](githooks.ts.md) (high), `replaceBlock` → [`packages/sync/src/githooks.ts#replaceBlock`](githooks.ts.md) (high), `write` → [`packages/sync/src/githooks.ts#write`](githooks.ts.md) (high)
