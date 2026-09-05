@@ -26,22 +26,23 @@
 - `function parseCargoManifest(text: string | null): CargoManifest`  L85-136
 - `function parentDir(path: string): string`  L142-145
 - `function join(dir: string, rest: string): string`  L147-150
-- `function relativeTo(dir: string, path: string): string | null`  L153-157
-- `function rustModuleName(path: string): string`  L160-165
-- `interface Crate`  L171-178
-- `interface CrateIndex`  L180-187
-- `function createRustResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`  L189-372
-- `interface Binding`  L379-384
-- `interface RustCallIndex`  L386-413
-- `const EMPTY_INDEX: RustCallIndex = Object.freeze({ items: Object.freeze(new Map()), members: Object.freeze(new Map()), bindings: Object.freeze(new Map()), modules: Object.freeze(new Map()), reexports…`  L419-426
-- `function nest<V>(map: Map<string, Map<string, V>>, key: string): Map<string, V>`  L428-434
-- `function push<V>(map: Map<string, V[]>, key: string, value: V, same: (a: V, b: V) => boolean): void`  L437-444
-- `function sameBinding(a: Binding, b: Binding): boolean`  L446-448
-- `function agreed( candidates: ReadonlyArray<{ to: string; confidence: Confidence } | null>, ): { to: string; confidence: Confidence } | null`  L456-470
-- `function buildRustCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): RustCallIndex`  L476-553
-- `function callable(kind: string | undefined): boolean`  L556-558
-- `function resolveRustCall( file: FileRecord, site: CallSite, index: RustCallIndex, ): { to: string; confidence: Confidence } | null`  L571-623
-- `function throughType( index: RustCallIndex, binding: Binding, member: string, ): { to: string; confidence: Confidence } | null`  L626-644
-- `function declared(index: RustCallIndex, module: string, name: string): { to: string; confidence: Confidence } | null`  L647-657
+- `function normalizeDir(dir: string): string`  L164-174
+- `function relativeTo(dir: string, path: string): string | null`  L177-181
+- `function rustModuleName(path: string): string`  L184-189
+- `interface Crate`  L195-202
+- `interface CrateIndex`  L204-211
+- `function createRustResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`  L213-399
+- `interface Binding`  L406-411
+- `interface RustCallIndex`  L413-440
+- `const EMPTY_INDEX: RustCallIndex = Object.freeze({ items: Object.freeze(new Map()), members: Object.freeze(new Map()), bindings: Object.freeze(new Map()), modules: Object.freeze(new Map()), reexports…`  L446-453
+- `function nest<V>(map: Map<string, Map<string, V>>, key: string): Map<string, V>`  L455-461
+- `function push<V>(map: Map<string, V[]>, key: string, value: V, same: (a: V, b: V) => boolean): void`  L464-471
+- `function sameBinding(a: Binding, b: Binding): boolean`  L473-475
+- `function agreed( candidates: ReadonlyArray<{ to: string; confidence: Confidence } | null>, ): { to: string; confidence: Confidence } | null`  L483-497
+- `function buildRustCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): RustCallIndex`  L503-580
+- `function callable(kind: string | undefined): boolean`  L583-585
+- `function resolveRustCall( file: FileRecord, site: CallSite, index: RustCallIndex, ): { to: string; confidence: Confidence } | null`  L598-650
+- `function throughType( index: RustCallIndex, binding: Binding, member: string, ): { to: string; confidence: Confidence } | null`  L653-671
+- `function declared(index: RustCallIndex, module: string, name: string): { to: string; confidence: Confidence } | null`  L674-684
 
-**Calls:** `agreed` → [`packages/core/src/resolve/rust.ts#agreed`](rust.ts.md) (high), `arrayStrings` → [`packages/core/src/resolve/rust.ts#arrayStrings`](rust.ts.md) (high), `callable` → [`packages/core/src/resolve/rust.ts#callable`](rust.ts.md) (high), `declared` → [`packages/core/src/resolve/rust.ts#declared`](rust.ts.md) (high), `join` → [`packages/core/src/resolve/rust.ts#join`](rust.ts.md) (high), `nest` → [`packages/core/src/resolve/rust.ts#nest`](rust.ts.md) (high), `parentDir` → [`packages/core/src/resolve/rust.ts#parentDir`](rust.ts.md) (high), `parseCargoManifest` → [`packages/core/src/resolve/rust.ts#parseCargoManifest`](rust.ts.md) (high), `push` → [`packages/core/src/resolve/rust.ts#push`](rust.ts.md) (high), `relativeTo` → [`packages/core/src/resolve/rust.ts#relativeTo`](rust.ts.md) (high), `rustModuleName` → [`packages/core/src/resolve/rust.ts#rustModuleName`](rust.ts.md) (high), `stripComment` → [`packages/core/src/resolve/rust.ts#stripComment`](rust.ts.md) (high), `throughType` → [`packages/core/src/resolve/rust.ts#throughType`](rust.ts.md) (high), `unquote` → [`packages/core/src/resolve/rust.ts#unquote`](rust.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)
+**Calls:** `agreed` → [`packages/core/src/resolve/rust.ts#agreed`](rust.ts.md) (high), `arrayStrings` → [`packages/core/src/resolve/rust.ts#arrayStrings`](rust.ts.md) (high), `callable` → [`packages/core/src/resolve/rust.ts#callable`](rust.ts.md) (high), `declared` → [`packages/core/src/resolve/rust.ts#declared`](rust.ts.md) (high), `join` → [`packages/core/src/resolve/rust.ts#join`](rust.ts.md) (high), `nest` → [`packages/core/src/resolve/rust.ts#nest`](rust.ts.md) (high), `normalizeDir` → [`packages/core/src/resolve/rust.ts#normalizeDir`](rust.ts.md) (high), `parentDir` → [`packages/core/src/resolve/rust.ts#parentDir`](rust.ts.md) (high), `parseCargoManifest` → [`packages/core/src/resolve/rust.ts#parseCargoManifest`](rust.ts.md) (high), `push` → [`packages/core/src/resolve/rust.ts#push`](rust.ts.md) (high), `relativeTo` → [`packages/core/src/resolve/rust.ts#relativeTo`](rust.ts.md) (high), `rustModuleName` → [`packages/core/src/resolve/rust.ts#rustModuleName`](rust.ts.md) (high), `stripComment` → [`packages/core/src/resolve/rust.ts#stripComment`](rust.ts.md) (high), `throughType` → [`packages/core/src/resolve/rust.ts#throughType`](rust.ts.md) (high), `unquote` → [`packages/core/src/resolve/rust.ts#unquote`](rust.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)

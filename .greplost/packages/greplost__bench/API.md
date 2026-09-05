@@ -288,23 +288,24 @@
 - `function firstStr(root: unknown, paths: readonly string[]): string | null` L99-105
 - `function fmt(value: number | null): string` L125-131
 - `function provenanceOf(payload: Payload | null): string | null` L144-150
-- `function firstMachine(payloads: readonly (Payload | null)[]): Record<string, unknown> | null` L152-159
-- `function mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel["corpus"]` L170-192
-- `function versionRows(agent: Payload | null, headtohead: Payload | null): { name: string; value: string }[]` L199-215
-- `function competitors(): CompetitorEntry[]` L225-244
-- `interface CorpusEntry` L246-251
-- `function corpusIndex(): Map<string, CorpusEntry>` L261-282
-- `function runFor(repo: string | null, files: number | null): RunTarget | undefined` L291-298
-- `function targetOf(payload: Payload | null): RunTarget | undefined` L305-320
-- `function replayF1(payload: Payload): number | null` L323-330
-- `function replayF2(payload: Payload): number | null` L332-339
-- `interface Scenario` L342-353
-- `function scenariosOf(payload: Payload): Scenario[]` L368-435
-- `interface ConditionStats` L438-444
-- `function agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>` L447-484
-- `interface SubstituteSummary` L496-500
-- `interface LangRow` L518-557
-- `function langRows(structural: Payload | null): LangRow[]` L595-724
+- `function machineWithSource( payloads: readonly (Payload | null)[], ): { machine: Record<string, unknown>; suite: string } | null` L162-172
+- `function buildOf(payload: Payload | null): { version: string; sha: string } | null` L175-181
+- `function mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel["corpus"]` L192-214
+- `function versionRows( agent: Payload | null, headtohead: Payload | null, structural: Payload | null = null, ): { name: string; value: string }[]` L221-250
+- `function competitors(): CompetitorEntry[]` L260-279
+- `interface CorpusEntry` L281-286
+- `function corpusIndex(): Map<string, CorpusEntry>` L296-317
+- `function runFor(repo: string | null, files: number | null): RunTarget | undefined` L326-333
+- `function targetOf(payload: Payload | null): RunTarget | undefined` L340-355
+- `function replayF1(payload: Payload): number | null` L358-365
+- `function replayF2(payload: Payload): number | null` L367-374
+- `interface Scenario` L377-388
+- `function scenariosOf(payload: Payload): Scenario[]` L403-470
+- `interface ConditionStats` L473-479
+- `function agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>` L482-519
+- `interface SubstituteSummary` L531-535
+- `interface LangRow` L553-592
+- `function langRows(structural: Payload | null): LangRow[]` L630-759
 
 ## bench/src/report-sections.ts
 
@@ -314,12 +315,12 @@
 
 ## bench/src/report.ts
 
-- `const PAYLOAD_INDEX = "INDEX.json"` L65-65
-- `interface BuildOptions` L67-76
-- `async function run(args: string[]): Promise<number>` L92-120
-- `function buildModel(options: BuildOptions = {}): ReportModel` L169-323
-- `interface PayloadIndexFile` L330-336
-- `function readPayloadIndex(dir?: string): PayloadIndexFile | null` L339-356
+- `const PAYLOAD_INDEX = "INDEX.json"` L74-74
+- `interface BuildOptions` L76-85
+- `async function run(args: string[]): Promise<number>` L101-129
+- `function buildModel(options: BuildOptions = {}): ReportModel` L178-341
+- `interface PayloadIndexFile` L348-354
+- `function readPayloadIndex(dir?: string): PayloadIndexFile | null` L357-374
 
 ## bench/src/results-io.ts
 
@@ -351,13 +352,13 @@
 - `interface RunTarget` L185-193
 - `function provenanceLine( date: string | null, sha: string | null, target: RunTarget | undefined, ): string` L204-229
 - `function scopeTarget(target: string, run: RunTarget | undefined, scaleText?: string): string` L241-264
-- `interface ReportModel` L276-306
-- `function emptySection(): EvalSection` L309-311
-- `function renderResultsMd(model: ReportModel): string` L318-348
-- `const TRUTH_NOTE_GLOSS: Record<string, string> = { "unsupported:S1": "the truth module declares that it does not measure import edges, so S1 is `n/a` for it.", "unsupported:S2": "the truth mod…` L842-935
-- `function cell(text: string): string` L989-991
-- `function formatNumber(value: number): string` L1007-1013
-- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L1057-1068
+- `interface ReportModel` L276-313
+- `function emptySection(): EvalSection` L316-318
+- `function renderResultsMd(model: ReportModel): string` L325-355
+- `const TRUTH_NOTE_GLOSS: Record<string, string> = { "unsupported:S1": "the truth module declares that it does not measure import edges, so S1 is `n/a` for it.", "unsupported:S2": "the truth mod…` L866-959
+- `function cell(text: string): string` L1013-1015
+- `function formatNumber(value: number): string` L1031-1037
+- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L1081-1092
 
 ## bench/src/score.ts
 
@@ -493,7 +494,7 @@
 - `interface SignalExtra` L84-87
 - `function generateExtra(root: string, files: string[]): SignalExtra` L89-97
 - `function generateTruth(root: string, files: string[]): Truth` L103-115
-- `function appRoutePath(file: string): string | undefined` L707-718
+- `function appRoutePath(file: string): string | undefined` L710-721
 
 ## bench/src/truth/ts-calls.ts
 
@@ -554,3 +555,62 @@
 - `function groupByFlavour(files: readonly string[], root?: string): Array<[YamlFlavour, string[]]>` L150-162
 - `function generateTruth(root: string, files: string[]): Truth` L164-170
 - `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }` L173-196
+
+## bench/truth/javatruth/Truth.java
+
+- `public final class Truth` L83-649
+
+## bench/truth/kotlintruth/parse_javap.py
+
+- `THIS_CLASS` L53-53
+- `CONSTANT_CLASS` L54-54
+- `CLASS_FLAGS` L55-55
+- `MEMBER_FLAGS` L56-56
+- `DESCRIPTOR` L57-57
+- `SOURCE_FILE` L58-58
+- `MEMBER_DECL` L59-59
+- `INVOKE` L60-60
+- `METADATA_K` L61-61
+- `DATA_SYNTHETIC` L64-64
+- `OBJECT_METHODS` L65-69
+- `ENUM_MEMBERS` L70-70
+- `class Member` L73-97
+- `class ClassFile` L100-135
+- `def split_sections(dump: str) -> list` L138-148
+- `def parse_member_name(decl: str, descriptor: str, printed_class: str) -> str` L151-158
+- `def parse_class(lines: list) -> ClassFile` L161-235
+- `def first_parameter(descriptor: str) -> str` L243-248
+- `def simple_name(internal: str) -> str` L251-253
+- `def property_of(member: Member, fields: set) -> str` L256-268
+- `def member_symbol(cls: ClassFile, member: Member, fields: set, *, as_target: bool) -> str` L271-301
+- `def prefix(cls: ClassFile) -> str` L304-306
+- `def extension_receiver(member: Member) -> str` L309-314
+- `def caller_symbol(cls: ClassFile, member: Member, fields: set) -> str` L317-326
+- `def strip_array(internal: str) -> str` L329-334
+- `def build(dump: str) -> dict` L342-394
+- `def call_edge(source: str, target: str, by_internal: dict, current: ClassFile): # javap prints `// Method accept:(Ltiny/Item;)Z` with no class when the callee is a member # of the class being disasse…` L397-429
+- `def main() -> int` L432-440
+
+## bench/truth/pytruth/main.py
+
+- `MODULE_EXTENSIONS` L72-72
+- `PROJECT_MARKERS` L74-74
+- `def import_roots(root: str, files: list[str]) -> list[str]` L133-169
+- `def module_name(root_dir: str, path: str) -> str` L172-182
+- `class ModuleTable` L185-219
+- `@dataclass class ModuleFacts` L227-259
+- `COMPOUND` L313-313
+- `DEFINITIONS` L314-314
+- `def walk_scope(body: list[ast.stmt], parent: str, facts: ModuleFacts) -> None` L333-362
+- `def collect_all(body: list[ast.stmt], facts: ModuleFacts) -> None` L383-401
+- `def collect_bindings(tree: ast.Module, facts: ModuleFacts) -> None` L404-420
+- `def function_bindings(node: ast.AST) -> set[str]` L428-473
+- `@dataclass class CallSite` L476-479
+- `def class_body_bindings(node: ast.ClassDef) -> set[str]` L482-507
+- `def collect_calls( body: list[ast.stmt], owner: str, scope: frozenset[str] | None, out: list[CallSite], inside_function: bool = False, class_scope: frozenset[str] | None = None, ) -> None` L510-562
+- `def callee_text(func: ast.expr) -> str | None` L587-593
+- `def literal_specifier(node: ast.Call) -> str | None` L601-617
+- `def resolve_literal(table: ModuleTable, path: str, spec: str) -> str | None` L620-623
+- `def resolve_specifier(table: ModuleTable, path: str, module: str, level: int) -> str | None` L626-636
+- `class Truth` L639-884
+- `def main(argv: list[str]) -> int` L887-913

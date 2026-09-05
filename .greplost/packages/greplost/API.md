@@ -43,7 +43,7 @@
 
 ## packages/cli/src/commands/init.ts
 
-- `async function run(ctx: CommandContext): Promise<number>` L19-66
+- `async function run(ctx: CommandContext): Promise<number>` L19-73
 
 ## packages/cli/src/commands/query.ts
 

@@ -17,7 +17,7 @@
 **Key symbols:** None.
 
 **Nodes:**
-- [`job.test`](ci.yml/job.test.md)  L25-114
+- [`job.test`](ci.yml/job.test.md)  L25-131
 - [`step.test.~0`](ci.yml/step.test.-0.md)  L27-28
 - [`step.test.~1`](ci.yml/step.test.-1.md)  L29-30
 - [`step.test.~2`](ci.yml/step.test.-2.md)  L31-32
@@ -39,6 +39,8 @@
 - [`step.test.~18`](ci.yml/step.test.-18.md)  L97-101
 - [`step.test.~19`](ci.yml/step.test.-19.md)  L102-106
 - [`step.test.~20`](ci.yml/step.test.-20.md)  L107-108
-- [`step.test.~21`](ci.yml/step.test.-21.md)  L109-110
-- [`step.test.~22`](ci.yml/step.test.-22.md)  L111-112
-- [`step.test.~23`](ci.yml/step.test.-23.md)  L113-114
+- [`step.test.~21`](ci.yml/step.test.-21.md)  L109-121
+- [`step.test.~22`](ci.yml/step.test.-22.md)  L122-123
+- [`step.test.~23`](ci.yml/step.test.-23.md)  L124-127
+- [`step.test.~24`](ci.yml/step.test.-24.md)  L128-129
+- [`step.test.~25`](ci.yml/step.test.-25.md)  L130-131

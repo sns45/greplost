@@ -19,13 +19,13 @@
 
 | Package | Path | Files | LOC | Nodes | Deps | Fan-in | Fan-out | Map |
 |---|---|---|---|---|---|---|---|---|
-| greplost-monorepo | . | 4 | 330 | 37 | 3 | 0 | 0 | [MAP](packages/greplost-monorepo/MAP.md) |
-| @greplost/bench | bench | 49 | 26127 | 0 | 35 | 0 | 2 | [MAP](packages/greplost__bench/MAP.md) |
-| greplost | packages/cli | 18 | 2220 | 0 | 4 | 0 | 5 | [MAP](packages/greplost/MAP.md) |
-| @greplost/core | packages/core | 65 | 18366 | 0 | 10 | 6 | 0 | [MAP](packages/greplost__core/MAP.md) |
-| @greplost/render | packages/render | 15 | 2274 | 0 | 1 | 4 | 1 | [MAP](packages/greplost__render/MAP.md) |
+| greplost-monorepo | . | 4 | 347 | 39 | 3 | 0 | 0 | [MAP](packages/greplost-monorepo/MAP.md) |
+| @greplost/bench | bench | 53 | 29841 | 0 | 49 | 0 | 2 | [MAP](packages/greplost__bench/MAP.md) |
+| greplost | packages/cli | 18 | 2227 | 0 | 4 | 0 | 5 | [MAP](packages/greplost/MAP.md) |
+| @greplost/core | packages/core | 65 | 18506 | 0 | 10 | 6 | 0 | [MAP](packages/greplost__core/MAP.md) |
+| @greplost/render | packages/render | 15 | 2308 | 0 | 1 | 4 | 1 | [MAP](packages/greplost__render/MAP.md) |
 | @greplost/semantic | packages/semantic | 5 | 1509 | 0 | 4 | 1 | 3 | [MAP](packages/greplost__semantic/MAP.md) |
-| @greplost/sync | packages/sync | 12 | 3380 | 0 | 4 | 4 | 2 | [MAP](packages/greplost__sync/MAP.md) |
+| @greplost/sync | packages/sync | 12 | 3420 | 0 | 4 | 4 | 2 | [MAP](packages/greplost__sync/MAP.md) |
 | @greplost/workspace | packages/workspace | 8 | 1903 | 0 | 2 | 1 | 3 | [MAP](packages/greplost__workspace/MAP.md) |
 
 ## Hotspots

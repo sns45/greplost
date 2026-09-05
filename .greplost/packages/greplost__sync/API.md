@@ -11,9 +11,9 @@
 ## packages/sync/src/build.ts
 
 - `interface BuildArtifactsOptions` L28-35
-- `interface BuildResult` L37-48
-- `function readSummaries(root: string): SummaryCache` L58-83
-- `async function buildArtifacts(root: string, opts: BuildArtifactsOptions = {}): Promise<BuildResult>` L94-131
+- `interface BuildResult` L37-55
+- `function readSummaries(root: string): SummaryCache` L65-90
+- `async function buildArtifacts(root: string, opts: BuildArtifactsOptions = {}): Promise<BuildResult>` L101-139
 
 ## packages/sync/src/dirty.ts
 
@@ -60,10 +60,10 @@
 ## packages/sync/src/init.ts
 
 - `interface InitOptions` L37-42
-- `interface InitResult` L44-51
-- `async function init(root: string, opts: InitOptions = {}): Promise<InitResult>` L73-100
-- `interface MarkedLanguages` L114-119
-- `function markedLanguages( files: readonly string[], readText: (rel: string) => string | undefined, ): MarkedLanguages` L158-205
+- `interface InitResult` L44-63
+- `async function init(root: string, opts: InitOptions = {}): Promise<InitResult>` L85-121
+- `interface MarkedLanguages` L135-140
+- `function markedLanguages( files: readonly string[], readText: (rel: string) => string | undefined, ): MarkedLanguages` L179-232
 
 ## packages/sync/src/lock.ts
 
