@@ -51,7 +51,7 @@ import type {
   Lang,
   ReferenceRecord,
 } from "../schema.ts";
-import { compareStrings, nodeId } from "../schema.ts";
+import { compareStrings, nodeId, splitNodeId } from "../schema.ts";
 import { clip, lineOf } from "./ts-signature.ts";
 import type { YamlValue } from "./yaml-doc.ts";
 import { documentValue, mapGet, mapPath, scalarAt, seqItems, yamlDocuments } from "./yaml-doc.ts";
@@ -96,6 +96,8 @@ interface ActionsState {
   readonly refs: ReferenceRecord[];
   /** Declaration ids already used in this file, so a duplicate name can take a `~<n>` suffix. */
   readonly usedIds: Set<string>;
+  /** Names already exported, so two jobs with one id publish one export and not two. */
+  readonly exportedNames: Set<string>;
 }
 
 // ---------------------------------------------------------------------------
@@ -103,26 +105,45 @@ interface ActionsState {
 // ---------------------------------------------------------------------------
 
 /**
- * A node name made unique within the file: `build`, then `build~2`, then `build~3`.
+ * A declaration id made unique within the file: `…#job.build`, then `…#job.build~2`.
  *
  * Duplicate job ids cannot occur in a YAML mapping a human wrote, but tree-sitter's
  * error-recovering parse reads a duplicated key as two entries, and two declarations with one
- * id would collide in `graph/symbols.jsonl`. The suffix lives in the id and in the name it is
- * derived from, never anywhere a person typed (driver ruling 2026-09-04).
+ * id would collide in `graph/symbols.jsonl`. The suffix lives in the **id and nowhere else**
+ * (driver ruling 2026-09-04, the rule `extract/hcl.ts` and `extract/yaml-k8s.ts` both follow):
+ * `name` stays as the file wrote it, because the name is what a `needs:` writes when it reaches
+ * for the job — `needs: build` names *both* of two jobs called `build`, and a suffixed name
+ * would make the second silently distinguishable and turn an ambiguous reference into a certain
+ * one. It is also what the export index publishes, and `build~2` is a name nobody wrote.
+ *
+ * One rule covers a step under a duplicated job, on both sides of the score: the step's name is
+ * always `<jobId as written>.~<stepIndex>`, so the second `build`'s first step is named
+ * `build.~0` like the first's and its *id* takes the suffix (`…#step.build.~0~2`). Putting the
+ * suffix in the job segment instead would spell a job id nobody wrote inside a step name.
  */
-function uniqueName(state: ActionsState, kind: DeclKind, name: string): string {
-  const idFor = (candidate: string): string => nodeId(state.path, kind, candidate);
-  if (!state.usedIds.has(idFor(name))) {
-    state.usedIds.add(idFor(name));
-    return name;
+function uniqueId(state: ActionsState, kind: DeclKind, name: string): string {
+  const base = nodeId(state.path, kind, name);
+  if (!state.usedIds.has(base)) {
+    state.usedIds.add(base);
+    return base;
   }
   for (let n = 2; ; n += 1) {
-    const candidate = `${name}~${n}`;
-    const id = idFor(candidate);
-    if (state.usedIds.has(id)) continue;
-    state.usedIds.add(id);
+    const candidate = `${base}~${n}`;
+    if (state.usedIds.has(candidate)) continue;
+    state.usedIds.add(candidate);
     return candidate;
   }
+}
+
+/**
+ * The part of a declaration's id after the `#`: what a `ReferenceRecord.from` must carry.
+ *
+ * Read back through `splitNodeId` rather than rebuilt from `kind` and `name`, so the suffix that
+ * distinguishes two same-named jobs reaches the reference and the bare name does not.
+ */
+function localPath(declaration: Declaration): string {
+  const parts = splitNodeId(declaration.id);
+  return parts === null ? declaration.name : `${parts.kind}.${parts.name}`;
 }
 
 /** `meta` with sorted keys, dropping every absent entry; undefined when nothing was recorded. */
@@ -156,14 +177,13 @@ function addNode(
   state: ActionsState,
   source: string,
   kind: DeclKind,
-  rawName: string,
+  name: string,
   signature: string,
   node: Node,
   meta: Record<string, string> | undefined,
 ): Declaration {
-  const name = uniqueName(state, kind, rawName);
   const declaration: Declaration = {
-    id: nodeId(state.path, kind, name),
+    id: uniqueId(state, kind, name),
     file: state.path,
     name,
     kind,
@@ -233,17 +253,45 @@ function scalarList(value: YamlValue | null): Array<{ text: string; node: Node }
 }
 
 /**
+ * A `run:` body with every `${{ … }}` span replaced by spaces of the same length.
+ *
+ * The pre-pass leaf 2.8 applies to a Helm template, for the same reason and with the same
+ * equal-length rule so offsets stay truthful. Without it a path *inside* an expression looks
+ * like a path the step runs: `echo ${{ hashFiles('scripts/x.ts') }}` splits on the quote and
+ * offers `scripts/x.ts`, which is a file the workflow never executes. `hashFiles`, `format`,
+ * `fromJSON` and `inputs` all take path-shaped arguments: across the 266 `run:` bodies of the
+ * pinned corpus, blanking removes 102 of 239 candidate tokens (leaf 2.9 fix round 1).
+ *
+ * An unterminated `${{` blanks to the end of the body: whatever follows is inside an expression
+ * as far as anyone can tell, and guessing otherwise is how a fragment becomes an edge.
+ */
+export function blankExpressions(body: string): string {
+  let out = "";
+  let index = 0;
+  for (;;) {
+    const start = body.indexOf("${{", index);
+    if (start === -1) return out + body.slice(index);
+    const end = body.indexOf("}}", start + 3);
+    out += body.slice(index, start);
+    if (end === -1) return out + " ".repeat(body.length - start);
+    out += " ".repeat(end + 2 - start);
+    index = end + 2;
+  }
+}
+
+/**
  * The path-shaped tokens of a `run:` body, in source order and without repeats.
  *
  * A `run:` body is shell, and shell is not a language greplost parses. What it does instead is
  * the one thing that cannot go wrong: offer every word that *could* spell a repo-relative path
  * and let the reference layer keep the ones that name exactly one indexed file. A word holding
- * an expression, a glob or a `..` is not a literal path and never becomes a candidate.
+ * an expression, a glob or a `..` is not a literal path and never becomes a candidate, and the
+ * interior of an expression is blanked before the split so it cannot contribute one either.
  */
 export function runPathTokens(body: string): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const raw of body.split(SHELL_SEPARATORS)) {
+  for (const raw of blankExpressions(body).split(SHELL_SEPARATORS)) {
     if (raw === "" || raw.includes("$") || raw.includes("*") || raw.includes("?")) continue;
     const token = raw.startsWith("./") ? raw.slice(2) : raw;
     if (token === "" || token.startsWith("/") || token.includes("..")) continue;
@@ -285,7 +333,7 @@ function collectStep(state: ActionsState, source: string, step: StepInput): void
       ["usesRef", uses === null ? null : refOf(uses)],
     ]),
   );
-  const owner = `step.${declaration.name}`;
+  const owner = localPath(declaration);
 
   if (literal(uses)) {
     addReference(state, owner, uses, "uses", lineOf(mapGet(step.value, "uses")?.node ?? step.value.node));
@@ -333,7 +381,8 @@ function collectJob(state: ActionsState, source: string, id: string, body: YamlV
         ["usesRef", refOf(uses)],
       ]),
     );
-    const owner = `task.${task.name}`;
+    addExport(state, task.name);
+    const owner = localPath(task);
     if (literal(uses)) {
       addReference(state, owner, uses, "uses", lineOf(mapGet(body, "uses")?.node ?? body.node));
     }
@@ -355,14 +404,29 @@ function collectJob(state: ActionsState, source: string, id: string, body: YamlV
       ["runsOn", scalarOrList(mapGet(body, "runs-on"))],
     ]),
   );
-  const owner = `job.${job.name}`;
+  addExport(state, job.name);
+  const owner = localPath(job);
   collectNeeds(state, owner, body);
 
   const steps = mapGet(body, "steps");
   const items = seqItems(steps);
   for (let index = 0; index < items.length; index += 1) {
+    // `job.name`, not the id's name segment: a step is named after the job id as written, and a
+    // collision between two same-named jobs' steps is settled by `uniqueId` like any other.
     collectStep(state, source, { jobId: job.name, index, value: items[index] as YamlValue });
   }
+}
+
+/**
+ * One export record per job *name*, in source order.
+ *
+ * Called as each job is walked rather than from a sweep of `state.decls`, so a file holding two
+ * workflow documents does not re-publish the first document's jobs when the second is read.
+ */
+function addExport(state: ActionsState, name: string): void {
+  if (state.exportedNames.has(name)) return;
+  state.exportedNames.add(name);
+  state.exports.push({ name, kind: "named" });
 }
 
 /** `needs: build` and `needs: [build, lint]`, one reference per named job. */
@@ -391,11 +455,6 @@ function collectDocument(state: ActionsState, source: string, document: Node): v
   const jobs = mapGet(value, "jobs");
   if (jobs !== null && jobs.shape === "map") {
     for (const entry of jobs.entries) collectJob(state, source, entry.key, entry.value);
-    for (const declaration of state.decls) {
-      if (declaration.kind === "job" || declaration.kind === "task") {
-        state.exports.push({ name: declaration.name, kind: "named" });
-      }
-    }
     return;
   }
 
@@ -420,7 +479,14 @@ type YamlParts = Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "r
  * of the signature so this module mirrors `extractYamlK8s` and `extractHcl`.
  */
 export function extractYamlActions(path: string, _lang: Lang, source: string, tree: Tree): YamlParts {
-  const state: ActionsState = { path, decls: [], exports: [], refs: [], usedIds: new Set<string>() };
+  const state: ActionsState = {
+    path,
+    decls: [],
+    exports: [],
+    refs: [],
+    usedIds: new Set<string>(),
+    exportedNames: new Set<string>(),
+  };
   for (const document of yamlDocuments(tree.rootNode)) collectDocument(state, source, document);
   return {
     decls: state.decls,
