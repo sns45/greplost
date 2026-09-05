@@ -607,9 +607,9 @@
       "fanIn": 6,
       "fanOut": 1,
       "lang": "ts",
-      "loc": 1067,
+      "loc": 1068,
       "pkg": "@greplost/bench",
-      "sha256": "9f8190cf69e405f617c09437c2c8fbc3f593b500550d84a8424116a8d1cbd41f",
+      "sha256": "01a22866e6ce19277c08aa5a728c3fcdb4bb665b4f3306443814fd6d0259b773",
       "staleSummary": false
     },
     "bench/src/score.ts": {
@@ -3502,7 +3502,7 @@
         "@greplost/sync"
       ],
       "files": 49,
-      "loc": 26126,
+      "loc": 26127,
       "path": "bench",
       "rdeps": []
     },

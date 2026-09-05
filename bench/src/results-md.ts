@@ -724,8 +724,9 @@ const TS_FAMILY_LANGS: ReadonlySet<string> = new Set(["ts", "tsx", "js", "jsx"])
 const ORACLE_DISCLOSURES: Record<string, string> = {
   ts:
     "`bench/src/truth/ts.ts` for S1 to S4 (the TypeScript compiler's own checker) and " +
-    "`bench/src/truth/signals-ts.ts` for S5 and S6 (`tsc-checker-oracle`, `base-type-chain-for-pulumi`, " +
-    "`app-router-path-rules`). Two disclosed emulations: `workspace-entry-mapping` stands in for the " +
+    "`bench/src/truth/signals-ts.ts` for S5 and S6, which scores the four framework signal passes (React " +
+    "components, TanStack Start routes and handlers, Next.js App Router routes, Pulumi TypeScript resources) " +
+    "with `tsc-checker-oracle`, `base-type-chain-for-pulumi` and `app-router-path-rules`. Two disclosed emulations: `workspace-entry-mapping` stands in for the " +
     "installed-and-built state a corpus checkout does not have, and `nearest-tsconfig-resolution` " +
     "resolves a specifier with the compiler options of the nearest `tsconfig.json` above the importing " +
     "file, but only after resolution from the repo root has failed, because a corpus of independent " +

@@ -354,10 +354,10 @@
 - `interface ReportModel` L276-306
 - `function emptySection(): EvalSection` L309-311
 - `function renderResultsMd(model: ReportModel): string` L318-348
-- `const TRUTH_NOTE_GLOSS: Record<string, string> = { "unsupported:S1": "the truth module declares that it does not measure import edges, so S1 is `n/a` for it.", "unsupported:S2": "the truth mod…` L841-934
-- `function cell(text: string): string` L988-990
-- `function formatNumber(value: number): string` L1006-1012
-- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L1056-1067
+- `const TRUTH_NOTE_GLOSS: Record<string, string> = { "unsupported:S1": "the truth module declares that it does not measure import edges, so S1 is `n/a` for it.", "unsupported:S2": "the truth mod…` L842-935
+- `function cell(text: string): string` L989-991
+- `function formatNumber(value: number): string` L1007-1013
+- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L1057-1068
 
 ## bench/src/score.ts
 
