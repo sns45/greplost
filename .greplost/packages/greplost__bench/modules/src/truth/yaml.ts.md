@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/bench` ([map](../../../MAP.md))
 
-**Exports:** `NOTES (const)`, `YamlFlavour (type)`, `flavourOf(file: string, root?: string): YamlFlavour`, `generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }`, `generateTruth(root: string, files: string[]): Truth`, `groupByFlavour(files: readonly string[], root?: string): Array<[YamlFlavour, string[]]>`, `isHelmFile(file: string): boolean`, `isWorkflowFile(file: string): boolean`
+**Exports:** `NOTES (const)`, `YamlFlavour (type)`, `flavourOf(file: string, root?: string): YamlFlavour`, `generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }`, `generateTruth(root: string, files: string[]): Truth`, `groupByFlavour(files: readonly string[], root?: string): Array<[YamlFlavour, string[]]>`, `isHelmFile(file: string): boolean`, `isWorkflowFile(file: string): boolean`
 
 **Imports:** [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Edge), [`./ts.ts`](ts.ts.md) (Truth), [`./yaml-actions.ts`](yaml-actions.ts.md) (generateExtra, generateTruth, isActionsFile), [`./yaml-helm.ts`](yaml-helm.ts.md) (generateExtra, generateTruth), [`./yaml-k8s.ts`](yaml-k8s.ts.md) (generateExtra, generateTruth)
 
@@ -20,16 +20,16 @@
 - `type YamlFlavour = "yaml-actions" | "yaml-helm" | "yaml-k8s"`  L30-30
 - `const FLAVOURS: readonly YamlFlavour[] = ["yaml-actions", "yaml-helm", "yaml-k8s"]`  L33-33
 - `const GENERATORS: Readonly<Record<YamlFlavour, (root: string, files: string[]) => Truth>> = { "yaml-actions": generateActionsTruth, "yaml-helm": generateHelmTruth, "yaml-k8s": generateK8sTruth, }`  L35-39
-- `type ExtraGenerator = (root: string, files: string[], universe: string[]) => { references: Edge[]; nodes: string[] }`  L49-49
-- `const EXTRA_GENERATORS: Readonly<Record<YamlFlavour, ExtraGenerator | undefined>> = { "yaml-actions": generateActionsExtra, "yaml-helm": generateHelmExtra, "yaml-k8s": generateK8sExtra, }`  L62-66
-- `function compare(a: string, b: string): number`  L68-70
-- `function basename(file: string): string`  L72-75
-- `function isWorkflowFile(file: string): boolean`  L78-85
-- `function isHelmFile(file: string): boolean`  L88-91
-- `function flavourOf(file: string, root?: string): YamlFlavour`  L100-111
-- `function groupByFlavour(files: readonly string[], root?: string): Array<[YamlFlavour, string[]]>`  L114-126
-- `function generateTruth(root: string, files: string[]): Truth`  L128-134
-- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }`  L137-150
-- `function merge(truths: readonly Truth[]): Truth`  L156-182
+- `type ExtraGenerator = ( root: string, files: string[], universe: string[], ) => { references: Edge[]; nodes: string[]; nodeFiles?: string[] }`  L52-56
+- `const EXTRA_GENERATORS: Readonly<Record<YamlFlavour, ExtraGenerator | undefined>> = { "yaml-actions": generateActionsExtra, "yaml-helm": generateHelmExtra, "yaml-k8s": generateK8sExtra, }`  L68-72
+- `function compare(a: string, b: string): number`  L74-76
+- `function basename(file: string): string`  L78-81
+- `function isWorkflowFile(file: string): boolean`  L84-91
+- `function isHelmFile(file: string): boolean`  L94-97
+- `function flavourOf(file: string, root?: string): YamlFlavour`  L106-117
+- `function groupByFlavour(files: readonly string[], root?: string): Array<[YamlFlavour, string[]]>`  L120-132
+- `function generateTruth(root: string, files: string[]): Truth`  L134-140
+- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }`  L143-166
+- `function merge(truths: readonly Truth[]): Truth`  L172-198
 
 **Calls:** `isActionsFile` → [`bench/src/truth/yaml-actions.ts#isActionsFile`](yaml-actions.ts.md) (high), `basename` → [`bench/src/truth/yaml.ts#basename`](yaml.ts.md) (high), `compare` → [`bench/src/truth/yaml.ts#compare`](yaml.ts.md) (high), `flavourOf` → [`bench/src/truth/yaml.ts#flavourOf`](yaml.ts.md) (high), `groupByFlavour` → [`bench/src/truth/yaml.ts#groupByFlavour`](yaml.ts.md) (high), `isHelmFile` → [`bench/src/truth/yaml.ts#isHelmFile`](yaml.ts.md) (high), `isWorkflowFile` → [`bench/src/truth/yaml.ts#isWorkflowFile`](yaml.ts.md) (high), `merge` → [`bench/src/truth/yaml.ts#merge`](yaml.ts.md) (high)

@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/bench` ([map](../../../MAP.md))
 
-**Exports:** `NOTES (const)`, `ReferenceTruth (type)`, `generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }`, `generateTruth(root: string, files: string[]): Truth`
+**Exports:** `NOTES (const)`, `ReferenceTruth (type)`, `generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }`, `generateTruth(root: string, files: string[]): Truth`
 
 **Imports:** `node:fs` (readFileSync), `node:path` (default), `js-yaml` (loadAll), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Edge, compareEdges, compareStrings), [`./ts.ts`](ts.ts.md) (Truth)
 
@@ -23,24 +23,24 @@
 - `const LABEL_SEPARATORS = /[,=]/u`  L73-73
 - `type Plain = Record<string, unknown>`  L79-79
 - `function isPlain(value: unknown): value is Plain`  L81-83
-- `function text(value: unknown): string | null`  L92-94
-- `function get(value: unknown, ...keys: readonly string[]): unknown`  L96-103
-- `function walk(value: unknown, visit: (key: string, entry: unknown) => void): void`  L106-116
-- `function labelKey(value: unknown): string | null`  L119-130
-- `function labelMap(value: unknown): Map<string, string> | null`  L132-141
-- `function podLabelsOf(document: unknown, kind: string): Map<string, string> | null`  L144-154
-- `function usableName(value: string | null): value is string`  L157-159
-- `interface OracleNode`  L165-169
-- `interface FileReading`  L171-181
-- `function emptyReading(): FileReading`  L183-185
-- `function documentsOf(root: string, file: string): unknown[] | null`  L188-204
-- `function readFile(root: string, file: string): FileReading | null`  L207-275
-- `interface Run`  L281-284
-- `function coveredRun(root: string, files: string[]): Run`  L290-304
-- `type ReferenceTruth = Edge & { readonly refKind: string }`  L310-310
-- `function edge(from: string, to: string, refKind: string, symbol: string, confidence: "high" | "med"): ReferenceTruth`  L312-314
-- `function generateTruth(root: string, files: string[]): Truth`  L323-337
-- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }`  L347-402
-- `function dedupe(edges: readonly ReferenceTruth[]): ReferenceTruth[]`  L405-413
+- `function text(value: unknown): string | null`  L102-107
+- `function get(value: unknown, ...keys: readonly string[]): unknown`  L109-116
+- `function walk(value: unknown, visit: (key: string, entry: unknown) => void): void`  L119-129
+- `function labelKey(value: unknown): string | null`  L132-143
+- `function labelMap(value: unknown): Map<string, string> | null`  L145-154
+- `function podLabelsOf(document: unknown, kind: string): Map<string, string> | null`  L157-167
+- `function usableName(value: string | null): value is string`  L170-172
+- `interface OracleNode`  L178-182
+- `interface FileReading`  L184-194
+- `function emptyReading(): FileReading`  L196-198
+- `function documentsOf(root: string, file: string): unknown[] | null`  L201-217
+- `function readFile(root: string, file: string): FileReading | null`  L220-292
+- `interface Run`  L298-301
+- `function coveredRun(root: string, files: string[]): Run`  L307-321
+- `type ReferenceTruth = Edge & { readonly refKind: string }`  L327-327
+- `function edge(from: string, to: string, refKind: string, symbol: string, confidence: "high" | "med"): ReferenceTruth`  L329-331
+- `function generateTruth(root: string, files: string[]): Truth`  L340-357
+- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }`  L368-429
+- `function dedupe(edges: readonly ReferenceTruth[]): ReferenceTruth[]`  L432-440
 
 **Calls:** `coveredRun` → [`bench/src/truth/yaml-k8s.ts#coveredRun`](yaml-k8s.ts.md) (high), `dedupe` → [`bench/src/truth/yaml-k8s.ts#dedupe`](yaml-k8s.ts.md) (high), `documentsOf` → [`bench/src/truth/yaml-k8s.ts#documentsOf`](yaml-k8s.ts.md) (high), `edge` → [`bench/src/truth/yaml-k8s.ts#edge`](yaml-k8s.ts.md) (high), `emptyReading` → [`bench/src/truth/yaml-k8s.ts#emptyReading`](yaml-k8s.ts.md) (high), `get` → [`bench/src/truth/yaml-k8s.ts#get`](yaml-k8s.ts.md) (high), `isPlain` → [`bench/src/truth/yaml-k8s.ts#isPlain`](yaml-k8s.ts.md) (high), `labelKey` → [`bench/src/truth/yaml-k8s.ts#labelKey`](yaml-k8s.ts.md) (high), `labelMap` → [`bench/src/truth/yaml-k8s.ts#labelMap`](yaml-k8s.ts.md) (high), `podLabelsOf` → [`bench/src/truth/yaml-k8s.ts#podLabelsOf`](yaml-k8s.ts.md) (high), `readFile` → [`bench/src/truth/yaml-k8s.ts#readFile`](yaml-k8s.ts.md) (high), `text` → [`bench/src/truth/yaml-k8s.ts#text`](yaml-k8s.ts.md) (high), `usableName` → [`bench/src/truth/yaml-k8s.ts#usableName`](yaml-k8s.ts.md) (high), `walk` → [`bench/src/truth/yaml-k8s.ts#walk`](yaml-k8s.ts.md) (high), `compareEdges` → [`packages/core/src/schema.ts#compareEdges`](../../../../greplost__core/modules/src/schema.ts.md) (high)
