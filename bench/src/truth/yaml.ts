@@ -35,7 +35,10 @@ const GENERATORS: Readonly<Record<YamlFlavour, (root: string, files: string[]) =
 };
 
 /** The reference and node sets S5 and S6 read, per flavour (`TruthModule.generateExtra`). */
-type ExtraGenerator = (root: string, files: string[]) => { references: Edge[]; nodes: string[] };
+type ExtraGenerator = (
+  root: string,
+  files: string[],
+) => { references: Edge[]; nodes: string[]; nodeFiles?: string[] };
 
 /**
  * Added by leaf 2.8, which needed S5 and S6 measured for `yaml` and found the dispatcher
@@ -116,19 +119,29 @@ export function generateTruth(root: string, files: string[]): Truth {
 }
 
 /** The reference and node sets for a file list, merged across the flavours it holds. */
-export function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] } {
+export function generateExtra(
+  root: string,
+  files: string[],
+): { references: Edge[]; nodes: string[]; nodeFiles: string[] } {
   const references: Edge[] = [];
   const nodes: string[] = [];
+  // The union of what each flavour is willing to have S6 scored over. A flavour that names no
+  // `nodeFiles` states nodes for every file it was given, so its whole group goes in: otherwise
+  // one chart's restriction would silently turn S6 off for a repo's manifests as well, which is
+  // exactly the bug `nodeFiles` replaced `unsupported:S6` to fix (fix round 1).
+  const nodeFiles: string[] = [];
   for (const [flavour, group] of groupByFlavour(files)) {
     const generate = EXTRA_GENERATORS[flavour];
     if (generate === undefined) continue;
     const extra = generate(root, group);
     references.push(...extra.references);
     nodes.push(...extra.nodes);
+    nodeFiles.push(...(extra.nodeFiles ?? group));
   }
   references.sort((a, b) => compare(a.from, b.from) || compare(a.to, b.to));
   nodes.sort(compare);
-  return { references, nodes };
+  nodeFiles.sort(compare);
+  return { references, nodes, nodeFiles };
 }
 
 /**

@@ -20,10 +20,17 @@
  *  - the one reference a template really does make is `helm-values`: `.Values.<path>` names a
  *    key of the chart's own `values.yaml`, and both ends are real, unrendered files. This module
  *    finds them by reading the raw template text and the values file, with no code shared with
- *    `packages/core`, and that set is the S5 truth.
- *  - the **node set** (S6) is `unsupported`: a template's node ids carry the document-index
- *    fallback names, and nothing an oracle can see fixes their order once a `{{ if }}` decides
- *    whether a document renders at all.
+ *    `packages/core`, and that set is the S5 truth. **`same-regex-both-sides` publishes the
+ *    limit of that**: greplost and this oracle recognise a `.Values` path with the same regular
+ *    expression, written twice, so S5 witnesses that the two sides agree about which paths a
+ *    chart mentions and not that either is right about what a `.Values` path *is*. Only S2 —
+ *    the chart name and the values keys, read by js-yaml against greplost's tree-sitter walk —
+ *    is independently witnessed for a chart.
+ *  - a literal `image:` in a template is a second reference both sides state, found here by a
+ *    line scan of the raw text (`literalImages`) rather than by repeating the pre-pass.
+ *  - the **node set** (S6) is scored over `nodeFiles`: the chart's own files, never its
+ *    templates, whose node ids carry document-index fallback names that nothing an oracle can
+ *    see fixes once a `{{ if }}` decides whether a document renders at all.
  *
  * `helm template` still runs, and is what makes the note `helm-template-render` true: every
  * chart the oracle can render is rendered, and `helmRender` exposes the per-source-file
@@ -49,15 +56,20 @@ export const NOTES: readonly string[] = [
   "js-yaml-oracle",
   "helm-template-render",
   "names-not-compared-for-templates",
+  "same-regex-both-sides",
 ];
 
 /**
- * Metrics no oracle can measure for a chart.
+ * Metrics no oracle can measure for a chart: YAML has no calls, so S3 is unmeasurable rather
+ * than zero.
  *
- * S3: YAML has no calls. S6: a template's node ids are built from document indices and
- * fallback names, and `helm template` cannot report the documents it decided not to render.
+ * S6 used to be here too, because a template's node ids are document-index fallbacks and
+ * `helm template` cannot report the documents it decided not to render. It is not any more: a
+ * note is published *target-wide*, so one chart in a repo full of manifests turned S6 off for
+ * the manifests as well. `generateExtra` now returns `nodeFiles` — the chart's own files and
+ * never its templates — and S6 scores exactly those (fix round 1).
  */
-const UNSUPPORTED = ["unsupported:S3", "unsupported:S6"] as const;
+const UNSUPPORTED = ["unsupported:S3"] as const;
 
 const CHART_FILES: ReadonlySet<string> = new Set(["Chart.yaml", "Chart.yml"]);
 const VALUES_FILES: ReadonlySet<string> = new Set(["values.yaml", "values.yml"]);
@@ -172,7 +184,7 @@ interface Chart {
  * chart is not in the requested set still belongs to the directory above its `templates/`
  * segment, which is what `helm` itself would call the chart.
  */
-export function chartsOf(root: string, files: readonly string[]): Chart[] {
+export function chartsOf(files: readonly string[]): Chart[] {
   const byDir = new Map<string, { chartFile: string | null; valuesFile: string | null; templates: string[] }>();
   const entry = (dir: string) => {
     const found = byDir.get(dir);
@@ -233,6 +245,101 @@ function valuesKeys(file: string): string[] {
 }
 
 // ---------------------------------------------------------------------------
+// literal images
+// ---------------------------------------------------------------------------
+
+/** Keys whose value is a list of containers. */
+const CONTAINER_KEYS: ReadonlySet<string> = new Set(["containers", "initContainers", "ephemeralContainers"]);
+
+/** A `key: value` line, with the indentation of the key and whether a `- ` opened the item. */
+const LINE = /^(\s*)(-\s+)?([A-Za-z_][A-Za-z0-9_.\-\/]*):[ \t]*(.*?)[ \t]*$/u;
+
+/** True for a scalar that came out of a template action rather than out of the file. */
+function templated(value: string): boolean {
+  return value === "" || value.includes("{{");
+}
+
+/**
+ * Every literal `image:` a chart template writes, as `<file>#image.<container>` -> the reference.
+ *
+ * A *line* scan, deliberately: greplost reads a blanked parse tree, and an oracle that repeated
+ * the pre-pass and the tree walk would be the same program twice. What is restated here is the
+ * documented rule, not the implementation — a container is a sequence item under `containers:`,
+ * `initContainers:` or `ephemeralContainers:` with a `name:` and an `image:`, inside a document
+ * whose `apiVersion` and `kind` are both literal (spec 2.3, and the leaf's ruling that a
+ * templated kind makes no node). Anything with a `{{` in it is a value helm decides and neither
+ * side claims.
+ */
+export function literalImages(source: string, file: string): Array<{ from: string; image: string }> {
+  const out: Array<{ from: string; image: string }> = [];
+  const used = new Set<string>();
+  for (const document of source.split(/^---[ \t]*$/mu)) {
+    let apiVersion: string | null = null;
+    let kind: string | null = null;
+    for (const line of document.split("\n")) {
+      const match = LINE.exec(line);
+      if (match === null || (match[1] as string) !== "" || match[2] !== undefined) continue;
+      if (match[3] === "apiVersion") apiVersion = match[4] as string;
+      if (match[3] === "kind") kind = match[4] as string;
+    }
+    if (apiVersion === null || kind === null || templated(apiVersion) || templated(kind)) continue;
+
+    // Indentation of the innermost container list, and of the item currently open under it.
+    let listIndent: number | null = null;
+    let itemIndent: number | null = null;
+    let name: string | null = null;
+    let image: string | null = null;
+    const flush = (): void => {
+      if (name === null || image === null || templated(name) || templated(image) || name.includes("#")) {
+        name = null;
+        image = null;
+        return;
+      }
+      const base = `${file}#image.${name}`;
+      let id = base;
+      for (let n = 2; used.has(id); n += 1) id = `${base}~${n}`;
+      used.add(id);
+      out.push({ from: id, image });
+      name = null;
+      image = null;
+    };
+
+    for (const line of document.split("\n")) {
+      const match = LINE.exec(line);
+      if (match === null) continue;
+      const indent = (match[1] as string).length;
+      const dash = match[2] !== undefined;
+      const key = match[3] as string;
+      const value = match[4] as string;
+
+      if (CONTAINER_KEYS.has(key) && !dash) {
+        flush();
+        listIndent = indent;
+        itemIndent = null;
+        continue;
+      }
+      if (listIndent === null) continue;
+      // A line at or above the list's own indentation closes the list.
+      if (indent <= listIndent && !dash) {
+        flush();
+        listIndent = null;
+        itemIndent = null;
+        continue;
+      }
+      if (dash) {
+        flush();
+        itemIndent = indent + (match[2] as string).length;
+      }
+      if (itemIndent === null || indent + (dash ? (match[2] as string).length : 0) !== itemIndent) continue;
+      if (key === "name") name = value;
+      if (key === "image") image = value;
+    }
+    flush();
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // the run
 // ---------------------------------------------------------------------------
 
@@ -246,7 +353,7 @@ interface Run {
 
 function coveredRun(root: string, files: string[], render: boolean): Run {
   const absRoot = path.resolve(root);
-  const charts = chartsOf(absRoot, files);
+  const charts = chartsOf(files);
   const exports: Record<string, string[]> = {};
   const covered: string[] = [];
   const unrendered: string[] = [];
@@ -314,43 +421,86 @@ export function generateTruth(root: string, files: string[]): Truth {
 }
 
 /**
- * The reference set S5 is scored on: one `helm-values` edge per distinct `.Values.<path>` in a
- * chart file, to the `values.yaml` node for the path's first segment.
+ * The reference and node sets S5 and S6 are scored on.
  *
- * `nodes` is empty and `unsupported:S6` says why, so the empty list is never read as a claim
- * that a chart declares nothing.
+ * References are two rules, both read off the raw template text and neither needing a render:
+ *
+ *  - `helm-values`, one per distinct `.Values.<path>` in a template, to the `values.yaml` node
+ *    for the path's first segment. `Chart.yaml` is **not** scanned — greplost's extractor
+ *    returns a chart's `module` node and looks at nothing else in that file — so an
+ *    `annotations:` block mentioning `.Values` there cannot become an edge only one side has.
+ *  - `from-image`, one per literal `image:` in a template. A literal image in a chart is fully
+ *    rendered text and names the image that will run, so both sides claim it (fix round 1).
+ *
+ * `nodeFiles` is the chart's own files and never its `templates/**` (bench seam, `nodeFiles` on
+ * the `generateExtra` result): a chart file's node names — the chart's name, a values key — are
+ * written down and can be compared, and a template's are document-index fallbacks that only
+ * exist after helm has decided which documents render. Restricting S6 rather than declaring it
+ * `unsupported` is what lets a repo holding manifests *and* a chart still score its manifests.
  */
-export function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] } {
+export function generateExtra(
+  root: string,
+  files: string[],
+): { references: Edge[]; nodes: string[]; nodeFiles: string[] } {
   const absRoot = path.resolve(root);
   const { charts } = coveredRun(absRoot, files, false);
 
   const references: ReferenceTruth[] = [];
+  const nodes: string[] = [];
+  const nodeFiles: string[] = [];
+
   for (const chart of charts) {
-    if (chart.valuesFile === null) continue;
-    const keys = new Set(valuesKeys(path.join(absRoot, chart.valuesFile)));
-    if (keys.size === 0) continue;
-    const sources = [...chart.templates, ...(chart.chartFile === null ? [] : [chart.chartFile])].sort(compareStrings);
-    for (const file of sources) {
+    if (chart.chartFile !== null) {
+      nodeFiles.push(chart.chartFile);
+      const document = firstDocument(path.join(absRoot, chart.chartFile));
+      const name = document === null ? null : document["name"];
+      if (typeof name === "string" && name !== "" && !/[#\n\0]/u.test(name)) {
+        nodes.push(`${chart.chartFile}#module.${name}`);
+      }
+    }
+
+    const keys = chart.valuesFile === null ? [] : valuesKeys(path.join(absRoot, chart.valuesFile));
+    if (chart.valuesFile !== null) {
+      nodeFiles.push(chart.valuesFile);
+      for (const key of keys) nodes.push(`${chart.valuesFile}#variable.${key}`);
+    }
+    const keySet = new Set(keys);
+
+    for (const file of [...chart.templates].sort(compareStrings)) {
       let source: string;
       try {
         source = readFileSync(path.join(absRoot, file), "utf8");
       } catch {
         continue;
       }
-      const seen = new Set<string>();
-      for (const match of source.matchAll(VALUES_PATH)) {
-        const address = `.Values${match[1] as string}`;
-        if (seen.has(address)) continue;
-        seen.add(address);
-        const first = (match[1] as string).slice(1).split(".")[0] as string;
-        if (!keys.has(first)) continue;
+
+      if (chart.valuesFile !== null && keySet.size > 0) {
+        const seen = new Set<string>();
+        for (const match of source.matchAll(VALUES_PATH)) {
+          const address = `.Values${match[1] as string}`;
+          if (seen.has(address)) continue;
+          seen.add(address);
+          const first = (match[1] as string).slice(1).split(".")[0] as string;
+          if (!keySet.has(first)) continue;
+          references.push({
+            from: file,
+            to: `${chart.valuesFile}#variable.${first}`,
+            kind: "reference",
+            refKind: "helm-values",
+            symbols: [address],
+            confidence: "med",
+          });
+        }
+      }
+
+      for (const image of literalImages(source, file)) {
         references.push({
-          from: file,
-          to: `${chart.valuesFile}#variable.${first}`,
+          from: image.from,
+          to: `ext:image/${image.image}`,
           kind: "reference",
-          refKind: "helm-values",
-          symbols: [address],
-          confidence: "med",
+          refKind: "from-image",
+          symbols: [image.image],
+          confidence: "high",
         });
       }
     }
@@ -363,5 +513,5 @@ export function generateExtra(root: string, files: string[]): { references: Edge
     if (previous !== undefined && compareEdges(previous, candidate) === 0) continue;
     out.push(candidate);
   }
-  return { references: out, nodes: [] };
+  return { references: out, nodes: nodes.sort(compareStrings), nodeFiles: nodeFiles.sort(compareStrings) };
 }

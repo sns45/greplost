@@ -100,6 +100,20 @@ spec:
     app: web
 `;
 
+/** Two `ConfigMap`s with one name: the collision both halves of the ruling turn on. */
+const TWO_CONFIGMAPS = `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+  namespace: a
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+  namespace: b
+`;
+
 // ---------------------------------------------------------------------------
 
 describe("documents", () => {
@@ -132,9 +146,21 @@ describe("documents", () => {
     expect(out.decls.every((d) => d.exported === false)).toBe(true);
   });
 
-  test("a repeated name inside one file takes the ~<n> suffix, never #<n>", () => {
-    const twice = "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: c\n---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: c\n";
-    expect(run("dup.yaml", twice).decls.map((d) => d.name)).toEqual(["ConfigMap.c", "ConfigMap.c~2"]);
+  test("a repeated name inside one file suffixes the id and never the name", () => {
+    const twice = TWO_CONFIGMAPS.replace(/  namespace: [ab]\n/gu, "");
+    const out = run("dup.yaml", twice);
+    // The suffix lives in the id and nowhere else (driver ruling 2026-09-04): `name` stays as
+    // the file wrote it, so nothing downstream publishes a name nobody typed.
+    expect(out.decls.map((d) => d.id)).toEqual([
+      "dup.yaml#resource.ConfigMap.web-config",
+      "dup.yaml#resource.ConfigMap.web-config~2",
+    ]);
+    expect(out.decls.map((d) => d.name)).toEqual(["ConfigMap.web-config", "ConfigMap.web-config"]);
+  });
+
+  test("two documents with one name are one export record, not a suffixed second one", async () => {
+    const snapshot = await snapshotOf({ "dup.yaml": TWO_CONFIGMAPS });
+    expect(snapshot.manifest.files["dup.yaml"]?.exports).toEqual(["ConfigMap.web-config"]);
   });
 
   test("a plain YAML file with no apiVersion and kind contributes nothing", () => {
@@ -355,6 +381,28 @@ spec:
     expect(references(snapshot).filter((line) => line.includes("-config-ref->"))).toEqual([]);
   });
 
+  test("two ConfigMaps of one name in the SAME file are two candidates, so the edge drops", async () => {
+    // The id suffix distinguishes the two declarations; the *name* does not, and the name is
+    // what `configMapRef: web-config` writes. Looking the reference up by id would find the
+    // first and report an ambiguous reference as a certain one (driver ruling 2026-09-04).
+    const workload = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  template:
+    spec:
+      containers:
+        - name: app
+          image: nginx:1.27
+          envFrom:
+            - configMapRef:
+                name: web-config
+`;
+    const snapshot = await snapshotOf({ "cm.yaml": TWO_CONFIGMAPS, "deploy.yaml": workload });
+    expect(references(snapshot).filter((line) => line.includes("-config-ref->"))).toEqual([]);
+  });
+
   test("a config reference naming nothing at all is dropped, never left unresolved", async () => {
     const source = `apiVersion: v1
 kind: Pod
@@ -427,7 +475,32 @@ describe("helm templates", () => {
     const image = snapshot.symbols.find((d) => d.id === "templates/deployment.yaml#image.web");
     expect(image?.meta?.["templated"]).toBe("1");
     expect(image?.meta?.["imageTemplate"]).toBe("{{ .Values.image.repository }}:{{ .Values.image.tag }}");
-    expect(references(snapshot).filter((line) => line.includes("-from-image->"))).toEqual([]);
+    // The templated image makes no edge; its literal sibling in the same document does.
+    expect(references(snapshot).filter((line) => line.includes("#image.web -from-image->"))).toEqual([]);
+  });
+
+  test("a literal image inside a template is fully rendered text, so it still gets its edge", async () => {
+    const snapshot = await snapshotOf({
+      "Chart.yaml": "apiVersion: v2\nname: c\nversion: 0.1.0\n",
+      "values.yaml": "known: 1\n",
+      "templates/job.yaml": `apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-migrate
+spec:
+  template:
+    spec:
+      containers:
+        - name: migrate
+          image: busybox:1.36
+        - name: app
+          image: {{ .Values.known }}
+`,
+    });
+    // `busybox:1.36` came out of no template span; it is the image that will run.
+    expect(references(snapshot).filter((line) => line.includes("-from-image->"))).toEqual([
+      "templates/job.yaml#image.migrate -from-image-> ext:image/busybox:1.36 [busybox:1.36] high",
+    ]);
   });
 
   test("spans still point at the line the node was written on", () => {
@@ -511,6 +584,7 @@ describe("tiny-helm", () => {
     expect(snapshot.symbols.map((d) => d.id)).toEqual([
       "Chart.yaml#module.tiny",
       "templates/deployment.yaml#resource.Deployment.~0",
+      "templates/deployment.yaml#image.wait",
       "templates/deployment.yaml#image.web",
       "templates/service.yaml#resource.Service.~0",
       "values.yaml#variable.replicaCount",
@@ -526,9 +600,12 @@ describe("tiny-helm", () => {
     expect(snapshot.manifest.files["values.yaml"]?.exports).toEqual(["image", "replicaCount", "service"]);
   });
 
-  test("a chart draws no selector, config or image edge: helm-values is the only one left", async () => {
+  test("a chart draws no selector and no config edge: both are lookups by a name helm decides", async () => {
     const snapshot = await buildSnapshot({ root: TINY_HELM, config: YAML_CONFIG });
-    expect((snapshot.references ?? []).every((edge) => edge.refKind === "helm-values")).toBe(true);
+    // `from-image` survives because a literal image names itself; `helm-values` because both
+    // ends are unrendered files. Everything else in a chart is a value, not a name.
+    const kinds = new Set((snapshot.references ?? []).map((edge) => edge.refKind));
+    expect([...kinds].sort()).toEqual(["from-image", "helm-values"]);
   });
 
   test("every .Values path in the chart reaches its top-level values key", async () => {
@@ -538,6 +615,7 @@ describe("tiny-helm", () => {
       "templates/deployment.yaml -helm-values-> values.yaml#variable.image [.Values.image.tag] med",
       "templates/deployment.yaml -helm-values-> values.yaml#variable.replicaCount [.Values.replicaCount] med",
       "templates/deployment.yaml -helm-values-> values.yaml#variable.service [.Values.service.port] med",
+      "templates/deployment.yaml#image.wait -from-image-> ext:image/busybox:1.36 [busybox:1.36] high",
       "templates/service.yaml -helm-values-> values.yaml#variable.service [.Values.service.port] med",
     ]);
   });

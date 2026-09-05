@@ -210,16 +210,20 @@ function readFile(root: string, file: string): FileReading | null {
 
   const reading = emptyReading();
   const used = new Set<string>();
-  /** The uniqueness suffix rule, restated: `web`, then `web~2` (driver ruling 2026-09-04). */
-  const unique = (kind: string, name: string): string => {
-    let candidate = name;
-    for (let n = 2; used.has(`${kind}.${candidate}`); n += 1) candidate = `${name}~${n}`;
-    used.add(`${kind}.${candidate}`);
+  /**
+   * The uniqueness suffix rule, restated: the **id** takes `~2`, the name never does (driver
+   * ruling 2026-09-04). Two `ConfigMap`s called `web-config` are two nodes and one name, so a
+   * `configMapRef` naming it finds two candidates and resolves to nothing.
+   */
+  const uniqueId = (kind: string, name: string): string => {
+    const base = `${file}#${kind}.${name}`;
+    let candidate = base;
+    for (let n = 2; used.has(candidate); n += 1) candidate = `${base}~${n}`;
+    used.add(candidate);
     return candidate;
   };
-  const add = (kind: string, rawName: string): OracleNode => {
-    const name = unique(kind, rawName);
-    const node: OracleNode = { id: `${file}#${kind}.${name}`, name, file };
+  const add = (kind: string, name: string): OracleNode => {
+    const node: OracleNode = { id: uniqueId(kind, name), name, file };
     reading.nodes.push(node);
     return node;
   };
@@ -324,7 +328,10 @@ export function generateTruth(root: string, files: string[]): Truth {
   const { covered, readings } = coveredRun(root, files);
   const exports: Record<string, string[]> = {};
   for (const file of covered) {
-    exports[file] = (readings.get(file) as FileReading).nodes.map((node) => node.name).sort(compareStrings);
+    // Sorted node *names*, deduplicated: two documents with one name are one export record,
+    // exactly as `extract/yaml-k8s.ts` writes it.
+    const names = new Set((readings.get(file) as FileReading).nodes.map((node) => node.name));
+    exports[file] = [...names].sort(compareStrings);
   }
   return {
     files: covered,
@@ -341,10 +348,14 @@ export function generateTruth(root: string, files: string[]): Truth {
  *
  * Resolution is repo-wide and unique, exactly as spec 2.3 states it: a selector whose labels are
  * a subset of exactly one workload's pod labels, a `<Kind>/<name>` matching exactly one resource
- * node. Anything ambiguous produces no edge on this side either, so an oracle can never demand
+ * node **by written name**, so two same-named `ConfigMap`s are two candidates and neither side
+ * draws an edge. Anything ambiguous produces no edge here either, so an oracle can never demand
  * a guess.
  */
-export function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] } {
+export function generateExtra(
+  root: string,
+  files: string[],
+): { references: Edge[]; nodes: string[]; nodeFiles: string[] } {
   const { covered, readings } = coveredRun(root, files);
 
   const workloads: Array<{ id: string; labels: ReadonlyMap<string, string> }> = [];
@@ -398,7 +409,10 @@ export function generateExtra(root: string, files: string[]): { references: Edge
   }
 
   references.sort(compareEdges);
-  return { references: dedupe(references), nodes: nodes.sort(compareStrings) };
+  // Every covered manifest states its own nodes, so S6 scores all of them. The field exists for
+  // the flavour that cannot say that of every file it covers (`truth/yaml-helm.ts`), and naming
+  // the files here is what keeps a merged YAML truth from inheriting that restriction.
+  return { references: dedupe(references), nodes: nodes.sort(compareStrings), nodeFiles: [...covered] };
 }
 
 /** Adjacent duplicates only: the list is already sorted by every field that identifies an edge. */
