@@ -533,9 +533,24 @@ function singleToolSection(model: ReportModel): string[] {
  */
 function langsSection(model: ReportModel): string[] {
   const out = [`## ${LANG_SECTION_HEADER}`, ""];
+  const measured = model.langs.filter((row) => row.ran).length;
+  const total = model.langs.length;
+  // The opening sentence is a claim about coverage, so it counts. "Every
+  // language greplost indexes, scored against its own compiler truth" is true
+  // of a complete run and a lie about a payload set that reached six of ten,
+  // and the reader has no way to check it except by counting rows (review I5).
+  const opening =
+    total === 0 || measured === total
+      ? "Every language, IaC flavour and framework signal pass greplost indexes, scored against its own " +
+        "compiler truth."
+      : `${measured} of the ${total} languages the pinned corpus covers were measured by the payload set ` +
+        "this document was built from. The rest carry `not run` rows: nothing here stands in for them, " +
+        "and `bun run bench:structural --tier S --gate` is what fills them.";
   out.push(
-    "Every language, IaC flavour and framework signal pass greplost indexes, scored against its own " +
-      "compiler truth. One row per language, filled from the structural payload's `perLang` block; " +
+    opening +
+      " One row per language, filled from the structural payload's `perLang` block; " +
+      "`Files` is the files greplost scored, which is not the file count the corpus pin's glob names " +
+      "(a pinned `Dockerfile*` glob counts templates the indexer does not read). " +
       "`S1`, `S2`, `S3`, `S5` and `S6` are precision and `S4` is the cycle Jaccard, with recall, the " +
       "tp/fp/fn counts and the per-repo split in Eval 1 below. A language scored on more than one corpus " +
       "repo shows the **worst** of its repos, never an average: an average hides the weaker half, and the " +
@@ -583,8 +598,8 @@ function langsSection(model: ReportModel): string[] {
       langCell(row, "S4", row.s4),
       langCell(row, "S5", row.s5),
       langCell(row, "S6", row.s6),
-      `\`${row.truthSource}\``,
-      row.gated ? "gated" : "reported",
+      row.ran ? `\`${row.truthSource}\`` : NOT_RUN,
+      !row.ran ? NOT_RUN : row.gated ? "gated" : "reported",
     ];
     out.push(`| ${cells.map(cell).join(" | ")} |`);
   }
@@ -610,6 +625,7 @@ function langsSection(model: ReportModel): string[] {
  * chart's `n/a` must not erase two measured corpora.
  */
 function langCell(row: LangRow, id: string, value: number | null): string {
+  if (!row.ran) return NOT_RUN;
   if (row.na.includes(id)) return NOT_APPLICABLE;
   if (value === null) return row.files === null ? NOT_RUN : NOT_APPLICABLE;
   const base = row.vacuous.includes(id) ? `${formatNumber(value)} (vacuous)` : formatNumber(value);
@@ -625,7 +641,9 @@ function langCell(row: LangRow, id: string, value: number | null): string {
  */
 function oracleDisclosures(langs: readonly LangRow[]): string[] {
   const byKey = new Map<string, string[]>();
-  for (const row of langs) {
+  // Only for a language this payload set measured: a paragraph about what an
+  // oracle can and cannot see reads as a report on a run that happened.
+  for (const row of langs.filter((entry) => entry.ran)) {
     const key = TS_FAMILY_LANGS.has(row.lang) ? "ts" : row.lang;
     byKey.set(key, [...(byKey.get(key) ?? []), row.lang]);
   }
@@ -787,7 +805,8 @@ const ORACLE_DISCLOSURES: Record<string, string> = {
     "ids, and they are measured and gated. Helm: a " +
     "template is not valid YAML, so every `{{ ... }}` span is blanked in place before parsing and a " +
     "templated name falls back to the document index, which is why names are not compared for templates " +
-    "(`names-not-compared-for-templates`) and S6 is `n/a` for a chart. `same-regex-both-sides`: a " +
+    "(`names-not-compared-for-templates`): a chart's node ids are scored, but the *name* inside one is a " +
+    "document index rather than the name a real render would give it. `same-regex-both-sides`: a " +
     "chart's `.Values.<path>` references are found by one regular expression that both sides apply, so " +
     "S5 on Helm measures that regex against itself and not two independent implementations. " +
     "`if-else-arms-both-kept`: blanking keeps both arms of an `if`/`else`, so a chart's document set " +

@@ -48,43 +48,36 @@ Read honestly, and `RESULTS.md` says so under the table:
 ## Ruling: the `m` flag sweep (driver ruling 2026-09-05)
 
 `gate-check.mjs` matches `EXPECT` against stdout **plus** stderr, so an anchored regex needs the
-`m` flag. G6 here was `/^[1-9]/` and now reads `/^[1-9]/m`. The sweep of `gates/*.md` found four
-more, all in ledgers this leaf does not own and must not commit:
-
-| file | line | gate | current | fix |
-|---|---|---|---|---|
-| `gates/root-2.md` | 33 | T7 | `EXPECT: /^[1-9]/` | append `m` |
-| `gates/node-2.5.md` | 29 | N6 | `EXPECT: /^[1-9]/` | append `m` |
-| `gates/node-2.5.md` | 41 | N9 | `EXPECT: /^[1-9]/` | append `m` |
-| `gates/root.md` | 17 | T3 | `EXPECT: /^[1-9]/` | append `m` (closed build-1 ledger; the driver may prefer to leave it) |
-
-All four are `grep -c` checks whose output is a single line, so each still passes today: this is
-robustness against a check that ever prints a warning first, not a live failure.
+`m` flag. G6 here was `/^[1-9]/` and now reads `/^[1-9]/m`. The sweep of `gates/*.md` reported
+four more, in ledgers this leaf does not own and must not commit: `gates/root-2.md` T7,
+`gates/node-2.5.md` N6 and N9, and `gates/root.md` T3. **The driver applied all four in 5e39ca0**,
+and a re-sweep at this commit finds no start-anchored `EXPECT` left without the flag. Nothing is
+outstanding; the entry stays because the ruling asked for the sweep to be recorded.
 
 - [x] G1: the per-language structural test file passes
   CHECK: bun test bench/test/structural-langs.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 85 expect() calls | Ran 24 tests across 1 file. [126.00ms]
+  EVIDENCE: 139 expect() calls | Ran 34 tests across 1 file. [132.00ms]
 
 - [x] G2: the payload carries one entry per language with its repos, truth source and gated flag; describe('per-lang targets')
   CHECK: bun test bench/test/structural-langs.test.ts -t "per-lang targets" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 34 expect() calls | Ran 6 tests across 1 file. [110.00ms]
+  EVIDENCE: 34 expect() calls | Ran 6 tests across 1 file. [113.00ms]
 
 - [x] G3: an unsupported metric prints `n/a` and is neither a pass nor a fail; describe('n/a metrics')
   CHECK: bun test bench/test/structural-langs.test.ts -t "n/a metrics" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 17 expect() calls | Ran 6 tests across 1 file. [109.00ms]
+  EVIDENCE: 41 expect() calls | Ran 9 tests across 1 file. [113.00ms]
 
 - [x] G4: reference and signal-node precision are scored and gated; describe('S5 and S6')
   CHECK: bun test bench/test/structural-langs.test.ts -t "S5 and S6" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 13 expect() calls | Ran 4 tests across 1 file. [108.00ms]
+  EVIDENCE: 13 expect() calls | Ran 4 tests across 1 file. [109.00ms]
 
 - [x] G5: `--fixture` and `--fixture-go` keep their build-1 meaning; describe('build-1 flags still work')
   CHECK: bun test bench/test/structural-langs.test.ts -t "build-1 flags still work" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 13 expect() calls | Ran 4 tests across 1 file. [106.00ms]
+  EVIDENCE: 13 expect() calls | Ran 4 tests across 1 file. [110.00ms]
 
 - [x] G6: RESULTS.md states the head-to-head scope in one sentence
   CHECK: grep -c 'X1 to X10 cover TypeScript and Go only' bench/RESULTS.md
@@ -119,7 +112,7 @@ robustness against a check that ever prints a warning first, not a live failure.
 - [x] G12: the full suite is green from a frozen install
   CHECK: bun install --frozen-lockfile >/dev/null && bun test 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 17272 expect() calls | Ran 2116 tests across 66 files. [89.45s]
+  EVIDENCE: 17350 expect() calls | Ran 2131 tests across 67 files. [90.42s]
 
 - [x] G13: every package typechecks
   CHECK: bun run typecheck

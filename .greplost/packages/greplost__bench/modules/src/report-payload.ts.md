@@ -45,11 +45,11 @@
 - `interface ConditionStats`  L438-444
 - `function agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>`  L447-484
 - `interface SubstituteSummary`  L496-500
-- `interface LangRow`  L518-548
-- `const LANG_METRICS = ["S1", "S2", "S3", "S4", "S5", "S6"] as const`  L551-551
-- `function metricValue(repo: Record<string, unknown>, id: string): number | null`  L554-558
-- `function declares(repo: Record<string, unknown>, id: string): boolean`  L561-563
-- `function isVacuous(repo: Record<string, unknown>, id: string): boolean`  L566-570
-- `function langRows(structural: Payload | null): LangRow[]`  L586-681
+- `interface LangRow`  L518-557
+- `const LANG_METRICS = ["S1", "S2", "S3", "S4", "S5", "S6"] as const`  L560-560
+- `function metricValue(repo: Record<string, unknown>, id: string): number | null`  L563-567
+- `function declares(repo: Record<string, unknown>, id: string): boolean`  L570-572
+- `function isVacuous(repo: Record<string, unknown>, id: string): boolean`  L575-579
+- `function langRows(structural: Payload | null): LangRow[]`  L595-724
 
 **Calls:** `arr` → [`bench/src/report-payload.ts#arr`](report-payload.ts.md) (high), `at` → [`bench/src/report-payload.ts#at`](report-payload.ts.md) (high), `competitors` → [`bench/src/report-payload.ts#competitors`](report-payload.ts.md) (high), `corpusIndex` → [`bench/src/report-payload.ts#corpusIndex`](report-payload.ts.md) (high), `declares` → [`bench/src/report-payload.ts#declares`](report-payload.ts.md) (high), `deepFind` → [`bench/src/report-payload.ts#deepFind`](report-payload.ts.md) (high), `firstMachine` → [`bench/src/report-payload.ts#firstMachine`](report-payload.ts.md) (high), `firstNum` → [`bench/src/report-payload.ts#firstNum`](report-payload.ts.md) (high), `firstStr` → [`bench/src/report-payload.ts#firstStr`](report-payload.ts.md) (high), `isVacuous` → [`bench/src/report-payload.ts#isVacuous`](report-payload.ts.md) (high), `metricValue` → [`bench/src/report-payload.ts#metricValue`](report-payload.ts.md) (high), `num` → [`bench/src/report-payload.ts#num`](report-payload.ts.md) (high), `rec` → [`bench/src/report-payload.ts#rec`](report-payload.ts.md) (high), `str` → [`bench/src/report-payload.ts#str`](report-payload.ts.md) (high), `targetOf` → [`bench/src/report-payload.ts#targetOf`](report-payload.ts.md) (high), `provenanceLine` → [`bench/src/results-md.ts#provenanceLine`](results-md.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high)

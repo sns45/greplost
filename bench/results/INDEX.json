@@ -1,0 +1,41 @@
+{
+  "corpora": {
+    "anyq": "structural-2026-09-05-3792e73.json",
+    "bitnami-charts": "structural-2026-09-05-3792e73.json",
+    "coroutines": "structural-2026-09-05-3792e73.json",
+    "docker-node": "structural-2026-09-05-3792e73.json",
+    "docker-python": "structural-2026-09-05-3792e73.json",
+    "gin": "structural-2026-09-05-3792e73.json",
+    "gson": "structural-2026-09-05-3792e73.json",
+    "k8s-examples": "structural-2026-09-05-3792e73.json",
+    "next-app": "structural-2026-09-05-3792e73.json",
+    "pulumi-go": "structural-2026-09-05-3792e73.json",
+    "pulumi-ts": "structural-2026-09-05-3792e73.json",
+    "pydantic": "structural-2026-09-05-3792e73.json",
+    "ripgrep": "structural-2026-09-05-3792e73.json",
+    "starter-workflows": "structural-2026-09-05-3792e73.json",
+    "tanstack-start": "structural-2026-09-05-3792e73.json",
+    "tf-aws-eks": "structural-2026-09-05-3792e73.json",
+    "tf-aws-vpc": "structural-2026-09-05-3792e73.json"
+  },
+  "note": "The payload set bench/RESULTS.md was generated from. `bun run bench:report` reads these files by default, so a payload written later by a gate run cannot silently replace them; `bun run bench:report --latest` re-pins this file to the newest payload of each suite on disk. `corpora` names the structural payload each corpus repo's numbers came from.",
+  "payloads": {
+    "headtohead": [
+      "headtohead-2026-09-02-173a463.json",
+      "headtohead-2026-09-02-7e04594.json",
+      "headtohead-2026-09-02-bf2e9da.json"
+    ],
+    "mapquality": [
+      "mapquality-2026-09-02-dc3d859.json"
+    ],
+    "perf": [
+      "perf-2026-09-02-334b337.json"
+    ],
+    "replay": [
+      "replay-2026-09-02-334b337.json"
+    ],
+    "structural": [
+      "structural-2026-09-05-3792e73.json"
+    ]
+  }
+}

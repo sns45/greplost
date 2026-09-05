@@ -74,14 +74,14 @@
     "missed": [],
     "passed": true
   },
-  "greplostSha": "af6eaa1",
+  "greplostSha": "3792e73",
   "machine": {
     "arch": "arm64",
     "bun": "1.2.21",
     "cores": 16,
     "cpu": "Apple M4 Max",
     "go": "go version go1.25.3 darwin/arm64",
-    "greplostSha": "af6eaa1",
+    "greplostSha": "3792e73",
     "greplostVersion": "0.0.2",
     "memoryGB": 128,
     "node": "24.3.0",
@@ -166,7 +166,7 @@
       "truthSource": "bench/src/truth/yaml.ts"
     }
   },
-  "recordedAt": "2026-09-05T16:57:32.173Z",
+  "recordedAt": "2026-09-05T17:48:51.889Z",
   "repos": {
     "anyq": {
       "S1": {
@@ -1219,23 +1219,23 @@
         "tp": 370
       },
       "S3": {
-        "f1": 0.9838888888888888,
-        "fn": 58,
+        "f1": 0.9844530816213215,
+        "fn": 56,
         "fp": 0,
         "precision": 1,
-        "recall": 0.9682886823400766,
-        "tp": 1771
+        "recall": 0.9693821760524877,
+        "tp": 1773
       },
       "S4": 1,
       "S5": null,
       "S6": null,
       "callsAllConfidences": {
-        "f1": 0.99945295404814,
-        "fn": 2,
+        "f1": 1,
+        "fn": 0,
         "fp": 0,
         "precision": 1,
-        "recall": 0.9989065062875888,
-        "tp": 1827
+        "recall": 1,
+        "tp": 1829
       },
       "falseNegatives": {
         "S1": [],
@@ -1260,7 +1260,7 @@
           "crates/core/main.rs:361 (crates/core/main.rs#generate -> crates/core/flags/complete/powershell.rs#generate)",
           "crates/core/main.rs:361 (crates/core/main.rs#generate -> crates/core/flags/complete/zsh.rs#generate)",
           "crates/core/main.rs:361 (crates/core/main.rs#generate -> crates/core/flags/doc/man.rs#generate)",
-          "crates/core/main.rs:44 (crates/core/main.rs#main -> crates/core/flags/mod.rs#parse)"
+          "crates/core/main.rs:166 (crates/core/main.rs#search_parallel -> crates/core/flags/hiargs.rs#HiArgs.buffer_writer)"
         ],
         "S4": [],
         "S5": [],

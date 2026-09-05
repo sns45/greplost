@@ -529,6 +529,15 @@ export interface LangRow {
   truthSource: string;
   gated: boolean;
   /**
+   * False for a language the pinned corpus covers and this payload set does not:
+   * the row exists so the gap is visible, and every cell in it is `not run`.
+   *
+   * A missing language used to be a missing *row*, which is the one failure mode
+   * this section cannot afford: a reader counts the rows, sees ten, and has no
+   * way to know the eleventh was measured by nobody (review I5).
+   */
+  ran: boolean;
+  /**
    * Metric ids that print `n/a` for the whole language: every one of its repos
    * either declared the metric unsupported or carried no number for it.
    */
@@ -664,6 +673,7 @@ export function langRows(structural: Payload | null): LangRow[] {
       s6: worst["S6"] ?? null,
       truthSource: str(entry["truthSource"]) ?? "unknown",
       gated: entry["gated"] === true,
+      ran: true,
       na,
       partial,
       vacuous,
@@ -677,5 +687,38 @@ export function langRows(structural: Payload | null): LangRow[] {
             },
     });
   }
-  return rows;
+
+  // Every language the pinned corpus covers and this payload set did not: one
+  // row each, `not run` in every cell, naming the repos it would have been
+  // measured on. A gap in the corpus coverage is a fact about the benchmark,
+  // and a reader can only see it if it has a row (review I5).
+  const covered = new Set(rows.map((row) => row.lang as string));
+  const pinned = new Map<string, string[]>();
+  for (const repo of corpusIndex().values()) {
+    if (repo.lang === null) continue;
+    pinned.set(repo.lang, [...(pinned.get(repo.lang) ?? []), repo.name]);
+  }
+  for (const lang of [...pinned.keys()].sort(compareStrings)) {
+    if (covered.has(lang)) continue;
+    rows.push({
+      lang: lang as Lang,
+      corpus: (pinned.get(lang) ?? []).sort(compareStrings).join(", "),
+      files: null,
+      s1: null,
+      s2: null,
+      s3: null,
+      s4: null,
+      s5: null,
+      s6: null,
+      truthSource: "not run",
+      gated: false,
+      ran: false,
+      na: [],
+      partial: {},
+      vacuous: [],
+      substitute: null,
+    });
+  }
+
+  return rows.sort((a, b) => compareStrings(a.lang, b.lang));
 }

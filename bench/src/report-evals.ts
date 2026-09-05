@@ -16,6 +16,7 @@
 import { boxChart, groupedBarChart, lineChart, mermaidXy, type BoxDatum, type ChartSpec } from "./charts.ts";
 import { structuralAccuracyChart } from "./report-charts.ts";
 import {
+  NOT_APPLICABLE,
   TRUTH_NOTE_GLOSS,
   emptySection,
   type EvalRow,
@@ -61,6 +62,25 @@ export function eval1Section(payload: Payload | null, assetsRel = "docs/assets")
     const files = num(repo["files"]);
     const run = runFor(name, files);
     const withRun = (row: EvalRow): EvalRow => (run === undefined ? row : { ...row, run });
+    /**
+     * Metric ids this target's truth module declared it does not measure.
+     *
+     * They are the reason this section cannot just read the score blocks. A
+     * declared metric still has a block, and the numbers in it are not results:
+     * the Kotlin corpus has no oracle at all, so its S1 block reads
+     * `precision 0, recall 1` on an empty universe, and printing that against
+     * ">= 0.99 / >= 0.97" published a failing score for a measurement nobody
+     * took. A Dockerfile's S1 is the same defect with the opposite sign, a
+     * vacuous 1.000. `n/a` with no target is the honest cell, and it is what the
+     * suite's own table and the per-language table both print (review C2).
+     */
+    const na = new Set(
+      arr(repo["naMetrics"]).filter((id): id is string => typeof id === "string"),
+    );
+    const notMeasured = (row: EvalRow): EvalRow =>
+      na.has(row.id)
+        ? { ...row, target: "", measured: NOT_APPLICABLE, detail: "not measured by this oracle" }
+        : row;
     const rows: EvalRow[] = [
       scoreRow("S1", "import edge precision / recall", ">= 0.99 / >= 0.97", rec(repo["S1"])),
       scoreRow("S2", "export precision / recall", ">= 0.99 / >= 0.99", rec(repo["S2"])),
@@ -72,7 +92,9 @@ export function eval1Section(payload: Payload | null, assetsRel = "docs/assets")
         measured: fmt(num(repo["S4"])),
         detail: "",
       },
-    ].map(withRun);
+    ]
+      .map(notMeasured)
+      .map(withRun);
     // The two integrity flags from `structural.ts`. They are misses in their own
     // right, so they belong in the table, not in a footnote nobody reads.
     if (repo["truthEmpty"] === true) {
@@ -86,17 +108,25 @@ export function eval1Section(payload: Payload | null, assetsRel = "docs/assets")
     // One chart, for the first repo in sorted order: a second one would need a
     // second slug, and the table below already carries every repo.
     if (section.charts.length === 0) {
+      // A declared metric has no bar, for the same reason it has no cell: a
+      // plotted 0 or 1 for a measurement nobody took is the chart telling the
+      // same untruth the table used to.
+      const plotted = (id: string, label: string, value: number | null): { id: string; label: string; value: number | null } => ({
+        id,
+        label,
+        value: na.has(id) ? null : value,
+      });
       const chart = structuralAccuracyChart(
         name,
         files,
         [
-          { id: "S1", label: "S1 imports P", value: num(rec(repo["S1"])?.["precision"]) },
-          { id: "S1", label: "S1 imports R", value: num(rec(repo["S1"])?.["recall"]) },
-          { id: "S2", label: "S2 exports P", value: num(rec(repo["S2"])?.["precision"]) },
-          { id: "S2", label: "S2 exports R", value: num(rec(repo["S2"])?.["recall"]) },
-          { id: "S3", label: "S3 calls P", value: num(rec(repo["S3"])?.["precision"]) },
-          { id: "S3", label: "S3 calls R", value: num(rec(repo["S3"])?.["recall"]) },
-          { id: "S4", label: "S4 cycles J", value: num(repo["S4"]) },
+          plotted("S1", "S1 imports P", num(rec(repo["S1"])?.["precision"])),
+          plotted("S1", "S1 imports R", num(rec(repo["S1"])?.["recall"])),
+          plotted("S2", "S2 exports P", num(rec(repo["S2"])?.["precision"])),
+          plotted("S2", "S2 exports R", num(rec(repo["S2"])?.["recall"])),
+          plotted("S3", "S3 calls P", num(rec(repo["S3"])?.["precision"])),
+          plotted("S3", "S3 calls R", num(rec(repo["S3"])?.["recall"])),
+          plotted("S4", "S4 cycles J", num(repo["S4"])),
         ],
         assetsRel,
       );

@@ -20,11 +20,13 @@
  *   bun bench/src/cli.ts report --dry-run       # RESULTS.md only, no rasterisation
  *   bun bench/src/cli.ts report --results-dir <d> --out <f> --assets <d>
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
+import { compareStrings, stableStringify } from "@greplost/core/schema";
+
 import { boxChart, groupedBarChart, lineChart, mermaidXy, writeChart, type BoxDatum, type ChartSpec } from "./charts.ts";
-import { latestResult, orderedResults } from "./results-io.ts";
+import { latestResult, orderedResults, resultsDir } from "./results-io.ts";
 import { assumptions, firstMachine, langRows, mergeCorpus, resetAssumptions, versionRows, type Payload } from "./report-payload.ts";
 import { headToHeadFrom, singleTool } from "./report-sections.ts";
 import {
@@ -59,11 +61,18 @@ const RESULTS_MD = "bench/RESULTS.md";
 /** Where the PNGs land, repo-relative (tech spec 10.9). */
 const ASSETS_DIR = "docs/assets";
 
+/** The committed payload set this document was built from (ruling 2026-09-05). */
+export const PAYLOAD_INDEX = "INDEX.json";
+
 export interface BuildOptions {
   /** Where to read `*.json` results from; defaults to `bench/results`. */
   resultsDir?: string;
   /** Repo-relative directory the PNG links point at; defaults to `docs/assets`. */
   assetsRel?: string;
+  /** Ignore `INDEX.json` and read the newest payload of each suite instead. */
+  latest?: boolean;
+  /** Write `INDEX.json` from the payload set this pass actually read. */
+  writeIndex?: boolean;
 }
 
 interface Options {
@@ -73,6 +82,8 @@ interface Options {
   assets: string;
   /** True when `--out` was not given, so the convention line is the whole truth. */
   defaultOut: boolean;
+  /** `--latest`: re-pin the index to the newest payloads on disk. */
+  latest: boolean;
 }
 // ---------------------------------------------------------------------------
 // entry point
@@ -84,6 +95,10 @@ export async function run(args: string[]): Promise<number> {
     const model = buildModel({
       ...(options.resultsDir === undefined ? {} : { resultsDir: options.resultsDir }),
       assetsRel: path.relative(REPO_ROOT, options.assets).split(path.sep).join("/") || ASSETS_DIR,
+      ...(options.latest ? { latest: true } : {}),
+      // A real run records what it read, so the document and its payload set are
+      // committed together and the next run reproduces this document exactly.
+      writeIndex: true,
     });
     const text = renderResultsMd(model);
 
@@ -111,11 +126,13 @@ function parseArgs(args: string[]): Options {
     out: path.join(REPO_ROOT, RESULTS_MD),
     assets: path.join(REPO_ROOT, ASSETS_DIR),
     defaultOut: true,
+    latest: false,
   };
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     // Unknown flags are ignored: `bench all` forwards one argument list to every suite.
     if (arg === "--dry-run") options.dryRun = true;
+    else if (arg === "--latest") options.latest = true;
     else if (arg === "--results-dir") options.resultsDir = args[++i];
     else if (arg === "--out") {
       const next = args[++i];
@@ -168,18 +185,77 @@ export function buildModel(options: BuildOptions = {}): ReportModel {
    * the document differ between clones (review round 2, important b), and a later
    * one broke them on the short sha, which does not sort by time at all.
    */
+  /**
+   * The payload set this document is pinned to, or null when there is none and
+   * when `--latest` asked for the newest on disk instead (ruling 2026-09-05).
+   *
+   * Newest-on-disk is the wrong default for a committed document. Any gate run
+   * writes a payload, and a `--repo one-thing --gate` run writes one that covers
+   * a single corpus: the next `bench:report` would then rebuild `RESULTS.md`
+   * from it and silently drop nine languages, with every remaining number still
+   * true and the document as a whole a lie. Pinning the set makes that a
+   * deliberate act (`--latest`) rather than an accident.
+   */
+  const index = options.latest === true ? null : readPayloadIndex(dir);
+  /** Suite to the payload file names this pass actually read, for the index. */
+  const used = new Map<string, string[]>();
+
+  const record = (suite: string, payloads: readonly Payload[]): void => {
+    if (payloads.length > 0) used.set(suite, payloads.map((payload) => path.basename(payload.file)));
+  };
+
+  /** The payloads the index pins for a suite, or null when it pins none it can read. */
+  const pinned = (suite: string): Payload[] | null => {
+    const listed = index?.payloads[suite];
+    if (listed === undefined || listed.length === 0) return null;
+    const found: Payload[] = [];
+    const missing: string[] = [];
+    for (const name of listed) {
+      const file = path.join(resultsDir(dir), name);
+      try {
+        found.push({ data: JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>, file });
+      } catch {
+        missing.push(name);
+      }
+    }
+    if (missing.length === 0) return found;
+    // A pinned file that is not there is a disclosed fallback, never a silent
+    // one: the document says which file it wanted and what it read instead.
+    assumptions.push(
+      `\`bench/results/${PAYLOAD_INDEX}\` pins ${missing.map((name) => `\`${name}\``).join(", ")} for the ` +
+        `${suite} suite and ${missing.length === 1 ? "it is" : "they are"} not in the results directory; ` +
+        "the newest payload on disk was read instead",
+    );
+    return found.length > 0 ? found : null;
+  };
+
   const loadAll = (suite: string, from: string | undefined): Payload[] => {
+    const set = pinned(suite);
+    if (set !== null) {
+      record(suite, set);
+      return set;
+    }
     try {
-      return orderedResults(suite, from).map((entry) => ({ data: entry.payload, file: entry.file }));
+      const found = orderedResults(suite, from).map((entry) => ({ data: entry.payload, file: entry.file }));
+      record(suite, found);
+      return found;
     } catch {
       return [];
     }
   };
 
   const load = (suite: string): Payload | null => {
+    const set = pinned(suite);
+    if (set !== null) {
+      record(suite, set);
+      return set[set.length - 1] ?? null;
+    }
     try {
       const found = latestResult(suite, dir);
-      return found === undefined ? null : { data: found.payload, file: found.file };
+      if (found === undefined) return null;
+      const payload = { data: found.payload, file: found.file };
+      record(suite, [payload]);
+      return payload;
     } catch {
       // A corrupt result file must not take the whole report down with it.
       return null;
@@ -241,5 +317,84 @@ export function buildModel(options: BuildOptions = {}): ReportModel {
         `this reader expected it: ${guesses.join("; ")}. Every other value came from a documented path.`,
     );
   }
+
+  if (options.writeIndex === true) writePayloadIndex(dir, used, structural);
   return model;
+}
+
+// ---------------------------------------------------------------------------
+// the payload index
+// ---------------------------------------------------------------------------
+
+/** `bench/results/INDEX.json`: the payload set `RESULTS.md` was generated from. */
+export interface PayloadIndexFile {
+  note: string;
+  /** Suite to the payload file names it was read from, oldest first. */
+  payloads: Record<string, string[]>;
+  /** Corpus repo to the structural payload file its numbers came from. */
+  corpora: Record<string, string>;
+}
+
+/** The committed index, or null when there is none or it cannot be read. */
+export function readPayloadIndex(dir?: string): PayloadIndexFile | null {
+  const file = path.join(resultsDir(dir), PAYLOAD_INDEX);
+  if (!existsSync(file)) return null;
+  try {
+    const parsed = JSON.parse(readFileSync(file, "utf8")) as Partial<PayloadIndexFile>;
+    const payloads = parsed.payloads;
+    if (typeof payloads !== "object" || payloads === null) return null;
+    const cleaned: Record<string, string[]> = {};
+    for (const [suite, listed] of Object.entries(payloads)) {
+      if (!Array.isArray(listed)) continue;
+      cleaned[suite] = listed.filter((name): name is string => typeof name === "string");
+    }
+    return { note: parsed.note ?? "", payloads: cleaned, corpora: parsed.corpora ?? {} };
+  } catch {
+    // An unreadable index is one the report ignores, never one it dies on.
+    return null;
+  }
+}
+
+/**
+ * Record the payload set this pass read, so the document and the files behind it
+ * are committed together.
+ *
+ * `corpora` is the per-corpus half of the ruling: which structural payload
+ * supplied each repo's numbers. With one full run it is one file repeated, and
+ * with a run per corpus it is the map that says so.
+ */
+function writePayloadIndex(
+  dir: string | undefined,
+  used: ReadonlyMap<string, string[]>,
+  structural: Payload | null,
+): void {
+  const payloads: Record<string, string[]> = {};
+  for (const suite of [...used.keys()].sort(compareStrings)) payloads[suite] = used.get(suite) ?? [];
+
+  const corpora: Record<string, string> = {};
+  if (structural !== null) {
+    const name = path.basename(structural.file);
+    const repos = structural.data["repos"];
+    if (typeof repos === "object" && repos !== null) {
+      for (const repo of Object.keys(repos).sort(compareStrings)) corpora[repo] = name;
+    }
+  }
+
+  const index: PayloadIndexFile = {
+    note:
+      "The payload set bench/RESULTS.md was generated from. `bun run bench:report` reads these files by " +
+      "default, so a payload written later by a gate run cannot silently replace them; " +
+      "`bun run bench:report --latest` re-pins this file to the newest payload of each suite on disk. " +
+      "`corpora` names the structural payload each corpus repo's numbers came from.",
+    payloads,
+    corpora,
+  };
+  try {
+    const target = resultsDir(dir);
+    mkdirSync(target, { recursive: true });
+    writeFileSync(path.join(target, PAYLOAD_INDEX), `${stableStringify(index, 2)}\n`);
+  } catch {
+    // The document is the product; failing to record the set it came from is
+    // worth a missing file, never a failed report.
+  }
 }
