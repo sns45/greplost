@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/graph/link.ts`](../graph/link.ts.md), [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/resolver.ts`](resolver.ts.md)
 
-**Blast radius:** 67 files (`greplost impact packages/core/src/resolve/java.ts`)
+**Blast radius:** 68 files (`greplost impact packages/core/src/resolve/java.ts`)
 
 **Key symbols:**
 - `const UNRESOLVED: ResolvedTarget = { type: "unresolved" }`  L46-46

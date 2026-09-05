@@ -14,7 +14,11 @@
 
 import type { Edge } from "@greplost/core/schema";
 import type { Truth } from "./ts.ts";
-import { generateTruth as generateActionsTruth } from "./yaml-actions.ts";
+import {
+  generateExtra as generateActionsExtra,
+  generateTruth as generateActionsTruth,
+  isActionsFile,
+} from "./yaml-actions.ts";
 import { generateExtra as generateHelmExtra, generateTruth as generateHelmTruth } from "./yaml-helm.ts";
 import { generateExtra as generateK8sExtra, generateTruth as generateK8sTruth } from "./yaml-k8s.ts";
 
@@ -34,8 +38,15 @@ const GENERATORS: Readonly<Record<YamlFlavour, (root: string, files: string[]) =
   "yaml-k8s": generateK8sTruth,
 };
 
-/** The reference and node sets S5 and S6 read, per flavour (`TruthModule.generateExtra`). */
-type ExtraGenerator = (root: string, files: string[]) => { references: Edge[]; nodes: string[] };
+/**
+ * The reference and node sets S5 and S6 read, per flavour (`TruthModule.generateExtra`).
+ *
+ * The third parameter is the *whole* YAML file set the target was indexed with, not just the
+ * flavour's group: a workflow's `uses` and `run:` tokens can name a file of another flavour, so
+ * a generator that resolved against its own group alone would report an edge greplost drew as a
+ * false positive (leaf 2.9). A generator that does not need it simply declares two parameters.
+ */
+type ExtraGenerator = (root: string, files: string[], universe: string[]) => { references: Edge[]; nodes: string[] };
 
 /**
  * Added by leaf 2.8, which needed S5 and S6 measured for `yaml` and found the dispatcher
@@ -49,7 +60,7 @@ type ExtraGenerator = (root: string, files: string[]) => { references: Edge[]; n
  * found in a workflow as a false positive.
  */
 const EXTRA_GENERATORS: Readonly<Record<YamlFlavour, ExtraGenerator | undefined>> = {
-  "yaml-actions": undefined,
+  "yaml-actions": generateActionsExtra,
   "yaml-helm": generateHelmExtra,
   "yaml-k8s": generateK8sExtra,
 };
@@ -86,17 +97,24 @@ export function isHelmFile(file: string): boolean {
  * configuration file lands: the Kubernetes oracle is the one that knows an `apiVersion`/`kind`
  * document from an ordinary YAML file, so it is the one that has to see both.
  */
-export function flavourOf(file: string): YamlFlavour {
+export function flavourOf(file: string, root?: string): YamlFlavour {
   if (isWorkflowFile(file)) return "yaml-actions";
   if (isHelmFile(file)) return "yaml-helm";
+  // Leaf 2.9: the path is not the whole rule. A composite action's `action.yml` and a workflow
+  // *template* outside `.github/workflows/` are both Actions files at other paths, and the
+  // pinned corpus is 174 of the latter, so the content rule `extract/yaml.ts` applies is
+  // restated here — on js-yaml, independently — whenever the caller can say where the files
+  // live. Without a root the path rules are all there is, which is what the seam's own
+  // `flavourOf(file)` callers expect.
+  if (root !== undefined && isActionsFile(root, file)) return "yaml-actions";
   return "yaml-k8s";
 }
 
 /** Group the file list by flavour, dropping empty groups, in a fixed flavour order. */
-export function groupByFlavour(files: readonly string[]): Array<[YamlFlavour, string[]]> {
+export function groupByFlavour(files: readonly string[], root?: string): Array<[YamlFlavour, string[]]> {
   const groups = new Map<YamlFlavour, string[]>();
   for (const file of [...files].sort(compare)) {
-    const flavour = flavourOf(file);
+    const flavour = flavourOf(file, root);
     const bucket = groups.get(flavour);
     if (bucket === undefined) groups.set(flavour, [file]);
     else bucket.push(file);
@@ -108,7 +126,7 @@ export function groupByFlavour(files: readonly string[]): Array<[YamlFlavour, st
 }
 
 export function generateTruth(root: string, files: string[]): Truth {
-  const groups = groupByFlavour(files);
+  const groups = groupByFlavour(files, root);
   if (groups.length === 0) {
     return { files: [], imports: [], exports: {}, calls: [], cycles: [], notes: [...NOTES] };
   }
@@ -119,10 +137,10 @@ export function generateTruth(root: string, files: string[]): Truth {
 export function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] } {
   const references: Edge[] = [];
   const nodes: string[] = [];
-  for (const [flavour, group] of groupByFlavour(files)) {
+  for (const [flavour, group] of groupByFlavour(files, root)) {
     const generate = EXTRA_GENERATORS[flavour];
     if (generate === undefined) continue;
-    const extra = generate(root, group);
+    const extra = generate(root, group, files);
     references.push(...extra.references);
     nodes.push(...extra.nodes);
   }

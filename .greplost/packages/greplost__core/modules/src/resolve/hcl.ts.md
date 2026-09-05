@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/references/hcl.ts`](../references/hcl.ts.md), [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/resolver.ts`](resolver.ts.md)
 
-**Blast radius:** 67 files (`greplost impact packages/core/src/resolve/hcl.ts`)
+**Blast radius:** 68 files (`greplost impact packages/core/src/resolve/hcl.ts`)
 
 **Key symbols:**
 - `const HCL_ROOT_DIR_ID = "."`  L24-24

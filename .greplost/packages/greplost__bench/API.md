@@ -384,11 +384,11 @@
 - `function buildOptionsFor(target: Target): { root: string; config?: GreplostConfig }` L506-532
 - `function unsupportedMetrics(notes: readonly string[]): string[]` L634-642
 - `function scoredFiles(snapshot: Snapshot, lang: TruthLang): string[]` L728-738
-- `function scoreAgainstTruth( name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang, extra: ExtraTruth | null = null, ): RepoScores` L746-890
-- `function perLangSummary( targets: readonly Target[], scores: readonly RepoScores[], ): Record<string, { repos: string[]; gated: boolean; truthSource: string }>` L924-945
-- `function unparsableBucket( scores: readonly RepoScores[], ): { count: number; files: { repo: string; path: string; reason: string }[] }` L974-981
-- `function missedMetrics(scores: RepoScores): string[]` L993-1024
-- `function locate(snapshot: Snapshot, key: string, kind: "import" | "call" | "export"): string` L1078-1090
+- `function scoreAgainstTruth( name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang, extra: ExtraTruth | null = null, ): RepoScores` L746-896
+- `function perLangSummary( targets: readonly Target[], scores: readonly RepoScores[], ): Record<string, { repos: string[]; gated: boolean; truthSource: string }>` L930-951
+- `function unparsableBucket( scores: readonly RepoScores[], ): { count: number; files: { repo: string; path: string; reason: string }[] }` L980-987
+- `function missedMetrics(scores: RepoScores): string[]` L999-1030
+- `function locate(snapshot: Snapshot, key: string, kind: "import" | "call" | "export"): string` L1084-1096
 
 ## bench/src/tasks.ts
 
@@ -504,8 +504,11 @@
 
 ## bench/src/truth/yaml-actions.ts
 
-- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
-- `function generateTruth(root: string, files: string[]): Truth` L17-22
+- `const NOTES: readonly string[] = ["js-yaml-oracle"]` L51-51
+- `function isActionsFile(root: string, file: string): boolean` L130-139
+- `type ReferenceTruth = Edge & { readonly refKind: string }` L378-378
+- `function generateTruth(root: string, files: string[]): Truth` L391-405
+- `function generateExtra( root: string, files: string[], universe: string[] = files, ): { references: Edge[]; nodes: string[] }` L416-460
 
 ## bench/src/truth/yaml-helm.ts
 
@@ -526,11 +529,11 @@
 
 ## bench/src/truth/yaml.ts
 
-- `const NOTES: readonly string[] = ["yaml-flavour-dispatch"]` L21-21
-- `type YamlFlavour = "yaml-actions" | "yaml-helm" | "yaml-k8s"` L26-26
-- `function isWorkflowFile(file: string): boolean` L67-74
-- `function isHelmFile(file: string): boolean` L77-80
-- `function flavourOf(file: string): YamlFlavour` L89-93
-- `function groupByFlavour(files: readonly string[]): Array<[YamlFlavour, string[]]>` L96-108
-- `function generateTruth(root: string, files: string[]): Truth` L110-116
-- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L119-132
+- `const NOTES: readonly string[] = ["yaml-flavour-dispatch"]` L25-25
+- `type YamlFlavour = "yaml-actions" | "yaml-helm" | "yaml-k8s"` L30-30
+- `function isWorkflowFile(file: string): boolean` L78-85
+- `function isHelmFile(file: string): boolean` L88-91
+- `function flavourOf(file: string, root?: string): YamlFlavour` L100-111
+- `function groupByFlavour(files: readonly string[], root?: string): Array<[YamlFlavour, string[]]>` L114-126
+- `function generateTruth(root: string, files: string[]): Truth` L128-134
+- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L137-150

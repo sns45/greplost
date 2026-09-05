@@ -16,9 +16,16 @@
 
 import { callersOf, findSymbols, importersOf } from "@greplost/core";
 import type { Structure } from "@greplost/core";
-import { importTargetsOf } from "@greplost/core/graph";
-import type { DeclKind, Declaration, ImportEdge, Manifest } from "@greplost/core/schema";
-import { compareDeclarations, compareStrings } from "@greplost/core/schema";
+import { impactOf, impactPairs, importTargetsOf, referencedBy, referencesOf } from "@greplost/core/graph";
+import type {
+  Confidence,
+  DeclKind,
+  Declaration,
+  ImportEdge,
+  Manifest,
+  RefKind,
+} from "@greplost/core/schema";
+import { compareDeclarations, compareStrings, isNodeKind } from "@greplost/core/schema";
 
 import type { CommandContext } from "../args.ts";
 import { fields, printError, printJson, printLine, summarise, table } from "../output.ts";
@@ -27,7 +34,9 @@ import {
   importsOfFile,
   loadStructure,
   looksLikePath,
+  nodeCardOf,
   resolveFile,
+  resolveNode,
   toRepoRelative,
 } from "./structure.ts";
 import { dispatchWorkspace } from "./workspace.ts";
@@ -53,6 +62,50 @@ export interface QueryMatch {
   importers: string[];
   /** Symbol ids that call this declaration. */
   callers: string[];
+  /**
+   * Schema 2. Language, IaC or framework attributes of a non-file node, and the
+   * reference edges leaving and entering it. All three are omitted when there
+   * is nothing to say, so a TypeScript repo's answer is byte for byte the one
+   * build 1 printed and no existing consumer sees a new key.
+   */
+  meta?: Record<string, string>;
+  references?: ReferenceOut[];
+  referencedBy?: ReferenceIn[];
+}
+
+/** A reference edge as `query` reports it, from the near end. */
+export interface ReferenceOut {
+  to: string;
+  refKind: RefKind;
+  confidence: Confidence;
+}
+
+/** A reference edge as `query` reports it, from the far end. */
+export interface ReferenceIn {
+  from: string;
+  refKind: RefKind;
+  confidence: Confidence;
+}
+
+/**
+ * The node block, present when the argument named a non-file node. Mirrors
+ * `QueryFile`: a node is the other thing a map holds that is not a symbol, and
+ * an agent should not have to read it differently.
+ */
+export interface QueryNode {
+  id: string;
+  file: string;
+  kind: DeclKind;
+  name: string;
+  package: string;
+  /** `.greplost`-relative node card path; slugged, so it never contains a `#`. */
+  card: string;
+  meta?: Record<string, string>;
+  references: ReferenceOut[];
+  referencedBy: ReferenceIn[];
+  /** Reverse closure over import, re-export and reference edges: the card's figure. */
+  blast: number;
+  span: [number, number];
 }
 
 /** The file block, present when the argument named an indexed file. */
@@ -73,6 +126,8 @@ export interface QueryResult {
   query: string;
   matches: QueryMatch[];
   file?: QueryFile;
+  /** Schema 2: present when the argument was an exact non-file node id. */
+  node?: QueryNode;
 }
 
 export async function run(ctx: CommandContext): Promise<number> {
@@ -86,6 +141,11 @@ export async function run(ctx: CommandContext): Promise<number> {
   if (ctx.json) {
     printJson(result);
     return result.file === undefined && result.matches.length === 0 ? 1 : 0;
+  }
+
+  if (result.node !== undefined) {
+    printNode(result.node);
+    return 0;
   }
 
   if (result.file === undefined && result.matches.length === 0) {
@@ -112,12 +172,21 @@ export async function run(ctx: CommandContext): Promise<number> {
 /** The whole answer, as `--json` serialises it. Pure: no output, no filesystem. */
 export function queryStructure(structure: Structure, root: string, needle: string): QueryResult {
   const manifest = structure.manifest;
+  // The ladder, in this order and no other (spec 4.5): an indexed file first
+  // and still first, then an exact non-file node id, then the symbol search. A
+  // node id can never be mistaken for a path, because `looksLikePath` rejects
+  // anything holding a `#`.
   const asFile = resolveFile(manifest, toRepoRelative(root, needle));
+  const asNode = asFile === undefined ? resolveNode(structure, needle) : undefined;
 
-  const declarations =
-    asFile === undefined
-      ? findSymbols(structure.symbols, needle)
-      : [...structure.symbols.filter((decl) => decl.file === asFile)].sort(compareDeclarations);
+  let declarations: Declaration[];
+  if (asFile !== undefined) {
+    declarations = [...structure.symbols.filter((decl) => decl.file === asFile)].sort(compareDeclarations);
+  } else if (asNode !== undefined) {
+    declarations = [asNode];
+  } else {
+    declarations = findSymbols(structure.symbols, needle);
+  }
 
   // One pass over the edges rather than one per declaration: a file query on a
   // large module would otherwise re-scan the whole import graph per symbol.
@@ -126,6 +195,7 @@ export function queryStructure(structure: Structure, root: string, needle: strin
 
   const result: QueryResult = { query: needle, matches };
   if (asFile !== undefined) result.file = describeFile(structure, manifest, asFile);
+  if (asNode !== undefined) result.node = describeNode(structure, manifest, asNode);
   return result;
 }
 
@@ -165,7 +235,8 @@ function describe(
   byTarget: Map<string, ImportEdge[]>,
 ): QueryMatch {
   const entry = manifest.files[decl.file];
-  return {
+  const node = isNodeKind(decl.kind);
+  const match: QueryMatch = {
     id: decl.id,
     file: decl.file,
     name: decl.name,
@@ -174,10 +245,55 @@ function describe(
     span: decl.span,
     exported: decl.exported,
     package: entry?.pkg ?? "",
-    card: cardOf(manifest, decl.file),
+    // A node's card is its own; everything else is documented by its file's.
+    card: node ? nodeCardOf(manifest, decl.id) : cardOf(manifest, decl.file),
     importers: symbolImporters(byTarget, decl),
     callers: callersOf(structure.calls, decl.id),
   };
+  if (decl.meta !== undefined) match.meta = decl.meta;
+  const out = outboundReferences(structure, decl.id);
+  const back = inboundReferences(structure, decl.id);
+  if (out.length > 0) match.references = out;
+  if (back.length > 0) match.referencedBy = back;
+  return match;
+}
+
+function outboundReferences(structure: Structure, id: string): ReferenceOut[] {
+  return referencesOf(structure.references, id).map((edge) => ({
+    to: edge.to,
+    refKind: edge.refKind,
+    confidence: edge.confidence,
+  }));
+}
+
+function inboundReferences(structure: Structure, id: string): ReferenceIn[] {
+  return referencedBy(structure.references, id).map((edge) => ({
+    from: edge.from,
+    refKind: edge.refKind,
+    confidence: edge.confidence,
+  }));
+}
+
+/**
+ * The node block. `blast` is the reverse closure over `impactPairs`, the same
+ * figure `greplost impact <node-id>` reports and the same one the node card
+ * prints, so a reader never sees three numbers for one question.
+ */
+function describeNode(structure: Structure, manifest: Manifest, decl: Declaration): QueryNode {
+  const node: QueryNode = {
+    id: decl.id,
+    file: decl.file,
+    kind: decl.kind,
+    name: decl.name,
+    package: manifest.files[decl.file]?.pkg ?? "",
+    card: nodeCardOf(manifest, decl.id),
+    references: outboundReferences(structure, decl.id),
+    referencedBy: inboundReferences(structure, decl.id),
+    blast: impactOf(impactPairs(structure), decl.id).length,
+    span: decl.span,
+  };
+  if (decl.meta !== undefined) node.meta = decl.meta;
+  return node;
 }
 
 /**
@@ -240,6 +356,32 @@ function printFile(file: QueryFile): void {
     ["exports", summarise(file.exports, 8)],
     ["imports", summarise(file.imports)],
     ["importers", summarise(file.importers)],
+  ])) {
+    printLine(line);
+  }
+}
+
+/**
+ * A node reads as one block, not as a row in a table of one: everything the map
+ * knows about it fits in eight aligned fields, and the table form would waste
+ * four columns on a single answer.
+ */
+function printNode(node: QueryNode): void {
+  printLine(node.id);
+  const attributes = Object.entries(node.meta ?? {})
+    .sort(([a], [b]) => compareStrings(a, b))
+    .map(([key, value]) => `${key}: ${value}`)
+    .join(", ");
+  for (const line of fields([
+    ["kind", node.kind],
+    ["file", node.file],
+    ["package", node.package],
+    ["card", node.card],
+    ["source", `L${node.span[0]}-${node.span[1]}`],
+    ["attributes", attributes],
+    ["blast", String(node.blast)],
+    ["references", summarise(node.references.map((r) => `${r.to} (${r.refKind})`))],
+    ["referenced by", summarise(node.referencedBy.map((r) => `${r.from} (${r.refKind})`))],
   ])) {
     printLine(line);
   }

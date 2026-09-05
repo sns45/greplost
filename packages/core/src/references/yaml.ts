@@ -15,18 +15,30 @@
  * references are Kubernetes references with one extra source.
  */
 
-import type { FileRecord, ReferenceEdge, ReferenceRecord } from "../schema.ts";
+import type { FileRecord, RefKind, ReferenceEdge, ReferenceRecord } from "../schema.ts";
 import { isWorkflowPath } from "../extract/yaml.ts";
 import type { ReferenceContext } from "./link.ts";
 import { resolveYamlActionsReferences } from "./yaml-actions.ts";
 import { resolveYamlK8sReferences } from "./yaml-k8s.ts";
+
+/**
+ * The three mechanisms only a workflow produces (leaf 2.9).
+ *
+ * The path is no longer enough on its own: a composite action's `action.yml` and a workflow
+ * template outside `.github/workflows/` are both Actions files at other paths (see the
+ * classification ruling in `extract/yaml.ts`). The `refKind` is enough, and it was already the
+ * reason a mismatch here was safe — the two flavours' kinds are disjoint — so the dispatch is
+ * made on the thing that actually distinguishes them, with the path kept as the fallback for a
+ * kind no extractor emits.
+ */
+const ACTIONS_REF_KINDS: ReadonlySet<RefKind> = new Set<RefKind>(["needs", "uses", "config"]);
 
 export function resolveYamlReferences(
   file: FileRecord,
   ref: ReferenceRecord,
   ctx: ReferenceContext,
 ): ReferenceEdge | null {
-  return isWorkflowPath(file.path)
+  return ACTIONS_REF_KINDS.has(ref.refKind) || isWorkflowPath(file.path)
     ? resolveYamlActionsReferences(file, ref, ctx)
     : resolveYamlK8sReferences(file, ref, ctx);
 }

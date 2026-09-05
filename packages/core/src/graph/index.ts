@@ -10,5 +10,6 @@ export {
   importTargetsOf,
   resolvedImportTargets,
 } from "./directories.ts";
+export { impactPairs, nodesOf, referencedBy, referencesOf } from "./query.ts";
 export { computeMetrics } from "./metrics.ts";
 export type { ComputedMetrics, FileMetrics } from "./metrics.ts";

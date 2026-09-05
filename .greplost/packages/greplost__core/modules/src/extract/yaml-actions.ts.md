@@ -6,13 +6,40 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `extractYamlActions( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`
+**Exports:** `COMPOSITE_JOB_ID (const)`, `extractYamlActions(path: string, _lang: Lang, source: string, tree: Tree): YamlParts`, `isActionDefinitionPath(path: string): boolean`, `refOf(uses: string): string | null`, `runPathTokens(body: string): string[]`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (FileRecord, Lang), `web-tree-sitter` (Tree)
+**Imports:** `web-tree-sitter` (Node, Tree), [`../schema.ts`](../schema.ts.md) (DeclKind, Declaration, ExportRecord, FileRecord, Lang, ReferenceRecord, compareStrings, nodeId), [`./ts-signature.ts`](ts-signature.ts.md) (clip, lineOf), [`./yaml-doc.ts`](yaml-doc.ts.md) (YamlValue, documentValue, mapGet, mapPath, scalarAt, seqItems, yamlDocuments)
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md), [`packages/core/src/extract/yaml.ts`](yaml.ts.md)
 
 **Blast radius:** 44 files (`greplost impact packages/core/src/extract/yaml-actions.ts`)
 
 **Key symbols:**
-- `function extractYamlActions( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L12-19
+- `const COMPOSITE_JOB_ID = "runs"`  L60-60
+- `const MAX_RUN_META = 80`  L63-63
+- `const EXPRESSION = /\$\{\{/u`  L69-69
+- `const PATH_TOKEN = /^(?:\.\/)?[A-Za-z0-9._@+-]+(?:\/[A-Za-z0-9._@+-]+)*$/u`  L80-80
+- `const SHELL_SEPARATORS = /[\s;&|()<>"'`=,]+/u`  L83-83
+- `interface StepInput`  L86-90
+- `interface ActionsState`  L92-99
+- `function uniqueName(state: ActionsState, kind: DeclKind, name: string): string`  L113-126
+- `function metaOf(entries: ReadonlyArray<readonly [string, string | null]>): Record<string, string> | undefined`  L129-135
+- `function trimmedSpan(source: string, node: Node): [number, number]`  L144-153
+- `function addNode( state: ActionsState, source: string, kind: DeclKind, rawName: string, signature: string, node: Node, meta: Record<string, string> | undefined, ): Declaration`  L155-179
+- `function addReference( state: ActionsState, from: string, to: string, refKind: ReferenceRecord["refKind"], line: number, ): void`  L181-189
+- `function usableName(text: string | null): text is string`  L196-198
+- `function literal(text: string | null): text is string`  L201-203
+- `function scalarOrList(value: YamlValue | null): string | null`  L212-222
+- `function scalarList(value: YamlValue | null): Array<{ text: string; node: Node }>`  L225-233
+- `function runPathTokens(body: string): string[]`  L243-259
+- `function collectStep(state: ActionsState, source: string, step: StepInput): void`  L265-298
+- `function clipRun(body: string): string`  L301-303
+- `function refOf(uses: string): string | null`  L306-309
+- `function collectJob(state: ActionsState, source: string, id: string, body: YamlValue): void`  L315-366
+- `function collectNeeds(state: ActionsState, owner: string, body: YamlValue): void`  L369-374
+- `function isActionDefinitionPath(path: string): boolean`  L381-385
+- `function collectDocument(state: ActionsState, source: string, document: Node): void`  L387-409
+- `type YamlParts = Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L416-416
+- `function extractYamlActions(path: string, _lang: Lang, source: string, tree: Tree): YamlParts`  L422-434
+
+**Calls:** `clip` → [`packages/core/src/extract/ts-signature.ts#clip`](ts-signature.ts.md) (high), `lineOf` → [`packages/core/src/extract/ts-signature.ts#lineOf`](ts-signature.ts.md) (high), `addNode` → [`packages/core/src/extract/yaml-actions.ts#addNode`](yaml-actions.ts.md) (high), `addReference` → [`packages/core/src/extract/yaml-actions.ts#addReference`](yaml-actions.ts.md) (high), `clipRun` → [`packages/core/src/extract/yaml-actions.ts#clipRun`](yaml-actions.ts.md) (high), `collectDocument` → [`packages/core/src/extract/yaml-actions.ts#collectDocument`](yaml-actions.ts.md) (high), `collectJob` → [`packages/core/src/extract/yaml-actions.ts#collectJob`](yaml-actions.ts.md) (high), `collectNeeds` → [`packages/core/src/extract/yaml-actions.ts#collectNeeds`](yaml-actions.ts.md) (high), `collectStep` → [`packages/core/src/extract/yaml-actions.ts#collectStep`](yaml-actions.ts.md) (high), `isActionDefinitionPath` → [`packages/core/src/extract/yaml-actions.ts#isActionDefinitionPath`](yaml-actions.ts.md) (high), `literal` → [`packages/core/src/extract/yaml-actions.ts#literal`](yaml-actions.ts.md) (high), `metaOf` → [`packages/core/src/extract/yaml-actions.ts#metaOf`](yaml-actions.ts.md) (high), `refOf` → [`packages/core/src/extract/yaml-actions.ts#refOf`](yaml-actions.ts.md) (high), `runPathTokens` → [`packages/core/src/extract/yaml-actions.ts#runPathTokens`](yaml-actions.ts.md) (high), `scalarList` → [`packages/core/src/extract/yaml-actions.ts#scalarList`](yaml-actions.ts.md) (high), `scalarOrList` → [`packages/core/src/extract/yaml-actions.ts#scalarOrList`](yaml-actions.ts.md) (high), `trimmedSpan` → [`packages/core/src/extract/yaml-actions.ts#trimmedSpan`](yaml-actions.ts.md) (high), `uniqueName` → [`packages/core/src/extract/yaml-actions.ts#uniqueName`](yaml-actions.ts.md) (high), `usableName` → [`packages/core/src/extract/yaml-actions.ts#usableName`](yaml-actions.ts.md) (high), `documentValue` → [`packages/core/src/extract/yaml-doc.ts#documentValue`](yaml-doc.ts.md) (high), `mapGet` → [`packages/core/src/extract/yaml-doc.ts#mapGet`](yaml-doc.ts.md) (high), `mapPath` → [`packages/core/src/extract/yaml-doc.ts#mapPath`](yaml-doc.ts.md) (high), `scalarAt` → [`packages/core/src/extract/yaml-doc.ts#scalarAt`](yaml-doc.ts.md) (high), `seqItems` → [`packages/core/src/extract/yaml-doc.ts#seqItems`](yaml-doc.ts.md) (high), `yamlDocuments` → [`packages/core/src/extract/yaml-doc.ts#yamlDocuments`](yaml-doc.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `nodeId` → [`packages/core/src/schema.ts#nodeId`](../schema.ts.md) (high)
