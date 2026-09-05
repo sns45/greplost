@@ -149,13 +149,35 @@ export function provenanceOf(payload: Payload | null): string | null {
   return provenanceLine(date, sha, targetOf(payload));
 }
 
-export function firstMachine(payloads: readonly (Payload | null)[]): Record<string, unknown> | null {
+/**
+ * The first machine profile in the list, *and the suite that recorded it*.
+ *
+ * The suite matters as much as the profile. Payloads are pinned per suite and a suite is
+ * re-run when its own numbers change, so the profile shown at the top of RESULTS.md is one
+ * run's, not the document's: it said `greplostVersion 0.0.1` while the structural numbers
+ * underneath it were measured on a later build. A reader cannot be expected to guess that,
+ * so the report names the payload the profile came from and prints the structural
+ * payload's build beside it (leaf review, 2026-09-05).
+ */
+export function machineWithSource(
+  payloads: readonly (Payload | null)[],
+): { machine: Record<string, unknown>; suite: string } | null {
   for (const payload of payloads) {
     if (payload === null) continue;
     const machine = rec(payload.data["machine"]);
-    if (machine !== null && Object.keys(machine).length > 0) return machine;
+    if (machine === null || Object.keys(machine).length === 0) continue;
+    return { machine, suite: str(payload.data["suite"]) ?? payload.file };
   }
   return null;
+}
+
+/** `greplostVersion` and `greplostSha` a payload's machine profile recorded, when it has one. */
+export function buildOf(payload: Payload | null): { version: string; sha: string } | null {
+  const machine = payload === null ? null : rec(payload.data["machine"]);
+  if (machine === null) return null;
+  const version = str(machine["greplostVersion"]);
+  const sha = str(machine["greplostSha"]);
+  return version === null && sha === null ? null : { version: version ?? "-", sha: sha ?? "-" };
 }
 
 /**
@@ -196,12 +218,25 @@ export function mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel[
  * `bench/competitors.json`, and the Claude CLI and model the agent suite recorded
  * (tech spec 10.1, "pinned everything").
  */
-export function versionRows(agent: Payload | null, headtohead: Payload | null): { name: string; value: string }[] {
+export function versionRows(
+  agent: Payload | null,
+  headtohead: Payload | null,
+  structural: Payload | null = null,
+): { name: string; value: string }[] {
   const rows: { name: string; value: string }[] = [];
-  const machine = firstMachine([headtohead, agent]);
+  const source = machineWithSource([headtohead, agent]);
+  const machine = source?.machine ?? null;
   for (const key of ["greplostVersion", "greplostSha", "bun", "node", "go"]) {
     const value = machine === null ? null : machine[key];
-    if (typeof value === "string" && value.length > 0) rows.push({ name: key, value });
+    // The suite is part of the fact: these are the versions *that* run recorded, and the
+    // structural payload below may name another build entirely.
+    const name = source !== null && key.startsWith("greplost") ? `${key} (${source.suite})` : key;
+    if (typeof value === "string" && value.length > 0) rows.push({ name, value });
+  }
+  const built = buildOf(structural);
+  if (built !== null && source !== null && source.suite !== "structural") {
+    rows.push({ name: "greplostVersion (structural)", value: built.version });
+    rows.push({ name: "greplostSha (structural)", value: built.sha });
   }
   const claudeVersion = agent === null ? null : firstStr(agent.data, ["claudeVersion", "cli.version", "versions.claude"]);
   if (claudeVersion !== null) rows.push({ name: "claude CLI", value: claudeVersion });

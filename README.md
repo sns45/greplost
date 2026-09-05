@@ -72,20 +72,20 @@ Status: pre-release 0.1.0. Design: [docs/greplost-tech-spec.md](docs/greplost-te
 | Go | `go.mod` | imports as package directories, exported identifiers, call edges, cycles |
 | Python | `pyproject.toml`, `setup.py` or any `.py` | absolute, relative and namespace-package imports, module exports, call edges |
 | Rust | `Cargo.toml` | `mod`/`use` edges across the crate tree, public items, call edges |
-| Java | `pom.xml`, `build.gradle`, `build.gradle.kts` | package and type imports, public types and members, call edges |
+| Java | `pom.xml`, `build.gradle`, `build.gradle.kts` or any `.java` | package and type imports, public types and members, call edges |
 | Kotlin | any `.kt` or `.kts`, which includes a `build.gradle.kts` | imports, declarations and call edges (see the accuracy caveat below) |
 | Terraform (HCL) | any `.tf` | `resource`, `data`, `module`, `variable`, `output`, `provider` and `local` nodes, module edges, and reference edges between them |
 | Kubernetes YAML | a manifest whose first key is `apiVersion` | one node per object and per container image, with `selector`, `config-ref` and `from-image` edges |
 | Helm charts | `Chart.yaml` | the chart, its top-level values and one node per template document, with `helm-values` edges from a `.Values.<path>` back to the value it reads |
-| GitHub Actions | `.github/workflows/*.yml` | `job` and `step` nodes, `needs` edges between jobs, and `uses` edges to actions and reusable workflows |
-| Dockerfiles | any `Dockerfile*` or `Containerfile` | a node per build stage and per final image, `ARG`/`ENV` constants, and `from-image`, `copy-from` and `config` edges |
+| GitHub Actions | any `.yml` or `.yaml` under `.github/workflows/` | `job` and `step` nodes, `needs` edges between jobs, and `uses` edges to actions and reusable workflows |
+| Dockerfiles | `Dockerfile`, `Containerfile` or `Dockerfile.<suffix>` | a node per build stage and per final image, `ARG`/`ENV` constants, and `from-image`, `copy-from` and `config` edges |
 | React, TanStack Start, Next.js, Pulumi (TS and Go) | the framework in `package.json` or `go.mod` | components, routes, loaders, app routes and Pulumi resources as nodes on top of the language map |
 
 Things inside a file are nodes with ids of the form `<file>#<kind>.<name>`, and `greplost query` and `greplost impact` take one wherever they take a path. Call edges are only recorded when the callee resolves to one declaration (`high`) or through a re-export chain (`med`); nothing is guessed.
 
 `greplost init` writes `config.json` once and never rewrites it. Its `languages` start as the TypeScript family (`ts`, `tsx`, `js`, `jsx`) and gain every language whose marker above is in the indexed file set, so a repository with both a `go.mod` and a Terraform module gets both; the framework signal passes turn on the same way, from the dependency that names them. Edit the file to change it; a build that indexes nothing says so on stderr rather than writing an empty map in silence.
 
-Accuracy per language, the oracle each is measured against and what that oracle cannot see are published in [bench/RESULTS.md](bench/RESULTS.md) under "Languages, IaC and signals". Kotlin is the one language with no corpus compiler truth: its numbers are fixture numbers and are labelled `reported` rather than `gated`. The head-to-head numbers below cover TypeScript and Go only; no competitor was run on any language build 2 added.
+Accuracy per language, the oracle each is measured against and what that oracle cannot see are published in [bench/RESULTS.md](bench/RESULTS.md) under "Languages, IaC and signals". Kotlin is the one language with no corpus oracle: its numbers are fixture numbers and are labelled `reported` rather than `gated`. The head-to-head numbers below cover TypeScript and Go only; no competitor was run on any language build 2 added.
 
 ## Install
 
