@@ -14,18 +14,21 @@
  * oracle's tests skip with a printed reason instead of failing: a machine without a Kotlin
  * compiler has not disproved anything.
  */
-import { afterAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
   generateTruth,
-  hasKotlinToolchain,
   isFixtureRoot,
+  KOTLINC_FLOOR,
+  kotlincVersion,
+  kotlinToolchainProblem,
   kotlinToolOutput,
   kotlinTruthTool,
   NOTES,
 } from "../src/truth/kotlin.ts";
+import type { Truth } from "../src/truth/ts.ts";
 import { unsupportedMetrics } from "../src/structural.ts";
 import { edgeKey, exportKeys } from "../src/score.ts";
 
@@ -36,11 +39,22 @@ const toolDir = path.join(repoRoot, "bench", "truth", "kotlintruth");
 /** The three indexed files of the fixture. */
 const FIXTURE_FILES = ["src/tiny/App.kt", "src/tiny/Store.kt", "src/tiny/util/Retry.kt"];
 
-const toolchain = hasKotlinToolchain();
+/**
+ * A cold `kotlinc` takes seconds - a JVM start, then a compile - so every test that runs one
+ * says so. Bun's default is 5 s, which the CI runner blew twice before this was explicit.
+ */
+const COMPILE_TIMEOUT_MS = 180_000;
+
+/**
+ * The oracle needs a kotlinc at or above the floor it was written against, plus javap and
+ * python3. A machine without one has not disproved anything, so the describe below skips with
+ * one printed reason instead of failing - or timing out - on a compiler it was never given.
+ */
+const toolchainProblem = kotlinToolchainProblem();
+const toolchain = toolchainProblem === null;
 if (!toolchain) {
   console.warn(
-    "truth-kotlin: skipping the fixture oracle - kotlinc, javap or python3 is not on PATH " +
-      '(install the compiler with "brew install kotlin"); the reported-only rules still run',
+    `truth-kotlin: skipping the fixture oracle - ${toolchainProblem}; the reported-only rules still run`,
   );
 }
 
@@ -60,13 +74,18 @@ function copyFixture(): string {
 }
 
 describe.skipIf(!toolchain)("kotlin fixture oracle", () => {
-  const truth = toolchain ? generateTruth(fixtureRoot, FIXTURE_FILES) : null;
+  // The first compile runs in a hook with an explicit timeout rather than in the describe body,
+  // where it would be untimed collection work on the cold path and unbounded on a slow runner.
+  let truth: Truth | null = null;
+  beforeAll(() => {
+    truth = generateTruth(fixtureRoot, FIXTURE_FILES);
+  }, COMPILE_TIMEOUT_MS);
 
   test("no version string reaches the truth document", () => {
     // The positive half of the ruling: whatever the machine's kotlinc is, the document this
     // oracle hands the harness carries no trace of it.
     expect(JSON.stringify(truth)).not.toMatch(/\d+\.\d+\.\d+/u);
-  });
+  }, COMPILE_TIMEOUT_MS);
 
   test("the oracle compiles the fixture and reads the classfiles back", () => {
     // `run.sh` is what compiles; a run that never reached `javap` could not know any of this.
@@ -77,7 +96,7 @@ describe.skipIf(!toolchain)("kotlin fixture oracle", () => {
     // disclosed rather than hidden (leaf 2.6 fix round 1).
     expect([...NOTES]).toContain("internal-class-is-public-in-bytecode");
     expect([...NOTES]).toContain("object-protocol-overrides-dropped");
-  });
+  }, COMPILE_TIMEOUT_MS);
 
   test("a class is attributed to its .kt file by the SourceFile attribute, not by its name", () => {
     // `@file:JvmName("AppMain")` renames the class `App.kt` compiles into, and `Store.kt`
@@ -103,7 +122,7 @@ describe.skipIf(!toolchain)("kotlin fixture oracle", () => {
       "Store.put",
     ]);
     expect(truth?.exports["src/tiny/util/Retry.kt"]).toEqual(["String.shout", "retry"]);
-  });
+  }, COMPILE_TIMEOUT_MS);
 
   test("an extension is named by the receiver the compiler recorded, and a property by its name", () => {
     const names = exportKeys(truth?.exports ?? {});
@@ -118,7 +137,7 @@ describe.skipIf(!toolchain)("kotlin fixture oracle", () => {
     expect(names).not.toContain("src/tiny/Store.kt#Store.total");
     expect(names).not.toContain("src/tiny/Store.kt#Store.INSTANCE");
     expect(names).not.toContain("src/tiny/Store.kt#Item.copy");
-  });
+  }, COMPILE_TIMEOUT_MS);
 
   test("an import edge is a reference that crosses a package", () => {
     expect(keys(truth?.imports ?? [])).toEqual(["src/tiny/App.kt -> src/tiny/util/Retry.kt"]);
@@ -126,7 +145,7 @@ describe.skipIf(!toolchain)("kotlin fixture oracle", () => {
     // `Store` and `Item` without one, and neither is an edge.
     expect(truth?.imports.every((e) => e.kind === "import" && e.confidence === "high")).toBe(true);
     expect(truth?.cycles).toEqual([]);
-  });
+  }, COMPILE_TIMEOUT_MS);
 
   test("call edges come from the invoke instructions of each method body", () => {
     expect(keys(truth?.calls ?? [])).toEqual([
@@ -147,7 +166,7 @@ describe.skipIf(!toolchain)("kotlin fixture oracle", () => {
     // A SAM construction (`Handler { true }`) compiles to an `invokedynamic`, which is not an
     // `invoke*` to a method of an indexed class, so neither side has an edge for it.
     expect(keys(truth?.calls ?? []).some((key) => key.endsWith("#Handler"))).toBe(false);
-  });
+  }, COMPILE_TIMEOUT_MS);
 
   test("the run is cached by content under bench/.corpus/.tools", () => {
     const before = kotlinToolOutput(fixtureRoot, FIXTURE_FILES);
@@ -156,7 +175,7 @@ describe.skipIf(!toolchain)("kotlin fixture oracle", () => {
     const cacheDir = path.join(repoRoot, "bench", ".corpus", ".tools");
     const cached = readFileSync(path.join(cacheDir, cacheName(cacheDir)), "utf8");
     expect(JSON.parse(cached).files).toEqual(["tiny/App.kt", "tiny/Store.kt", "tiny/util/Retry.kt"]);
-  });
+  }, COMPILE_TIMEOUT_MS);
 
   test("a narrower file list narrows the universe on both ends", () => {
     const narrowed = generateTruth(fixtureRoot, ["src/tiny/Store.kt"]);
@@ -166,13 +185,13 @@ describe.skipIf(!toolchain)("kotlin fixture oracle", () => {
       "src/tiny/Store.kt#Box.Companion.of -> src/tiny/Store.kt#Box",
       "src/tiny/Store.kt#Store.put -> src/tiny/Store.kt#Store.accept",
     ]);
-  });
+  }, COMPILE_TIMEOUT_MS);
 
   test("a file list the compiler never covered is an error, not four perfect scores", () => {
     expect(() => generateTruth(fixtureRoot, ["src/tiny/Absent.kt"])).toThrow(
       /greplost: kotlin truth is empty for .*covered none of the 1 requested files/,
     );
-  });
+  }, COMPILE_TIMEOUT_MS);
 
   test("the oracle's output changes when the fixture changes", () => {
     const root = copyFixture();
@@ -187,7 +206,7 @@ describe.skipIf(!toolchain)("kotlin fixture oracle", () => {
     expect(after.exports["tiny/util/Retry.kt"]?.length ?? 0).toBe(
       (before.exports["tiny/util/Retry.kt"]?.length ?? 0) + 1,
     );
-  });
+  }, COMPILE_TIMEOUT_MS);
 });
 
 describe("reported only", () => {
@@ -214,6 +233,27 @@ describe("reported only", () => {
     expect(unsupportedMetrics([...NOTES])).toEqual([]);
   });
 
+  test("the toolchain probe holds kotlinc to the floor the oracle was written against", () => {
+    // CI's runner image carries an older kotlinc, and an older compiler emits different
+    // synthetics: the probe has to say "too old", not "present", or the oracle fails inside a
+    // test that was never given a compiler it can read (CI, 2026-09-05).
+    expect(KOTLINC_FLOOR).toEqual([2, 4]);
+    expect(kotlincVersion("info: kotlinc-jvm 2.4.10 (JRE 24.0.2+12)")).toEqual([2, 4, 10]);
+    expect(kotlincVersion("info: kotlinc-jvm 1.9.24 (JRE 17.0.10+7)")).toEqual([1, 9, 24]);
+    expect(kotlincVersion("bash: kotlinc: command not found")).toBeNull();
+  });
+
+  test("an absent or too-old kotlinc is a printed skip, never a failure", () => {
+    // The reason is one sentence and names which of the two it is, so a red CI log says what to
+    // install rather than what broke.
+    const problem = kotlinToolchainProblem();
+    if (problem !== null) {
+      expect(problem).toMatch(/no kotlinc on PATH|older than the 2\.4 floor|no recognisable version|not on PATH/u);
+    }
+    // Whatever this machine has, asking is cheap and never throws.
+    expect(() => kotlinToolchainProblem()).not.toThrow();
+  });
+
   test("the oracle's module graph carries no greplost code at runtime", () => {
     const source = readFileSync(path.join(repoRoot, "bench", "src", "truth", "kotlin.ts"), "utf8");
     // Any import of greplost's own code has to be a type-only import, which is erased.
@@ -238,9 +278,15 @@ describe("reported only", () => {
     // not valid for another, so the version belongs there - and nowhere else.
     const source = readFileSync(path.join(repoRoot, "bench", "src", "truth", "kotlin.ts"), "utf8");
     expect([...NOTES].join(" ")).not.toMatch(/\d+\.\d+\.\d+/u);
-    // The banner is read in exactly one place, and its one caller is the hash.
+    // The banner is read in exactly one place, and it is read for exactly two reasons: the
+    // cache key, and the toolchain floor check that decides whether these tests can run at all.
     expect(source.match(/^function compilerStamp\(\)/gmu)?.length ?? 0).toBe(1);
-    expect(source.match(/compilerStamp\(\)/gu)?.length ?? 0).toBe(2);
+    expect(source.match(/compilerStamp\(\)/gu)?.length ?? 0).toBe(3);
+    const problem = source.slice(
+      source.indexOf("export function kotlinToolchainProblem("),
+      source.indexOf("export function hasKotlinToolchain("),
+    );
+    expect(problem).toContain("const banner = compilerStamp();");
     const runHash = source.slice(source.indexOf("function runHash("), source.indexOf("function parseOutput("));
     expect(runHash).toContain("hash.update(compilerStamp())");
     // The other probe is the boolean one, whose output is discarded.
