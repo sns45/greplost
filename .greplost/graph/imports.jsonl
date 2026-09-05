@@ -169,7 +169,7 @@
 {"confidence":"high","from":"bench/src/truth/java.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
 {"confidence":"high","from":"bench/src/truth/java.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["Edge"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/truth/kotlin.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
-{"confidence":"high","from":"bench/src/truth/kotlin.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["execFileSync"],"to":"ext:node:child_process"}
+{"confidence":"high","from":"bench/src/truth/kotlin.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["execFileSync","spawnSync"],"to":"ext:node:child_process"}
 {"confidence":"high","from":"bench/src/truth/kotlin.ts","importKind":"static","kind":"import","specifier":"node:crypto","symbols":["createHash"],"to":"ext:node:crypto"}
 {"confidence":"high","from":"bench/src/truth/kotlin.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","mkdirSync","readFileSync","writeFileSync"],"to":"ext:node:fs"}
 {"confidence":"high","from":"bench/src/truth/kotlin.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}

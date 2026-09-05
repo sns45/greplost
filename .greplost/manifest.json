@@ -738,19 +738,22 @@
     "bench/src/truth/kotlin.ts": {
       "blast": 0,
       "exports": [
+        "KOTLINC_FLOOR",
         "NOTES",
         "generateTruth",
         "hasKotlinToolchain",
         "isFixtureRoot",
         "kotlinToolOutput",
-        "kotlinTruthTool"
+        "kotlinToolchainProblem",
+        "kotlinTruthTool",
+        "kotlincVersion"
       ],
       "fanIn": 0,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 347,
+      "loc": 429,
       "pkg": "@greplost/bench",
-      "sha256": "43f8f58115b5fba876c7f20d394eab1d8f9c3976eb6c5e686e11f21a03283299",
+      "sha256": "fdfdc56514acc0c1664b659d6af232665efaeebc0d3f09e7d224409bdcdca83b",
       "staleSummary": false
     },
     "bench/src/truth/python.ts": {
@@ -1446,9 +1449,9 @@
       "fanIn": 1,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 724,
+      "loc": 772,
       "pkg": "@greplost/core",
-      "sha256": "628f2a2c6b6f6e932c3131fd8fb96d0a56f523514dd82e288d4cca5e992b758d",
+      "sha256": "72671b30d3a16c89b182aa837fc983c106ee41a9a6acd1b3590554fba90bd50c",
       "staleSummary": false
     },
     "packages/core/src/extract/python.ts": {
@@ -2250,15 +2253,16 @@
         "buildKotlinCallIndex",
         "createKotlinResolver",
         "kotlinPackageOf",
+        "kotlinStripped",
         "kotlinTopLevelNames",
         "resolveKotlinCall"
       ],
       "fanIn": 3,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 429,
+      "loc": 565,
       "pkg": "@greplost/core",
-      "sha256": "e5ae0b0f116c963ae483580603dc493b60a549e180b25ad60badc1e2e5bec924",
+      "sha256": "582e5ad611a38640e86ab52d84683166585e6732e7d0acc822550df9f2dd5504",
       "staleSummary": false
     },
     "packages/core/src/resolve/packages.ts": {
@@ -3458,14 +3462,14 @@
         "@greplost/sync"
       ],
       "files": 49,
-      "loc": 24919,
+      "loc": 25001,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 65,
-      "loc": 17872,
+      "loc": 18056,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",

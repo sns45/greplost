@@ -57,7 +57,7 @@
 
 ## packages/core/src/extract/kotlin.ts
 
-- `function extractKotlin( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L701-724
+- `function extractKotlin( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L747-772
 
 ## packages/core/src/extract/python.ts
 
@@ -357,12 +357,13 @@
 
 ## packages/core/src/resolve/kotlin.ts
 
-- `function kotlinPackageOf(source: string): string` L67-78
-- `function kotlinTopLevelNames(source: string): Set<string>` L88-109
-- `function createKotlinResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L126-231
-- `interface KotlinCallIndex` L244-255
-- `function buildKotlinCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): KotlinCallIndex` L275-341
-- `function resolveKotlinCall( file: FileRecord, site: CallSite, index: KotlinCallIndex, ): { to: string; confidence: Confidence } | null` L377-429
+- `function kotlinStripped(source: string): string` L91-145
+- `function kotlinPackageOf(source: string): string` L154-165
+- `function kotlinTopLevelNames(source: string): Set<string>` L175-196
+- `function createKotlinResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L213-316
+- `interface KotlinCallIndex` L337-348
+- `function buildKotlinCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): KotlinCallIndex` L368-439
+- `function resolveKotlinCall( file: FileRecord, site: CallSite, index: KotlinCallIndex, ): { to: string; confidence: Confidence } | null` L510-565
 
 ## packages/core/src/resolve/packages.ts
 

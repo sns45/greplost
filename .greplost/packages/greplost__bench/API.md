@@ -439,12 +439,15 @@
 
 ## bench/src/truth/kotlin.ts
 
-- `const NOTES: readonly string[] = [ "fixture-oracle-only", "no-corpus-compiler-truth", "kotlinc-javap-classfiles", "jvm-synthetics-dropped", "property-access-not-a-call", ]` L59-65
-- `function kotlinTruthTool(): string` L102-108
-- `function hasKotlinToolchain(): boolean` L116-129
-- `function isFixtureRoot(root: string): boolean` L132-135
-- `function kotlinToolOutput(root: string, files: readonly string[]): KotlinToolOutput` L188-212
-- `function generateTruth(root: string, files: string[]): Truth` L272-347
+- `const NOTES: readonly string[] = [ "fixture-oracle-only", "no-corpus-compiler-truth", "kotlinc-javap-classfiles", "jvm-synthetics-dropped", "property-access-not-a-call", "internal-class-is-pub…` L77-85
+- `function kotlinTruthTool(): string` L122-128
+- `const KOTLINC_FLOOR: readonly [number, number] = [2, 4]` L140-140
+- `function kotlincVersion(banner: string): [number, number, number] | null` L143-147
+- `function kotlinToolchainProblem(): string | null` L155-177
+- `function hasKotlinToolchain(): boolean` L185-187
+- `function isFixtureRoot(root: string): boolean` L190-193
+- `function kotlinToolOutput(root: string, files: readonly string[]): KotlinToolOutput` L270-294
+- `function generateTruth(root: string, files: string[]): Truth` L354-429
 
 ## bench/src/truth/python.ts
 

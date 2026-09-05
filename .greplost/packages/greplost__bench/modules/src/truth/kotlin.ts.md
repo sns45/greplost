@@ -6,38 +6,42 @@
 
 **Package:** `@greplost/bench` ([map](../../../MAP.md))
 
-**Exports:** `NOTES (const)`, `generateTruth(root: string, files: string[]): Truth`, `hasKotlinToolchain(): boolean`, `isFixtureRoot(root: string): boolean`, `kotlinToolOutput(root: string, files: readonly string[]): KotlinToolOutput`, `kotlinTruthTool(): string`
+**Exports:** `KOTLINC_FLOOR (const)`, `NOTES (const)`, `generateTruth(root: string, files: string[]): Truth`, `hasKotlinToolchain(): boolean`, `isFixtureRoot(root: string): boolean`, `kotlinToolOutput(root: string, files: readonly string[]): KotlinToolOutput`, `kotlinToolchainProblem(): string | null`, `kotlinTruthTool(): string`, `kotlincVersion(banner: string): [number, number, number] | null`
 
-**Imports:** `node:child_process` (execFileSync), `node:crypto` (createHash), `node:fs` (existsSync, mkdirSync, readFileSync, writeFileSync), `node:path` (default), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Edge), [`./ts.ts`](ts.ts.md) (Truth)
+**Imports:** `node:child_process` (execFileSync, spawnSync), `node:crypto` (createHash), `node:fs` (existsSync, mkdirSync, readFileSync, writeFileSync), `node:path` (default), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Edge), [`./ts.ts`](ts.ts.md) (Truth)
 
 **Imported by:** None.
 
 **Blast radius:** 0 files (`greplost impact bench/src/truth/kotlin.ts`)
 
 **Key symbols:**
-- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..", "..")`  L40-40
-- `const TOOL_SOURCE_DIR = path.join(REPO_ROOT, "bench", "truth", "kotlintruth")`  L42-42
-- `const TOOL_CACHE_DIR = path.join(REPO_ROOT, "bench", ".corpus", ".tools")`  L43-43
-- `const TOOL_SOURCES = ["run.sh", "parse_javap.py"] as const`  L45-45
-- `const FIXTURE_DIR = path.join(REPO_ROOT, "fixtures")`  L47-47
-- `const RUN_TIMEOUT_MS = 10 * 60 * 1000`  L49-49
-- `const MAX_BUFFER = 128 * 1024 * 1024`  L50-50
-- `const NOTES: readonly string[] = [ "fixture-oracle-only", "no-corpus-compiler-truth", "kotlinc-javap-classfiles", "jvm-synthetics-dropped", "property-access-not-a-call", ]`  L59-65
-- `const REPORTED_ONLY = "reported-only"`  L68-68
-- `interface KotlinToolOutput`  L71-77
-- `function compare(a: string, b: string): number`  L83-85
-- `function compareEdge(a: Edge, b: Edge): number`  L87-89
-- `function edge(from: string, to: string, kind: Edge["kind"]): Edge`  L91-93
-- `function fileOf(id: string): string`  L96-99
-- `function kotlinTruthTool(): string`  L102-108
-- `function hasKotlinToolchain(): boolean`  L116-129
-- `function isFixtureRoot(root: string): boolean`  L132-135
-- `function stderrOf(cause: unknown): string`  L137-142
-- `function runHash(root: string, files: readonly string[]): string`  L145-163
-- `function parseOutput(stdout: string, root: string): KotlinToolOutput`  L165-180
-- `function kotlinToolOutput(root: string, files: readonly string[]): KotlinToolOutput`  L188-212
-- `function mapKey(key: string, files: readonly string[]): string | null`  L221-224
-- `function cyclesOf(nodes: readonly string[], edges: readonly Edge[]): string[][]`  L234-264
-- `function generateTruth(root: string, files: string[]): Truth`  L272-347
+- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..", "..")`  L47-47
+- `const TOOL_SOURCE_DIR = path.join(REPO_ROOT, "bench", "truth", "kotlintruth")`  L49-49
+- `const TOOL_CACHE_DIR = path.join(REPO_ROOT, "bench", ".corpus", ".tools")`  L50-50
+- `const TOOL_SOURCES = ["run.sh", "parse_javap.py"] as const`  L52-52
+- `const FIXTURE_DIR = path.join(REPO_ROOT, "fixtures")`  L54-54
+- `const RUN_TIMEOUT_MS = 10 * 60 * 1000`  L56-56
+- `const MAX_BUFFER = 128 * 1024 * 1024`  L57-57
+- `const NOTES: readonly string[] = [ "fixture-oracle-only", "no-corpus-compiler-truth", "kotlinc-javap-classfiles", "jvm-synthetics-dropped", "property-access-not-a-call", "internal-class-is-pub…`  L77-85
+- `const REPORTED_ONLY = "reported-only"`  L88-88
+- `interface KotlinToolOutput`  L91-97
+- `function compare(a: string, b: string): number`  L103-105
+- `function compareEdge(a: Edge, b: Edge): number`  L107-109
+- `function edge(from: string, to: string, kind: Edge["kind"]): Edge`  L111-113
+- `function fileOf(id: string): string`  L116-119
+- `function kotlinTruthTool(): string`  L122-128
+- `const KOTLINC_FLOOR: readonly [number, number] = [2, 4]`  L140-140
+- `function kotlincVersion(banner: string): [number, number, number] | null`  L143-147
+- `function kotlinToolchainProblem(): string | null`  L155-177
+- `function hasKotlinToolchain(): boolean`  L185-187
+- `function isFixtureRoot(root: string): boolean`  L190-193
+- `function stderrOf(cause: unknown): string`  L195-200
+- `function compilerStamp(): string`  L211-219
+- `function runHash(root: string, files: readonly string[]): string`  L225-245
+- `function parseOutput(stdout: string, root: string): KotlinToolOutput`  L247-262
+- `function kotlinToolOutput(root: string, files: readonly string[]): KotlinToolOutput`  L270-294
+- `function mapKey(key: string, files: readonly string[]): string | null`  L303-306
+- `function cyclesOf(nodes: readonly string[], edges: readonly Edge[]): string[][]`  L316-346
+- `function generateTruth(root: string, files: string[]): Truth`  L354-429
 
-**Calls:** `compare` → [`bench/src/truth/kotlin.ts#compare`](kotlin.ts.md) (high), `cyclesOf` → [`bench/src/truth/kotlin.ts#cyclesOf`](kotlin.ts.md) (high), `edge` → [`bench/src/truth/kotlin.ts#edge`](kotlin.ts.md) (high), `fileOf` → [`bench/src/truth/kotlin.ts#fileOf`](kotlin.ts.md) (high), `isFixtureRoot` → [`bench/src/truth/kotlin.ts#isFixtureRoot`](kotlin.ts.md) (high), `kotlinToolOutput` → [`bench/src/truth/kotlin.ts#kotlinToolOutput`](kotlin.ts.md) (high), `kotlinTruthTool` → [`bench/src/truth/kotlin.ts#kotlinTruthTool`](kotlin.ts.md) (high), `mapKey` → [`bench/src/truth/kotlin.ts#mapKey`](kotlin.ts.md) (high), `parseOutput` → [`bench/src/truth/kotlin.ts#parseOutput`](kotlin.ts.md) (high), `runHash` → [`bench/src/truth/kotlin.ts#runHash`](kotlin.ts.md) (high), `stderrOf` → [`bench/src/truth/kotlin.ts#stderrOf`](kotlin.ts.md) (high)
+**Calls:** `compare` → [`bench/src/truth/kotlin.ts#compare`](kotlin.ts.md) (high), `compilerStamp` → [`bench/src/truth/kotlin.ts#compilerStamp`](kotlin.ts.md) (high), `cyclesOf` → [`bench/src/truth/kotlin.ts#cyclesOf`](kotlin.ts.md) (high), `edge` → [`bench/src/truth/kotlin.ts#edge`](kotlin.ts.md) (high), `fileOf` → [`bench/src/truth/kotlin.ts#fileOf`](kotlin.ts.md) (high), `isFixtureRoot` → [`bench/src/truth/kotlin.ts#isFixtureRoot`](kotlin.ts.md) (high), `kotlinToolOutput` → [`bench/src/truth/kotlin.ts#kotlinToolOutput`](kotlin.ts.md) (high), `kotlinToolchainProblem` → [`bench/src/truth/kotlin.ts#kotlinToolchainProblem`](kotlin.ts.md) (high), `kotlinTruthTool` → [`bench/src/truth/kotlin.ts#kotlinTruthTool`](kotlin.ts.md) (high), `kotlincVersion` → [`bench/src/truth/kotlin.ts#kotlincVersion`](kotlin.ts.md) (high), `mapKey` → [`bench/src/truth/kotlin.ts#mapKey`](kotlin.ts.md) (high), `parseOutput` → [`bench/src/truth/kotlin.ts#parseOutput`](kotlin.ts.md) (high), `runHash` → [`bench/src/truth/kotlin.ts#runHash`](kotlin.ts.md) (high), `stderrOf` → [`bench/src/truth/kotlin.ts#stderrOf`](kotlin.ts.md) (high)
