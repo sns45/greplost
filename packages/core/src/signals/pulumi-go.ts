@@ -54,11 +54,12 @@
  *  - a value that reads `<var>.<Field>` where `<var>` is another resource in this file.
  *    `vpc.ID()` and `bucket.Arn` both reduce to the same `selector_expression`, so a method
  *    call and a field read need one rule between them; the reference's `to` is `<var>.<Field>`.
- *  - a bare identifier naming another resource inside `pulumi.Parent(...)` or
- *    `pulumi.DependsOn(...)`, whose `to` is the bare `<var>`. Those two options are a
- *    dependency the map would otherwise lose entirely (driver ruling, leaf 2.7 review item 2);
- *    `pulumi.Provider(...)` and the rest are deliberately not read, so a bare identifier
- *    anywhere else is never an edge.
+ *  - a bare identifier naming another resource inside one of the four resource options that
+ *    name a resource outright — `pulumi.Parent(...)`, `pulumi.DependsOn(...)`,
+ *    `pulumi.Provider(...)` and `pulumi.Providers(...)` — whose `to` is the bare `<var>`. Each
+ *    is a dependency the map would otherwise lose entirely (driver ruling, leaf 2.7 review
+ *    item 2 and the follow-up on fix round 1's concern 1). No other option is read, so a bare
+ *    identifier anywhere else is never an edge.
  *
  * Confidence is the linker's call (`references/go.ts`).
  *
@@ -92,8 +93,16 @@ const ADOPTION = /^Get[A-Z]/u;
 const ADOPTION_ARITY = 4;
 /** A Go module major-version suffix, which is never the package name. */
 const VERSION_SEGMENT = /^v[0-9]+$/u;
-/** The resource options that name another resource outright (driver ruling, review item 2). */
-const RESOURCE_OPTIONS: ReadonlySet<string> = new Set(["DependsOn", "Parent"]);
+/**
+ * The resource options that name another resource outright (driver ruling, review item 2 and
+ * the follow-up ruling on fix round 1's concern 1).
+ *
+ * `Parent` and `DependsOn` name a resource this one hangs off or waits for; `Provider` and
+ * `Providers` name the provider resource that will create it, which is a resource too and a
+ * dependency the map would otherwise lose. `pulumi.Provider(awsProvider)` alone accounts for
+ * seventeen edges in the pinned corpus.
+ */
+const RESOURCE_OPTIONS: ReadonlySet<string> = new Set(["DependsOn", "Parent", "Provider", "Providers"]);
 /** Characters `nodeId` refuses in a name; a logical name carrying one falls back to an index. */
 const UNUSABLE_IN_NAME = /[#\n\0]/u;
 
@@ -426,9 +435,8 @@ function lowerFirst(name: string): string {
  *  - `<var>.<Field>` where `<var>` names another resource in this file. `vpc.ID()` is a
  *    `call_expression` wrapping exactly that selector, and `bucket.Arn.ApplyT(f)`'s innermost
  *    selector is still `bucket.Arn`, so a method call and a field read need one rule.
- *  - a bare `<var>` inside `pulumi.Parent(...)` or `pulumi.DependsOn(...)`. A bare identifier is
- *    only ever read inside those two, so `pulumi.Provider(p)` and an args field holding a
- *    resource value produce nothing.
+ *  - a bare `<var>` inside one of the four options in `RESOURCE_OPTIONS`. A bare identifier is
+ *    only ever read inside those, so an args field holding a resource value produces nothing.
  */
 function resourceInputs(
   args: Node,
@@ -469,7 +477,7 @@ function resourceInputs(
   return out;
 }
 
-/** The `argument_list` of a `pulumi.Parent(...)`/`pulumi.DependsOn(...)` call, or null. */
+/** The `argument_list` of a resource option that names a resource outright, or null. */
 function resourceOptionArguments(call: Node, core: ReadonlySet<string>): Node | null {
   const callee = field(call, "function");
   if (callee === null || callee.type !== "selector_expression") return null;

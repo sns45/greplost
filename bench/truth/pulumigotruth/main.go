@@ -102,6 +102,9 @@ const (
 	sdkPrefix   = "github.com/pulumi/pulumi/sdk/"
 	sdkPkgSufix = "/go/pulumi"
 	resourceIfc = "Resource"
+	// The declaration kind every node this program reports carries, which is also
+	// the receiver type name whose methods a node id could collide with.
+	nodeKind = "resource"
 )
 
 func main() {
@@ -310,6 +313,14 @@ func scanFile(
 ) {
 	bound := bindings(syntax)
 	names := newAllocator()
+	// Seeded with the file's own declarations, exactly as greplost seeds from the
+	// records its extractor produced: a Go method on a lower-case type named
+	// `resource` has the symbol path `resource.bucket`, which is the id a
+	// `resource.bucket` node would otherwise claim. Both sides have to move the
+	// node to `~2`, or they disagree about a file neither of them got wrong.
+	for _, name := range declaredNodeNames(syntax) {
+		names.take(name)
+	}
 	byBinding := map[string]string{}
 	type resourceCall struct {
 		name string
@@ -357,6 +368,48 @@ func scanFile(
 				Symbols: []string{read.text},
 			}
 			refs[ref.From+" -> "+ref.To+" ("+read.text+")"] = ref
+		}
+	}
+}
+
+// declaredNodeNames is every method name of a type named `resource`, in source
+// order.
+//
+// A Go symbol path is the declaration's own name, except for a method, which is
+// "<receiver type>.<name>" — so a `resource.` prefix can come from nothing else.
+// The allocator only has to know the names a node could collide with.
+func declaredNodeNames(syntax *ast.File) []string {
+	var out []string
+	for _, decl := range syntax.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok || fn.Recv == nil || len(fn.Recv.List) == 0 || fn.Name == nil {
+			continue
+		}
+		if receiverTypeName(fn.Recv.List[0].Type) != nodeKind {
+			continue
+		}
+		out = append(out, fn.Name.Name)
+	}
+	return out
+}
+
+// receiverTypeName is a method receiver's base type name, with the pointer and
+// the type parameters of a generic receiver taken off: `*Store[T]` -> `Store`.
+func receiverTypeName(expr ast.Expr) string {
+	for {
+		switch typed := expr.(type) {
+		case *ast.StarExpr:
+			expr = typed.X
+		case *ast.IndexExpr:
+			expr = typed.X
+		case *ast.IndexListExpr:
+			expr = typed.X
+		case *ast.ParenExpr:
+			expr = typed.X
+		case *ast.Ident:
+			return typed.Name
+		default:
+			return ""
 		}
 	}
 }

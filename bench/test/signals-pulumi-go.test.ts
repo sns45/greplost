@@ -245,6 +245,56 @@ describe("go types oracle", () => {
   );
 
   test(
+    "a resource node never collides with a language declaration, on this side either",
+    () => {
+      // A Go method `bucket` on a lower-case type `resource` has the symbol path
+      // `resource.bucket`, which is the id a `resource.bucket` node would claim. greplost
+      // seeds its allocator from the records its extractor produced; this oracle seeds from
+      // the same declarations in the syntax, so both move the node to `~2`.
+      const root = copyFixture("collide");
+      writeFileSync(
+        path.join(root, "collide.go"),
+        "package main\n\n" +
+          'import (\n\t"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/s3"\n\t"github.com/pulumi/pulumi/sdk/v3/go/pulumi"\n)\n\n' +
+          "type resource struct{}\n\n" +
+          'func (r resource) bucket() string { return "" }\n\n' +
+          "func collide(ctx *pulumi.Context) error {\n" +
+          '\tbucket, err := s3.NewBucket(ctx, "collide", &s3.BucketArgs{})\n' +
+          "\t_ = bucket\n\treturn err\n}\n",
+      );
+      const nodes = generateExtra(root, fixtureFiles(root)).nodes.filter((id) =>
+        id.startsWith("collide.go"),
+      );
+      expect(nodes).toEqual(["collide.go#resource.bucket~2"]);
+    },
+    SLOW,
+  );
+
+  test(
+    "a provider option is a resource-input edge on this side too",
+    () => {
+      const root = copyFixture("providers");
+      writeFileSync(
+        path.join(root, "providers.go"),
+        "package main\n\n" +
+          'import (\n\t"github.com/pulumi/pulumi-aws/sdk/v6/go/aws"\n' +
+          '\t"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/s3"\n' +
+          '\t"github.com/pulumi/pulumi/sdk/v3/go/pulumi"\n)\n\n' +
+          "func providers(ctx *pulumi.Context) error {\n" +
+          '\tp, err := aws.NewProvider(ctx, "p", &aws.ProviderArgs{})\n' +
+          "\tif err != nil {\n\t\treturn err\n\t}\n" +
+          '\tb, err := s3.NewBucket(ctx, "b", &s3.BucketArgs{}, pulumi.Provider(p))\n' +
+          "\t_ = b\n\treturn err\n}\n",
+      );
+      const edges = generateExtra(root, fixtureFiles(root))
+        .references.filter((edge) => edge.from.startsWith("providers.go"))
+        .map((edge) => [edge.from, edge.to, (edge.symbols ?? []).join(",")]);
+      expect(edges).toEqual([["providers.go#resource.b", "providers.go#resource.p", "p"]]);
+    },
+    SLOW,
+  );
+
+  test(
     "it throws rather than returning an empty truth for files it could not load",
     () => {
       expect(() => generateExtra(FIXTURE, ["does/not/exist.go"])).toThrow(/loaded none of 1 file/);

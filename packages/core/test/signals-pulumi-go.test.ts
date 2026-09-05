@@ -424,14 +424,35 @@ describe("resource inputs", () => {
     expect(refs(out)).toEqual([]);
   });
 
+  test("a provider option names a resource the target depends on", () => {
+    const out = signals(
+      "main.go",
+      program(
+        '\tp, _ := aws.NewProvider(ctx, "p", &aws.ProviderArgs{})\n' +
+          '\tq, _ := aws.NewProvider(ctx, "q", &aws.ProviderArgs{})\n' +
+          '\tbucket, _ := s3.NewBucket(ctx, "b", &s3.BucketArgs{}, pulumi.Provider(p))\n' +
+          '\tobj, _ := s3.NewBucketObject(ctx, "o", &s3.BucketObjectArgs{}, pulumi.Providers(p, q))\n' +
+          "\t_, _, _, _ = p, q, bucket, obj\n",
+        '\t"github.com/pulumi/pulumi-aws/sdk/v6/go/aws"\n' +
+          '\t"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/s3"\n' +
+          '\t"github.com/pulumi/pulumi/sdk/v3/go/pulumi"\n',
+      ),
+    );
+    expect(refs(out).map((r) => [r.from, r.to, r.refKind])).toEqual([
+      ["resource.bucket", "p", "resource-input"],
+      ["resource.obj", "p", "resource-input"],
+      ["resource.obj", "q", "resource-input"],
+    ]);
+  });
+
   test("a bare identifier outside a resource option is not a reference", () => {
-    // `pulumi.Provider` and the args struct both mention `bucket`; only the two option calls
-    // the ruling names read a bare identifier, so nothing here is an edge.
+    // The args struct mentions `bucket`; only the four options in `RESOURCE_OPTIONS` read a
+    // bare identifier, and `pulumi.Timeouts` is not one of them.
     const out = signals(
       "main.go",
       program(
         '\tbucket, _ := s3.NewBucket(ctx, "b", &s3.BucketArgs{})\n' +
-          '\tobj, _ := s3.NewBucketObject(ctx, "o", &s3.BucketObjectArgs{}, pulumi.Provider(bucket))\n' +
+          '\tobj, _ := s3.NewBucketObject(ctx, "o", &s3.BucketObjectArgs{Source: bucket}, pulumi.Timeouts(bucket))\n' +
           "\t_, _ = bucket, obj\n",
         '\t"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/s3"\n\t"github.com/pulumi/pulumi/sdk/v3/go/pulumi"\n',
       ),
