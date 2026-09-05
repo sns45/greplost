@@ -1,12 +1,12 @@
 /**
  * greplost:render support for non-file nodes (leaf 2.11, spec sections 0.2 and 4).
  *
- * A non-file node — a Terraform resource, a workflow job, a Dockerfile stage, a
- * Kubernetes document, a route, a Pulumi resource — is a `Declaration` whose
+ * A non-file node, a Terraform resource, a workflow job, a Dockerfile stage, a
+ * Kubernetes document, a route, a Pulumi resource, is a `Declaration` whose
  * `kind` is in `NODE_KINDS` and never a manifest entry. This file holds the
  * render half of that contract: the card path (slugged, never carrying a `#`),
  * the card itself, the file card's Nodes block, the caps, the collision guard,
- * and the two goldens — `tiny-terraform` for what nodes look like, `tiny-ts`
+ * and the two goldens, `tiny-terraform` for what nodes look like, `tiny-ts`
  * for the regression that says a repo without them does not move one byte.
  *
  * `GREPLOST_UPDATE_GOLDEN=1 bun test packages/render/test/nodes.test.ts`

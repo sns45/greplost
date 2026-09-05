@@ -7,8 +7,8 @@
  * language-native address that produced it (`bucket.ID`, `vpc.Arn`), and its head is the
  * binding name.
  *
- * Why there is no `med` branch here, unlike `references/ts.ts`. Spec 3.5's second rule — "`med`
- * when it is imported from exactly one other indexed file that declares it" — has no Go
+ * Why there is no `med` branch here, unlike `references/ts.ts`. Spec 3.5's second rule, "`med`
+ * when it is imported from exactly one other indexed file that declares it", has no Go
  * analogue: a Pulumi Go resource is bound by a function-local `:=`, and a Go import binds a
  * *package*, never a resource. There is no name to hop through, so a head that is not a
  * resource in this file resolves to nothing and the reference is dropped. Ambiguity is dropped

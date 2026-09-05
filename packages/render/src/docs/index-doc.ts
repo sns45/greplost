@@ -10,7 +10,7 @@
  * all down to 10; (2) limit the tree to depth 2, then depth 1, then drop it;
  * (3) drop the hotspot lists. Each step re-maximises K against the smaller
  * document, so the largest K that fits is always the one used (ruling
- * 2026-09-02) — pinning K at the floor of 10 once the tree was cut left a
+ * 2026-09-02), pinning K at the floor of 10 once the tree was cut left a
  * 501-package INDEX using 652 of its 3000 tokens. A final backstop takes the
  * table below its floor of 10, down to 0, so the postcondition holds for any
  * input at all.
@@ -72,7 +72,7 @@ export function buildIndex(ctx: DocContext): string {
   };
 
   // (1) and (2): the table down to its floor of 10, then the tree to depth 2,
-  // depth 1 and gone — re-maximising K against each smaller tree. (3) The
+  // depth 1 and gone, re-maximising K against each smaller tree. (3) The
   // hotspot lists go last, and K is re-maximised once more without them.
   for (const hotspots of [true, false]) {
     for (const treeDepth of TREE_STEPS) {

@@ -43,8 +43,8 @@ Exit codes: 0 success, 1 drift or not found, 2 usage error.
 
 ## Full documentation
 
-Everything else — the artifact layout, the Claude Code plugin, the benchmark
-results, and the design spec — is in the project README:
+Everything else, the artifact layout, the Claude Code plugin, the benchmark
+results, and the design spec, is in the project README:
 <https://github.com/sns45/greplost#readme>.
 
 Apache 2.0 licensed.

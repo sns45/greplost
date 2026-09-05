@@ -82,7 +82,7 @@ export interface BuildOptions {
   /**
    * Out-parameter: discovery appends, sorted, every candidate path it had to
    * skip because the path itself cannot be a map id (it holds a `#`, a newline
-   * or a NUL — see `isMappablePath`). A caller that passes one can report the
+   * or a NUL; see `isMappablePath`). A caller that passes one can report the
    * count; one that does not still gets the same snapshot.
    */
   skipped?: string[];
@@ -348,7 +348,7 @@ function freezeRecord(record: FileRecord): FileRecord {
  * Schema 2: a non-file node's id is `<file>#<kind>.<name>` and not
  * `<file>#<name>`, so re-addressing has to ask which form the declaration
  * takes. `symbolId` alone silently dropped the kind, which only shows up when
- * two files have *identical bytes* — 727 of terraform-aws-vpc's 1,909
+ * two files have *identical bytes*, 727 of terraform-aws-vpc's 1,909
  * declarations, because its per-example `outputs.tf` files are copies of one
  * another.
  *

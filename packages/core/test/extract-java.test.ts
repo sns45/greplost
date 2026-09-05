@@ -483,8 +483,8 @@ public class Sub extends Base {
 `,
     });
     // javac resolves `size()` to the inherited `Base.size`, which spec 1.4 drops. The field
-    // `Sub.size` is not callable and must never stand in for it: only a `method` — or, for a
-    // `new`, a type — is a call target.
+    // `Sub.size` is not callable and must never stand in for it: only a `method`, or, for a
+    // `new`, a type, is a call target.
     expect(edges).toEqual([]);
   });
 

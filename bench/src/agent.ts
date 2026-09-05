@@ -897,7 +897,7 @@ function parseArgs(args: string[]): Options {
   // `--fixture` only chooses the repo and the task set, and the runner still resolves
   // `claude` on PATH. Under `bun test` that is a fake binary, but a developer running
   // `bench agent --fixture` on their own machine reaches the real CLI and bills a real
-  // account — with no ceiling, which is precisely the dangerous case. A cap that is
+  // account, with no ceiling, which is precisely the dangerous case. A cap that is
   // never reached costs a hermetic run nothing (review round 3, important 6).
   options.maxUsd = maxUsd ?? DEFAULT_MAX_USD;
 

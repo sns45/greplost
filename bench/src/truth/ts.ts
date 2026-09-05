@@ -62,9 +62,9 @@ export interface Truth {
    * Emulations the truth generator applied, for `RESULTS.md` to disclose. Two of them, each
    * present only when at least one edge actually came from it:
    *
-   *  - `workspace-entry-mapping` — the installed-and-built state a corpus clone does not have
+   *  - `workspace-entry-mapping`, the installed-and-built state a corpus clone does not have
    *    (see `truth/ts-workspace.ts`).
-   *  - `nearest-tsconfig-resolution` — the specifier was resolved with the compiler options of
+   *  - `nearest-tsconfig-resolution`: the specifier was resolved with the compiler options of
    *    the nearest `tsconfig.json` above the importing file, and only after standard resolution
    *    from the repo root failed to land on a file already in the scored set. A corpus of
    *    independent example apps keeps its `paths` aliases there, not at the root (leaf 2.3).
@@ -240,7 +240,7 @@ export function generateTsTruth(root: string, files: string[], options: TruthOpt
     // A corpus of many independent apps has many tsconfigs, and the root one knows none of
     // their `paths` aliases (`~/components/X`, `@/lib/y`). Resolving those with the *nearest*
     // tsconfig is what a real toolchain does, and without it every aliased import is missing
-    // from the truth set — which scores greplost's correct edge as a false positive, and every
+    // from the truth set, which scores greplost's correct edge as a false positive, and every
     // call through it as one too. Only ever consulted after the standard resolution failed to
     // land on a requested file, so a single-project repo behaves exactly as before.
     const local = projects.resolve(specifier, containingFile);
@@ -433,7 +433,7 @@ function readCompilerOptions(absRoot: string): { options: ts.CompilerOptions; co
   const parsed = ts.parseJsonConfigFileContent(read.config, ts.sys, absRoot);
   // `files`/`include` from the config are ignored on purpose: the caller decides which
   // files are scored, so the program's root set is exactly the given list. `allowJs` is
-  // forced for the same reason — greplost extracts `.js`/`.jsx` too, and a program that
+  // forced for the same reason: greplost extracts `.js`/`.jsx` too, and a program that
   // refused to bind the JavaScript it was handed would report those files as exporting
   // nothing, scoring real exports as false positives.
   return { options: { ...parsed.options, allowJs: true, noEmit: true }, configErrors: parsed.errors };
@@ -484,7 +484,7 @@ function reportDiagnostics(
  * follows the equals into the exported value and lists *its* members, so a CommonJS module
  * exporting a class reports "prototype" rather than anything a consumer can import. greplost
  * has no `export =` kind, and what an importer binds is the whole module, so it is reported
- * as "default" — the same name `import X from "./m"` binds under `esModuleInterop`.
+ * as "default", the same name `import X from "./m"` binds under `esModuleInterop`.
  *
  * `export *` is followed transitively, because that is what the compiler does and what a
  * consumer sees (core's `buildExportIndex` matches this; driver ruling, fix round 1).

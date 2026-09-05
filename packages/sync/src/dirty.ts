@@ -4,7 +4,7 @@
  * `.greplost/.dirty` is the channel from the Claude Code plugin's `PostToolUse`
  * hook to the next update: one repo-relative path per line, appended after
  * every Edit/Write/MultiEdit. It exists because that hook runs on the critical
- * path of a tool call, so it must be O(1) — an append and nothing else. No
+ * path of a tool call, so it must be O(1), an append and nothing else. No
  * read, no dedupe, no sort, no lock. All of that is the reader's job, which is
  * why `readAndClearDirty` returns a unique sorted set from a file that is
  * allowed to be full of duplicates.
@@ -76,7 +76,7 @@ export function appendDirty(root: string, paths: string[]): void {
  * repo-relative. `[]` when there is nothing (the common case).
  *
  * The queue is renamed aside before it is read, not read and then deleted. An
- * appender does not take the lock — that is the point of it being O(1) — so
+ * appender does not take the lock: that is the point of it being O(1), so
  * between a read and an unlink there is a window in which an edit is recorded
  * and then thrown away without ever being indexed. After a rename, an appender
  * that has not yet opened the path creates a fresh file, and one that already
@@ -129,7 +129,7 @@ export function readAndClearDirty(root: string): string[] {
  * Dropped: blank lines, paths that resolve outside the repo (an absolute path
  * from another checkout, a `../` escape), and anything under `.greplost/`.
  * The artifact directory is excluded from discovery by definition, so a
- * generated artifact can never be a source file — and treating one as dirty
+ * generated artifact can never be a source file, and treating one as dirty
  * would mean every update that writes the map makes the map look stale.
  */
 export function toRepoRelative(root: string, candidate: string): string | undefined {

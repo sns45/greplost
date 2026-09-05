@@ -75,7 +75,7 @@ export function resetAssumptions(): void {
  * The first of `paths` that holds a finite number; then, as a fallback, the first
  * value found anywhere in the payload under the last path segment of any
  * candidate. The fallback is what makes this report survive a neighbour suite
- * nesting its summary one level deeper than documented — and every use of it is
+ * nesting its summary one level deeper than documented, and every use of it is
  * recorded in `assumptions`, so it is a disclosed guess rather than a silent one.
  */
 export function firstNum(root: unknown, paths: readonly string[]): number | null {
@@ -184,7 +184,7 @@ export function buildOf(payload: Payload | null): { version: string; sha: string
  * The corpus table: every repo any payload named, with its pinned facts.
  *
  * A payload carries whatever the suite that wrote it recorded, and several
- * record only the repo's name — which rendered as `| gin | - | - | - |`, three
+ * record only the repo's name, which rendered as `| gin | - | - | - |`, three
  * dashes for facts the repository already knows. Tier, language and the pinned
  * SHA come from `bench/corpus.json` whenever it lists the repo, and the payload
  * fills in only what the pinned file does not have (review round 2, minor).
@@ -392,7 +392,7 @@ export interface Scenario {
  *
  * The shape the perf suite actually writes is
  * `repos: [{ name, files, tier, scenarios: [{ scenario, ms: { p50, p95 }, peakRssBytes }] }]`
- * — an array of repos, each holding an array of scenarios whose percentiles are
+ *, an array of repos, each holding an array of scenarios whose percentiles are
  * nested under `ms`. This reader was first written against a flat
  * `scenarios: { name: { p50, p95, rss } }` object, which matched nothing, so
  * P1 to P3 rendered `not run` beside a payload that had the numbers all along.

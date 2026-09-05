@@ -8,7 +8,7 @@
  * give `handler.loader` / `handler.beforeLoad` nodes, and `component` gives a `route-handler`
  * reference to whatever identifier it names.
  *
- * **A computed path emits nothing at all** — not the route, not its handlers. A route greplost
+ * **A computed path emits nothing at all**, not the route, not its handlers. A route greplost
  * cannot name is a route it must not pretend to have found, and half a route (the loaders with
  * no route to hang them on) would be worse than none.
  *

@@ -259,7 +259,7 @@ describe("golden union", () => {
  * A repository with no root `package.json` and no root `go.mod` is where that
  * used to break: the root package was named after the checkout directory, and
  * that name is in `manifest.packages`, in every `manifest.files[*].pkg`, in the
- * `packages/<slug>/` artifact directory and in the INDEX/MAP titles — so two
+ * `packages/<slug>/` artifact directory and in the INDEX/MAP titles, so two
  * clones produced two different maps and `greplost verify` failed on the second
  * one for no reason a reader could see.
  */

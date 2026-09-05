@@ -903,7 +903,7 @@ describe("fake claude timeouts and budget", () => {
     //
     // Counted off the payload, not off the fake's invocation log. The log line is
     // written by the fake *before* it sleeps, and writing it spawns a real
-    // `greplost --version` to record the shim version — start-up work that under load
+    // `greplost --version` to record the shim version, start-up work that under load
     // outlives this 400 ms timeout, so the child is killed before it logs and
     // `invocations()` comes back empty. That is the intermittent `bun test bench`
     // failure (review round 3, important 7): a wall-clock race dressed as an assertion
@@ -1037,7 +1037,7 @@ describe("fake claude timeouts and budget", () => {
 
   test("a fixture run carries the default cap and passes a budget flag", async () => {
     // Review round 3, important 6: `--fixture` used to mean uncapped. `--fixture` only
-    // chooses the repo and the task set — the runner still resolves `claude` on PATH, so
+    // chooses the repo and the task set: the runner still resolves `claude` on PATH, so
     // a fixture run on a developer's machine reaches the real CLI. That is the dangerous
     // case, not the safe one, so the default ceiling applies to it too.
     resetHarness();

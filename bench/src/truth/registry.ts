@@ -5,8 +5,8 @@
  * registers: adding the file is enough, which is what lets a language leaf land without editing
  * a shared file.
  *
- * Every truth generator is independent of tree-sitter and of `packages/core` — that is the
- * whole point of an oracle — so this module imports nothing from either at runtime; the two
+ * Every truth generator is independent of tree-sitter and of `packages/core`: that is the
+ * whole point of an oracle, so this module imports nothing from either at runtime; the two
  * type imports below are erased.
  */
 

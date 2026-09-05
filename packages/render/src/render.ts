@@ -3,7 +3,7 @@
  *
  * `renderArtifacts` turns one `Snapshot` plus its `SummaryCache` into every
  * markdown artifact under `.greplost/`, keyed by artifact-relative path. Pure:
- * no filesystem access, no `Date`, no environment, no absolute paths — the
+ * no filesystem access, no `Date`, no environment, no absolute paths, the
  * only date that ever reaches the output is the `refreshedAt` of a semantic
  * summary, and only inside the staleness banner (tech spec 5.3, 6).
  *
@@ -134,7 +134,7 @@ export interface DocContext {
  *
  * Plain symbols are deliberately absent. `blastRadius` allocates one bitset row
  * of `ceil(V / 32)` words per strongly connected component, so the universe is
- * quadratic in its own size — seeding it with `declById` (every declaration in
+ * quadratic in its own size, seeding it with `declById` (every declaration in
  * the repo) cost about V^2 / 8 bytes, roughly 800 MB on an 80k-declaration
  * checkout, to compute closures for ids that no import, re-export or reference
  * pair can ever name. A symbol reaches a card through `callsFrom`, never here.

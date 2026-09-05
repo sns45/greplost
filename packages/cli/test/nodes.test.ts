@@ -4,7 +4,7 @@
  * A node id (`main.tf#resource.aws_vpc.main`) is not a path and not a symbol
  * name, so it needs its own rung on the resolution ladder: `resolveFile` first
  * and still first, then an exact node id, then `findSymbols`. The two shapes an
- * agent parses are pinned here — `QueryResult.node` and `ImpactResult.nodes` —
+ * agent parses are pinned here, `QueryResult.node` and `ImpactResult.nodes`,
  * together with the rule that keeps every existing consumer working: a *file*
  * target still answers with `files` and never grows a `nodes` key.
  *
@@ -333,7 +333,7 @@ describe("golden through the CLI", () => {
   /**
    * The committed render golden and the bytes `greplost init` actually writes
    * must be the same bytes, or the golden is testing a path no user runs.
-   * `buildArtifacts` calls `renderArtifacts`, so this holds by construction —
+   * `buildArtifacts` calls `renderArtifacts`, so this holds by construction,
    * and this test is what keeps it holding, because a future card that reached
    * for the filesystem or the clock would diverge here and nowhere else.
    */

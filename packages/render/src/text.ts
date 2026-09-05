@@ -5,7 +5,7 @@
  * answer the same question about the same kind of thing, so a person reading
  * one and then the other should not have to notice which they are looking at.
  * They used to: the CLI and the workspace layer each carried their own `table`,
- * `fields` and `summarise`, and the copies had drifted — one wrote `key value`
+ * `fields` and `summarise`, and the copies had drifted, one wrote `key value`
  * and the other `key: value`, one said `(+3 more)` and the other `… and 3
  * more`. One implementation, one look.
  *

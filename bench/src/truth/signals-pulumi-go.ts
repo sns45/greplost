@@ -48,7 +48,7 @@ const MAX_BUFFER = 512 * 1024 * 1024;
  *  - `helper-attribution-differs`: a resource built inside a helper (`buildProvider(ctx)`,
  *    `createLambdas(ctx)`) is attributed by this oracle to the **file the constructor is
  *    written in**, because that is where the `token.FileSet` puts the call. greplost agrees,
- *    for the same reason — but a reader looking at a program that calls a helper from
+ *    for the same reason, but a reader looking at a program that calls a helper from
  *    `main.go` will find the resource filed under the helper's file, not under the call site,
  *    and both S5 and S6 are scored per file. It costs neither side a point, and it is a real
  *    difference between what the map says and where a person would look (leaf 2.7 review,

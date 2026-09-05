@@ -153,7 +153,7 @@ function join(dir: string, rest: string): string {
  * Canonical form of a repo-relative directory: `.`, `..` and empty segments resolved.
  *
  * A `[workspace] members` entry is a path relative to its own manifest, and the commonest
- * entry in the wild is `"."` — the "prevent this from interfering with workspaces" idiom
+ * entry in the wild is `"."`, the "prevent this from interfering with workspaces" idiom
  * that ripgrep's `fuzz/Cargo.toml` and thousands like it carry. Joined naively, `fuzz` and
  * `.` make `fuzz/.`: a *different* string that the filesystem resolves to the same manifest,
  * which names `.` once more. The crate index then walked `fuzz/./.`, `fuzz/././.`, … for as

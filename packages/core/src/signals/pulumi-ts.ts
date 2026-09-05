@@ -9,7 +9,7 @@
  * One narrowing the spec's text does not spell out but its intent requires: `@pulumi/pulumi` is
  * the SDK, not a provider. `new pulumi.Config()` and `new pulumi.asset.FileAsset(...)` are
  * imported from `@pulumi/pulumi` and are emphatically not resources, so from that one package
- * only the resource base classes and `StackReference` count — 46 `new pulumi.Config()` calls in
+ * only the resource base classes and `StackReference` count, 46 `new pulumi.Config()` calls in
  * the pinned corpus would otherwise be resources. Every other `@pulumi/<provider>` package is a
  * provider SDK, whose exported classes are resources.
  *

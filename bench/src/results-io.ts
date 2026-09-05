@@ -6,7 +6,7 @@
  *
  * The date, the greplost SHA and `recordedAt` are the only environment values allowed in
  * a results file (tech spec 5.3 forbids them in structure-layer output, not here; bench
- * payloads may carry a timestamp, the structure layer may not — ruling 2026-09-04);
+ * payloads may carry a timestamp, the structure layer may not, ruling 2026-09-04);
  * machine and corpus pinning are the caller's to supply.
  *
  * **`recordedAt` is the ordering key.** The file name carries a date and a short sha, and

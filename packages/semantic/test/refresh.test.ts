@@ -67,8 +67,8 @@ const TRANSIENT = new Set([".lock", ".dirty"]);
 
 /**
  * Machine-local files any `update` legitimately rewrites: the last-indexed
- * commit and the parse cache. Compared by default — a dry run must not touch
- * even these — and ignored only where a rebuild is the thing under test.
+ * commit and the parse cache. Compared by default, a dry run must not touch
+ * even these, and ignored only where a rebuild is the thing under test.
  */
 const REBUILT = new Set([".state.json", "cache/parse.json"]);
 
@@ -429,7 +429,7 @@ describe("stale", () => {
     async () => {
       // The plain flow, and the one the round-1 tie-break got wrong: edit a
       // file, run `greplost refresh`. Nothing rebuilds the map in between, so
-      // `manifest.json` still describes the *previous* bytes — and a survivor
+      // `manifest.json` still describes the *previous* bytes, and a survivor
       // chosen from it is the old summary, which then renders under the stale
       // banner while the one just paid for is thrown away.
       const root = await initialised("no-update");
@@ -1009,7 +1009,7 @@ describe("safety", () => {
 
   /**
    * `.greplost/` is committed and git stores symlinks, so `cache/summaries.json`
-   * is a path a repository can point anywhere — and `greplost update --semantic`
+   * is a path a repository can point anywhere, and `greplost update --semantic`
    * runs unattended. The summary cache goes through `@greplost/sync`'s
    * `safeWrite`, which replaces the link instead of writing through it.
    */

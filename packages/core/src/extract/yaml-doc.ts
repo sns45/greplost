@@ -1,8 +1,8 @@
 /**
  * Reading a tree-sitter YAML tree as plain values (build 2, leaf 2.8).
  *
- * Every YAML flavour greplost knows — Kubernetes manifests, Helm charts, GitHub Actions
- * workflows — walks the same shapes: a stream of documents, each a mapping of scalars,
+ * Every YAML flavour greplost knows, Kubernetes manifests, Helm charts, GitHub Actions
+ * workflows, walks the same shapes: a stream of documents, each a mapping of scalars,
  * sequences and nested mappings. This module is that walk, and nothing above it: it knows no
  * `apiVersion`, no `jobs`, no `Chart.yaml`. Leaf 2.8 owns it and **leaf 2.9 imports it** rather
  * than writing a second one, which is the whole reason it is a file of its own (driver ruling
@@ -18,7 +18,7 @@
  *
  * What it deliberately does *not* do: resolve anchors, aliases or merge keys (`<<:`). A YAML
  * parser that resolves them has to build a value graph, and greplost's extractors want the text
- * as written — an alias is recorded as the alias it is, and the flavour module decides. That is
+ * as written: an alias is recorded as the alias it is, and the flavour module decides. That is
  * a documented difference from `js-yaml`, which the truth generators use.
  */
 
@@ -232,7 +232,7 @@ export function scalarMap(value: YamlValue | null): Map<string, string> {
  * Deployment and `spec.jobTemplate.spec.template.spec.containers` in a CronJob; a `configMapRef`
  * can sit under `envFrom`, under `volumes` or inside a list of projected sources. Enumerating
  * the paths means a kind nobody thought of contributes nothing, so both greplost and the oracle
- * search by key instead — the same rule, stated once, applied to whatever the document holds.
+ * search by key instead, the same rule, stated once, applied to whatever the document holds.
  */
 export function findByKey(value: YamlValue, key: string): YamlValue[] {
   const found: YamlValue[] = [];

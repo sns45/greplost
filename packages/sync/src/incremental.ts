@@ -6,15 +6,15 @@
  * trees, by construction rather than by care. Both render the entire map in
  * memory from the checkout; both write only the bytes that differ. Nothing is
  * patched, so nothing can drift. What "incremental" buys is not a smaller
- * write — `writeArtifacts` already reduces that to the artifacts that actually
- * changed — but a smaller parse: files whose sha256 has not moved come back
+ * write, `writeArtifacts` already reduces that to the artifacts that actually
+ * changed, but a smaller parse: files whose sha256 has not moved come back
  * out of `.greplost/cache/parse.json` instead of through tree-sitter.
  *
  * That leaves the dirty set with exactly one job: deciding whether there is
  * anything to do at all. It is not used to select what to rebuild (selective
  * regeneration is what the write layer does, and it does it from bytes rather
  * than from a guess about dependencies). It answers "is this checkout already
- * indexed?", and the answer has to be conservative in one direction only —
+ * indexed?", and the answer has to be conservative in one direction only,
  * a false "dirty" costs a rebuild that writes nothing, a false "clean" leaves
  * a stale map, which is the one failure greplost promises cannot happen.
  *
@@ -25,8 +25,8 @@
  * compiles into its own tree would otherwise never look clean.
  *
  * The clean fast path fires only when git can positively confirm the checkout
- * has not moved — without git there is no such confirmation, so every run
- * rebuilds — and only when the *previous* build indexed a tree that matched its
+ * has not moved, without git there is no such confirmation, so every run
+ * rebuilds, and only when the *previous* build indexed a tree that matched its
  * commit. That last condition is what makes a reverted edit visible: HEAD does
  * not move when a change is thrown away, so a map built from the dirty tree
  * would otherwise stay in place, describing code that no longer exists.
@@ -116,8 +116,8 @@ async function runUpdate(root: string, opts: UpdateOptions, started: number): Pr
   // 8.8, "Clear .dirty").
   const consumed = readAndClearDirty(root);
 
-  // Everything from here on can throw — an unreadable config, a discovery that
-  // fails, a build that fails — and the queue has already been emptied, so all
+  // Everything from here on can throw, an unreadable config, a discovery that
+  // fails, a build that fails, and the queue has already been emptied, so all
   // of it runs under the restore below.
   try {
     const state = readState(root);
@@ -130,13 +130,13 @@ async function runUpdate(root: string, opts: UpdateOptions, started: number): Pr
     const configHash = sha256Hex(stableStringify(config));
 
     // What something told us changed, and what git can see has changed. Both
-    // are needed in full mode too — not to decide anything, but to record
+    // are needed in full mode too, not to decide anything, but to record
     // whether the tree this build indexed was the tree HEAD describes.
     const signalled = uniqueSorted([...consumed, ...normalisePaths(root, opts.files ?? [])]);
     const working = git === undefined ? [] : workingTreePaths(root);
     const committed =
       // Skipped when the map was built from HEAD itself: the diff is empty by
-      // definition, and this is the hot path — the plugin's `Stop` hook runs it
+      // definition, and this is the hot path, the plugin's `Stop` hook runs it
       // after every turn, so two fewer process spawns is most of what it costs.
       incremental && indexed !== undefined && indexed !== git?.head && commitExists(root, indexed)
         ? committedSince(root, indexed)
@@ -152,7 +152,7 @@ async function runUpdate(root: string, opts: UpdateOptions, started: number): Pr
 
     // The tree this build is about to index: clean when nothing outside HEAD
     // reached it. Recorded so the next run knows whether HEAD alone describes
-    // the map — a build of a dirty tree is not repeatable from the commit it
+    // the map, a build of a dirty tree is not repeatable from the commit it
     // names, and a revert would otherwise leave the map describing code that is
     // gone.
     const treeClean =
@@ -171,7 +171,7 @@ async function runUpdate(root: string, opts: UpdateOptions, started: number): Pr
     // HEAD is exactly the commit the map was built from, that build saw the
     // same tree HEAD describes, and it ran under the config in force today.
     // Drop any one and there is a sequence that leaves a stale map in place
-    // forever. `git.head === undefined` — no git, or a repo with no commits —
+    // forever. `git.head === undefined`, no git, or a repo with no commits,
     // can never confirm the second, so those repositories always rebuild rather
     // than trusting a state file nothing corroborates.
     if (
@@ -197,8 +197,8 @@ async function runUpdate(root: string, opts: UpdateOptions, started: number): Pr
     const { snapshot, files, skipped, warnings } = await buildArtifacts(root, { cache });
     store.save(usedKeys(snapshot));
 
-    // An empty map is a legitimate answer — a repository really can have no
-    // indexable files — and it is also what a config that matches nothing
+    // An empty map is a legitimate answer, a repository really can have no
+    // indexable files, and it is also what a config that matches nothing
     // produces, which is far more common and completely silent otherwise: the
     // build succeeds, the exit code is 0 and INDEX.md describes nothing. On
     // stderr, and regardless of `--quiet`, because `--json` owns stdout and
@@ -267,7 +267,7 @@ async function runUpdate(root: string, opts: UpdateOptions, started: number): Pr
  * A `ParseCache` that counts, and that can be told not to answer.
  *
  * `reparsed`/`cached` are the only visible evidence that incremental mode did
- * anything at all — the artifacts it writes are identical either way — so they
+ * anything at all, the artifacts it writes are identical either way, so they
  * are measured at the boundary rather than inferred. Blocking reads (rather
  * than not passing a cache at all) is what lets a full rebuild still populate
  * the cache for the next run.
@@ -342,7 +342,7 @@ interface GitContext {
  * Deliberately strict: git counts only when `root` *is* the top level of the
  * work tree. `git status --porcelain` reports paths relative to the top level
  * whatever directory it is run from, so anywhere else those paths would be
- * resolved against the wrong root — quietly producing a dirty set full of
+ * resolved against the wrong root, quietly producing a dirty set full of
  * paths that do not exist. A subdirectory therefore behaves like a
  * non-repository: correct, just never "clean".
  */
@@ -359,8 +359,8 @@ function gitContext(root: string): GitContext | undefined {
 /**
  * Narrow a set of changed paths to the ones that could change the map.
  *
- * Two tests, cheapest first. A path whose extension no language claims — a
- * `.env.local`, a lockfile, a screenshot — can never be indexed, and that
+ * Two tests, cheapest first. A path whose extension no language claims, a
+ * `.env.local`, a lockfile, a screenshot, can never be indexed, and that
  * settles most of what a working tree churns through without touching the
  * disk. What is left has to be checked against the same discovery the build
  * runs, because `config.exclude` is where a repository says that `dist/`,
@@ -373,7 +373,7 @@ function gitContext(root: string): GitContext | undefined {
  * exist) never parses it.
  *
  * A candidate that is a directory on disk is kept whatever its name, because a
- * directory is not a file that failed the tests — it is an unknown number of
+ * directory is not a file that failed the tests: it is an unknown number of
  * them. Sources of directory-shaped candidates are meant to be rare now that
  * the working tree is read with `--untracked-files=all`, but a caller can pass
  * one in `files`, and the cost of treating one as "nothing changed" is a whole
@@ -435,7 +435,7 @@ function isIndexableName(rel: string, config: GreplostConfig): boolean {
  *
  * Not `readStructure`: that also parses the three graph files, and the only
  * question here is which paths were indexed. An unreadable or absent manifest
- * means "nothing was", which is the safe answer — a deleted file that is not in
+ * means "nothing was", which is the safe answer, a deleted file that is not in
  * the map has no card to prune.
  */
 function indexedFiles(root: string): Set<string> {
@@ -457,7 +457,7 @@ const TEMPORARY = /^\..+\.(\d+)\.\d+\.tmp$/;
  * between its write and its rename.
  *
  * They are not structure paths, so `writeArtifacts` will not prune them and
- * `verify` will not report them — which is what makes them safe to leave behind
+ * `verify` will not report them, which is what makes them safe to leave behind
  * mid-write, and also what would make them accumulate in a repository's status
  * output forever. A temporary belonging to this process is in flight, not
  * residue, and is left alone.
@@ -494,7 +494,7 @@ function sweepTemporaries(artifactDir: string): void {
  *
  * `--untracked-files=all` is load-bearing, not tidiness. Porcelain output
  * collapses an untracked directory to a single `newpkg/` entry, and a
- * directory has no extension, no discovery entry and no manifest entry — so a
+ * directory has no extension, no discovery entry and no manifest entry, so a
  * whole new package would be filtered out of the dirty set and the tree would
  * be declared clean while none of it was indexed. Listing every untracked file
  * individually is what makes "a new directory appeared" indistinguishable from
@@ -503,7 +503,7 @@ function sweepTemporaries(artifactDir: string): void {
  * The pathspec keeps that affordable: with `-uall`, a `.greplost/` that has not
  * been committed yet would otherwise be listed artifact by artifact on every
  * single run. `toRepoRelative` drops those paths anyway, so the exclusion is
- * only about not asking git to enumerate them — and a git too old for pathspec
+ * only about not asking git to enumerate them, and a git too old for pathspec
  * magic falls back to the plain form rather than reporting a clean tree.
  */
 function workingTreePaths(root: string): string[] {

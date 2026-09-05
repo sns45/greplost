@@ -565,8 +565,8 @@ describe("flows", () => {
 describe("refresh", () => {
   // `--dry-run` throughout: a real refresh spawns `claude -p`, and a test suite
   // that reaches a model is neither hermetic nor free. The seam itself is what
-  // is being checked here — that the command finds `@greplost/semantic`, hands
-  // it the operands, and passes its exit code back — and the semantic package's
+  // is being checked here, that the command finds `@greplost/semantic`, hands
+  // it the operands, and passes its exit code back, and the semantic package's
   // own tests drive the model path through an injected runner.
   test("delegates to the semantic layer and reports what a refresh would do", async () => {
     const run = await cli("refresh", "--dry-run", "--root", ts);

@@ -186,8 +186,8 @@ function importersField(
 
 /**
  * The file's non-file nodes, span-sorted, one bullet each, linked to the node
- * card that sits in a directory named after this file. Undefined — so the whole
- * block is omitted — when the file declares none, which is every file of every
+ * card that sits in a directory named after this file. Undefined, so the whole
+ * block is omitted, when the file declares none, which is every file of every
  * repo greplost indexed before schema 2.
  *
  * The label is the node id's `<kind>.<name>` half rather than the bare name: it

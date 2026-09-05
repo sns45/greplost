@@ -6,7 +6,7 @@
  * full rather than recomputed from the thing under test.
  *
  * `oracle independence` is the integrity check of tech spec 10.1 principle 2: the oracle may
- * not be able to agree with greplost by construction. Two properties, and both are needed — a
+ * not be able to agree with greplost by construction. Two properties, and both are needed: a
  * generator that imported greplost's extractor could not disagree with it, and one that
  * returned a constant could not disagree with anything.
  *

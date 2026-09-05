@@ -10,7 +10,7 @@
  * length, so the file's length, every line number and every column survive:
  *
  *  - an action that begins its line (nothing but whitespace before it) becomes spaces, so the
- *    line vanishes from the document instead of turning into a stray scalar — that is what
+ *    line vanishes from the document instead of turning into a stray scalar; that is what
  *    keeps `{{- if … }}`, `{{- range … }}` and `{{- end }}` from wrecking the block structure;
  *  - any other action becomes `_` characters, so `name: {{ .Release.Name }}` stays a `name:`
  *    key with a value, and the value is visibly a placeholder;
@@ -37,7 +37,7 @@
  *
  * blanks to a mapping with `egress:` twice, which is not YAML, and the file is read as far as
  * the grammar can recover and no further. Picking an arm would mean evaluating the condition,
- * which means running helm — so greplost reports the file as unparsable rather than choosing.
+ * which means running helm, so greplost reports the file as unparsable rather than choosing.
  * Measured on the pinned corpus: 4 of `bitnami/charts`'s 122 templates, all four this shape
  * (`redis/templates/{networkpolicy,podmonitor,servicemonitor}.yaml`,
  * `kafka/templates/metrics/jmx-configmap.yaml`); none of them is a `{{ define }}` block, which
@@ -51,7 +51,7 @@
  * `helm-values` reference to the chart's `values.yaml` node for the path's first segment. It is
  * recorded at *file* level rather than against the document that contains it, because an action
  * is as likely to sit in a `define` block or between two documents as inside one, and because
- * the truth oracle — which renders the chart and never sees the template's document structure —
+ * the truth oracle, which renders the chart and never sees the template's document structure,
  * has to be able to state the same edge (leaf 2.8 ruling).
  */
 
@@ -103,8 +103,8 @@ export function templateSpans(source: string): Array<[number, number]> {
     if (open === -1) return spans;
     let from = open + 2;
     // `{{/*`, and `{{- /*` with any whitespace between: a comment closes on `*/` first. The
-    // probe reads far enough that an action opening with a long run of whitespace — a `{{-`
-    // followed by a newline and an indented comment — is still recognised as one.
+    // probe reads far enough that an action opening with a long run of whitespace, a `{{-`
+    // followed by a newline and an indented comment, is still recognised as one.
     const head = source.slice(from, from + 64);
     const comment = /^-?\s*\/\*/u.exec(head);
     if (comment !== null) {
@@ -132,7 +132,7 @@ export function blankTemplates(source: string): string {
 
   // Second pass, for the one idiom the first rule gets wrong. `labels: {{- include … | nindent
   // 4 }}` is an action that *is* a key's whole value and renders a nested mapping, so the lines
-  // below it are more indented than the key — and `labels: ______` followed by an indented
+  // below it are more indented than the key, and `labels: ______` followed by an indented
   // `a: b` is not YAML at all (a plain scalar may not contain ": "). Filling those with spaces
   // instead leaves `labels:` with the block that follows as its value, which is what helm would
   // have produced. Whether the lines below are deeper is read off the *blanked* text, because a
@@ -301,7 +301,7 @@ function sortedMeta(meta: Record<string, string>): Record<string, string> {
  *
  * The offsets it is asked about arrive in increasing order (one regex sweep, left to right), so
  * it counts each newline once for the whole file rather than re-counting from byte zero for
- * every match — which on a 2,600-line values file was quadratic for no reason.
+ * every match, which on a 2,600-line values file was quadratic for no reason.
  */
 function lineCounter(source: string): (offset: number) => number {
   let at = 0;

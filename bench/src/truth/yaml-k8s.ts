@@ -25,7 +25,7 @@
  *
  *   files       the `.yaml` files it could read; the harness intersects both sides with this;
  *   imports     always empty: a manifest has no import statements at all;
- *   exports     each file's sorted node names — a manifest's public surface is the objects it
+ *   exports     each file's sorted node names: a manifest's public surface is the objects it
  *               declares, which is exactly what another manifest reaches for by name;
  *   calls       always empty, which is why S3 is `n/a` for YAML and never 0;
  *   references  the S5 truth: selector, config and image edges resolved the same way;

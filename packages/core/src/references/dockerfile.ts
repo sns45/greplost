@@ -8,13 +8,13 @@
  *
  * Three kinds, and the scope of each:
  *
- *  - `from-image` — a stage's base. It names an **earlier stage of the same file** when one
+ *  - `from-image`, a stage's base. It names an **earlier stage of the same file** when one
  *    carries that alias (docker's own rule: a stage can only build on a stage already defined),
  *    and otherwise the image it pulls, `ext:image/<ref>`.
- *  - `copy-from` — `COPY --from=<stage>`, which names either a stage of the same file (by
+ *  - `copy-from`, `COPY --from=<stage>`, which names either a stage of the same file (by
  *    alias, or by 0-based index, both of which docker accepts) or an image nothing in the repo
  *    builds, `ext:image/<ref>`.
- *  - `config` — a `COPY`/`ADD` source, resolved through `resolve/dockerfile.ts` to the one
+ *  - `config`, a `COPY`/`ADD` source, resolved through `resolve/dockerfile.ts` to the one
  *    indexed repo file it names. Nothing else in build 2 links a container recipe back to the
  *    code it ships.
  *
@@ -80,7 +80,7 @@ function indexOf(stage: Declaration): number | null {
  * Every stage `name` could mean, in source order.
  *
  * `before` bounds the search the way docker does: a base image may only name a stage already
- * defined. `COPY --from` gets `Infinity` — it too must name an earlier stage to build, but a
+ * defined. `COPY --from` gets `Infinity`: it too must name an earlier stage to build, but a
  * file that gets that wrong does not build at all, and the ambiguity rule below is what keeps
  * a wrong file from producing a wrong edge.
  *

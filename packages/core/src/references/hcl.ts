@@ -8,8 +8,8 @@
  *
  * The scope of every lookup is the *module*, which in Terraform is a directory: `terraform`
  * loads every `.tf` file in one directory as a single module, and an address may never reach
- * out of it. That is what makes a 90-directory corpus repo tractable — `aws_vpc.main` in
- * `examples/complete` cannot be confused with `aws_vpc.main` in `examples/simple` — and it is
+ * out of it. That is what makes a 90-directory corpus repo tractable, `aws_vpc.main` in
+ * `examples/complete` cannot be confused with `aws_vpc.main` in `examples/simple`, and it is
  * why the index below is keyed by directory rather than by file.
  *
  * The one documented hop is `module.M.O`: the module call names a directory, and `O` is an
@@ -36,8 +36,8 @@ import { HCL_PROVIDER_NAMESPACE, hclDirectoryOf } from "../resolve/hcl.ts";
 /**
  * Declarations of one module (one directory), keyed by the name as written.
  *
- * `Declaration.name` is already the name the file wrote — the `~<n>` uniqueness suffix lives in
- * the id and nowhere else (driver ruling 2026-09-04) — so the key needs no unpicking. Two
+ * `Declaration.name` is already the name the file wrote, the `~<n>` uniqueness suffix lives in
+ * the id and nowhere else (driver ruling 2026-09-04), so the key needs no unpicking. Two
  * `provider "aws"` blocks in one file therefore land in one bucket and make `aws` genuinely
  * ambiguous, which is the answer: finding only the first would report an ambiguous reference as
  * a certain one.

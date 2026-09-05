@@ -3,8 +3,8 @@
  * (tech spec 7.2, sync spec "Git hooks").
  *
  * The plugin's `Stop` hook keeps the map fresh for work done inside a Claude
- * session. Everything else — a rebase, a `git pull`, a branch switch, a commit
- * typed in another terminal, a teammate's merge — arrives through git, so
+ * session. Everything else, a rebase, a `git pull`, a branch switch, a commit
+ * typed in another terminal, a teammate's merge, arrives through git, so
  * `post-commit`, `post-merge` and `post-checkout` are where the other half of
  * freshness lives.
  *
@@ -117,7 +117,7 @@ export function installGitHooks(root: string): HookInstallResult {
 
   // The same test `update` applies before it trusts git: `root` must *be* the
   // top level of the work tree. A hook installed from a subdirectory would run
-  // `greplost update` in a directory that has no `.greplost/` — and if it did
+  // `greplost update` in a directory that has no `.greplost/`, and if it did
   // have one, it would be a second, wrong map. The two must agree about what a
   // repository root is, or `init` in a subdirectory installs hooks for a map it
   // then refuses to keep fresh.
@@ -202,7 +202,7 @@ function replaceBlock(existing: string, wanted: string): string {
  *
  * A new plain hook needs the shebang; husky runs its files with `sh` itself,
  * and husky v9 warns about the shebang, so its files get the block alone. An
- * existing file is appended to, with a newline first if it lacks one — running
+ * existing file is appended to, with a newline first if it lacks one, running
  * the previous last line and the marker together would comment out a command.
  */
 function write(file: string, existing: string | undefined, block: string = HOOK_BLOCK): void {

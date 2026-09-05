@@ -4,8 +4,8 @@
  *
  * Every visual in the README is produced by a command in this file, so a
  * screenshot cannot drift from the code it claims to show. The captures need
- * external tools — `vhs` for terminal recordings, `freeze` for code
- * screenshots, playwright's chromium for rendered pages — and those tools are
+ * external tools, `vhs` for terminal recordings, `freeze` for code
+ * screenshots, playwright's chromium for rendered pages, and those tools are
  * not always installed.
  *
  * The rule when one is missing: **skip that capture, print the exact command
@@ -205,7 +205,7 @@ const FREEZE_LINES = 40;
  * The rendered canvas width, in pixels.
  *
  * freeze sizes its canvas from the longest line it is given at about 36 px per
- * character, so a 100-column capture came out 3,607 px wide and 355KB — a
+ * character, so a 100-column capture came out 3,607 px wide and 355KB, a
  * download, not a README image. `--width` fixes the canvas and lays the same
  * wrapped text out inside it; nothing is clipped.
  */
@@ -649,7 +649,7 @@ export async function run(args: string[]): Promise<number> {
     for (const tool of tools) {
       const detail = tool.available
         ? `available${tool.version === null ? "" : ` (${tool.version})`}`
-        : `missing — install with \`${tool.install}\``;
+        : `missing, install with \`${tool.install}\``;
       console.log(`  ${tool.name}: ${detail}${tool.note === null ? "" : ` [${tool.note}]`}`);
     }
     if (options.list) {
@@ -674,7 +674,7 @@ export async function run(args: string[]): Promise<number> {
     const missing = capture.needs.filter((need) => byId.get(need)?.available !== true);
     if (missing.length > 0) {
       const instructions = missing.map((need) => byId.get(need)?.install ?? need).join(" && ");
-      console.log(`${SUITE}: #${capture.id} ${capture.name}: skipped, needs ${missing.join(", ")} — \`${instructions}\``);
+      console.log(`${SUITE}: #${capture.id} ${capture.name}: skipped, needs ${missing.join(", ")}, \`${instructions}\``);
       skipped++;
       continue;
     }

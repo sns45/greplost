@@ -13,13 +13,13 @@ the check unable to assert what its title says.
 (1) The CHECK rendered no node card. `DEFAULT_CONFIG.languages` is `["ts","tsx","js","jsx"]`
 and `greplost init` has no marker table for HCL, so `init` on a bare copy of
 `fixtures/tiny-terraform` indexes no files. It **exits 0** and writes a complete but empty map
-(INDEX.md, manifest.json, the graph files, one package MAP and API — 9 artifacts, 0 cards); it
+(INDEX.md, manifest.json, the graph files, one package MAP and API, 9 artifacts, 0 cards); it
 prints `no files indexed` on stderr as a warning, not as a failure. Corrected in fix round 1:
 the first version of this note said the check "exits non-zero", which is wrong and was measured
-again. The defect is subtler than a failure — `find` over that map really does print `0`,
+again. The defect is subtler than a failure, `find` over that map really does print `0`,
 because there is nothing under it at all, so the gate would have passed while proving nothing.
-The check now writes `{"languages":["hcl"]}` into the copy's config first — exactly what
-`packages/cli/test/commands.test.ts` does for `fixtures/tiny-go` — and asserts that a node card
+The check now writes `{"languages":["hcl"]}` into the copy's config first, exactly what
+`packages/cli/test/commands.test.ts` does for `fixtures/tiny-go`, and asserts that a node card
 exists at its slugged path before scanning. Strictly stronger: it proves a map with node cards
 was rendered *and* that no path under it carries a `#`. The fixture is leaf 2.2's and was not
 touched.
@@ -28,7 +28,7 @@ touched.
 `` `${stdout}\n${stderr}` ``, so the compared string always ends in a newline, and JavaScript's
 `$` (unlike Perl's) matches only at the very end of the string when the `m` flag is absent.
 `/^0$/` was therefore unsatisfiable for any check output whatsoever. The pattern is unchanged
-apart from that flag — `/^0$/m` — so the assertion is still "the count of paths containing a `#`
+apart from that flag, `/^0$/m`, so the assertion is still "the count of paths containing a `#`
 is exactly zero, alone on its line", and `1`, `12` or empty output still fail.
 
 EVIDENCE lines (2026-09-05, fix round 1): every gate now records the measured value its check

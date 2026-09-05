@@ -28,7 +28,7 @@ export async function run(ctx: CommandContext): Promise<number> {
   //
   // Both exit 2, not 1: the command line contradicted the checkout and nothing
   // ran, which is precisely what the CLI's usage code means. Exit 1 is "drift
-  // or not found" — an answer — and a caller that retries on it would retry
+  // or not found", an answer, and a caller that retries on it would retry
   // this forever.
   if (ctx.options.workspace === true) {
     if (!workspace) {

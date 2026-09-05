@@ -398,7 +398,7 @@ describe("linkImports", () => {
 
   test("drops a self-import rather than making a file depend on itself", () => {
     // Build 1 kept this edge (the rule was "resolve it, never invent a target"). Build 2's
-    // pulumi corpus contains a real one — `iam.ts` writing `import * as iam from "./iam"` —
+    // pulumi corpus contains a real one, `iam.ts` writing `import * as iam from "./iam"`,
     // and keeping it puts the file in its own fan-in, fan-out and blast radius, and a
     // self-loop in the import graph. `tsc` reports no such edge, so the compiler truth
     // scored greplost's as a false positive. Dropping it is the answer both agree on

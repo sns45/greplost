@@ -181,8 +181,8 @@ export interface RepoScores {
    * Files whose tree-sitter parse root is an ERROR node, or has one as a direct child
    * (`findUnparsableFiles` in `@greplost/core`; Appendix C ruling 2026-09-03).
    *
-   * Not a score and not gated: a bucket. These files are still scored — the extractor
-   * recovers what it can — but whatever the grammar could not read costs S1 and S2 recall
+   * Not a score and not gated: a bucket. These files are still scored, the extractor
+   * recovers what it can, but whatever the grammar could not read costs S1 and S2 recall
    * with no line in the report saying so, which is what this counts. Empty on a run that
    * did not look (a pure `scoreAgainstTruth` call in a test).
    */
@@ -571,13 +571,13 @@ async function truthFor(
  *  1. Did greplost predict anything at all? A repo with no signal node and no reference has
  *     nothing whose precision could be wrong, and asking a second compiler program about it
  *     would cost a whole extra build for a guaranteed empty answer. `null` is `n/a`, which is
- *     neither a pass nor a fail — the same contract every other unmeasured metric has.
+ *     neither a pass nor a fail, the same contract every other unmeasured metric has.
  *  2. Does this target's oracle offer a `generateExtra`? For the TypeScript family that is
  *     `truth/signals-ts.ts` (S1 to S4 stay with `truth/ts.ts`, which is a different oracle for
  *     a different question); every other language asks its own truth module.
  *
  * Consequence worth stating plainly: S6 recall is only reported when greplost predicted at
- * least one node. That is deliberate — spec section 3.7 gates precision and reports recall —
+ * least one node. That is deliberate, spec section 3.7 gates precision and reports recall,
  * but it does mean a pass that silently stopped emitting shows as `n/a` rather than as 0.000.
  * The fixture gate is what stands against that: `tiny-signals-ts` has known nodes.
  */

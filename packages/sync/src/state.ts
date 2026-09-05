@@ -8,7 +8,7 @@
  *
  * State is a hint, never a source of truth. Every field is optional, an
  * unreadable file reads as `{}`, and the worst a wrong or missing value can do
- * is cost a rebuild that produces exactly the same bytes — so a corrupted
+ * is cost a rebuild that produces exactly the same bytes, so a corrupted
  * state file must never be an error. That asymmetry (cheap to lose, expensive
  * to trust) is the whole design.
  */
@@ -29,7 +29,7 @@ export interface SyncState {
    * Without this, `lastIndexedCommit` alone is a lie by omission. A map built
    * from a dirty tree describes bytes that are not in any commit, so when the
    * tree is reverted (`git checkout -- .`, a dropped stash, a discarded change
-   * in an editor) HEAD is unchanged and `git status` is empty again — and a
+   * in an editor) HEAD is unchanged and `git status` is empty again, and a
    * fast path that trusted the commit alone would call that map current when
    * it describes code that no longer exists. Absent (an older state file, or a
    * build outside git) reads as `false`: one extra rebuild, never a stale map.
@@ -72,8 +72,8 @@ export function readState(root: string): SyncState {
   // A non-string commit would be handed straight to `git rev-parse`; the type
   // check is the boundary between a hint file and an argument list.
   if (typeof lastIndexedCommit !== "string" || lastIndexedCommit === "") return {};
-  // Anything but an explicit `true` — missing, null, a string, a state file
-  // written before this field existed — is not a claim that the tree was clean.
+  // Anything but an explicit `true`, missing, null, a string, a state file
+  // written before this field existed, is not a claim that the tree was clean.
   return {
     lastIndexedCommit,
     treeClean: treeClean === true,

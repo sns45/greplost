@@ -57,7 +57,7 @@ export interface BuildResult {
 /**
  * The committed semantic cache (`.greplost/cache/summaries.json`).
  *
- * `{}` when the file is absent — a repo with no semantic layer is the normal
+ * `{}` when the file is absent, a repo with no semantic layer is the normal
  * case, not an error. A file that exists but cannot be understood is an error:
  * silently treating it as empty would quietly rewrite every card that carries
  * prose, and the manifest's staleness fields with them.

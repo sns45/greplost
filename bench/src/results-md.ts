@@ -1,8 +1,8 @@
 /**
  * The `bench/RESULTS.md` template (tech spec 10.9, 10.10; bench leaf 1.5.7).
  *
- * This file is pure: it takes a `ReportModel` — the numbers `report.ts` read out
- * of `bench/results/*.json` — and returns markdown. It never reads a file, never
+ * This file is pure: it takes a `ReportModel`, the numbers `report.ts` read out
+ * of `bench/results/*.json`, and returns markdown. It never reads a file, never
  * asks the clock and never invents a value. That is the point of the split: the
  * rule from the tech spec is that the measured column is "filled by the harness,
  * never by hand", and the only way to keep that rule mechanically is for the
@@ -108,7 +108,7 @@ export interface MetricRow {
    * different runs with different costs, so the head-to-head table is often
    * filled from two payloads. A single provenance line above such a table would
    * put one run's corpus under the other run's numbers, which is the same
-   * defect as printing a tier-M target against a fixture — so the scale travels
+   * defect as printing a tier-M target against a fixture, so the scale travels
    * on the row.
    */
   run?: RunTarget;
@@ -263,7 +263,7 @@ export function scopeTarget(target: string, run: RunTarget | undefined, scaleTex
   return `${target} (${describeRun(run)})`;
 }
 
-/** `measured on anyq, tier S, 148 files` — the scale a row was actually taken at. */
+/** `measured on anyq, tier S, 148 files`, the scale a row was actually taken at. */
 function describeRun(run: RunTarget): string {
   const where = run.repo === undefined
     ? "measured on an unnamed corpus"
@@ -528,8 +528,8 @@ function singleToolSection(model: ReportModel): string[] {
   out.push("");
   out.push("| ID | Metric | Target | Measured | Source |", "|---|---|---|---|---|");
   for (const row of model.singleTool.rows) {
-    // The scale claim can sit in either column — P1's "1k / 10k files" is in the
-    // metric, X6's "(tier M)" is in the target — so both are offered to
+    // The scale claim can sit in either column, P1's "1k / 10k files" is in the
+    // metric, X6's "(tier M)" is in the target, so both are offered to
     // `scopeTarget`, and the qualifier lands in the target the reader compares
     // the measurement against.
     const target = scopeTarget(row.target, row.run, `${row.metric} ${row.target}`);

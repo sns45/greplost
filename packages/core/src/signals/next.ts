@@ -184,7 +184,7 @@ function isFunctionBinding(node: Node, value: Node | null): boolean {
   return inner.type === "arrow_function" || inner.type === "function_expression" || inner.type === "function";
 }
 
-/** `export const runtime = "edge"` — only a string literal, never an expression. */
+/** `export const runtime = "edge"`, only a string literal, never an expression. */
 function runtimeOf(bindings: readonly { name: string; exported: boolean; value: Node | null }[]): string | undefined {
   for (const binding of bindings) {
     if (!binding.exported || binding.name !== "runtime") continue;

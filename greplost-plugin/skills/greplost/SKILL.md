@@ -123,8 +123,8 @@ already rebuilt by then.
 ### In a workspace (a directory holding `greplost.workspace.json`)
 
 `update`, `verify`, `query` and `impact` run across every listed repo when
-invoked at the workspace root. Ids are then `<repo>::<path>` — the repo's
-directory name, `::`, then the path inside that repo — everywhere a path or a
+invoked at the workspace root. Ids are then `<repo>::<path>`, the repo's
+directory name, `::`, then the path inside that repo, everywhere a path or a
 symbol id appears: `impact --json`'s `path` and `files[*].path`, and `query
 --json`'s `file.path`, `file.card`, `matches[*].id`, `matches[*].file`,
 `matches[*].card`, `importers[*]` and `callers[*]`. So a `card` reads
@@ -144,7 +144,7 @@ indexed file resolves, and nothing is guessed.
 - `.greplost/` is missing, or `greplost verify` reports drift and you need the
   current on-disk truth rather than the (possibly stale) map.
 - Conceptual questions the map does not encode ("where is the billing logic
-  discussed", domain terminology) — the map is structural, not semantic,
+  discussed", domain terminology): the map is structural, not semantic,
   unless `greplost refresh` has populated FLOWS.md for the package in question.
 
 ## 4. About the hooks
@@ -166,7 +166,7 @@ So the map you read later in a session already includes the edits made earlier
 in it, without anyone running a command. greplost's hooks never emit a
 permission decision: `PreToolUse` only adds context, so tool calls are neither
 blocked nor auto-approved and your own permission prompt for Glob/Grep is
-untouched. A hook that fails logs to stderr and exits 0 — it can never break the
+untouched. A hook that fails logs to stderr and exits 0: it can never break the
 session, and it can never be the reason a tool call did not run. If you see that
 injected context, it is this same guidance surfacing without being asked; follow
 it rather than waiting for a hook to act on your behalf.

@@ -100,7 +100,7 @@ async function globCandidates(root: string, config: GreplostConfig): Promise<str
 
 /**
  * Every repo-relative path `config.include`/`config.exclude` admit, sorted and
- * deduplicated — before anything is asked about its language.
+ * deduplicated, before anything is asked about its language.
  *
  * This is `discoverFiles` with its last step left off, and it exists because
  * the files that decide *which* languages to index are not themselves indexable
@@ -114,7 +114,7 @@ async function globCandidates(root: string, config: GreplostConfig): Promise<str
  * A path is not only a location, it is an *id* (tech spec 5.3): `<file>` names
  * a file, `<file>#<symbol>` a declaration, and schema 2's `<file>#<kind>.<name>`
  * a non-file node. A path containing a `#` is therefore indistinguishable from
- * a symbol id — `splitNodeId` would read `we#ird.tf` as the file `we` — and
+ * a symbol id, `splitNodeId` would read `we#ird.tf` as the file `we`, and
  * `nodeCardPath` cannot slug a directory out of it. A path containing a newline
  * or a NUL cannot survive `graph/*.jsonl`, which is one record per line.
  *

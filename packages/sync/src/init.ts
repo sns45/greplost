@@ -65,7 +65,7 @@ export interface InitResult {
 /**
  * Everything the runtime writes and nothing anyone should commit: the dirty
  * queue, the lock, the last-indexed commit, and the parse cache. The rest of
- * `.greplost/` — the map itself, `config.json`, the semantic summaries — is
+ * `.greplost/`, the map itself, `config.json`, the semantic summaries, is
  * meant to be in the repository; that is the whole point of it being there.
  */
 const GITIGNORE_ENTRIES: readonly string[] = [

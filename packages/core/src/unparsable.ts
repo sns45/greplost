@@ -33,10 +33,10 @@ export interface UnparsableFile {
   path: string;
   lang: Lang;
   /**
-   * `error-root`: the parse root is itself an ERROR node — nothing about the file's
+   * `error-root`: the parse root is itself an ERROR node; nothing about the file's
    * top level was recognised.
    * `error-child`: the root is a program, but one of its direct children is an ERROR
-   * node — a run of top-level source the grammar could not place.
+   * node, a run of top-level source the grammar could not place.
    */
   reason: "error-root" | "error-child";
 }

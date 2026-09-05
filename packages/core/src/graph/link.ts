@@ -248,7 +248,7 @@ export function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): Ex
       // and is never one of the names the module exports. The id says so, not the kind: a
       // language declaration may legitimately carry a node kind's name.
       if (isNodeDeclaration(decl)) continue;
-      // `export default function Page() {}` marks the declaration exported, because it is —
+      // `export default function Page() {}` marks the declaration exported, because it is,
       // but the name it is exported under is `default`, not `Page`. The compiler reports one
       // export here and greplost used to report two, which cost S2 precision on every App
       // Router page in the corpus. The export record is the only thing that knows the

@@ -48,7 +48,7 @@ describe("loadTruth", () => {
     // `python` was the example here until leaf 2.1 implemented it, `java` until leaf 2.5,
     // `kotlin` until leaf 2.6, `yaml-actions` until leaf 2.9 and `dockerfile` until leaf 2.10.
     // Build 2 landed them all, so what is left to hold is that none of them is still the seam's
-    // throwing stub — a stub is the only module that declares `not-implemented`.
+    // throwing stub: a stub is the only module that declares `not-implemented`.
     for (const target of TARGETS) {
       const mod = await loadTruth(target);
       expect(typeof mod.generateTruth, `${target}.generateTruth`).toBe("function");

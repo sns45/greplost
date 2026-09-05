@@ -3,10 +3,10 @@
  *
  * Three layers, each tested on inline sources first and then pinned against
  * `fixtures/tiny-k8s` and `fixtures/tiny-helm` end to end:
- *   - `extractYamlK8s`          — the nodes one manifest makes (spec 2.3, "Declarations");
- *   - `blankTemplates`/`extractYamlHelm` — the documented pre-pass that makes a Helm template
+ *   - `extractYamlK8s`, the nodes one manifest makes (spec 2.3, "Declarations");
+ *   - `blankTemplates`/`extractYamlHelm`, the documented pre-pass that makes a Helm template
  *                                 parseable without running helm, and the chart nodes;
- *   - `resolveYamlK8sReferences` — a selector, a config reference or a `.Values` action resolved
+ *   - `resolveYamlK8sReferences`, a selector, a config reference or a `.Values` action resolved
  *                                 to the one node it names, or dropped rather than guessed.
  *
  * The `describe` names are fixed by spec section 2.6: `documents`, `images`, `selectors`,

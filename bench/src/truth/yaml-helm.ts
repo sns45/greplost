@@ -5,7 +5,7 @@
  * The reason is not laziness, it is arithmetic: **a rendered name is a value and greplost's is
  * a template**. `helm template` turns `name: {{ include "common.names.fullname" . }}` into
  * `name: release-name-redis`, a string that depends on the release, the values file and the
- * chart's helper library — none of which is in the repository. Comparing greplost's
+ * chart's helper library, none of which is in the repository. Comparing greplost's
  * `Deployment.~0` against that would not be measuring greplost.
  *
  * So the oracle splits the chart into the parts a name means something in, and the parts it
@@ -23,8 +23,8 @@
  *    `packages/core`, and that set is the S5 truth. **`same-regex-both-sides` publishes the
  *    limit of that**: greplost and this oracle recognise a `.Values` path with the same regular
  *    expression, written twice, so S5 witnesses that the two sides agree about which paths a
- *    chart mentions and not that either is right about what a `.Values` path *is*. Only S2 —
- *    the chart name and the values keys, read by js-yaml against greplost's tree-sitter walk —
+ *    chart mentions and not that either is right about what a `.Values` path *is*. Only S2,
+ *    the chart name and the values keys, read by js-yaml against greplost's tree-sitter walk,
  *    is independently witnessed for a chart.
  *  - a literal `image:` in a template is a second reference both sides state, found here by a
  *    line scan of the raw text (`literalImages`) rather than by repeating the pre-pass.
@@ -74,8 +74,8 @@ export const NOTES: readonly string[] = [
  * S6 used to be here too, because a template's node ids are document-index fallbacks and
  * `helm template` cannot report the documents it decided not to render. It is not any more: a
  * note is published *target-wide*, so one chart in a repo full of manifests turned S6 off for
- * the manifests as well. `generateExtra` now returns `nodeFiles` — the chart's own files and
- * never its templates — and S6 scores exactly those (fix round 1).
+ * the manifests as well. `generateExtra` now returns `nodeFiles`, the chart's own files and
+ * never its templates, and S6 scores exactly those (fix round 1).
  */
 // S1 and S4 are vacuous for YAML (no imports, no cycles): stated as unsupported so RESULTS.md prints n/a
 // instead of a 1.000 nobody measured (driver ruling 2026-09-05, shared with the Dockerfile and Actions oracles).
@@ -132,7 +132,7 @@ export interface RenderedDocument {
 /**
  * `helm template <chart>` for one chart directory, split by its `# Source:` markers.
  *
- * Returns null when the chart cannot be rendered — an unvendored dependency is the usual
+ * Returns null when the chart cannot be rendered: an unvendored dependency is the usual
  * reason, and it is a fact about the checkout rather than about greplost. `helm` itself missing
  * is a throw, because then the oracle is not the one the spec names.
  */
@@ -274,7 +274,7 @@ function templated(value: string): boolean {
  *
  * A *line* scan, deliberately: greplost reads a blanked parse tree, and an oracle that repeated
  * the pre-pass and the tree walk would be the same program twice. What is restated here is the
- * documented rule, not the implementation — a container is a sequence item under `containers:`,
+ * documented rule, not the implementation: a container is a sequence item under `containers:`,
  * `initContainers:` or `ephemeralContainers:` with a `name:` and an `image:`, inside a document
  * whose `apiVersion` and `kind` are both literal (spec 2.3, and the leaf's ruling that a
  * templated kind makes no node). Anything with a `{{` in it is a value helm decides and neither
@@ -407,7 +407,7 @@ function coveredRun(root: string, files: string[], render: boolean): Run {
 /**
  * Helm truth for `files` (repo-relative posix paths) under `root`.
  *
- * `helm` is required — it is the oracle spec 2.3 names — and every chart that can be rendered
+ * `helm` is required: it is the oracle spec 2.3 names. Every chart that can be rendered
  * is, so a chart that stopped rendering is visible. A chart that cannot be rendered offline
  * (unvendored dependencies) is reported on stderr, not thrown: nothing scored here comes from
  * the render.
@@ -436,14 +436,14 @@ export function generateTruth(root: string, files: string[]): Truth {
  * References are two rules, both read off the raw template text and neither needing a render:
  *
  *  - `helm-values`, one per distinct `.Values.<path>` in a template, to the `values.yaml` node
- *    for the path's first segment. `Chart.yaml` is **not** scanned — greplost's extractor
- *    returns a chart's `module` node and looks at nothing else in that file — so an
+ *    for the path's first segment. `Chart.yaml` is **not** scanned: greplost's extractor
+ *    returns a chart's `module` node and looks at nothing else in that file, so an
  *    `annotations:` block mentioning `.Values` there cannot become an edge only one side has.
  *  - `from-image`, one per literal `image:` in a template. A literal image in a chart is fully
  *    rendered text and names the image that will run, so both sides claim it (fix round 1).
  *
  * `nodeFiles` is the chart's own files and never its `templates/**` (bench seam, `nodeFiles` on
- * the `generateExtra` result): a chart file's node names — the chart's name, a values key — are
+ * the `generateExtra` result): a chart file's node names, the chart's name, a values key, are
  * written down and can be compared, and a template's are document-index fallbacks that only
  * exist after helm has decided which documents render. Restricting S6 rather than declaring it
  * `unsupported` is what lets a repo holding manifests *and* a chart still score its manifests.

@@ -275,7 +275,7 @@ describe("oracle independence", () => {
     const source = readFileSync(app, "utf8").replace("import tiny.Store;\n", "");
     writeFileSync(app, source);
     const after = generateTruth(root, FIXTURE_FILES);
-    // `Store` is still reachable — it is a sibling in the same package — so the file still
+    // `Store` is still reachable: it is a sibling in the same package, so the file still
     // compiles and the calls stay, but the *import* edge is gone.
     expect(keys(after.imports)).toEqual([
       `${SRC}/App.java -> ${SRC}/Retry.java`,

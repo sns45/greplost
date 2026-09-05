@@ -505,7 +505,7 @@ function addImport(
  *
  * `typeOnly` is inherited: an import inside an `if TYPE_CHECKING:` body exists only for a
  * type checker, so it is `type` however deeply it is nested in that body. An import inside a
- * function body is still `static` — Python has no dynamic-import *syntax* to tell it apart,
+ * function body is still `static`, Python has no dynamic-import *syntax* to tell it apart,
  * and the one dynamic form there is (`importlib.import_module("x")`) is handled below.
  */
 function collectImports(state: PyState, node: Node, typeOnly: boolean): void {
@@ -686,7 +686,7 @@ function patternNames(node: Node, into: Set<string>): void {
  * flattens it: a name bound in another branch of the same function is far likelier to be a
  * local than a coincidence, and withholding costs recall while emitting costs precision.
  *
- * `global x` / `nonlocal x` say the opposite — the name is *not* this scope's — so they are
+ * `global x` / `nonlocal x` say the opposite: the name is *not* this scope's, so they are
  * subtracted at the end.
  */
 function boundNames(scope: Node): ReadonlySet<string> {

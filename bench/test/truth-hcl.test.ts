@@ -6,8 +6,8 @@
  * full rather than recomputed from the thing under test.
  *
  * `fixture truth` also carries the leaf's real **S5**. `bench/src/structural.ts` still hard-codes
- * `S5: null` — wiring `generateExtra` into `scoreAgainstTruth` is a change to a file leaf 2.0
- * owns and three wave-1 leaves share, so it is reported to the driver rather than made here —
+ * `S5: null`, wiring `generateExtra` into `scoreAgainstTruth` is a change to a file leaf 2.0
+ * owns and three wave-1 leaves share, so it is reported to the driver rather than made here,
  * and a metric nobody computes is a metric nobody can fail. Reference precision and recall are
  * therefore computed here, from this leaf's own oracle, with the same `scoreEdges` the harness
  * would use and against the same 0.95 threshold `gates/leaf-2.2.md` states.
@@ -133,7 +133,7 @@ describe("fixture truth", () => {
     ]);
   });
 
-  test("the node set holds no id splitNodeId rejects — S6 compares node ids, not declarations", () => {
+  test("the node set holds no id splitNodeId rejects, S6 compares node ids, not declarations", () => {
     // `<file>#terraform` is a *symbol*: the `terraform` settings block is not a thing any
     // address can name, so it is a `const` and not a node. Publishing it here put an id in the
     // truth set that `splitNodeId` refuses, and every one of them was scored as an S6 miss
@@ -201,7 +201,7 @@ describe("fixture truth", () => {
     expect(S5.tp).toBe(extra.references.length);
 
     // The node set is scored the same way: every node the oracle found, and no invented one.
-    // Both sides are the *node* ids, which is what `scoreAgainstTruth` compares for S6 — the
+    // Both sides are the *node* ids, which is what `scoreAgainstTruth` compares for S6, the
     // `terraform` settings block is a `const` symbol on both sides and belongs to neither set.
     const declared = snapshot.symbols
       .filter((decl) => splitNodeId(decl.id) !== null)

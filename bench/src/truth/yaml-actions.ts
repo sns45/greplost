@@ -30,7 +30,7 @@
  *   files       the workflow and action files it could read;
  *   imports     always empty: a workflow has no import statement, and `resolve/yaml.ts` says
  *               the same thing on greplost's side;
- *   exports     each file's sorted job ids — a workflow's public surface is the jobs another
+ *   exports     each file's sorted job ids: a workflow's public surface is the jobs another
  *               job, or another workflow, reaches for by name;
  *   calls       always empty, which is why S3 is `n/a` for YAML and never 0;
  *   references  the S5 truth: `needs`, `uses` and `config` resolved by the same documented
@@ -50,11 +50,11 @@ import type { Truth } from "./ts.ts";
 /**
  * Oracle choices this generator applies, for `RESULTS.md` to disclose.
  *
- *  - `js-yaml-oracle`               — which reader actually ran (see the module docstring).
- *  - `anchors-not-expanded`         — js-yaml resolves anchors, aliases and merge keys (`<<:`)
+ *  - `js-yaml-oracle`, which reader actually ran (see the module docstring).
+ *  - `anchors-not-expanded`, js-yaml resolves anchors, aliases and merge keys (`<<:`)
  *    and greplost reads the text as written; a workflow that uses one is a real divergence and
  *    is scored as one rather than papered over.
- *  - `config-precision-unmeasured`  — the `config` refKind has no corpus-scale measurement. A
+ *  - `config-precision-unmeasured`: the `config` refKind has no corpus-scale measurement. A
  *    YAML target is indexed with `languages: ["yaml"]`, so a `run:` body naming `scripts/x.ts`
  *    resolves to nothing on either side, and even the fixture's two `config` edges fall outside
  *    S5 because their targets are not scored YAML files. Leaf 2.12 discloses this.
@@ -66,8 +66,8 @@ export const NOTES: readonly string[] = ["js-yaml-oracle", "anchors-not-expanded
  * count. `structural.ts` reads these out of the notes and prints `n/a` (leaf 2.0 ruling R10);
  * nothing is inferred.
  *
- * S3 (calls) and S1 (imports) are both structurally absent — spec 2.4 gives a workflow neither,
- * and `resolve/yaml.ts` says the same on greplost's side — and S4 is the cycle set over an
+ * S3 (calls) and S1 (imports) are both structurally absent: spec 2.4 gives a workflow neither,
+ * and `resolve/yaml.ts` says the same on greplost's side, and S4 is the cycle set over an
  * import graph that does not exist. Reporting them as a measured 1.000 over an empty universe
  * on both sides is the vacuous pass tech spec 10.1 principle 2 exists to stop. S2, S5 and S6
  * stay measured and gated, so `--gate` is never left with nothing to fail (leaf 2.9 fix
@@ -160,7 +160,7 @@ type Flavour = "actions" | "helm" | "k8s" | "plain";
 /**
  * One document's flavour: `classifyYamlDocument` restated, in order, on js-yaml's objects.
  *
- * Restated and not shared — that is what makes a flavour disagreement between the two programs
+ * Restated and not shared: that is what makes a flavour disagreement between the two programs
  * show up as a score rather than as silence. The order is the extractor's, including the two
  * facts the review turned up: a file under `.github/workflows/` with **no `on` key** is not a
  * workflow (GitHub will not run it, and greplost classifies it `plain`), and the content rules

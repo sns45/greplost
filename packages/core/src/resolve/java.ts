@@ -72,7 +72,7 @@ function join(dir: string, rest: string): string {
  * `com.google.gson.Gson` -> `ext:maven/com.google:gson`, from the first two segments as the
  * group and the third as the artifact (spec 1.4). The artifact is only ever a **package**
  * segment: a fully qualified Java name ends in the *type*, so `org.junit.Test` has to take
- * `junit` and not `Test` — publishing a type as an artifact would make one external node per
+ * `junit` and not `Test`, publishing a type as an artifact would make one external node per
  * class of a dependency instead of one per dependency. Anything that is not a `com.`/`org.`
  * name keeps its first segment, which is what spec 1.4 says.
  */
@@ -165,7 +165,7 @@ interface TypeRef {
  * kind is consulted. It exists so a call can never land on something that is not callable:
  * `class Sub extends Base { int size = 7; int total() { return size(); } }` declares a field
  * named `Sub.size` and calls an inherited `Base.size`, and without the kind the field is a
- * perfectly unique — and completely wrong — `high` answer.
+ * perfectly unique, and completely wrong, `high` answer.
  */
 interface MemberEntry {
   count: number;
@@ -365,7 +365,7 @@ export function resolveJavaCall(
   // 1. `new Type`: the type's constructor, or the type itself when it declares none.
   //
   //    The order matters. A type that writes *several* constructors is overloaded, and picking
-  //    between them needs the argument types — so the call is dropped, exactly as an overloaded
+  //    between them needs the argument types, so the call is dropped, exactly as an overloaded
   //    method call is. Falling back to the type declaration there would be a different edge
   //    from the one a compiler resolves, which is a false positive rather than a missing edge:
   //    `new JsonIOException(cause)` names a constructor, not a class.

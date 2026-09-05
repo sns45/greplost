@@ -392,7 +392,7 @@ describe("mod tree", () => {
   test('a `[workspace] members = ["."]` crate does not walk the crate index forever', () => {
     // ripgrep's `fuzz/Cargo.toml` carries the standard "prevent this from interfering
     // with workspaces" idiom, `members = ["."]`. A member is joined onto its own
-    // directory, so `fuzz` + `.` is `fuzz/.` — a *different* string that the filesystem
+    // directory, so `fuzz` + `.` is `fuzz/.`, a *different* string that the filesystem
     // happily resolves to the same manifest, which names `.` again. The crate index
     // walked `fuzz/./.`, `fuzz/././.` and so on, allocating a longer path every step:
     // `bun run bench:replay --repo ripgrep` was killed at 51.9 GB. The reader below

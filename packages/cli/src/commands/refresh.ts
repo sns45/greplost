@@ -3,8 +3,8 @@
  *
  * The semantic layer is optional, so this command is a seam rather than an
  * implementation: it asks `@greplost/semantic` for the entry point below and
- * delegates to it, and when there is none — a build that shipped without the
- * package — it says so in one line and exits 1. Nothing here has an opinion
+ * delegates to it, and when there is none, a build that shipped without the
+ * package, it says so in one line and exits 1. Nothing here has an opinion
  * about how summaries are produced; that is the semantic leaf's contract:
  *
  *   refreshCommand(root: string, opts: {
@@ -14,7 +14,7 @@
  * The export is `refreshCommand` rather than `refresh` because the package has
  * both, and they are not the same function: `refresh` is the library call and
  * answers with a `RefreshResult` (and throws), while `refreshCommand` is this
- * shape — an exit code, its own output, no exceptions. Looking up the wrong one
+ * shape, an exit code, its own output, no exceptions. Looking up the wrong one
  * would "work" right up until the CLI returned an object as its exit status.
  */
 
@@ -32,7 +32,7 @@ export interface SemanticRefreshOptions {
 export type SemanticRefresh = (root: string, opts: SemanticRefreshOptions) => Promise<number>;
 
 /**
- * The same run, decided but not printed — what `update --semantic` needs.
+ * The same run, decided but not printed, what `update --semantic` needs.
  *
  * `refreshCommand` owns its output, which is right for `greplost refresh` and
  * wrong for a command that has a result of its own: two writers meant two JSON

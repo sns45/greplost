@@ -25,13 +25,13 @@ Read honestly, and `RESULTS.md` should say so:
 
 - **The corpus is single-stage.** All 60 indexed Dockerfiles in the two repos carry exactly one
   `FROM`, none of them with an `AS` alias, so S2 measures one positional stage name per file and
-  S5 measures 60 `from-image` edges to `ext:image/<ref>` — a real check that the tree-sitter
+  S5 measures 60 `from-image` edges to `ext:image/<ref>`, a real check that the tree-sitter
   extractor reads the same base reference dockerfile-ast reads, and no check at all of
   multi-stage naming, `copy-from` or `config`. Those three are covered by `fixtures/tiny-docker`
   and by `packages/core/test/extract-dockerfile.test.ts` only.
 - **`config` resolves to nothing on either corpus.** A Dockerfile-only run indexes Dockerfiles,
   so the 18 `COPY docker-entrypoint.sh` sources name a file the map does not hold and are
-  dropped on both sides. The refKind is real, and pays off exactly where it should — a repo
+  dropped on both sides. The refKind is real, and pays off exactly where it should, a repo
   whose config indexes both `dockerfile` and its application language.
 - **Spec 5.1 counts 44 and 21; greplost indexes 42 and 18.** The five `Dockerfile-*.template`
   files are not Dockerfiles by `langOf`: `LANG_BY_BASENAME` matches `Dockerfile` exactly and
@@ -51,8 +51,8 @@ another leaf can assume are:
    position, never a hash. This is *not* the `~<n>` duplicate suffix, which stays in the id
    alone: two stages written `AS x` are `#stage.x` and `#stage.x~2`, both named `x`.
 2. **Every stage name is in `FileRecord.exports`; `Declaration.exported` is alias-only.** Spec
-   2.5 fixes both halves — `Truth.exports` is "the file's sorted stage names", and `exported` is
-   "true for a named stage, false otherwise" — and they are different questions: `exported` says
+   2.5 fixes both halves, `Truth.exports` is "the file's sorted stage names", and `exported` is
+   "true for a named stage, false otherwise", and they are different questions: `exported` says
    another Dockerfile can `COPY --from` this stage by name, while the export index is the
    surface the file declares, which `COPY --from=<index>` addresses positionally. It is also the
    only reading under which S2 is measurable on a corpus of single-stage Dockerfiles: with named
@@ -65,7 +65,7 @@ another leaf can assume are:
    a Dockerfile and a manifest is the `ext:image/<ref>` target both leaves emit on a `from-image`
    edge, not a node name.
 4. **A reference built from a build variable is dropped.** `FROM $BASE` names whatever the
-   builder computes, so `ext:image/$BASE` would be an external node naming no image — the rule
+   builder computes, so `ext:image/$BASE` would be an external node naming no image, the rule
    spec 2.3 already applies to a templated Kubernetes `image:`. `meta.base` still records the
    text as written.
 5. **A `COPY`/`ADD` source resolves against two contexts and must agree.** Nothing greplost can
@@ -81,8 +81,8 @@ another leaf can assume are:
    the two corpora index hits it.
 7. **Nothing recovered from an `ERROR` region is published as if it had been read** (fix round
    1). The region begins at the instruction the grammar choked on and runs to the end of the
-   file, so a declaration found inside it carries no `meta.default` — the value the parser
-   managed to read is a prefix of the real one (`ENV NOTE a b c` gives `a`) — and a file holding
+   file, so a declaration found inside it carries no `meta.default`, the value the parser
+   managed to read is a prefix of the real one (`ENV NOTE a b c` gives `a`), and a file holding
    any `ERROR` gets **no `image` node at all**, because the final stage may be in the part that
    was lost (`FROM a AS one` / `ENV NOTE a b c` / `FROM a AS two` really builds `two`). Both are
    misses the oracle catches, never a wrong id.

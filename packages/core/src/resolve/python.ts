@@ -8,8 +8,8 @@
  *     the module the interpreter actually executes and the file a reader has to open.
  *     Relative specifiers (`.`, `..pkg.mod`) keep their dots and resolve against the
  *     importing file's own package directory, one level up per extra dot (PEP 328).
- *     Anything the indexed file set cannot answer is external — `ext:<name>` for a
- *     standard-library root, `ext:pypi/<name>` for a distribution — or, for a relative
+ *     Anything the indexed file set cannot answer is external, `ext:<name>` for a
+ *     standard-library root, `ext:pypi/<name>` for a distribution, or, for a relative
  *     specifier that names nothing, `unresolved`.
  *
  *  2. `buildPythonCallIndex` / `resolvePythonCall` implement the five call rules the spec
@@ -21,7 +21,7 @@
  *
  * **Where the call rules actually run.** `graph/link.ts`'s shared resolver already
  * implements exactly those five, because `extract/python.ts` writes `self.m()` as
- * `this.m` and writes `import X as obj` as a namespace symbol — which is why the spec
+ * `this.m` and writes `import X as obj` as a namespace symbol, which is why the spec
  * asks for that normalisation. Python therefore needs no branch in `link.ts` and this
  * leaf edits no shared file. The two functions below are the contract's standalone form
  * of the same rules: they are tested directly, and a caller that wants Python call
@@ -512,8 +512,8 @@ export function buildPythonCallIndex(
 /**
  * One Python call site resolved to a declaration, or null when nothing is certain.
  *
- * The five rules of spec 1.2, in order. Everything else — a deeper chain, a call on a local,
- * a name the file never bound — is dropped rather than guessed (tech spec 5.1).
+ * The five rules of spec 1.2, in order. Everything else, a deeper chain, a call on a local,
+ * a name the file never bound, is dropped rather than guessed (tech spec 5.1).
  */
 export function resolvePythonCall(
   file: FileRecord,

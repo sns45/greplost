@@ -134,8 +134,8 @@ function stderrOf(cause: unknown): string {
  * `go list ./...` is a *module* command: run from a directory that is not inside a module it
  * matches nothing at all, and it never descends into a nested module. A repository that is one
  * module (every build-1 Go corpus, and every Go fixture) is loaded exactly as it always was,
- * from its own root. A repository that is a bag of modules — `pulumi/examples`, the pinned
- * `pulumi-go` corpus, is fifty of them with nothing at the top — is loaded once per module and
+ * from its own root. A repository that is a bag of modules, `pulumi/examples`, the pinned
+ * `pulumi-go` corpus, is fifty of them with nothing at the top, is loaded once per module and
  * the ids are re-rooted onto the repository, so both sides of the score still speak repo paths
  * (leaf 2.7).
  */

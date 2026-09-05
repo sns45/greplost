@@ -90,19 +90,19 @@ export function singleTool(
 
   const notes: string[] = [
     `F2 rests on ${f2Denominator(replay)}. It compares the structure artifacts that \`listStructurePaths\` ` +
-      "enumerates — `INDEX.md`, `manifest.json`, `graph/*.jsonl`, `repo/*.md`, `packages/*/{MAP,API}.md` and " +
-      "`packages/*/modules/**` — and not the whole `.greplost/` directory: `config.json`, `cache/` and the " +
+      "enumerates, `INDEX.md`, `manifest.json`, `graph/*.jsonl`, `repo/*.md`, `packages/*/{MAP,API}.md` and " +
+      "`packages/*/modules/**`, and not the whole `.greplost/` directory: `config.json`, `cache/` and the " +
       "runtime files (`.dirty`, `.lock`, `.state.json`) are excluded, because they are not the map and are " +
       "not committed (ruling 2026-09-02).",
     "`unparsable` counts files whose tree-sitter parse root is an ERROR node or has one as a direct child: " +
       "the top level of the file is not a program the grammar recognises (`findUnparsableFiles` in " +
       "`@greplost/core`, Appendix C ruling 2026-09-03). The extractor recovers around ERROR nodes, so these " +
-      "files are still scored — which is the problem: whatever the grammar could not read costs S1 and S2 " +
+      "files are still scored, which is the problem: whatever the grammar could not read costs S1 and S2 " +
       "recall with no line saying so unless it is counted here. tree-sitter-typescript 0.23.2 is the newest " +
       "grammar that exists, and hono's generic call signatures hit open upstream issue " +
       "https://github.com/tree-sitter/tree-sitter-typescript/issues/335. The count is read from the " +
-      "structural payload when it reports one, and otherwise derived from it — a file every one of whose " +
-      "truth items was missed is a file nothing was extracted from — and it is `n/a` with `not measured` " +
+      "structural payload when it reports one, and otherwise derived from it, a file every one of whose " +
+      "truth items was missed is a file nothing was extracted from, and it is `n/a` with `not measured` " +
       "when the payload carries neither. Nothing about it is asserted here.",
   ];
   if (replay === null || perf === null || agent === null || mapquality === null) {
@@ -135,12 +135,12 @@ function f2Denominator(replay: Payload | null): string {
  * The unparsable-files row.
  *
  * Three sources, in order, and never a fourth: the payload's own count under
- * any of the names the extractor might use; a count derived from the payload —
+ * any of the names the extractor might use; a count derived from the payload,
  * files every one of whose truth items was missed, which is what "nothing was
  * extracted from this file" looks like in a score sheet; and `n/a` with `not
  * measured`. The third branch used to carry a sentence about the extractor's
  * error recovery being in progress, which is a claim about the code and not a
- * reading of a payload — exactly the hand-filled cell tech spec 10.10 forbids.
+ * reading of a payload, exactly the hand-filled cell tech spec 10.10 forbids.
  */
 function unparsableRow(structural: Payload | null): SummaryRow {
   const reported = structural === null ? null : firstNum(structural.data, [
@@ -387,9 +387,9 @@ export function headToHead(payload: Payload | null, replay: Payload | null, asse
   // What the X2 walk is, stated at render time rather than read out of a payload.
   //
   // The suite records it in its own method list, but a payload written before that
-  // sentence existed carries the old wording, and the disclosure a reader most needs —
+  // sentence existed carries the old wording, and the disclosure a reader most needs,
   // that the history is generated, one added import per commit, with no deletions and no
-  // renames — must not depend on which run last touched `bench/results/` (review round 3,
+  // renames, must not depend on which run last touched `bench/results/` (review round 3,
   // important 8). It is a fact about how this harness builds every X2 walk, so it is true
   // of every X2 row the table can show.
   if (rows.some((row) => row.id === "X2")) {
@@ -397,7 +397,7 @@ export function headToHead(payload: Payload | null, replay: Payload | null, asse
       "X2: the commit walk is **synthetic**. It is generated over the corpus repo's pinned checkout rather " +
         "than replayed from its real history: each commit appends exactly one resolvable import line to one " +
         "file, so truth moves by exactly one edge per commit, and the walk contains no deletions, no renames " +
-        "and no new files — the easy direction for an incremental updater. Tech spec 10.0 X2 asks for 500 " +
+        "and no new files, the easy direction for an incremental updater. Tech spec 10.0 X2 asks for 500 " +
         "real commits of a corpus checkout; that is not what was run.",
     );
   }

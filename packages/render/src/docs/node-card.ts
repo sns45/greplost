@@ -56,7 +56,7 @@ export function buildNodeCard(ctx: DocContext, id: string): string {
   blocks.push(`**References:** ${edgesField(ctx, from, (edge) => edge.to, parts.file, link)}`);
   blocks.push(`**Referenced by:** ${edgesField(ctx, to, (edge) => edge.from, parts.file, link)}`);
 
-  // Nodes, not files, and over imports *plus* reference edges — the file card's
+  // Nodes, not files, and over imports *plus* reference edges, the file card's
   // `**Blast radius:** N files` is the manifest's import-only figure, and the
   // two are deliberately different questions about the same source line.
   const blast = ctx.nodeBlast.get(id) ?? 0;
@@ -88,7 +88,7 @@ function attributesField(decl: Declaration): string | undefined {
  * file, and the full id otherwise, so a cross-file edge says which file it
  * crossed to. Spec 4.4's example renders the bare name (`aws_kms_key.logs`);
  * that was amended in fix round 1 because the bare name of a `local`, a
- * `provider` or a `module` is a single opaque word — `tags`, `aws`, `logs` —
+ * `provider` or a `module` is a single opaque word, `tags`, `aws`, `logs`,
  * with nothing to say what kind of thing it is. The kind-qualified form is also
  * exactly what the file card's Nodes block prints, so one node reads the same
  * on both cards, and it is unique within a file by construction (the `~<n>`

@@ -4,7 +4,7 @@
  * `verify` is the CI backstop (tech spec 7.3): it rebuilds the structure layer
  * in memory from the checkout plus the committed summary cache and diffs the
  * bytes against `.greplost/`. These tests drive it through the four states it
- * can report — clean, changed, missing, extra — and pin the shape of the
+ * can report, clean, changed, missing, extra, and pin the shape of the
  * unified diff it hands to a failing build.
  */
 

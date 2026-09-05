@@ -16,7 +16,7 @@
  *    ruling). A missing or templated **name** is different, and is what the spec's
  *    document-index fallback is for.
  *  - **Exports.** A manifest's `Declaration.exported` is `false` for every node, exactly as the
- *    spec says — and the *file record* still lists its node names in `exports`, because that is
+ *    spec says, and the *file record* still lists its node names in `exports`, because that is
  *    the channel `FileEntry.exports` reads and a `ConfigMap` named `web-config` is precisely
  *    what another manifest reaches for by name. The two statements do not collide:
  *    `buildExportIndex` never takes a non-file node from the declaration side (`isNodeKind`),
@@ -28,8 +28,8 @@
  *    it onto the one node it can mean, or drops it.
  *
  * Nothing in this file reads the filesystem or knows about another file (tech spec 5.1). The
- * Helm flavour reuses every rule here through `extractK8sDocuments`; the differences it needs —
- * the template pre-pass, `Chart.yaml`, `values.yaml` and `.Values` references — live in
+ * Helm flavour reuses every rule here through `extractK8sDocuments`; the differences it needs,
+ * the template pre-pass, `Chart.yaml`, `values.yaml` and `.Values` references, live in
  * `extract/yaml-helm.ts`.
  */
 
@@ -57,8 +57,8 @@ const CONTAINER_KEYS: ReadonlySet<string> = new Set(["containers", "initContaine
  * Config references, by the key that introduces them: the key holding the name, and the kind
  * of object the name belongs to (spec 2.3, "References").
  *
- * Exactly the six the spec lists. A seventh that looks just as reasonable — a volume's
- * `secret.secretName` — is deliberately absent: every rule here has to be restated by an
+ * Exactly the six the spec lists. A seventh that looks just as reasonable, a volume's
+ * `secret.secretName`, is deliberately absent: every rule here has to be restated by an
  * independent oracle, and a rule only one side implements is a false positive by construction.
  */
 const CONFIG_REFS: Readonly<Record<string, { readonly nameKey: string; readonly kind: string }>> = {
@@ -121,7 +121,7 @@ interface K8sState {
  * True for a manifest, false for a Helm template: whether this file's *names* are names.
  *
  * A chart template's object *names* are values chosen when the chart is rendered, not names
- * anything else in the repository can reach for — spec 2.3 says the same thing as "names are
+ * anything else in the repository can reach for, spec 2.3 says the same thing as "names are
  * not compared". So a template's record exports nothing, and neither `selector` nor
  * `config-ref` is drawn from one: both are lookups by name, and one built from the handful of
  * labels a chart happens to write literally would be a fragment of a graph that only exists
@@ -141,7 +141,7 @@ function namesAreNames(state: K8sState): boolean {
  *
  * The suffix lives in the **id and nowhere else** (driver ruling 2026-09-04, the same rule
  * `extract/hcl.ts` follows): `name` stays as the file wrote it, because the name is what every
- * other manifest writes when it reaches for the object — `configMapRef: { name: web-config }`
+ * other manifest writes when it reaches for the object, `configMapRef: { name: web-config }`
  * names *both* of two same-named ConfigMaps, and a suffixed name would make the second one
  * silently distinguishable and turn an ambiguous reference into a certain one. It is also what
  * the export index publishes, and `ConfigMap.web-config~2` is a name nobody wrote.
@@ -277,7 +277,7 @@ function read(state: K8sState, value: YamlValue | null, ...keys: readonly string
  * A node's line span, with trailing blank lines cut off.
  *
  * A YAML block node runs to the start of whatever comes next, so its `endPosition` is the line
- * *after* the document — one line past the last thing anybody wrote. Every other language's
+ * *after* the document, one line past the last thing anybody wrote. Every other language's
  * span ends on a closing brace, so the difference would show up only here, as a card claiming a
  * line the node does not occupy.
  */
@@ -415,8 +415,8 @@ function collectImages(state: K8sState, document: YamlValue, index: number): voi
       );
       // An image reference built from a template action is not an image reference: greplost
       // never runs helm, so `ext:image/______:____` would be an invented external node. A
-      // *literal* one is different, in a chart as much as in a manifest — `image: busybox:1.36`
-      // is fully rendered text and names the image that will actually run — so this is the one
+      // *literal* one is different, in a chart as much as in a manifest, `image: busybox:1.36`
+      // is fully rendered text and names the image that will actually run, so this is the one
       // reference a template does draw besides `helm-values` (fix round 1).
       if (image.text !== null && !image.templated) {
         addReference(state, localPath(node), image.text, "from-image", lineOf(container.node));

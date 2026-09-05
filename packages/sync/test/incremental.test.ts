@@ -4,8 +4,8 @@
  *
  * The claim these tests exist to defend is the one the whole product rests on:
  * an incremental update and a full rebuild produce the same `.greplost/`, byte
- * for byte. Incremental is therefore never a different map — only a cheaper
- * route to the same one — and "the map is always in sync" survives contact
+ * for byte. Incremental is therefore never a different map, only a cheaper
+ * route to the same one, and "the map is always in sync" survives contact
  * with the fast path.
  *
  * Everything runs on a temp copy of `fixtures/tiny-ts` with a real git
@@ -414,7 +414,7 @@ describe("dirty", () => {
     writeFileSync(path.join(root, source), "export function thing(): number {\n  return 1;\n}\n");
     writeFileSync(path.join(root, other), "export const other = 2;\n");
 
-    // Porcelain collapses the whole subtree to `packages/newpkg/` by default —
+    // Porcelain collapses the whole subtree to `packages/newpkg/` by default,
     // a path with no extension, no discovery entry and no manifest entry, which
     // every filter would drop.
     expect(git(root, ["status", "--porcelain"])).toContain("packages/newpkg/");
@@ -439,7 +439,7 @@ describe("dirty", () => {
     git(root, ["add", "packages/newpkg"]);
     git(root, ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", "commit", "-q", "-m", "new"]);
 
-    // HEAD moved, so one rebuild — and now the tree does match its commit.
+    // HEAD moved, so one rebuild, and now the tree does match its commit.
     expect((await update(root, { mode: "incremental", quiet: true })).skipped).toBeUndefined();
     expect(readState(root).treeClean).toBe(true);
     expect((await update(root, { mode: "incremental", quiet: true })).skipped).toBe("clean");
@@ -499,7 +499,7 @@ describe("dirty", () => {
     writeFileSync(residue, "half an artifact");
     writeFileSync(inFlight, "mid-rename");
 
-    // Nothing is dirty, so this run takes the fast path — and must still sweep,
+    // Nothing is dirty, so this run takes the fast path, and must still sweep,
     // or a repository that stays clean keeps the residue in its status forever.
     const result = await update(root, { mode: "incremental", quiet: true });
 

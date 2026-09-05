@@ -13,7 +13,7 @@
  *    a node, because guessing which label is the name is how a wrong id gets into the map.
  *    `locals` is the exception: it yields one `local` node per attribute, named after the
  *    attribute, so its id is `<file>#local.<name>`. `terraform` yields a single `const` named
- *    `terraform` — it is a settings block, not a thing anything can address, so it is a symbol
+ *    `terraform`: it is a settings block, not a thing anything can address, so it is a symbol
  *    and not a node (which is what keeps `splitNodeId` from having to read `<file>#terraform`).
  *  - **Imports.** Only a `module` block imports, and its specifier is the `source` string as
  *    written. `resolve/hcl.ts` turns that into a directory id or an `ext:module/<source>`.
@@ -250,8 +250,8 @@ function metaOf(entries: ReadonlyArray<readonly [string, string | null]>): Recor
  * `expression` wrapper around either, and reading only `expression` nodes misses every operand
  * of every operator (measured on terraform-aws-vpc: 221 real references).
  *
- * The chain stops at the first step that is not an attribute — `data.x.y.names[0]` is the
- * address `data.x.y.names`, and `aws_vpc.main[*].id` is `aws_vpc.main` — and at the start of
+ * The chain stops at the first step that is not an attribute, `data.x.y.names[0]` is the
+ * address `data.x.y.names`, and `aws_vpc.main[*].id` is `aws_vpc.main`, and at the start of
  * the next chain, since a chain always begins with its own `variable_expr`.
  *
  * A single segment is not an address: `string` in `type = string` and a bare object key are
@@ -323,7 +323,7 @@ interface HclState {
  *
  * The suffix lives in the **id and nowhere else** (driver ruling 2026-09-04): `name` stays as
  * the file wrote it, because it is what every address referring to the block writes and what
- * the export index publishes — a suffixed name reached `FileEntry.exports` and advertised an
+ * the export index publishes, a suffixed name reached `FileEntry.exports` and advertised an
  * export nobody had written. Two blocks with one name are then correctly *ambiguous* to the
  * linker rather than silently distinguishable.
  *
@@ -390,7 +390,7 @@ function addReference(state: HclState, from: string, to: string, line: number): 
  * Every address inside one expression, attributed to `owner`.
  *
  * `bound` carries the names a `for` expression or a `dynamic` block put in scope. An address is
- * found at its head — a `variable_expr` — wherever that head sits, so an operand of an operator
+ * found at its head, a `variable_expr`, wherever that head sits, so an operand of an operator
  * and a value inside a template, a tuple, an object or a function call are all reached the same
  * way and none of them needs its own case.
  */
@@ -421,8 +421,8 @@ function walkExpression(state: HclState, owner: string, node: Node, bound: Reado
 /**
  * Every reference inside a block body, attributed to the node the block declared.
  *
- * Nested blocks are walked too — a `dynamic`, `lifecycle` or `provisioner` block belongs to the
- * resource that contains it — with any name the nested block binds added to the scope.
+ * Nested blocks are walked too, a `dynamic`, `lifecycle` or `provisioner` block belongs to the
+ * resource that contains it, with any name the nested block binds added to the scope.
  */
 function walkBody(
   state: HclState,
@@ -507,7 +507,7 @@ function collectLocals(state: HclState, block: Node): void {
     const parts = attributeParts(attribute);
     if (parts === null) continue;
     // A `locals` entry is a node of kind `local` named after the attribute, so its id is
-    // `<file>#local.<name>` through `nodeId` — byte-identical to the id the `const`-with-a-
+    // `<file>#local.<name>` through `nodeId`, byte-identical to the id the `const`-with-a-
     // dotted-name form produced, but one that `splitNodeId` can actually read back.
     const declaration = addDeclaration(
       state,

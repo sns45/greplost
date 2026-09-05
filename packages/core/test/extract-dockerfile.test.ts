@@ -3,13 +3,13 @@
  *
  * Three layers, each tested on inline sources first and then pinned against
  * `fixtures/tiny-docker` end to end:
- *   - `extractDockerfile`           — what one Dockerfile says about itself (spec 2.5,
+ *   - `extractDockerfile`, what one Dockerfile says about itself (spec 2.5,
  *                                     "Declarations"): one `stage` node per `FROM`, one `image`
  *                                     node for the final stage, `const`s for `ARG` and `ENV`;
- *   - `createDockerfileResolver`    — a `COPY`/`ADD` source resolved to the one indexed repo
+ *   - `createDockerfileResolver`, a `COPY`/`ADD` source resolved to the one indexed repo
  *                                     file it names, and to nothing at all when it names none
  *                                     or more than one;
- *   - `resolveDockerfileReferences` — `from-image`, `copy-from` and `config` resolved to the
+ *   - `resolveDockerfileReferences`, `from-image`, `copy-from` and `config` resolved to the
  *                                     node they name, at the confidence spec 0.3 fixes, or
  *                                     dropped rather than guessed.
  *
@@ -160,8 +160,8 @@ describe("stages", () => {
     // tree-sitter-dockerfile v0.2.0 cannot read the legacy `ENV NAME a b c` form and wraps it,
     // and every instruction after it, in one `ERROR`. What the walk recovers from inside that
     // region is a fragment, so it is published as a fragment: the stage before it is real, the
-    // constant is real but its value is not, and the final stage — the only thing an `image`
-    // node can be named after — was never seen at all.
+    // constant is real but its value is not, and the final stage, the only thing an `image`
+    // node can be named after, was never seen at all.
     const out = run("Dockerfile", "FROM alpine AS one\nENV NOTE a b c\nFROM alpine AS two\n");
     expect(out.decls.filter((d) => d.kind === "stage").map((d) => d.id)).toEqual(["Dockerfile#stage.one"]);
     // The real value is `a b c`; the grammar saw `a`. A default it cannot vouch for is dropped.

@@ -12,7 +12,7 @@
  * point is a file nothing in the repository imports (`fanIn === 0`) that either
  * is named like a program's front door or exports one of the three names a
  * runtime calls (`main`, `handler`, `fetch`). Those are ranked by downstream
- * reach — the size of the transitive import closure below them — because the
+ * reach, the size of the transitive import closure below them, because the
  * entry point that touches the most of the package is the one whose flow
  * explains the most of it, and the top five survive. A library package with no
  * such file gets no flows and no document, which is the honest answer: nothing
@@ -182,7 +182,7 @@ export function renderFlows(pkg: PackageInfo, flows: readonly Flow[], today = is
   return `${blocks.join("\n\n")}\n`;
 }
 
-/** `` 1. `path` (`symbol`): note `` — the symbol is dropped when the model named none. */
+/** `` 1. `path` (`symbol`): note ``; the symbol is dropped when the model named none. */
 function renderStep(step: FlowStep): string {
   const where = step.symbol === undefined ? `\`${step.file}\`` : `\`${step.file}\` (\`${step.symbol}\`)`;
   return `${where}: ${step.note}`;
@@ -199,7 +199,7 @@ export function isoDate(date: Date): string {
  * The name alone is not enough: `export const fetch = 5` is a constant that
  * happens to be called `fetch`, and treating it as a front door would put a
  * module of numbers at the head of a flow. So the declaration has to be
- * callable — a `function`, or a `const`/`let` bound to an arrow or a function
+ * callable, a `function`, or a `const`/`let` bound to an arrow or a function
  * expression, which is how the extractor records `export const handler = async
  * () => {}` and `export const fetch = function () {}`. The signature is the
  * header as written, so the `=>` or the `function` keyword is in it and the
