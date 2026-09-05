@@ -408,7 +408,17 @@ public final class Truth {
       Tree identifier = tree.getQualifiedIdentifier();
       if (identifier == null) continue;
       String fqn = identifier.toString().replaceAll("\\s+", "");
-      if (fqn.endsWith(".*")) continue;
+      if (fqn.endsWith(".*")) {
+        // An on-demand import names either a package (`java.util.*`, no file to point at) or a
+        // *type* whose static members are being pulled in (`import static p.Consts.*`). The
+        // second is a dependency on that type's file and greplost resolves it as one, so the
+        // oracle has to as well or every such import is a false positive by construction.
+        fqn = fqn.substring(0, fqn.length() - 2);
+        TypeElement onDemand = elements.getTypeElement(fqn);
+        if (onDemand == null) continue;
+        addImport(file, fileOf(onDemand), out);
+        continue;
+      }
       TypeElement type = null;
       for (String candidate = fqn; candidate.contains("."); ) {
         type = elements.getTypeElement(candidate);
@@ -416,12 +426,20 @@ public final class Truth {
         candidate = candidate.substring(0, candidate.lastIndexOf('.'));
       }
       if (type == null) continue;
-      String target = fileOf(type);
-      // A file importing a nested type of its own is not an edge; greplost's linker drops a
-      // self-import for every language, so the oracle must not carry one either.
-      if (target.isEmpty() || target.equals(file) || !seen.contains(target)) continue;
-      out.add(file + " " + target);
+      addImport(file, fileOf(type), out);
     }
+  }
+
+  /**
+   * One import edge, if it is one at all.
+   *
+   * A file importing a nested type of its own is not an edge: greplost's linker drops a
+   * self-import for every language, so the oracle must not carry one either. The separator is
+   * NUL because a repo-relative path may contain a space but never a NUL.
+   */
+  private void addImport(String file, String target, Set<String> out) {
+    if (target.isEmpty() || target.equals(file) || !seen.contains(target)) return;
+    out.add(file + "\0" + target);
   }
 
   // -------------------------------------------------------------------------
@@ -439,10 +457,7 @@ public final class Truth {
 
           @Override
           public Void visitNewClass(NewClassTree node, Void unused) {
-            // `RED, GREEN` in an enum body is a `new` the compiler wrote, not the author: it
-            // would otherwise be an edge from the enum to itself that nobody can read in the
-            // source and that greplost, reading only what is written, never emits.
-            if (!isEnumConstant(getCurrentPath().getParentPath())) record(getCurrentPath(), out);
+            record(getCurrentPath(), out);
             return super.visitNewClass(node, unused);
           }
         };
@@ -454,6 +469,28 @@ public final class Truth {
     if (path == null || !(path.getLeaf() instanceof VariableTree)) return false;
     Element element = trees.getElement(path);
     return element != null && element.getKind() == ElementKind.ENUM_CONSTANT;
+  }
+
+  /**
+   * True when a `new` sits inside an enum constant's own declaration.
+   *
+   * `RED, GREEN` is a construction the compiler wrote, not the author, and `A { int n(){…} }`
+   * is the same construction with a body bolted on — the body just puts extra tree nodes
+   * between the `new` and the constant, which is why the immediate parent is not enough. Both
+   * would otherwise be an edge from the enum to itself that nobody can read in the source and
+   * that greplost, reading only what is written, never emits.
+   *
+   * The walk is paired with "the constructor javac resolved was not written in source" at the
+   * call site, so a real `new Store(…)` written *inside* a constant's body is still truth: its
+   * constructor is one a human wrote.
+   */
+  private boolean insideEnumConstant(TreePath path) {
+    for (TreePath current = path.getParentPath(); current != null; current = current.getParentPath()) {
+      Tree leaf = current.getLeaf();
+      if (leaf instanceof ClassTree || leaf instanceof MethodTree) return false;
+      if (isEnumConstant(current)) return true;
+    }
+    return false;
   }
 
   private void record(TreePath path, Set<String> out) {
@@ -471,6 +508,7 @@ public final class Truth {
       // type itself; any other generated member (a record accessor, an enum's `values`) has
       // nothing to point at and the call is not truth.
       if (callee.getKind() != ElementKind.CONSTRUCTOR) return;
+      if (insideEnumConstant(path)) return;
       to = ownerName;
     } else {
       to = ownerName + "." + simpleName(callee, owner);
@@ -479,7 +517,7 @@ public final class Truth {
 
     String from = callerOf(path);
     if (from == null) return;
-    out.add(from + " " + targetFile + "#" + to);
+    out.add(from + "\0" + targetFile + "#" + to);
   }
 
   private int count(String file, String name) {
@@ -545,7 +583,7 @@ public final class Truth {
     out.append('[');
     boolean first = true;
     for (String edge : edges) {
-      int at = edge.indexOf(' ');
+      int at = edge.indexOf('\0');
       if (at < 0) continue;
       if (!first) out.append(',');
       first = false;

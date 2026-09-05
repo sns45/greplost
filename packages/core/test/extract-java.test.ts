@@ -450,6 +450,63 @@ public class Child extends Base {
     expect(edges).toEqual([]);
   });
 
+  test("a call never resolves to a field that happens to share the method's name", () => {
+    const edges = callEdges({
+      "src/main/java/tiny/Base.java": `package tiny;
+public class Base { public int size() { return 0; } }
+`,
+      "src/main/java/tiny/Sub.java": `package tiny;
+public class Sub extends Base {
+  private final int size = 7;
+  public int total() { return size() + size; }
+}
+`,
+    });
+    // javac resolves `size()` to the inherited `Base.size`, which spec 1.4 drops. The field
+    // `Sub.size` is not callable and must never stand in for it: only a `method` — or, for a
+    // `new`, a type — is a call target.
+    expect(edges).toEqual([]);
+  });
+
+  test("a call written outside a collected method body still reads its own locals", () => {
+    const edges = callEdges({
+      "src/main/java/tiny/Store.java": STORE,
+      "src/main/java/tiny/Holder.java": `package tiny;
+public class Holder {
+  static {
+    Store booted = new Store("boot");
+    booted.put("a");
+  }
+  private final Runnable task = new Runnable() {
+    public void run() {
+      Store inner = new Store("inner");
+      inner.put("b");
+    }
+  };
+  enum Mode {
+    ONE {
+      void go() {
+        Store each = new Store("each");
+        each.put("c");
+      }
+    };
+    void go() {}
+  }
+}
+`,
+    });
+    // A static block, a field initializer's anonymous class and an enum constant's body each
+    // bind their own locals; the caller stays the nearest *named* declaration, which is where
+    // javac attributes them too.
+    expect(edges).toEqual([
+      "src/main/java/tiny/Holder.java#Holder -> src/main/java/tiny/Store.java#Store.Store (high)",
+      "src/main/java/tiny/Holder.java#Holder -> src/main/java/tiny/Store.java#Store.put (high)",
+      "src/main/java/tiny/Holder.java#Holder.Mode -> src/main/java/tiny/Store.java#Store.Store (high)",
+      "src/main/java/tiny/Holder.java#Holder.Mode -> src/main/java/tiny/Store.java#Store.put (high)",
+      "src/main/java/tiny/Store.java#Store.put -> src/main/java/tiny/Store.java#Store.record (high)",
+    ]);
+  });
+
   test("an ambiguous member name inside one file resolves to nothing", () => {
     const edges = callEdges({
       "src/main/java/tiny/Store.java": `package tiny;
