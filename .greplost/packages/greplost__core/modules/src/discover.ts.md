@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/core` ([map](../../MAP.md))
 
-**Exports:** `DiscoveredFile (interface)`, `discoverCandidates(root: string, config: GreplostConfig): Promise<string[]>`, `discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]>`
+**Exports:** `DiscoveredFile (interface)`, `discoverCandidates( root: string, config: GreplostConfig, skipped?: string[], ): Promise<string[]>`, `discoverFiles( root: string, config: GreplostConfig, skipped?: string[], ): Promise<DiscoveredFile[]>`, `isMappablePath(relPath: string): boolean`
 
 **Imports:** `node:child_process` (execFileSync), `node:fs` (existsSync, realpathSync), `node:path` (join, resolve, sep), `fast-glob` (default), `picomatch` (default), [`./schema.ts`](schema.ts.md) (ARTIFACT_DIR, GreplostConfig, Lang, compareStrings), [`./lang.ts`](lang.ts.md) (langOf)
 
@@ -21,7 +21,8 @@
 - `function isGitRepo(root: string): boolean`  L37-63
 - `function gitCandidates(root: string): string[]`  L65-81
 - `async function globCandidates(root: string, config: GreplostConfig): Promise<string[]>`  L83-99
-- `async function discoverCandidates(root: string, config: GreplostConfig): Promise<string[]>`  L111-126
-- `async function discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]>`  L128-141
+- `function isMappablePath(relPath: string): boolean`  L126-128
+- `async function discoverCandidates( root: string, config: GreplostConfig, skipped?: string[], ): Promise<string[]>`  L130-157
+- `async function discoverFiles( root: string, config: GreplostConfig, skipped?: string[], ): Promise<DiscoveredFile[]>`  L159-176
 
-**Calls:** `discoverCandidates` → [`packages/core/src/discover.ts#discoverCandidates`](discover.ts.md) (high), `gitCandidates` → [`packages/core/src/discover.ts#gitCandidates`](discover.ts.md) (high), `globCandidates` → [`packages/core/src/discover.ts#globCandidates`](discover.ts.md) (high), `isGitRepo` → [`packages/core/src/discover.ts#isGitRepo`](discover.ts.md) (high), `toPosix` → [`packages/core/src/discover.ts#toPosix`](discover.ts.md) (high), `langOf` → [`packages/core/src/lang.ts#langOf`](lang.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high)
+**Calls:** `discoverCandidates` → [`packages/core/src/discover.ts#discoverCandidates`](discover.ts.md) (high), `gitCandidates` → [`packages/core/src/discover.ts#gitCandidates`](discover.ts.md) (high), `globCandidates` → [`packages/core/src/discover.ts#globCandidates`](discover.ts.md) (high), `isGitRepo` → [`packages/core/src/discover.ts#isGitRepo`](discover.ts.md) (high), `isMappablePath` → [`packages/core/src/discover.ts#isMappablePath`](discover.ts.md) (high), `toPosix` → [`packages/core/src/discover.ts#toPosix`](discover.ts.md) (high), `langOf` → [`packages/core/src/lang.ts#langOf`](lang.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high)

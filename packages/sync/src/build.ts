@@ -38,6 +38,13 @@ export interface BuildResult {
   snapshot: Snapshot;
   /** Every structure artifact, keyed by path relative to `.greplost/`, in sorted key order. */
   files: Map<string, string>;
+  /**
+   * Repo-relative paths discovery skipped because the path cannot be a map id
+   * (it holds a `#`, a newline or a NUL). Sorted; empty for every normal repo.
+   * `update` reports the count once; `verify` ignores it, because a skipped
+   * file is not drift.
+   */
+  skipped: string[];
 }
 
 /**
@@ -88,9 +95,11 @@ export async function buildArtifacts(root: string, opts: BuildArtifactsOptions =
   const absoluteRoot = path.resolve(root);
   const summaries = readSummaries(absoluteRoot);
 
+  const skipped: string[] = [];
   const snapshot = await buildSnapshot({
     root: absoluteRoot,
     summaries,
+    skipped,
     ...(opts.config === undefined ? {} : { config: opts.config }),
     ...(opts.parser === undefined ? {} : { parser: opts.parser }),
     ...(opts.cache === undefined ? {} : { cache: opts.cache }),
@@ -118,7 +127,7 @@ export async function buildArtifacts(root: string, opts: BuildArtifactsOptions =
     files.set(rel, merged.get(rel) as string);
   }
 
-  return { snapshot, files };
+  return { snapshot, files, skipped };
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

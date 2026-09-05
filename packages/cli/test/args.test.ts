@@ -84,7 +84,7 @@ describe("args", () => {
   test("help takes a command name and usageFor narrows to it", () => {
     expect(ok(["help", "query"]).operands).toEqual(["query"]);
     expect(ok(["impact", "x", "--help"]).operands).toEqual(["impact"]);
-    expect(usageFor("query")).toContain("greplost query <symbol|path>");
+    expect(usageFor("query")).toContain("greplost query <symbol|path|node-id>");
     expect(usageFor("query")).not.toContain("greplost impact");
     expect(usageFor("nonsense")).toBe(USAGE);
   });

@@ -19,15 +19,15 @@
 - `const IMPORTER_CAP = 50`  L26-26
 - `const NODE_CAP = 50`  L32-32
 - `const NO_SUMMARY = "No summary yet; run `greplost refresh`."`  L34-34
-- `function buildCard(ctx: DocContext, file: string): string`  L36-67
-- `function summaryBlocks(ctx: DocContext, file: string): string[]`  L80-99
-- `function exportsField(ctx: DocContext, file: string): string`  L101-117
-- `interface ImportGroup`  L119-122
-- `function importsField( ctx: DocContext, file: string, link: (target: string | undefined) => string | undefined, ): string`  L130-165
-- `function importersField( ctx: DocContext, file: string, link: (target: string | undefined) => string | undefined, ): string`  L167-183
-- `function nodesField( ctx: DocContext, file: string, link: (target: string | undefined) => string | undefined, ): string | undefined`  L195-211
-- `function keySymbolsField(ctx: DocContext, file: string): string`  L213-222
-- `const CONFIDENCE_RANK: Readonly<Record<Confidence, number>> = { high: 2, med: 1 }`  L224-224
-- `function callsField( ctx: DocContext, file: string, link: (target: string | undefined) => string | undefined, ): string | undefined`  L231-258
+- `function buildCard(ctx: DocContext, file: string): string`  L36-69
+- `function summaryBlocks(ctx: DocContext, file: string): string[]`  L82-101
+- `function exportsField(ctx: DocContext, file: string): string`  L103-119
+- `interface ImportGroup`  L121-124
+- `function importsField( ctx: DocContext, file: string, link: (target: string | undefined) => string | undefined, ): string`  L132-167
+- `function importersField( ctx: DocContext, file: string, link: (target: string | undefined) => string | undefined, ): string`  L169-185
+- `function nodesField( ctx: DocContext, file: string, link: (target: string | undefined) => string | undefined, ): string | undefined`  L197-213
+- `function keySymbolsField(ctx: DocContext, file: string): string`  L215-224
+- `const CONFIDENCE_RANK: Readonly<Record<Confidence, number>> = { high: 2, med: 1 }`  L226-226
+- `function callsField( ctx: DocContext, file: string, link: (target: string | undefined) => string | undefined, ): string | undefined`  L233-260
 
 **Calls:** `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high), `isNodeKind` → [`packages/core/src/schema.ts#isNodeKind`](../../../../greplost__core/modules/src/schema.ts.md) (high), `exportEntry` → [`packages/render/src/docs/api.ts#exportEntry`](api.ts.md) (high), `keySymbol` → [`packages/render/src/docs/api.ts#keySymbol`](api.ts.md) (high), `localNames` → [`packages/render/src/docs/api.ts#localNames`](api.ts.md) (high), `shortName` → [`packages/render/src/docs/api.ts#shortName`](api.ts.md) (high), `callsField` → [`packages/render/src/docs/card.ts#callsField`](card.ts.md) (high), `exportsField` → [`packages/render/src/docs/card.ts#exportsField`](card.ts.md) (high), `importersField` → [`packages/render/src/docs/card.ts#importersField`](card.ts.md) (high), `importsField` → [`packages/render/src/docs/card.ts#importsField`](card.ts.md) (high), `keySymbolsField` → [`packages/render/src/docs/card.ts#keySymbolsField`](card.ts.md) (high), `nodesField` → [`packages/render/src/docs/card.ts#nodesField`](card.ts.md) (high), `summaryBlocks` → [`packages/render/src/docs/card.ts#summaryBlocks`](card.ts.md) (high), `packageDir` → [`packages/render/src/slug.ts#packageDir`](../slug.ts.md) (high), `relLink` → [`packages/render/src/slug.ts#relLink`](../slug.ts.md) (high)

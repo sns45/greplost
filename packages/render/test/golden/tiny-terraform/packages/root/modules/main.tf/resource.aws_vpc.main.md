@@ -8,9 +8,9 @@
 
 **Attributes:** `provider: aws`, `type: aws_vpc`
 
-**References:** [`tags`](local.tags.md) (hcl-ref), [`aws`](provider.aws.md) (hcl-ref), [`variables.tf#variable.cidr`](../variables.tf/variable.cidr.md) (hcl-ref)
+**References:** [`local.tags`](local.tags.md) (hcl-ref), [`provider.aws`](provider.aws.md) (hcl-ref), [`variables.tf#variable.cidr`](../variables.tf/variable.cidr.md) (hcl-ref)
 
-**Referenced by:** [`logs`](module.logs.md) (hcl-ref), [`aws_subnet.a`](resource.aws_subnet.a.md) (hcl-ref), [`outputs.tf#output.vpc_id`](../outputs.tf/output.vpc_id.md) (hcl-ref)
+**Referenced by:** [`module.logs`](module.logs.md) (hcl-ref), [`resource.aws_subnet.a`](resource.aws_subnet.a.md) (hcl-ref), [`outputs.tf#output.vpc_id`](../outputs.tf/output.vpc_id.md) (hcl-ref)
 
 **Blast radius:** 3 node(s) (`greplost impact main.tf#resource.aws_vpc.main`)
 

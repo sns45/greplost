@@ -15,9 +15,9 @@
 **Blast radius:** 2 files (`greplost impact packages/cli/src/commands/impact.ts`)
 
 **Key symbols:**
-- `interface ImpactFiles`  L26-31
-- `interface ImpactNodes`  L39-43
-- `type ImpactResult = ImpactFiles | ImpactNodes`  L45-45
-- `async function run(ctx: CommandContext): Promise<number>`  L47-97
+- `interface ImpactFiles`  L34-39
+- `interface ImpactNodes`  L47-51
+- `type ImpactResult = ImpactFiles | ImpactNodes`  L53-53
+- `async function run(ctx: CommandContext): Promise<number>`  L55-105
 
 **Calls:** `importPairs` → [`packages/cli/src/commands/structure.ts#importPairs`](structure.ts.md) (high), `loadStructure` → [`packages/cli/src/commands/structure.ts#loadStructure`](structure.ts.md) (high), `resolveFile` → [`packages/cli/src/commands/structure.ts#resolveFile`](structure.ts.md) (high), `resolveNode` → [`packages/cli/src/commands/structure.ts#resolveNode`](structure.ts.md) (high), `toRepoRelative` → [`packages/cli/src/commands/structure.ts#toRepoRelative`](structure.ts.md) (high), `dispatchWorkspace` → [`packages/cli/src/commands/workspace.ts#dispatchWorkspace`](workspace.ts.md) (high), `printJson` → [`packages/cli/src/output.ts#printJson`](../output.ts.md) (high), `printLine` → [`packages/cli/src/output.ts#printLine`](../output.ts.md) (high), `impactOf` → [`packages/core/src/graph/blast.ts#impactOf`](../../../../greplost__core/modules/src/graph/blast.ts.md) (med), `impactPairs` → [`packages/core/src/graph/query.ts#impactPairs`](../../../../greplost__core/modules/src/graph/query.ts.md) (med), `table` → [`packages/render/src/text.ts#table`](../../../../greplost__render/modules/src/text.ts.md) (med)

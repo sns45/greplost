@@ -8,7 +8,7 @@
 
 **Attributes:** `source: ./modules/logs`
 
-**References:** [`aws_vpc.main`](resource.aws_vpc.main.md) (hcl-ref), `modules/logs` (uses)
+**References:** [`resource.aws_vpc.main`](resource.aws_vpc.main.md) (hcl-ref), `modules/logs` (uses)
 
 **Referenced by:** None.
 

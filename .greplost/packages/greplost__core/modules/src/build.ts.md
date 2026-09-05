@@ -16,21 +16,21 @@
 
 **Key symbols:**
 - `interface ParseCache`  L66-69
-- `interface BuildOptions`  L71-82
-- `const READ_CONCURRENCY = 32`  L85-85
-- `interface SourceFile extends DiscoveredFile`  L87-90
-- `async function buildSnapshot(opts: BuildOptions): Promise<Snapshot>`  L92-157
-- `async function readSources(discovered: DiscoveredFile[]): Promise<SourceFile[]>`  L160-168
-- `async function readOne(file: DiscoveredFile): Promise<SourceFile>`  L170-182
-- `async function extractAll( sources: SourceFile[], opts: BuildOptions, signals: readonly SignalPassId[] | undefined, ): Promise<FileRecord[]>`  L200-254
-- `function recordKey(source: SourceFile, signals: readonly SignalPassId[] | undefined): string`  L260-263
-- `function extract(source: SourceFile, parser: ParserHandle, signals: readonly SignalPassId[] | undefined): FileRecord`  L269-285
-- `function freezeRecord(record: FileRecord): FileRecord`  L293-300
-- `function restamp(record: FileRecord, filePath: string): FileRecord`  L323-337
-- `function moveId(id: string, from: string, to: string): string`  L340-343
-- `function repoReader(root: string): (rel: string) => string | null`  L350-364
-- `interface SummaryIndex`  L370-375
-- `function indexSummaries(summaries: SummaryCache | undefined): SummaryIndex | null`  L377-395
-- `function summaryFor( filePath: string, sha256: string, summaries: SummaryIndex | null, ): { hash?: string; stale: boolean }`  L404-413
+- `interface BuildOptions`  L71-89
+- `const READ_CONCURRENCY = 32`  L92-92
+- `interface SourceFile extends DiscoveredFile`  L94-97
+- `async function buildSnapshot(opts: BuildOptions): Promise<Snapshot>`  L99-166
+- `async function readSources(discovered: DiscoveredFile[]): Promise<SourceFile[]>`  L169-177
+- `async function readOne(file: DiscoveredFile): Promise<SourceFile>`  L179-191
+- `async function extractAll( sources: SourceFile[], opts: BuildOptions, signals: readonly SignalPassId[] | undefined, ): Promise<FileRecord[]>`  L209-263
+- `function recordKey(source: SourceFile, signals: readonly SignalPassId[] | undefined): string`  L269-272
+- `function extract(source: SourceFile, parser: ParserHandle, signals: readonly SignalPassId[] | undefined): FileRecord`  L278-294
+- `function freezeRecord(record: FileRecord): FileRecord`  L302-309
+- `function restamp(record: FileRecord, filePath: string): FileRecord`  L332-346
+- `function moveId(id: string, from: string, to: string): string`  L349-352
+- `function repoReader(root: string): (rel: string) => string | null`  L359-373
+- `interface SummaryIndex`  L379-384
+- `function indexSummaries(summaries: SummaryCache | undefined): SummaryIndex | null`  L386-404
+- `function summaryFor( filePath: string, sha256: string, summaries: SummaryIndex | null, ): { hash?: string; stale: boolean }`  L413-422
 
 **Calls:** `extract` → [`packages/core/src/build.ts#extract`](build.ts.md) (high), `extractAll` → [`packages/core/src/build.ts#extractAll`](build.ts.md) (high), `freezeRecord` → [`packages/core/src/build.ts#freezeRecord`](build.ts.md) (high), `indexSummaries` → [`packages/core/src/build.ts#indexSummaries`](build.ts.md) (high), `moveId` → [`packages/core/src/build.ts#moveId`](build.ts.md) (high), `readOne` → [`packages/core/src/build.ts#readOne`](build.ts.md) (high), `readSources` → [`packages/core/src/build.ts#readSources`](build.ts.md) (high), `recordKey` → [`packages/core/src/build.ts#recordKey`](build.ts.md) (high), `repoReader` → [`packages/core/src/build.ts#repoReader`](build.ts.md) (high), `restamp` → [`packages/core/src/build.ts#restamp`](build.ts.md) (high), `summaryFor` → [`packages/core/src/build.ts#summaryFor`](build.ts.md) (high), `loadConfig` → [`packages/core/src/config.ts#loadConfig`](config.ts.md) (high), `discoverFiles` → [`packages/core/src/discover.ts#discoverFiles`](discover.ts.md) (high), `extractFile` → [`packages/core/src/extract/index.ts#extractFile`](extract/index.ts.md) (high), `buildExportIndex` → [`packages/core/src/graph/link.ts#buildExportIndex`](graph/link.ts.md) (med), `exportNames` → [`packages/core/src/graph/link.ts#exportNames`](graph/link.ts.md) (med), `linkCalls` → [`packages/core/src/graph/link.ts#linkCalls`](graph/link.ts.md) (med), `linkImports` → [`packages/core/src/graph/link.ts#linkImports`](graph/link.ts.md) (med), `computeMetrics` → [`packages/core/src/graph/metrics.ts#computeMetrics`](graph/metrics.ts.md) (med), `sha256Hex` → [`packages/core/src/hash.ts#sha256Hex`](hash.ts.md) (high), `createParser` → [`packages/core/src/parser.ts#createParser`](parser.ts.md) (high), `linkReferences` → [`packages/core/src/references/link.ts#linkReferences`](references/link.ts.md) (med), `detectPackages` → [`packages/core/src/resolve/packages.ts#detectPackages`](resolve/packages.ts.md) (med), `createResolver` → [`packages/core/src/resolve/resolver.ts#createResolver`](resolve/resolver.ts.md) (med), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high), `signalPathKey` → [`packages/core/src/signals/index.ts#signalPathKey`](signals/index.ts.md) (high)

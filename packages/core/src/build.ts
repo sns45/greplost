@@ -79,6 +79,13 @@ export interface BuildOptions {
   cache?: ParseCache;
   /** Semantic-layer cache, for `summaryHash`/`staleSummary` only. */
   summaries?: SummaryCache;
+  /**
+   * Out-parameter: discovery appends, sorted, every candidate path it had to
+   * skip because the path itself cannot be a map id (it holds a `#`, a newline
+   * or a NUL — see `isMappablePath`). A caller that passes one can report the
+   * count; one that does not still gets the same snapshot.
+   */
+  skipped?: string[];
 }
 
 /** Files read in parallel per batch: enough to saturate a disk, few enough to keep FDs sane. */
@@ -95,7 +102,9 @@ export async function buildSnapshot(opts: BuildOptions): Promise<Snapshot> {
 
   // Discovery order is not trusted: the pipeline is fed a path-sorted list so
   // the output cannot depend on how the files were found.
-  const discovered = [...(await discoverFiles(root, config))].sort((a, b) => compareStrings(a.path, b.path));
+  const discovered = [...(await discoverFiles(root, config, opts.skipped))].sort((a, b) =>
+    compareStrings(a.path, b.path),
+  );
   const sources = await readSources(discovered);
 
   const files = await extractAll(sources, opts, config.signals);

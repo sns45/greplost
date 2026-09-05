@@ -104,8 +104,8 @@ const COMMAND_USAGE: ReadonlyArray<readonly [CommandName, string, string]> = [
     "bring the map up to date",
   ],
   ["verify", "greplost verify [--diff]", "exit 1 on drift"],
-  ["query", "greplost query <symbol|path>", "definition, importers, callers, package, card"],
-  ["impact", "greplost impact <path> [--depth <n>]", "blast radius, by depth"],
+  ["query", "greplost query <symbol|path|node-id>", "definition, references, importers, callers, card"],
+  ["impact", "greplost impact <path|node-id> [--depth <n>]", "blast radius, by depth"],
   ["flows", "greplost flows <pkg>", "print the package's FLOWS.md"],
   ["refresh", "greplost refresh [pkg] [--model <m>] [--dry-run]", "semantic layer"],
   ["bench", "greplost bench <suite> [args...]", "benchmark suites (inside the greplost repo)"],
@@ -116,6 +116,9 @@ const COMMAND_USAGE: ReadonlyArray<readonly [CommandName, string, string]> = [
 ];
 
 const USAGE_FOOTER = `Every command accepts --root <dir> and --json.
+A node id names a non-file node inside a file: <file>#<kind>.<name>, as in
+main.tf#resource.aws_vpc.main or ci.yml#job.build. A file's blast radius counts
+files over imports; a node's counts nodes over imports and reference edges.
 In a workspace (a directory holding greplost.workspace.json), update, verify,
 query and impact act on every listed repo when run from that root; init there
 needs --workspace; update --files is ignored and --semantic is refused.

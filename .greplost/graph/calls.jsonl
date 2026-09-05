@@ -1314,8 +1314,6 @@
 {"confidence":"med","from":"packages/cli/src/commands/query.ts#describeNode","kind":"call","to":"packages/core/src/graph/blast.ts#impactOf"}
 {"confidence":"med","from":"packages/cli/src/commands/query.ts#describeNode","kind":"call","to":"packages/core/src/graph/query.ts#impactPairs"}
 {"confidence":"med","from":"packages/cli/src/commands/query.ts#importEdgesByTarget","kind":"call","to":"packages/core/src/graph/directories.ts#importTargetsOf"}
-{"confidence":"med","from":"packages/cli/src/commands/query.ts#inboundReferences","kind":"call","to":"packages/core/src/graph/query.ts#referencedBy"}
-{"confidence":"med","from":"packages/cli/src/commands/query.ts#outboundReferences","kind":"call","to":"packages/core/src/graph/query.ts#referencesOf"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts#printFile","kind":"call","to":"packages/cli/src/output.ts#printLine"}
 {"confidence":"med","from":"packages/cli/src/commands/query.ts#printFile","kind":"call","to":"packages/render/src/text.ts#fields"}
 {"confidence":"med","from":"packages/cli/src/commands/query.ts#printFile","kind":"call","to":"packages/render/src/text.ts#summarise"}
@@ -1331,6 +1329,7 @@
 {"confidence":"high","from":"packages/cli/src/commands/query.ts#queryStructure","kind":"call","to":"packages/cli/src/commands/query.ts#describeFile"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts#queryStructure","kind":"call","to":"packages/cli/src/commands/query.ts#describeNode"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts#queryStructure","kind":"call","to":"packages/cli/src/commands/query.ts#importEdgesByTarget"}
+{"confidence":"high","from":"packages/cli/src/commands/query.ts#queryStructure","kind":"call","to":"packages/cli/src/commands/query.ts#indexReferences"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts#queryStructure","kind":"call","to":"packages/cli/src/commands/structure.ts#resolveFile"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts#queryStructure","kind":"call","to":"packages/cli/src/commands/structure.ts#resolveNode"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts#queryStructure","kind":"call","to":"packages/cli/src/commands/structure.ts#toRepoRelative"}
@@ -1461,6 +1460,7 @@
 {"confidence":"high","from":"packages/core/src/discover.ts#discoverCandidates","kind":"call","to":"packages/core/src/discover.ts#gitCandidates"}
 {"confidence":"high","from":"packages/core/src/discover.ts#discoverCandidates","kind":"call","to":"packages/core/src/discover.ts#globCandidates"}
 {"confidence":"high","from":"packages/core/src/discover.ts#discoverCandidates","kind":"call","to":"packages/core/src/discover.ts#isGitRepo"}
+{"confidence":"high","from":"packages/core/src/discover.ts#discoverCandidates","kind":"call","to":"packages/core/src/discover.ts#isMappablePath"}
 {"confidence":"high","from":"packages/core/src/discover.ts#discoverFiles","kind":"call","to":"packages/core/src/discover.ts#discoverCandidates"}
 {"confidence":"high","from":"packages/core/src/discover.ts#discoverFiles","kind":"call","to":"packages/core/src/lang.ts#langOf"}
 {"confidence":"high","from":"packages/core/src/discover.ts#discoverFiles","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
@@ -2729,6 +2729,7 @@
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/core/src/schema.ts#isFileId"}
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/core/src/schema.ts#isNodeKind"}
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/core/src/schema.ts#splitNodeId"}
+{"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/render/src/render.ts#blastUniverse"}
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/render/src/render.ts#fileOfSymbol"}
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/render/src/slug.ts#cardPath"}
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/render/src/slug.ts#nodeCardPath"}

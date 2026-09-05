@@ -6,9 +6,9 @@
 
 **Package:** `root` ([map](../../MAP.md))
 
-**References:** [`name`](local.name.md) (hcl-ref)
+**References:** [`local.name`](local.name.md) (hcl-ref)
 
-**Referenced by:** [`aws_vpc.main`](resource.aws_vpc.main.md) (hcl-ref)
+**Referenced by:** [`resource.aws_vpc.main`](resource.aws_vpc.main.md) (hcl-ref)
 
 **Blast radius:** 4 node(s) (`greplost impact main.tf#local.tags`)
 

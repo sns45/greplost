@@ -13,7 +13,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -284,9 +284,12 @@ describe("file target unchanged", () => {
     expect(result["files"]).toEqual([{ path: "main.tf", depth: 1 }]);
   });
 
-  test("query on a plain symbol keeps the build-1 match shape, byte for byte", async () => {
+  test("query on a plain symbol carries both reference arrays, empty, and no node block", async () => {
     const result = onlyJson(await cli("query", "Registry", "--json", "--root", ts));
     const match = (result["matches"] as Array<Record<string, unknown>>)[0] as Record<string, unknown>;
+    // Spec 4.5: `references` and `referencedBy` are arrays on every match, so a
+    // consumer never has to test for the key before reading `.length`. `meta`
+    // stays optional, because the spec declares it that way.
     expect(Object.keys(match).sort()).toEqual([
       "callers",
       "card",
@@ -297,9 +300,14 @@ describe("file target unchanged", () => {
       "kind",
       "name",
       "package",
+      "referencedBy",
+      "references",
       "signature",
       "span",
     ]);
+    expect(match["references"]).toEqual([]);
+    expect(match["referencedBy"]).toEqual([]);
+    expect(match["meta"]).toBeUndefined();
     expect(result["node"]).toBeUndefined();
   });
 
@@ -318,5 +326,39 @@ describe("file target unchanged", () => {
       "package",
       "path",
     ]);
+  });
+});
+
+describe("golden through the CLI", () => {
+  /**
+   * The committed render golden and the bytes `greplost init` actually writes
+   * must be the same bytes, or the golden is testing a path no user runs.
+   * `buildArtifacts` calls `renderArtifacts`, so this holds by construction —
+   * and this test is what keeps it holding, because a future card that reached
+   * for the filesystem or the clock would diverge here and nowhere else.
+   */
+  test("the map init writes is byte-identical to packages/render/test/golden/tiny-terraform", () => {
+    const golden = path.join(repoRoot, "packages", "render", "test", "golden", "tiny-terraform");
+    const written = path.join(tf, ".greplost");
+
+    const walk = (dir: string, prefix = ""): string[] => {
+      const out: string[] = [];
+      for (const entry of readdirSync(dir).sort()) {
+        const full = path.join(dir, entry);
+        const rel = prefix === "" ? entry : `${prefix}/${entry}`;
+        if (statSync(full).isDirectory()) out.push(...walk(full, rel));
+        else if (rel.endsWith(".md")) out.push(rel);
+      }
+      return out;
+    };
+
+    const expected = walk(golden);
+    expect(expected.length).toBeGreaterThan(0);
+    expect(walk(written)).toEqual(expected);
+    for (const rel of expected) {
+      expect(`${rel}\n${readFileSync(path.join(written, rel), "utf8")}`).toBe(
+        `${rel}\n${readFileSync(path.join(golden, rel), "utf8")}`,
+      );
+    }
   });
 });
