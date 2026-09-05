@@ -8,33 +8,37 @@
 
 **Exports:** None.
 
-**Imports:** `encoding/json` (*), `flag` (*), `fmt` (*), `go/ast` (*), `go/types` (*), `io/fs` (*), `os` (*), `path/filepath` (*), `sort` (*), `strings` (*), `golang.org/x/tools/go/packages` (*)
+**Imports:** `encoding/json` (*), `flag` (*), `fmt` (*), `go/ast` (*), `go/types` (*), `go/token` (*), `io/fs` (*), `os` (*), `path/filepath` (*), `sort` (*), `strconv` (*), `strings` (*), `golang.org/x/tools/go/packages` (*)
 
 **Imported by:** None.
 
 **Blast radius:** 0 files (`greplost impact bench/truth/pulumigotruth/main.go`)
 
 **Key symbols:**
-- `type reference struct`  L61-67
-- `type output struct`  L70-88
-- `const sdkPrefix = "github.com/pulumi/pulumi/sdk/"`  L93-93
-- `const sdkPkgSufix = "/go/pulumi"`  L94-94
-- `const resourceIfc = "Resource"`  L95-95
-- `func main()`  L98-121
-- `func run(root string) (*output, error)`  L123-187
-- `func load(dir string) ([]*packages.Package, error)`  L189-198
-- `func moduleDirs(root string) ([]string, error)`  L205-231
-- `func resourceInterface(pkgs []*packages.Package) *types.Interface`  L239-260
-- `func scanModule( root string, pkgs []*packages.Package, iface *types.Interface, files map[string]bool, nodes map[string]bool, refs map[string]reference, )`  L266-291
-- `func scanFile( file string, syntax *ast.File, info *types.Info, iface *types.Interface, nodes map[string]bool, refs map[string]reference, )`  L294-349
-- `func isResource(t types.Type, iface *types.Interface) bool`  L352-367
-- `func bindings(syntax *ast.File) map[*ast.CallExpr]string`  L373-399
-- `type address struct`  L402-405
-- `func inputsOf( call *ast.CallExpr, info *types.Info, iface *types.Interface, byBinding map[string]string, self string, ) []address`  L412-450
-- `type allocator struct`  L453-453
-- `func newAllocator() *allocator`  L455-455
-- `allocator.take(name string) string`  L457-466
-- `func relTo(root, name string) (string, bool)`  L469-475
-- `func sortedKeys(set map[string]bool) []string`  L477-484
+- `type reference struct`  L70-76
+- `type output struct`  L79-97
+- `const sdkPrefix = "github.com/pulumi/pulumi/sdk/"`  L102-102
+- `const sdkPkgSufix = "/go/pulumi"`  L103-103
+- `const resourceIfc = "Resource"`  L104-104
+- `const nodeKind = "resource"`  L107-107
+- `func main()`  L110-133
+- `func run(root string) (*output, error)`  L135-199
+- `func load(dir string) ([]*packages.Package, error)`  L201-210
+- `func moduleDirs(root string) ([]string, error)`  L217-243
+- `func resourceInterface(pkgs []*packages.Package) *types.Interface`  L251-272
+- `func scanModule( root string, pkgs []*packages.Package, iface *types.Interface, files map[string]bool, nodes map[string]bool, refs map[string]reference, )`  L278-303
+- `func scanFile( file string, syntax *ast.File, info *types.Info, iface *types.Interface, nodes map[string]bool, refs map[string]reference, )`  L306-373
+- `func declaredNodeNames(syntax *ast.File) []string`  L381-394
+- `func receiverTypeName(expr ast.Expr) string`  L398-415
+- `func logicalName(call *ast.CallExpr) (string, bool)`  L424-437
+- `func isResource(t types.Type, iface *types.Interface) bool`  L440-455
+- `func bindings(syntax *ast.File) map[*ast.CallExpr]string`  L461-487
+- `type address struct`  L490-493
+- `func inputsOf( call *ast.CallExpr, info *types.Info, iface *types.Interface, byBinding map[string]string, self string, ) []address`  L507-554
+- `type allocator struct`  L557-557
+- `func newAllocator() *allocator`  L559-559
+- `allocator.take(name string) string`  L561-570
+- `func relTo(root, name string) (string, bool)`  L573-579
+- `func sortedKeys(set map[string]bool) []string`  L581-588
 
-**Calls:** `bindings` → [`bench/truth/pulumigotruth/main.go#bindings`](main.go.md) (high), `inputsOf` → [`bench/truth/pulumigotruth/main.go#inputsOf`](main.go.md) (high), `isResource` → [`bench/truth/pulumigotruth/main.go#isResource`](main.go.md) (high), `load` → [`bench/truth/pulumigotruth/main.go#load`](main.go.md) (high), `moduleDirs` → [`bench/truth/pulumigotruth/main.go#moduleDirs`](main.go.md) (high), `newAllocator` → [`bench/truth/pulumigotruth/main.go#newAllocator`](main.go.md) (high), `relTo` → [`bench/truth/pulumigotruth/main.go#relTo`](main.go.md) (high), `resourceInterface` → [`bench/truth/pulumigotruth/main.go#resourceInterface`](main.go.md) (high), `run` → [`bench/truth/pulumigotruth/main.go#run`](main.go.md) (high), `scanFile` → [`bench/truth/pulumigotruth/main.go#scanFile`](main.go.md) (high), `scanModule` → [`bench/truth/pulumigotruth/main.go#scanModule`](main.go.md) (high), `sortedKeys` → [`bench/truth/pulumigotruth/main.go#sortedKeys`](main.go.md) (high)
+**Calls:** `bindings` → [`bench/truth/pulumigotruth/main.go#bindings`](main.go.md) (high), `declaredNodeNames` → [`bench/truth/pulumigotruth/main.go#declaredNodeNames`](main.go.md) (high), `inputsOf` → [`bench/truth/pulumigotruth/main.go#inputsOf`](main.go.md) (high), `isResource` → [`bench/truth/pulumigotruth/main.go#isResource`](main.go.md) (high), `load` → [`bench/truth/pulumigotruth/main.go#load`](main.go.md) (high), `logicalName` → [`bench/truth/pulumigotruth/main.go#logicalName`](main.go.md) (high), `moduleDirs` → [`bench/truth/pulumigotruth/main.go#moduleDirs`](main.go.md) (high), `newAllocator` → [`bench/truth/pulumigotruth/main.go#newAllocator`](main.go.md) (high), `receiverTypeName` → [`bench/truth/pulumigotruth/main.go#receiverTypeName`](main.go.md) (high), `relTo` → [`bench/truth/pulumigotruth/main.go#relTo`](main.go.md) (high), `resourceInterface` → [`bench/truth/pulumigotruth/main.go#resourceInterface`](main.go.md) (high), `run` → [`bench/truth/pulumigotruth/main.go#run`](main.go.md) (high), `scanFile` → [`bench/truth/pulumigotruth/main.go#scanFile`](main.go.md) (high), `scanModule` → [`bench/truth/pulumigotruth/main.go#scanModule`](main.go.md) (high), `sortedKeys` → [`bench/truth/pulumigotruth/main.go#sortedKeys`](main.go.md) (high)

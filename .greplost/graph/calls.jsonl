@@ -1229,6 +1229,7 @@
 {"confidence":"high","from":"bench/truth/gocallgraph/main.go#run","kind":"call","to":"bench/truth/gocallgraph/main.go#exportedNames"}
 {"confidence":"high","from":"bench/truth/gocallgraph/main.go#run","kind":"call","to":"bench/truth/gocallgraph/main.go#sortedEdges"}
 {"confidence":"high","from":"bench/truth/gocallgraph/main.go#run","kind":"call","to":"bench/truth/gocallgraph/main.go#sortedKeys"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go#declaredNodeNames","kind":"call","to":"bench/truth/pulumigotruth/main.go#receiverTypeName"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#inputsOf","kind":"call","to":"bench/truth/pulumigotruth/main.go#isResource"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#main","kind":"call","to":"bench/truth/pulumigotruth/main.go#run"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#run","kind":"call","to":"bench/truth/pulumigotruth/main.go#load"}
@@ -1237,8 +1238,10 @@
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#run","kind":"call","to":"bench/truth/pulumigotruth/main.go#scanModule"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#run","kind":"call","to":"bench/truth/pulumigotruth/main.go#sortedKeys"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#scanFile","kind":"call","to":"bench/truth/pulumigotruth/main.go#bindings"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go#scanFile","kind":"call","to":"bench/truth/pulumigotruth/main.go#declaredNodeNames"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#scanFile","kind":"call","to":"bench/truth/pulumigotruth/main.go#inputsOf"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#scanFile","kind":"call","to":"bench/truth/pulumigotruth/main.go#isResource"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go#scanFile","kind":"call","to":"bench/truth/pulumigotruth/main.go#logicalName"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#scanFile","kind":"call","to":"bench/truth/pulumigotruth/main.go#newAllocator"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#scanModule","kind":"call","to":"bench/truth/pulumigotruth/main.go#relTo"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#scanModule","kind":"call","to":"bench/truth/pulumigotruth/main.go#scanFile"}
@@ -2551,7 +2554,8 @@
 {"confidence":"med","from":"packages/core/src/signals/pulumi-go.ts","kind":"call","to":"packages/core/src/extract/ts-signature.ts#spanOf"}
 {"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts","kind":"call","to":"packages/core/src/signals/pulumi-go.ts#bindingNameOf"}
 {"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts","kind":"call","to":"packages/core/src/signals/pulumi-go.ts#classify"}
-{"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts","kind":"call","to":"packages/core/src/signals/pulumi-go.ts#firstStringArgument"}
+{"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts","kind":"call","to":"packages/core/src/signals/pulumi-go.ts#coreImports"}
+{"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts","kind":"call","to":"packages/core/src/signals/pulumi-go.ts#logicalNameArgument"}
 {"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts","kind":"call","to":"packages/core/src/signals/pulumi-go.ts#lowerFirst"}
 {"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts","kind":"call","to":"packages/core/src/signals/pulumi-go.ts#providerImports"}
 {"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts","kind":"call","to":"packages/core/src/signals/pulumi-go.ts#resourceInputs"}
@@ -2562,12 +2566,16 @@
 {"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts#bindingNameOf","kind":"call","to":"packages/core/src/signals/pulumi-go.ts#firstIdentifier"}
 {"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts#bindingNameOf","kind":"call","to":"packages/core/src/signals/pulumi-go.ts#isSameNode"}
 {"confidence":"med","from":"packages/core/src/signals/pulumi-go.ts#classify","kind":"call","to":"packages/core/src/extract/ts-signature.ts#field"}
-{"confidence":"med","from":"packages/core/src/signals/pulumi-go.ts#firstStringArgument","kind":"call","to":"packages/core/src/extract/ts-signature.ts#stringOf"}
+{"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts#classify","kind":"call","to":"packages/core/src/signals/pulumi-go.ts#logicalNameArgument"}
+{"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts#classify","kind":"call","to":"packages/core/src/signals/pulumi-go.ts#tokenOf"}
+{"confidence":"med","from":"packages/core/src/signals/pulumi-go.ts#logicalNameArgument","kind":"call","to":"packages/core/src/extract/ts-signature.ts#stringOf"}
 {"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts#providerImports","kind":"call","to":"packages/core/src/signals/pulumi-go.ts#providerOf"}
 {"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts#providerOf","kind":"call","to":"packages/core/src/signals/pulumi-go.ts#packageSegment"}
 {"confidence":"med","from":"packages/core/src/signals/pulumi-go.ts#resourceInputs","kind":"call","to":"packages/core/src/extract/ts-signature.ts#field"}
 {"confidence":"med","from":"packages/core/src/signals/pulumi-go.ts#resourceInputs","kind":"call","to":"packages/core/src/extract/ts-signature.ts#spanOf"}
+{"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts#resourceInputs","kind":"call","to":"packages/core/src/signals/pulumi-go.ts#resourceOptionArguments"}
 {"confidence":"high","from":"packages/core/src/signals/pulumi-go.ts#resourceInputs","kind":"call","to":"packages/core/src/signals/ts-nodes.ts#walk"}
+{"confidence":"med","from":"packages/core/src/signals/pulumi-go.ts#resourceOptionArguments","kind":"call","to":"packages/core/src/extract/ts-signature.ts#field"}
 {"confidence":"med","from":"packages/core/src/signals/pulumi-ts.ts","kind":"call","to":"packages/core/src/extract/ts-signature.ts#field"}
 {"confidence":"med","from":"packages/core/src/signals/pulumi-ts.ts","kind":"call","to":"packages/core/src/extract/ts-signature.ts#spanOf"}
 {"confidence":"high","from":"packages/core/src/signals/pulumi-ts.ts","kind":"call","to":"packages/core/src/signals/pulumi-ts.ts#bindingNameOf"}

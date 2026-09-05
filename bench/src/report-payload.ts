@@ -600,7 +600,7 @@ export function langRows(structural: Payload | null): LangRow[] {
       const found = rec(repos[name]);
       return found === null ? [] : [{ name, repo: found }];
     });
-    const scored = paired.map((entry) => entry.repo);
+    const scored = paired.map((pair) => pair.repo);
 
     const files = scored.reduce<number | null>((total, repo) => {
       const count = num(repo["files"]);
@@ -645,8 +645,12 @@ export function langRows(structural: Payload | null): LangRow[] {
       const found = rec(repo["substitute"]);
       return found === null ? [] : [found];
     });
-    const errorRates = substitutes.map((entry_) => num(entry_["errorRate"])).filter((value): value is number => value !== null);
-    const silent = substitutes.map((entry_) => num(entry_["silentCount"])).filter((value): value is number => value !== null);
+    const errorRates = substitutes
+      .map((checks) => num(checks["errorRate"]))
+      .filter((value): value is number => value !== null);
+    const silent = substitutes
+      .map((checks) => num(checks["silentCount"]))
+      .filter((value): value is number => value !== null);
 
     rows.push({
       lang: lang as Lang,
@@ -667,7 +671,7 @@ export function langRows(structural: Payload | null): LangRow[] {
         substitutes.length === 0
           ? null
           : {
-              deterministic: substitutes.every((entry_) => entry_["deterministic"] === true),
+              deterministic: substitutes.every((checks) => checks["deterministic"] === true),
               errorRate: errorRates.length === 0 ? null : Math.max(...errorRates),
               silentCount: silent.length === 0 ? null : silent.reduce((a, b) => a + b, 0),
             },

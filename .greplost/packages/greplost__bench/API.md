@@ -304,7 +304,7 @@
 - `function agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>` L447-484
 - `interface SubstituteSummary` L496-500
 - `interface LangRow` L518-548
-- `function langRows(structural: Payload | null): LangRow[]` L586-677
+- `function langRows(structural: Payload | null): LangRow[]` L586-681
 
 ## bench/src/report-sections.ts
 
@@ -351,10 +351,10 @@
 - `interface ReportModel` L276-306
 - `function emptySection(): EvalSection` L309-311
 - `function renderResultsMd(model: ReportModel): string` L318-348
-- `const TRUTH_NOTE_GLOSS: Record<string, string> = { "unsupported:S1": "the truth module declares that it does not measure import edges, so S1 is `n/a` for it.", "unsupported:S2": "the truth mod…` L819-907
-- `function cell(text: string): string` L961-963
-- `function formatNumber(value: number): string` L979-985
-- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L1029-1040
+- `const TRUTH_NOTE_GLOSS: Record<string, string> = { "unsupported:S1": "the truth module declares that it does not measure import edges, so S1 is `n/a` for it.", "unsupported:S2": "the truth mod…` L822-915
+- `function cell(text: string): string` L969-971
+- `function formatNumber(value: number): string` L987-993
+- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L1037-1048
 
 ## bench/src/score.ts
 
@@ -478,11 +478,11 @@
 
 ## bench/src/truth/signals-pulumi-go.ts
 
-- `const NOTES: readonly string[] = ["go-types-oracle", "types-implements-pulumi-resource"]` L45-45
-- `interface SignalExtra` L66-69
-- `function generateExtra(root: string, files: string[]): SignalExtra` L71-74
-- `function generateTruth(root: string, files: string[]): Truth` L80-92
-- `function pulumiGoTruthTool(): string` L121-139
+- `const NOTES: readonly string[] = [ "go-types-oracle", "types-implements-pulumi-resource", "helper-attribution-differs", "test-files-not-loaded", ]` L60-65
+- `interface SignalExtra` L86-89
+- `function generateExtra(root: string, files: string[]): SignalExtra` L91-94
+- `function generateTruth(root: string, files: string[]): Truth` L100-112
+- `function pulumiGoTruthTool(): string` L141-159
 
 ## bench/src/truth/signals-ts.ts
 

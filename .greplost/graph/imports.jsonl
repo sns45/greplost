@@ -256,12 +256,14 @@
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"flag","symbols":["*"],"to":"ext:flag"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"fmt","symbols":["*"],"to":"ext:fmt"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"go/ast","symbols":["*"],"to":"ext:go/ast"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"go/token","symbols":["*"],"to":"ext:go/token"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"go/types","symbols":["*"],"to":"ext:go/types"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"golang.org/x/tools/go/packages","symbols":["*"],"to":"ext:golang.org/x/tools/go/packages"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"io/fs","symbols":["*"],"to":"ext:io/fs"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"os","symbols":["*"],"to":"ext:os"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"path/filepath","symbols":["*"],"to":"ext:path/filepath"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"sort","symbols":["*"],"to":"ext:sort"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"strconv","symbols":["*"],"to":"ext:strconv"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go","importKind":"static","kind":"import","specifier":"strings","symbols":["*"],"to":"ext:strings"}
 {"confidence":"high","from":"bench/truth/tfinspect/main.go","importKind":"static","kind":"import","specifier":"encoding/json","symbols":["*"],"to":"ext:encoding/json"}
 {"confidence":"high","from":"bench/truth/tfinspect/main.go","importKind":"static","kind":"import","specifier":"flag","symbols":["*"],"to":"ext:flag"}

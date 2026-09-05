@@ -75,10 +75,10 @@ Status: pre-release 0.0.1. Design: [docs/greplost-tech-spec.md](docs/greplost-te
 | Java | `pom.xml`, `build.gradle`, `build.gradle.kts` | package and type imports, public types and members, call edges |
 | Kotlin | `build.gradle.kts` or any `.kt` | imports, declarations and call edges (see the accuracy caveat below) |
 | Terraform (HCL) | any `.tf` | `resource`, `data`, `module`, `variable`, `output`, `provider` and `local` nodes, module edges, and reference edges between them |
-| Kubernetes YAML | a manifest whose first key is `apiVersion` | one node per object, with `configmap`/`secret`/`service` reference edges |
-| Helm charts | `Chart.yaml` | one node per template document plus `.Values` reference edges into `values.yaml` |
-| GitHub Actions | `.github/workflows/*.yml` | `job` and `step` nodes, `needs` edges, and `uses` edges to local actions |
-| Dockerfiles | any `Dockerfile*` or `Containerfile` | one node per build stage, `from-image` and `copy --from` edges |
+| Kubernetes YAML | a manifest whose first key is `apiVersion` | one node per object and per container image, with `selector`, `config-ref` and `from-image` edges |
+| Helm charts | `Chart.yaml` | the chart, its top-level values and one node per template document, with `helm-values` edges from a `.Values.<path>` back to the value it reads |
+| GitHub Actions | `.github/workflows/*.yml` | `job` and `step` nodes, `needs` edges between jobs, and `uses` edges to actions and reusable workflows |
+| Dockerfiles | any `Dockerfile*` or `Containerfile` | a node per build stage and per final image, `ARG`/`ENV` constants, and `from-image`, `copy-from` and `config` edges |
 | React, TanStack Start, Next.js, Pulumi (TS and Go) | the framework in `package.json` or `go.mod` | components, routes, loaders, app routes and Pulumi resources as nodes on top of the language map |
 
 Things inside a file are nodes with ids of the form `<file>#<kind>.<name>`, and `greplost query` and `greplost impact` take one wherever they take a path. Call edges are only recorded when the callee resolves to one declaration (`high`) or through a re-export chain (`med`); nothing is guessed.

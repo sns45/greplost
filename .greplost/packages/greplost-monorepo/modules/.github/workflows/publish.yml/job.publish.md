@@ -8,7 +8,7 @@
 
 **Attributes:** `flavour: actions`, `runsOn: ubuntu-latest`
 
-**References:** [`ci`](task.ci.md) (needs)
+**References:** [`task.ci`](task.ci.md) (needs)
 
 **Referenced by:** None.
 

@@ -497,7 +497,7 @@
 
 ## packages/core/src/signals/pulumi-go.ts
 
-- `const pulumiGoPass: SignalPass = { id: "pulumi-go", langs: LANGS, applies, run(input: SignalInput): SignalOutput { const providers = providerImports(input.base.imports); if (providers.size ===…` L66-123
+- `const pulumiGoPass: SignalPass = { id: "pulumi-go", langs: LANGS, applies, run(input: SignalInput): SignalOutput { const providers = providerImports(input.base.imports); const core = coreImpor…` L119-194
 
 ## packages/core/src/signals/pulumi-ts.ts
 

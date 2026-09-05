@@ -721,11 +721,14 @@ const ORACLE_DISCLOSURES: Record<string, string> = {
     "being a type that implements Pulumi's resource interface). `cha-over-approximation`: " +
     "class-hierarchy analysis resolves an interface call to every implementation of the method, so the " +
     "oracle's call set is an upper bound and the recall measured against it is a lower bound. " +
-    "`helper-attribution-differs`: a resource constructed inside a helper function is attributed to the " +
-    "helper by one side and to the call site by the other, so a program that wraps its constructors " +
-    "moves nodes between files. A package the loader cannot build is dropped from truth rather than " +
-    "scored, so part of the Pulumi Go corpus is in greplost's map with no oracle opinion about it; the " +
-    "run prints how many on stderr.",
+    "`helper-attribution-differs`: a resource built inside a helper function is filed under the file the " +
+    "constructor is written in, by the map and by the oracle alike, so the two agree and neither loses a " +
+    "point; a reader of a program that calls that helper from `main.go` will nonetheless find the " +
+    "resource under the helper's file rather than the call site, and S5 and S6 are both scored per file. " +
+    "`test-files-not-loaded`: the loader runs with tests off, so a `_test.go` file is outside the covered " +
+    "universe entirely and the resources a program's unit tests construct are scored by neither side. A " +
+    "package the loader cannot build is dropped from truth rather than scored, so part of the Pulumi Go " +
+    "corpus is in greplost's map with no oracle opinion about it; the run prints how many on stderr.",
   python:
     "`bench/src/truth/python.ts`: `pytruth`, CPython's own `ast` module on Python 3.11 or newer " +
     "(`ast-only`, `python>=3.11`). It reads source and never executes an import " +
@@ -902,8 +905,13 @@ export const TRUTH_NOTE_GLOSS: Record<string, string> = {
   "go-types-oracle": "the Pulumi Go oracle loads the program with `go/types`.",
   "types-implements-pulumi-resource": "a resource is a type that implements Pulumi's resource interface, decided by the type checker.",
   "helper-attribution-differs":
-    "a resource constructed inside a helper function is attributed to the helper by one side and to the call " +
-    "site by the other, so a program that wraps its constructors moves nodes between files.",
+    "a resource built inside a helper function is filed under the file the constructor is written in, by the " +
+    "map and by the oracle alike, so the two agree and neither loses a point; but a reader of a program that " +
+    "calls that helper from `main.go` will find the resource under the helper's file rather than the call " +
+    "site, and both S5 and S6 are scored per file.",
+  "test-files-not-loaded":
+    "the Go loader runs with tests off, so `_test.go` files are outside the covered universe entirely: a " +
+    "Pulumi program's unit tests construct resources, and none of those are scored.",
 };
 
 function evalSection(heading: string, subtitle: string, section: EvalSection): string[] {

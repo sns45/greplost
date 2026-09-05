@@ -10,7 +10,7 @@
 
 **References:** [`.github/workflows/ci.yml`](../ci.yml.md) (uses)
 
-**Referenced by:** [`publish`](job.publish.md) (needs)
+**Referenced by:** [`job.publish`](job.publish.md) (needs)
 
 **Blast radius:** 1 node(s) (`greplost impact .github/workflows/publish.yml#task.ci`)
 

@@ -74,14 +74,14 @@
     "missed": [],
     "passed": true
   },
-  "greplostSha": "f250c7f",
+  "greplostSha": "af6eaa1",
   "machine": {
     "arch": "arm64",
     "bun": "1.2.21",
     "cores": 16,
     "cpu": "Apple M4 Max",
     "go": "go version go1.25.3 darwin/arm64",
-    "greplostSha": "f250c7f",
+    "greplostSha": "af6eaa1",
     "greplostVersion": "0.0.2",
     "memoryGB": 128,
     "node": "24.3.0",
@@ -166,7 +166,7 @@
       "truthSource": "bench/src/truth/yaml.ts"
     }
   },
-  "recordedAt": "2026-09-05T16:46:32.422Z",
+  "recordedAt": "2026-09-05T16:57:32.173Z",
   "repos": {
     "anyq": {
       "S1": {
@@ -950,20 +950,20 @@
       },
       "S4": 1,
       "S5": {
-        "f1": 0.9972752043596731,
+        "f1": 0.9977827050997783,
         "fn": 1,
         "fp": 0,
         "precision": 1,
-        "recall": 0.9945652173913043,
-        "tp": 183
+        "recall": 0.995575221238938,
+        "tp": 225
       },
       "S6": {
-        "f1": 0.9839816933638443,
-        "fn": 7,
+        "f1": 0.9863013698630138,
+        "fn": 6,
         "fp": 0,
         "precision": 1,
-        "recall": 0.9684684684684685,
-        "tp": 215
+        "recall": 0.972972972972973,
+        "tp": 216
       },
       "callsAllConfidences": {
         "f1": 0.9787234042553191,
@@ -987,9 +987,8 @@
           "aws-go-s3-folder-component/main.go:1 (aws-go-s3-folder-component/main.go#resource.f)",
           "classic-azure-go-webserver-component/main.go:1 (classic-azure-go-webserver-component/main.go#resource.server)",
           "kubernetes-go-guestbook/components/main.go:1 (kubernetes-go-guestbook/components/main.go#resource.frontend)",
-          "kubernetes-go-guestbook/components/main.go:1 (kubernetes-go-guestbook/components/main.go#resource.~0)",
-          "kubernetes-go-guestbook/components/main.go:1 (kubernetes-go-guestbook/components/main.go#resource.~1)",
-          "kubernetes-go-helm-release-wordpress/main.go:1 (kubernetes-go-helm-release-wordpress/main.go#resource.svc)",
+          "kubernetes-go-guestbook/components/main.go:1 (kubernetes-go-guestbook/components/main.go#resource.~redis-leader)",
+          "kubernetes-go-guestbook/components/main.go:1 (kubernetes-go-guestbook/components/main.go#resource.~redis-replica)",
           "testing-unit-go-components/main.go:1 (testing-unit-go-components/main.go#resource.nginx)"
         ]
       },
