@@ -26,10 +26,12 @@
 - `function basename(file: string): string`  L78-81
 - `function isWorkflowFile(file: string): boolean`  L84-91
 - `function isHelmFile(file: string): boolean`  L94-97
-- `function flavourOf(file: string, root?: string): YamlFlavour`  L106-117
-- `function groupByFlavour(files: readonly string[], root?: string): Array<[YamlFlavour, string[]]>`  L120-132
-- `function generateTruth(root: string, files: string[]): Truth`  L134-140
-- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }`  L143-166
-- `function merge(truths: readonly Truth[]): Truth`  L172-198
+- `function flavourOf(file: string, root?: string): YamlFlavour`  L106-124
+- `const ACTIONS_FILE_CACHE = new Map<string, Map<string, boolean>>()`  L134-134
+- `function cachedIsActionsFile(root: string, file: string): boolean`  L136-147
+- `function groupByFlavour(files: readonly string[], root?: string): Array<[YamlFlavour, string[]]>`  L150-162
+- `function generateTruth(root: string, files: string[]): Truth`  L164-170
+- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }`  L173-196
+- `function merge(truths: readonly Truth[]): Truth`  L202-228
 
-**Calls:** `isActionsFile` → [`bench/src/truth/yaml-actions.ts#isActionsFile`](yaml-actions.ts.md) (high), `basename` → [`bench/src/truth/yaml.ts#basename`](yaml.ts.md) (high), `compare` → [`bench/src/truth/yaml.ts#compare`](yaml.ts.md) (high), `flavourOf` → [`bench/src/truth/yaml.ts#flavourOf`](yaml.ts.md) (high), `groupByFlavour` → [`bench/src/truth/yaml.ts#groupByFlavour`](yaml.ts.md) (high), `isHelmFile` → [`bench/src/truth/yaml.ts#isHelmFile`](yaml.ts.md) (high), `isWorkflowFile` → [`bench/src/truth/yaml.ts#isWorkflowFile`](yaml.ts.md) (high), `merge` → [`bench/src/truth/yaml.ts#merge`](yaml.ts.md) (high)
+**Calls:** `isActionsFile` → [`bench/src/truth/yaml-actions.ts#isActionsFile`](yaml-actions.ts.md) (high), `basename` → [`bench/src/truth/yaml.ts#basename`](yaml.ts.md) (high), `cachedIsActionsFile` → [`bench/src/truth/yaml.ts#cachedIsActionsFile`](yaml.ts.md) (high), `compare` → [`bench/src/truth/yaml.ts#compare`](yaml.ts.md) (high), `flavourOf` → [`bench/src/truth/yaml.ts#flavourOf`](yaml.ts.md) (high), `groupByFlavour` → [`bench/src/truth/yaml.ts#groupByFlavour`](yaml.ts.md) (high), `isHelmFile` → [`bench/src/truth/yaml.ts#isHelmFile`](yaml.ts.md) (high), `isWorkflowFile` → [`bench/src/truth/yaml.ts#isWorkflowFile`](yaml.ts.md) (high), `merge` → [`bench/src/truth/yaml.ts#merge`](yaml.ts.md) (high)

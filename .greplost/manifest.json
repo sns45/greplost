@@ -900,9 +900,9 @@
       "fanIn": 1,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 471,
+      "loc": 567,
       "pkg": "@greplost/bench",
-      "sha256": "22ffdbd6d603a05450e466f629898f61dee1e5191e98ead5480af5f1ba4ef4bd",
+      "sha256": "fa1e27c55b5d62fd9e705cd4ba4526f15ed897c59a3b6a21b9c1dd695a01e689",
       "staleSummary": false
     },
     "bench/src/truth/yaml-helm.ts": {
@@ -956,9 +956,9 @@
       "fanIn": 0,
       "fanOut": 5,
       "lang": "ts",
-      "loc": 198,
+      "loc": 228,
       "pkg": "@greplost/bench",
-      "sha256": "a382fd2c30bacfce693d6b3b34d2c1e9f17beba636e802f9026a00bef15fcec6",
+      "sha256": "32ab1544728662d3bb05b8647d548d393daf6a4d6a848e23a1b51fae5e6106f8",
       "staleSummary": false
     },
     "bench/truth/gocallgraph/main.go": {
@@ -1560,6 +1560,7 @@
       "blast": 44,
       "exports": [
         "COMPOSITE_JOB_ID",
+        "blankExpressions",
         "extractYamlActions",
         "isActionDefinitionPath",
         "refOf",
@@ -1568,9 +1569,9 @@
       "fanIn": 2,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 434,
+      "loc": 500,
       "pkg": "@greplost/core",
-      "sha256": "c6add0a910186974b988b8b34da95fabf66698afdcb8f5e84b11393dc552ec9a",
+      "sha256": "0e705c454ed95e109d7de3f72c82a51e7b66ac61f6e53d4f3b38af7f413c99ce",
       "staleSummary": false
     },
     "packages/core/src/extract/yaml-doc.ts": {
@@ -1647,9 +1648,9 @@
       "fanIn": 3,
       "fanOut": 4,
       "lang": "ts",
-      "loc": 179,
+      "loc": 184,
       "pkg": "@greplost/core",
-      "sha256": "379633e5fccac42d0c87cd87d92ceb4bf17cbffc1ebf2f0bc9a40be8b4dbe9f0",
+      "sha256": "b0b82bbf6c5426017148b97ee67c3de202d8a168f5a5c1a761af7bea48b99ff8",
       "staleSummary": false
     },
     "packages/core/src/graph/blast.ts": {
@@ -3462,14 +3463,14 @@
         "@greplost/sync"
       ],
       "files": 49,
-      "loc": 25001,
+      "loc": 25127,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 65,
-      "loc": 18056,
+      "loc": 18127,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",

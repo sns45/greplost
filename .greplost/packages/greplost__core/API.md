@@ -110,10 +110,11 @@
 ## packages/core/src/extract/yaml-actions.ts
 
 - `const COMPOSITE_JOB_ID = "runs"` L60-60
-- `function runPathTokens(body: string): string[]` L243-259
-- `function refOf(uses: string): string | null` L306-309
-- `function isActionDefinitionPath(path: string): boolean` L381-385
-- `function extractYamlActions(path: string, _lang: Lang, source: string, tree: Tree): YamlParts` L422-434
+- `function blankExpressions(body: string): string` L268-280
+- `function runPathTokens(body: string): string[]` L291-307
+- `function refOf(uses: string): string | null` L354-357
+- `function isActionDefinitionPath(path: string): boolean` L445-449
+- `function extractYamlActions(path: string, _lang: Lang, source: string, tree: Tree): YamlParts` L481-500
 
 ## packages/core/src/extract/yaml-doc.ts
 
@@ -154,9 +155,9 @@
 - `function isWorkflowPath(path: string): boolean` L62-70
 - `function isHelmPath(path: string): boolean` L73-76
 - `function documentKeys(document: Node): string[]` L96-106
-- `function classifyYamlDocument(path: string, keys: readonly string[]): YamlFlavour` L138-145
-- `function classifyYamlFile(path: string, tree: Tree): YamlFlavour` L151-161
-- `function extractYaml( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L163-179
+- `function classifyYamlDocument(path: string, keys: readonly string[]): YamlFlavour` L139-150
+- `function classifyYamlFile(path: string, tree: Tree): YamlFlavour` L156-166
+- `function extractYaml( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L168-184
 
 ## packages/core/src/graph/blast.ts
 

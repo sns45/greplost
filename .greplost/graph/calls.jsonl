@@ -1115,6 +1115,10 @@
 {"confidence":"high","from":"bench/src/truth/ts.ts#listTypeScriptFiles","kind":"call","to":"bench/src/truth/ts.ts#toPosix"}
 {"confidence":"high","from":"bench/src/truth/ts.ts#normalizeId","kind":"call","to":"bench/src/truth/ts.ts#toPosix"}
 {"confidence":"high","from":"bench/src/truth/ts.ts#sourceCandidates","kind":"call","to":"bench/src/truth/ts.ts#toPosix"}
+{"confidence":"high","from":"bench/src/truth/yaml-actions.ts#classifyDocument","kind":"call","to":"bench/src/truth/yaml-actions.ts#isActionDefinitionName"}
+{"confidence":"high","from":"bench/src/truth/yaml-actions.ts#classifyDocument","kind":"call","to":"bench/src/truth/yaml-actions.ts#isHelmPathName"}
+{"confidence":"high","from":"bench/src/truth/yaml-actions.ts#classifyDocument","kind":"call","to":"bench/src/truth/yaml-actions.ts#isPlain"}
+{"confidence":"high","from":"bench/src/truth/yaml-actions.ts#classifyDocument","kind":"call","to":"bench/src/truth/yaml-actions.ts#isWorkflowPathName"}
 {"confidence":"high","from":"bench/src/truth/yaml-actions.ts#coveredRun","kind":"call","to":"bench/src/truth/yaml-actions.ts#readFile"}
 {"confidence":"high","from":"bench/src/truth/yaml-actions.ts#dedupe","kind":"call","to":"packages/core/src/schema.ts#compareEdges"}
 {"confidence":"high","from":"bench/src/truth/yaml-actions.ts#generateExtra","kind":"call","to":"bench/src/truth/yaml-actions.ts#coveredRun"}
@@ -1125,9 +1129,10 @@
 {"confidence":"high","from":"bench/src/truth/yaml-actions.ts#generateExtra","kind":"call","to":"bench/src/truth/yaml-actions.ts#pathsByToken"}
 {"confidence":"high","from":"bench/src/truth/yaml-actions.ts#generateTruth","kind":"call","to":"bench/src/truth/yaml-actions.ts#coveredRun"}
 {"confidence":"high","from":"bench/src/truth/yaml-actions.ts#isActionDefinitionName","kind":"call","to":"bench/src/truth/yaml-actions.ts#basename"}
+{"confidence":"high","from":"bench/src/truth/yaml-actions.ts#isActionsFile","kind":"call","to":"bench/src/truth/yaml-actions.ts#classifyDocument"}
 {"confidence":"high","from":"bench/src/truth/yaml-actions.ts#isActionsFile","kind":"call","to":"bench/src/truth/yaml-actions.ts#documentsOf"}
-{"confidence":"high","from":"bench/src/truth/yaml-actions.ts#isActionsFile","kind":"call","to":"bench/src/truth/yaml-actions.ts#isActionDefinitionName"}
-{"confidence":"high","from":"bench/src/truth/yaml-actions.ts#isActionsFile","kind":"call","to":"bench/src/truth/yaml-actions.ts#isPlain"}
+{"confidence":"high","from":"bench/src/truth/yaml-actions.ts#isActionsFile","kind":"call","to":"bench/src/truth/yaml-actions.ts#isWorkflowPathName"}
+{"confidence":"high","from":"bench/src/truth/yaml-actions.ts#isHelmPathName","kind":"call","to":"bench/src/truth/yaml-actions.ts#basename"}
 {"confidence":"high","from":"bench/src/truth/yaml-actions.ts#localUsesTarget","kind":"call","to":"bench/src/truth/yaml-actions.ts#fromRepoRoot"}
 {"confidence":"high","from":"bench/src/truth/yaml-actions.ts#readFile","kind":"call","to":"bench/src/truth/yaml-actions.ts#documentsOf"}
 {"confidence":"high","from":"bench/src/truth/yaml-actions.ts#readFile","kind":"call","to":"bench/src/truth/yaml-actions.ts#emptyReading"}
@@ -1138,6 +1143,7 @@
 {"confidence":"high","from":"bench/src/truth/yaml-actions.ts#readFile","kind":"call","to":"bench/src/truth/yaml-actions.ts#stringList"}
 {"confidence":"high","from":"bench/src/truth/yaml-actions.ts#readFile","kind":"call","to":"bench/src/truth/yaml-actions.ts#text"}
 {"confidence":"high","from":"bench/src/truth/yaml-actions.ts#readFile","kind":"call","to":"bench/src/truth/yaml-actions.ts#usableName"}
+{"confidence":"high","from":"bench/src/truth/yaml-actions.ts#runPathTokens","kind":"call","to":"bench/src/truth/yaml-actions.ts#blankExpressions"}
 {"confidence":"high","from":"bench/src/truth/yaml-helm.ts#chartsOf","kind":"call","to":"bench/src/truth/yaml-helm.ts#basename"}
 {"confidence":"high","from":"bench/src/truth/yaml-helm.ts#chartsOf","kind":"call","to":"bench/src/truth/yaml-helm.ts#dirname"}
 {"confidence":"high","from":"bench/src/truth/yaml-helm.ts#chartsOf","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
@@ -1179,7 +1185,8 @@
 {"confidence":"high","from":"bench/src/truth/yaml-k8s.ts#readFile","kind":"call","to":"bench/src/truth/yaml-k8s.ts#walk"}
 {"confidence":"high","from":"bench/src/truth/yaml-k8s.ts#walk","kind":"call","to":"bench/src/truth/yaml-k8s.ts#isPlain"}
 {"confidence":"high","from":"bench/src/truth/yaml-k8s.ts#walk","kind":"call","to":"bench/src/truth/yaml-k8s.ts#walk"}
-{"confidence":"high","from":"bench/src/truth/yaml.ts#flavourOf","kind":"call","to":"bench/src/truth/yaml-actions.ts#isActionsFile"}
+{"confidence":"high","from":"bench/src/truth/yaml.ts#cachedIsActionsFile","kind":"call","to":"bench/src/truth/yaml-actions.ts#isActionsFile"}
+{"confidence":"high","from":"bench/src/truth/yaml.ts#flavourOf","kind":"call","to":"bench/src/truth/yaml.ts#cachedIsActionsFile"}
 {"confidence":"high","from":"bench/src/truth/yaml.ts#flavourOf","kind":"call","to":"bench/src/truth/yaml.ts#isHelmFile"}
 {"confidence":"high","from":"bench/src/truth/yaml.ts#flavourOf","kind":"call","to":"bench/src/truth/yaml.ts#isWorkflowFile"}
 {"confidence":"high","from":"bench/src/truth/yaml.ts#generateExtra","kind":"call","to":"bench/src/truth/yaml.ts#compare"}
@@ -2012,8 +2019,7 @@
 {"confidence":"high","from":"packages/core/src/extract/ts.ts#extractTs","kind":"call","to":"packages/core/src/schema.ts#symbolId"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#addNode","kind":"call","to":"packages/core/src/extract/ts-signature.ts#clip"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#addNode","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#trimmedSpan"}
-{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#addNode","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#uniqueName"}
-{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#addNode","kind":"call","to":"packages/core/src/schema.ts#nodeId"}
+{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#addNode","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#uniqueId"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectDocument","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#collectJob"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectDocument","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#collectStep"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectDocument","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#isActionDefinitionPath"}
@@ -2022,11 +2028,13 @@
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectDocument","kind":"call","to":"packages/core/src/extract/yaml-doc.ts#mapPath"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectDocument","kind":"call","to":"packages/core/src/extract/yaml-doc.ts#seqItems"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectJob","kind":"call","to":"packages/core/src/extract/ts-signature.ts#lineOf"}
+{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectJob","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#addExport"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectJob","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#addNode"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectJob","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#addReference"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectJob","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#collectNeeds"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectJob","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#collectStep"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectJob","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#literal"}
+{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectJob","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#localPath"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectJob","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#metaOf"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectJob","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#refOf"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectJob","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#scalarOrList"}
@@ -2044,6 +2052,7 @@
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectStep","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#addReference"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectStep","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#clipRun"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectStep","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#literal"}
+{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectStep","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#localPath"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectStep","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#metaOf"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectStep","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#refOf"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectStep","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#runPathTokens"}
@@ -2051,9 +2060,11 @@
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#collectStep","kind":"call","to":"packages/core/src/extract/yaml-doc.ts#scalarAt"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#extractYamlActions","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#collectDocument"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#extractYamlActions","kind":"call","to":"packages/core/src/extract/yaml-doc.ts#yamlDocuments"}
+{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#localPath","kind":"call","to":"packages/core/src/schema.ts#splitNodeId"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#metaOf","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
+{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#runPathTokens","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#blankExpressions"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#scalarList","kind":"call","to":"packages/core/src/extract/yaml-doc.ts#seqItems"}
-{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#uniqueName","kind":"call","to":"packages/core/src/schema.ts#nodeId"}
+{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#uniqueId","kind":"call","to":"packages/core/src/schema.ts#nodeId"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-doc.ts#documentValue","kind":"call","to":"packages/core/src/extract/yaml-doc.ts#isValueType"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-doc.ts#documentValue","kind":"call","to":"packages/core/src/extract/yaml-doc.ts#readValue"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-doc.ts#findByKey","kind":"call","to":"packages/core/src/extract/yaml-doc.ts#walk"}

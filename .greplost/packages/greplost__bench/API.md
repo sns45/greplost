@@ -511,11 +511,11 @@
 
 ## bench/src/truth/yaml-actions.ts
 
-- `const NOTES: readonly string[] = ["js-yaml-oracle"]` L51-51
-- `function isActionsFile(root: string, file: string): boolean` L130-139
-- `type ReferenceTruth = Edge & { readonly refKind: string }` L378-378
-- `function generateTruth(root: string, files: string[]): Truth` L391-405
-- `function generateExtra( root: string, files: string[], universe: string[] = files, ): { references: Edge[]; nodes: string[] }` L416-460
+- `const NOTES: readonly string[] = ["js-yaml-oracle", "anchors-not-expanded", "config-precision-unmeasured"]` L62-62
+- `function isActionsFile(root: string, file: string): boolean` L188-196
+- `type ReferenceTruth = Edge & { readonly refKind: string }` L472-472
+- `function generateTruth(root: string, files: string[]): Truth` L485-501
+- `function generateExtra( root: string, files: string[], universe: string[] = files, ): { references: Edge[]; nodes: string[] }` L512-556
 
 ## bench/src/truth/yaml-helm.ts
 
@@ -541,7 +541,7 @@
 - `type YamlFlavour = "yaml-actions" | "yaml-helm" | "yaml-k8s"` L30-30
 - `function isWorkflowFile(file: string): boolean` L84-91
 - `function isHelmFile(file: string): boolean` L94-97
-- `function flavourOf(file: string, root?: string): YamlFlavour` L106-117
-- `function groupByFlavour(files: readonly string[], root?: string): Array<[YamlFlavour, string[]]>` L120-132
-- `function generateTruth(root: string, files: string[]): Truth` L134-140
-- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }` L143-166
+- `function flavourOf(file: string, root?: string): YamlFlavour` L106-124
+- `function groupByFlavour(files: readonly string[], root?: string): Array<[YamlFlavour, string[]]>` L150-162
+- `function generateTruth(root: string, files: string[]): Truth` L164-170
+- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }` L173-196

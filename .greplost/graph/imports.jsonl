@@ -481,7 +481,7 @@
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts","importKind":"type","kind":"import","specifier":"./yaml-doc.ts","symbols":["YamlValue"],"to":"packages/core/src/extract/yaml-doc.ts"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts","importKind":"static","kind":"import","specifier":"./yaml-doc.ts","symbols":["documentValue","mapGet","mapPath","scalarAt","seqItems","yamlDocuments"],"to":"packages/core/src/extract/yaml-doc.ts"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["DeclKind","Declaration","ExportRecord","FileRecord","Lang","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
-{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings","nodeId"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings","nodeId","splitNodeId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-doc.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Node"],"to":"ext:web-tree-sitter"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-helm.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Tree"],"to":"ext:web-tree-sitter"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-helm.ts","importKind":"static","kind":"import","specifier":"./ts-signature.ts","symbols":["clip"],"to":"packages/core/src/extract/ts-signature.ts"}
