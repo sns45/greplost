@@ -191,7 +191,7 @@
       "tier": "S",
       "lang": "go",
       "defaultBranch": "master",
-      "notes": "build 2; 85 .go under *-go-*/",
+      "notes": "build 2; 85 .go in the repo, 59 under the *-go-* subset, 44 scored (the Go toolchain leaves the packages that do not type-check at this pin out of the covered set)",
       "subset": "*-go-*/**"
     },
     {

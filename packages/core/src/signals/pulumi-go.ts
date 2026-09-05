@@ -7,26 +7,59 @@
  * from an in-repo package is not, and `fixtures/tiny-pulumi-go` carries that decoy so the rule
  * cannot quietly become a text match on `New`.
  *
- * Two narrowings the spec's sentence implies and this file makes explicit:
+ * Three shapes make a resource, and all three are questions about the import block and the
+ * call, never about the spelling of a type:
  *
- *  - `github.com/pulumi/pulumi/sdk/...` is the **core SDK**, a library rather than a provider.
- *    It makes the pass apply (a Go file that imports it is a Pulumi program), but
- *    `pulumi.NewFileAsset(...)` and `pulumi.NewAssetArchive(...)` are not resources. Only
- *    `github.com/pulumi/pulumi-<provider>/...` packages construct them.
- *  - the package identifier is **not** always the last path segment. `.../resources/v3` is
- *    package `resources`, because `/v3` is a Go module major-version suffix; the language
- *    extractor's `local` says `v3`, so this pass registers the version-stripped segment as a
- *    second name for that import. Eleven imports in the pinned corpus are written that way.
+ *  - `<pkg>.New<Type>(ctx, name, …)` where `<pkg>` is a provider import: construction.
+ *  - `<pkg>.Get<Type>(ctx, "<name>", id, state, …)` where `<pkg>` is a provider import:
+ *    **adoption** of a resource that already exists. It is separated from a data source by its
+ *    shape and not by widening the `New` regex, because `Get`/`Lookup` is also how a provider
+ *    SDK spells a data source, and a data source returns a plain result struct. A data source
+ *    is `Get<Thing>(ctx, args, opts)` — two or three arguments, and the second is an args
+ *    pointer or `nil`; an adoption constructor takes at least four and names the resource with
+ *    a string literal in the second.
+ *  - `pulumi.NewStackReference(ctx, name, …)` from the **core SDK**. The core SDK is a library
+ *    rather than a provider — `pulumi.NewFileAsset(...)` and `pulumi.NewAssetArchive(...)` are
+ *    not resources — and `StackReference` is the one concrete resource it exports, exactly as
+ *    `signals/pulumi-ts.ts` treats `@pulumi/pulumi`.
+ *
+ * One further reading the spec's sentence leaves open: the package identifier is **not** always
+ * the last path segment. `.../resources/v3` is package `resources`, because `/v3` is a Go
+ * module major-version suffix; the language extractor's `local` says `v3`, so this pass
+ * registers the version-stripped segment as a second name for that import. Eleven imports in
+ * the pinned corpus are written that way.
+ *
+ * `meta.type` is a **derived approximation** of the Pulumi type token, not the token the engine
+ * uses. It is exact for the AWS-classic shape the spec describes (`.../go/aws/s3` +
+ * `NewBucket` -> `aws:s3/bucket:Bucket`); elsewhere it is the best an import path can give.
+ * `azure-native` is published as `github.com/pulumi/pulumi-azure-native-sdk/resources/v3`, so
+ * this pass writes `azure-native-sdk:resources/resourceGroup:ResourceGroup` where the engine
+ * says `azure-native:resources:ResourceGroup`. No metric scores `meta.type`; a card reader
+ * should treat it as a label, and `meta.provider` as the reliable half.
  *
  * A resource is named after the identifier its `:=` (or `=`, or `var`) binds. An unbound
- * result — `_, err = s3.NewBucketObject(...)`, or a bare call statement — is named `~<index>` by
- * its position among the file's unbound resources: the spec's `#<index>` cannot be used,
- * because `nodeId` refuses a `#` in a name (leaf 2.0 report, concern 1; driver ruling
- * 2026-09-04). A name bound twice inside one file takes `~<n>` from 2, the same rule.
+ * result — `_, err = s3.NewBucketObject(...)`, or a bare call statement — takes its Pulumi
+ * logical name when the second argument is a string literal (`~site`), and otherwise its
+ * position among the file's *remaining* unbound resources (`~0`). The literal comes first
+ * because a position is not an identity: an unbound resource inserted above another shifts
+ * every index below it, and the two sides of the score then disagree about which node is which
+ * (leaf 2.7 review, item 3). The spec's `#<index>` cannot be used at all, because `nodeId`
+ * refuses a `#` in a name (leaf 2.0 report, concern 1; driver ruling 2026-09-04), which is also
+ * why a logical name containing one falls back to the index. A name taken twice inside one file
+ * takes `~<n>` from 2, and the allocator is seeded with the file's own language declarations so
+ * a Go method on a lower-case type named `resource` cannot be shadowed by a node.
  *
- * `resource-input`: a value inside the constructor's arguments that reads `<var>.<Field>` where
- * `<var>` is another resource in this file gives a reference. `vpc.ID()` and `bucket.Arn` both
- * reduce to the same `selector_expression`, so a method call and a field read are one rule.
+ * `resource-input` is two rules over the constructor's arguments:
+ *
+ *  - a value that reads `<var>.<Field>` where `<var>` is another resource in this file.
+ *    `vpc.ID()` and `bucket.Arn` both reduce to the same `selector_expression`, so a method
+ *    call and a field read need one rule between them; the reference's `to` is `<var>.<Field>`.
+ *  - a bare identifier naming another resource inside `pulumi.Parent(...)` or
+ *    `pulumi.DependsOn(...)`, whose `to` is the bare `<var>`. Those two options are a
+ *    dependency the map would otherwise lose entirely (driver ruling, leaf 2.7 review item 2);
+ *    `pulumi.Provider(...)` and the rest are deliberately not read, so a bare identifier
+ *    anywhere else is never an edge.
+ *
  * Confidence is the linker's call (`references/go.ts`).
  *
  * Determinism: nothing here reads the filesystem, the clock or the environment, and the whole
@@ -40,14 +73,29 @@ import { NameAllocator, field, signalNode, spanOf, stringOf, walk } from "./ts-n
 
 const LANGS: ReadonlySet<Lang> = new Set<Lang>(["go"]);
 
+/** The symbol-path prefix a `resource` node's name carries, for the allocator's seeding. */
+const NODE_NAME_PREFIX = "resource.";
+
 /** Every provider SDK lives under this prefix; the segment after it is the provider. */
 const PROVIDER_PREFIX = "github.com/pulumi/pulumi-";
 /** The core SDK: a library, not a provider. Its presence still means "this is a Pulumi program". */
 const CORE_SDK_PREFIX = "github.com/pulumi/pulumi/sdk";
+/** The core SDK package itself; `.../go/pulumi/config` is a different package. */
+const CORE_PACKAGE_SUFFIX = "/go/pulumi";
+/** The one concrete resource the core SDK exports. */
+const CORE_RESOURCE = "NewStackReference";
 /** `New` followed by an upper-case letter: Go's exported-constructor convention. */
 const CONSTRUCTOR = /^New[A-Z]/u;
+/** `Get` followed by an upper-case letter: adoption, and also how a data source is spelled. */
+const ADOPTION = /^Get[A-Z]/u;
+/** How many arguments an adoption constructor takes before its variadic options. */
+const ADOPTION_ARITY = 4;
 /** A Go module major-version suffix, which is never the package name. */
 const VERSION_SEGMENT = /^v[0-9]+$/u;
+/** The resource options that name another resource outright (driver ruling, review item 2). */
+const RESOURCE_OPTIONS: ReadonlySet<string> = new Set(["DependsOn", "Parent"]);
+/** Characters `nodeId` refuses in a name; a logical name carrying one falls back to an index. */
+const UNUSABLE_IN_NAME = /[#\n\0]/u;
 
 /**
  * Cheap text gate (spec 3.6): a Go file that imports a Pulumi path.
@@ -56,11 +104,7 @@ const VERSION_SEGMENT = /^v[0-9]+$/u;
  * a file a Pulumi program; Go import paths are always string literals.
  */
 function applies(_path: string, source: string): boolean {
-  for (const quote of ['"', "`"]) {
-    if (source.includes(`${quote}${PROVIDER_PREFIX}`)) return true;
-    if (source.includes(`${quote}${CORE_SDK_PREFIX}`)) return true;
-  }
-  return false;
+  return source.includes(`"${PROVIDER_PREFIX}`) || source.includes(`"${CORE_SDK_PREFIX}`);
 }
 
 export const pulumiGoPass: SignalPass = {
@@ -69,9 +113,17 @@ export const pulumiGoPass: SignalPass = {
   applies,
   run(input: SignalInput): SignalOutput {
     const providers = providerImports(input.base.imports);
-    if (providers.size === 0) return { decls: [], refs: [] };
+    const core = coreImports(input.base.imports);
+    if (providers.size === 0 && core.size === 0) return { decls: [], refs: [] };
 
+    // Seeded with the file's own declarations: a Go method on a lower-case type named
+    // `resource` has the symbol path `resource.bucket`, which is exactly the id a
+    // `resource.bucket` node would claim, and a node must never stand in for a symbol.
     const names = new NameAllocator();
+    for (const decl of input.base.decls) {
+      if (decl.name.startsWith(NODE_NAME_PREFIX)) names.take(decl.name.slice(NODE_NAME_PREFIX.length));
+    }
+
     const decls: Declaration[] = [];
     const refs: ReferenceRecord[] = [];
     /** Binding name -> the node name of the resource it holds, for `resource-input`. */
@@ -81,15 +133,23 @@ export const pulumiGoPass: SignalPass = {
 
     walk(input.tree.rootNode, (node) => {
       if (node.type !== "call_expression") return;
-      const resource = classify(node, providers);
+      const resource = classify(node, providers, core);
       if (resource === null) return;
 
       const binding = bindingNameOf(node);
-      const name = names.take(binding ?? `~${anonymous}`);
-      if (binding === null) anonymous += 1;
-      else if (!resourceByBinding.has(binding)) resourceByBinding.set(binding, name);
+      const resourceName = logicalNameArgument(resource.args);
+      let claimed: string;
+      if (binding !== null) {
+        claimed = binding;
+      } else if (resourceName !== undefined && resourceName !== "" && !UNUSABLE_IN_NAME.test(resourceName)) {
+        claimed = `~${resourceName}`;
+      } else {
+        claimed = `~${anonymous}`;
+        anonymous += 1;
+      }
+      const name = names.take(claimed);
+      if (binding !== null && !resourceByBinding.has(binding)) resourceByBinding.set(binding, name);
 
-      const resourceName = firstStringArgument(resource.args);
       decls.push(
         signalNode({
           path: input.path,
@@ -106,6 +166,7 @@ export const pulumiGoPass: SignalPass = {
             typeSource: "import-path",
             provider: resource.provider,
             resourceName,
+            adopted: resource.adopted ? "1" : undefined,
           },
         }),
       );
@@ -113,9 +174,10 @@ export const pulumiGoPass: SignalPass = {
     });
 
     // References come second: a resource may be fed the output of one constructed below it
-    // (Go allows it through a closure), so the binding index has to be complete first.
+    // (Go allows it through a `var` declared above and assigned later), so the binding index
+    // has to be complete first.
     for (const { name, args } of pending) {
-      for (const ref of resourceInputs(args, resourceByBinding, name)) refs.push(ref);
+      for (const ref of resourceInputs(args, resourceByBinding, name, core)) refs.push(ref);
     }
 
     return { decls, refs };
@@ -170,6 +232,23 @@ function providerImports(imports: readonly ImportRecord[]): Map<string, Provider
   return out;
 }
 
+/**
+ * Local names bound to the core SDK's own `pulumi` package.
+ *
+ * `.../sdk/v3/go/pulumi/config` and `.../sdk/v3/go/common/resource` are different packages and
+ * are deliberately not in the set: only the package that exports `StackReference`, `Parent` and
+ * `DependsOn` counts.
+ */
+function coreImports(imports: readonly ImportRecord[]): Set<string> {
+  const out = new Set<string>();
+  for (const record of imports) {
+    if (!record.specifier.startsWith(CORE_SDK_PREFIX)) continue;
+    if (!record.specifier.endsWith(CORE_PACKAGE_SUFFIX)) continue;
+    for (const symbol of record.symbols) out.add(symbol.local);
+  }
+  return out;
+}
+
 /** `github.com/pulumi/pulumi-aws/sdk/v6/go/aws/s3` -> `{ provider: "aws", module: "s3" }`. */
 function providerOf(specifier: string): ProviderImport | null {
   const rest = specifier.slice(PROVIDER_PREFIX.length);
@@ -198,12 +277,14 @@ function packageSegment(segments: readonly string[]): string {
 // constructors
 // ---------------------------------------------------------------------------
 
-/** A call that constructs a Pulumi resource, and everything its node needs. */
+/** A call that constructs or adopts a Pulumi resource, and everything its node needs. */
 interface ResourceCall {
   provider: string;
   module: string;
-  /** The constructed type: `NewBucketPolicy` -> `BucketPolicy`. */
+  /** The constructed type: `NewBucketPolicy` -> `BucketPolicy`, `GetService` -> `Service`. */
   type: string;
+  /** True for the `Get<Type>` adoption form, which becomes `meta.adopted`. */
+  adopted: boolean;
   /** The callee as written, for the signature. */
   written: string;
   /** The call's `argument_list`, where `resource-input` reads live. */
@@ -211,37 +292,54 @@ interface ResourceCall {
 }
 
 /**
- * Classify one `call_expression`.
+ * Classify one `call_expression`, by the three shapes named in this file's header.
  *
- * `<pkg>.New<Type>(ctx, name, …)`: the package identifier must be a provider import, the field
- * must be an exported `New…`, and the call must carry at least the context and the name. Every
- * one of those is a question about the tree and the import block, never about the spelling of
- * the type.
+ * Nothing here reads the spelling of a type. What it reads is where the package identifier was
+ * imported from, whether the selected name is an exported `New…` or `Get…`, how many arguments
+ * the call carries, and whether the second one is a string literal.
  */
-function classify(call: Node, providers: ReadonlyMap<string, ProviderImport>): ResourceCall | null {
+function classify(
+  call: Node,
+  providers: ReadonlyMap<string, ProviderImport>,
+  core: ReadonlySet<string>,
+): ResourceCall | null {
   const callee = field(call, "function");
   if (callee === null || callee.type !== "selector_expression") return null;
   const operand = field(callee, "operand");
   const selected = field(callee, "field");
   if (operand === null || selected === null) return null;
   if (operand.type !== "identifier" && operand.type !== "package_identifier") return null;
-  if (!CONSTRUCTOR.test(selected.text)) return null;
-
-  const provider = providers.get(operand.text);
-  if (provider === undefined) return null;
 
   const args = field(call, "arguments");
-  // Every Pulumi constructor takes at least a context and a logical name; a one-argument `New…`
-  // is some other function that happens to share the prefix.
-  if (args === null || args.namedChildren.filter((child) => child !== null).length < 2) return null;
+  if (args === null) return null;
+  const arity = args.namedChildren.filter((child) => child !== null).length;
+  const written = `${operand.text}.${selected.text}`;
 
-  return {
-    provider: provider.provider,
-    module: provider.module,
-    type: selected.text.slice(3),
-    written: `${operand.text}.${selected.text}`,
-    args,
-  };
+  const provider = providers.get(operand.text);
+  if (provider !== undefined) {
+    // Every Pulumi constructor takes at least a context and a logical name; a one-argument
+    // `New…` is some other function that happens to share the prefix.
+    if (CONSTRUCTOR.test(selected.text) && arity >= 2) {
+      return { ...tokenOf(provider, selected.text.slice(3)), adopted: false, written, args };
+    }
+    // Adoption: `Get<Type>(ctx, "<name>", id, state, …)`. A data source is `Get<Thing>(ctx,
+    // args, opts)` or `Lookup<Thing>(ctx, args)` — never four arguments with a string-literal
+    // name in the second, which is what separates the two without naming either.
+    if (ADOPTION.test(selected.text) && arity >= ADOPTION_ARITY && logicalNameArgument(args) !== undefined) {
+      return { ...tokenOf(provider, selected.text.slice(3)), adopted: true, written, args };
+    }
+    return null;
+  }
+
+  // The core SDK is a library with exactly one concrete resource in it.
+  if (core.has(operand.text) && selected.text === CORE_RESOURCE && arity >= 2) {
+    return { provider: "pulumi", module: "pulumi", type: CORE_RESOURCE.slice(3), adopted: false, written, args };
+  }
+  return null;
+}
+
+function tokenOf(provider: ProviderImport, type: string): Pick<ResourceCall, "provider" | "module" | "type"> {
+  return { provider: provider.provider, module: provider.module, type };
 }
 
 /**
@@ -295,8 +393,14 @@ function firstIdentifier(node: Node | null, fieldName?: string): string | null {
   return first.text === "_" ? null : first.text;
 }
 
-/** The second argument when it is a string literal: Pulumi's logical name. */
-function firstStringArgument(args: Node): string | undefined {
+/**
+ * The second argument when it is a string literal: Pulumi's logical name.
+ *
+ * Every resource constructor and adoption function in every Pulumi Go SDK takes the context
+ * first and the logical name second, so this one accessor answers both "what is this resource
+ * called" and "is this the adoption form rather than a data source".
+ */
+function logicalNameArgument(args: Node): string | undefined {
   const named = args.namedChildren.filter((child): child is Node => child !== null);
   const second = named[1];
   if (second === undefined) return undefined;
@@ -317,34 +421,61 @@ function lowerFirst(name: string): string {
 /**
  * `resource-input` references from one constructor's arguments.
  *
- * Deliberately narrow: `<var>.<Field>` where `<var>` names another resource in this file.
- * `vpc.ID()` is a `call_expression` wrapping exactly that selector, and
- * `bucket.Arn.ApplyT(f)`'s innermost selector is still `bucket.Arn`, so both reduce to the same
- * node type and neither needs a rule of its own.
+ * Two narrow rules, and nothing else:
+ *
+ *  - `<var>.<Field>` where `<var>` names another resource in this file. `vpc.ID()` is a
+ *    `call_expression` wrapping exactly that selector, and `bucket.Arn.ApplyT(f)`'s innermost
+ *    selector is still `bucket.Arn`, so a method call and a field read need one rule.
+ *  - a bare `<var>` inside `pulumi.Parent(...)` or `pulumi.DependsOn(...)`. A bare identifier is
+ *    only ever read inside those two, so `pulumi.Provider(p)` and an args field holding a
+ *    resource value produce nothing.
  */
 function resourceInputs(
   args: Node,
   resourceByBinding: ReadonlyMap<string, string>,
   self: string,
+  core: ReadonlySet<string>,
 ): ReferenceRecord[] {
   const seen = new Set<string>();
   const out: ReferenceRecord[] = [];
+  const add = (address: string, line: number): void => {
+    if (seen.has(address)) return;
+    seen.add(address);
+    out.push({ from: `resource.${self}`, to: address, refKind: "resource-input", line });
+  };
+  const bareNames = (node: Node): void => {
+    walk(node, (inner) => {
+      if (inner.type !== "identifier") return;
+      const target = resourceByBinding.get(inner.text);
+      if (target === undefined || target === self) return;
+      add(inner.text, spanOf(inner)[0]);
+    });
+  };
+
   walk(args, (node) => {
+    if (node.type === "call_expression") {
+      const option = resourceOptionArguments(node, core);
+      if (option !== null) bareNames(option);
+      return;
+    }
     if (node.type !== "selector_expression") return;
     const operand = field(node, "operand");
     const selected = field(node, "field");
     if (operand === null || selected === null || operand.type !== "identifier") return;
     const target = resourceByBinding.get(operand.text);
     if (target === undefined || target === self) return;
-    const address = `${operand.text}.${selected.text}`;
-    if (seen.has(address)) return;
-    seen.add(address);
-    out.push({
-      from: `resource.${self}`,
-      to: address,
-      refKind: "resource-input",
-      line: spanOf(node)[0],
-    });
+    add(`${operand.text}.${selected.text}`, spanOf(node)[0]);
   });
   return out;
+}
+
+/** The `argument_list` of a `pulumi.Parent(...)`/`pulumi.DependsOn(...)` call, or null. */
+function resourceOptionArguments(call: Node, core: ReadonlySet<string>): Node | null {
+  const callee = field(call, "function");
+  if (callee === null || callee.type !== "selector_expression") return null;
+  const operand = field(callee, "operand");
+  const selected = field(callee, "field");
+  if (operand === null || selected === null || operand.type !== "identifier") return null;
+  if (!core.has(operand.text) || !RESOURCE_OPTIONS.has(selected.text)) return null;
+  return field(call, "arguments");
 }

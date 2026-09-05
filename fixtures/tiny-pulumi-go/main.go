@@ -3,8 +3,9 @@
 //
 //   - a resource constructor reached through a Pulumi provider import, bound with
 //     `:=`, which is the `resource.<varName>` node;
-//   - a second resource whose `Args` literal reads the first one's `ID()`, which is
-//     the `resource-input` reference;
+//   - a second resource whose `Args` literal reads the first one's `ID()` and whose
+//     `pulumi.Parent` option names it outright, which are the two `resource-input`
+//     reference forms;
 //   - a decoy constructor of exactly the same shape from a package that is not a
 //     Pulumi provider, which is neither.
 package main
@@ -28,7 +29,7 @@ func main() {
 		policy, err := s3.NewBucketPolicy(ctx, "site-policy", &s3.BucketPolicyArgs{
 			Bucket: bucket.ID(),
 			Policy: pulumi.String(`{"Version":"2012-10-17","Statement":[]}`),
-		})
+		}, pulumi.Parent(bucket))
 		if err != nil {
 			return err
 		}
