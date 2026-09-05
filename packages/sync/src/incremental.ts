@@ -194,7 +194,7 @@ async function runUpdate(root: string, opts: UpdateOptions, started: number): Pr
     // repair for a cache someone has corrupted.
     const cache = new CountingCache(store, incremental);
 
-    const { snapshot, files } = await buildArtifacts(root, { cache });
+    const { snapshot, files, skipped } = await buildArtifacts(root, { cache });
     store.save(usedKeys(snapshot));
 
     // An empty map is a legitimate answer — a repository really can have no
@@ -206,6 +206,19 @@ async function runUpdate(root: string, opts: UpdateOptions, started: number): Pr
     if (snapshot.files.length === 0) {
       console.error(
         `greplost: no files indexed (check languages/include/exclude in ${ARTIFACT_DIR}/${ARTIFACT_PATHS.config})`,
+      );
+    }
+
+    // A repo-relative path is also an id (tech spec 5.3), so a path holding a
+    // `#`, a newline or a NUL cannot be told from a symbol id, cannot be slugged
+    // into a node card directory, and cannot be linked to. Discovery skips such
+    // files; saying nothing would leave a source file silently absent from the
+    // map. One line with the count, never a list: on the pathological repo that
+    // has thousands, a list is the whole output.
+    if (skipped.length > 0) {
+      console.error(
+        `greplost: skipped ${skipped.length} file${skipped.length === 1 ? "" : "s"} ` +
+          'whose path contains "#", a newline or NUL and so cannot be a map id',
       );
     }
 

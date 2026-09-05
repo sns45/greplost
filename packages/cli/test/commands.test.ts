@@ -147,9 +147,14 @@ describe("query", () => {
     expect(result.query).toBe("Registry");
     expect(result.matches).toHaveLength(1);
     const match = result.matches[0] as Record<string, unknown>;
+    // `references`/`referencedBy` are schema-2 additions (leaf 2.11, spec 4.5):
+    // always arrays, empty for a repo with no reference edges.
     expect(Object.keys(match).sort()).toEqual(
-      ["callers", "card", "exported", "file", "id", "importers", "kind", "name", "package", "signature", "span"],
+      ["callers", "card", "exported", "file", "id", "importers", "kind", "name", "package",
+       "referencedBy", "references", "signature", "span"],
     );
+    expect(match["references"]).toEqual([]);
+    expect(match["referencedBy"]).toEqual([]);
     expect(match["file"]).toBe("packages/core/src/registry.ts");
     expect(match["id"]).toBe("packages/core/src/registry.ts#Registry");
     expect(match["kind"]).toBe("class");
@@ -620,7 +625,7 @@ describe("version", () => {
   test("help <cmd> narrows to that command, and --help --json wraps it", async () => {
     const one = await cli("help", "impact");
     expect(one.code).toBe(0);
-    expect(one.stdout).toContain("usage: greplost impact <path> [--depth <n>]");
+    expect(one.stdout).toContain("usage: greplost impact <path|node-id> [--depth <n>]");
     expect(one.stdout).not.toContain("greplost query");
 
     const viaFlag = await cli("impact", "x", "--help");

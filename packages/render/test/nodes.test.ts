@@ -17,7 +17,8 @@ import { beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import { buildSnapshot, sha256Hex } from "@greplost/core";
+import { buildSnapshot, loadConfig, sha256Hex } from "@greplost/core";
+import type { Structure } from "@greplost/core";
 import { impactOf, impactPairs } from "@greplost/core/graph";
 import type {
   CallEdge,
@@ -30,14 +31,22 @@ import type {
   Snapshot,
   SummaryCache,
 } from "@greplost/core/schema";
-import { DEFAULT_CONFIG, SCHEMA_VERSION, compareStrings, isNodeKind } from "@greplost/core/schema";
+import { DEFAULT_CONFIG, SCHEMA_VERSION, compareStrings, isNodeKind, splitNodeId } from "@greplost/core/schema";
 
-import { buildNodeCard, createContext, nodeCardPath, nodeSlug, renderArtifacts } from "../src/index.ts";
+import {
+  blastUniverse,
+  buildNodeCard,
+  createContext,
+  nodeCardPath,
+  nodeSlug,
+  renderArtifacts,
+} from "../src/index.ts";
 import type { RenderInput } from "../src/index.ts";
 
 const FIXTURES = path.resolve(import.meta.dir, "../../../fixtures");
 const TINY_TS = path.join(FIXTURES, "tiny-ts");
 const TINY_TERRAFORM = path.join(FIXTURES, "tiny-terraform");
+const TINY_ACTIONS = path.join(FIXTURES, "tiny-actions");
 const TS_GOLDEN = path.resolve(import.meta.dir, "golden/tiny-ts");
 const TF_GOLDEN = path.resolve(import.meta.dir, "golden/tiny-terraform");
 const UPDATE = process.env["GREPLOST_UPDATE_GOLDEN"] === "1";
@@ -89,6 +98,17 @@ function listGolden(root: string): string[] {
   };
   if (existsSync(root)) walk(root, "");
   return out.sort(compareStrings);
+}
+
+/** The committed-structure view of a snapshot, without a round trip through disk. */
+function structureOf(snapshot: Snapshot): Structure {
+  return {
+    manifest: snapshot.manifest,
+    imports: snapshot.imports,
+    calls: snapshot.calls,
+    symbols: snapshot.symbols,
+    references: snapshot.references ?? [],
+  };
 }
 
 /** The `**<label>:**` block of a card, without its trailing newline. */
@@ -237,13 +257,15 @@ describe("node card", () => {
     expect(block(card, "Kind")).toBe("**Kind:** `resource`  **In file:** [`main.tf`](../main.tf.md)");
     expect(block(card, "Package")).toBe("**Package:** `root` ([map](../../MAP.md))");
     expect(block(card, "Attributes")).toBe("**Attributes:** `provider: aws`, `type: aws_vpc`");
+    // A same-file target is labelled exactly as the file card's Nodes block
+    // labels it, `<kind>.<name>`; a cross-file target keeps its full id.
     expect(block(card, "References")).toBe(
-      "**References:** [`tags`](local.tags.md) (hcl-ref), [`aws`](provider.aws.md) (hcl-ref), " +
+      "**References:** [`local.tags`](local.tags.md) (hcl-ref), [`provider.aws`](provider.aws.md) (hcl-ref), " +
         "[`variables.tf#variable.cidr`](../variables.tf/variable.cidr.md) (hcl-ref)",
     );
     expect(block(card, "Referenced by")).toBe(
-      "**Referenced by:** [`logs`](module.logs.md) (hcl-ref), " +
-        "[`aws_subnet.a`](resource.aws_subnet.a.md) (hcl-ref), " +
+      "**Referenced by:** [`module.logs`](module.logs.md) (hcl-ref), " +
+        "[`resource.aws_subnet.a`](resource.aws_subnet.a.md) (hcl-ref), " +
         "[`outputs.tf#output.vpc_id`](../outputs.tf/output.vpc_id.md) (hcl-ref)",
     );
     expect(block(card, "Blast radius")).toBe(`**Blast radius:** 3 node(s) (\`greplost impact ${VPC}\`)`);
@@ -274,14 +296,14 @@ describe("node card", () => {
     const card = tfArtifacts.get("packages/root/modules/main.tf/local.name.md") as string;
     expect(block(card, "Attributes")).toBeUndefined();
     expect(block(card, "References")).toBe("**References:** None.");
-    expect(block(card, "Referenced by")).toBe("**Referenced by:** [`tags`](local.tags.md) (hcl-ref)");
+    expect(block(card, "Referenced by")).toBe("**Referenced by:** [`local.tags`](local.tags.md) (hcl-ref)");
     expect(block(card, "Blast radius")).toBe("**Blast radius:** 5 node(s) (`greplost impact main.tf#local.name`)");
   });
 
   test("a reference target with no card of its own is named, never linked", () => {
     const card = tfArtifacts.get("packages/root/modules/main.tf/module.logs.md") as string;
     expect(block(card, "References")).toBe(
-      "**References:** [`aws_vpc.main`](resource.aws_vpc.main.md) (hcl-ref), `modules/logs` (uses)",
+      "**References:** [`resource.aws_vpc.main`](resource.aws_vpc.main.md) (hcl-ref), `modules/logs` (uses)",
     );
     expect(block(card, "Referenced by")).toBe("**Referenced by:** None.");
   });
@@ -290,6 +312,44 @@ describe("node card", () => {
     const ctx = createContext(tf);
     expect(() => buildNodeCard(ctx, "main.tf#resource.nope.nope")).toThrow(/no node card/);
     expect(() => buildNodeCard(ctx, "main.tf#terraform")).toThrow(/no node card/);
+  });
+
+  test("the blast universe holds files, node ids and pair endpoints, and no plain symbol", async () => {
+    // `fixtures/tiny-actions` is the smallest repo that mixes both: workflow
+    // jobs and steps are nodes, `scripts/x.ts#x` and `scripts/announce.mjs#announce`
+    // are ordinary declarations that no reference or import edge can ever name.
+    const snapshot = await buildSnapshot({ root: TINY_ACTIONS, config: loadConfig(TINY_ACTIONS) });
+    const structure = structureOf(snapshot);
+    const pairs = impactPairs(structure);
+    const nodes = snapshot.symbols.filter((d) => isNodeKind(d.kind));
+    const universe = blastUniverse(Object.keys(structure.manifest.files), nodes.map((d) => d.id), pairs);
+
+    expect(universe).toContain("scripts/x.ts");
+    expect(universe).toContain(".github/workflows/ci.yml#job.build");
+    expect(universe).toContain("ext:action/actions/checkout");
+    // The whole point: a plain symbol is never an endpoint of an import,
+    // re-export or reference pair, so seeding it would cost `blastRadius` a
+    // bitset row (about V/8 bytes each) and buy nothing.
+    expect(universe).not.toContain("scripts/x.ts#x");
+    expect(universe).not.toContain("scripts/announce.mjs#announce");
+    expect(universe.filter((id) => id.includes("#")).every((id) => splitNodeId(id) !== null)).toBe(true);
+    expect(universe).toEqual([...universe].sort(compareStrings));
+    expect(new Set(universe).size).toBe(universe.length);
+  });
+
+  test("card, query and impact still report one blast figure for the same node", async () => {
+    const snapshot = await buildSnapshot({ root: TINY_ACTIONS, config: loadConfig(TINY_ACTIONS) });
+    const structure = structureOf(snapshot);
+    const artifacts = renderArtifacts({ snapshot, summaries: {} });
+    const ctx = createContext({ snapshot, summaries: {} });
+    for (const decl of snapshot.symbols.filter((d) => isNodeKind(d.kind))) {
+      const walked = impactOf(impactPairs(structure), decl.id).length;
+      expect({ id: decl.id, blast: ctx.nodeBlast.get(decl.id) }).toEqual({ id: decl.id, blast: walked });
+      const card = artifacts.get(ctx.nodeCardPathOf(decl.id) as string) as string;
+      expect(block(card, "Blast radius")).toBe(
+        `**Blast radius:** ${walked} node(s) (\`greplost impact ${decl.id}\`)`,
+      );
+    }
   });
 
   test("every link in every rendered artifact resolves to another artifact", () => {
@@ -406,6 +466,42 @@ describe("card path collisions", () => {
       { path: "main.tf/resource.x", decls: [] },
     ]);
     expect(() => renderArtifacts({ snapshot, summaries: {} })).toThrow(/card path collision/);
+  });
+
+  test("two node cards that differ only by case are a collision, because APFS says so", () => {
+    // `resource "aws_vpc" "Main"` beside `resource "aws_vpc" "main"` is legal
+    // Terraform and two distinct ids. On a case-insensitive filesystem — the
+    // macOS and Windows default — the second card overwrites the first, and
+    // `greplost verify` is then permanently red with no way to fix it.
+    const snapshot = synth([
+      {
+        path: "main.tf",
+        decls: [decl("main.tf", "resource", "aws_vpc.Main", 1), decl("main.tf", "resource", "aws_vpc.main", 3)],
+      },
+    ]);
+    expect(() => renderArtifacts({ snapshot, summaries: {} })).toThrow(/card path collision/);
+  });
+
+  test("two file cards that differ only by Unicode normalisation are a collision too", () => {
+    // Composed vs decomposed "é": one sequence on Linux, one file on APFS.
+    const snapshot = synth([
+      { path: "caf\u00e9.tf", decls: [decl("caf\u00e9.tf", "resource", "a", 1)] },
+      { path: "cafe\u0301.tf", decls: [decl("cafe\u0301.tf", "resource", "b", 1)] },
+    ]);
+    expect(() => renderArtifacts({ snapshot, summaries: {} })).toThrow(/card path collision/);
+  });
+
+  test("case folding does not invent collisions between genuinely different cards", () => {
+    const snapshot = synth([
+      {
+        path: "main.tf",
+        decls: [decl("main.tf", "resource", "aws_vpc.main", 1), decl("main.tf", "resource", "aws_subnet.main", 3)],
+      },
+      { path: "Other.tf", decls: [decl("Other.tf", "resource", "x", 1)] },
+    ]);
+    const artifacts = renderArtifacts({ snapshot, summaries: {} });
+    expect(artifacts.has("packages/root/modules/main.tf/resource.aws_vpc.main.md")).toBe(true);
+    expect(artifacts.has("packages/root/modules/Other.tf/resource.x.md")).toBe(true);
   });
 
   test("the real render claims every path exactly once", () => {

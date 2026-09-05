@@ -8,7 +8,7 @@
 
 **Attributes:** `provider: aws`, `type: aws_subnet`
 
-**References:** [`aws`](provider.aws.md) (hcl-ref), [`aws_vpc.main`](resource.aws_vpc.main.md) (hcl-ref), [`variables.tf#variable.cidr`](../variables.tf/variable.cidr.md) (hcl-ref)
+**References:** [`provider.aws`](provider.aws.md) (hcl-ref), [`resource.aws_vpc.main`](resource.aws_vpc.main.md) (hcl-ref), [`variables.tf#variable.cidr`](../variables.tf/variable.cidr.md) (hcl-ref)
 
 **Referenced by:** None.
 

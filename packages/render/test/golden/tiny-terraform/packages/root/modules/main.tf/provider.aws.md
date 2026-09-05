@@ -8,7 +8,7 @@
 
 **References:** [`variables.tf#variable.region`](../variables.tf/variable.region.md) (hcl-ref)
 
-**Referenced by:** [`aws_subnet.a`](resource.aws_subnet.a.md) (hcl-ref), [`aws_vpc.main`](resource.aws_vpc.main.md) (hcl-ref)
+**Referenced by:** [`resource.aws_subnet.a`](resource.aws_subnet.a.md) (hcl-ref), [`resource.aws_vpc.main`](resource.aws_vpc.main.md) (hcl-ref)
 
 **Blast radius:** 4 node(s) (`greplost impact main.tf#provider.aws`)
 

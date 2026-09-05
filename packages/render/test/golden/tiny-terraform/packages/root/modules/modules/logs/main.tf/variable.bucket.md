@@ -10,7 +10,7 @@
 
 **References:** None.
 
-**Referenced by:** [`aws_s3_bucket.logs`](resource.aws_s3_bucket.logs.md) (hcl-ref)
+**Referenced by:** [`resource.aws_s3_bucket.logs`](resource.aws_s3_bucket.logs.md) (hcl-ref)
 
 **Blast radius:** 3 node(s) (`greplost impact modules/logs/main.tf#variable.bucket`)
 

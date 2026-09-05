@@ -16,7 +16,7 @@
 
 import { callersOf, findSymbols, importersOf } from "@greplost/core";
 import type { Structure } from "@greplost/core";
-import { impactOf, impactPairs, importTargetsOf, referencedBy, referencesOf } from "@greplost/core/graph";
+import { impactOf, impactPairs, importTargetsOf } from "@greplost/core/graph";
 import type {
   Confidence,
   DeclKind,
@@ -24,8 +24,9 @@ import type {
   ImportEdge,
   Manifest,
   RefKind,
+  ReferenceEdge,
 } from "@greplost/core/schema";
-import { compareDeclarations, compareStrings, isNodeKind } from "@greplost/core/schema";
+import { compareDeclarations, compareEdges, compareStrings, isNodeKind } from "@greplost/core/schema";
 
 import type { CommandContext } from "../args.ts";
 import { fields, printError, printJson, printLine, summarise, table } from "../output.ts";
@@ -63,14 +64,18 @@ export interface QueryMatch {
   /** Symbol ids that call this declaration. */
   callers: string[];
   /**
-   * Schema 2. Language, IaC or framework attributes of a non-file node, and the
-   * reference edges leaving and entering it. All three are omitted when there
-   * is nothing to say, so a TypeScript repo's answer is byte for byte the one
-   * build 1 printed and no existing consumer sees a new key.
+   * Schema 2. Language, IaC or framework attributes of a non-file node; omitted
+   * when the declaration carries none, exactly as spec 4.5 declares it.
    */
   meta?: Record<string, string>;
-  references?: ReferenceOut[];
-  referencedBy?: ReferenceIn[];
+  /**
+   * Schema 2. Reference edges leaving and entering this declaration, always
+   * present and `[]` when there are none (spec 4.5), so a consumer reads
+   * `.length` without first testing for the key. A repo with no reference edges
+   * gets two empty arrays, not two missing fields.
+   */
+  references: ReferenceOut[];
+  referencedBy: ReferenceIn[];
 }
 
 /** A reference edge as `query` reports it, from the near end. */
@@ -85,6 +90,12 @@ export interface ReferenceIn {
   from: string;
   refKind: RefKind;
   confidence: Confidence;
+}
+
+/** Reference edges bucketed by both endpoints, built once per `queryStructure`. */
+interface ReferenceIndex {
+  from: Map<string, ReferenceEdge[]>;
+  to: Map<string, ReferenceEdge[]>;
 }
 
 /**
@@ -188,15 +199,43 @@ export function queryStructure(structure: Structure, root: string, needle: strin
     declarations = findSymbols(structure.symbols, needle);
   }
 
-  // One pass over the edges rather than one per declaration: a file query on a
-  // large module would otherwise re-scan the whole import graph per symbol.
+  // One pass over each edge collection rather than one per declaration: a file
+  // query on a large module would otherwise re-scan the whole import graph, and
+  // both reference directions, once per symbol it answers with.
   const byTarget = importEdgesByTarget(structure, declarations);
-  const matches = declarations.map((decl) => describe(structure, manifest, decl, byTarget));
+  const edges = indexReferences(structure.references);
+  const matches = declarations.map((decl) => describe(structure, manifest, decl, byTarget, edges));
 
   const result: QueryResult = { query: needle, matches };
   if (asFile !== undefined) result.file = describeFile(structure, manifest, asFile);
-  if (asNode !== undefined) result.node = describeNode(structure, manifest, asNode);
+  if (asNode !== undefined) result.node = describeNode(structure, manifest, asNode, edges);
   return result;
+}
+
+/**
+ * Reference edges bucketed by both endpoints, each bucket sorted with
+ * `compareEdges` — the same order `referencesOf`/`referencedBy` produce, which
+ * is what keeps a `query` answer and a node card listing the same edges in the
+ * same sequence.
+ *
+ * Built once per invocation. The two core helpers each scan the whole edge list,
+ * so calling them per declaration made a query on a 400-resource Terraform file
+ * 800 linear scans of `graph/references.jsonl`.
+ */
+function indexReferences(references: readonly ReferenceEdge[]): ReferenceIndex {
+  const from = new Map<string, ReferenceEdge[]>();
+  const to = new Map<string, ReferenceEdge[]>();
+  for (const edge of references) {
+    const out = from.get(edge.from);
+    if (out === undefined) from.set(edge.from, [edge]);
+    else out.push(edge);
+    const back = to.get(edge.to);
+    if (back === undefined) to.set(edge.to, [edge]);
+    else back.push(edge);
+  }
+  for (const bucket of from.values()) bucket.sort(compareEdges);
+  for (const bucket of to.values()) bucket.sort(compareEdges);
+  return { from, to };
 }
 
 /**
@@ -233,6 +272,7 @@ function describe(
   manifest: Manifest,
   decl: Declaration,
   byTarget: Map<string, ImportEdge[]>,
+  edges: ReferenceIndex,
 ): QueryMatch {
   const entry = manifest.files[decl.file];
   const node = isNodeKind(decl.kind);
@@ -249,25 +289,23 @@ function describe(
     card: node ? nodeCardOf(manifest, decl.id) : cardOf(manifest, decl.file),
     importers: symbolImporters(byTarget, decl),
     callers: callersOf(structure.calls, decl.id),
+    references: outboundReferences(edges, decl.id),
+    referencedBy: inboundReferences(edges, decl.id),
   };
   if (decl.meta !== undefined) match.meta = decl.meta;
-  const out = outboundReferences(structure, decl.id);
-  const back = inboundReferences(structure, decl.id);
-  if (out.length > 0) match.references = out;
-  if (back.length > 0) match.referencedBy = back;
   return match;
 }
 
-function outboundReferences(structure: Structure, id: string): ReferenceOut[] {
-  return referencesOf(structure.references, id).map((edge) => ({
+function outboundReferences(edges: ReferenceIndex, id: string): ReferenceOut[] {
+  return (edges.from.get(id) ?? []).map((edge) => ({
     to: edge.to,
     refKind: edge.refKind,
     confidence: edge.confidence,
   }));
 }
 
-function inboundReferences(structure: Structure, id: string): ReferenceIn[] {
-  return referencedBy(structure.references, id).map((edge) => ({
+function inboundReferences(edges: ReferenceIndex, id: string): ReferenceIn[] {
+  return (edges.to.get(id) ?? []).map((edge) => ({
     from: edge.from,
     refKind: edge.refKind,
     confidence: edge.confidence,
@@ -279,7 +317,12 @@ function inboundReferences(structure: Structure, id: string): ReferenceIn[] {
  * figure `greplost impact <node-id>` reports and the same one the node card
  * prints, so a reader never sees three numbers for one question.
  */
-function describeNode(structure: Structure, manifest: Manifest, decl: Declaration): QueryNode {
+function describeNode(
+  structure: Structure,
+  manifest: Manifest,
+  decl: Declaration,
+  edges: ReferenceIndex,
+): QueryNode {
   const node: QueryNode = {
     id: decl.id,
     file: decl.file,
@@ -287,8 +330,8 @@ function describeNode(structure: Structure, manifest: Manifest, decl: Declaratio
     name: decl.name,
     package: manifest.files[decl.file]?.pkg ?? "",
     card: nodeCardOf(manifest, decl.id),
-    references: outboundReferences(structure, decl.id),
-    referencedBy: inboundReferences(structure, decl.id),
+    references: outboundReferences(edges, decl.id),
+    referencedBy: inboundReferences(edges, decl.id),
     blast: impactOf(impactPairs(structure), decl.id).length,
     span: decl.span,
   };

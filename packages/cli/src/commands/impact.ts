@@ -1,5 +1,13 @@
 /**
- * `greplost impact <path>` (tech spec 9, plugin-cli spec "--json shapes").
+ * `greplost impact <path|node-id>` (tech spec 9, plugin-cli spec "--json shapes").
+ *
+ * **The two radii are different questions and are counted differently.** A
+ * *file*'s radius counts **files**, over import and re-export edges only, and is
+ * read straight from the manifest. A *node*'s radius counts **nodes**, over
+ * import, re-export **and reference** edges together (`impactPairs`), and is
+ * computed here because a node has no manifest entry. A Terraform variable that
+ * forty resources read has a large node radius and its file may still have a
+ * file radius of zero; both numbers are right.
  *
  * "If I change this file, what can break?" answered from the committed import
  * graph: every file that transitively imports the target, with the number of

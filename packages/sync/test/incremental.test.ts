@@ -975,6 +975,44 @@ describe("init", () => {
       "greplost: no files indexed (check languages/include/exclude in .greplost/config.json)",
     ]);
   });
+
+  /**
+   * Leaf 2.11 fix round 1. A repo-relative path is also an id, so a source file
+   * whose path holds a `#`, a newline or a NUL cannot be named by a card link,
+   * a symbol id or a node id. Discovery skips it; the build says so once,
+   * naming the count, rather than either indexing an unreachable file (build 1)
+   * or aborting the render (schema 2 before this fix).
+   */
+  test("says so on stderr, once and with a count, when a path cannot be a map id", async () => {
+    const root = copyFixture("unmappable");
+    writeFileSync(path.join(root, "packages/core/src/we#ird.ts"), "export const weird = 1;\n");
+    writeFileSync(path.join(root, "packages/core/src/al#so.ts"), "export const also = 2;\n");
+
+    const said: string[] = [];
+    const error = console.error;
+    console.error = (...args: unknown[]): void => {
+      said.push(args.map((arg) => String(arg)).join(" "));
+    };
+    let result;
+    try {
+      result = await init(root, { hooks: false, quiet: true });
+    } finally {
+      console.error = error;
+    }
+
+    expect(said).toEqual([
+      'greplost: skipped 2 files whose path contains "#", a newline or NUL and so cannot be a map id',
+    ]);
+    // The rest of the repo indexed normally, and neither odd path reached the map.
+    expect(result.update.written).toBeGreaterThan(0);
+    const manifest = JSON.parse(
+      readFileSync(path.join(root, ARTIFACT_DIR, "manifest.json"), "utf8"),
+    ) as { files: Record<string, unknown> };
+    expect(Object.keys(manifest.files).filter((f) => f.includes("#"))).toEqual([]);
+    expect(Object.keys(manifest.files).length).toBeGreaterThan(0);
+    // And the map it wrote is still byte-exact, which is what the abort broke.
+    expect((await verify(root)).ok).toBe(true);
+  });
 });
 
 /**

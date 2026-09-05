@@ -5,8 +5,8 @@
 ## packages/core/src/build.ts
 
 - `interface ParseCache` L66-69
-- `interface BuildOptions` L71-82
-- `async function buildSnapshot(opts: BuildOptions): Promise<Snapshot>` L92-157
+- `interface BuildOptions` L71-89
+- `async function buildSnapshot(opts: BuildOptions): Promise<Snapshot>` L99-166
 
 ## packages/core/src/config.ts
 
@@ -16,8 +16,9 @@
 ## packages/core/src/discover.ts
 
 - `interface DiscoveredFile` L24-29
-- `async function discoverCandidates(root: string, config: GreplostConfig): Promise<string[]>` L111-126
-- `async function discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]>` L128-141
+- `function isMappablePath(relPath: string): boolean` L126-128
+- `async function discoverCandidates( root: string, config: GreplostConfig, skipped?: string[], ): Promise<string[]>` L130-157
+- `async function discoverFiles( root: string, config: GreplostConfig, skipped?: string[], ): Promise<DiscoveredFile[]>` L159-176
 
 ## packages/core/src/extract/dockerfile.ts
 

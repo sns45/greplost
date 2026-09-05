@@ -8,7 +8,7 @@
 
 **Attributes:** `provider: aws`, `type: aws_s3_bucket`
 
-**References:** [`bucket`](variable.bucket.md) (hcl-ref)
+**References:** [`variable.bucket`](variable.bucket.md) (hcl-ref)
 
 **Referenced by:** [`modules/logs/outputs.tf#output.arn`](../outputs.tf/output.arn.md) (hcl-ref)
 
