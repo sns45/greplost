@@ -6,13 +6,50 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `extractDockerfile( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`
+**Exports:** `extractDockerfile( path: string, _lang: Lang, _source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (FileRecord, Lang), `web-tree-sitter` (Tree)
+**Imports:** `web-tree-sitter` (Node, Tree), [`../schema.ts`](../schema.ts.md) (DeclKind, Declaration, ExportRecord, FileRecord, Lang, RefKind, ReferenceRecord, compareStrings, nodeId, symbolId), [`./ts-signature.ts`](ts-signature.ts.md) (clip, lineOf, spanOf)
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md)
 
 **Blast radius:** 31 files (`greplost impact packages/core/src/extract/dockerfile.ts`)
 
 **Key symbols:**
-- `function extractDockerfile( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L11-18
+- `const MAX_COMMAND = 120`  L49-49
+- `const FROM = "from_instruction"`  L55-55
+- `const ARG = "arg_instruction"`  L56-56
+- `const ENV = "env_instruction"`  L57-57
+- `const COPY = "copy_instruction"`  L58-58
+- `const ADD = "add_instruction"`  L59-59
+- `const ENTRYPOINT = "entrypoint_instruction"`  L60-60
+- `const CMD = "cmd_instruction"`  L61-61
+- `const FROM_FLAG = "from"`  L64-64
+- `const PLATFORM_FLAG = "platform"`  L65-65
+- `function childOfType(node: Node, type: string): Node | null`  L71-74
+- `function namedChildrenOfType(node: Node, type: string): Node[]`  L76-78
+- `function flagOf(node: Node): { name: string; value: string } | null`  L86-92
+- `function flagValue(instruction: Node, name: string): string | null`  L95-101
+- `function tokenText(node: Node): string`  L104-109
+- `function usableName(text: string): boolean`  L118-120
+- `function isLiteral(text: string): boolean`  L123-125
+- `function clipCommand(text: string): string`  L128-131
+- `function metaOf(entries: ReadonlyArray<readonly [string, string | null]>): Record<string, string> | undefined`  L134-140
+- `interface Stage`  L147-154
+- `interface DockerState`  L156-166
+- `function uniqueId(state: DockerState, kind: DeclKind, name: string, isNode: boolean): string`  L176-188
+- `function addDeclaration( state: DockerState, kind: DeclKind, name: string, signature: string, span: [number, number], exported: boolean, meta: Record<string, string> | undefined, ): Declaration`  L190-211
+- `function localPath(state: DockerState, declaration: Declaration): string`  L214-216
+- `function currentStage(state: DockerState): Stage | null`  L219-221
+- `function addReference(state: DockerState, to: string, refKind: RefKind, line: number): void`  L224-233
+- `function collectFrom(state: DockerState, instruction: Node): void`  L239-273
+- `function collectArg(state: DockerState, instruction: Node): void`  L276-281
+- `function collectEnv(state: DockerState, instruction: Node): void`  L284-290
+- `function addConstant( state: DockerState, prefix: "arg" | "env", name: string, value: Node | null, node: Node, ): void`  L292-309
+- `function collectCopy(state: DockerState, instruction: Node): void`  L319-329
+- `function collectCommand(state: DockerState, instruction: Node, key: "entrypoint" | "cmd"): void`  L332-340
+- `function collectInstruction(state: DockerState, instruction: Node): void`  L346-372
+- `function walk(state: DockerState, node: Node): void`  L383-391
+- `function finish(state: DockerState): void`  L399-419
+- `function extractDockerfile( path: string, _lang: Lang, _source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L429-457
+
+**Calls:** `addConstant` → [`packages/core/src/extract/dockerfile.ts#addConstant`](dockerfile.ts.md) (high), `addDeclaration` → [`packages/core/src/extract/dockerfile.ts#addDeclaration`](dockerfile.ts.md) (high), `addReference` → [`packages/core/src/extract/dockerfile.ts#addReference`](dockerfile.ts.md) (high), `childOfType` → [`packages/core/src/extract/dockerfile.ts#childOfType`](dockerfile.ts.md) (high), `clipCommand` → [`packages/core/src/extract/dockerfile.ts#clipCommand`](dockerfile.ts.md) (high), `collectArg` → [`packages/core/src/extract/dockerfile.ts#collectArg`](dockerfile.ts.md) (high), `collectCommand` → [`packages/core/src/extract/dockerfile.ts#collectCommand`](dockerfile.ts.md) (high), `collectCopy` → [`packages/core/src/extract/dockerfile.ts#collectCopy`](dockerfile.ts.md) (high), `collectEnv` → [`packages/core/src/extract/dockerfile.ts#collectEnv`](dockerfile.ts.md) (high), `collectFrom` → [`packages/core/src/extract/dockerfile.ts#collectFrom`](dockerfile.ts.md) (high), `collectInstruction` → [`packages/core/src/extract/dockerfile.ts#collectInstruction`](dockerfile.ts.md) (high), `currentStage` → [`packages/core/src/extract/dockerfile.ts#currentStage`](dockerfile.ts.md) (high), `finish` → [`packages/core/src/extract/dockerfile.ts#finish`](dockerfile.ts.md) (high), `flagOf` → [`packages/core/src/extract/dockerfile.ts#flagOf`](dockerfile.ts.md) (high), `flagValue` → [`packages/core/src/extract/dockerfile.ts#flagValue`](dockerfile.ts.md) (high), `isLiteral` → [`packages/core/src/extract/dockerfile.ts#isLiteral`](dockerfile.ts.md) (high), `localPath` → [`packages/core/src/extract/dockerfile.ts#localPath`](dockerfile.ts.md) (high), `metaOf` → [`packages/core/src/extract/dockerfile.ts#metaOf`](dockerfile.ts.md) (high), `namedChildrenOfType` → [`packages/core/src/extract/dockerfile.ts#namedChildrenOfType`](dockerfile.ts.md) (high), `tokenText` → [`packages/core/src/extract/dockerfile.ts#tokenText`](dockerfile.ts.md) (high), `uniqueId` → [`packages/core/src/extract/dockerfile.ts#uniqueId`](dockerfile.ts.md) (high), `usableName` → [`packages/core/src/extract/dockerfile.ts#usableName`](dockerfile.ts.md) (high), `walk` → [`packages/core/src/extract/dockerfile.ts#walk`](dockerfile.ts.md) (high), `clip` → [`packages/core/src/extract/ts-signature.ts#clip`](ts-signature.ts.md) (high), `lineOf` → [`packages/core/src/extract/ts-signature.ts#lineOf`](ts-signature.ts.md) (high), `spanOf` → [`packages/core/src/extract/ts-signature.ts#spanOf`](ts-signature.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `nodeId` → [`packages/core/src/schema.ts#nodeId`](../schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)

@@ -145,6 +145,10 @@
 {"confidence":"high","from":"bench/src/tasks.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
 {"confidence":"high","from":"bench/src/tasks.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["Edge","compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/truth/dockerfile.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
+{"confidence":"high","from":"bench/src/truth/dockerfile.ts","importKind":"static","kind":"import","specifier":"dockerfile-ast","symbols":["DockerfileParser"],"to":"ext:dockerfile-ast"}
+{"confidence":"high","from":"bench/src/truth/dockerfile.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["readFileSync"],"to":"ext:node:fs"}
+{"confidence":"high","from":"bench/src/truth/dockerfile.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
+{"confidence":"high","from":"bench/src/truth/dockerfile.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["Edge","compareEdges","compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/truth/go.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
 {"confidence":"high","from":"bench/src/truth/go.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["execFileSync"],"to":"ext:node:child_process"}
 {"confidence":"high","from":"bench/src/truth/go.ts","importKind":"static","kind":"import","specifier":"node:crypto","symbols":["createHash"],"to":"ext:node:crypto"}
@@ -401,8 +405,10 @@
 {"confidence":"high","from":"packages/core/src/discover.ts","importKind":"static","kind":"import","specifier":"./lang.ts","symbols":["langOf"],"to":"packages/core/src/lang.ts"}
 {"confidence":"high","from":"packages/core/src/discover.ts","importKind":"static","kind":"import","specifier":"./schema.ts","symbols":["ARTIFACT_DIR","compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/discover.ts","importKind":"type","kind":"import","specifier":"./schema.ts","symbols":["GreplostConfig","Lang"],"to":"packages/core/src/schema.ts"}
-{"confidence":"high","from":"packages/core/src/extract/dockerfile.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Tree"],"to":"ext:web-tree-sitter"}
-{"confidence":"high","from":"packages/core/src/extract/dockerfile.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","Lang"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/extract/dockerfile.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Node","Tree"],"to":"ext:web-tree-sitter"}
+{"confidence":"high","from":"packages/core/src/extract/dockerfile.ts","importKind":"static","kind":"import","specifier":"./ts-signature.ts","symbols":["clip","lineOf","spanOf"],"to":"packages/core/src/extract/ts-signature.ts"}
+{"confidence":"high","from":"packages/core/src/extract/dockerfile.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["DeclKind","Declaration","ExportRecord","FileRecord","Lang","RefKind","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/extract/dockerfile.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings","nodeId","symbolId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/extract/go.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Node","Tree"],"to":"ext:web-tree-sitter"}
 {"confidence":"high","from":"packages/core/src/extract/go.ts","importKind":"static","kind":"import","specifier":"./ts-signature.ts","symbols":["clip","field","lineOf","spanOf"],"to":"packages/core/src/extract/ts-signature.ts"}
 {"confidence":"high","from":"packages/core/src/extract/go.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","DeclKind","Declaration","ExportRecord","FileRecord","ImportRecord","Lang"],"to":"packages/core/src/schema.ts"}
@@ -552,7 +558,9 @@
 {"confidence":"high","from":"packages/core/src/parser.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Tree"],"to":"ext:web-tree-sitter"}
 {"confidence":"high","from":"packages/core/src/parser.ts","importKind":"type","kind":"import","specifier":"./schema.ts","symbols":["Lang"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/references/dockerfile.ts","importKind":"type","kind":"import","specifier":"./link.ts","symbols":["ReferenceContext"],"to":"packages/core/src/references/link.ts"}
-{"confidence":"high","from":"packages/core/src/references/dockerfile.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","ReferenceEdge","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/references/dockerfile.ts","importKind":"static","kind":"import","specifier":"./link.ts","symbols":["referenceSource"],"to":"packages/core/src/references/link.ts"}
+{"confidence":"high","from":"packages/core/src/references/dockerfile.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["Declaration","FileRecord","ReferenceEdge","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/references/dockerfile.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["externalId","symbolId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/references/go.ts","importKind":"type","kind":"import","specifier":"./link.ts","symbols":["ReferenceContext"],"to":"packages/core/src/references/link.ts"}
 {"confidence":"high","from":"packages/core/src/references/go.ts","importKind":"static","kind":"import","specifier":"./link.ts","symbols":["referenceSource"],"to":"packages/core/src/references/link.ts"}
 {"confidence":"high","from":"packages/core/src/references/go.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","ReferenceEdge","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
