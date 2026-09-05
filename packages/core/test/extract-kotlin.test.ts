@@ -148,8 +148,8 @@ fun run() {}
       ["mutable", "var", true],
       ["run", "function", true],
     ]);
-    expect(decl(record, "Registry").meta).toEqual({ object: "1" });
-    expect(decl(record, "Marker").meta).toEqual({ annotation: "1" });
+    expect(decl(record, "Registry").meta).toEqual({ object: "1", package: "tiny" });
+    expect(decl(record, "Marker").meta).toEqual({ annotation: "1", package: "tiny" });
   });
 
   test("a function inside a class or an object is a method, and a top-level one is a function", () => {
@@ -247,18 +247,20 @@ package tiny
 class Kept
 fun main() {}
 `);
-    expect(decl(record, "main").meta).toEqual({ jvmName: "AppMain" });
-    expect(decl(record, "Kept").meta).toEqual({ jvmName: "AppMain" });
+    expect(decl(record, "main").meta).toEqual({ jvmName: "AppMain", package: "tiny" });
+    expect(decl(record, "Kept").meta).toEqual({ jvmName: "AppMain", package: "tiny" });
   });
 
-  test("a name declared twice in one file takes a ~<n> suffix in source order", () => {
+  test("a name declared twice in one file takes a ~<n> suffix in the id, never in the name", () => {
     const record = extract(`class Store {
     fun put(a: Int) {}
     fun put(a: Int, b: Int) {}
     fun put(a: String) {}
 }
 `);
-    expect(record.decls.map((d) => d.name)).toEqual(["Store", "Store.put", "Store.put~2", "Store.put~3"]);
+    // The name is what the source says, so a card renders `Store.put` three times; the id is
+    // what has to be unique (driver ruling 2026-09-04, every language).
+    expect(record.decls.map((d) => d.name)).toEqual(["Store", "Store.put", "Store.put", "Store.put"]);
     expect(record.decls.map((d) => d.id)).toEqual([
       "src/tiny/A.kt#Store",
       "src/tiny/A.kt#Store.put",
@@ -267,6 +269,22 @@ fun main() {}
     ]);
     // An overloaded name is one exported name, not three.
     expect(record.exports.map((e) => e.name)).toEqual(["Store", "Store.put"]);
+  });
+
+  test("meta.package carries the file's package header on every top-level declaration", () => {
+    const record = extract(`package tiny.util
+
+class Box {
+    fun value(): Int = 1
+}
+fun free() {}
+`);
+    expect(decl(record, "Box").meta).toEqual({ package: "tiny.util" });
+    expect(decl(record, "free").meta).toEqual({ package: "tiny.util" });
+    // A member is reached through its type, so it does not repeat the package.
+    expect(decl(record, "Box.value").meta).toBeUndefined();
+    // The default package writes no key at all.
+    expect(extract("fun free() {}\n").decls[0]?.meta).toBeUndefined();
   });
 
   test("a signature is the header without the body, and a span covers the declaration", () => {
@@ -395,14 +413,51 @@ import tiny.other.*
     expect(resolver(sources)("src/tiny/App.kt", "tiny.util")).toEqual({ type: "unresolved" });
   });
 
-  test("the standard library and a Maven coordinate are external", () => {
+  test("the standard library and a Maven coordinate are external, with Java's id shape", () => {
     const resolve = resolver({ "src/tiny/App.kt": "package tiny\n" });
     expect(resolve("src/tiny/App.kt", "kotlin.math.max")).toEqual({ type: "external", pkg: "kotlin" });
     expect(resolve("src/tiny/App.kt", "java.util.List")).toEqual({ type: "external", pkg: "java" });
-    expect(resolve("src/tiny/App.kt", "com.squareup.okhttp3.Call")).toEqual({
+    // `<group>:<artifact>`, exactly as `resolve/java.ts` writes it, so one dependency is one
+    // external node in a repo that holds both languages (spec 0.2).
+    expect(resolve("src/tiny/App.kt", "com.google.gson.Gson")).toEqual({
       type: "external",
-      pkg: "maven/com.squareup",
+      pkg: "maven/com.google:gson",
     });
+    expect(resolve("src/tiny/App.kt", "org.junit.jupiter.api.Test")).toEqual({
+      type: "external",
+      pkg: "maven/org.junit:jupiter",
+    });
+    // Only `com` and `org` are Maven roots (spec 1.4): everything else keeps its head.
+    expect(resolve("src/tiny/App.kt", "io.ktor.client.HttpClient")).toEqual({ type: "external", pkg: "io" });
+    expect(resolve("src/tiny/App.kt", "com.google")).toEqual({ type: "external", pkg: "maven/com:google" });
+  });
+
+  test("a declaration written in a comment or a string does not answer an import", () => {
+    // The probe reads lines, so a commented-out declaration would otherwise resolve an import
+    // to a file that declares nothing at all - a wrong `high` edge, the one thing this layer
+    // must never emit.
+    const sources = {
+      "src/tiny/util/a.kt": 'package tiny.util\n\n// fun helper() {}\n/* class Helper */\nval doc = """\nfun helper() {}\n"""\n',
+      "src/tiny/util/b.kt": "package tiny.util\n\nfun helper() {}\n",
+    };
+    expect(resolver(sources)("src/tiny/App.kt", "tiny.util.helper")).toEqual({
+      type: "file",
+      path: "src/tiny/util/b.kt",
+    });
+    // And with only the commented-out one indexed, nothing resolves.
+    const commented = { "src/tiny/util/a.kt": sources["src/tiny/util/a.kt"] as string };
+    expect(resolver(commented)("src/tiny/App.kt", "tiny.util.helper")).toEqual({ type: "unresolved" });
+  });
+
+  test("a package header written in a comment is not the file's package", () => {
+    const sources = {
+      "src/tiny/util/a.kt": "// package tiny.other\npackage tiny.util\n\nclass Retry\n",
+    };
+    expect(resolver(sources)("src/tiny/App.kt", "tiny.util.Retry")).toEqual({
+      type: "file",
+      path: "src/tiny/util/a.kt",
+    });
+    expect(resolver(sources)("src/tiny/App.kt", "tiny.other.Retry")).toEqual({ type: "external", pkg: "tiny" });
   });
 
   test("a member declared inside a class never answers a package-level import", () => {
@@ -497,6 +552,31 @@ fun main() {
     expect(record.calls.map((c) => c.callee)).toEqual(["Item", "Item", "Item.label", "Item.label", "Item.label"]);
   });
 
+  test("a literal receiver of a known type resolves like any other receiver", () => {
+    const record = extract(`fun run() {
+    "x".shout()
+    1.twice()
+    true.flip()
+    'c'.code2()
+}
+`);
+    // The compiler names these `String.shout`, `Int.twice` and `Boolean.flip`, and so does the
+    // oracle from the classfile's receiver parameter, so the map agrees with both.
+    expect(record.calls.map((c) => c.callee)).toEqual(["String.shout", "Int.twice", "Boolean.flip", "Char.code2"]);
+  });
+
+  test("a one-line object body is the vendored grammar's blind spot, and it is silent", () => {
+    // A documented limit of the pinned grammar (grammars/VERSIONS.txt). A one-line *class* body
+    // is read correctly; a one-line *object* body parses as an expression - an object literal
+    // applied to a lambda - so the file yields no declaration and, because there is no ERROR
+    // node, `findUnparsableFiles` does not report it either. Pinned here so a grammar bump
+    // shows up as a test change rather than as a silent gain.
+    expect(extract("class A { fun b() {} }\n").decls.map((d) => d.name)).toEqual(["A", "A.b"]);
+    expect(extract("object A { fun b() {} }\n").decls).toEqual([]);
+    // Over two lines, which is how Kotlin is written, both are fine.
+    expect(extract("object A {\n    fun b() {}\n}\n").decls.map((d) => d.name)).toEqual(["A", "A.b"]);
+  });
+
   test("a receiver this file cannot type is dropped, never guessed", () => {
     const record = extract(`fun run(anything: Any) {
     val untyped = compute()
@@ -567,6 +647,27 @@ fun main() {
     });
   });
 
+  test("a same-package call resolves across directories, because the package header decides", () => {
+    // The pinned corpus splits one package over two source sets: `common/src` and `jvm/src`
+    // both hold `kotlinx.coroutines`. A directory-only rule drops every call between them.
+    const sources = {
+      "core/common/src/Store.kt": "package tiny\n\nfun store() {}\n",
+      "core/jvm/src/App.kt": "package tiny\n\nfun main() {\n    store()\n}\n",
+    };
+    expect(callTo(sources, "core/jvm/src/App.kt", "store")).toEqual({
+      to: "core/common/src/Store.kt#store",
+      confidence: "high",
+    });
+  });
+
+  test("a file in another package is not a same-package sibling, whatever the directory says", () => {
+    const sources = {
+      "src/tiny/Store.kt": "package tiny.other\n\nfun store() {}\n",
+      "src/tiny/App.kt": "package tiny\n\nfun main() {\n    store()\n}\n",
+    };
+    expect(callTo(sources, "src/tiny/App.kt", "store")).toBeNull();
+  });
+
   test("two same-package siblings declaring one name is an ambiguity, and it is dropped", () => {
     const sources = {
       "src/tiny/a.kt": "package tiny\n\nfun store() {}\n",
@@ -615,11 +716,16 @@ describe("tiny-kotlin", () => {
     ]);
   });
 
-  test("the one import-qualified dependency is the one import edge", () => {
-    expect(snapshot.imports.map((e) => `${e.from} -> ${e.to}`)).toEqual([
-      "src/tiny/App.kt -> src/tiny/util/Retry.kt",
+  test("named and aliased imports are edges; a wildcard names a package, not a file", () => {
+    expect(snapshot.imports.map((e) => `${e.from} -> ${e.to} (${e.specifier})`)).toEqual([
+      "src/tiny/App.kt -> src/tiny/util/Retry.kt (tiny.util.retry)",
+      "src/tiny/App.kt -> src/tiny/util/Retry.kt (tiny.util.shout)",
+      "src/tiny/App.kt -> unresolved:tiny.util (tiny.util)",
     ]);
-    expect(snapshot.imports[0]?.specifier).toBe("tiny.util.retry");
+    // `import tiny.util.retry as again` binds a second name to the same declaration, so it is
+    // the same edge and is deduped away; the wildcard names no single file and is unresolved,
+    // never `ext:tiny`.
+    expect(snapshot.imports.filter((e) => e.to === "src/tiny/util/Retry.kt").length).toBe(2);
   });
 
   test("the exported surface of each file", () => {
@@ -633,6 +739,8 @@ describe("tiny-kotlin", () => {
         "Box.Companion",
         "Box.Companion.of",
         "Box.item",
+        "Handler",
+        "Handler.handle",
         "Item",
         "Item.id",
         "Item.label",
@@ -653,18 +761,27 @@ describe("tiny-kotlin", () => {
       "src/tiny/App.kt#main -> src/tiny/Store.kt#Item",
       "src/tiny/App.kt#main -> src/tiny/Store.kt#Item.label",
       "src/tiny/App.kt#main -> src/tiny/Store.kt#Store.put",
+      "src/tiny/App.kt#main -> src/tiny/util/Retry.kt#String.shout",
       "src/tiny/App.kt#main -> src/tiny/util/Retry.kt#retry",
       "src/tiny/Store.kt#Box.Companion.of -> src/tiny/Store.kt#Box",
       "src/tiny/Store.kt#Store.put -> src/tiny/Store.kt#Store.accept",
     ]);
     expect(snapshot.calls.every((e) => e.confidence === "high")).toBe(true);
+    // `retry(2)` and `again(3)` are one edge: an alias binds a second name to one declaration.
+    // A SAM construction (`Handler { true }`) is not a call to anything callable, and the
+    // classfile has no `invoke*` for it either, so neither side has an edge.
+    expect(snapshot.calls.some((e) => e.to.endsWith("#Handler"))).toBe(false);
   });
 
   test("the fixture's declarations carry the meta the spec asks for", () => {
     const symbols = new Map(snapshot.symbols.map((d) => [d.id, d]));
     expect(symbols.get("src/tiny/Store.kt#Store.put")?.meta).toEqual({ suspend: "1" });
-    expect(symbols.get("src/tiny/Store.kt#Store")?.meta).toEqual({ object: "1" });
-    expect(symbols.get("src/tiny/App.kt#main")?.meta).toEqual({ jvmName: "AppMain", suspend: "1" });
+    expect(symbols.get("src/tiny/Store.kt#Store")?.meta).toEqual({ object: "1", package: "tiny" });
+    expect(symbols.get("src/tiny/App.kt#main")?.meta).toEqual({
+      jvmName: "AppMain",
+      package: "tiny",
+      suspend: "1",
+    });
     expect(symbols.get("src/tiny/Store.kt#Item")?.kind).toBe("record");
     expect(symbols.get("src/tiny/util/Retry.kt#String.shout")?.parent).toBe("String");
   });

@@ -35,6 +35,13 @@ const KOTLIN_EXTENSIONS = [".kt", ".kts"] as const;
 /** Package roots that always leave the repo, whatever the file set holds. */
 const EXTERNAL_ROOTS: ReadonlySet<string> = new Set(["java", "javax", "kotlin", "jdk", "sun"]);
 
+/**
+ * Prefixes whose first segments name a Maven coordinate (spec 1.4). `com` and `org` only: the
+ * list is Java's, and it has to stay Java's, because a repo holding both languages must give
+ * one dependency one external node.
+ */
+const MAVEN_ROOTS: ReadonlySet<string> = new Set(["com", "org"]);
+
 /** Keywords that open a Kotlin declaration, for the lexical top-level probe. */
 const DECLARATION_KEYWORDS: ReadonlySet<string> = new Set([
   "class",
@@ -55,6 +62,86 @@ function parentDir(path: string): string {
 
 function isKotlin(path: string): boolean {
   return KOTLIN_EXTENSIONS.some((extension) => path.endsWith(extension));
+}
+
+/**
+ * `com.google.gson.Gson` -> `maven/com.google:gson`; a shorter name keeps what it has.
+ *
+ * The shape is `resolve/java.ts`'s, written out rather than imported: the two leaves may not
+ * depend on each other, and a Kotlin file and a Java file importing the same artifact have to
+ * land on the same `ext:` node or the map shows one dependency twice (spec 0.2).
+ */
+function externalPackage(segments: readonly string[]): string {
+  const head = segments[0] ?? "";
+  if (!MAVEN_ROOTS.has(head) || segments.length < 2) return head;
+  const group = `${head}.${segments[1] ?? ""}`;
+  const artifact = segments[2];
+  return artifact === undefined ? `maven/${head}:${segments[1] ?? ""}` : `maven/${group}:${artifact}`;
+}
+
+/**
+ * One Kotlin source with every comment, string and character literal blanked out.
+ *
+ * The two probes below read *lines*, so without this a commented-out `// fun helper()` or a
+ * `"""fun helper()"""` in a doc string would answer an import - and an import resolved to a file
+ * that declares nothing is a wrong `high` edge, the one thing this layer must never emit.
+ * Blanking preserves every offset and newline, so a line's column-0 test still means what it
+ * meant. Kotlin block comments nest, and a raw string ends only at `"""`.
+ */
+export function kotlinStripped(source: string): string {
+  const out = source.split("");
+  const blank = (from: number, to: number): void => {
+    for (let i = from; i < to && i < out.length; i += 1) {
+      if (out[i] !== "\n") out[i] = " ";
+    }
+  };
+  let i = 0;
+  while (i < source.length) {
+    const two = source.slice(i, i + 2);
+    if (two === "//") {
+      const end = source.indexOf("\n", i);
+      blank(i, end === -1 ? source.length : end);
+      i = end === -1 ? source.length : end;
+      continue;
+    }
+    if (two === "/*") {
+      let depth = 1;
+      let j = i + 2;
+      while (j < source.length && depth > 0) {
+        const pair = source.slice(j, j + 2);
+        if (pair === "/*") {
+          depth += 1;
+          j += 2;
+        } else if (pair === "*/") {
+          depth -= 1;
+          j += 2;
+        } else j += 1;
+      }
+      blank(i, j);
+      i = j;
+      continue;
+    }
+    if (source.startsWith('"""', i)) {
+      const end = source.indexOf('"""', i + 3);
+      const stop = end === -1 ? source.length : end + 3;
+      blank(i, stop);
+      i = stop;
+      continue;
+    }
+    if (source[i] === '"' || source[i] === "'") {
+      const quote = source[i] as string;
+      let j = i + 1;
+      while (j < source.length && source[j] !== quote && source[j] !== "\n") {
+        j += source[j] === "\\" ? 2 : 1;
+      }
+      const stop = Math.min(j + 1, source.length);
+      blank(i, stop);
+      i = stop;
+      continue;
+    }
+    i += 1;
+  }
+  return out.join("");
 }
 
 /**
@@ -141,8 +228,10 @@ export function createKotlinResolver(ctx: RepoContext): (fromFile: string, speci
       if (byDir === undefined) filesByDir.set(dir, [file]);
       else byDir.push(file);
 
-      const source = ctx.readFile(file);
-      if (source === null) continue;
+      const raw = ctx.readFile(file);
+      if (raw === null) continue;
+      // One strip per file, shared by both probes: neither may read a comment or a string.
+      const source = kotlinStripped(raw);
       namesByFile.set(file, kotlinTopLevelNames(source));
       const declared = kotlinPackageOf(source);
       const byPackage = filesByPackage.get(declared);
@@ -212,11 +301,7 @@ export function createKotlinResolver(ctx: RepoContext): (fromFile: string, speci
       if (name !== "" && packageFiles(name).length > 0) return UNRESOLVED;
     }
 
-    // A Maven coordinate is the first two segments of a `com.`/`org.` group id (spec 1.4).
-    if ((head === "com" || head === "org" || head === "io" || head === "net") && segments.length > 1) {
-      return { type: "external", pkg: `maven/${head}.${segments[1] ?? ""}` };
-    }
-    return { type: "external", pkg: head };
+    return { type: "external", pkg: externalPackage(segments) };
   }
 
   return (fromFile: string, specifier: string): ResolvedTarget => {
@@ -241,31 +326,39 @@ interface Binding {
   name: string;
 }
 
+/** What one declared name resolves to inside one file, and how many declarations claim it. */
+interface Member {
+  /** The symbol part of the declaration's id: `Store.put`, or `Store.put~2` for a twin. */
+  symbol: string;
+  /** Declarations in this file carrying the name. More than one resolves to nothing (ruling). */
+  count: number;
+}
+
 export interface KotlinCallIndex {
   /** file -> top-level names, with their kind (a class is callable: it is its constructor). */
   topLevel: Map<string, Map<string, DeclKind>>;
-  /** file -> every declared symbol path, so a member can be checked before it is emitted. */
-  symbols: Map<string, Set<string>>;
-  /** file -> symbol paths that collided inside the file; they resolve to nothing (ruling). */
-  ambiguous: Map<string, Set<string>>;
+  /** file -> declared name -> the id it resolves to, and how many declarations carry it. */
+  members: Map<string, Map<string, Member>>;
   /** file -> local name -> what the import bound. */
   bindings: Map<string, Map<string, Binding>>;
-  /** package directory -> its indexed Kotlin files, sorted. Kotlin needs no import inside one. */
+  /** package name -> the indexed files declaring it. Kotlin needs no import inside a package. */
   siblings: Map<string, string[]>;
+  /** file -> the package it declared, so a sibling set can be found from a call site. */
+  packageOf: Map<string, string>;
 }
 
 const EMPTY_INDEX: KotlinCallIndex = {
   topLevel: new Map(),
-  symbols: new Map(),
-  ambiguous: new Map(),
+  members: new Map(),
   bindings: new Map(),
   siblings: new Map(),
+  packageOf: new Map(),
 };
 
-/** `Store.put~2` says `Store.put` was declared twice in the file (driver ruling 2026-09-04). */
-function baseName(name: string): string | null {
-  const match = /^(.*)~\d+$/u.exec(name);
-  return match === null ? null : (match[1] ?? null);
+/** The symbol part of a declaration id: `src/A.kt#Store.put~2` -> `Store.put~2`. */
+function symbolOf(id: string): string {
+  const hash = id.indexOf("#");
+  return hash === -1 ? id : id.slice(hash + 1);
 }
 
 /**
@@ -281,31 +374,36 @@ export function buildKotlinCallIndex(
 
   const index: KotlinCallIndex = {
     topLevel: new Map(),
-    symbols: new Map(),
-    ambiguous: new Map(),
+    members: new Map(),
     bindings: new Map(),
     siblings: new Map(),
+    packageOf: new Map(),
   };
   const paths = new Set(kotlinFiles.map((file) => file.path));
 
   for (const file of kotlinFiles) {
     const topLevel = new Map<string, DeclKind>();
-    const symbols = new Set<string>();
-    const ambiguous = new Set<string>();
+    const members = new Map<string, Member>();
+    let declared: string | null = null;
     for (const decl of file.decls) {
-      symbols.add(decl.name);
-      const base = baseName(decl.name);
-      if (base !== null) ambiguous.add(base);
+      // The id is what is unique (a twin carries `~<n>`); the name is what the source wrote, so
+      // a name two declarations share is counted twice and resolves to nothing.
+      const existing = members.get(decl.name);
+      if (existing === undefined) members.set(decl.name, { symbol: symbolOf(decl.id), count: 1 });
+      else existing.count += 1;
+      if (decl.parent === undefined && declared === null) declared = decl.meta?.["package"] ?? null;
       if (decl.parent !== undefined || decl.kind === "method") continue;
       if (!topLevel.has(decl.name)) topLevel.set(decl.name, decl.kind);
     }
     index.topLevel.set(file.path, topLevel);
-    index.symbols.set(file.path, symbols);
-    if (ambiguous.size > 0) index.ambiguous.set(file.path, ambiguous);
+    index.members.set(file.path, members);
 
-    const dir = parentDir(file.path);
-    const bucket = index.siblings.get(dir);
-    if (bucket === undefined) index.siblings.set(dir, [file.path]);
+    // A Kotlin package is not a directory (`extract/kotlin.ts` writes the header into
+    // `meta.package`); the directory is the fallback for a file that declares none.
+    const group = declared ?? `dir:${parentDir(file.path)}`;
+    index.packageOf.set(file.path, group);
+    const bucket = index.siblings.get(group);
+    if (bucket === undefined) index.siblings.set(group, [file.path]);
     else bucket.push(file.path);
   }
   for (const bucket of index.siblings.values()) bucket.sort(compareStrings);
@@ -340,16 +438,25 @@ export function buildKotlinCallIndex(
   return index;
 }
 
-/** True when the file declares `symbol` and nothing else in it claimed the same path. */
-function declares(index: KotlinCallIndex, file: string, symbol: string): boolean {
-  if (index.ambiguous.get(file)?.has(symbol) === true) return false;
-  return index.symbols.get(file)?.has(symbol) === true;
+/**
+ * The id `name` resolves to inside `file`, or null when the file does not declare it or two
+ * declarations do. A name that collides inside one file resolves to nothing (driver ruling
+ * 2026-09-04): the map would otherwise pick whichever overload came first.
+ */
+function declaredSymbol(index: KotlinCallIndex, file: string, name: string): string | null {
+  const member = index.members.get(file)?.get(name);
+  return member === undefined || member.count > 1 ? null : member.symbol;
+}
+
+/** The files of this file's own package: Kotlin needs no import inside one. */
+function packageSiblings(index: KotlinCallIndex, file: string): string[] {
+  return index.siblings.get(index.packageOf.get(file) ?? "") ?? [];
 }
 
 /** Files whose top-level declarations this file can name without qualifying them. */
 function visibleFiles(index: KotlinCallIndex, file: FileRecord): string[] {
   const out = [file.path];
-  for (const sibling of index.siblings.get(parentDir(file.path)) ?? []) {
+  for (const sibling of packageSiblings(index, file.path)) {
     if (sibling !== file.path) out.push(sibling);
   }
   for (const binding of index.bindings.get(file.path)?.values() ?? []) {
@@ -358,11 +465,16 @@ function visibleFiles(index: KotlinCallIndex, file: FileRecord): string[] {
   return out;
 }
 
-/** The one visible file declaring `symbol`, or null when it is not exactly one. */
-function uniqueDeclarer(index: KotlinCallIndex, file: FileRecord, symbol: string): string | null {
-  const hits: string[] = [];
+/** The one visible file declaring `name`, with the id it resolves to, or null for anything else. */
+function uniqueDeclarer(
+  index: KotlinCallIndex,
+  file: FileRecord,
+  name: string,
+): { file: string; symbol: string } | null {
+  const hits: Array<{ file: string; symbol: string }> = [];
   for (const candidate of visibleFiles(index, file)) {
-    if (declares(index, candidate, symbol)) hits.push(candidate);
+    const symbol = declaredSymbol(index, candidate, name);
+    if (symbol !== null) hits.push({ file: candidate, symbol });
   }
   return hits.length === 1 ? (hits[0] ?? null) : null;
 }
@@ -386,24 +498,28 @@ export function resolveKotlinCall(
   if (dot === -1) {
     // A top-level name of this file, of a same-package sibling, or of one import's target.
     const own = index.topLevel.get(file.path);
-    if (own?.has(callee) === true && declares(index, file.path, callee)) {
-      return { to: symbolId(file.path, callee), confidence: "high" };
-    }
+    const here = own?.has(callee) === true ? declaredSymbol(index, file.path, callee) : null;
+    if (here !== null) return { to: symbolId(file.path, here), confidence: "high" };
+
     const binding = index.bindings.get(file.path)?.get(callee);
     if (binding !== undefined && binding.name !== "*") {
       const target = binding.module;
-      const name = index.topLevel.get(target)?.has(binding.name) === true ? binding.name : null;
-      if (name !== null && declares(index, target, name)) {
-        return { to: symbolId(target, name), confidence: "high" };
-      }
-      return null;
+      const imported =
+        index.topLevel.get(target)?.has(binding.name) === true
+          ? declaredSymbol(index, target, binding.name)
+          : null;
+      return imported === null ? null : { to: symbolId(target, imported), confidence: "high" };
     }
-    const hits: string[] = [];
-    for (const sibling of index.siblings.get(parentDir(file.path)) ?? []) {
+
+    const hits: Array<{ file: string; symbol: string }> = [];
+    for (const sibling of packageSiblings(index, file.path)) {
       if (sibling === file.path) continue;
-      if (index.topLevel.get(sibling)?.has(callee) === true && declares(index, sibling, callee)) hits.push(sibling);
+      if (index.topLevel.get(sibling)?.has(callee) !== true) continue;
+      const symbol = declaredSymbol(index, sibling, callee);
+      if (symbol !== null) hits.push({ file: sibling, symbol });
     }
-    return hits.length === 1 ? { to: symbolId(hits[0] as string, callee), confidence: "high" } : null;
+    const only = hits.length === 1 ? hits[0] : undefined;
+    return only === undefined ? null : { to: symbolId(only.file, only.symbol), confidence: "high" };
   }
 
   const object = callee.slice(0, dot);
@@ -415,15 +531,14 @@ export function resolveKotlinCall(
     // of `Store`, and `Box.Companion.of` one of `Box.Companion`.
     const cut = site.caller.lastIndexOf(".");
     if (cut === -1) return null;
-    const owner = site.caller.slice(0, cut);
-    const symbol = `${owner}.${member}`;
-    return declares(index, file.path, symbol) ? { to: symbolId(file.path, symbol), confidence: "high" } : null;
+    const symbol = declaredSymbol(index, file.path, `${site.caller.slice(0, cut)}.${member}`);
+    return symbol === null ? null : { to: symbolId(file.path, symbol), confidence: "high" };
   }
 
   // `T.m`: a member of a type, an object, or - reached through its class - a companion.
-  for (const symbol of [`${object}.${member}`, `${object}.Companion.${member}`]) {
-    const target = uniqueDeclarer(index, file, symbol);
-    if (target !== null) return { to: symbolId(target, symbol), confidence: "high" };
+  for (const name of [`${object}.${member}`, `${object}.Companion.${member}`]) {
+    const target = uniqueDeclarer(index, file, name);
+    if (target !== null) return { to: symbolId(target.file, target.symbol), confidence: "high" };
   }
   return null;
 }
