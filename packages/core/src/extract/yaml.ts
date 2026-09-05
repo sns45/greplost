@@ -32,7 +32,7 @@
 
 import type { FileRecord, Lang } from "../schema.ts";
 import type { Node, Tree } from "web-tree-sitter";
-import { extractYamlActions } from "./yaml-actions.ts";
+import { extractYamlActions, isActionDefinitionPath } from "./yaml-actions.ts";
 import { extractYamlHelm } from "./yaml-helm.ts";
 import { extractYamlK8s } from "./yaml-k8s.ts";
 
@@ -119,10 +119,27 @@ function findMapping(node: Node): Node | null {
   return null;
 }
 
-/** Spec 2.1's four rules, for one document. */
+/**
+ * Spec 2.1's four rules, for one document, with the two content rules leaf 2.9 added.
+ *
+ * Ruling (leaf 2.9, 2026-09-04): the path rule alone cannot see the two Actions files spec 2.4
+ * requires. A composite action's `action.yml` is never under `.github/workflows/`, and a
+ * workflow *template* is a workflow that has not been installed yet — the pinned corpus
+ * (`actions/starter-workflows`) keeps 174 of its 183 workflows in `ci/`, `deployments/`,
+ * `code-scanning/` and `pages/`, so a path-only rule would have scored nine files and reported
+ * the result as a measurement of 187.
+ *
+ * Both additions are keyed on content, and both are narrower than they look: a document with
+ * top-level `on` *and* `jobs` is a GitHub Actions workflow and nothing else writes that pair
+ * (GitLab CI has no `on`, CircleCI no `on`, Azure Pipelines `trigger` rather than `on`), and
+ * `runs` at the top level of a file literally named `action.yml` is the action definition
+ * format. They sit *after* the Helm rule, so no chart file changes flavour.
+ */
 export function classifyYamlDocument(path: string, keys: readonly string[]): YamlFlavour {
   if (isWorkflowPath(path) && keys.includes("on")) return "actions";
   if (isHelmPath(path)) return "helm";
+  if (keys.includes("on") && keys.includes("jobs")) return "actions";
+  if (isActionDefinitionPath(path) && keys.includes("runs")) return "actions";
   if (keys.includes("apiVersion") && keys.includes("kind")) return "k8s";
   return "plain";
 }
