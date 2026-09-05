@@ -30,9 +30,12 @@ image in a template now draws, and both Helm targets' S6 stops being `n/a`.
 S1 is `tp 0` on both sides and not vacuous by accident: YAML has no import statements at all, and
 both the extractor and the oracle say so rather than failing to find any. S5's `tp` counts
 `(from, to, refKind)` keys over the universe `scoreAgainstTruth` scores: a source in a covered
-file, and a target that is a covered file or an `ext:` id. Numbers measured after `git merge
-main` at 028ad17, which brought the driver's Terraform-review change admitting `ext:` targets
-into S5 (it is what takes k8s-examples from 43 keys to 172: the `ext:image/<ref>` edges).
+file, and a target that is a covered file or an `ext:` id (the driver's Terraform-review change
+admitting `ext:` targets is what takes k8s-examples from 43 keys to 172: the `ext:image/<ref>`
+edges). Every number here was re-measured after the fix-round-1 `git merge main` at 2181790,
+which also brought leaf 2.9's third `universe` parameter into the `yaml` dispatcher's
+`ExtraGenerator`; the merge conflict in `bench/src/truth/yaml.ts` was resolved by keeping both
+sides, `universe` from 2.9 and `nodeFiles` from here.
 
 Rulings this leaf made, in full, with reasons, are in the leaf report; the four that change what
 another leaf can assume are:
@@ -91,37 +94,37 @@ keys) with no false positive.
 - [x] G1: each document becomes `<Kind>.<metadata.name>` (or the 0-based index when unnamed), and each container becomes an `image` node; describe('documents'), describe('images')
   CHECK: bun test packages/core/test/extract-yaml-k8s.test.ts -t "documents|images" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 11 pass | 25 filtered out | 0 fail | Ran 11 tests across 1 file. [97.00ms]
+  EVIDENCE: 12 pass | 29 filtered out | 0 fail | Ran 12 tests across 1 file. [178.00ms]
 
 - [x] G2: a selector matching exactly one workload is a high-confidence edge and a selector matching two is dropped; `configMapRef`, `secretRef`, key refs, PVC claims and volume configMaps resolve only when unique; describe('selectors'), describe('config refs')
   CHECK: bun test packages/core/test/extract-yaml-k8s.test.ts -t "selectors|config refs" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 9 pass | 27 filtered out | 0 fail | Ran 9 tests across 1 file. [180.00ms]
+  EVIDENCE: 10 pass | 31 filtered out | 0 fail | Ran 10 tests across 1 file. [228.00ms]
 
 - [x] G3: the template blanking pre-pass replaces every `{{ … }}` span in place with an equal-length filler so the source length, every line and every column are preserved, and a templated name falls back to the document index with the raw template kept in `meta.nameTemplate`; describe('helm templates')
   CHECK: bun test packages/core/test/extract-yaml-k8s.test.ts -t "helm templates" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 7 pass | 29 filtered out | 0 fail | Ran 7 tests across 1 file. [80.00ms]
+  EVIDENCE: 9 pass | 32 filtered out | 0 fail | Ran 9 tests across 1 file. [180.00ms]
 
 - [x] G4: `values.yaml` yields one `variable` node per top-level key only, and a `.Values.x` action links to it at `med` confidence; describe('values')
   CHECK: bun test packages/core/test/extract-yaml-k8s.test.ts -t values 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 7 pass | 29 filtered out | 0 fail | Ran 7 tests across 1 file. [150.00ms]
+  EVIDENCE: 7 pass | 34 filtered out | 0 fail | Ran 7 tests across 1 file. [185.00ms]
 
 - [x] G5: both fixtures build with the expected node sets and reference edges; describe('tiny-k8s'), describe('tiny-helm')
   CHECK: bun test packages/core/test/extract-yaml-k8s.test.ts -t "tiny-k8s|tiny-helm" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 7 pass | 29 filtered out | 0 fail | Ran 7 tests across 1 file. [207.00ms]
+  EVIDENCE: 7 pass | 34 filtered out | 0 fail | Ran 7 tests across 1 file. [302.00ms]
 
 - [x] G6: the truth generator test file passes
   CHECK: bun test bench/test/truth-yaml-k8s.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 18 pass | 0 fail | 84 expect() calls | Ran 18 tests across 1 file. [541.00ms]
+  EVIDENCE: 21 pass | 0 fail | 102 expect() calls | Ran 21 tests across 1 file. [866.00ms]
 
 - [x] G7: the `js-yaml` oracle and the `helm template` oracle share no code with `packages/core`, and their output changes when the fixture changes; describe('oracle independence')
   CHECK: bun test bench/test/truth-yaml-k8s.test.ts -t "oracle independence" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 3 pass | 15 filtered out | 0 fail | 30 expect() calls | Ran 3 tests across 1 file. [124.00ms]
+  EVIDENCE: 3 pass | 18 filtered out | 0 fail | 30 expect() calls | Ran 3 tests across 1 file. [148.00ms]
 
 - [x] G8: S1, S2, S4 and S5 pass on the Kubernetes fixture (S3 is `n/a`; a manifest has no calls)
   CHECK: bun run bench:structural --fixture tiny-k8s --lang yaml --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -162,7 +165,7 @@ keys) with no false positive.
 - [x] G12: the core and bench suites are green
   CHECK: bun test packages/core bench 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 1231 pass | 0 fail | 5188 expect() calls | Ran 1231 tests across 34 files. [54.65s] (after `git merge main` at 028ad17)
+  EVIDENCE: 1440 pass | 0 fail | 5630 expect() calls | Ran 1440 tests across 43 files. [69.47s] (after `git merge main` at 2181790, fix round 1)
 
 - [x] G13: core and bench typecheck
   CHECK: bunx tsc -p packages/core/tsconfig.json --noEmit && bunx tsc -p bench/tsconfig.json --noEmit
