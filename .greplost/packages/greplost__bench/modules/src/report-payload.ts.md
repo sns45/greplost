@@ -6,43 +6,50 @@
 
 **Package:** `@greplost/bench` ([map](../../MAP.md))
 
-**Exports:** `ConditionStats (interface)`, `CorpusEntry (interface)`, `Payload (interface)`, `Scenario (interface)`, `agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>`, `arr(value: unknown): unknown[]`, `assumptions (let)`, `competitors(): CompetitorEntry[]`, `corpusIndex(): Map<string, CorpusEntry>`, `firstMachine(payloads: readonly (Payload | null)[]): Record<string, unknown> | null`, `firstNum(root: unknown, paths: readonly string[]): number | null`, `firstStr(root: unknown, paths: readonly string[]): string | null`, `fmt(value: number | null): string`, `mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel["corpus"]`, `num(value: unknown): number | null`, `provenanceOf(payload: Payload | null): string | null`, `rec(value: unknown): Record<string, unknown> | null`, `replayF1(payload: Payload): number | null`, `replayF2(payload: Payload): number | null`, `resetAssumptions(): void`, `runFor(repo: string | null, files: number | null): RunTarget | undefined`, `scenariosOf(payload: Payload): Scenario[]`, `str(value: unknown): string | null`, `targetOf(payload: Payload | null): RunTarget | undefined`, `versionRows(agent: Payload | null, headtohead: Payload | null): { name: string; value: string }[]`
+**Exports:** `ConditionStats (interface)`, `CorpusEntry (interface)`, `LangRow (interface)`, `Payload (interface)`, `Scenario (interface)`, `SubstituteSummary (interface)`, `agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>`, `arr(value: unknown): unknown[]`, `assumptions (let)`, `competitors(): CompetitorEntry[]`, `corpusIndex(): Map<string, CorpusEntry>`, `firstMachine(payloads: readonly (Payload | null)[]): Record<string, unknown> | null`, `firstNum(root: unknown, paths: readonly string[]): number | null`, `firstStr(root: unknown, paths: readonly string[]): string | null`, `fmt(value: number | null): string`, `langRows(structural: Payload | null): LangRow[]`, `mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel["corpus"]`, `num(value: unknown): number | null`, `provenanceOf(payload: Payload | null): string | null`, `rec(value: unknown): Record<string, unknown> | null`, `replayF1(payload: Payload): number | null`, `replayF2(payload: Payload): number | null`, `resetAssumptions(): void`, `runFor(repo: string | null, files: number | null): RunTarget | undefined`, `scenariosOf(payload: Payload): Scenario[]`, `str(value: unknown): string | null`, `targetOf(payload: Payload | null): RunTarget | undefined`, `versionRows(agent: Payload | null, headtohead: Payload | null): { name: string; value: string }[]`
 
-**Imports:** `node:fs` (existsSync, readFileSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (compareStrings), [`./results-md.ts`](results-md.ts.md) (ReportModel, RunTarget, provenanceLine)
+**Imports:** `node:fs` (existsSync, readFileSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (Lang, compareStrings), [`./results-md.ts`](results-md.ts.md) (ReportModel, RunTarget, provenanceLine)
 
-**Imported by:** [`bench/src/report-charts.ts`](report-charts.ts.md), [`bench/src/report-evals.ts`](report-evals.ts.md), [`bench/src/report-sections.ts`](report-sections.ts.md), [`bench/src/report.ts`](report.ts.md)
+**Imported by:** [`bench/src/report-charts.ts`](report-charts.ts.md), [`bench/src/report-evals.ts`](report-evals.ts.md), [`bench/src/report-sections.ts`](report-sections.ts.md), [`bench/src/report.ts`](report.ts.md), [`bench/src/results-md.ts`](results-md.ts.md)
 
-**Blast radius:** 4 files (`greplost impact bench/src/report-payload.ts`)
+**Blast radius:** 6 files (`greplost impact bench/src/report-payload.ts`)
 
 **Key symbols:**
-- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L24-24
-- `interface Payload`  L27-30
-- `function rec(value: unknown): Record<string, unknown> | null`  L33-35
-- `function arr(value: unknown): unknown[]`  L37-39
-- `function num(value: unknown): number | null`  L41-43
-- `function str(value: unknown): string | null`  L45-47
-- `function at(root: unknown, dotted: string): unknown`  L50-58
-- `let assumptions: string[] = []`  L66-66
-- `function resetAssumptions(): void`  L69-71
-- `function firstNum(root: unknown, paths: readonly string[]): number | null`  L80-96
-- `function firstStr(root: unknown, paths: readonly string[]): string | null`  L98-104
-- `function deepFind(root: unknown, key: string, maxDepth: number): unknown`  L107-121
-- `function fmt(value: number | null): string`  L124-130
-- `function provenanceOf(payload: Payload | null): string | null`  L143-149
-- `function firstMachine(payloads: readonly (Payload | null)[]): Record<string, unknown> | null`  L151-158
-- `function mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel["corpus"]`  L169-191
-- `function versionRows(agent: Payload | null, headtohead: Payload | null): { name: string; value: string }[]`  L198-214
-- `interface CompetitorEntry`  L216-221
-- `function competitors(): CompetitorEntry[]`  L224-243
-- `interface CorpusEntry`  L245-250
-- `function corpusIndex(): Map<string, CorpusEntry>`  L260-281
-- `function runFor(repo: string | null, files: number | null): RunTarget | undefined`  L290-297
-- `function targetOf(payload: Payload | null): RunTarget | undefined`  L304-319
-- `function replayF1(payload: Payload): number | null`  L322-329
-- `function replayF2(payload: Payload): number | null`  L331-338
-- `interface Scenario`  L341-352
-- `function scenariosOf(payload: Payload): Scenario[]`  L367-434
-- `interface ConditionStats`  L437-443
-- `function agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>`  L446-483
+- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L25-25
+- `interface Payload`  L28-31
+- `function rec(value: unknown): Record<string, unknown> | null`  L34-36
+- `function arr(value: unknown): unknown[]`  L38-40
+- `function num(value: unknown): number | null`  L42-44
+- `function str(value: unknown): string | null`  L46-48
+- `function at(root: unknown, dotted: string): unknown`  L51-59
+- `let assumptions: string[] = []`  L67-67
+- `function resetAssumptions(): void`  L70-72
+- `function firstNum(root: unknown, paths: readonly string[]): number | null`  L81-97
+- `function firstStr(root: unknown, paths: readonly string[]): string | null`  L99-105
+- `function deepFind(root: unknown, key: string, maxDepth: number): unknown`  L108-122
+- `function fmt(value: number | null): string`  L125-131
+- `function provenanceOf(payload: Payload | null): string | null`  L144-150
+- `function firstMachine(payloads: readonly (Payload | null)[]): Record<string, unknown> | null`  L152-159
+- `function mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel["corpus"]`  L170-192
+- `function versionRows(agent: Payload | null, headtohead: Payload | null): { name: string; value: string }[]`  L199-215
+- `interface CompetitorEntry`  L217-222
+- `function competitors(): CompetitorEntry[]`  L225-244
+- `interface CorpusEntry`  L246-251
+- `function corpusIndex(): Map<string, CorpusEntry>`  L261-282
+- `function runFor(repo: string | null, files: number | null): RunTarget | undefined`  L291-298
+- `function targetOf(payload: Payload | null): RunTarget | undefined`  L305-320
+- `function replayF1(payload: Payload): number | null`  L323-330
+- `function replayF2(payload: Payload): number | null`  L332-339
+- `interface Scenario`  L342-353
+- `function scenariosOf(payload: Payload): Scenario[]`  L368-435
+- `interface ConditionStats`  L438-444
+- `function agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>`  L447-484
+- `interface SubstituteSummary`  L496-500
+- `interface LangRow`  L518-548
+- `const LANG_METRICS = ["S1", "S2", "S3", "S4", "S5", "S6"] as const`  L551-551
+- `function metricValue(repo: Record<string, unknown>, id: string): number | null`  L554-558
+- `function declares(repo: Record<string, unknown>, id: string): boolean`  L561-563
+- `function isVacuous(repo: Record<string, unknown>, id: string): boolean`  L566-570
+- `function langRows(structural: Payload | null): LangRow[]`  L586-681
 
-**Calls:** `arr` → [`bench/src/report-payload.ts#arr`](report-payload.ts.md) (high), `at` → [`bench/src/report-payload.ts#at`](report-payload.ts.md) (high), `competitors` → [`bench/src/report-payload.ts#competitors`](report-payload.ts.md) (high), `corpusIndex` → [`bench/src/report-payload.ts#corpusIndex`](report-payload.ts.md) (high), `deepFind` → [`bench/src/report-payload.ts#deepFind`](report-payload.ts.md) (high), `firstMachine` → [`bench/src/report-payload.ts#firstMachine`](report-payload.ts.md) (high), `firstNum` → [`bench/src/report-payload.ts#firstNum`](report-payload.ts.md) (high), `firstStr` → [`bench/src/report-payload.ts#firstStr`](report-payload.ts.md) (high), `num` → [`bench/src/report-payload.ts#num`](report-payload.ts.md) (high), `rec` → [`bench/src/report-payload.ts#rec`](report-payload.ts.md) (high), `str` → [`bench/src/report-payload.ts#str`](report-payload.ts.md) (high), `targetOf` → [`bench/src/report-payload.ts#targetOf`](report-payload.ts.md) (high), `provenanceLine` → [`bench/src/results-md.ts#provenanceLine`](results-md.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high)
+**Calls:** `arr` → [`bench/src/report-payload.ts#arr`](report-payload.ts.md) (high), `at` → [`bench/src/report-payload.ts#at`](report-payload.ts.md) (high), `competitors` → [`bench/src/report-payload.ts#competitors`](report-payload.ts.md) (high), `corpusIndex` → [`bench/src/report-payload.ts#corpusIndex`](report-payload.ts.md) (high), `declares` → [`bench/src/report-payload.ts#declares`](report-payload.ts.md) (high), `deepFind` → [`bench/src/report-payload.ts#deepFind`](report-payload.ts.md) (high), `firstMachine` → [`bench/src/report-payload.ts#firstMachine`](report-payload.ts.md) (high), `firstNum` → [`bench/src/report-payload.ts#firstNum`](report-payload.ts.md) (high), `firstStr` → [`bench/src/report-payload.ts#firstStr`](report-payload.ts.md) (high), `isVacuous` → [`bench/src/report-payload.ts#isVacuous`](report-payload.ts.md) (high), `metricValue` → [`bench/src/report-payload.ts#metricValue`](report-payload.ts.md) (high), `num` → [`bench/src/report-payload.ts#num`](report-payload.ts.md) (high), `rec` → [`bench/src/report-payload.ts#rec`](report-payload.ts.md) (high), `str` → [`bench/src/report-payload.ts#str`](report-payload.ts.md) (high), `targetOf` → [`bench/src/report-payload.ts#targetOf`](report-payload.ts.md) (high), `provenanceLine` → [`bench/src/results-md.ts#provenanceLine`](results-md.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high)

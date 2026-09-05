@@ -46,10 +46,13 @@ const SEARCH_TOOLS: ReadonlySet<string> = new Set(["Glob", "Grep"]);
 
 const SESSION_START_CONTEXT =
   "This repo has a greplost map: read .greplost/INDEX.md before exploring; " +
-  "use `greplost query`/`impact --json`.";
+  "use `greplost query`/`impact --json`. Things inside a file (a Terraform resource, a " +
+  "Kubernetes object, a workflow job, a build stage) have node ids of the form " +
+  "`<file>#<kind>.<name>`, and both commands take one.";
 
 const PRE_TOOL_USE_CONTEXT =
-  "greplost: consult .greplost/INDEX.md or `greplost query <symbol> --json` before grepping.";
+  "greplost: consult .greplost/INDEX.md or `greplost query <symbol> --json` before grepping; " +
+  "a node id (`<file>#<kind>.<name>`) works there too.";
 
 export async function run(ctx: CommandContext): Promise<number> {
   const event = ctx.operands[0] as HookEvent;

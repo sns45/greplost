@@ -6,23 +6,33 @@
 
 **Package:** `@greplost/sync` ([map](../../MAP.md))
 
-**Exports:** `InitOptions (interface)`, `InitResult (interface)`, `init(root: string, opts: InitOptions = {}): Promise<InitResult>`
+**Exports:** `InitOptions (interface)`, `InitResult (interface)`, `MarkedLanguages (interface)`, `init(root: string, opts: InitOptions = {}): Promise<InitResult>`, `markedLanguages( files: readonly string[], readText: (rel: string) => string | undefined, ): MarkedLanguages`
 
-**Imports:** `node:fs` (existsSync, mkdirSync, readFileSync), `node:path` (default), [`@greplost/core`](../../../greplost__core/modules/src/index.ts.md) (discoverCandidates), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, DEFAULT_CONFIG, GreplostConfig, stableStringify), [`./githooks.ts`](githooks.ts.md) (installGitHooks), [`./incremental.ts`](incremental.ts.md) (UpdateResult, update), [`./parse-cache.ts`](parse-cache.ts.md) (PARSE_CACHE_PATH), [`./write.ts`](write.ts.md) (safeWrite)
+**Imports:** `node:fs` (closeSync, existsSync, mkdirSync, openSync, readFileSync, readSync), `node:path` (default), [`@greplost/core`](../../../greplost__core/modules/src/index.ts.md) (discoverCandidates), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, DEFAULT_CONFIG, DOCKERFILE_PREFIX, GreplostConfig, Lang, compareStrings, stableStringify), [`./githooks.ts`](githooks.ts.md) (installGitHooks), [`./incremental.ts`](incremental.ts.md) (UpdateResult, update), [`./parse-cache.ts`](parse-cache.ts.md) (PARSE_CACHE_PATH), [`./write.ts`](write.ts.md) (safeWrite)
 
 **Imported by:** [`packages/sync/src/index.ts`](index.ts.md)
 
 **Blast radius:** 18 files (`greplost impact packages/sync/src/init.ts`)
 
 **Key symbols:**
-- `interface InitOptions`  L30-35
-- `interface InitResult`  L37-44
-- `const GITIGNORE_ENTRIES: readonly string[] = [ // A glob, not the bare name: the queue is consumed by renaming it aside, and // a run killed at that instant leaves `.dirty.taken` behind. It is swept …`  L52-64
-- `async function init(root: string, opts: InitOptions = {}): Promise<InitResult>`  L66-93
-- `async function createConfig(root: string, artifactDir: string): Promise<boolean>`  L96-101
-- `async function initialConfig(root: string): Promise<GreplostConfig>`  L115-128
-- `function ensureGitignore(root: string, artifactDir: string): boolean`  L139-161
-- `function write(root: string, rel: string, contents: string): void`  L168-176
-- `function reasonOf(cause: unknown): string`  L178-180
+- `interface InitOptions`  L37-42
+- `interface InitResult`  L44-51
+- `const GITIGNORE_ENTRIES: readonly string[] = [ // A glob, not the bare name: the queue is consumed by renaming it aside, and // a run killed at that instant leaves `.dirty.taken` behind. It is swept …`  L59-71
+- `async function init(root: string, opts: InitOptions = {}): Promise<InitResult>`  L73-100
+- `async function createConfig(root: string, artifactDir: string): Promise<boolean>`  L103-108
+- `type SignalPass = NonNullable<GreplostConfig["signals"]>[number]`  L111-111
+- `interface MarkedLanguages`  L114-119
+- `const MARKER_PROBE_BYTES = 4096`  L122-122
+- `const WORKFLOW_PATH = /(?:^|\/)\.github\/workflows\/[^/]+\.ya?ml$/`  L125-125
+- `const SIGNAL_PACKAGES: readonly { pass: SignalPass; packages: readonly string[] }[] = [ { pass: "next", packages: ["next"] }, { pass: "pulumi-ts", packages: ["@pulumi/pulumi"] }, { pass: "react", pac…`  L128-133
+- `const PULUMI_GO_MODULE = "github.com/pulumi/pulumi/sdk"`  L136-136
+- `function markedLanguages( files: readonly string[], readText: (rel: string) => string | undefined, ): MarkedLanguages`  L158-205
+- `function isYamlMarker(file: string, base: string, readText: (rel: string) => string | undefined): boolean`  L216-229
+- `function dependencyNames(text: string | undefined): string[]`  L232-250
+- `function probe(root: string, rel: string): string | undefined`  L253-271
+- `async function initialConfig(root: string): Promise<GreplostConfig>`  L279-299
+- `function ensureGitignore(root: string, artifactDir: string): boolean`  L310-332
+- `function write(root: string, rel: string, contents: string): void`  L339-347
+- `function reasonOf(cause: unknown): string`  L349-351
 
-**Calls:** `discoverCandidates` → [`packages/core/src/discover.ts#discoverCandidates`](../../../greplost__core/modules/src/discover.ts.md) (med), `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high), `installGitHooks` → [`packages/sync/src/githooks.ts#installGitHooks`](githooks.ts.md) (high), `update` → [`packages/sync/src/incremental.ts#update`](incremental.ts.md) (high), `createConfig` → [`packages/sync/src/init.ts#createConfig`](init.ts.md) (high), `ensureGitignore` → [`packages/sync/src/init.ts#ensureGitignore`](init.ts.md) (high), `initialConfig` → [`packages/sync/src/init.ts#initialConfig`](init.ts.md) (high), `reasonOf` → [`packages/sync/src/init.ts#reasonOf`](init.ts.md) (high), `write` → [`packages/sync/src/init.ts#write`](init.ts.md) (high), `safeWrite` → [`packages/sync/src/write.ts#safeWrite`](write.ts.md) (high)
+**Calls:** `discoverCandidates` → [`packages/core/src/discover.ts#discoverCandidates`](../../../greplost__core/modules/src/discover.ts.md) (med), `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high), `installGitHooks` → [`packages/sync/src/githooks.ts#installGitHooks`](githooks.ts.md) (high), `update` → [`packages/sync/src/incremental.ts#update`](incremental.ts.md) (high), `createConfig` → [`packages/sync/src/init.ts#createConfig`](init.ts.md) (high), `dependencyNames` → [`packages/sync/src/init.ts#dependencyNames`](init.ts.md) (high), `ensureGitignore` → [`packages/sync/src/init.ts#ensureGitignore`](init.ts.md) (high), `initialConfig` → [`packages/sync/src/init.ts#initialConfig`](init.ts.md) (high), `isYamlMarker` → [`packages/sync/src/init.ts#isYamlMarker`](init.ts.md) (high), `markedLanguages` → [`packages/sync/src/init.ts#markedLanguages`](init.ts.md) (high), `probe` → [`packages/sync/src/init.ts#probe`](init.ts.md) (high), `reasonOf` → [`packages/sync/src/init.ts#reasonOf`](init.ts.md) (high), `write` → [`packages/sync/src/init.ts#write`](init.ts.md) (high), `safeWrite` → [`packages/sync/src/write.ts#safeWrite`](write.ts.md) (high)

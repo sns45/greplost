@@ -25,7 +25,7 @@ import path from "node:path";
 
 import { boxChart, groupedBarChart, lineChart, mermaidXy, writeChart, type BoxDatum, type ChartSpec } from "./charts.ts";
 import { latestResult, orderedResults } from "./results-io.ts";
-import { assumptions, firstMachine, mergeCorpus, resetAssumptions, versionRows, type Payload } from "./report-payload.ts";
+import { assumptions, firstMachine, langRows, mergeCorpus, resetAssumptions, versionRows, type Payload } from "./report-payload.ts";
 import { headToHeadFrom, singleTool } from "./report-sections.ts";
 import {
   bench3Section,
@@ -205,6 +205,9 @@ export function buildModel(options: BuildOptions = {}): ReportModel {
     versions: versionRows(agent, headtohead),
     headToHead: headToHeadFrom(headtoheads, replay, assetsRel),
     singleTool: { rows: [], notes: [] },
+    // Build 2's per-language view of the same structural payload. A build-1
+    // payload has no `perLang` block and yields no rows, which the section says.
+    langs: langRows(structural),
     sections: {
       eval1: eval1Section(structural, assetsRel),
       eval2: eval2Section(replay),

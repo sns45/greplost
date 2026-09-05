@@ -14,12 +14,19 @@
  * what this call actually brought into existence, not what happens to exist.
  */
 
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readSync } from "node:fs";
 import path from "node:path";
 
 import { discoverCandidates } from "@greplost/core";
-import type { GreplostConfig } from "@greplost/core/schema";
-import { ARTIFACT_DIR, ARTIFACT_PATHS, DEFAULT_CONFIG, stableStringify } from "@greplost/core/schema";
+import type { GreplostConfig, Lang } from "@greplost/core/schema";
+import {
+  ARTIFACT_DIR,
+  ARTIFACT_PATHS,
+  DEFAULT_CONFIG,
+  DOCKERFILE_PREFIX,
+  compareStrings,
+  stableStringify,
+} from "@greplost/core/schema";
 
 import { installGitHooks } from "./githooks.ts";
 import { update } from "./incremental.ts";
@@ -100,31 +107,195 @@ async function createConfig(root: string, artifactDir: string): Promise<boolean>
   return true;
 }
 
+/** A framework signal pass, exactly as `config.json` spells it. */
+type SignalPass = NonNullable<GreplostConfig["signals"]>[number];
+
+/** What the marker table found: the languages to index and the passes to run. */
+export interface MarkedLanguages {
+  /** `DEFAULT_CONFIG.languages` first, then every marked language, sorted. */
+  languages: Lang[];
+  /** The signal passes whose framework the repository actually depends on, sorted. */
+  signals: SignalPass[];
+}
+
+/** How much of a marker file is read to decide what it is. */
+const MARKER_PROBE_BYTES = 4096;
+
+/** `.github/workflows/<name>.yml`, at the root or under any directory. */
+const WORKFLOW_PATH = /(?:^|\/)\.github\/workflows\/[^/]+\.ya?ml$/;
+
+/** Package names that turn on a TypeScript signal pass (spec 3.2 to 3.5). */
+const SIGNAL_PACKAGES: readonly { pass: SignalPass; packages: readonly string[] }[] = [
+  { pass: "next", packages: ["next"] },
+  { pass: "pulumi-ts", packages: ["@pulumi/pulumi"] },
+  { pass: "react", packages: ["react"] },
+  { pass: "tanstack", packages: ["@tanstack/react-router", "@tanstack/react-start"] },
+];
+
+/** The module path a Pulumi Go program requires (spec 3.6). */
+const PULUMI_GO_MODULE = "github.com/pulumi/pulumi/sdk";
+
 /**
- * The defaults, plus `"go"` when the repository has a `go.mod`.
+ * The marker table (spec 0.6, extended with signal passes by the ruling of
+ * 2026-09-05).
  *
- * greplost indexes Go and the README says so, but `DEFAULT_CONFIG.languages` is
- * the TypeScript set, so a Go repository used to get a config that matched
- * nothing: `init` reported a successful build, exit 0, and an empty map. The
- * detection is deliberately the crudest rule that cannot be wrong — a `go.mod`
- * anywhere in the file set discovery already admits — and it *adds* rather than
- * replaces, because a repository with both a `go.mod` and a `tsconfig.json` is
- * ordinary and dropping either half would be the same bug with the arguments
- * swapped. Everything after `init` is the user's: this file is never rewritten.
+ * `DEFAULT_CONFIG.languages` is the TypeScript family and stays that way, so
+ * adding a language to greplost cannot change an existing repository's map. The
+ * price is that every other language is opt-in, and a Terraform repository used
+ * to get a config that matched nothing: `init` reported a successful build, exit
+ * 0, and an empty map. This closes that for the languages build 2 added, on the
+ * crudest rule that cannot be wrong (a filename, or for a manifest one first
+ * key), and it *adds* rather than replaces, because a repository with both a
+ * `go.mod` and a `tsconfig.json` is ordinary and dropping either half would be
+ * the same bug with the arguments swapped.
+ *
+ * Nothing here parses a file. `readText` returns the first few kilobytes of one,
+ * or `undefined` when it cannot be read, and an unreadable marker is simply not
+ * a marker: `init` must never fail because a file it was curious about was
+ * unreadable. Everything after `init` is the user's; this config is written once
+ * and never rewritten.
+ */
+export function markedLanguages(
+  files: readonly string[],
+  readText: (rel: string) => string | undefined,
+): MarkedLanguages {
+  const marked = new Set<Lang>();
+  const manifests: string[] = [];
+  const goModules: string[] = [];
+
+  for (const file of files) {
+    const base = file.slice(file.lastIndexOf("/") + 1);
+
+    if (base === "go.mod") {
+      marked.add("go");
+      goModules.push(file);
+    }
+    if (base === "package.json") manifests.push(file);
+
+    if (base === "pyproject.toml" || base === "setup.py" || file.endsWith(".py")) marked.add("python");
+    if (base === "Cargo.toml") marked.add("rust");
+    if (base === "pom.xml" || base === "build.gradle" || base === "build.gradle.kts") marked.add("java");
+    if (file.endsWith(".kt") || file.endsWith(".kts")) marked.add("kotlin");
+    if (file.endsWith(".tf")) marked.add("hcl");
+    if (base === "Dockerfile" || base === "Containerfile" || base.startsWith(DOCKERFILE_PREFIX)) {
+      marked.add("dockerfile");
+    }
+    if (isYamlMarker(file, base, readText)) marked.add("yaml");
+  }
+
+  const signals = new Set<SignalPass>();
+  for (const manifest of manifests) {
+    for (const name of dependencyNames(readText(manifest))) {
+      for (const entry of SIGNAL_PACKAGES) {
+        if (entry.packages.includes(name)) signals.add(entry.pass);
+      }
+    }
+  }
+  for (const goModule of goModules) {
+    if ((readText(goModule) ?? "").includes(PULUMI_GO_MODULE)) signals.add("pulumi-go");
+  }
+
+  const added = [...marked]
+    .filter((lang) => !DEFAULT_CONFIG.languages.includes(lang))
+    .sort(compareStrings);
+  return {
+    languages: [...DEFAULT_CONFIG.languages, ...added],
+    signals: [...signals].sort(compareStrings),
+  };
+}
+
+/**
+ * True when a YAML file is one greplost knows how to read: a Helm chart, an
+ * Actions workflow, or a manifest whose first key is `apiVersion`.
+ *
+ * The first-key test is what keeps the marker honest. Almost every repository
+ * has YAML in it (lockfiles, CI for other systems, application settings), and
+ * marking `yaml` on the extension alone would start indexing all of it as if it
+ * were Kubernetes.
+ */
+function isYamlMarker(file: string, base: string, readText: (rel: string) => string | undefined): boolean {
+  if (base === "Chart.yaml" || base === "Chart.yml") return true;
+  if (WORKFLOW_PATH.test(file)) return true;
+  if (!file.endsWith(".yaml") && !file.endsWith(".yml")) return false;
+  const text = readText(file);
+  if (text === undefined) return false;
+  for (const line of text.split("\n")) {
+    const trimmed = line.trim();
+    // Comments, blank lines and a document marker come before the first key.
+    if (trimmed.length === 0 || trimmed.startsWith("#") || trimmed === "---") continue;
+    return trimmed.startsWith("apiVersion:");
+  }
+  return false;
+}
+
+/** Every dependency name a `package.json` declares, in any of the four blocks. */
+function dependencyNames(text: string | undefined): string[] {
+  if (text === undefined) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    // A manifest that is not JSON declares nothing; `update` reports the repo's
+    // real problems, and `init` must not fail on one.
+    return [];
+  }
+  if (typeof parsed !== "object" || parsed === null) return [];
+  const manifest = parsed as Record<string, unknown>;
+  const names: string[] = [];
+  for (const block of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
+    const found = manifest[block];
+    if (typeof found === "object" && found !== null) names.push(...Object.keys(found as Record<string, unknown>));
+  }
+  return names;
+}
+
+/** The first few kilobytes of a repo file, or `undefined` when it cannot be read. */
+function probe(root: string, rel: string): string | undefined {
+  let handle: number | undefined;
+  try {
+    handle = openSync(path.join(root, rel), "r");
+    const buffer = Buffer.alloc(MARKER_PROBE_BYTES);
+    const read = readSync(handle, buffer, 0, MARKER_PROBE_BYTES, 0);
+    return buffer.subarray(0, read).toString("utf8");
+  } catch {
+    return undefined;
+  } finally {
+    if (handle !== undefined) {
+      try {
+        closeSync(handle);
+      } catch {
+        // Already closed, or never opened: nothing to report and nothing to do.
+      }
+    }
+  }
+}
+
+/**
+ * The defaults, plus every language and signal pass the marker table finds.
+ *
+ * `DEFAULT_CONFIG` itself is returned unchanged when nothing was marked, so a
+ * plain TypeScript repository writes exactly the config it always did.
  */
 async function initialConfig(root: string): Promise<GreplostConfig> {
-  let hasGoModule = false;
+  let candidates: string[];
   try {
-    const candidates = await discoverCandidates(root, DEFAULT_CONFIG);
-    hasGoModule = candidates.some((file) => file === "go.mod" || file.endsWith("/go.mod"));
+    candidates = await discoverCandidates(root, DEFAULT_CONFIG);
   } catch {
     // Discovery is `update`'s job to report; a config written from the plain
     // defaults is the right answer when nothing can be seen from here.
     return DEFAULT_CONFIG;
   }
 
-  if (!hasGoModule || DEFAULT_CONFIG.languages.includes("go")) return DEFAULT_CONFIG;
-  return { ...DEFAULT_CONFIG, languages: [...DEFAULT_CONFIG.languages, "go"] };
+  const marked = markedLanguages(candidates, (rel) => probe(root, rel));
+  const sameLanguages =
+    marked.languages.length === DEFAULT_CONFIG.languages.length &&
+    marked.languages.every((lang, index) => lang === DEFAULT_CONFIG.languages[index]);
+  if (sameLanguages && marked.signals.length === 0) return DEFAULT_CONFIG;
+  return {
+    ...DEFAULT_CONFIG,
+    languages: marked.languages,
+    ...(marked.signals.length === 0 ? {} : { signals: marked.signals }),
+  };
 }
 
 /**

@@ -6,47 +6,57 @@
 
 **Package:** `@greplost/bench` ([map](../../MAP.md))
 
-**Exports:** `ChartRef (interface)`, `EvalRow (interface)`, `EvalSection (interface)`, `METRIC_TITLES (const)`, `MetricCell (interface)`, `MetricRow (interface)`, `NOT_APPLICABLE (const)`, `NOT_RUN (const)`, `ReportModel (interface)`, `RunTarget (interface)`, `SECTION_HEADERS (const)`, `SummaryRow (interface)`, `Verdict (type)`, `XId (type)`, `X_IDS (const)`, `cell(text: string): string`, `emptySection(): EvalSection`, `formatNumber(value: number): string`, `provenanceLine( date: string | null, sha: string | null, target: RunTarget | undefined, ): string`, `renderResultsMd(model: ReportModel): string`, `scopeTarget(target: string, run: RunTarget | undefined, scaleText?: string): string`
+**Exports:** `ChartRef (interface)`, `EvalRow (interface)`, `EvalSection (interface)`, `HEAD_TO_HEAD_SCOPE (const)`, `LANG_SECTION_HEADER (const)`, `METRIC_TITLES (const)`, `MetricCell (interface)`, `MetricRow (interface)`, `NOT_APPLICABLE (const)`, `NOT_RUN (const)`, `ReportModel (interface)`, `RunTarget (interface)`, `SECTION_HEADERS (const)`, `SummaryRow (interface)`, `TRUTH_NOTE_GLOSS (const)`, `Verdict (type)`, `XId (type)`, `X_IDS (const)`, `cell(text: string): string`, `emptySection(): EvalSection`, `formatNumber(value: number): string`, `provenanceLine( date: string | null, sha: string | null, target: RunTarget | undefined, ): string`, `renderResultsMd(model: ReportModel): string`, `scopeTarget(target: string, run: RunTarget | undefined, scaleText?: string): string`
 
-**Imports:** None.
+**Imports:** [`./report-payload.ts`](report-payload.ts.md) (LangRow)
 
 **Imported by:** [`bench/src/headtohead.ts`](headtohead.ts.md), [`bench/src/report-charts.ts`](report-charts.ts.md), [`bench/src/report-evals.ts`](report-evals.ts.md), [`bench/src/report-payload.ts`](report-payload.ts.md), [`bench/src/report-sections.ts`](report-sections.ts.md), [`bench/src/report.ts`](report.ts.md)
 
 **Blast radius:** 6 files (`greplost impact bench/src/results-md.ts`)
 
 **Key symbols:**
-- `const X_IDS = ["X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9", "X10"] as const`  L29-29
-- `type XId = (typeof X_IDS)[number]`  L30-30
-- `const SECTION_HEADERS = [ "Machine", "Corpus", "Versions", "Head-to-head", "Eval 1", "Eval 2", "Bench 3", "Eval 4", "Eval 5", "Map quality", ] as const`  L33-44
-- `const NOT_RUN = "not run"`  L47-47
-- `const NOT_APPLICABLE = "n/a"`  L50-50
-- `type Verdict = "win" | "loss" | "tie" | "na"`  L52-52
-- `interface MetricCell`  L55-69
-- `interface MetricRow`  L71-90
-- `interface EvalRow`  L93-103
-- `interface EvalSection`  L105-116
-- `interface ChartRef`  L118-139
-- `interface SummaryRow`  L142-152
-- `interface RunTarget`  L158-166
-- `function provenanceLine( date: string | null, sha: string | null, target: RunTarget | undefined, ): string`  L177-202
-- `function scopeTarget(target: string, run: RunTarget | undefined, scaleText?: string): string`  L214-237
-- `function describeRun(run: RunTarget): string`  L240-247
-- `interface ReportModel`  L249-274
-- `function emptySection(): EvalSection`  L277-279
-- `function renderResultsMd(model: ReportModel): string`  L286-315
-- `function machineSection(model: ReportModel): string[]`  L317-329
-- `function corpusSection(model: ReportModel): string[]`  L331-343
-- `function versionsSection(model: ReportModel): string[]`  L345-355
-- `function headToHeadSection(model: ReportModel): string[]`  L357-453
-- `function singleToolSection(model: ReportModel): string[]`  L461-483
-- `function evalSection(heading: string, subtitle: string, section: EvalSection): string[]`  L485-507
-- `function renderCharts(charts: readonly ChartRef[]): string[]`  L509-530
-- `function cell(text: string): string`  L537-539
-- `function formatCell(cellValue: MetricCell | undefined): string`  L541-545
-- `function verdictCell(cellValue: MetricCell | undefined): string`  L547-552
-- `function formatNumber(value: number): string`  L555-561
-- `function lossReasonsOf(row: MetricRow, competitors: readonly string[]): string`  L573-582
-- `function perToolLine(row: MetricRow, tools: readonly string[]): string | null`  L585-593
-- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…`  L605-616
+- `const X_IDS = ["X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9", "X10"] as const`  L36-36
+- `type XId = (typeof X_IDS)[number]`  L37-37
+- `const SECTION_HEADERS = [ "Machine", "Corpus", "Versions", "Head-to-head", "Languages, IaC and signals", "Eval 1", "Eval 2", "Bench 3", "Eval 4", "Eval 5", "Map quality", ] as const`  L40-52
+- `const LANG_SECTION_HEADER = "Languages, IaC and signals"`  L58-58
+- `const HEAD_TO_HEAD_SCOPE = "X1 to X10 cover TypeScript and Go only; build 2's languages are scored against their own compiler " + "truth in the single-tool table below, with no competitor arm."`  L69-71
+- `const NOT_RUN = "not run"`  L74-74
+- `const NOT_APPLICABLE = "n/a"`  L77-77
+- `type Verdict = "win" | "loss" | "tie" | "na"`  L79-79
+- `interface MetricCell`  L82-96
+- `interface MetricRow`  L98-117
+- `interface EvalRow`  L120-130
+- `interface EvalSection`  L132-143
+- `interface ChartRef`  L145-166
+- `interface SummaryRow`  L169-179
+- `interface RunTarget`  L185-193
+- `function provenanceLine( date: string | null, sha: string | null, target: RunTarget | undefined, ): string`  L204-229
+- `function scopeTarget(target: string, run: RunTarget | undefined, scaleText?: string): string`  L241-264
+- `function describeRun(run: RunTarget): string`  L267-274
+- `interface ReportModel`  L276-306
+- `function emptySection(): EvalSection`  L309-311
+- `function renderResultsMd(model: ReportModel): string`  L318-348
+- `function machineSection(model: ReportModel): string[]`  L350-362
+- `function corpusSection(model: ReportModel): string[]`  L364-376
+- `function versionsSection(model: ReportModel): string[]`  L378-388
+- `function headToHeadSection(model: ReportModel): string[]`  L390-490
+- `function singleToolSection(model: ReportModel): string[]`  L498-520
+- `function langsSection(model: ReportModel): string[]`  L534-597
+- `function langCell(row: LangRow, id: string, value: number | null): string`  L612-618
+- `function oracleDisclosures(langs: readonly LangRow[]): string[]`  L626-648
+- `function vacuousDisclosures(langs: readonly LangRow[]): string[]`  L651-667
+- `function substituteDisclosures(langs: readonly LangRow[]): string[]`  L670-692
+- `const TS_FAMILY_LANGS: ReadonlySet<string> = new Set(["ts", "tsx", "js", "jsx"])`  L695-695
+- `const ORACLE_DISCLOSURES: Record<string, string> = { ts: "`bench/src/truth/ts.ts` for S1 to S4 (the TypeScript compiler's own checker) and " + "`bench/src/truth/signals-ts.ts` for S5 and S6 (`tsc-che…`  L706-811
+- `const TRUTH_NOTE_GLOSS: Record<string, string> = { "unsupported:S1": "the truth module declares that it does not measure import edges, so S1 is `n/a` for it.", "unsupported:S2": "the truth mod…`  L822-915
+- `function evalSection(heading: string, subtitle: string, section: EvalSection): string[]`  L917-939
+- `function renderCharts(charts: readonly ChartRef[]): string[]`  L941-962
+- `function cell(text: string): string`  L969-971
+- `function formatCell(cellValue: MetricCell | undefined): string`  L973-977
+- `function verdictCell(cellValue: MetricCell | undefined): string`  L979-984
+- `function formatNumber(value: number): string`  L987-993
+- `function lossReasonsOf(row: MetricRow, competitors: readonly string[]): string`  L1005-1014
+- `function perToolLine(row: MetricRow, tools: readonly string[]): string | null`  L1017-1025
+- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…`  L1037-1048
 
-**Calls:** `cell` → [`bench/src/results-md.ts#cell`](results-md.ts.md) (high), `corpusSection` → [`bench/src/results-md.ts#corpusSection`](results-md.ts.md) (high), `describeRun` → [`bench/src/results-md.ts#describeRun`](results-md.ts.md) (high), `evalSection` → [`bench/src/results-md.ts#evalSection`](results-md.ts.md) (high), `formatCell` → [`bench/src/results-md.ts#formatCell`](results-md.ts.md) (high), `formatNumber` → [`bench/src/results-md.ts#formatNumber`](results-md.ts.md) (high), `headToHeadSection` → [`bench/src/results-md.ts#headToHeadSection`](results-md.ts.md) (high), `lossReasonsOf` → [`bench/src/results-md.ts#lossReasonsOf`](results-md.ts.md) (high), `machineSection` → [`bench/src/results-md.ts#machineSection`](results-md.ts.md) (high), `perToolLine` → [`bench/src/results-md.ts#perToolLine`](results-md.ts.md) (high), `renderCharts` → [`bench/src/results-md.ts#renderCharts`](results-md.ts.md) (high), `scopeTarget` → [`bench/src/results-md.ts#scopeTarget`](results-md.ts.md) (high), `singleToolSection` → [`bench/src/results-md.ts#singleToolSection`](results-md.ts.md) (high), `verdictCell` → [`bench/src/results-md.ts#verdictCell`](results-md.ts.md) (high), `versionsSection` → [`bench/src/results-md.ts#versionsSection`](results-md.ts.md) (high)
+**Calls:** `cell` → [`bench/src/results-md.ts#cell`](results-md.ts.md) (high), `corpusSection` → [`bench/src/results-md.ts#corpusSection`](results-md.ts.md) (high), `describeRun` → [`bench/src/results-md.ts#describeRun`](results-md.ts.md) (high), `evalSection` → [`bench/src/results-md.ts#evalSection`](results-md.ts.md) (high), `formatCell` → [`bench/src/results-md.ts#formatCell`](results-md.ts.md) (high), `formatNumber` → [`bench/src/results-md.ts#formatNumber`](results-md.ts.md) (high), `headToHeadSection` → [`bench/src/results-md.ts#headToHeadSection`](results-md.ts.md) (high), `langCell` → [`bench/src/results-md.ts#langCell`](results-md.ts.md) (high), `langsSection` → [`bench/src/results-md.ts#langsSection`](results-md.ts.md) (high), `lossReasonsOf` → [`bench/src/results-md.ts#lossReasonsOf`](results-md.ts.md) (high), `machineSection` → [`bench/src/results-md.ts#machineSection`](results-md.ts.md) (high), `oracleDisclosures` → [`bench/src/results-md.ts#oracleDisclosures`](results-md.ts.md) (high), `perToolLine` → [`bench/src/results-md.ts#perToolLine`](results-md.ts.md) (high), `renderCharts` → [`bench/src/results-md.ts#renderCharts`](results-md.ts.md) (high), `scopeTarget` → [`bench/src/results-md.ts#scopeTarget`](results-md.ts.md) (high), `singleToolSection` → [`bench/src/results-md.ts#singleToolSection`](results-md.ts.md) (high), `substituteDisclosures` → [`bench/src/results-md.ts#substituteDisclosures`](results-md.ts.md) (high), `vacuousDisclosures` → [`bench/src/results-md.ts#vacuousDisclosures`](results-md.ts.md) (high), `verdictCell` → [`bench/src/results-md.ts#verdictCell`](results-md.ts.md) (high), `versionsSection` → [`bench/src/results-md.ts#versionsSection`](results-md.ts.md) (high)

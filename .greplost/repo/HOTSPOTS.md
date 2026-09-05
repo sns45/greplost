@@ -6,7 +6,7 @@
 
 | File | Fan-in | Fan-out | Blast |
 |---|---|---|---|
-| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 126 | 0 | 153 |
+| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 126 | 0 | 154 |
 | [`bench/src/truth/ts.ts`](../packages/greplost__bench/modules/src/truth/ts.ts.md) | 18 | 3 | 18 |
 | [`packages/cli/src/args.ts`](../packages/greplost/modules/src/args.ts.md) | 14 | 1 | 14 |
 | [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 14 | 0 | 64 |
@@ -21,7 +21,7 @@
 | [`packages/render/src/render.ts`](../packages/greplost__render/modules/src/render.ts.md) | 8 | 10 | 38 |
 | [`packages/render/src/slug.ts`](../packages/greplost__render/modules/src/slug.ts.md) | 8 | 1 | 39 |
 | [`bench/src/results-io.ts`](../packages/greplost__bench/modules/src/results-io.ts.md) | 7 | 1 | 7 |
-| [`bench/src/results-md.ts`](../packages/greplost__bench/modules/src/results-md.ts.md) | 6 | 0 | 6 |
+| [`bench/src/results-md.ts`](../packages/greplost__bench/modules/src/results-md.ts.md) | 6 | 1 | 6 |
 | [`packages/cli/src/commands/workspace.ts`](../packages/greplost/modules/src/commands/workspace.ts.md) | 6 | 2 | 7 |
 | [`packages/core/src/parser.ts`](../packages/greplost__core/modules/src/parser.ts.md) | 6 | 1 | 48 |
 | [`packages/sync/src/write.ts`](../packages/greplost__sync/modules/src/write.ts.md) | 6 | 2 | 23 |
@@ -31,7 +31,7 @@
 
 | File | Fan-in | Fan-out | Blast |
 |---|---|---|---|
-| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 126 | 0 | 153 |
+| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 126 | 0 | 154 |
 | [`packages/core/src/resolve/go.ts`](../packages/greplost__core/modules/src/resolve/go.ts.md) | 2 | 1 | 69 |
 | [`packages/core/src/resolve/tsconfig.ts`](../packages/greplost__core/modules/src/resolve/tsconfig.ts.md) | 2 | 0 | 69 |
 | [`packages/core/src/resolve/dockerfile.ts`](../packages/greplost__core/modules/src/resolve/dockerfile.ts.md) | 2 | 2 | 68 |
@@ -54,8 +54,9 @@
 
 ## Import cycles
 
-5 cycles
+6 cycles
 
+- bench/src/report-payload.ts → bench/src/results-md.ts → bench/src/report-payload.ts
 - packages/core/src/extract/ts-calls.ts → packages/core/src/extract/ts-imports.ts → packages/core/src/extract/ts.ts → packages/core/src/extract/ts-calls.ts
 - packages/core/src/references/dockerfile.ts → packages/core/src/references/go.ts → packages/core/src/references/hcl.ts → packages/core/src/references/link.ts → packages/core/src/references/ts.ts → packages/core/src/references/yaml-actions.ts → packages/core/src/references/yaml-k8s.ts → packages/core/src/references/yaml.ts → packages/core/src/references/dockerfile.ts
 - packages/core/src/resolve/dockerfile.ts → packages/core/src/resolve/hcl.ts → packages/core/src/resolve/java.ts → packages/core/src/resolve/kotlin.ts → packages/core/src/resolve/python.ts → packages/core/src/resolve/resolver.ts → packages/core/src/resolve/rust.ts → packages/core/src/resolve/yaml.ts → packages/core/src/resolve/dockerfile.ts

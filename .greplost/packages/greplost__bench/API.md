@@ -268,40 +268,43 @@
 
 ## bench/src/report-evals.ts
 
-- `function eval1Section(payload: Payload | null, assetsRel = "docs/assets"): EvalSection` L47-126
-- `function eval2Section(payload: Payload | null): EvalSection` L189-244
-- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection` L257-362
-- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection` L368-455
-- `function eval5Section(payload: Payload | null): EvalSection` L479-507
-- `function mapqualitySection(payload: Payload | null): EvalSection` L509-567
+- `function eval1Section(payload: Payload | null, assetsRel = "docs/assets"): EvalSection` L48-127
+- `function eval2Section(payload: Payload | null): EvalSection` L193-248
+- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection` L261-366
+- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection` L372-459
+- `function eval5Section(payload: Payload | null): EvalSection` L483-511
+- `function mapqualitySection(payload: Payload | null): EvalSection` L513-571
 
 ## bench/src/report-payload.ts
 
-- `interface Payload` L27-30
-- `function rec(value: unknown): Record<string, unknown> | null` L33-35
-- `function arr(value: unknown): unknown[]` L37-39
-- `function num(value: unknown): number | null` L41-43
-- `function str(value: unknown): string | null` L45-47
-- `let assumptions: string[] = []` L66-66
-- `function resetAssumptions(): void` L69-71
-- `function firstNum(root: unknown, paths: readonly string[]): number | null` L80-96
-- `function firstStr(root: unknown, paths: readonly string[]): string | null` L98-104
-- `function fmt(value: number | null): string` L124-130
-- `function provenanceOf(payload: Payload | null): string | null` L143-149
-- `function firstMachine(payloads: readonly (Payload | null)[]): Record<string, unknown> | null` L151-158
-- `function mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel["corpus"]` L169-191
-- `function versionRows(agent: Payload | null, headtohead: Payload | null): { name: string; value: string }[]` L198-214
-- `function competitors(): CompetitorEntry[]` L224-243
-- `interface CorpusEntry` L245-250
-- `function corpusIndex(): Map<string, CorpusEntry>` L260-281
-- `function runFor(repo: string | null, files: number | null): RunTarget | undefined` L290-297
-- `function targetOf(payload: Payload | null): RunTarget | undefined` L304-319
-- `function replayF1(payload: Payload): number | null` L322-329
-- `function replayF2(payload: Payload): number | null` L331-338
-- `interface Scenario` L341-352
-- `function scenariosOf(payload: Payload): Scenario[]` L367-434
-- `interface ConditionStats` L437-443
-- `function agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>` L446-483
+- `interface Payload` L28-31
+- `function rec(value: unknown): Record<string, unknown> | null` L34-36
+- `function arr(value: unknown): unknown[]` L38-40
+- `function num(value: unknown): number | null` L42-44
+- `function str(value: unknown): string | null` L46-48
+- `let assumptions: string[] = []` L67-67
+- `function resetAssumptions(): void` L70-72
+- `function firstNum(root: unknown, paths: readonly string[]): number | null` L81-97
+- `function firstStr(root: unknown, paths: readonly string[]): string | null` L99-105
+- `function fmt(value: number | null): string` L125-131
+- `function provenanceOf(payload: Payload | null): string | null` L144-150
+- `function firstMachine(payloads: readonly (Payload | null)[]): Record<string, unknown> | null` L152-159
+- `function mergeCorpus(payloads: readonly (Payload | null)[]): ReportModel["corpus"]` L170-192
+- `function versionRows(agent: Payload | null, headtohead: Payload | null): { name: string; value: string }[]` L199-215
+- `function competitors(): CompetitorEntry[]` L225-244
+- `interface CorpusEntry` L246-251
+- `function corpusIndex(): Map<string, CorpusEntry>` L261-282
+- `function runFor(repo: string | null, files: number | null): RunTarget | undefined` L291-298
+- `function targetOf(payload: Payload | null): RunTarget | undefined` L305-320
+- `function replayF1(payload: Payload): number | null` L323-330
+- `function replayF2(payload: Payload): number | null` L332-339
+- `interface Scenario` L342-353
+- `function scenariosOf(payload: Payload): Scenario[]` L368-435
+- `interface ConditionStats` L438-444
+- `function agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>` L447-484
+- `interface SubstituteSummary` L496-500
+- `interface LangRow` L518-548
+- `function langRows(structural: Payload | null): LangRow[]` L586-681
 
 ## bench/src/report-sections.ts
 
@@ -313,7 +316,7 @@
 
 - `interface BuildOptions` L62-67
 - `async function run(args: string[]): Promise<number>` L81-105
-- `function buildModel(options: BuildOptions = {}): ReportModel` L152-242
+- `function buildModel(options: BuildOptions = {}): ReportModel` L152-245
 
 ## bench/src/results-io.ts
 
@@ -328,27 +331,30 @@
 
 ## bench/src/results-md.ts
 
-- `const X_IDS = ["X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9", "X10"] as const` L29-29
-- `type XId = (typeof X_IDS)[number]` L30-30
-- `const SECTION_HEADERS = [ "Machine", "Corpus", "Versions", "Head-to-head", "Eval 1", "Eval 2", "Bench 3", "Eval 4", "Eval 5", "Map quality", ] as const` L33-44
-- `const NOT_RUN = "not run"` L47-47
-- `const NOT_APPLICABLE = "n/a"` L50-50
-- `type Verdict = "win" | "loss" | "tie" | "na"` L52-52
-- `interface MetricCell` L55-69
-- `interface MetricRow` L71-90
-- `interface EvalRow` L93-103
-- `interface EvalSection` L105-116
-- `interface ChartRef` L118-139
-- `interface SummaryRow` L142-152
-- `interface RunTarget` L158-166
-- `function provenanceLine( date: string | null, sha: string | null, target: RunTarget | undefined, ): string` L177-202
-- `function scopeTarget(target: string, run: RunTarget | undefined, scaleText?: string): string` L214-237
-- `interface ReportModel` L249-274
-- `function emptySection(): EvalSection` L277-279
-- `function renderResultsMd(model: ReportModel): string` L286-315
-- `function cell(text: string): string` L537-539
-- `function formatNumber(value: number): string` L555-561
-- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L605-616
+- `const X_IDS = ["X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9", "X10"] as const` L36-36
+- `type XId = (typeof X_IDS)[number]` L37-37
+- `const SECTION_HEADERS = [ "Machine", "Corpus", "Versions", "Head-to-head", "Languages, IaC and signals", "Eval 1", "Eval 2", "Bench 3", "Eval 4", "Eval 5", "Map quality", ] as const` L40-52
+- `const LANG_SECTION_HEADER = "Languages, IaC and signals"` L58-58
+- `const HEAD_TO_HEAD_SCOPE = "X1 to X10 cover TypeScript and Go only; build 2's languages are scored against their own compiler " + "truth in the single-tool table below, with no competitor arm."` L69-71
+- `const NOT_RUN = "not run"` L74-74
+- `const NOT_APPLICABLE = "n/a"` L77-77
+- `type Verdict = "win" | "loss" | "tie" | "na"` L79-79
+- `interface MetricCell` L82-96
+- `interface MetricRow` L98-117
+- `interface EvalRow` L120-130
+- `interface EvalSection` L132-143
+- `interface ChartRef` L145-166
+- `interface SummaryRow` L169-179
+- `interface RunTarget` L185-193
+- `function provenanceLine( date: string | null, sha: string | null, target: RunTarget | undefined, ): string` L204-229
+- `function scopeTarget(target: string, run: RunTarget | undefined, scaleText?: string): string` L241-264
+- `interface ReportModel` L276-306
+- `function emptySection(): EvalSection` L309-311
+- `function renderResultsMd(model: ReportModel): string` L318-348
+- `const TRUTH_NOTE_GLOSS: Record<string, string> = { "unsupported:S1": "the truth module declares that it does not measure import edges, so S1 is `n/a` for it.", "unsupported:S2": "the truth mod…` L822-915
+- `function cell(text: string): string` L969-971
+- `function formatNumber(value: number): string` L987-993
+- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L1037-1048
 
 ## bench/src/score.ts
 
