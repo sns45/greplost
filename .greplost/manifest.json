@@ -917,9 +917,9 @@
       "fanIn": 1,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 525,
+      "loc": 527,
       "pkg": "@greplost/bench",
-      "sha256": "c7ff5ac182b631c4dd0a1b504bbdc94c64918e5c8c69a0f8be428228e33faaad",
+      "sha256": "950b6bd8504f1f5531eed1073b219cec8c3b652fe2a08f05ba74217e09dd807c",
       "staleSummary": false
     },
     "bench/src/truth/yaml-k8s.ts": {
@@ -933,9 +933,9 @@
       "fanIn": 2,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 440,
+      "loc": 442,
       "pkg": "@greplost/bench",
-      "sha256": "e66eaa137013be91a2012d60202f665406ab70729f73639ce8be373bd9f8bece",
+      "sha256": "42ca032b972544ab81d0d24bbeef4d302dfacb7a0bea616d21f575e6f299d3db",
       "staleSummary": false
     },
     "bench/src/truth/yaml.ts": {
@@ -3458,7 +3458,7 @@
         "@greplost/sync"
       ],
       "files": 49,
-      "loc": 24915,
+      "loc": 24919,
       "path": "bench",
       "rdeps": []
     },

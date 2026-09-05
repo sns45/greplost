@@ -16,31 +16,31 @@
 
 **Key symbols:**
 - `const NOTES: readonly string[] = ["js-yaml-oracle"]`  L45-45
-- `const UNSUPPORTED = ["unsupported:S3"] as const`  L52-52
-- `const CONTAINER_KEYS: ReadonlySet<string> = new Set(["containers", "initContainers", "ephemeralContainers"])`  L55-55
-- `const CONFIG_REFS: Readonly<Record<string, { readonly nameKey: string; readonly kind: string }>> = { configMap: { nameKey: "name", kind: "ConfigMap" }, configMapKeyRef: { nameKey: "name", kind: "Conf…`  L58-65
-- `const SELECTOR_PATHS: Readonly<Record<string, readonly string[]>> = { NetworkPolicy: ["spec", "podSelector", "matchLabels"], Service: ["spec", "selector"], }`  L68-71
-- `const LABEL_SEPARATORS = /[,=]/u`  L73-73
-- `type Plain = Record<string, unknown>`  L79-79
-- `function isPlain(value: unknown): value is Plain`  L81-83
-- `function text(value: unknown): string | null`  L102-107
-- `function get(value: unknown, ...keys: readonly string[]): unknown`  L109-116
-- `function walk(value: unknown, visit: (key: string, entry: unknown) => void): void`  L119-129
-- `function labelKey(value: unknown): string | null`  L132-143
-- `function labelMap(value: unknown): Map<string, string> | null`  L145-154
-- `function podLabelsOf(document: unknown, kind: string): Map<string, string> | null`  L157-167
-- `function usableName(value: string | null): value is string`  L170-172
-- `interface OracleNode`  L178-182
-- `interface FileReading`  L184-194
-- `function emptyReading(): FileReading`  L196-198
-- `function documentsOf(root: string, file: string): unknown[] | null`  L201-217
-- `function readFile(root: string, file: string): FileReading | null`  L220-292
-- `interface Run`  L298-301
-- `function coveredRun(root: string, files: string[]): Run`  L307-321
-- `type ReferenceTruth = Edge & { readonly refKind: string }`  L327-327
-- `function edge(from: string, to: string, refKind: string, symbol: string, confidence: "high" | "med"): ReferenceTruth`  L329-331
-- `function generateTruth(root: string, files: string[]): Truth`  L340-357
-- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }`  L368-429
-- `function dedupe(edges: readonly ReferenceTruth[]): ReferenceTruth[]`  L432-440
+- `const UNSUPPORTED = ["unsupported:S1", "unsupported:S3", "unsupported:S4"] as const`  L54-54
+- `const CONTAINER_KEYS: ReadonlySet<string> = new Set(["containers", "initContainers", "ephemeralContainers"])`  L57-57
+- `const CONFIG_REFS: Readonly<Record<string, { readonly nameKey: string; readonly kind: string }>> = { configMap: { nameKey: "name", kind: "ConfigMap" }, configMapKeyRef: { nameKey: "name", kind: "Conf…`  L60-67
+- `const SELECTOR_PATHS: Readonly<Record<string, readonly string[]>> = { NetworkPolicy: ["spec", "podSelector", "matchLabels"], Service: ["spec", "selector"], }`  L70-73
+- `const LABEL_SEPARATORS = /[,=]/u`  L75-75
+- `type Plain = Record<string, unknown>`  L81-81
+- `function isPlain(value: unknown): value is Plain`  L83-85
+- `function text(value: unknown): string | null`  L104-109
+- `function get(value: unknown, ...keys: readonly string[]): unknown`  L111-118
+- `function walk(value: unknown, visit: (key: string, entry: unknown) => void): void`  L121-131
+- `function labelKey(value: unknown): string | null`  L134-145
+- `function labelMap(value: unknown): Map<string, string> | null`  L147-156
+- `function podLabelsOf(document: unknown, kind: string): Map<string, string> | null`  L159-169
+- `function usableName(value: string | null): value is string`  L172-174
+- `interface OracleNode`  L180-184
+- `interface FileReading`  L186-196
+- `function emptyReading(): FileReading`  L198-200
+- `function documentsOf(root: string, file: string): unknown[] | null`  L203-219
+- `function readFile(root: string, file: string): FileReading | null`  L222-294
+- `interface Run`  L300-303
+- `function coveredRun(root: string, files: string[]): Run`  L309-323
+- `type ReferenceTruth = Edge & { readonly refKind: string }`  L329-329
+- `function edge(from: string, to: string, refKind: string, symbol: string, confidence: "high" | "med"): ReferenceTruth`  L331-333
+- `function generateTruth(root: string, files: string[]): Truth`  L342-359
+- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }`  L370-431
+- `function dedupe(edges: readonly ReferenceTruth[]): ReferenceTruth[]`  L434-442
 
 **Calls:** `coveredRun` → [`bench/src/truth/yaml-k8s.ts#coveredRun`](yaml-k8s.ts.md) (high), `dedupe` → [`bench/src/truth/yaml-k8s.ts#dedupe`](yaml-k8s.ts.md) (high), `documentsOf` → [`bench/src/truth/yaml-k8s.ts#documentsOf`](yaml-k8s.ts.md) (high), `edge` → [`bench/src/truth/yaml-k8s.ts#edge`](yaml-k8s.ts.md) (high), `emptyReading` → [`bench/src/truth/yaml-k8s.ts#emptyReading`](yaml-k8s.ts.md) (high), `get` → [`bench/src/truth/yaml-k8s.ts#get`](yaml-k8s.ts.md) (high), `isPlain` → [`bench/src/truth/yaml-k8s.ts#isPlain`](yaml-k8s.ts.md) (high), `labelKey` → [`bench/src/truth/yaml-k8s.ts#labelKey`](yaml-k8s.ts.md) (high), `labelMap` → [`bench/src/truth/yaml-k8s.ts#labelMap`](yaml-k8s.ts.md) (high), `podLabelsOf` → [`bench/src/truth/yaml-k8s.ts#podLabelsOf`](yaml-k8s.ts.md) (high), `readFile` → [`bench/src/truth/yaml-k8s.ts#readFile`](yaml-k8s.ts.md) (high), `text` → [`bench/src/truth/yaml-k8s.ts#text`](yaml-k8s.ts.md) (high), `usableName` → [`bench/src/truth/yaml-k8s.ts#usableName`](yaml-k8s.ts.md) (high), `walk` → [`bench/src/truth/yaml-k8s.ts#walk`](yaml-k8s.ts.md) (high), `compareEdges` → [`packages/core/src/schema.ts#compareEdges`](../../../../greplost__core/modules/src/schema.ts.md) (high)
