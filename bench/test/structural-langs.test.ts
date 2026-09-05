@@ -14,15 +14,15 @@
  * `build-1 flags still work`.
  */
 import { afterAll, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { DEFAULT_CONFIG } from "@greplost/core/schema";
 
-import { langRows, type Payload } from "../src/report-payload.ts";
+import { langRows, type LangRow, type Payload } from "../src/report-payload.ts";
 import { buildModel } from "../src/report.ts";
-import { LANG_SECTION_HEADER, NOT_APPLICABLE, renderResultsMd } from "../src/results-md.ts";
+import { LANG_SECTION_HEADER, NOT_APPLICABLE, NOT_RUN, renderResultsMd } from "../src/results-md.ts";
 import type { Score } from "../src/score.ts";
 import {
   TARGETS,
@@ -114,6 +114,24 @@ function repoPayload(over: Record<string, unknown> = {}): Record<string, unknown
   };
 }
 
+/**
+ * One language's row.
+ *
+ * `langRows` also emits a `not run` row for every language the pinned corpus
+ * covers and the payload set lacks, so a row is found by its language and never
+ * by its position.
+ */
+function rowFor(rows: readonly LangRow[], lang: string): LangRow {
+  const found = rows.find((row) => row.lang === lang);
+  if (found === undefined) throw new Error(`no row for ${lang}`);
+  return found;
+}
+
+/** The languages a payload actually measured, in table order. */
+function measuredLangs(rows: readonly LangRow[]): string[] {
+  return rows.filter((row) => row.ran).map((row) => row.lang);
+}
+
 /** A structural payload wrapped the way `report-payload.ts` reads one. */
 function payloadOf(data: Record<string, unknown>): Payload {
   return {
@@ -202,19 +220,19 @@ describe("per-lang targets", () => {
       }),
     );
 
-    expect(rows.map((row) => row.lang)).toEqual(["hcl", "python"]);
-    const hcl = rows[0];
-    expect(hcl?.corpus).toBe("tf-aws-eks, tf-aws-vpc");
+    expect(measuredLangs(rows)).toEqual(["hcl", "python"]);
+    const hcl = rowFor(rows, "hcl");
+    expect(hcl.corpus).toBe("tf-aws-eks, tf-aws-vpc");
     // The file count is the sum of the repos the language covered, not a guess.
-    expect(hcl?.files).toBe(164);
-    expect(hcl?.truthSource).toBe("bench/src/truth/hcl.ts");
-    expect(hcl?.gated).toBe(true);
+    expect(hcl.files).toBe(164);
+    expect(hcl.truthSource).toBe("bench/src/truth/hcl.ts");
+    expect(hcl.gated).toBe(true);
     // S3 is declared unsupported; S5 and S6 are `n/a` because no repo of this
     // language carried a number for them.
-    expect(hcl?.na).toEqual(["S3", "S5", "S6"]);
-    expect(hcl?.s3).toBeNull();
-    expect(rows[1]?.files).toBe(105);
-    expect(rows[1]?.s1).toBe(1);
+    expect(hcl.na).toEqual(["S3", "S5", "S6"]);
+    expect(hcl.s3).toBeNull();
+    expect(rowFor(rows, "python").files).toBe(105);
+    expect(rowFor(rows, "python").s1).toBe(1);
   });
 
   test("langRows takes the worst repo of a language, so an aggregate never flatters it", () => {
@@ -227,7 +245,7 @@ describe("per-lang targets", () => {
         },
       }),
     );
-    expect(rows[0]?.s1).toBe(0.5);
+    expect(rowFor(rows, "yaml").s1).toBe(0.5);
   });
 
   test("a payload with no perLang block yields no rows, and the section says the run is not there", () => {
@@ -420,10 +438,10 @@ describe("n/a metrics", () => {
       }),
     );
     // Declared by every repo, or carried by none: a language-wide `n/a`.
-    expect(rows[0]?.na).toEqual(["S3", "S5"]);
+    expect(rowFor(rows, "yaml").na).toEqual(["S3", "S5"]);
     // Declared by one of two: the measured half is still a measurement.
-    expect(rows[0]?.partial["S6"]).toEqual(["bitnami-charts"]);
-    expect(rows[0]?.s6).toBe(1);
+    expect(rowFor(rows, "yaml").partial["S6"]).toEqual(["bitnami-charts"]);
+    expect(rowFor(rows, "yaml").s6).toBe(1);
 
     const text = renderWith("partial", {
       perLang: {
@@ -440,6 +458,104 @@ describe("n/a metrics", () => {
     });
     const row = text.split("\n").find((line) => line.startsWith("| yaml |"));
     expect(row).toContain("n/a for bitnami-charts");
+  });
+
+  test("Eval 1 prints n/a for a declared metric instead of a score against a target", () => {
+    // The suite's own table says "n/a, not measured by this oracle" for these.
+    // Eval 1 used to read the block regardless and published Kotlin's S1 as
+    // `0 / 1` against a 0.99 target, which is a failing score for a metric that
+    // was never measured, and a Dockerfile's S1 as a vacuous 1.
+    const text = renderWith("eval1-na", {
+      corpus: [{ name: "coroutines" }],
+      perLang: { kotlin: { repos: ["coroutines"], gated: false, truthSource: "bench/src/truth/kotlin.ts" } },
+      repos: {
+        coroutines: repoPayload({
+          files: 163,
+          naMetrics: ["S1", "S2", "S3", "S4", "S5", "S6"],
+          S1: { precision: 0, recall: 1, f1: 0, tp: 0, fp: 0, fn: 0 },
+          S2: { precision: 0, recall: 1, f1: 0, tp: 0, fp: 0, fn: 0 },
+          S3: { precision: 0, recall: 1, f1: 0, tp: 0, fp: 0, fn: 0 },
+          S4: 1,
+          substitute: { deterministic: true, errorRate: 0, silentFiles: [], silentCount: 0 },
+        }),
+      },
+    });
+    const eval1 = text.slice(text.indexOf("## Eval 1"));
+    const rows = eval1.split("\n").filter((line) => /^\| S[1-4] \|/.test(line));
+    expect(rows.length).toBe(4);
+    for (const row of rows) {
+      expect(row).toContain(NOT_APPLICABLE);
+      // No score, and no target to read a missing score against.
+      expect(row).not.toContain("0.99");
+      expect(row).not.toContain("0 / 1");
+    }
+  });
+
+  test("Eval 1 still scores a metric the oracle did measure", () => {
+    const text = renderWith("eval1-measured", {
+      corpus: [{ name: "docker-node" }],
+      perLang: {
+        dockerfile: { repos: ["docker-node"], gated: true, truthSource: "bench/src/truth/dockerfile.ts" },
+      },
+      repos: {
+        "docker-node": repoPayload({
+          files: 18,
+          naMetrics: ["S1", "S3", "S4"],
+          S2: { precision: 1, recall: 1, f1: 1, tp: 18, fp: 0, fn: 0 },
+        }),
+      },
+    });
+    const eval1 = text.slice(text.indexOf("## Eval 1"));
+    const s2 = eval1.split("\n").find((line) => line.startsWith("| S2 |"));
+    expect(s2).toContain("1 / 1");
+    expect(s2).toContain("tp 18");
+    const s1 = eval1.split("\n").find((line) => line.startsWith("| S1 |"));
+    expect(s1).toContain(NOT_APPLICABLE);
+  });
+
+  test("no language paragraph claims a metric is n/a that its own row scores", () => {
+    // The prose is written by hand and the row is generated, so the two can
+    // drift: the Helm oracle stopped declaring `unsupported:S6` and the yaml
+    // paragraph went on saying S6 was `n/a` for a chart while the row printed
+    // 1.000 with 216 true positives (review I1). This is the check that keeps
+    // them honest for every language at once.
+    const measured = { precision: 1, recall: 1, f1: 1, tp: 216, fp: 0, fn: 0 };
+    const text = renderWith("no-contradiction", {
+      perLang: {
+        yaml: {
+          repos: ["bitnami-charts"],
+          gated: true,
+          truthSource: "bench/src/truth/yaml.ts",
+        },
+      },
+      repos: {
+        "bitnami-charts": repoPayload({
+          files: 130,
+          naMetrics: ["S1", "S3", "S4"],
+          S1: null,
+          S3: null,
+          S4: null,
+          S5: measured,
+          S6: measured,
+        }),
+      },
+    });
+
+    const section = text.slice(text.indexOf(`## ${LANG_SECTION_HEADER}`));
+    const row = section.split("\n").find((line) => line.startsWith("| yaml |"));
+    expect(row).toBeDefined();
+    const cells = (row ?? "").split("|").map((cell_) => cell_.trim());
+    // Cells: "", lang, corpus, files, S1..S6, truth source, scored, "".
+    const paragraph = section.split("\n").find((line) => line.startsWith("- **yaml**")) ?? "";
+    for (const [index, id] of ["S1", "S2", "S3", "S4", "S5", "S6"].entries()) {
+      const cell_ = cells[4 + index] ?? "";
+      if (cell_ === NOT_APPLICABLE) continue;
+      // The row carries a number for this metric, so no sentence may say the
+      // oracle does not measure it.
+      expect(paragraph).not.toContain(`${id} is \`${NOT_APPLICABLE}\``);
+      expect(paragraph).not.toMatch(new RegExp(`\\b${id}\\b[^.]{0,60}\\bnot measured\\b`));
+    }
+    expect(paragraph).toContain("S1, S3 and S4 are `n/a`");
   });
 
   test("a metric scored on an empty set is disclosed as vacuous rather than published as 1.000", () => {
@@ -491,8 +607,8 @@ describe("S5 and S6", () => {
         },
       }),
     );
-    expect(rows[0]?.s5).toBe(1);
-    expect(rows[0]?.s6).toBe(0.98);
+    expect(rowFor(rows, "ts").s5).toBe(1);
+    expect(rowFor(rows, "ts").s6).toBe(0.98);
 
     const unmeasured = langRows(
       payloadOf({
@@ -500,8 +616,8 @@ describe("S5 and S6", () => {
         repos: { ripgrep: repoPayload({ files: 95 }) },
       }),
     );
-    expect(unmeasured[0]?.s5).toBeNull();
-    expect(unmeasured[0]?.s6).toBeNull();
+    expect(rowFor(unmeasured, "rust").s5).toBeNull();
+    expect(rowFor(unmeasured, "rust").s6).toBeNull();
   });
 
   test("the document names S5 and S6 in the table header, with what each measures", () => {
@@ -513,6 +629,135 @@ describe("S5 and S6", () => {
     expect(text).toContain("S6");
     expect(text).toMatch(/reference edge/i);
     expect(text).toMatch(/signal node|node id/i);
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe("payload index", () => {
+  /** A results directory holding a full run and a later single-repo gate run. */
+  function twoRuns(name: string): string {
+    const dir = tempDir(name);
+    writeFileSync(
+      path.join(dir, "structural-2026-09-05-aaaaaaa.json"),
+      JSON.stringify({
+        suite: "structural",
+        date: "2026-09-05",
+        greplostSha: "aaaaaaa",
+        recordedAt: "2026-09-05T10:00:00.000Z",
+        corpus: [{ name: "pydantic" }, { name: "ripgrep" }],
+        perLang: {
+          python: { repos: ["pydantic"], gated: true, truthSource: "bench/src/truth/python.ts" },
+          rust: { repos: ["ripgrep"], gated: true, truthSource: "bench/src/truth/rust.ts" },
+        },
+        repos: { pydantic: repoPayload({ files: 105 }), ripgrep: repoPayload({ files: 95 }) },
+      }),
+    );
+    // The stray: one repo, written later by someone re-running a single gate.
+    writeFileSync(
+      path.join(dir, "structural-2026-09-05-bbbbbbb.json"),
+      JSON.stringify({
+        suite: "structural",
+        date: "2026-09-05",
+        greplostSha: "bbbbbbb",
+        recordedAt: "2026-09-05T20:00:00.000Z",
+        corpus: [{ name: "pydantic" }],
+        perLang: { python: { repos: ["pydantic"], gated: true, truthSource: "bench/src/truth/python.ts" } },
+        repos: { pydantic: repoPayload({ files: 105 }) },
+      }),
+    );
+    return dir;
+  }
+
+  test("a stray payload written after the document cannot silently replace the set it was built from", () => {
+    const dir = twoRuns("index-pinned");
+    writeFileSync(
+      path.join(dir, "INDEX.json"),
+      JSON.stringify({ payloads: { structural: ["structural-2026-09-05-aaaaaaa.json"] } }),
+    );
+    const text = renderResultsMd(buildModel({ resultsDir: dir }));
+    // The pinned run scored two languages; the stray one scored a single repo.
+    expect(text).toContain("| rust |");
+    expect(text).toContain("Measured 2026-09-05 at aaaaaaa");
+  });
+
+  test("--latest opts into the newest payload on disk and re-pins the index", () => {
+    const dir = twoRuns("index-latest");
+    writeFileSync(
+      path.join(dir, "INDEX.json"),
+      JSON.stringify({ payloads: { structural: ["structural-2026-09-05-aaaaaaa.json"] } }),
+    );
+    const text = renderResultsMd(buildModel({ resultsDir: dir, latest: true }));
+    expect(text).toContain("Measured 2026-09-05 at bbbbbbb");
+    // The rust row is `not run` now, and says so rather than vanishing.
+    const row = text.split("\n").find((line) => line.startsWith("| rust |"));
+    expect(row).toContain(NOT_RUN);
+  });
+
+  test("with no index at all the report still reads the newest on disk", () => {
+    const dir = twoRuns("index-absent");
+    const text = renderResultsMd(buildModel({ resultsDir: dir }));
+    expect(text).toContain("Measured 2026-09-05 at bbbbbbb");
+  });
+
+  test("an index naming a file that is not there degrades to the newest and discloses it", () => {
+    const dir = twoRuns("index-stale");
+    writeFileSync(
+      path.join(dir, "INDEX.json"),
+      JSON.stringify({ payloads: { structural: ["structural-2026-09-05-ccccccc.json"] } }),
+    );
+    const text = renderResultsMd(buildModel({ resultsDir: dir }));
+    expect(text).toContain("Measured 2026-09-05 at bbbbbbb");
+    expect(text).toContain("structural-2026-09-05-ccccccc.json");
+    expect(text).toMatch(/index|INDEX\.json/);
+  });
+
+  test("the report writes the index it used, so the set is committed with the document", () => {
+    const dir = twoRuns("index-written");
+    buildModel({ resultsDir: dir, latest: true, writeIndex: true });
+    const index = JSON.parse(readFileSync(path.join(dir, "INDEX.json"), "utf8")) as {
+      payloads: Record<string, string[]>;
+      corpora: Record<string, string>;
+    };
+    expect(index.payloads["structural"]).toEqual(["structural-2026-09-05-bbbbbbb.json"]);
+    // The per-corpus listing the ruling asks for: which file each repo's numbers came from.
+    expect(index.corpora["pydantic"]).toBe("structural-2026-09-05-bbbbbbb.json");
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe("missing languages", () => {
+  test("a language the pinned corpus covers and the payload set lacks gets a not run row", () => {
+    const text = renderWith("missing-langs", {
+      corpus: [{ name: "pydantic" }],
+      perLang: { python: { repos: ["pydantic"], gated: true, truthSource: "bench/src/truth/python.ts" } },
+      repos: { pydantic: repoPayload({ files: 105 }) },
+    });
+    const section = text.slice(text.indexOf(`## ${LANG_SECTION_HEADER}`));
+
+    // Python was measured.
+    expect(section).toMatch(/^\| python \| pydantic \| 105 \|/m);
+    // Every other language `bench/corpus.json` pins is present and honest.
+    for (const lang of ["dockerfile", "go", "hcl", "java", "kotlin", "rust", "tsx", "yaml"]) {
+      const row = section.split("\n").find((line) => line.startsWith(`| ${lang} |`));
+      expect([lang, row === undefined]).toEqual([lang, false]);
+      expect([lang, (row ?? "").includes(NOT_RUN)]).toEqual([lang, true]);
+    }
+    // A not run row names the repos it would have been measured on.
+    const rust = section.split("\n").find((line) => line.startsWith("| rust |")) ?? "";
+    expect(rust).toContain("ripgrep");
+  });
+
+  test("the opening sentence counts what was measured instead of claiming everything was", () => {
+    const partial = renderWith("opening-partial", {
+      corpus: [{ name: "pydantic" }],
+      perLang: { python: { repos: ["pydantic"], gated: true, truthSource: "bench/src/truth/python.ts" } },
+      repos: { pydantic: repoPayload({ files: 105 }) },
+    });
+    const section = partial.slice(partial.indexOf(`## ${LANG_SECTION_HEADER}`));
+    expect(section).not.toMatch(/^Every language, IaC flavour and framework signal pass/m);
+    expect(section).toMatch(/1 of the \d+ languages/);
   });
 });
 

@@ -80,13 +80,31 @@ greplost impact '.github/workflows/ci.yml#job.test' --json
 For an exact node id, `query --json` adds a `node` block next to `matches`:
 `{ id, file, kind, name, package, card, span, blast, meta, references,
 referencedBy }`, where `references` and `referencedBy` are the reference edges
-(`config-ref`, `from-image`, `values-ref`, `needs`, `uses`, and so on) that link
-nodes to each other and to files. No artifact path ever contains a `#`: the card
-lives at `packages/<slug>/modules/<file>/<kind>.<name>.md`.
+(`hcl-ref`, `selector`, `config-ref`, `needs`, `uses`, `from-image`, `copy-from`,
+`helm-values`, `config`, `resource-input`, `route-handler`) that link nodes to
+each other and to files. No artifact path ever contains a `#`: the card lives at
+`packages/<slug>/modules/<file>/<kind>.<name>.md`.
 
 ### `impact` shape
 
-`greplost impact <path> --json` returns `{ "path": string, "radius": number, "files": [{ "path": string, "depth": number }] }` — `radius` is the file's full reverse-import closure (never truncated, matches the module card's blast figure); `files` lists every dependent with its hop count and can be narrowed with `--depth <n>`.
+`impact` answers two different questions and returns two different shapes,
+decided by whether the argument is a file or a node id. Read `radius` from
+whichever one came back; check for the `files` key to tell them apart.
+
+A **file** target returns
+`{ "path": string, "radius": number, "files": [{ "path": string, "depth": number }] }`.
+`radius` is the file's full reverse-import closure over import and re-export
+edges, read from the manifest, so it is the same number the module card prints;
+`files` lists every dependent with its hop count and can be narrowed with
+`--depth <n>`, which truncates the listing and never the radius.
+
+A **node id** target returns
+`{ "path": string, "radius": number, "nodes": [{ "id": string, "depth": number }] }`
+, the same two fields with `nodes` in place of `files`. That radius counts
+**nodes** and is computed over import, re-export **and reference** edges
+together, because a node has no manifest entry to read one from. The two radii
+are not comparable: a Terraform variable forty resources read has a large node
+radius while its file's radius may be zero, and both numbers are right.
 
 ### `verify` and `update` shapes (for `/greplost:verify` and `/greplost:update`)
 

@@ -73,7 +73,7 @@ Status: pre-release 0.0.1. Design: [docs/greplost-tech-spec.md](docs/greplost-te
 | Python | `pyproject.toml`, `setup.py` or any `.py` | absolute, relative and namespace-package imports, module exports, call edges |
 | Rust | `Cargo.toml` | `mod`/`use` edges across the crate tree, public items, call edges |
 | Java | `pom.xml`, `build.gradle`, `build.gradle.kts` | package and type imports, public types and members, call edges |
-| Kotlin | `build.gradle.kts` or any `.kt` | imports, declarations and call edges (see the accuracy caveat below) |
+| Kotlin | any `.kt` or `.kts`, which includes a `build.gradle.kts` | imports, declarations and call edges (see the accuracy caveat below) |
 | Terraform (HCL) | any `.tf` | `resource`, `data`, `module`, `variable`, `output`, `provider` and `local` nodes, module edges, and reference edges between them |
 | Kubernetes YAML | a manifest whose first key is `apiVersion` | one node per object and per container image, with `selector`, `config-ref` and `from-image` edges |
 | Helm charts | `Chart.yaml` | the chart, its top-level values and one node per template document, with `helm-values` edges from a `.Values.<path>` back to the value it reads |

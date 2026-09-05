@@ -294,9 +294,9 @@ greplost measured against its own section 3 targets, one row per metric id. The 
 
 ## Languages, IaC and signals
 
-Every language, IaC flavour and framework signal pass greplost indexes, scored against its own compiler truth. One row per language, filled from the structural payload's `perLang` block; `S1`, `S2`, `S3`, `S5` and `S6` are precision and `S4` is the cycle Jaccard, with recall, the tp/fp/fn counts and the per-repo split in Eval 1 below. A language scored on more than one corpus repo shows the **worst** of its repos, never an average: an average hides the weaker half, and the worst repo is what the gate decided on. `n/a` is a metric this language's oracle does not measure, either because it declared it unsupported or because it produced no number for it: never a pass, never a fail. `n/a for <repo>` means only that repo's oracle sat the metric out and the value beside it is the rest. No competitor was run on any of these languages.
+Every language, IaC flavour and framework signal pass greplost indexes, scored against its own compiler truth. One row per language, filled from the structural payload's `perLang` block; `Files` is the files greplost scored, which is not the file count the corpus pin's glob names (a pinned `Dockerfile*` glob counts templates the indexer does not read). `S1`, `S2`, `S3`, `S5` and `S6` are precision and `S4` is the cycle Jaccard, with recall, the tp/fp/fn counts and the per-repo split in Eval 1 below. A language scored on more than one corpus repo shows the **worst** of its repos, never an average: an average hides the weaker half, and the worst repo is what the gate decided on. `n/a` is a metric this language's oracle does not measure, either because it declared it unsupported or because it produced no number for it: never a pass, never a fail. `n/a for <repo>` means only that repo's oracle sat the metric out and the value beside it is the rest. No competitor was run on any of these languages.
 
-Measured 2026-09-05 at af6eaa1.
+Measured 2026-09-05 at 3792e73.
 
 | Lang | Corpus | Files | S1 imports P | S2 exports P | S3 calls P | S4 cycles J | S5 reference edges P | S6 signal nodes P | Truth source | Scored |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -321,7 +321,7 @@ Measured 2026-09-05 at af6eaa1.
 - **python**: `bench/src/truth/python.ts`: `pytruth`, CPython's own `ast` module on Python 3.11 or newer (`ast-only`, `python>=3.11`). It reads source and never executes an import (`no-import-execution`), so a module reached through `importlib`, a module-level `__getattr__` or a runtime `sys.path` edit is in neither side; PEP 420 namespace packages are resolved by directory (`pep420-namespace-packages`).
 - **rust**: `bench/src/truth/rust.ts`: `rusttruth`, a `syn` re-implementation of the extractor's rules (`syn-item-tree`, `cargo-metadata-roots`), **not** `rustc`, which has no stable public name-resolution API. `rule-agreement-oracle`: S1 to S4 on Rust measure two independent implementations of one rule set agreeing (a different parser, a different language, no shared line of code) and not agreement with a compiler, so a rule that is wrong in the specification is wrong on both sides and scores 1.000. `no-trait-dispatch`: a method call on a generic or `dyn` receiver is absent from truth exactly as it is absent from the map, because neither side does type inference, so that whole class of call is unmeasured rather than measured and missed.
 - **ts, tsx**: `bench/src/truth/ts.ts` for S1 to S4 (the TypeScript compiler's own checker) and `bench/src/truth/signals-ts.ts` for S5 and S6 (`tsc-checker-oracle`, `base-type-chain-for-pulumi`, `app-router-path-rules`). Two disclosed emulations: `workspace-entry-mapping` stands in for the installed-and-built state a corpus checkout does not have, and `nearest-tsconfig-resolution` resolves a specifier with the compiler options of the nearest `tsconfig.json` above the importing file, but only after resolution from the repo root has failed, because a corpus of independent example apps keeps its path aliases there and the root config knows none of them. The pinned Pulumi subset is `aws-ts-*/**/*.ts`, which admits TypeScript only: the JavaScript and `.tsx` files in those examples are outside the scored set, so **build 1's CommonJS handling has no corpus coverage at all** (`.js` is parsed with the TypeScript grammar, and nothing in this benchmark measures that).
-- **yaml**: `bench/src/truth/yaml.ts`, dispatching by flavour (`yaml-flavour-dispatch`) to `yaml-k8s.ts`, `yaml-helm.ts` and `yaml-actions.ts`, all reading with `js-yaml` (`js-yaml-oracle`) and, for a chart, `helm template` (`helm-template-render`). A manifest, a chart and a workflow have no call site, no import statement and therefore no import cycle, so S1, S3 and S4 are `n/a` rather than a 1.000 found by looking for nothing; S2, S5 and S6 are the objects, the reference edges and the node ids, and they are measured and gated. Helm: a template is not valid YAML, so every `{{ ... }}` span is blanked in place before parsing and a templated name falls back to the document index, which is why names are not compared for templates (`names-not-compared-for-templates`) and S6 is `n/a` for a chart. `same-regex-both-sides`: a chart's `.Values.<path>` references are found by one regular expression that both sides apply, so S5 on Helm measures that regex against itself and not two independent implementations. `if-else-arms-both-kept`: blanking keeps both arms of an `if`/`else`, so a chart's document set holds documents a real render would produce only one of. Workflows: a `${{ ... }}` value is chosen when the workflow runs and is never a name in the map; `anchors-not-expanded` means `js-yaml` resolves anchors and merge keys while greplost reads the text as written, so a workflow using one is scored as the divergence it is; and `config-precision-unmeasured` means the `config` reference kind, which points a `run:` body at a script in the repo, has no corpus-scale measurement at all, because a YAML target indexes YAML only and the target of such an edge is never a scored file. It is covered by `fixtures/tiny-actions` and the extractor tests, and by nothing in this table.
+- **yaml**: `bench/src/truth/yaml.ts`, dispatching by flavour (`yaml-flavour-dispatch`) to `yaml-k8s.ts`, `yaml-helm.ts` and `yaml-actions.ts`, all reading with `js-yaml` (`js-yaml-oracle`) and, for a chart, `helm template` (`helm-template-render`). A manifest, a chart and a workflow have no call site, no import statement and therefore no import cycle, so S1, S3 and S4 are `n/a` rather than a 1.000 found by looking for nothing; S2, S5 and S6 are the objects, the reference edges and the node ids, and they are measured and gated. Helm: a template is not valid YAML, so every `{{ ... }}` span is blanked in place before parsing and a templated name falls back to the document index, which is why names are not compared for templates (`names-not-compared-for-templates`): a chart's node ids are scored, but the *name* inside one is a document index rather than the name a real render would give it. `same-regex-both-sides`: a chart's `.Values.<path>` references are found by one regular expression that both sides apply, so S5 on Helm measures that regex against itself and not two independent implementations. `if-else-arms-both-kept`: blanking keeps both arms of an `if`/`else`, so a chart's document set holds documents a real render would produce only one of. Workflows: a `${{ ... }}` value is chosen when the workflow runs and is never a name in the map; `anchors-not-expanded` means `js-yaml` resolves anchors and merge keys while greplost reads the text as written, so a workflow using one is scored as the divergence it is; and `config-precision-unmeasured` means the `config` reference kind, which points a `run:` body at a script in the repo, has no corpus-scale measurement at all, because a YAML target indexes YAML only and the target of such an edge is never a scored file. It is covered by `fixtures/tiny-actions` and the extractor tests, and by nothing in this table.
 
 **What gates a language with no accuracy gate**
 
@@ -333,7 +333,7 @@ A target whose every gated metric is `n/a` would pass `--gate` on an extractor t
 
 Structural accuracy vs compiler truth (S1 to S4)
 
-Measured 2026-09-05 at af6eaa1.
+Measured 2026-09-05 at 3792e73.
 
 ### anyq (148 files)
 
@@ -348,37 +348,37 @@ Measured 2026-09-05 at af6eaa1.
 
 | ID | Metric | Target | Measured | Detail |
 |---|---|---|---|---|
-| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 0, fp 0, fn 0 |
+| S1 | import edge precision / recall |  | n/a | not measured by this oracle |
 | S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 216, fp 0, fn 0 |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 0, fp 0, fn 0; all confidences: precision 1, recall 1 |
-| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+| S3 | call edge precision (confidence=high) |  | n/a | not measured by this oracle |
+| S4 | import cycle Jaccard |  | n/a | not measured by this oracle |
 
 ### coroutines (163 files)
 
 | ID | Metric | Target | Measured | Detail |
 |---|---|---|---|---|
-| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 0 / 1 | tp 0, fp 23, fn 0 |
-| S2 | export precision / recall | >= 0.99 / >= 0.99 | 0 / 1 | tp 0, fp 645, fn 0 |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 0 | recall 1, tp 0, fp 501, fn 0; all confidences: precision 0, recall 1 |
-| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+| S1 | import edge precision / recall |  | n/a | not measured by this oracle |
+| S2 | export precision / recall |  | n/a | not measured by this oracle |
+| S3 | call edge precision (confidence=high) |  | n/a | not measured by this oracle |
+| S4 | import cycle Jaccard |  | n/a | not measured by this oracle |
 
 ### docker-node (18 files)
 
 | ID | Metric | Target | Measured | Detail |
 |---|---|---|---|---|
-| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 0, fp 0, fn 0 |
+| S1 | import edge precision / recall |  | n/a | not measured by this oracle |
 | S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 18, fp 0, fn 0 |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 0, fp 0, fn 0; all confidences: precision 1, recall 1 |
-| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+| S3 | call edge precision (confidence=high) |  | n/a | not measured by this oracle |
+| S4 | import cycle Jaccard |  | n/a | not measured by this oracle |
 
 ### docker-python (42 files)
 
 | ID | Metric | Target | Measured | Detail |
 |---|---|---|---|---|
-| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 0, fp 0, fn 0 |
+| S1 | import edge precision / recall |  | n/a | not measured by this oracle |
 | S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 42, fp 0, fn 0 |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 0, fp 0, fn 0; all confidences: precision 1, recall 1 |
-| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+| S3 | call edge precision (confidence=high) |  | n/a | not measured by this oracle |
+| S4 | import cycle Jaccard |  | n/a | not measured by this oracle |
 
 ### gin (53 files)
 
@@ -402,10 +402,10 @@ Measured 2026-09-05 at af6eaa1.
 
 | ID | Metric | Target | Measured | Detail |
 |---|---|---|---|---|
-| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 0, fp 0, fn 0 |
+| S1 | import edge precision / recall |  | n/a | not measured by this oracle |
 | S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 401, fp 0, fn 0 |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 0, fp 0, fn 0; all confidences: precision 1, recall 1 |
-| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+| S3 | call edge precision (confidence=high) |  | n/a | not measured by this oracle |
+| S4 | import cycle Jaccard |  | n/a | not measured by this oracle |
 
 ### next-app (341 files)
 
@@ -449,17 +449,17 @@ Measured 2026-09-05 at af6eaa1.
 |---|---|---|---|---|
 | S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 223, fp 0, fn 0 |
 | S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 370, fp 0, fn 0 |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.968, tp 1771, fp 0, fn 58; all confidences: precision 1, recall 0.999 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.969, tp 1773, fp 0, fn 56; all confidences: precision 1, recall 1 |
 | S4 | import cycle Jaccard | = 1.00 | 1 |  |
 
 ### starter-workflows (187 files)
 
 | ID | Metric | Target | Measured | Detail |
 |---|---|---|---|---|
-| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 0, fp 0, fn 0 |
+| S1 | import edge precision / recall |  | n/a | not measured by this oracle |
 | S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 211, fp 0, fn 0 |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 0, fp 0, fn 0; all confidences: precision 1, recall 1 |
-| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+| S3 | call edge precision (confidence=high) |  | n/a | not measured by this oracle |
+| S4 | import cycle Jaccard |  | n/a | not measured by this oracle |
 
 ### tanstack-start (389 files)
 
@@ -476,7 +476,7 @@ Measured 2026-09-05 at af6eaa1.
 |---|---|---|---|---|
 | S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 20, fp 0, fn 0 |
 | S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 759, fp 0, fn 0 |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 0, fp 0, fn 0; all confidences: precision 1, recall 1 |
+| S3 | call edge precision (confidence=high) |  | n/a | not measured by this oracle |
 | S4 | import cycle Jaccard | = 1.00 | 1 |  |
 
 ### tf-aws-vpc (77 files)
@@ -485,7 +485,7 @@ Measured 2026-09-05 at af6eaa1.
 |---|---|---|---|---|
 | S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 18, fp 0, fn 0 |
 | S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 1591, fp 0, fn 0 |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 0, fp 0, fn 0; all confidences: precision 1, recall 1 |
+| S3 | call edge precision (confidence=high) |  | n/a | not measured by this oracle |
 | S4 | import cycle Jaccard | = 1.00 | 1 |  |
 
 > Truth notes (how the oracle was built, Appendix C ruling on 10.3): `anchors-not-expanded`, `ast-only`, `cargo-metadata-roots`, `cha-callgraph`, `cha-over-approximation`, `config-precision-unmeasured`, `dockerfile-ast-oracle`, `fixture-oracle-only`, `go-packages-per-file-imports`, `hclsyntax-traversals`, `helm-template-render`, `if-else-arms-both-kept`, `internal-class-is-public-in-bytecode`, `javac-tree-api`, `js-yaml-oracle`, `jvm-synthetics-dropped`, `kotlinc-javap-classfiles`, `module-info-not-scored`, `names-not-compared-for-templates`, `nearest-tsconfig-resolution`, `no-call-edges`, `no-corpus-compiler-truth`, `no-import-execution`, `no-inherited-dispatch`, `no-overload-resolution`, `no-trait-dispatch`, `object-protocol-overrides-dropped`, `pep420-namespace-packages`, `property-access-not-a-call`, `python>=3.11`, `reported-only`, `rule-agreement-oracle`, `same-regex-both-sides`, `same-rules-different-parser`, `source-classpath-only`, `syn-item-tree`, `terraform-config-inspect`, `unresolved-files-dropped`, `unsupported:S1`, `unsupported:S3`, `unsupported:S4`, `workspace-entry-mapping`.

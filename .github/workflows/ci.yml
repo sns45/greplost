@@ -1,9 +1,25 @@
 name: ci
+# One job, and it clones the whole pinned corpus to run the tier S structural
+# gate over every language. That is minutes of runner time, and it buys nothing
+# on a change that cannot move a number, so prose-only pushes and pull requests
+# skip it. The nightly schedule is what keeps the gate honest anyway: it runs
+# the full corpus against main whether or not anyone pushed.
 on:
   workflow_call:
   push:
     branches: [main]
+    paths-ignore:
+      - "README.md"
+      - "docs/**"
+      - ".promotions/**"
   pull_request:
+    paths-ignore:
+      - "README.md"
+      - "docs/**"
+      - ".promotions/**"
+  schedule:
+    # 03:17 UTC, off the hour so it does not queue behind everyone else's cron.
+    - cron: "17 3 * * *"
 jobs:
   test:
     runs-on: ubuntu-latest

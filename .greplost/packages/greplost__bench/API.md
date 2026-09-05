@@ -268,12 +268,12 @@
 
 ## bench/src/report-evals.ts
 
-- `function eval1Section(payload: Payload | null, assetsRel = "docs/assets"): EvalSection` L48-127
-- `function eval2Section(payload: Payload | null): EvalSection` L193-248
-- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection` L261-366
-- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection` L372-459
-- `function eval5Section(payload: Payload | null): EvalSection` L483-511
-- `function mapqualitySection(payload: Payload | null): EvalSection` L513-571
+- `function eval1Section(payload: Payload | null, assetsRel = "docs/assets"): EvalSection` L49-157
+- `function eval2Section(payload: Payload | null): EvalSection` L223-278
+- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection` L291-396
+- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection` L402-489
+- `function eval5Section(payload: Payload | null): EvalSection` L513-541
+- `function mapqualitySection(payload: Payload | null): EvalSection` L543-601
 
 ## bench/src/report-payload.ts
 
@@ -303,8 +303,8 @@
 - `interface ConditionStats` L438-444
 - `function agentCategories(payload: Payload): Map<string, Map<string, ConditionStats>>` L447-484
 - `interface SubstituteSummary` L496-500
-- `interface LangRow` L518-548
-- `function langRows(structural: Payload | null): LangRow[]` L586-681
+- `interface LangRow` L518-557
+- `function langRows(structural: Payload | null): LangRow[]` L595-724
 
 ## bench/src/report-sections.ts
 
@@ -314,9 +314,12 @@
 
 ## bench/src/report.ts
 
-- `interface BuildOptions` L62-67
-- `async function run(args: string[]): Promise<number>` L81-105
-- `function buildModel(options: BuildOptions = {}): ReportModel` L152-245
+- `const PAYLOAD_INDEX = "INDEX.json"` L65-65
+- `interface BuildOptions` L67-76
+- `async function run(args: string[]): Promise<number>` L92-120
+- `function buildModel(options: BuildOptions = {}): ReportModel` L169-323
+- `interface PayloadIndexFile` L330-336
+- `function readPayloadIndex(dir?: string): PayloadIndexFile | null` L339-356
 
 ## bench/src/results-io.ts
 
@@ -351,10 +354,10 @@
 - `interface ReportModel` L276-306
 - `function emptySection(): EvalSection` L309-311
 - `function renderResultsMd(model: ReportModel): string` L318-348
-- `const TRUTH_NOTE_GLOSS: Record<string, string> = { "unsupported:S1": "the truth module declares that it does not measure import edges, so S1 is `n/a` for it.", "unsupported:S2": "the truth mod…` L822-915
-- `function cell(text: string): string` L969-971
-- `function formatNumber(value: number): string` L987-993
-- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L1037-1048
+- `const TRUTH_NOTE_GLOSS: Record<string, string> = { "unsupported:S1": "the truth module declares that it does not measure import edges, so S1 is `n/a` for it.", "unsupported:S2": "the truth mod…` L841-934
+- `function cell(text: string): string` L988-990
+- `function formatNumber(value: number): string` L1006-1012
+- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…` L1056-1067
 
 ## bench/src/score.ts
 

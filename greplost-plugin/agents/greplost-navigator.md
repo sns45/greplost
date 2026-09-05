@@ -16,11 +16,17 @@ The Bash tool is granted to you for exactly one purpose: invoking the
 PATH). Use only:
 
 ```
-greplost query <symbol|path> --json
-greplost impact <path> --json
+greplost query <symbol|path|node-id> --json
+greplost impact <path|node-id> --json
 greplost flows <pkg> --json
 greplost verify --json
 ```
+
+A **node id** is `<file>#<kind>.<name>`: the things inside a file that the map
+also indexes, such as a Terraform resource, a Kubernetes object, a Helm
+template document, a workflow job or step, a Dockerfile build stage, or a
+framework signal like a React component or a Pulumi resource. `query` and
+`impact` take one wherever they take a path; quote it, because it holds a `#`.
 
 Never run any other shell command — no editors, no package managers, no git
 mutations, nothing that writes. You have no Write, Edit, or MultiEdit tool,
@@ -38,7 +44,9 @@ encode) — they are also read-only.
    `.callers`, and — for a file argument — the `file` block (`exports`,
    `imports`, `importers`, `fanIn`, `fanOut`, `blast`, `loc`).
 3. For "what breaks if I change X": run `greplost impact <X> --json` and
-   report `radius` plus the `files` list, grouped by `depth`.
+   report `radius` plus the list, grouped by `depth`. A file target returns
+   `files`; a node id returns `nodes`, and that radius counts nodes over
+   reference edges as well as imports, so say which of the two you got.
 4. For "what does package P do" or flow-level questions: run
    `greplost flows <P> --json` if it exists; otherwise say the semantic layer
    hasn't been generated for that package (suggest `/greplost:refresh`) and

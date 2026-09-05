@@ -19,8 +19,8 @@
 
 | Package | Path | Files | LOC | Nodes | Deps | Fan-in | Fan-out | Map |
 |---|---|---|---|---|---|---|---|---|
-| greplost-monorepo | . | 4 | 314 | 37 | 3 | 0 | 0 | [MAP](packages/greplost-monorepo/MAP.md) |
-| @greplost/bench | bench | 49 | 25879 | 0 | 35 | 0 | 2 | [MAP](packages/greplost__bench/MAP.md) |
+| greplost-monorepo | . | 4 | 330 | 37 | 3 | 0 | 0 | [MAP](packages/greplost-monorepo/MAP.md) |
+| @greplost/bench | bench | 49 | 26126 | 0 | 35 | 0 | 2 | [MAP](packages/greplost__bench/MAP.md) |
 | greplost | packages/cli | 18 | 2220 | 0 | 4 | 0 | 5 | [MAP](packages/greplost/MAP.md) |
 | @greplost/core | packages/core | 65 | 18366 | 0 | 10 | 6 | 0 | [MAP](packages/greplost__core/MAP.md) |
 | @greplost/render | packages/render | 15 | 2274 | 0 | 1 | 4 | 1 | [MAP](packages/greplost__render/MAP.md) |
@@ -30,7 +30,7 @@
 
 ## Hotspots
 
-- Most imported: `packages/core/src/schema.ts` (fan-in 126), `bench/src/truth/ts.ts` (fan-in 18), `packages/cli/src/args.ts` (fan-in 14), `packages/core/src/extract/ts-signature.ts` (fan-in 14), `packages/cli/src/output.ts` (fan-in 11)
+- Most imported: `packages/core/src/schema.ts` (fan-in 127), `bench/src/truth/ts.ts` (fan-in 18), `packages/cli/src/args.ts` (fan-in 14), `packages/core/src/extract/ts-signature.ts` (fan-in 14), `packages/cli/src/output.ts` (fan-in 11)
 - Largest blast radius: `packages/core/src/schema.ts` (154 files), `packages/core/src/resolve/go.ts` (69 files), `packages/core/src/resolve/tsconfig.ts` (69 files), `packages/core/src/resolve/dockerfile.ts` (68 files), `packages/core/src/resolve/hcl.ts` (68 files)
 - Import cycles: 6, see [repo/HOTSPOTS.md](repo/HOTSPOTS.md)
 
