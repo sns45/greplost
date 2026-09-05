@@ -6,12 +6,12 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Attributes:** `flavour: actions`, `run: bun install --frozen-lockfile`
+**Attributes:** `flavour: actions`, `name: Cache the built truth generators`, `uses: actions/cache@v4`, `usesRef: v4`
 
-**References:** None.
+**References:** `ext:action/actions/cache` (uses)
 
 **Referenced by:** None.
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~9`)
 
-**Source:** L49-49
+**Source:** L50-54

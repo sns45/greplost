@@ -6,12 +6,12 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Attributes:** `flavour: actions`, `name: Corpus setup (tier S: every pinned repo, one per language and flavour; tier M)`, `run: bun bench/src/cli.ts corpus setup --tier S && bun bench/src/cli.ts corpus setup `
+**Attributes:** `flavour: actions`, `name: Cache the benchmark corpus (pinned in bench/corpus.json)`, `uses: actions/cache@v4`, `usesRef: v4`
 
-**References:** [`bench/src/cli.ts`](../../../../../greplost__bench/modules/src/cli.ts.md) (config)
+**References:** `ext:action/actions/cache` (uses)
 
 **Referenced by:** None.
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~18`)
 
-**Source:** L80-84
+**Source:** L81-85

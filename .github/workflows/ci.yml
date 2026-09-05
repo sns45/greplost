@@ -28,9 +28,10 @@ jobs:
       # first build on a cold runner needs the network for `cargo fetch`; every
       # build after that is `--offline`, which is what the registry cache below
       # is for. python3 is 3.12 on ubuntu-latest and the Python oracle's floor is
-      # 3.11, so it needs no step. kotlinc is deliberately absent: Kotlin ships
-      # reported-only (Appendix C 2026-09-04) and its truth tests skip with a
-      # printed reason when the toolchain is not on PATH.
+      # 3.11, so it needs no step. The kotlinc step above is what the *fixture*
+      # oracle needs; the Kotlin corpus stays reported-only either way (Appendix
+      # C 2026-09-04), and the Kotlin truth tests skip with a printed reason when
+      # the toolchain is not on PATH.
       - uses: dtolnay/rust-toolchain@stable
       - name: Cache the cargo registry for the Rust truth generator
         uses: actions/cache@v4

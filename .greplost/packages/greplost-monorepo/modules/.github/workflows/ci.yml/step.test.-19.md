@@ -6,12 +6,12 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Attributes:** `flavour: actions`, `name: structural accuracy gate (tier S)`, `run: bun run bench:structural --tier S --gate`
+**Attributes:** `flavour: actions`, `name: Corpus setup (tier S: every pinned repo, one per language and flavour; tier M)`, `run: bun bench/src/cli.ts corpus setup --tier S && bun bench/src/cli.ts corpus setup `
 
-**References:** None.
+**References:** [`bench/src/cli.ts`](../../../../../greplost__bench/modules/src/cli.ts.md) (config)
 
 **Referenced by:** None.
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~19`)
 
-**Source:** L85-86
+**Source:** L86-90

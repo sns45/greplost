@@ -6,12 +6,12 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Attributes:** `flavour: actions`, `uses: actions/setup-go@v5`, `usesRef: v5`
+**Attributes:** `flavour: actions`, `name: kotlin compiler for the Kotlin fixture oracle`, `run: curl -sSL -o /tmp/kotlinc.zip https://github.com/JetBrains/kotlin/releases/downl`
 
-**References:** `ext:action/actions/setup-go` (uses)
+**References:** None.
 
 **Referenced by:** None.
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~4`)
 
-**Source:** L19-28
+**Source:** L19-23

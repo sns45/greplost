@@ -296,11 +296,11 @@ greplost measured against its own section 3 targets, one row per metric id. The 
 
 Every language, IaC flavour and framework signal pass greplost indexes, scored against its own compiler truth. One row per language, filled from the structural payload's `perLang` block; `S1`, `S2`, `S3`, `S5` and `S6` are precision and `S4` is the cycle Jaccard, with recall, the tp/fp/fn counts and the per-repo split in Eval 1 below. A language scored on more than one corpus repo shows the **worst** of its repos, never an average: an average hides the weaker half, and the worst repo is what the gate decided on. `n/a` is a metric this language's oracle does not measure, either because it declared it unsupported or because it produced no number for it: never a pass, never a fail. `n/a for <repo>` means only that repo's oracle sat the metric out and the value beside it is the rest. No competitor was run on any of these languages.
 
-Measured 2026-09-05 at 22f6f67.
+Measured 2026-09-05 at f250c7f.
 
 | Lang | Corpus | Files | S1 imports P | S2 exports P | S3 calls P | S4 cycles J | S5 reference edges P | S6 signal nodes P | Truth source | Scored |
 |---|---|---|---|---|---|---|---|---|---|---|
-| dockerfile | docker-node, docker-python | 60 | 1 (vacuous) | 1 | n/a | 1 (vacuous) | 1 | 1 | `bench/src/truth/dockerfile.ts` | gated |
+| dockerfile | docker-node, docker-python | 60 | n/a | 1 | n/a | n/a | 1 | 1 | `bench/src/truth/dockerfile.ts` | gated |
 | go | gin, pulumi-go | 97 | 1 | 1 | 1 | 1 | 1 (n/a for gin) | 1 (n/a for gin) | `bench/src/truth/go.ts` | gated |
 | hcl | tf-aws-eks, tf-aws-vpc | 164 | 1 | 1 | n/a | 1 | 1 | 1 | `bench/src/truth/hcl.ts` | gated |
 | java | gson | 95 | 1 | 1 | 1 | 1 | n/a | n/a | `bench/src/truth/java.ts` | gated |
@@ -309,26 +309,19 @@ Measured 2026-09-05 at 22f6f67.
 | rust | ripgrep | 95 | 1 | 1 | 1 | 1 | n/a | n/a | `bench/src/truth/rust.ts` | gated |
 | ts | anyq, pulumi-ts | 268 | 1 | 0.996 | 1 | 1 | 1 (n/a for anyq) | 1 (n/a for anyq) | `bench/src/truth/ts.ts` | gated |
 | tsx | next-app, tanstack-start | 730 | 0.998 | 1 | 1 | 1 | 0.992 | 1 | `bench/src/truth/ts.ts` | gated |
-| yaml | bitnami-charts, k8s-examples, starter-workflows | 562 | 1 (vacuous) | 1 | n/a | 1 (vacuous) | 1 | 1 (n/a for bitnami-charts) | `bench/src/truth/yaml.ts` | gated |
+| yaml | bitnami-charts, k8s-examples, starter-workflows | 562 | n/a | 1 | n/a | n/a | 1 | 1 | `bench/src/truth/yaml.ts` | gated |
 
 **What each oracle is, and what it cannot see**
 
-- **dockerfile**: `bench/src/truth/dockerfile.ts`: an independent Dockerfile AST reader (`dockerfile-ast-oracle`). `same-rules-different-parser`: the same rules read by a different parser, not by BuildKit, so this is rule agreement rather than builder truth. A Dockerfile has no calls, so S3 is `n/a`. The two pinned corpora are honestly **below the tier-S band**: no public repository carries a hundred Dockerfiles, and `docker-python` and `docker-node` together are the realistic ceiling for the format.
+- **dockerfile**: `bench/src/truth/dockerfile.ts`: an independent Dockerfile AST reader (`dockerfile-ast-oracle`). `same-rules-different-parser`: the same rules read by a different parser, not by BuildKit, so this is rule agreement rather than builder truth. The format has no call site, no import statement and therefore no import cycle, so S1, S3 and S4 are `n/a` rather than a 1.000 found by looking for nothing; S2, S5 and S6 are the stage names, the reference edges and the node ids, which is everything a Dockerfile actually says, and they are measured and gated. The two pinned corpora are honestly **below the tier-S band**: no public repository carries a hundred Dockerfiles, and `docker-python` and `docker-node` together are the realistic ceiling for the format.
 - **go**: `bench/src/truth/go.ts` for S1 to S4 (`go/packages` per-file imports and a class-hierarchy call graph) and `bench/src/truth/signals-pulumi-go.ts` for S5 and S6 (`go-types-oracle`, a resource being a type that implements Pulumi's resource interface). `cha-over-approximation`: class-hierarchy analysis resolves an interface call to every implementation of the method, so the oracle's call set is an upper bound and the recall measured against it is a lower bound. `helper-attribution-differs`: a resource constructed inside a helper function is attributed to the helper by one side and to the call site by the other, so a program that wraps its constructors moves nodes between files. A package the loader cannot build is dropped from truth rather than scored, so part of the Pulumi Go corpus is in greplost's map with no oracle opinion about it; the run prints how many on stderr.
 - **hcl**: `bench/src/truth/hcl.ts`: `tfinspect`, built on `terraform-config-inspect` and `hclsyntax` (`terraform-config-inspect`, `hclsyntax-traversals`). `same-rules-different-parser`: references and nodes are scored against an independent re-implementation of the same rules on a different parser, not against Terraform's own evaluator, so S5 and S6 measure two implementations agreeing. `no-call-edges`: HCL has no calls at all, so S3 is `n/a` rather than 0, because there is nothing for either side to be right or wrong about.
 - **java**: `bench/src/truth/java.ts`: `javac`'s own Tree API (`javac-tree-api`) on a source-only classpath (`source-classpath-only`). Third-party jars are deliberately absent, so a file whose dependency is a jar does not compile and is dropped from truth instead of scored (`unresolved-files-dropped`): those files are in greplost's map with no oracle opinion about them, and the run prints how many on stderr. `no-overload-resolution`: a call is matched to a method by name, so two overloads of one name are one target on both sides. `no-inherited-dispatch`: a call that lands on a member inherited from a supertype is attributed to the type that declares it, not to the receiver's type. `module-info-not-scored`: `module-info.java` declares a module rather than a type and carries no scored declaration. The pinned gson subset `**/src/main/**` spans several Maven modules and includes `gson/src/main/java-templates`, a templating-maven-plugin source root whose `GsonBuildConfig.java` Maven filters into the build directory: both sides read the template copy, so gson resolves that dependency inside its own source tree rather than against generated sources.
-- **kotlin**: `bench/src/truth/kotlin.ts`: **reported-only** (`reported-only`, `fixture-oracle-only`, `no-corpus-compiler-truth`). A real `kotlinc` plus `javap -v` classfile oracle covers `fixtures/tiny-kotlin` and nothing else: there is **no corpus compiler truth** for Kotlin, because `kotlin-compiler-embeddable`'s PSI and FIR APIs are internal and unstable and compiling a Gradle multiplatform corpus outside Gradle is not reliable (Appendix C, 2026-09-04). Every corpus metric is therefore `n/a` and the run is gated on the three substitute checks below. Kotlin's accuracy numbers in this repository are fixture numbers: a smoke test, not accuracy against a compiler. JVM synthetics are dropped and a property access is not a call (`jvm-synthetics-dropped`, `property-access-not-a-call`).
+- **kotlin**: `bench/src/truth/kotlin.ts`: **reported-only** (`reported-only`, `fixture-oracle-only`, `no-corpus-compiler-truth`). A real `kotlinc` plus `javap -v` classfile oracle covers `fixtures/tiny-kotlin` and nothing else: there is **no corpus compiler truth** for Kotlin, because `kotlin-compiler-embeddable`'s PSI and FIR APIs are internal and unstable and compiling a Gradle multiplatform corpus outside Gradle is not reliable (Appendix C, 2026-09-04). Every corpus metric is therefore `n/a` and the run is gated on the three substitute checks below. Kotlin's accuracy numbers in this repository are fixture numbers: a smoke test, not accuracy against a compiler. JVM synthetics are dropped and a property access is not a call (`jvm-synthetics-dropped`, `property-access-not-a-call`). Two disagreements with the map are measured rather than papered over: `internal-class-is-public-in-bytecode` (an `internal` class stays public in the bytecode, so the oracle calls it exported where the map does not) and `object-protocol-overrides-dropped` (`equals`, `hashCode` and `toString` are dropped because every data class generates them, which drops a hand-written override with them).
 - **python**: `bench/src/truth/python.ts`: `pytruth`, CPython's own `ast` module on Python 3.11 or newer (`ast-only`, `python>=3.11`). It reads source and never executes an import (`no-import-execution`), so a module reached through `importlib`, a module-level `__getattr__` or a runtime `sys.path` edit is in neither side; PEP 420 namespace packages are resolved by directory (`pep420-namespace-packages`).
 - **rust**: `bench/src/truth/rust.ts`: `rusttruth`, a `syn` re-implementation of the extractor's rules (`syn-item-tree`, `cargo-metadata-roots`), **not** `rustc`, which has no stable public name-resolution API. `rule-agreement-oracle`: S1 to S4 on Rust measure two independent implementations of one rule set agreeing (a different parser, a different language, no shared line of code) and not agreement with a compiler, so a rule that is wrong in the specification is wrong on both sides and scores 1.000. `no-trait-dispatch`: a method call on a generic or `dyn` receiver is absent from truth exactly as it is absent from the map, because neither side does type inference, so that whole class of call is unmeasured rather than measured and missed.
 - **ts, tsx**: `bench/src/truth/ts.ts` for S1 to S4 (the TypeScript compiler's own checker) and `bench/src/truth/signals-ts.ts` for S5 and S6 (`tsc-checker-oracle`, `base-type-chain-for-pulumi`, `app-router-path-rules`). Two disclosed emulations: `workspace-entry-mapping` stands in for the installed-and-built state a corpus checkout does not have, and `nearest-tsconfig-resolution` resolves a specifier with the compiler options of the nearest `tsconfig.json` above the importing file, but only after resolution from the repo root has failed, because a corpus of independent example apps keeps its path aliases there and the root config knows none of them. The pinned Pulumi subset is `aws-ts-*/**/*.ts`, which admits TypeScript only: the JavaScript and `.tsx` files in those examples are outside the scored set, so **build 1's CommonJS handling has no corpus coverage at all** (`.js` is parsed with the TypeScript grammar, and nothing in this benchmark measures that).
-- **yaml**: `bench/src/truth/yaml.ts`, dispatching by flavour (`yaml-flavour-dispatch`) to `yaml-k8s.ts`, `yaml-helm.ts` and `yaml-actions.ts`, all reading with `js-yaml` (`js-yaml-oracle`) and, for a chart, `helm template` (`helm-template-render`). YAML has no calls, so S3 is `n/a`. Helm: a template is not valid YAML, so every `{{ ... }}` span is blanked in place before parsing and a templated name falls back to the document index, which is why names are not compared for templates (`names-not-compared-for-templates`) and S6 is `n/a` for a chart. `same-regex-both-sides`: a chart's `.Values.<path>` references are found by one regular expression that both sides apply, so S5 on Helm measures that regex against itself and not two independent implementations. `if-else-arms-both-kept`: blanking keeps both arms of an `if`/`else`, so a chart's document set holds documents a real render would produce only one of. Workflows: a `${{ ... }}` value is chosen when the workflow runs and is never a name in the map.
-
-**Metrics scored on an empty set**
-
-A metric whose true positives, false positives and false negatives are all zero was scored on an empty universe: the 1.000 means there was nothing to be wrong about, not that everything was right. It is marked `(vacuous)` in the table and is not evidence of accuracy.
-
-- **dockerfile** (docker-node, docker-python): S1, S4.
-- **yaml** (bitnami-charts, k8s-examples, starter-workflows): S1, S4.
+- **yaml**: `bench/src/truth/yaml.ts`, dispatching by flavour (`yaml-flavour-dispatch`) to `yaml-k8s.ts`, `yaml-helm.ts` and `yaml-actions.ts`, all reading with `js-yaml` (`js-yaml-oracle`) and, for a chart, `helm template` (`helm-template-render`). A manifest, a chart and a workflow have no call site, no import statement and therefore no import cycle, so S1, S3 and S4 are `n/a` rather than a 1.000 found by looking for nothing; S2, S5 and S6 are the objects, the reference edges and the node ids, and they are measured and gated. Helm: a template is not valid YAML, so every `{{ ... }}` span is blanked in place before parsing and a templated name falls back to the document index, which is why names are not compared for templates (`names-not-compared-for-templates`) and S6 is `n/a` for a chart. `same-regex-both-sides`: a chart's `.Values.<path>` references are found by one regular expression that both sides apply, so S5 on Helm measures that regex against itself and not two independent implementations. `if-else-arms-both-kept`: blanking keeps both arms of an `if`/`else`, so a chart's document set holds documents a real render would produce only one of. Workflows: a `${{ ... }}` value is chosen when the workflow runs and is never a name in the map; `anchors-not-expanded` means `js-yaml` resolves anchors and merge keys while greplost reads the text as written, so a workflow using one is scored as the divergence it is; and `config-precision-unmeasured` means the `config` reference kind, which points a `run:` body at a script in the repo, has no corpus-scale measurement at all, because a YAML target indexes YAML only and the target of such an edge is never a scored file. It is covered by `fixtures/tiny-actions` and the extractor tests, and by nothing in this table.
 
 **What gates a language with no accuracy gate**
 
@@ -340,7 +333,7 @@ A target whose every gated metric is `n/a` would pass `--gate` on an extractor t
 
 Structural accuracy vs compiler truth (S1 to S4)
 
-Measured 2026-09-05 at 22f6f67.
+Measured 2026-09-05 at f250c7f.
 
 ### anyq (148 files)
 
@@ -365,8 +358,8 @@ Measured 2026-09-05 at 22f6f67.
 | ID | Metric | Target | Measured | Detail |
 |---|---|---|---|---|
 | S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 0 / 1 | tp 0, fp 23, fn 0 |
-| S2 | export precision / recall | >= 0.99 / >= 0.99 | 0 / 1 | tp 0, fp 674, fn 0 |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 0 | recall 1, tp 0, fp 499, fn 0; all confidences: precision 0, recall 1 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 0 / 1 | tp 0, fp 645, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 0 | recall 1, tp 0, fp 501, fn 0; all confidences: precision 0, recall 1 |
 | S4 | import cycle Jaccard | = 1.00 | 1 |  |
 
 ### docker-node (18 files)
@@ -402,7 +395,7 @@ Measured 2026-09-05 at 22f6f67.
 |---|---|---|---|---|
 | S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 0.993 | tp 271, fp 0, fn 2 |
 | S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 489, fp 0, fn 0 |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.855, tp 721, fp 0, fn 122; all confidences: precision 1, recall 0.855 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.904, tp 752, fp 0, fn 80; all confidences: precision 1, recall 0.904 |
 | S4 | import cycle Jaccard | = 1.00 | 1 |  |
 
 ### k8s-examples (245 files)
@@ -495,7 +488,9 @@ Measured 2026-09-05 at 22f6f67.
 | S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 0, fp 0, fn 0; all confidences: precision 1, recall 1 |
 | S4 | import cycle Jaccard | = 1.00 | 1 |  |
 
-> Truth notes (how the oracle was built, Appendix C ruling on 10.3): `ast-only`, `cargo-metadata-roots`, `cha-callgraph`, `cha-over-approximation`, `dockerfile-ast-oracle`, `fixture-oracle-only`, `go-packages-per-file-imports`, `hclsyntax-traversals`, `helm-template-render`, `javac-tree-api`, `js-yaml-oracle`, `jvm-synthetics-dropped`, `kotlinc-javap-classfiles`, `names-not-compared-for-templates`, `nearest-tsconfig-resolution`, `no-call-edges`, `no-corpus-compiler-truth`, `no-import-execution`, `no-trait-dispatch`, `pep420-namespace-packages`, `property-access-not-a-call`, `python>=3.11`, `reported-only`, `rule-agreement-oracle`, `same-rules-different-parser`, `source-classpath-only`, `syn-item-tree`, `terraform-config-inspect`, `unresolved-files-dropped`, `unsupported:S3`, `unsupported:S6`, `workspace-entry-mapping`.
+> Truth notes (how the oracle was built, Appendix C ruling on 10.3): `anchors-not-expanded`, `ast-only`, `cargo-metadata-roots`, `cha-callgraph`, `cha-over-approximation`, `config-precision-unmeasured`, `dockerfile-ast-oracle`, `fixture-oracle-only`, `go-packages-per-file-imports`, `hclsyntax-traversals`, `helm-template-render`, `if-else-arms-both-kept`, `internal-class-is-public-in-bytecode`, `javac-tree-api`, `js-yaml-oracle`, `jvm-synthetics-dropped`, `kotlinc-javap-classfiles`, `module-info-not-scored`, `names-not-compared-for-templates`, `nearest-tsconfig-resolution`, `no-call-edges`, `no-corpus-compiler-truth`, `no-import-execution`, `no-inherited-dispatch`, `no-overload-resolution`, `no-trait-dispatch`, `object-protocol-overrides-dropped`, `pep420-namespace-packages`, `property-access-not-a-call`, `python>=3.11`, `reported-only`, `rule-agreement-oracle`, `same-regex-both-sides`, `same-rules-different-parser`, `source-classpath-only`, `syn-item-tree`, `terraform-config-inspect`, `unresolved-files-dropped`, `unsupported:S1`, `unsupported:S3`, `unsupported:S4`, `workspace-entry-mapping`.
+
+> `anchors-not-expanded`: `js-yaml` resolves anchors, aliases and merge keys and greplost reads the text as written, so a workflow that uses one is a real divergence and is scored as one rather than papered over.
 
 > `ast-only`: the Python oracle reads the source with CPython's `ast` module and never runs the code.
 
@@ -504,6 +499,8 @@ Measured 2026-09-05 at 22f6f67.
 > `cha-callgraph`: the Go oracle built its call graph by class-hierarchy analysis rather than by pointer analysis.
 
 > `cha-over-approximation`: class-hierarchy analysis resolves an interface call to every implementation of the method, so the oracle's call set is an upper bound and the recall measured against it is a lower bound.
+
+> `config-precision-unmeasured`: the `config` reference kind has no corpus-scale measurement: a YAML target is indexed with `languages: ["yaml"]`, so a `run:` body naming a script resolves to nothing on either side and the edge falls outside S5. It is covered by the fixture and the extractor tests only.
 
 > `dockerfile-ast-oracle`: the Dockerfile oracle reads an independent Dockerfile AST, not BuildKit's.
 
@@ -515,6 +512,10 @@ Measured 2026-09-05 at 22f6f67.
 
 > `helm-template-render`: chart truth comes from `helm template`; greplost never runs helm.
 
+> `if-else-arms-both-kept`: blanking a template's `{{ ... }}` spans keeps both arms of an `if`/`else`, so a chart's document set holds documents a real render would produce only one of.
+
+> `internal-class-is-public-in-bytecode`: Kotlin mangles an `internal` member to `name$module`, which the oracle drops, but an `internal` class stays public in the bytecode, so the oracle calls it exported where the map does not: a known S2 false positive on the truth side.
+
 > `javac-tree-api`: the Java oracle reads `javac`'s own Tree API, not a re-implementation.
 
 > `js-yaml-oracle`: the YAML oracle parses with `js-yaml`, independently of the tree-sitter grammar greplost uses.
@@ -522,6 +523,8 @@ Measured 2026-09-05 at 22f6f67.
 > `jvm-synthetics-dropped`: JVM synthetic members the compiler generates are dropped rather than scored.
 
 > `kotlinc-javap-classfiles`: the Kotlin fixture oracle compiles with `kotlinc` and reads the classfiles with `javap -v`.
+
+> `module-info-not-scored`: `module-info.java` declares a module rather than a type and carries no scored declaration.
 
 > `names-not-compared-for-templates`: a templated name falls back to the document index, so names are not compared for a chart's templates.
 
@@ -533,7 +536,13 @@ Measured 2026-09-05 at 22f6f67.
 
 > `no-import-execution`: no import is executed, so a module reached through `importlib`, a module-level `__getattr__` or a runtime `sys.path` edit is in neither the map nor the truth.
 
+> `no-inherited-dispatch`: a call that lands on a member inherited from a supertype is attributed to the type that declares it, not to the receiver's type.
+
+> `no-overload-resolution`: a call is matched to a method by name, so two overloads of one name are one target on both sides.
+
 > `no-trait-dispatch`: a method call on a generic or `dyn` receiver is in neither side, because neither does type inference: that class of call is unmeasured rather than measured and missed.
+
+> `object-protocol-overrides-dropped`: `equals`, `hashCode` and `toString` at their standard descriptors are dropped because every data class generates them, which drops a hand-written override with them: a known S2 false negative on the truth side.
 
 > `pep420-namespace-packages`: PEP 420 namespace packages are resolved by directory rather than by `__init__.py`.
 
@@ -545,6 +554,8 @@ Measured 2026-09-05 at 22f6f67.
 
 > `rule-agreement-oracle`: the oracle re-implements the extractor's rules on a different parser instead of asking a compiler (`rustc` has no stable public name-resolution API), so the metric is two independent implementations of one rule set agreeing, not agreement with the compiler.
 
+> `same-regex-both-sides`: a chart's `.Values.<path>` references are found by one regular expression that both sides apply, so S5 on Helm measures that regex against itself rather than two independent implementations.
+
 > `same-rules-different-parser`: both sides implement the same documented rules with different parsers, so the metric measures two implementations agreeing rather than agreement with the format's own tooling.
 
 > `source-classpath-only`: the classpath is the corpus sources alone: third-party jars are deliberately absent.
@@ -555,9 +566,11 @@ Measured 2026-09-05 at 22f6f67.
 
 > `unresolved-files-dropped`: a file that does not compile on that source-only classpath is dropped from truth rather than scored, so it is in greplost's map with no oracle opinion about it; the run prints how many on stderr.
 
+> `unsupported:S1`: the truth module declares that it does not measure import edges, so S1 is `n/a` for it.
+
 > `unsupported:S3`: the truth module declares that it does not measure call edges (the format has none), so S3 is `n/a`, which is neither a pass nor a fail.
 
-> `unsupported:S6`: the truth module declares that it does not measure signal nodes, so S6 is `n/a` for it.
+> `unsupported:S4`: the truth module declares that it does not measure import cycles, so S4 is `n/a` for it.
 
 > `workspace-entry-mapping`: the TypeScript truth generator emulated the installed-and-built state of workspace packages (package manifests plus tsconfig `outDir`/`rootDir`) so cross-package imports and calls resolve on a corpus checkout that was never installed or built (Appendix C ruling on 10.3).
 

@@ -763,7 +763,11 @@ const ORACLE_DISCLOSURES: Record<string, string> = {
     "is therefore `n/a` and the run is gated on the three substitute checks below. Kotlin's accuracy " +
     "numbers in this repository are fixture numbers: a smoke test, not accuracy against a compiler. " +
     "JVM synthetics are dropped and a property access is not a call (`jvm-synthetics-dropped`, " +
-    "`property-access-not-a-call`).",
+    "`property-access-not-a-call`). Two disagreements with the map are measured rather than papered " +
+    "over: `internal-class-is-public-in-bytecode` (an `internal` class stays public in the bytecode, so " +
+    "the oracle calls it exported where the map does not) and `object-protocol-overrides-dropped` " +
+    "(`equals`, `hashCode` and `toString` are dropped because every data class generates them, which " +
+    "drops a hand-written override with them).",
   hcl:
     "`bench/src/truth/hcl.ts`: `tfinspect`, built on `terraform-config-inspect` and `hclsyntax` " +
     "(`terraform-config-inspect`, `hclsyntax-traversals`). `same-rules-different-parser`: references " +
@@ -774,7 +778,10 @@ const ORACLE_DISCLOSURES: Record<string, string> = {
   yaml:
     "`bench/src/truth/yaml.ts`, dispatching by flavour (`yaml-flavour-dispatch`) to `yaml-k8s.ts`, " +
     "`yaml-helm.ts` and `yaml-actions.ts`, all reading with `js-yaml` (`js-yaml-oracle`) and, for a " +
-    "chart, `helm template` (`helm-template-render`). YAML has no calls, so S3 is `n/a`. Helm: a " +
+    "chart, `helm template` (`helm-template-render`). A manifest, a chart and a workflow have no call " +
+    "site, no import statement and therefore no import cycle, so S1, S3 and S4 are `n/a` rather than a " +
+    "1.000 found by looking for nothing; S2, S5 and S6 are the objects, the reference edges and the node " +
+    "ids, and they are measured and gated. Helm: a " +
     "template is not valid YAML, so every `{{ ... }}` span is blanked in place before parsing and a " +
     "templated name falls back to the document index, which is why names are not compared for templates " +
     "(`names-not-compared-for-templates`) and S6 is `n/a` for a chart. `same-regex-both-sides`: a " +
@@ -782,11 +789,19 @@ const ORACLE_DISCLOSURES: Record<string, string> = {
     "S5 on Helm measures that regex against itself and not two independent implementations. " +
     "`if-else-arms-both-kept`: blanking keeps both arms of an `if`/`else`, so a chart's document set " +
     "holds documents a real render would produce only one of. Workflows: a `${{ ... }}` value is chosen " +
-    "when the workflow runs and is never a name in the map.",
+    "when the workflow runs and is never a name in the map; `anchors-not-expanded` means `js-yaml` " +
+    "resolves anchors and merge keys while greplost reads the text as written, so a workflow using one " +
+    "is scored as the divergence it is; and `config-precision-unmeasured` means the `config` reference " +
+    "kind, which points a `run:` body at a script in the repo, has no corpus-scale measurement at all, " +
+    "because a YAML target indexes YAML only and the target of such an edge is never a scored file. It " +
+    "is covered by `fixtures/tiny-actions` and the extractor tests, and by nothing in this table.",
   dockerfile:
     "`bench/src/truth/dockerfile.ts`: an independent Dockerfile AST reader (`dockerfile-ast-oracle`). " +
     "`same-rules-different-parser`: the same rules read by a different parser, not by BuildKit, so this " +
-    "is rule agreement rather than builder truth. A Dockerfile has no calls, so S3 is `n/a`. The two " +
+    "is rule agreement rather than builder truth. The format has no call site, no import statement and " +
+    "therefore no import cycle, so S1, S3 and S4 are `n/a` rather than a 1.000 found by looking for " +
+    "nothing; S2, S5 and S6 are the stage names, the reference edges and the node ids, which is " +
+    "everything a Dockerfile actually says, and they are measured and gated. The two " +
     "pinned corpora are honestly **below the tier-S band**: no public repository carries a hundred " +
     "Dockerfiles, and `docker-python` and `docker-node` together are the realistic ceiling for the " +
     "format.",
@@ -855,6 +870,21 @@ export const TRUTH_NOTE_GLOSS: Record<string, string> = {
     "implementations agreeing rather than agreement with the format's own tooling.",
   "yaml-flavour-dispatch": "YAML files are split by flavour (Kubernetes manifest, Helm chart, Actions workflow) and each flavour has its own oracle.",
   "js-yaml-oracle": "the YAML oracle parses with `js-yaml`, independently of the tree-sitter grammar greplost uses.",
+  "anchors-not-expanded":
+    "`js-yaml` resolves anchors, aliases and merge keys and greplost reads the text as written, so a " +
+    "workflow that uses one is a real divergence and is scored as one rather than papered over.",
+  "config-precision-unmeasured":
+    "the `config` reference kind has no corpus-scale measurement: a YAML target is indexed with " +
+    "`languages: [\"yaml\"]`, so a `run:` body naming a script resolves to nothing on either side and the " +
+    "edge falls outside S5. It is covered by the fixture and the extractor tests only.",
+  "internal-class-is-public-in-bytecode":
+    "Kotlin mangles an `internal` member to `name$module`, which the oracle drops, but an `internal` " +
+    "class stays public in the bytecode, so the oracle calls it exported where the map does not: a known " +
+    "S2 false positive on the truth side.",
+  "object-protocol-overrides-dropped":
+    "`equals`, `hashCode` and `toString` at their standard descriptors are dropped because every data " +
+    "class generates them, which drops a hand-written override with them: a known S2 false negative on " +
+    "the truth side.",
   "helm-template-render": "chart truth comes from `helm template`; greplost never runs helm.",
   "names-not-compared-for-templates":
     "a templated name falls back to the document index, so names are not compared for a chart's templates.",

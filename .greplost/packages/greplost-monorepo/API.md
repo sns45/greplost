@@ -4,7 +4,7 @@
 
 ## .github/workflows/ci.yml
 
-- `job test` L9-92
+- `job test` L9-98
 
 ## .github/workflows/publish.yml
 

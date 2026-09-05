@@ -6,7 +6,7 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Attributes:** `flavour: actions`, `run: bun run typecheck`
+**Attributes:** `flavour: actions`, `name: go modules for the Go truth generators`, `run: set -euo pipefail for tool in gocallgraph tfinspect pulumigotruth; do (cd "bench`
 
 **References:** None.
 
@@ -14,4 +14,4 @@
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~11`)
 
-**Source:** L56-56
+**Source:** L56-61

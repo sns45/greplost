@@ -6,12 +6,12 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Attributes:** `flavour: actions`, `name: the built binary runs under node`, `run: set -euo pipefail node packages/cli/bin/greplost.js --version smoke="$(mktemp -d`
+**Attributes:** `flavour: actions`, `name: build the publishable bundle`, `run: bun run build`
 
-**References:** [`packages/cli/bin/greplost.js`](../../../../../greplost/modules/bin/greplost.js.md) (config)
+**References:** None.
 
 **Referenced by:** None.
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~14`)
 
-**Source:** L63-70
+**Source:** L64-68

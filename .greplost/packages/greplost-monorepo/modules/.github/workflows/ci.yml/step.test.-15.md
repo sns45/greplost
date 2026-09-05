@@ -6,12 +6,12 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Attributes:** `flavour: actions`, `name: verify the committed map of this repo`, `run: bun packages/cli/src/main.ts verify --diff`
+**Attributes:** `flavour: actions`, `name: the built binary runs under node`, `run: set -euo pipefail node packages/cli/bin/greplost.js --version smoke="$(mktemp -d`
 
-**References:** [`packages/cli/src/main.ts`](../../../../../greplost/modules/src/main.ts.md) (config)
+**References:** [`packages/cli/bin/greplost.js`](../../../../../greplost/modules/bin/greplost.js.md) (config)
 
 **Referenced by:** None.
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~15`)
 
-**Source:** L71-72
+**Source:** L69-76

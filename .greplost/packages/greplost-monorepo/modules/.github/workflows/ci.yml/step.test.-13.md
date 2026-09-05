@@ -6,7 +6,7 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Attributes:** `flavour: actions`, `name: build the publishable bundle`, `run: bun run build`
+**Attributes:** `flavour: actions`, `run: bun test`
 
 **References:** None.
 
@@ -14,4 +14,4 @@
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~13`)
 
-**Source:** L58-62
+**Source:** L63-63

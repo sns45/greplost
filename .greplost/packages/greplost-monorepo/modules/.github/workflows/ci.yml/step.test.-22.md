@@ -6,7 +6,7 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Attributes:** `flavour: actions`, `name: performance gate (tier S)`, `run: bun run bench:perf --tier S --gate`
+**Attributes:** `flavour: actions`, `name: freshness gate (100-commit replay)`, `run: bun run bench:replay --commits 100 --gate`
 
 **References:** None.
 
@@ -14,4 +14,4 @@
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~22`)
 
-**Source:** L91-92
+**Source:** L95-96

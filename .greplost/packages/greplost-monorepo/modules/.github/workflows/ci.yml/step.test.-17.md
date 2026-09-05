@@ -6,12 +6,12 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Attributes:** `flavour: actions`, `name: Cache the benchmark corpus (pinned in bench/corpus.json)`, `uses: actions/cache@v4`, `usesRef: v4`
+**Attributes:** `flavour: actions`, `name: README tables match bench/RESULTS.md`, `run: bun run readme:check`
 
-**References:** `ext:action/actions/cache` (uses)
+**References:** None.
 
 **Referenced by:** None.
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~17`)
 
-**Source:** L75-79
+**Source:** L79-80

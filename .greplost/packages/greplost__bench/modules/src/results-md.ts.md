@@ -47,16 +47,16 @@
 - `function vacuousDisclosures(langs: readonly LangRow[]): string[]`  L651-667
 - `function substituteDisclosures(langs: readonly LangRow[]): string[]`  L670-692
 - `const TS_FAMILY_LANGS: ReadonlySet<string> = new Set(["ts", "tsx", "js", "jsx"])`  L695-695
-- `const ORACLE_DISCLOSURES: Record<string, string> = { ts: "`bench/src/truth/ts.ts` for S1 to S4 (the TypeScript compiler's own checker) and " + "`bench/src/truth/signals-ts.ts` for S5 and S6 (`tsc-che…`  L706-793
-- `const TRUTH_NOTE_GLOSS: Record<string, string> = { "unsupported:S1": "the truth module declares that it does not measure import edges, so S1 is `n/a` for it.", "unsupported:S2": "the truth mod…`  L804-877
-- `function evalSection(heading: string, subtitle: string, section: EvalSection): string[]`  L879-901
-- `function renderCharts(charts: readonly ChartRef[]): string[]`  L903-924
-- `function cell(text: string): string`  L931-933
-- `function formatCell(cellValue: MetricCell | undefined): string`  L935-939
-- `function verdictCell(cellValue: MetricCell | undefined): string`  L941-946
-- `function formatNumber(value: number): string`  L949-955
-- `function lossReasonsOf(row: MetricRow, competitors: readonly string[]): string`  L967-976
-- `function perToolLine(row: MetricRow, tools: readonly string[]): string | null`  L979-987
-- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…`  L999-1010
+- `const ORACLE_DISCLOSURES: Record<string, string> = { ts: "`bench/src/truth/ts.ts` for S1 to S4 (the TypeScript compiler's own checker) and " + "`bench/src/truth/signals-ts.ts` for S5 and S6 (`tsc-che…`  L706-808
+- `const TRUTH_NOTE_GLOSS: Record<string, string> = { "unsupported:S1": "the truth module declares that it does not measure import edges, so S1 is `n/a` for it.", "unsupported:S2": "the truth mod…`  L819-907
+- `function evalSection(heading: string, subtitle: string, section: EvalSection): string[]`  L909-931
+- `function renderCharts(charts: readonly ChartRef[]): string[]`  L933-954
+- `function cell(text: string): string`  L961-963
+- `function formatCell(cellValue: MetricCell | undefined): string`  L965-969
+- `function verdictCell(cellValue: MetricCell | undefined): string`  L971-976
+- `function formatNumber(value: number): string`  L979-985
+- `function lossReasonsOf(row: MetricRow, competitors: readonly string[]): string`  L997-1006
+- `function perToolLine(row: MetricRow, tools: readonly string[]): string | null`  L1009-1017
+- `const METRIC_TITLES: Record<XId, { title: string; target: string }> = { X1: { title: "Structural precision vs compiler truth", target: ">= +10pt calls, >= +3pt imports" }, X2: { title: "Stalen…`  L1029-1040
 
 **Calls:** `cell` → [`bench/src/results-md.ts#cell`](results-md.ts.md) (high), `corpusSection` → [`bench/src/results-md.ts#corpusSection`](results-md.ts.md) (high), `describeRun` → [`bench/src/results-md.ts#describeRun`](results-md.ts.md) (high), `evalSection` → [`bench/src/results-md.ts#evalSection`](results-md.ts.md) (high), `formatCell` → [`bench/src/results-md.ts#formatCell`](results-md.ts.md) (high), `formatNumber` → [`bench/src/results-md.ts#formatNumber`](results-md.ts.md) (high), `headToHeadSection` → [`bench/src/results-md.ts#headToHeadSection`](results-md.ts.md) (high), `langCell` → [`bench/src/results-md.ts#langCell`](results-md.ts.md) (high), `langsSection` → [`bench/src/results-md.ts#langsSection`](results-md.ts.md) (high), `lossReasonsOf` → [`bench/src/results-md.ts#lossReasonsOf`](results-md.ts.md) (high), `machineSection` → [`bench/src/results-md.ts#machineSection`](results-md.ts.md) (high), `oracleDisclosures` → [`bench/src/results-md.ts#oracleDisclosures`](results-md.ts.md) (high), `perToolLine` → [`bench/src/results-md.ts#perToolLine`](results-md.ts.md) (high), `renderCharts` → [`bench/src/results-md.ts#renderCharts`](results-md.ts.md) (high), `scopeTarget` → [`bench/src/results-md.ts#scopeTarget`](results-md.ts.md) (high), `singleToolSection` → [`bench/src/results-md.ts#singleToolSection`](results-md.ts.md) (high), `substituteDisclosures` → [`bench/src/results-md.ts#substituteDisclosures`](results-md.ts.md) (high), `vacuousDisclosures` → [`bench/src/results-md.ts#vacuousDisclosures`](results-md.ts.md) (high), `verdictCell` → [`bench/src/results-md.ts#verdictCell`](results-md.ts.md) (high), `versionsSection` → [`bench/src/results-md.ts#versionsSection`](results-md.ts.md) (high)

@@ -6,7 +6,7 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Attributes:** `flavour: actions`, `name: map quality gate`, `run: bun run bench:mapquality --gate`
+**Attributes:** `flavour: actions`, `name: structural accuracy gate (tier S)`, `run: bun run bench:structural --tier S --gate`
 
 **References:** None.
 
@@ -14,4 +14,4 @@
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~20`)
 
-**Source:** L87-88
+**Source:** L91-92

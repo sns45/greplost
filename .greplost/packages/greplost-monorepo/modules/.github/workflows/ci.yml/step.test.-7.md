@@ -6,7 +6,7 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Attributes:** `flavour: actions`, `name: Cache the Go module downloads for the Go truth generators`, `uses: actions/cache@v4`, `usesRef: v4`
+**Attributes:** `flavour: actions`, `name: Cache the cargo registry for the Rust truth generator`, `uses: actions/cache@v4`, `usesRef: v4`
 
 **References:** `ext:action/actions/cache` (uses)
 
@@ -14,4 +14,4 @@
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~7`)
 
-**Source:** L37-43
+**Source:** L36-42

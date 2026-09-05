@@ -74,14 +74,14 @@
     "missed": [],
     "passed": true
   },
-  "greplostSha": "22f6f67",
+  "greplostSha": "f250c7f",
   "machine": {
     "arch": "arm64",
     "bun": "1.2.21",
     "cores": 16,
     "cpu": "Apple M4 Max",
     "go": "go version go1.25.3 darwin/arm64",
-    "greplostSha": "22f6f67",
+    "greplostSha": "f250c7f",
     "greplostVersion": "0.0.2",
     "memoryGB": 128,
     "node": "24.3.0",
@@ -166,7 +166,7 @@
       "truthSource": "bench/src/truth/yaml.ts"
     }
   },
-  "recordedAt": "2026-09-05T16:32:21.422Z",
+  "recordedAt": "2026-09-05T16:46:32.422Z",
   "repos": {
     "anyq": {
       "S1": {
@@ -282,12 +282,12 @@
         "tp": 694
       },
       "S6": {
-        "f1": 0,
+        "f1": 1,
         "fn": 0,
-        "fp": 309,
-        "precision": 0,
+        "fp": 0,
+        "precision": 1,
         "recall": 1,
-        "tp": 0
+        "tp": 216
       },
       "callsAllConfidences": {
         "f1": 1,
@@ -311,33 +311,13 @@
         "S3": [],
         "S4": [],
         "S5": [],
-        "S6": [
-          "bitnami/kafka/Chart.yaml:4 (bitnami/kafka/Chart.yaml#module.kafka)",
-          "bitnami/kafka/templates/broker/config-secrets.yaml:8 (bitnami/kafka/templates/broker/config-secrets.yaml#resource.Secret.~0)",
-          "bitnami/kafka/templates/broker/configmap.yaml:15 (bitnami/kafka/templates/broker/configmap.yaml#resource.ConfigMap.~0)",
-          "bitnami/kafka/templates/broker/svc-external-access.yaml:12 (bitnami/kafka/templates/broker/svc-external-access.yaml#resource.Service.~0)",
-          "bitnami/kafka/templates/broker/svc-headless.yaml:8 (bitnami/kafka/templates/broker/svc-headless.yaml#resource.Service.~0)",
-          "bitnami/kafka/templates/ca-cert.yaml:22 (bitnami/kafka/templates/ca-cert.yaml#resource.Certificate.~1)",
-          "bitnami/kafka/templates/ca-cert.yaml:8 (bitnami/kafka/templates/ca-cert.yaml#resource.Issuer.~0)",
-          "bitnami/kafka/templates/ca-cert.yaml:40 (bitnami/kafka/templates/ca-cert.yaml#resource.Issuer.~2)",
-          "bitnami/kafka/templates/cert.yaml:7 (bitnami/kafka/templates/cert.yaml#resource.Certificate.~0)",
-          "bitnami/kafka/templates/controller-eligible/config-secrets.yaml:8 (bitnami/kafka/templates/controller-eligible/config-secrets.yaml#resource.Secret.~0)",
-          "bitnami/kafka/templates/controller-eligible/configmap.yaml:15 (bitnami/kafka/templates/controller-eligible/configmap.yaml#resource.ConfigMap.~0)",
-          "bitnami/kafka/templates/controller-eligible/svc-external-access.yaml:13 (bitnami/kafka/templates/controller-eligible/svc-external-access.yaml#resource.Service.~0)",
-          "bitnami/kafka/templates/controller-eligible/svc-headless.yaml:6 (bitnami/kafka/templates/controller-eligible/svc-headless.yaml#resource.Service.~0)",
-          "bitnami/kafka/templates/log4j2-configmap.yaml:7 (bitnami/kafka/templates/log4j2-configmap.yaml#resource.ConfigMap.~0)",
-          "bitnami/kafka/templates/metrics/jmx-servicemonitor.yaml:7 (bitnami/kafka/templates/metrics/jmx-servicemonitor.yaml#resource.ServiceMonitor.~0)",
-          "bitnami/kafka/templates/metrics/jmx-svc.yaml:7 (bitnami/kafka/templates/metrics/jmx-svc.yaml#resource.Service.~0)",
-          "bitnami/kafka/templates/metrics/prometheusrule.yaml:7 (bitnami/kafka/templates/metrics/prometheusrule.yaml#resource.PrometheusRule.~0)",
-          "bitnami/kafka/templates/provisioning/job.yaml:222 (bitnami/kafka/templates/provisioning/job.yaml#image.kafka-provisioning)",
-          "bitnami/kafka/templates/provisioning/job.yaml:51 (bitnami/kafka/templates/provisioning/job.yaml#image.prepare-config)",
-          "bitnami/kafka/templates/provisioning/job.yaml:174 (bitnami/kafka/templates/provisioning/job.yaml#image.wait-for-available-kafka)"
-        ]
+        "S6": []
       },
       "files": 130,
       "naMetrics": [
+        "S1",
         "S3",
-        "S6"
+        "S4"
       ],
       "noFiles": false,
       "substitute": null,
@@ -355,7 +335,7 @@
       "S2": {
         "f1": 0,
         "fn": 0,
-        "fp": 674,
+        "fp": 645,
         "precision": 0,
         "recall": 1,
         "tp": 0
@@ -363,7 +343,7 @@
       "S3": {
         "f1": 0,
         "fn": 0,
-        "fp": 499,
+        "fp": 501,
         "precision": 0,
         "recall": 1,
         "tp": 0
@@ -374,7 +354,7 @@
       "callsAllConfidences": {
         "f1": 0,
         "fn": 0,
-        "fp": 499,
+        "fp": 501,
         "precision": 0,
         "recall": 1,
         "tp": 0
@@ -544,7 +524,9 @@
       },
       "files": 18,
       "naMetrics": [
-        "S3"
+        "S1",
+        "S3",
+        "S4"
       ],
       "noFiles": false,
       "substitute": null,
@@ -618,7 +600,9 @@
       },
       "files": 42,
       "naMetrics": [
-        "S3"
+        "S1",
+        "S3",
+        "S4"
       ],
       "noFiles": false,
       "substitute": null,
@@ -721,23 +705,23 @@
         "tp": 489
       },
       "S3": {
-        "f1": 0.921994884910486,
-        "fn": 122,
+        "f1": 0.9494949494949495,
+        "fn": 80,
         "fp": 0,
         "precision": 1,
-        "recall": 0.8552787663107948,
-        "tp": 721
+        "recall": 0.9038461538461539,
+        "tp": 752
       },
       "S4": 1,
       "S5": null,
       "S6": null,
       "callsAllConfidences": {
-        "f1": 0.921994884910486,
-        "fn": 122,
+        "f1": 0.9494949494949495,
+        "fn": 80,
         "fp": 0,
         "precision": 1,
-        "recall": 0.8552787663107948,
-        "tp": 721
+        "recall": 0.9038461538461539,
+        "tp": 752
       },
       "falseNegatives": {
         "S1": [
@@ -749,23 +733,23 @@
           "extras/src/main/java/com/google/gson/interceptors/InterceptorFactory.java:44 (extras/src/main/java/com/google/gson/interceptors/InterceptorFactory.java#InterceptorFactory.InterceptorAdapter.InterceptorAdapter -> extras/src/main/java/com/google/gson/interceptors/Intercept.java#Intercept.postDeserialize)",
           "extras/src/main/java/com/google/gson/interceptors/InterceptorFactory.java:44 (extras/src/main/java/com/google/gson/interceptors/InterceptorFactory.java#InterceptorFactory.InterceptorAdapter.InterceptorAdapter -> gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.TypeAdapter)",
           "extras/src/main/java/com/google/gson/interceptors/InterceptorFactory.java:59 (extras/src/main/java/com/google/gson/interceptors/InterceptorFactory.java#InterceptorFactory.InterceptorAdapter.read -> extras/src/main/java/com/google/gson/interceptors/JsonPostDeserializer.java#JsonPostDeserializer.postDeserialize)",
-          "extras/src/main/java/com/google/gson/typeadapters/UtcDateTypeAdapter.java:1 (extras/src/main/java/com/google/gson/typeadapters/UtcDateTypeAdapter.java#UtcDateTypeAdapter.UtcDateTypeAdapter -> gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.TypeAdapter)",
-          "gson/src/main/java/com/google/gson/FieldNamingPolicy.java:31 (gson/src/main/java/com/google/gson/FieldNamingPolicy.java#FieldNamingPolicy -> gson/src/main/java/com/google/gson/FieldNamingPolicy.java#FieldNamingPolicy)",
-          "gson/src/main/java/com/google/gson/Gson.java:1 (gson/src/main/java/com/google/gson/Gson.java#Gson.FutureTypeAdapter.FutureTypeAdapter -> gson/src/main/java/com/google/gson/internal/bind/SerializationDelegatingTypeAdapter.java#SerializationDelegatingTypeAdapter)",
           "gson/src/main/java/com/google/gson/Gson.java:1267 (gson/src/main/java/com/google/gson/Gson.java#Gson.FutureTypeAdapter.read -> gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.read)",
           "gson/src/main/java/com/google/gson/Gson.java:1272 (gson/src/main/java/com/google/gson/Gson.java#Gson.FutureTypeAdapter.write -> gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.write)",
           "gson/src/main/java/com/google/gson/Gson.java:340 (gson/src/main/java/com/google/gson/Gson.java#Gson.getAdapter -> gson/src/main/java/com/google/gson/TypeAdapterFactory.java#TypeAdapterFactory.create)",
           "gson/src/main/java/com/google/gson/Gson.java:472 (gson/src/main/java/com/google/gson/Gson.java#Gson.getDelegateAdapter -> gson/src/main/java/com/google/gson/TypeAdapterFactory.java#TypeAdapterFactory.create)",
-          "gson/src/main/java/com/google/gson/LongSerializationPolicy.java:29 (gson/src/main/java/com/google/gson/LongSerializationPolicy.java#LongSerializationPolicy -> gson/src/main/java/com/google/gson/LongSerializationPolicy.java#LongSerializationPolicy)",
-          "gson/src/main/java/com/google/gson/ToNumberPolicy.java:36 (gson/src/main/java/com/google/gson/ToNumberPolicy.java#ToNumberPolicy -> gson/src/main/java/com/google/gson/ToNumberPolicy.java#ToNumberPolicy)",
-          "gson/src/main/java/com/google/gson/ToNumberPolicy.java:36 (gson/src/main/java/com/google/gson/ToNumberPolicy.java#ToNumberPolicy -> gson/src/main/java/com/google/gson/stream/JsonReader.java#JsonReader.getPreviousPath)",
-          "gson/src/main/java/com/google/gson/ToNumberPolicy.java:36 (gson/src/main/java/com/google/gson/ToNumberPolicy.java#ToNumberPolicy -> gson/src/main/java/com/google/gson/stream/JsonReader.java#JsonReader.isLenient)",
-          "gson/src/main/java/com/google/gson/ToNumberPolicy.java:36 (gson/src/main/java/com/google/gson/ToNumberPolicy.java#ToNumberPolicy -> gson/src/main/java/com/google/gson/stream/JsonReader.java#JsonReader.nextDouble)",
-          "gson/src/main/java/com/google/gson/ToNumberPolicy.java:36 (gson/src/main/java/com/google/gson/ToNumberPolicy.java#ToNumberPolicy -> gson/src/main/java/com/google/gson/stream/JsonReader.java#JsonReader.nextString)",
-          "gson/src/main/java/com/google/gson/TypeAdapter.java:1 (gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.NullSafeTypeAdapter.NullSafeTypeAdapter -> gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.TypeAdapter)",
           "gson/src/main/java/com/google/gson/TypeAdapter.java:309 (gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.NullSafeTypeAdapter.read -> gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.read)",
           "gson/src/main/java/com/google/gson/TypeAdapter.java:300 (gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.NullSafeTypeAdapter.write -> gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.write)",
-          "gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java:437 (gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java#ConstructorConstructor.InstanceCreatorConstructor.construct -> gson/src/main/java/com/google/gson/InstanceCreator.java#InstanceCreator.createInstance)"
+          "gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java:437 (gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java#ConstructorConstructor.InstanceCreatorConstructor.construct -> gson/src/main/java/com/google/gson/InstanceCreator.java#InstanceCreator.createInstance)",
+          "gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java:361 (gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java#ConstructorConstructor.newUnsafeAllocator -> gson/src/main/java/com/google/gson/internal/UnsafeAllocator.java#UnsafeAllocator.newInstance)",
+          "gson/src/main/java/com/google/gson/internal/Excluder.java:110 (gson/src/main/java/com/google/gson/internal/Excluder.java#Excluder.create -> gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.read)",
+          "gson/src/main/java/com/google/gson/internal/Excluder.java:110 (gson/src/main/java/com/google/gson/internal/Excluder.java#Excluder.create -> gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.write)",
+          "gson/src/main/java/com/google/gson/internal/Excluder.java:199 (gson/src/main/java/com/google/gson/internal/Excluder.java#Excluder.excludeClass -> gson/src/main/java/com/google/gson/ExclusionStrategy.java#ExclusionStrategy.shouldSkipClass)",
+          "gson/src/main/java/com/google/gson/internal/Excluder.java:176 (gson/src/main/java/com/google/gson/internal/Excluder.java#Excluder.isExcludedByExposeAnnotation -> gson/src/main/java/com/google/gson/annotations/Expose.java#Expose.deserialize)",
+          "gson/src/main/java/com/google/gson/internal/Excluder.java:176 (gson/src/main/java/com/google/gson/internal/Excluder.java#Excluder.isExcludedByExposeAnnotation -> gson/src/main/java/com/google/gson/annotations/Expose.java#Expose.serialize)",
+          "gson/src/main/java/com/google/gson/internal/Excluder.java:184 (gson/src/main/java/com/google/gson/internal/Excluder.java#Excluder.isExcludedByStrategy -> gson/src/main/java/com/google/gson/ExclusionStrategy.java#ExclusionStrategy.shouldSkipField)",
+          "gson/src/main/java/com/google/gson/internal/Excluder.java:244 (gson/src/main/java/com/google/gson/internal/Excluder.java#Excluder.isValidSince -> gson/src/main/java/com/google/gson/annotations/Since.java#Since.value)",
+          "gson/src/main/java/com/google/gson/internal/Excluder.java:252 (gson/src/main/java/com/google/gson/internal/Excluder.java#Excluder.isValidUntil -> gson/src/main/java/com/google/gson/annotations/Until.java#Until.value)",
+          "gson/src/main/java/com/google/gson/internal/ReflectionAccessFilterHelper.java:76 (gson/src/main/java/com/google/gson/internal/ReflectionAccessFilterHelper.java#ReflectionAccessFilterHelper.canAccess -> gson/src/main/java/com/google/gson/internal/ReflectionAccessFilterHelper.java#ReflectionAccessFilterHelper.AccessChecker.canAccess)"
         ],
         "S4": [],
         "S5": [],
@@ -853,7 +837,9 @@
       },
       "files": 245,
       "naMetrics": [
-        "S3"
+        "S1",
+        "S3",
+        "S4"
       ],
       "noFiles": false,
       "substitute": null,
@@ -1363,7 +1349,9 @@
       },
       "files": 187,
       "naMetrics": [
-        "S3"
+        "S1",
+        "S3",
+        "S4"
       ],
       "noFiles": false,
       "substitute": null,
@@ -1618,37 +1606,47 @@
   },
   "truth": {
     "notes": [
+      "anchors-not-expanded",
       "ast-only",
       "cargo-metadata-roots",
       "cha-callgraph",
       "cha-over-approximation",
+      "config-precision-unmeasured",
       "dockerfile-ast-oracle",
       "fixture-oracle-only",
       "go-packages-per-file-imports",
       "hclsyntax-traversals",
       "helm-template-render",
+      "if-else-arms-both-kept",
+      "internal-class-is-public-in-bytecode",
       "javac-tree-api",
       "js-yaml-oracle",
       "jvm-synthetics-dropped",
       "kotlinc-javap-classfiles",
+      "module-info-not-scored",
       "names-not-compared-for-templates",
       "nearest-tsconfig-resolution",
       "no-call-edges",
       "no-corpus-compiler-truth",
       "no-import-execution",
+      "no-inherited-dispatch",
+      "no-overload-resolution",
       "no-trait-dispatch",
+      "object-protocol-overrides-dropped",
       "pep420-namespace-packages",
       "property-access-not-a-call",
       "python>=3.11",
       "reported-only",
       "rule-agreement-oracle",
+      "same-regex-both-sides",
       "same-rules-different-parser",
       "source-classpath-only",
       "syn-item-tree",
       "terraform-config-inspect",
       "unresolved-files-dropped",
+      "unsupported:S1",
       "unsupported:S3",
-      "unsupported:S6",
+      "unsupported:S4",
       "workspace-entry-mapping"
     ]
   },

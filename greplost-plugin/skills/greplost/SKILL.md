@@ -64,6 +64,26 @@ nothing matched and there is no `file` block, 0 otherwise; the JSON is printed
 either way, so check `matches.length` / `file` rather than relying on the
 process exit code inside a larger tool call.
 
+### Node ids: the things inside a file
+
+A Terraform resource, a Kubernetes object, a Helm template document, a workflow
+job or step, a Dockerfile build stage and a framework signal (a React component,
+a route, a Pulumi resource) are nodes in the map, with the id
+`<file>#<kind>.<name>` (a duplicate name inside one file takes a `~<n>` suffix on
+the id only). `query` and `impact` take one wherever they take a path:
+
+```
+greplost query 'main.tf#resource.aws_vpc.this' --json
+greplost impact '.github/workflows/ci.yml#job.test' --json
+```
+
+For an exact node id, `query --json` adds a `node` block next to `matches`:
+`{ id, file, kind, name, package, card, span, blast, meta, references,
+referencedBy }`, where `references` and `referencedBy` are the reference edges
+(`config-ref`, `from-image`, `values-ref`, `needs`, `uses`, and so on) that link
+nodes to each other and to files. No artifact path ever contains a `#`: the card
+lives at `packages/<slug>/modules/<file>/<kind>.<name>.md`.
+
 ### `impact` shape
 
 `greplost impact <path> --json` returns `{ "path": string, "radius": number, "files": [{ "path": string, "depth": number }] }` — `radius` is the file's full reverse-import closure (never truncated, matches the module card's blast figure); `files` lists every dependent with its hop count and can be narrowed with `--depth <n>`.

@@ -6,12 +6,12 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Attributes:** `flavour: actions`, `name: README tables match bench/RESULTS.md`, `run: bun run readme:check`
+**Attributes:** `flavour: actions`, `name: verify the committed map of this repo`, `run: bun packages/cli/src/main.ts verify --diff`
 
-**References:** None.
+**References:** [`packages/cli/src/main.ts`](../../../../../greplost/modules/src/main.ts.md) (config)
 
 **Referenced by:** None.
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~16`)
 
-**Source:** L73-74
+**Source:** L77-78

@@ -6,12 +6,12 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Attributes:** `flavour: actions`, `uses: dtolnay/rust-toolchain@stable`, `usesRef: stable`
+**Attributes:** `flavour: actions`, `uses: actions/setup-go@v5`, `usesRef: v5`
 
-**References:** `ext:action/dtolnay/rust-toolchain` (uses)
+**References:** `ext:action/actions/setup-go` (uses)
 
 **Referenced by:** None.
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~5`)
 
-**Source:** L29-29
+**Source:** L24-34

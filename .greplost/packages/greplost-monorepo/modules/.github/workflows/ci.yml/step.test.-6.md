@@ -6,12 +6,12 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Attributes:** `flavour: actions`, `name: Cache the cargo registry for the Rust truth generator`, `uses: actions/cache@v4`, `usesRef: v4`
+**Attributes:** `flavour: actions`, `uses: dtolnay/rust-toolchain@stable`, `usesRef: stable`
 
-**References:** `ext:action/actions/cache` (uses)
+**References:** `ext:action/dtolnay/rust-toolchain` (uses)
 
 **Referenced by:** None.
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~6`)
 
-**Source:** L30-36
+**Source:** L35-35
