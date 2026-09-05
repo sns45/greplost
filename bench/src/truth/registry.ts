@@ -26,10 +26,22 @@ export type TruthTarget =
   | "signals-ts"
   | "signals-pulumi-go";
 
+/**
+ * What an oracle states beyond imports, exports and calls: reference edges (S5) and node ids
+ * (S6). `nodeFiles`, when present, names the files whose nodes the oracle states; S6 then scores
+ * only declarations and ids in those files (a Helm chart's templates are excluded this way
+ * without switching S6 off for the manifests beside it).
+ */
+export interface ExtraTruth {
+  references: Edge[];
+  nodes: string[];
+  nodeFiles?: string[];
+}
+
 export interface TruthModule {
   generateTruth(root: string, files: string[]): Truth;
   /** Raw, non-`Truth` payload the IaC and signal scorers read: reference and node sets. */
-  generateExtra?(root: string, files: string[]): { references: Edge[]; nodes: string[] };
+  generateExtra?(root: string, files: string[]): ExtraTruth;
   readonly NOTES?: readonly string[];
 }
 
