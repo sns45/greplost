@@ -433,9 +433,9 @@
 
 ## bench/src/truth/java.ts
 
-- `const NOTES: readonly string[] = ["javac-tree-api", "source-classpath-only", "unresolved-files-dropped"]` L59-59
-- `function javaTruthTool(): string` L144-163
-- `function generateTruth(root: string, files: string[]): Truth` L291-347
+- `const NOTES: readonly string[] = [ "javac-tree-api", "source-classpath-only", "unresolved-files-dropped", "no-overload-resolution", "no-inherited-dispatch", "module-info-not-scored", ]` L66-73
+- `function javaTruthTool(): string` L158-177
+- `function generateTruth(root: string, files: string[]): Truth` L305-361
 
 ## bench/src/truth/kotlin.ts
 

@@ -23,18 +23,18 @@
 - `const BUILD_TIMEOUT_MS = 5 * 60 * 1000`  L53-53
 - `const RUN_TIMEOUT_MS = 15 * 60 * 1000`  L55-55
 - `const MAX_BUFFER = 512 * 1024 * 1024`  L56-56
-- `const NOTES: readonly string[] = ["javac-tree-api", "source-classpath-only", "unresolved-files-dropped"]`  L59-59
-- `interface JavaToolOutput`  L62-69
-- `function compare(a: string, b: string): number`  L76-78
-- `function compareEdge(a: Edge, b: Edge): number`  L80-82
-- `function stderrOf(cause: unknown): string`  L84-89
-- `function toolHash(): string`  L92-104
-- `function javacMajor(): number`  L114-136
-- `function javaTruthTool(): string`  L144-163
-- `function runTool(root: string, files: readonly string[]): JavaToolOutput`  L165-201
-- `function fileOf(id: string): string`  L204-207
-- `function edge(from: string, to: string, kind: Edge["kind"]): Edge`  L209-211
-- `function importCycles(nodes: readonly string[], edges: ReadonlyArray<{ from: string; to: string }>): string[][]`  L220-283
-- `function generateTruth(root: string, files: string[]): Truth`  L291-347
+- `const NOTES: readonly string[] = [ "javac-tree-api", "source-classpath-only", "unresolved-files-dropped", "no-overload-resolution", "no-inherited-dispatch", "module-info-not-scored", ]`  L66-73
+- `interface JavaToolOutput`  L76-83
+- `function compare(a: string, b: string): number`  L90-92
+- `function compareEdge(a: Edge, b: Edge): number`  L94-96
+- `function stderrOf(cause: unknown): string`  L98-103
+- `function toolHash(): string`  L106-118
+- `function javacMajor(): number`  L128-150
+- `function javaTruthTool(): string`  L158-177
+- `function runTool(root: string, files: readonly string[]): JavaToolOutput`  L179-215
+- `function fileOf(id: string): string`  L218-221
+- `function edge(from: string, to: string, kind: Edge["kind"]): Edge`  L223-225
+- `function importCycles(nodes: readonly string[], edges: ReadonlyArray<{ from: string; to: string }>): string[][]`  L234-297
+- `function generateTruth(root: string, files: string[]): Truth`  L305-361
 
 **Calls:** `compare` → [`bench/src/truth/java.ts#compare`](java.ts.md) (high), `edge` → [`bench/src/truth/java.ts#edge`](java.ts.md) (high), `fileOf` → [`bench/src/truth/java.ts#fileOf`](java.ts.md) (high), `importCycles` → [`bench/src/truth/java.ts#importCycles`](java.ts.md) (high), `javaTruthTool` → [`bench/src/truth/java.ts#javaTruthTool`](java.ts.md) (high), `javacMajor` → [`bench/src/truth/java.ts#javacMajor`](java.ts.md) (high), `runTool` → [`bench/src/truth/java.ts#runTool`](java.ts.md) (high), `stderrOf` → [`bench/src/truth/java.ts#stderrOf`](java.ts.md) (high), `toolHash` → [`bench/src/truth/java.ts#toolHash`](java.ts.md) (high)

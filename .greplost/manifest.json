@@ -730,9 +730,9 @@
       "fanIn": 0,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 347,
+      "loc": 361,
       "pkg": "@greplost/bench",
-      "sha256": "dd3eccfbe75b977f1480eb5b9fdfe3e804161c8ef2da1e29733c9c9d94e4bfe5",
+      "sha256": "3bcbf8f19e6dc6ae99c12d88385a097cc8275294f2239ea1b3362f74f01588c0",
       "staleSummary": false
     },
     "bench/src/truth/kotlin.ts": {
@@ -1433,9 +1433,9 @@
       "fanIn": 1,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 618,
+      "loc": 656,
       "pkg": "@greplost/core",
-      "sha256": "c5f1e686ec0ce12ba0988a05b3878d332fc8180f8b391054f3fc7cff999fc2c6",
+      "sha256": "26a6318a433156e3986ca1e374bf34ce6e8caacaf8e7abb1e4eacc331b0a039b",
       "staleSummary": false
     },
     "packages/core/src/extract/kotlin.ts": {
@@ -1731,7 +1731,7 @@
       "lang": "ts",
       "loc": 627,
       "pkg": "@greplost/core",
-      "sha256": "7988424ec1ae05fd6f167b83dd7d3516626a361e3b254ef27f4b0fc01787f1d6",
+      "sha256": "7905fd71837741813ac94d2617e98ab232c5d7f140f449bb174953d9ca39e844",
       "staleSummary": false
     },
     "packages/core/src/graph/metrics.ts": {
@@ -2238,9 +2238,9 @@
       "fanIn": 3,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 389,
+      "loc": 436,
       "pkg": "@greplost/core",
-      "sha256": "c8732050336e9f23bbf30bb9fac0973e3466cb56f994633de8e6ccb8bfc4afca",
+      "sha256": "442a02ce7bf8d20a97bc7a1d3d9eb6d263f2cbba49131a3d6a79f7fc8525d960",
       "staleSummary": false
     },
     "packages/core/src/resolve/kotlin.ts": {
@@ -3458,14 +3458,14 @@
         "@greplost/sync"
       ],
       "files": 49,
-      "loc": 24901,
+      "loc": 24915,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 65,
-      "loc": 17787,
+      "loc": 17872,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
