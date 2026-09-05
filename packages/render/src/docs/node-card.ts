@@ -128,6 +128,9 @@ function edgesField(
  * render actually emits.
  */
 function cardFor(ctx: DocContext, target: string): string | undefined {
+  // A node whose own card was dropped for a path collision has nothing to point at, and a
+  // link would open whichever node won that path (ruling 2026-09-05).
+  if (ctx.skippedNodeCards.has(target)) return undefined;
   const decl = ctx.declById.get(target);
   // A plain symbol has no card of its own, so an edge that names one (a route
   // handler, say) links to the module card that documents it.

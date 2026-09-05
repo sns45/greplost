@@ -497,6 +497,23 @@ describe("card path collisions", () => {
     expect(warnings[0]).toContain("main.tf#resource.aws_vpc.Main");
   });
 
+  test("the file card names the skipped node without linking to another node's card", () => {
+    // The row used to link to `resource.aws_vpc.main.md`, which does not exist: on APFS
+    // that opens `resource.aws_vpc.Main.md`, so a reader following the link lands on the
+    // *other* resource and has no way to know. The row is now plain text and says why.
+    const snapshot = synth([
+      {
+        path: "main.tf",
+        decls: [decl("main.tf", "resource", "aws_vpc.Main", 1), decl("main.tf", "resource", "aws_vpc.main", 3)],
+      },
+    ]);
+    const artifacts = renderArtifacts({ snapshot, summaries: {} });
+    const nodes = block(artifacts.get("packages/root/modules/main.tf.md") as string, "Nodes") as string;
+    expect(nodes).toContain("[`resource.aws_vpc.Main`](main.tf/resource.aws_vpc.Main.md)");
+    expect(nodes).toContain("`resource.aws_vpc.main` (no card: collides with `resource.aws_vpc.Main`)");
+    expect(nodes).not.toContain("(main.tf/resource.aws_vpc.main.md)");
+  });
+
   test("the skipped card is skipped the same way on the next render, so verify stays exact", () => {
     const snapshot = synth([
       {

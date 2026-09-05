@@ -521,7 +521,7 @@
       "lang": "ts",
       "loc": 759,
       "pkg": "@greplost/bench",
-      "sha256": "2ea5a91f2efcdd0f2ca334146f953af71b98e6ac510514edafe5d041be0a961f",
+      "sha256": "21803a2f58278b2805d80c1c323bf4c163b3960fa850a9b84992494150458c93",
       "staleSummary": false
     },
     "bench/src/report-sections.ts": {
@@ -2789,9 +2789,9 @@
       "fanIn": 1,
       "fanOut": 4,
       "lang": "ts",
-      "loc": 260,
+      "loc": 269,
       "pkg": "@greplost/render",
-      "sha256": "b7392424ef223f8aa62a2b9f2fd463dba712b6ed955386a3a4d5e5532ebd35d1",
+      "sha256": "1f263731c01e82d91d431f29c1cf813db5c6f7689419b003ef3cd05987c090e3",
       "staleSummary": false
     },
     "packages/render/src/docs/hotspots.ts": {
@@ -2833,9 +2833,9 @@
       "fanIn": 2,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 147,
+      "loc": 150,
       "pkg": "@greplost/render",
-      "sha256": "3fe8760668ac70187ccac96cd54adcd7f6081a0159d611681eb51553099efefb",
+      "sha256": "cd5d5359c69c20366615bc84758913d7552ef628d68d1a3509951ac474c0d961",
       "staleSummary": false
     },
     "packages/render/src/docs/package-map.ts": {
@@ -2951,9 +2951,9 @@
       "fanIn": 8,
       "fanOut": 10,
       "lang": "ts",
-      "loc": 497,
+      "loc": 545,
       "pkg": "@greplost/render",
-      "sha256": "29a8160196a026f2f15b1625723c1e3045bff80f301676fa7d6ed4809c01f125",
+      "sha256": "e3af72c4ef3b6ee2af2149bbfd7de17f8902e5740b69adee33560e7dff27e303",
       "staleSummary": false
     },
     "packages/render/src/slug.ts": {
@@ -3624,7 +3624,7 @@
         "@greplost/core"
       ],
       "files": 15,
-      "loc": 2308,
+      "loc": 2368,
       "path": "packages/render",
       "rdeps": [
         "@greplost/semantic",

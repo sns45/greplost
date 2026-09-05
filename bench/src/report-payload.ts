@@ -390,10 +390,10 @@ export interface Scenario {
 /**
  * Every timed scenario in a perf payload.
  *
- * The shape the perf suite actually writes is
- * `repos: [{ name, files, tier, scenarios: [{ scenario, ms: { p50, p95 }, peakRssBytes }] }]`
- *, an array of repos, each holding an array of scenarios whose percentiles are
- * nested under `ms`. This reader was first written against a flat
+ * The shape the perf suite actually writes is an array of repos, each holding an array of
+ * scenarios whose percentiles are nested under `ms`:
+ * `repos: [{ name, files, tier, scenarios: [{ scenario, ms: { p50, p95 }, peakRssBytes }] }]`.
+ * This reader was first written against a flat
  * `scenarios: { name: { p50, p95, rss } }` object, which matched nothing, so
  * P1 to P3 rendered `not run` beside a payload that had the numbers all along.
  * Both shapes are read now, plus a `repos` object keyed by name, because a

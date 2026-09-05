@@ -126,6 +126,13 @@ export interface DocContext {
    * node id or its file belongs to no package.
    */
   nodeCardPathOf(id: string): string | undefined;
+  /**
+   * Nodes whose card the render cannot write, each mapped to the artifact that already
+   * claims its path (a node id, or the file whose card does). Computed before any card is
+   * built, so a card that would have linked to the missing page can say so instead of
+   * pointing at whichever node won the path (ruling 2026-09-05).
+   */
+  skippedNodeCards: ReadonlyMap<string, string>;
 }
 
 /**
@@ -308,6 +315,7 @@ export function createContext(input: RenderInput): DocContext {
 
   return {
     snapshot,
+    skippedNodeCards: collidingNodeCards(packages, filesByPackage, nodesOf),
     summaries: input.summaries,
     config: snapshot.config,
     manifest,
@@ -347,6 +355,52 @@ function fileOfSymbol(id: string): string {
 }
 
 /**
+ * Node cards this render cannot write, each mapped to the artifact that claimed the path
+ * first, in the order `renderArtifacts` emits.
+ *
+ * Two node ids can name one file: `resource \"aws_vpc\" \"Main\"` beside
+ * `resource \"aws_vpc\" \"main\"` is legal Terraform and two distinct ids, and `nodeSlug`
+ * is lossy besides (`a/b` and `a__b` slug the same). The later card is dropped rather than
+ * failing the whole map (ruling 2026-09-05), and this runs *before* any card is built so
+ * that the cards which would have linked to the dropped page can name it as text instead.
+ * A link would resolve, on the filesystem the map is written to, to the other node's card:
+ * the one outcome worse than a dead link is a live link to the wrong thing.
+ */
+function collidingNodeCards(
+  packages: readonly PackageInfo[],
+  filesByPackage: ReadonlyMap<string, string[]>,
+  nodesOf: ReadonlyMap<string, Declaration[]>,
+): Map<string, string> {
+  const claimedBy = new Map<string, string>();
+  const skipped = new Map<string, string>();
+  const claim = (path: string, claimant: string): void => {
+    claimedBy.set(foldPath(path), claimant);
+  };
+
+  claim("INDEX.md", "INDEX.md");
+  claim("repo/MAP.md", "repo/MAP.md");
+  claim("repo/HOTSPOTS.md", "repo/HOTSPOTS.md");
+  for (const pkg of packages) {
+    const dir = packageDir(pkg.name);
+    claim(`${dir}/MAP.md`, `${dir}/MAP.md`);
+    claim(`${dir}/API.md`, `${dir}/API.md`);
+    for (const file of filesByPackage.get(pkg.name) ?? []) {
+      claim(cardPath(pkg, file), file);
+      for (const decl of nodesOf.get(file) ?? []) {
+        const path = nodeCardPath(pkg, decl.id);
+        const other = claimedBy.get(foldPath(path));
+        if (other !== undefined) {
+          skipped.set(decl.id, other);
+          continue;
+        }
+        claim(path, decl.id);
+      }
+    }
+  }
+  return skipped;
+}
+
+/**
  * Every markdown artifact, keyed by path relative to `.greplost/`. Insertion
  * order is fixed (INDEX, repo docs, then packages by path, each with its map,
  * API and cards) so two renders of the same snapshot produce identical maps
@@ -360,44 +414,38 @@ export function renderArtifacts(input: RenderInput): Map<string, string> {
   // Map silently keeps the last writer, so the guard needs the raw list.
   const claimed: string[] = [];
   /** Folded path -> what claimed it, for the node-card skip below. */
-  const claimedBy = new Map<string, string>();
-  const emit = (path: string, text: string, claimant: string): void => {
+  const emit = (path: string, text: string): void => {
     claimed.push(path);
-    claimedBy.set(foldPath(path), claimant);
     out.set(path, text);
   };
 
-  emit("INDEX.md", buildIndex(ctx), "INDEX.md");
-  emit("repo/MAP.md", buildRepoMap(ctx), "repo/MAP.md");
-  emit("repo/HOTSPOTS.md", buildHotspots(ctx), "repo/HOTSPOTS.md");
+  emit("INDEX.md", buildIndex(ctx));
+  emit("repo/MAP.md", buildRepoMap(ctx));
+  emit("repo/HOTSPOTS.md", buildHotspots(ctx));
 
   for (const pkg of ctx.packages) {
     const dir = packageDir(pkg.name);
-    emit(`${dir}/MAP.md`, buildPackageMap(ctx, pkg), `${dir}/MAP.md`);
-    emit(`${dir}/API.md`, buildApi(ctx, pkg), `${dir}/API.md`);
+    emit(`${dir}/MAP.md`, buildPackageMap(ctx, pkg));
+    emit(`${dir}/API.md`, buildApi(ctx, pkg));
     for (const file of ctx.filesByPackage.get(pkg.name) ?? []) {
-      emit(cardPath(pkg, file), buildCard(ctx, file), file);
+      emit(cardPath(pkg, file), buildCard(ctx, file));
       // Each of the file's non-file nodes, immediately after its file card, so
       // the artifact order is still "package by path, each file in path order".
       for (const decl of ctx.nodesOf.get(file) ?? []) {
-        const path = nodeCardPath(pkg, decl.id);
-        // Two node ids can name one file: `resource "aws_vpc" "Main"` beside
-        // `resource "aws_vpc" "main"` is legal Terraform and two distinct ids,
-        // and `nodeSlug` is lossy besides (`a/b` and `a__b` slug the same).
-        // Failing the whole render left the repository with no map at all over
-        // one node, so the later card is skipped with a warning naming both ids
-        // and the build carries on (ruling 2026-09-05). `verify` renders through
-        // this same function, so it skips the same card and stays byte-exact.
-        const other = claimedBy.get(foldPath(path));
+        // Which cards collide was settled by `collidingNodeCards` before the first card
+        // was built, so the cards already say what this loop is about to do. Skipping is
+        // a property of the snapshot, so `verify` renders the same set and stays exact.
+        const other = ctx.skippedNodeCards.get(decl.id);
         if (other !== undefined) {
           input.warnings?.push(
-            `greplost: no card for ${decl.id}: ${path} is already claimed by ${other}. ` +
-              "Two ids that differ only by case or Unicode normalisation are one file on " +
-              "macOS and Windows; rename one of them to give both a card.",
+            `greplost: no card for ${decl.id}: ${nodeCardPath(pkg, decl.id)} is already ` +
+              `claimed by ${other}. Two ids that differ only by case or Unicode ` +
+              "normalisation are one file on macOS and Windows; rename one of them to " +
+              "give both a card.",
           );
           continue;
         }
-        emit(path, buildNodeCard(ctx, decl.id), decl.id);
+        emit(nodeCardPath(pkg, decl.id), buildNodeCard(ctx, decl.id));
       }
     }
   }

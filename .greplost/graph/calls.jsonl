@@ -2968,6 +2968,10 @@
 {"confidence":"high","from":"packages/render/src/render.ts#assertNoCardCollision","kind":"call","to":"packages/render/src/render.ts#foldPath"}
 {"confidence":"high","from":"packages/render/src/render.ts#assertNoSlugCollision","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
 {"confidence":"high","from":"packages/render/src/render.ts#assertNoSlugCollision","kind":"call","to":"packages/render/src/slug.ts#packageDir"}
+{"confidence":"high","from":"packages/render/src/render.ts#collidingNodeCards","kind":"call","to":"packages/render/src/render.ts#foldPath"}
+{"confidence":"high","from":"packages/render/src/render.ts#collidingNodeCards","kind":"call","to":"packages/render/src/slug.ts#cardPath"}
+{"confidence":"high","from":"packages/render/src/render.ts#collidingNodeCards","kind":"call","to":"packages/render/src/slug.ts#nodeCardPath"}
+{"confidence":"high","from":"packages/render/src/render.ts#collidingNodeCards","kind":"call","to":"packages/render/src/slug.ts#packageDir"}
 {"confidence":"med","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/core/src/graph/blast.ts#blastRadius"}
 {"confidence":"med","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/core/src/graph/directories.ts#filesByDirectory"}
 {"confidence":"med","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/core/src/graph/query.ts#impactPairs"}
@@ -2976,6 +2980,7 @@
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/core/src/schema.ts#isNodeDeclaration"}
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/core/src/schema.ts#splitNodeId"}
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/render/src/render.ts#blastUniverse"}
+{"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/render/src/render.ts#collidingNodeCards"}
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/render/src/render.ts#fileOfSymbol"}
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/render/src/slug.ts#cardPath"}
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/render/src/slug.ts#nodeCardPath"}
@@ -2991,7 +2996,6 @@
 {"confidence":"high","from":"packages/render/src/render.ts#renderArtifacts","kind":"call","to":"packages/render/src/render.ts#assertNoCardCollision"}
 {"confidence":"high","from":"packages/render/src/render.ts#renderArtifacts","kind":"call","to":"packages/render/src/render.ts#assertNoSlugCollision"}
 {"confidence":"high","from":"packages/render/src/render.ts#renderArtifacts","kind":"call","to":"packages/render/src/render.ts#createContext"}
-{"confidence":"high","from":"packages/render/src/render.ts#renderArtifacts","kind":"call","to":"packages/render/src/render.ts#foldPath"}
 {"confidence":"high","from":"packages/render/src/render.ts#renderArtifacts","kind":"call","to":"packages/render/src/slug.ts#cardPath"}
 {"confidence":"high","from":"packages/render/src/render.ts#renderArtifacts","kind":"call","to":"packages/render/src/slug.ts#nodeCardPath"}
 {"confidence":"high","from":"packages/render/src/render.ts#renderArtifacts","kind":"call","to":"packages/render/src/slug.ts#packageDir"}

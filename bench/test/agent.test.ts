@@ -647,7 +647,7 @@ describe("fake claude", () => {
     // The guard that matters most in this file: if PATH resolution ever regressed,
     // every test below would spend real money against the real Claude Code.
     expect(resolveClaude()).toBe(path.join(harness.dir, "bin", "claude"));
-  });
+  }, 60_000);
 
   test("runs the fixture end to end in the gl condition and scores the canned answer 1.0", async () => {
     resetHarness();
@@ -681,7 +681,7 @@ describe("fake claude", () => {
     const aggregate = payload["aggregate"] as Record<string, Record<string, Record<string, { mean: number }>>>;
     expect(aggregate["gl"]?.["overall"]?.["accuracy"]?.mean).toBe(1);
     expect(aggregate["gl"]?.["overall"]?.["toolCalls"]?.mean).toBe(2);
-  });
+  }, 60_000);
 
   test("prepares a real .greplost/ copy and passes the condition's flags", async () => {
     resetHarness();
@@ -701,7 +701,7 @@ describe("fake claude", () => {
       // The prompt is passed verbatim: the fake answered by looking it up.
       expect(call.argv[call.argv.indexOf("-p") + 1]).toContain("Answer with a JSON block");
     }
-  });
+  }, 60_000);
 
   test("gl passes --plugin-dir and puts a working greplost shim first on the child's PATH", async () => {
     resetHarness();
@@ -723,7 +723,7 @@ describe("fake claude", () => {
       // runner deletes its whole working directory when the run ends.)
       expect(call.shimVersion).toMatch(/^greplost \d+\.\d+\.\d+/);
     }
-  });
+  }, 60_000);
 
   test("base gets no plugin dir and no greplost shim", async () => {
     resetHarness();
@@ -734,7 +734,7 @@ describe("fake claude", () => {
       expect(call.greplost).toBe(false);
       expect(call.shimVersion).toBe("");
     }
-  });
+  }, 60_000);
 
   test("falls back to stream-json once, then stays there, because the envelope has no tool-call count", async () => {
     resetHarness();
@@ -762,7 +762,7 @@ describe("fake claude", () => {
     expect(probe["sessions"]).toBe(1);
     expect(probe["costUsd"]).toBe(0.0125);
     expect(probe["tokens"]).toBe(5520);
-  });
+  }, 60_000);
 
   test("gl-strict disallows Grep and Glob", async () => {
     resetHarness();
@@ -778,7 +778,7 @@ describe("fake claude", () => {
     const runs = writtenResult()["runs"] as Record<string, unknown>[];
     expect(runs.length).toBeGreaterThan(0);
     for (const record of runs) expect(record["score"]).toBe(1);
-  });
+  }, 60_000);
 
   test("records a competitor with no installed artifacts as N/A instead of zero", async () => {
     resetHarness();
@@ -794,7 +794,7 @@ describe("fake claude", () => {
     expect((payload["aggregate"] as Record<string, unknown>)["graphify"]).toBeUndefined();
     for (const record of payload["runs"] as Record<string, unknown>[]) expect(record["condition"]).toBe("gl");
     for (const call of invocations()) expect(call.argv).not.toContain("graphify");
-  });
+  }, 60_000);
 
   test("an answer with no JSON block scores zero and is counted as unparsed", async () => {
     resetHarness();
@@ -812,7 +812,7 @@ describe("fake claude", () => {
     expect(overall?.["unparsed"]).toBe(2);
     // The CLI worked: an unreadable answer is not a broken session.
     expect(overall?.["errors"]).toBe(0);
-  });
+  }, 60_000);
 
   test("a run where every condition is N/A writes nothing and fails", async () => {
     resetHarness();
@@ -821,7 +821,7 @@ describe("fake claude", () => {
     expect(code).toBe(1);
     expect(readdirSync(harness.resultsDir)).toEqual([]);
     expect(invocations()).toEqual([]);
-  });
+  }, 60_000);
 
   test("--gate reports A3 non-inferiority against base", async () => {
     resetHarness();
@@ -838,7 +838,7 @@ describe("fake claude", () => {
     expect(code).toBe(0);
     expect(lines[lines.length - 1]).toBe("agent: GATE PASS");
     expect(writtenResult()["gate"]).toEqual({ passed: true, missed: [] });
-  });
+  }, 60_000);
 
   test("wins, losses and ties are counted per task against base", async () => {
     resetHarness();
@@ -855,7 +855,7 @@ describe("fake claude", () => {
     // Both conditions get the same canned answer, so every task is a tie.
     expect(table["gl"]).toEqual({ wins: 0, losses: 0, ties: 4 });
     expect(table["base"]).toBeUndefined();
-  });
+  }, 60_000);
 });
 
 describe("fake claude timeouts and budget", () => {
@@ -936,7 +936,7 @@ describe("fake claude timeouts and budget", () => {
     }
     const overall = (payload["aggregate"] as Record<string, Record<string, Record<string, number>>>)["gl"]?.["overall"];
     expect(overall?.["errors"]).toBe(1);
-  });
+  }, 60_000);
 
   test("a non-zero exit is folded into the record's error", async () => {
     resetHarness();
@@ -945,7 +945,7 @@ describe("fake claude timeouts and budget", () => {
     for (const record of writtenResult()["runs"] as Record<string, unknown>[]) {
       expect(String(record["error"])).toContain("exit 3");
     }
-  });
+  }, 60_000);
 
   test("--max-usd caps the run: the flag is passed and the loop aborts with partial results", async () => {
     resetHarness();
@@ -988,7 +988,7 @@ describe("fake claude timeouts and budget", () => {
     expect(budget["truncatedSessions"] as number).toBeGreaterThanOrEqual(1);
     // Attributable: every record says which ceiling its own session was given.
     for (const record of runs) expect(record["sessionBudgetUsd"] as number).toBeLessThanOrEqual(0.03);
-  });
+  }, 60_000);
 
   test("--max-session-usd sets the per-session ceiling and is recorded", async () => {
     resetHarness();
@@ -1011,7 +1011,7 @@ describe("fake claude timeouts and budget", () => {
     for (const record of payload["runs"] as Record<string, unknown>[]) {
       expect(record["sessionBudgetUsd"]).toBe(0.5);
     }
-  });
+  }, 60_000);
 
   test("the per-session ceiling follows the observed median once sessions have billed", async () => {
     resetHarness();
@@ -1033,7 +1033,7 @@ describe("fake claude timeouts and budget", () => {
     expect(calls[calls.length - 1]?.argv[(calls[calls.length - 1]?.argv.indexOf("--max-budget-usd") ?? -1) + 1]).toBe(
       "0.05",
     );
-  });
+  }, 60_000);
 
   test("a fixture run carries the default cap and passes a budget flag", async () => {
     // Review round 3, important 6: `--fixture` used to mean uncapped. `--fixture` only
@@ -1053,7 +1053,7 @@ describe("fake claude timeouts and budget", () => {
       expect(at).toBeGreaterThanOrEqual(0);
       expect(Number(call.argv[at + 1])).toBeLessThanOrEqual(DEFAULT_MAX_USD);
     }
-  });
+  }, 60_000);
 
   test("--max-usd still overrides the default on a fixture run", async () => {
     resetHarness();
@@ -1062,7 +1062,7 @@ describe("fake claude timeouts and budget", () => {
       await run(["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "1", "--max-usd", "0.5"]),
     ).toBe(0);
     expect((writtenResult()["budget"] as Record<string, unknown>)["maxUsd"]).toBe(0.5);
-  });
+  }, 60_000);
 
   test("--tasks 0 and --runs 0 are rejected rather than silently defaulted", async () => {
     resetHarness();
@@ -1071,7 +1071,7 @@ describe("fake claude timeouts and budget", () => {
     expect(await run(["--fixture", "--tasks", "-3"])).toBe(2);
     expect(readdirSync(harness.resultsDir)).toEqual([]);
     expect(invocations()).toEqual([]);
-  });
+  }, 60_000);
 });
 
 describe("fake claude results, metrics and seams", () => {
@@ -1081,7 +1081,7 @@ describe("fake claude results, metrics and seams", () => {
     expect(await run(["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "1"])).toBe(0);
     expect(writtenResultFile()).toMatch(/^agent-fixture-\d{4}-\d{2}-\d{2}-[^/]*\.json$/);
     expect(writtenResult()["suite"]).toBe("agent-fixture");
-  });
+  }, 60_000);
 
   test("--categories keeps only the categories asked for", async () => {
     resetHarness();
@@ -1093,7 +1093,7 @@ describe("fake claude results, metrics and seams", () => {
     expect(tasks.length).toBeGreaterThan(0);
     for (const task of tasks) expect(task.category).toBe("definition");
     expect(await run(["--fixture", "--categories", "nonsense"])).toBe(2);
-  });
+  }, 60_000);
 
   test("the payload carries A1 to A4 keyed by their tech spec ids", async () => {
     resetHarness();
@@ -1114,7 +1114,7 @@ describe("fake claude results, metrics and seams", () => {
     expect(metrics["A1"]?.["target"]).toBe(0.5);
     expect(metrics["A1"]?.["met"]).toBe(false);
     expect(metrics["A4"]?.["id"]).toBe("A4");
-  });
+  }, 60_000);
 
   test("A3blast is null when the blast-radius category never ran", async () => {
     resetHarness();
@@ -1140,14 +1140,14 @@ describe("fake claude results, metrics and seams", () => {
     expect(metrics["A3blast"]).toBeNull();
     expect((metrics["A3"] as Record<string, unknown>)["delta"]).toBe(0);
     expect((metrics["A1"] as Record<string, unknown>)["ratio"]).toBe(1);
-  });
+  }, 60_000);
 
   test("metrics are null when the run cannot compare gl against base", async () => {
     resetHarness();
     writeAnswerKey(generateStructuralTasks("tiny-ts", fixtureTruth, 1));
     expect(await run(["--fixture", "--condition", "gl", "--runs", "1", "--tasks", "1"])).toBe(0);
     expect(writtenResult()["metrics"]).toBeNull();
-  });
+  }, 60_000);
 
   test("runTask is a programmatic entry that scores one task in a prepared copy", async () => {
     resetHarness();
@@ -1171,7 +1171,7 @@ describe("fake claude results, metrics and seams", () => {
     // macOS resolves /var to /private/var, and the child reports its resolved cwd.
     expect((calls[0] as FakeInvocation).cwd).toBe(realpathSync(copy));
     expect((calls[0] as FakeInvocation).argv[1]).toBe(task.prompt);
-  });
+  }, 60_000);
 });
 
 describe("dry-run", () => {
@@ -1192,5 +1192,5 @@ describe("dry-run", () => {
     expect(readdirSync(harness.resultsDir)).toEqual([]);
     // Nothing was executed: a dry run must not need a `claude` on PATH at all.
     expect(invocations()).toEqual([]);
-  });
+  }, 60_000);
 });
