@@ -108,7 +108,24 @@ jobs:
         run: bun run bench:structural --tier S --gate
       - name: map quality gate
         run: bun run bench:mapquality --gate
-      - name: freshness gate (100-commit replay)
-        run: bun run bench:replay --commits 100 --gate
-      - name: performance gate (tier S)
-        run: bun run bench:perf --tier S --gate
+      # Named repos, not a tier. Both of these steps used to inherit whatever
+      # `--tier S` happened to mean, and tier S grew from two repos in build 1 to
+      # seventeen in build 2: the replay step went from replaying commits of one
+      # TypeScript repo to replaying every language in the corpus, and was killed
+      # for memory. A gate that changes what it measures because a corpus entry
+      # was added is not a gate, so both steps name their repos.
+      #
+      # Freshness is a property of the sync layer, not of a language: hono
+      # (TypeScript) and pydantic (Python) are one repo from each half of the
+      # product, and the tier S *structural* gate above is what covers every
+      # language.
+      - name: freshness gate (100-commit replay, hono)
+        run: bun run bench:replay --repo hono --commits 100 --gate
+      - name: freshness gate (100-commit replay, pydantic)
+        run: bun run bench:replay --repo pydantic --commits 100 --gate
+      # The two repos build 1 measured, and the two the absolute P1/P2 budgets in
+      # RESULTS.md were set against.
+      - name: performance gate (anyq)
+        run: bun run bench:perf --repo anyq --gate
+      - name: performance gate (gin)
+        run: bun run bench:perf --repo gin --gate
