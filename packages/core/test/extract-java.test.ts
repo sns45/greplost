@@ -283,6 +283,20 @@ import static tiny.Retry.attempts;
     });
   });
 
+  test("an on-demand import whose prefix names a type resolves to that type's file", () => {
+    const resolve = resolver({
+      "src/main/java/tiny/Consts.java": "package tiny;\npublic final class Consts { public static final int MAX = 1; }\n",
+      "src/main/java/tiny/App.java": "package tiny;\n",
+    });
+    // `import static tiny.Consts.*` reaches a type, so it is an edge to that type's file;
+    // `import tiny.*` reaches a package, which is not a file and never an edge.
+    expect(resolve("src/main/java/tiny/App.java", "tiny.Consts")).toEqual({
+      type: "file",
+      path: "src/main/java/tiny/Consts.java",
+    });
+    expect(resolve("src/main/java/tiny/App.java", "tiny")).toEqual({ type: "external", pkg: "tiny" });
+  });
+
   test("a file outside any src/main/java resolves against the repo root", () => {
     const resolve = resolver({ "tiny/Store.java": "package tiny;\npublic class Store {}\n" });
     expect(resolve("tiny/App.java", "tiny.Store")).toEqual({ type: "file", path: "tiny/Store.java" });
@@ -306,6 +320,12 @@ import static tiny.Retry.attempts;
     expect(resolve("src/main/java/tiny/App.java", "org.junit.jupiter.api.Test")).toEqual({
       type: "external",
       pkg: "maven/org.junit:jupiter",
+    });
+    // The artifact is never the last segment, which is the *type*: `org.junit.Test` publishes
+    // the JUnit 4 artifact, not one external node per test class.
+    expect(resolve("src/main/java/tiny/App.java", "org.junit.Test")).toEqual({
+      type: "external",
+      pkg: "maven/org.junit:junit",
     });
     // Anything else falls back to its first segment.
     expect(resolve("src/main/java/tiny/App.java", "io.netty.buffer.ByteBuf")).toEqual({ type: "external", pkg: "io" });
@@ -585,7 +605,7 @@ describe("tiny-java", () => {
     expect(edge?.to).toBe(`${SRC}/Store.java`);
   });
 
-  test("the static import and nothing else reaches Retry", () => {
+  test("both static import forms and the plain one are the only in-repo edges", () => {
     expect(
       snapshot.imports
         .filter((e) => e.to.endsWith(".java"))
@@ -593,6 +613,9 @@ describe("tiny-java", () => {
     ).toEqual([
       `${SRC}/App.java -> ${SRC}/Retry.java (tiny.Retry.attempts)`,
       `${SRC}/App.java -> ${SRC}/Store.java (tiny.Store)`,
+      // `import static tiny.Retry.*` names a *type*, so it is a dependency on that type's file
+      // exactly as the named form is. Only a package on-demand import points at nothing.
+      `${SRC}/Store.java -> ${SRC}/Retry.java (tiny.Retry)`,
     ]);
   });
 

@@ -66,13 +66,24 @@ function join(dir: string, rest: string): string {
   return rest === "" ? dir : `${dir}/${rest}`;
 }
 
-/** `com.google.gson` -> `maven/com.google:gson`; a shorter name keeps what it has. */
+/**
+ * The external id an unresolved Java name publishes.
+ *
+ * `com.google.gson.Gson` -> `ext:maven/com.google:gson`, from the first two segments as the
+ * group and the third as the artifact (spec 1.4). The artifact is only ever a **package**
+ * segment: a fully qualified Java name ends in the *type*, so `org.junit.Test` has to take
+ * `junit` and not `Test` — publishing a type as an artifact would make one external node per
+ * class of a dependency instead of one per dependency. Anything that is not a `com.`/`org.`
+ * name keeps its first segment, which is what spec 1.4 says.
+ */
 function externalPackage(segments: readonly string[]): string {
   const head = segments[0] ?? "";
   if (!MAVEN_ROOTS.has(head) || segments.length < 2) return head;
   const group = `${head}.${segments[1] ?? ""}`;
-  const artifact = segments[2];
-  return artifact === undefined ? `maven/${head}:${segments[1] ?? ""}` : `maven/${group}:${artifact}`;
+  // With four or more segments the third is a package segment; with three it is the type, so
+  // the group's own last segment is the deepest package name available.
+  const artifact = segments.length >= 4 ? segments[2] : segments[1];
+  return `maven/${group}:${artifact ?? ""}`;
 }
 
 // ---------------------------------------------------------------------------

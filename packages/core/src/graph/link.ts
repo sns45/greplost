@@ -534,17 +534,17 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
               : file.lang === "kotlin"
                 ? resolveKotlinCall(file, site, kotlinCalls)
                 : dot === -1
-          ? resolveName(callee, file.path, topLevel, bindings, index)
-          : resolveMember(
-              callee.slice(0, dot),
-              callee.slice(dot + 1),
-              site.caller,
-              file.path,
-              topLevel,
-              bindings,
-              index,
-              declKinds,
-            );
+                  ? resolveName(callee, file.path, topLevel, bindings, index)
+                  : resolveMember(
+                      callee.slice(0, dot),
+                      callee.slice(dot + 1),
+                      site.caller,
+                      file.path,
+                      topLevel,
+                      bindings,
+                      index,
+                      declKinds,
+                    );
       if (resolved === null || !isCallable(resolved.to)) continue;
 
       const from = site.caller === "" ? file.path : symbolId(file.path, site.caller);

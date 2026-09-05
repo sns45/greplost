@@ -472,28 +472,47 @@ public final class Truth {
   }
 
   /**
-   * True when a `new` sits inside an enum constant's own declaration.
+   * True when a call sits inside a member javac generated rather than read.
    *
-   * `RED, GREEN` is a construction the compiler wrote, not the author, and `A { int n(){…} }`
-   * is the same construction with a body bolted on — the body just puts extra tree nodes
-   * between the `new` and the constant, which is why the immediate parent is not enough. Both
-   * would otherwise be an edge from the enum to itself that nobody can read in the source and
-   * that greplost, reading only what is written, never emits.
+   * javac fills the tree in as it goes: an enum gets a constructor calling `Enum(String,int)`,
+   * and a *bodied* enum constant (`A { int n(){…} }`) gets a whole anonymous subclass whose
+   * generated constructor calls the enum's own. Nobody wrote either `super()`, and greplost —
+   * which reads only what is written — emits neither, so the second one showed up as an
+   * unreadable edge from the enum to itself. The enclosing member's `Origin` is the compiler's
+   * own answer to "did a human write this": `MANDATED` for both, `EXPLICIT` for real code.
    *
-   * The walk is paired with "the constructor javac resolved was not written in source" at the
-   * call site, so a real `new Store(…)` written *inside* a constant's body is still truth: its
-   * constructor is one a human wrote.
+   * The walk stops at the first enclosing method, so a call inside a constant's body that a
+   * human *did* write is still truth.
    */
-  private boolean insideEnumConstant(TreePath path) {
+  private boolean generatedContext(TreePath path) {
     for (TreePath current = path.getParentPath(); current != null; current = current.getParentPath()) {
-      Tree leaf = current.getLeaf();
-      if (leaf instanceof ClassTree || leaf instanceof MethodTree) return false;
-      if (isEnumConstant(current)) return true;
+      if (!(current.getLeaf() instanceof MethodTree)) continue;
+      Element enclosing = trees.getElement(current);
+      if (enclosing == null || writtenInSource(enclosing)) return false;
+      return !isAuthoredAnonymousClass(current.getParentPath());
     }
     return false;
   }
 
+  /**
+   * True when this path is the body of a `new X() { … }` an author actually wrote.
+   *
+   * The distinction the rule above turns on. javac gives such a body a constructor of its own
+   * whose `super()` calls `X`'s — and that `super()` is precisely what the author's `new` means,
+   * the edge a reader wants and the one greplost publishes from the `new` itself. A *bodied
+   * enum constant* compiles to the same shape from source nobody wrote as a `new` at all, so
+   * its `super()` is an edge from the enum to itself that appears in no source file.
+   */
+  private boolean isAuthoredAnonymousClass(TreePath path) {
+    if (path == null || !(path.getLeaf() instanceof ClassTree)) return false;
+    Element element = trees.getElement(path);
+    if (!(element instanceof TypeElement type) || type.getNestingKind() != NestingKind.ANONYMOUS) return false;
+    TreePath creation = path.getParentPath();
+    return creation == null || !isEnumConstant(creation.getParentPath());
+  }
+
   private void record(TreePath path, Set<String> out) {
+    if (generatedContext(path)) return;
     Element target = trees.getElement(path);
     if (!(target instanceof ExecutableElement callee)) return;
     String targetFile = fileOf(target);
@@ -508,7 +527,9 @@ public final class Truth {
       // type itself; any other generated member (a record accessor, an enum's `values`) has
       // nothing to point at and the call is not truth.
       if (callee.getKind() != ElementKind.CONSTRUCTOR) return;
-      if (insideEnumConstant(path)) return;
+      // A bare `RED, GREEN` is a construction the compiler wrote: the constant *is* the `new`,
+      // so there is no generated method around it for `generatedContext` to catch.
+      if (isEnumConstant(path.getParentPath())) return;
       to = ownerName;
     } else {
       to = ownerName + "." + simpleName(callee, owner);
