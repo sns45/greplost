@@ -36,7 +36,7 @@ untouched and says so.
   CHECK: bun packages/cli/src/main.ts verify --diff 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: map is in sync
 
-- [ ] T9: CI is green on the build-2 branch, including the structural-langs job
+- [ ] T9: CI is green on the build-2 branch, including the tier S structural gate step (ruling 2026-09-05: the gate runs inside the existing test job rather than a separate structural-langs job)
   CHECK: gh run list --branch "$(git rev-parse --abbrev-ref HEAD)" --limit 1 --json conclusion --jq '.[0].conclusion'
   EXPECT: success
 
