@@ -98,3 +98,29 @@ describe("grammars", () => {
     }
   });
 });
+
+describe("handle lifetime", () => {
+  test("dispose releases the handle and is idempotent", async () => {
+    const parser = await createParser();
+    const tree = parser.parse("export const a = 1;\n", "ts");
+    tree.delete();
+    parser.dispose();
+    parser.dispose();
+  });
+
+  test("parsing after dispose is a clear error, not a wasm crash", async () => {
+    const parser = await createParser();
+    parser.dispose();
+    expect(() => parser.parse("export const a = 1;\n", "ts")).toThrow(/disposed/);
+  });
+
+  test("disposing one handle leaves another usable, because the grammars are shared", async () => {
+    const first = await createParser();
+    const second = await createParser();
+    first.dispose();
+    const tree = second.parse("export const a = 1;\n", "ts");
+    expect(tree.rootNode.hasError).toBe(false);
+    tree.delete();
+    second.dispose();
+  });
+});

@@ -388,6 +388,47 @@ describe("mod tree", () => {
       path: "core/flags/defs.rs",
     });
   });
+
+  test('a `[workspace] members = ["."]` crate does not walk the crate index forever', () => {
+    // ripgrep's `fuzz/Cargo.toml` carries the standard "prevent this from interfering
+    // with workspaces" idiom, `members = ["."]`. A member is joined onto its own
+    // directory, so `fuzz` + `.` is `fuzz/.` — a *different* string that the filesystem
+    // happily resolves to the same manifest, which names `.` again. The crate index
+    // walked `fuzz/./.`, `fuzz/././.` and so on, allocating a longer path every step:
+    // `bun run bench:replay --repo ripgrep` was killed at 51.9 GB. The reader below
+    // normalises `.` the way the filesystem does, and gives up rather than hanging the
+    // suite if the loop ever comes back.
+    let reads = 0;
+    const sources: Readonly<Record<string, string>> = {
+      "Cargo.toml": '[package]\nname = "rg"\n\n[workspace]\nmembers = [\n  "crates/globset",\n]\n',
+      "src/main.rs": "",
+      "crates/globset/Cargo.toml": '[package]\nname = "globset"\n',
+      "crates/globset/src/lib.rs": "",
+      "fuzz/Cargo.toml":
+        '[package]\nname = "rg_fuzz"\n\n[workspace]\nmembers = ["."]\n\n' +
+        '[[bin]]\nname = "fuzz_glob"\npath = "fuzz_targets/fuzz_glob.rs"\n',
+      "fuzz/fuzz_targets/fuzz_glob.rs": "",
+    };
+    const resolve = createRustResolver({
+      root: "/repo",
+      files: new Set(Object.keys(sources).filter((path) => path.endsWith(".rs"))),
+      packages: [],
+      readFile: (rel: string): string | null => {
+        reads += 1;
+        if (reads > 200) throw new Error(`greplost: test: ${reads} manifest reads, the crate index is looping`);
+        const normalised = rel
+          .split("/")
+          .filter((segment) => segment !== "." && segment !== "")
+          .join("/");
+        return sources[normalised] ?? null;
+      },
+    });
+
+    expect(resolve("fuzz/fuzz_targets/fuzz_glob.rs", "globset::Glob")).toEqual({
+      type: "file",
+      path: "crates/globset/src/lib.rs",
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------

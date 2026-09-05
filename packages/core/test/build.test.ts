@@ -118,6 +118,8 @@ function countingParser(inner: ParserHandle): { handle: ParserHandle; parses(): 
         parses += 1;
         return inner.parse(source, lang);
       },
+      // The wrapper does not own `inner`, so disposal is the caller's to do.
+      dispose() {},
     },
     parses: () => parses,
   };
@@ -552,5 +554,38 @@ describe("options", () => {
   test("the snapshot root is absolute and the config is the loaded one", async () => {
     expect(path.isAbsolute(snapshot.root)).toBe(true);
     expect(snapshot.config).toEqual(DEFAULT_CONFIG);
+  });
+});
+
+describe("parser lifetime", () => {
+  // A `Parser` is a wasm allocation that holds its own subtree pool and parse
+  // stack, and the emscripten heap never shrinks: one leaked per build turned a
+  // long-lived process into an unbounded one. `bench:replay --repo ripgrep` is
+  // exactly that process, and it reached tens of gigabytes before this.
+  //
+  // Fifty builds of `fixtures/tiny-ts` leaked 58.6 MB (1.17 MB a build) with
+  // nothing disposing the handle, and stay inside a few MB of noise with it.
+  // The bound is 20 MB: an order of magnitude under the leak it catches and
+  // wide enough that JS heap growth in a shared bun test process cannot trip it.
+  const BOUND_BYTES = 20 * 1024 * 1024;
+
+  test("fifty builds of one fixture do not grow RSS without bound", async () => {
+    // Warm-up: the first build compiles every grammar and fills the process-wide
+    // caches, which is a one-off cost and not what this measures.
+    await buildSnapshot({ root: TINY_TS });
+    const before = process.memoryUsage.rss();
+    for (let i = 0; i < 50; i++) await buildSnapshot({ root: TINY_TS });
+    const growth = process.memoryUsage.rss() - before;
+    expect(growth, `RSS grew ${(growth / 1048576).toFixed(1)} MB over 50 builds`).toBeLessThan(BOUND_BYTES);
+  });
+
+  test("a caller's own parser survives the build it was passed to", async () => {
+    const own = await createParser();
+    await buildSnapshot({ root: TINY_TS, parser: own });
+    // The handle is the caller's; a build that disposed it would break every
+    // caller that builds twice with one parser (this file's own `beforeAll`).
+    const second = await buildSnapshot({ root: TINY_TS, parser: own });
+    expect(second.files.length).toBeGreaterThan(0);
+    own.dispose();
   });
 });
