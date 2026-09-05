@@ -30,7 +30,7 @@ untouched and says so.
 
 - [ ] T7: the head-to-head scope statement is present and no competitor arm was run on a build-2 language
   CHECK: grep -c 'X1 to X10 cover TypeScript and Go only' bench/RESULTS.md
-  EXPECT: /^[1-9]/
+  EXPECT: /^[1-9]/m
 
 - [ ] T8: greplost verifies its own committed map
   CHECK: bun packages/cli/src/main.ts verify --diff 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'

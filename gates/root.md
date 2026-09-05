@@ -14,7 +14,7 @@ Scope: the complete deliverable: tool, plugin, benchmark harness with measured r
 
 - [x] T3: README shows numbers only with a link to RESULTS.md
   CHECK: grep -c 'bench/RESULTS.md' README.md
-  EXPECT: /^[1-9]/
+  EXPECT: /^[1-9]/m
   EVIDENCE: 4
 
 - [x] T4: final report re-measures every number it states and pastes this ledger with N of N

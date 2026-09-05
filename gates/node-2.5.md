@@ -26,7 +26,7 @@ Numbers are never typed by hand: every measured cell comes from a committed payl
 
 - [ ] N6: RESULTS.md states the head-to-head scope in one sentence
   CHECK: grep -c 'X1 to X10 cover TypeScript and Go only' bench/RESULTS.md
-  EXPECT: /^[1-9]/
+  EXPECT: /^[1-9]/m
 
 - [ ] N7: RESULTS.md names Kotlin as reported-only with its reason
   CHECK: grep -qi 'kotlin' bench/RESULTS.md && grep -q 'reported-only' bench/RESULTS.md && echo "kotlin: reported-only, documented"
@@ -38,7 +38,7 @@ Numbers are never typed by hand: every measured cell comes from a committed payl
 
 - [ ] N9: the README shows numbers only with a link to RESULTS.md
   CHECK: grep -c 'bench/RESULTS.md' README.md
-  EXPECT: /^[1-9]/
+  EXPECT: /^[1-9]/m
 
 - [ ] N10: greplost verifies its own committed map after the config gained yaml and dockerfile
   CHECK: bun packages/cli/src/main.ts verify --diff 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
