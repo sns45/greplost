@@ -12,15 +12,16 @@
 
 **Imported by:** [`packages/render/src/render.ts`](../render.ts.md)
 
-**Blast radius:** 37 files (`greplost impact packages/render/src/docs/package-map.ts`)
+**Blast radius:** 38 files (`greplost impact packages/render/src/docs/package-map.ts`)
 
 **Key symbols:**
-- `function buildPackageMap(ctx: DocContext, pkg: PackageInfo): string`  L20-40
-- `function fence(body: string): string`  L42-44
-- `function relativeToPackage(pkg: PackageInfo, file: string): string`  L47-51
-- `function moduleTree(pkg: PackageInfo, files: readonly string[]): string`  L53-55
-- `function moduleTable(ctx: DocContext, pkg: PackageInfo, files: readonly string[], self: string): string`  L57-71
-- `function componentDiagrams(ctx: DocContext, pkg: PackageInfo, files: readonly string[]): string[]`  L85-134
-- `function externalDependencies(ctx: DocContext, pkg: PackageInfo): string`  L136-140
+- `function buildPackageMap(ctx: DocContext, pkg: PackageInfo): string`  L20-44
+- `function fence(body: string): string`  L46-48
+- `function relativeToPackage(pkg: PackageInfo, file: string): string`  L51-55
+- `function moduleTree(pkg: PackageInfo, files: readonly string[]): string`  L57-59
+- `function moduleTable(ctx: DocContext, pkg: PackageInfo, files: readonly string[], self: string): string`  L61-75
+- `function nodeTable( ctx: DocContext, pkg: PackageInfo, files: readonly string[], self: string, ): string | undefined`  L86-103
+- `function componentDiagrams(ctx: DocContext, pkg: PackageInfo, files: readonly string[]): string[]`  L117-166
+- `function externalDependencies(ctx: DocContext, pkg: PackageInfo): string`  L168-172
 
-**Calls:** `renderTree` → [`packages/render/src/ascii.ts#renderTree`](../ascii.ts.md) (high), `componentDiagrams` → [`packages/render/src/docs/package-map.ts#componentDiagrams`](package-map.ts.md) (high), `externalDependencies` → [`packages/render/src/docs/package-map.ts#externalDependencies`](package-map.ts.md) (high), `fence` → [`packages/render/src/docs/package-map.ts#fence`](package-map.ts.md) (high), `moduleTable` → [`packages/render/src/docs/package-map.ts#moduleTable`](package-map.ts.md) (high), `moduleTree` → [`packages/render/src/docs/package-map.ts#moduleTree`](package-map.ts.md) (high), `relativeToPackage` → [`packages/render/src/docs/package-map.ts#relativeToPackage`](package-map.ts.md) (high), `mermaidId` → [`packages/render/src/mermaid.ts#mermaidId`](../mermaid.ts.md) (high), `renderGraph` → [`packages/render/src/mermaid.ts#renderGraph`](../mermaid.ts.md) (high), `packageDir` → [`packages/render/src/slug.ts#packageDir`](../slug.ts.md) (high), `relLink` → [`packages/render/src/slug.ts#relLink`](../slug.ts.md) (high), `splitDiagram` → [`packages/render/src/split.ts#splitDiagram`](../split.ts.md) (high)
+**Calls:** `renderTree` → [`packages/render/src/ascii.ts#renderTree`](../ascii.ts.md) (high), `componentDiagrams` → [`packages/render/src/docs/package-map.ts#componentDiagrams`](package-map.ts.md) (high), `externalDependencies` → [`packages/render/src/docs/package-map.ts#externalDependencies`](package-map.ts.md) (high), `fence` → [`packages/render/src/docs/package-map.ts#fence`](package-map.ts.md) (high), `moduleTable` → [`packages/render/src/docs/package-map.ts#moduleTable`](package-map.ts.md) (high), `moduleTree` → [`packages/render/src/docs/package-map.ts#moduleTree`](package-map.ts.md) (high), `nodeTable` → [`packages/render/src/docs/package-map.ts#nodeTable`](package-map.ts.md) (high), `relativeToPackage` → [`packages/render/src/docs/package-map.ts#relativeToPackage`](package-map.ts.md) (high), `mermaidId` → [`packages/render/src/mermaid.ts#mermaidId`](../mermaid.ts.md) (high), `renderGraph` → [`packages/render/src/mermaid.ts#renderGraph`](../mermaid.ts.md) (high), `packageDir` → [`packages/render/src/slug.ts#packageDir`](../slug.ts.md) (high), `relLink` → [`packages/render/src/slug.ts#relLink`](../slug.ts.md) (high), `splitDiagram` → [`packages/render/src/split.ts#splitDiagram`](../split.ts.md) (high)

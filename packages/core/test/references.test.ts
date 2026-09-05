@@ -4,14 +4,23 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { ARTIFACT_PATHS, NODE_KINDS, isNodeKind, nodeId, splitNodeId } from "../src/schema.ts";
-import type { DeclKind, FileRecord, ReferenceEdge, ReferenceRecord } from "../src/schema.ts";
+import { ARTIFACT_PATHS, DEFAULT_CONFIG, NODE_KINDS, isNodeKind, nodeId, splitNodeId } from "../src/schema.ts";
+import type {
+  DeclKind,
+  FileRecord,
+  GreplostConfig,
+  ReferenceEdge,
+  ReferenceRecord,
+  Snapshot,
+} from "../src/schema.ts";
 import { buildSnapshot } from "../src/build.ts";
 import { serializeSnapshot } from "../src/serialize/index.ts";
 import { parseJsonl, readStructure } from "../src/serialize/index.ts";
+import type { Structure } from "../src/serialize/index.ts";
+import { expandDirectoryTargets, impactOf } from "../src/graph/index.ts";
+import { impactPairs, nodesOf, referencedBy, referencesOf } from "../src/graph/query.ts";
 import { compareReferenceEdges, linkReferences, referenceSource } from "../src/references/index.ts";
 import { createResolver } from "../src/resolve/index.ts";
-import { extractDockerfile } from "../src/extract/dockerfile.ts";
 import { extractHcl } from "../src/extract/hcl.ts";
 import { extractPython } from "../src/extract/python.ts";
 import { extractRust } from "../src/extract/rust.ts";
@@ -295,11 +304,14 @@ describe("stubs", () => {
       // python (leaf 2.1), rust (leaf 2.4), java (leaf 2.5) and kotlin (leaf 2.6) are no longer
       // stubs: their own test files (extract-python/rust/java/kotlin.test.ts) hold them to the
       // contract now.
-      ["Dockerfile", (p) => extractDockerfile(p, "dockerfile", "", NO_TREE), /dockerfile extractor .* leaf 2\.10/],
-      // yaml-k8s and yaml-helm (leaf 2.8) are no longer stubs: `extract-yaml-k8s.test.ts`
-      // holds them to the contract now.
-      ["ci.yml", (p) => extractYamlActions(p, "yaml", "", NO_TREE), /yaml-actions extractor .* build-2 leaf 2\.9/],
+      // yaml-k8s and yaml-helm (leaf 2.8), yaml-actions (leaf 2.9) and dockerfile (leaf 2.10)
+      // are no longer stubs either: `extract-yaml-k8s.test.ts`, `extract-yaml-actions.test.ts`
+      // and `extract-dockerfile.test.ts` hold them to the contract now.
     ];
+    // Leaf 2.10 was the last one, so the list is empty and this test now states that: every
+    // `Lang` the dispatch table names reaches a real extractor. The loop stays, because a
+    // language added after build 2 lands here first.
+    expect(cases).toEqual([]);
     for (const [file, call, pattern] of cases) {
       expect(() => call(file), file).toThrow(pattern);
       // Every message names the file it happened on, so a failing build is actionable.
@@ -307,14 +319,12 @@ describe("stubs", () => {
     }
   });
 
-  test("every unimplemented resolver builds for free and throws on the first specifier", () => {
-    const ctx = emptyContext([]);
-    const cases: ReadonlyArray<readonly [ReturnType<typeof createDockerfileResolver>, RegExp]> = [
-      [createDockerfileResolver(ctx), /dockerfile resolver .* build-2 leaf 2\.10/],
-    ];
-    for (const [resolve, pattern] of cases) {
-      expect(() => resolve("a/b", "x")).toThrow(pattern);
-    }
+  test("the Dockerfile resolver is implemented: a COPY source nothing indexes is unresolved", () => {
+    // Leaf 2.10 landed, so no language resolver is a stub any more: the module answers for
+    // every specifier and never throws. `extract-dockerfile.test.ts` owns the rules.
+    const resolve = createDockerfileResolver(emptyContext(["Dockerfile"]));
+    expect(resolve("Dockerfile", "package.json")).toEqual({ type: "unresolved" });
+    expect(resolve("Dockerfile", "Dockerfile")).toEqual({ type: "file", path: "Dockerfile" });
   });
 
   test("the Rust resolver is implemented: a `use` of an absent crate is external, not a throw", () => {
@@ -360,12 +370,14 @@ describe("stubs", () => {
     // yaml-k8s landed with leaf 2.8 and behaves the same way: a selector nothing answers is
     // dropped rather than guessed, and `extract-yaml-k8s.test.ts` owns the assertions.
     expect(resolveYamlK8sReferences(record({ lang: "yaml" }), ref({ refKind: "selector" }), ctx)).toBeNull();
-    expect(() =>
-      resolveYamlActionsReferences(record({ lang: "yaml" }), ref({ refKind: "needs" }), ctx),
-    ).toThrow(/yaml-actions reference resolution .* leaf 2\.9/);
-    expect(() =>
-      resolveDockerfileReferences(record({ lang: "dockerfile" }), ref({ refKind: "from-image" }), ctx),
-    ).toThrow(/dockerfile reference resolution .* leaf 2\.10/);
+    // yaml-actions landed with leaf 2.9: `needs` that names no job in the same file is dropped
+    // rather than guessed, and `extract-yaml-actions.test.ts` owns the assertions.
+    expect(resolveYamlActionsReferences(record({ lang: "yaml" }), ref({ refKind: "needs" }), ctx)).toBeNull();
+    // dockerfile landed with leaf 2.10 and behaves the same way: a base image built from a
+    // build variable names no image, so it is dropped rather than turned into an `ext:` node.
+    expect(
+      resolveDockerfileReferences(record({ lang: "dockerfile" }), ref({ refKind: "from-image", to: "$BASE" }), ctx),
+    ).toBeNull();
   });
 
   test("a stub never returns: an empty answer would read as an empty file", () => {
@@ -379,5 +391,107 @@ describe("stubs", () => {
       returned = false;
     }
     expect(returned).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Leaf 2.11: the queries the render and CLI layers ask of a committed structure
+// that holds non-file nodes. `fixtures/tiny-terraform` is the subject because
+// it is the smallest repo whose graph mixes files, nodes and an external id.
+// ---------------------------------------------------------------------------
+
+const TINY_TERRAFORM = path.join(REPO_ROOT, "fixtures", "tiny-terraform");
+const HCL_CONFIG: GreplostConfig = { ...DEFAULT_CONFIG, languages: ["hcl"] };
+
+/** The committed-structure view of a snapshot, without a round trip through disk. */
+function structureOf(snapshot: Snapshot): Structure {
+  return {
+    manifest: snapshot.manifest,
+    imports: snapshot.imports,
+    calls: snapshot.calls,
+    symbols: snapshot.symbols,
+    references: snapshot.references ?? [],
+  };
+}
+
+describe("referencesOf", () => {
+  test("a node's outbound and inbound edges are split by direction and sorted", async () => {
+    const structure = structureOf(await buildSnapshot({ root: TINY_TERRAFORM, config: HCL_CONFIG }));
+    const id = "main.tf#resource.aws_vpc.main";
+
+    expect(referencesOf(structure.references, id).map((e) => [e.to, e.refKind])).toEqual([
+      ["main.tf#local.tags", "hcl-ref"],
+      ["main.tf#provider.aws", "hcl-ref"],
+      ["variables.tf#variable.cidr", "hcl-ref"],
+    ]);
+    expect(referencedBy(structure.references, id).map((e) => [e.from, e.refKind])).toEqual([
+      ["main.tf#module.logs", "hcl-ref"],
+      ["main.tf#resource.aws_subnet.a", "hcl-ref"],
+      ["outputs.tf#output.vpc_id", "hcl-ref"],
+    ]);
+  });
+
+  test("an id no edge names gets two empty lists, and the caller's array is never reordered", async () => {
+    const structure = structureOf(await buildSnapshot({ root: TINY_TERRAFORM, config: HCL_CONFIG }));
+    const before = structure.references.map((e) => `${e.from} ${e.to}`);
+    expect(referencesOf(structure.references, "main.tf#resource.nope.nope")).toEqual([]);
+    expect(referencedBy(structure.references, "main.tf#resource.nope.nope")).toEqual([]);
+    expect(structure.references.map((e) => `${e.from} ${e.to}`)).toEqual(before);
+  });
+
+  test("nodesOf returns only the node-kind declarations of one file, span-sorted", async () => {
+    const structure = structureOf(await buildSnapshot({ root: TINY_TERRAFORM, config: HCL_CONFIG }));
+    // `main.tf#terraform` is a `const`, not a node kind, so it never appears here.
+    expect(nodesOf(structure.symbols, "main.tf").map((d) => d.id)).toEqual([
+      "main.tf#provider.aws",
+      "main.tf#local.name",
+      "main.tf#local.tags",
+      "main.tf#resource.aws_vpc.main",
+      "main.tf#resource.aws_subnet.a",
+      "main.tf#module.logs",
+    ]);
+    for (const decl of nodesOf(structure.symbols, "main.tf")) expect(isNodeKind(decl.kind)).toBe(true);
+    expect(nodesOf(structure.symbols, "no/such/file.tf")).toEqual([]);
+  });
+});
+
+describe("impactPairs", () => {
+  test("the pairs are the import, re-export and reference edges of a mixed graph", async () => {
+    const structure = structureOf(await buildSnapshot({ root: TINY_TERRAFORM, config: HCL_CONFIG }));
+    const pairs = impactPairs(structure).map(([from, to]) => `${from} -> ${to}`);
+
+    // The one `module` import targets a directory, so it expands to that directory's files.
+    expect(pairs).toContain("main.tf -> modules/logs/main.tf");
+    expect(pairs).toContain("main.tf -> modules/logs/outputs.tf");
+    // Every reference edge is carried through unchanged, external targets included.
+    expect(pairs).toContain("main.tf#resource.aws_subnet.a -> main.tf#resource.aws_vpc.main");
+    expect(pairs).toContain("main.tf#terraform -> ext:provider/aws");
+    expect(pairs).toHaveLength(2 + structure.references.length);
+    // Sorted, so a caller cannot make the graph depend on edge arrival order.
+    expect(pairs).toEqual([...pairs].sort());
+  });
+
+  test("a node's blast radius is the reverse closure over those pairs", async () => {
+    const structure = structureOf(await buildSnapshot({ root: TINY_TERRAFORM, config: HCL_CONFIG }));
+    const pairs = impactPairs(structure);
+
+    expect(impactOf(pairs, "main.tf#resource.aws_vpc.main")).toEqual([
+      { path: "main.tf#module.logs", depth: 1 },
+      { path: "main.tf#resource.aws_subnet.a", depth: 1 },
+      { path: "outputs.tf#output.vpc_id", depth: 1 },
+    ]);
+    // Across files, and two hops deep.
+    expect(impactOf(pairs, "modules/logs/main.tf#resource.aws_s3_bucket.logs")).toEqual([
+      { path: "modules/logs/outputs.tf#output.arn", depth: 1 },
+      { path: "outputs.tf#output.logs_arn", depth: 2 },
+    ]);
+  });
+
+  test("a repo with no references yields exactly the import pairs", async () => {
+    const structure = structureOf(await buildSnapshot({ root: TINY_TS }));
+    expect(structure.references).toEqual([]);
+    expect(impactPairs(structure)).toEqual(
+      expandDirectoryTargets(structure.imports, Object.keys(structure.manifest.files)),
+    );
   });
 });

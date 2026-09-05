@@ -1,0 +1,6 @@
+# The basename rule catches a suffixed name: `Dockerfile.dev` is a Dockerfile.
+FROM node:20
+WORKDIR /app
+COPY package.json .
+ENV NODE_ENV=development
+CMD ["npm", "run", "dev"]

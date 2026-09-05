@@ -36,8 +36,10 @@
 
 ## packages/cli/src/commands/impact.ts
 
-- `interface ImpactResult` L22-27
-- `async function run(ctx: CommandContext): Promise<number>` L29-64
+- `interface ImpactFiles` L26-31
+- `interface ImpactNodes` L39-43
+- `type ImpactResult = ImpactFiles | ImpactNodes` L45-45
+- `async function run(ctx: CommandContext): Promise<number>` L47-97
 
 ## packages/cli/src/commands/init.ts
 
@@ -45,11 +47,14 @@
 
 ## packages/cli/src/commands/query.ts
 
-- `interface QueryMatch` L36-56
-- `interface QueryFile` L59-70
-- `interface QueryResult` L72-76
-- `async function run(ctx: CommandContext): Promise<number>` L78-110
-- `function queryStructure(structure: Structure, root: string, needle: string): QueryResult` L113-130
+- `interface QueryMatch` L45-74
+- `interface ReferenceOut` L77-81
+- `interface ReferenceIn` L84-88
+- `interface QueryNode` L95-109
+- `interface QueryFile` L112-123
+- `interface QueryResult` L125-131
+- `async function run(ctx: CommandContext): Promise<number>` L133-170
+- `function queryStructure(structure: Structure, root: string, needle: string): QueryResult` L173-200
 
 ## packages/cli/src/commands/refresh.ts
 
@@ -72,11 +77,13 @@
 
 - `function loadStructure(root: string): Structure` L24-30
 - `function toRepoRelative(root: string, argument: string): string` L37-42
-- `function looksLikePath(candidate: string): boolean` L50-53
-- `function resolveFile(manifest: Manifest, candidate: string): string | undefined` L63-71
-- `function cardOf(manifest: Manifest, file: string): string` L87-92
-- `function importPairs(structure: Structure): Array<readonly [string, string]>` L101-103
-- `function importsOfFile(structure: Structure, file: string): string[]` L115-121
+- `function looksLikePath(candidate: string): boolean` L50-58
+- `function resolveNode(structure: Structure, candidate: string): Declaration | undefined` L67-70
+- `function resolveFile(manifest: Manifest, candidate: string): string | undefined` L80-88
+- `function cardOf(manifest: Manifest, file: string): string` L104-109
+- `function nodeCardOf(manifest: Manifest, id: string): string` L115-122
+- `function importPairs(structure: Structure): Array<readonly [string, string]>` L131-133
+- `function importsOfFile(structure: Structure, file: string): string[]` L145-151
 
 ## packages/cli/src/commands/update.ts
 

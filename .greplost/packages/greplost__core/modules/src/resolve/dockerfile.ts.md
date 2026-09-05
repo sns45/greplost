@@ -6,15 +6,23 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `DockerfileCallIndex (type)`, `createDockerfileResolver( ctx: RepoContext, ): (fromFile: string, specifier: string) => ResolvedTarget`, `resolveDockerfileCall( file: FileRecord, _site: CallSite, _index: DockerfileCallIndex, ): { to: string; confidence: Confidence } | null`
+**Exports:** `DOCKERFILE_ROOT_DIR_ID (const)`, `DockerfileCallIndex (type)`, `createDockerfileResolver( ctx: RepoContext, ): (fromFile: string, specifier: string) => ResolvedTarget`, `dockerfileDirectoryOf(filePath: string): string`, `isContextPath(source: string): boolean`, `resolveDockerfileCall( file: FileRecord, _site: CallSite, _index: DockerfileCallIndex, ): { to: string; confidence: Confidence } | null`
 
 **Imports:** [`../schema.ts`](../schema.ts.md) (CallSite, Confidence, FileRecord), [`./resolver.ts`](resolver.ts.md) (RepoContext, ResolvedTarget)
 
 **Imported by:** [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/resolver.ts`](resolver.ts.md)
 
-**Blast radius:** 67 files (`greplost impact packages/core/src/resolve/dockerfile.ts`)
+**Blast radius:** 68 files (`greplost impact packages/core/src/resolve/dockerfile.ts`)
 
 **Key symbols:**
-- `type DockerfileCallIndex = Readonly<Record<string, never>>`  L12-12
-- `function createDockerfileResolver( ctx: RepoContext, ): (fromFile: string, specifier: string) => ResolvedTarget`  L14-23
-- `function resolveDockerfileCall( file: FileRecord, _site: CallSite, _index: DockerfileCallIndex, ): { to: string; confidence: Confidence } | null`  L25-33
+- `const DOCKERFILE_ROOT_DIR_ID = "."`  L25-25
+- `const UNRESOLVED: ResolvedTarget = { type: "unresolved" }`  L27-27
+- `type DockerfileCallIndex = Readonly<Record<string, never>>`  L30-30
+- `const GLOB_CHARACTERS = /[*?[\]{}]/u`  L33-33
+- `function dockerfileDirectoryOf(filePath: string): string`  L36-39
+- `function isContextPath(source: string): boolean`  L48-55
+- `function normalizeJoin(dir: string, rest: string): string | null`  L58-70
+- `function createDockerfileResolver( ctx: RepoContext, ): (fromFile: string, specifier: string) => ResolvedTarget`  L79-94
+- `function resolveDockerfileCall( file: FileRecord, _site: CallSite, _index: DockerfileCallIndex, ): { to: string; confidence: Confidence } | null`  L102-110
+
+**Calls:** `dockerfileDirectoryOf` → [`packages/core/src/resolve/dockerfile.ts#dockerfileDirectoryOf`](dockerfile.ts.md) (high), `isContextPath` → [`packages/core/src/resolve/dockerfile.ts#isContextPath`](dockerfile.ts.md) (high), `normalizeJoin` → [`packages/core/src/resolve/dockerfile.ts#normalizeJoin`](dockerfile.ts.md) (high)

@@ -21,7 +21,7 @@
 
 ## packages/core/src/extract/dockerfile.ts
 
-- `function extractDockerfile( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L11-18
+- `function extractDockerfile( path: string, _lang: Lang, _source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L429-457
 
 ## packages/core/src/extract/go.ts
 
@@ -109,7 +109,11 @@
 
 ## packages/core/src/extract/yaml-actions.ts
 
-- `function extractYamlActions( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L12-19
+- `const COMPOSITE_JOB_ID = "runs"` L60-60
+- `function runPathTokens(body: string): string[]` L243-259
+- `function refOf(uses: string): string | null` L306-309
+- `function isActionDefinitionPath(path: string): boolean` L381-385
+- `function extractYamlActions(path: string, _lang: Lang, source: string, tree: Tree): YamlParts` L422-434
 
 ## packages/core/src/extract/yaml-doc.ts
 
@@ -149,9 +153,9 @@
 - `function isWorkflowPath(path: string): boolean` L62-70
 - `function isHelmPath(path: string): boolean` L73-76
 - `function documentKeys(document: Node): string[]` L96-106
-- `function classifyYamlDocument(path: string, keys: readonly string[]): YamlFlavour` L123-128
-- `function classifyYamlFile(path: string, tree: Tree): YamlFlavour` L134-144
-- `function extractYaml( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L146-162
+- `function classifyYamlDocument(path: string, keys: readonly string[]): YamlFlavour` L138-145
+- `function classifyYamlFile(path: string, tree: Tree): YamlFlavour` L151-161
+- `function extractYaml( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L163-179
 
 ## packages/core/src/graph/blast.ts
 
@@ -174,6 +178,7 @@
 - re-exports `GraphEdges` from `./tarjan.ts`
 - re-exports `blastRadius`, `impactOf` from `./blast.ts`
 - re-exports `directoryOf`, `expandDirectoryTargets`, `filesByDirectory`, `importTargetsOf`, `resolvedImportTargets` from `./directories.ts`
+- re-exports `impactPairs`, `nodesOf`, `referencedBy`, `referencesOf` from `./query.ts`
 - re-exports `computeMetrics` from `./metrics.ts`
 - re-exports `ComputedMetrics`, `FileMetrics` from `./metrics.ts`
 
@@ -196,9 +201,13 @@
 
 ## packages/core/src/graph/query.ts
 
-- `function findSymbols(symbols: Declaration[], needle: string): Declaration[]` L28-39
-- `function importersOf(imports: ImportEdge[], file: string): string[]` L52-62
-- `function callersOf(calls: CallEdge[], symbolId: string): string[]` L68-76
+- `function findSymbols(symbols: Declaration[], needle: string): Declaration[]` L29-40
+- `function importersOf(imports: ImportEdge[], file: string): string[]` L53-63
+- `function callersOf(calls: CallEdge[], symbolId: string): string[]` L69-77
+- `function nodesOf(symbols: readonly Declaration[], file: string): Declaration[]` L88-90
+- `function referencesOf(refs: readonly ReferenceEdge[], id: string): ReferenceEdge[]` L93-95
+- `function referencedBy(refs: readonly ReferenceEdge[], id: string): ReferenceEdge[]` L98-100
+- `function impactPairs(structure: Structure): Array<readonly [string, string]>` L116-121
 
 ## packages/core/src/graph/tarjan.ts
 
@@ -244,7 +253,8 @@
 
 ## packages/core/src/references/dockerfile.ts
 
-- `function resolveDockerfileReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null` L11-20
+- `const IMAGE_NAMESPACE = "image/"` L37-37
+- `function resolveDockerfileReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L161-176
 
 ## packages/core/src/references/go.ts
 
@@ -280,7 +290,8 @@
 
 ## packages/core/src/references/yaml-actions.ts
 
-- `function resolveYamlActionsReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null` L12-21
+- `function externalUsesId(uses: string): string | null` L170-178
+- `function resolveYamlActionsReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L204-219
 
 ## packages/core/src/references/yaml-k8s.ts
 
@@ -288,13 +299,16 @@
 
 ## packages/core/src/references/yaml.ts
 
-- `function resolveYamlReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L24-32
+- `function resolveYamlReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L36-44
 
 ## packages/core/src/resolve/dockerfile.ts
 
-- `type DockerfileCallIndex = Readonly<Record<string, never>>` L12-12
-- `function createDockerfileResolver( ctx: RepoContext, ): (fromFile: string, specifier: string) => ResolvedTarget` L14-23
-- `function resolveDockerfileCall( file: FileRecord, _site: CallSite, _index: DockerfileCallIndex, ): { to: string; confidence: Confidence } | null` L25-33
+- `const DOCKERFILE_ROOT_DIR_ID = "."` L25-25
+- `type DockerfileCallIndex = Readonly<Record<string, never>>` L30-30
+- `function dockerfileDirectoryOf(filePath: string): string` L36-39
+- `function isContextPath(source: string): boolean` L48-55
+- `function createDockerfileResolver( ctx: RepoContext, ): (fromFile: string, specifier: string) => ResolvedTarget` L79-94
+- `function resolveDockerfileCall( file: FileRecord, _site: CallSite, _index: DockerfileCallIndex, ): { to: string; confidence: Confidence } | null` L102-110
 
 ## packages/core/src/resolve/go.ts
 
