@@ -22,18 +22,18 @@ import type { CallSite, Confidence, FileRecord } from "../schema.ts";
 import type { RepoContext, ResolvedTarget } from "./resolver.ts";
 
 /** The repo-root directory id, for a Dockerfile that sits at the top of the repo. */
-export const DOCKERFILE_ROOT_DIR_ID = ".";
+const DOCKERFILE_ROOT_DIR_ID = ".";
 
 const UNRESOLVED: ResolvedTarget = { type: "unresolved" };
 
 /** Placeholder for the per-language call index; a Dockerfile has no calls, so it holds nothing. */
-export type DockerfileCallIndex = Readonly<Record<string, never>>;
+type DockerfileCallIndex = Readonly<Record<string, never>>;
 
 /** Characters that make a source a pattern rather than a name (`COPY src/*.js /app/`). */
 const GLOB_CHARACTERS = /[*?[\]{}]/u;
 
 /** Directory of a repo-relative path; `"."` for a file at the repo root. */
-export function dockerfileDirectoryOf(filePath: string): string {
+function dockerfileDirectoryOf(filePath: string): string {
   const index = filePath.lastIndexOf("/");
   return index === -1 ? DOCKERFILE_ROOT_DIR_ID : filePath.slice(0, index);
 }
@@ -45,7 +45,7 @@ export function dockerfileDirectoryOf(filePath: string): string {
  * absolute path and a URL name something outside the context entirely, and a path holding a
  * build variable names whatever the builder computes.
  */
-export function isContextPath(source: string): boolean {
+function isContextPath(source: string): boolean {
   if (source === "" || source === "." || source === "..") return false;
   if (source.startsWith("/") || /^[A-Za-z]:[\\/]/u.test(source)) return false;
   if (source.includes("://")) return false;

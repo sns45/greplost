@@ -32,6 +32,13 @@
  *   nodes       every `stage` and `image` node id, so the node set is scored alongside the
  *               edges (S6).
  *
+ * Two things it deliberately does not state. `meta.entrypoint`/`meta.cmd` are declaration
+ * *attributes*, and nothing scores an attribute — S6 compares node ids — so reading `ENTRYPOINT`
+ * and `CMD` here would be a derivation no gate could ever check. And the exec form of
+ * `COPY`/`ADD` (`COPY ["a", "b", "/d/"]`) is a JSON array rather than a list of path arguments:
+ * neither this module nor `packages/core/src/extract/dockerfile.ts` takes sources out of one, so
+ * such an instruction produces no `config` reference on either side.
+ *
  * An empty result is an error, never a score: a run where the parser loaded nothing would
  * otherwise report vacuous 1.000s and pass the gate.
  */
@@ -53,14 +60,15 @@ import type { Truth } from "./ts.ts";
 export const NOTES: readonly string[] = ["dockerfile-ast-oracle", "same-rules-different-parser"];
 
 /**
- * S3 is not a miss for a Dockerfile, it is unmeasurable: the format has no call edges at all,
- * so there is nothing for an oracle to be right or wrong about. `structural.ts` reads this
- * spelling out of the notes and prints `n/a` (leaf 2.0 ruling R10); nothing is inferred.
+ * Three metrics are not misses for a Dockerfile, they are unmeasurable, and saying so is not
+ * the same as scoring 1.000 by finding nothing (driver ruling 2026-09-05, applied to the YAML
+ * oracles too). The format has no call site (S3), no import statement (S1) and therefore no
+ * import cycle (S4); `structural.ts` reads this spelling out of the notes and prints `n/a`
+ * (leaf 2.0 ruling R10), and nothing is inferred. S2, S5 and S6 stay measured and gated: they
+ * are the stage names, the reference edges and the node ids, which is everything this format
+ * actually says.
  */
-const UNSUPPORTED = ["unsupported:S3"] as const;
-
-/** `meta.entrypoint`/`meta.cmd` are capped here (spec 2.5). */
-const MAX_COMMAND = 120;
+const UNSUPPORTED = ["unsupported:S1", "unsupported:S3", "unsupported:S4"] as const;
 
 /** Characters that make a `COPY` source a pattern rather than a name. */
 const GLOB_CHARACTERS = /[*?[\]{}]/u;
@@ -80,12 +88,6 @@ function usableName(value: string | null): value is string {
 /** A value only the builder can compute is not a literal. */
 function isLiteral(text: string): boolean {
   return !text.includes("$");
-}
-
-/** Whitespace collapsed, clipped to `MAX_COMMAND` characters (spec 2.5). */
-function clipCommand(text: string): string {
-  const flat = text.replace(/\s+/gu, " ").trim();
-  return flat.length > MAX_COMMAND ? `${flat.slice(0, MAX_COMMAND - 1)}…` : flat;
 }
 
 /** Directory of a repo-relative path; `""` for a file at the repo root. */
@@ -377,16 +379,15 @@ export function generateExtra(root: string, files: string[]): { references: Edge
       }
       const limit = request.refKind === "from-image" ? request.fromIndex : Number.POSITIVE_INFINITY;
       const wanted = request.text.toLowerCase();
-      const siblings = reading.stages.filter(
-        (stage) => stage.name.toLowerCase() === wanted && stage.index < limit && stage.id !== request.from,
-      );
-      if (siblings.length === 1) {
-        references.push(edge(request.from, (siblings[0] as OracleStage).id, request.refKind, request.text));
+      const named = reading.stages.filter((stage) => stage.name.toLowerCase() === wanted && stage.index < limit);
+      if (named.length === 1 && (named[0] as OracleStage).id !== request.from) {
+        references.push(edge(request.from, (named[0] as OracleStage).id, request.refKind, request.text));
         continue;
       }
-      // A text naming two stages names a stage, ambiguously: it is dropped rather than turned
-      // into an image reference nobody wrote.
-      if (siblings.length > 1) continue;
+      // A text naming a stage of this file names a stage — ambiguously when two carry the
+      // alias, and itself when the stage copies from itself, which is a file docker refuses.
+      // Either way it is dropped rather than turned into an image reference nobody wrote.
+      if (named.length > 0) continue;
       // An image reference built from a build variable is not an image reference.
       if (request.text.includes("$")) continue;
       references.push(edge(request.from, `ext:image/${request.text}`, request.refKind, request.text));

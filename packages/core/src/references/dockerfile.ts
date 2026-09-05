@@ -34,7 +34,7 @@ import type { ReferenceContext } from "./link.ts";
 import { referenceSource } from "./link.ts";
 
 /** The `ext:` namespace a container image lands in (spec section 0.2). */
-export const IMAGE_NAMESPACE = "image/";
+const IMAGE_NAMESPACE = "image/";
 
 /** A `--from=<n>` that names a stage by its position rather than by an alias. */
 const STAGE_INDEX = /^\d+$/u;
@@ -129,7 +129,15 @@ function resolveFromImage(
   return image === null ? null : edge(file, ref, image, "high");
 }
 
-/** `COPY --from=<stage>`: a sibling stage by alias or by index, else an external image. */
+/**
+ * `COPY --from=<stage>`: a sibling stage by alias or by index, else an external image.
+ *
+ * A text naming a stage of this file is a *stage* reference even when it names the stage doing
+ * the copying: `COPY --from=build` inside `build` is a file docker refuses, and answering it
+ * with `ext:image/build` would publish an external image nobody wrote. So a self reference, an
+ * ambiguous one and a positional one that lands nowhere are all dropped, and only a text
+ * naming no stage at all can be an image.
+ */
 function resolveCopyFrom(
   file: FileRecord,
   ref: ReferenceRecord,
@@ -142,9 +150,11 @@ function resolveCopyFrom(
     const stage = stageAt(file, Number.parseInt(ref.to, 10), owner);
     return stage === null ? null : edge(file, ref, stage.id, "high");
   }
-  const siblings = stagesNamed(file, ref.to, Number.POSITIVE_INFINITY).filter((stage) => stage.id !== owner?.id);
-  if (siblings.length === 1) return edge(file, ref, (siblings[0] as Declaration).id, "high");
-  if (siblings.length > 1) return null;
+  const named = stagesNamed(file, ref.to, Number.POSITIVE_INFINITY);
+  if (named.length === 1 && (named[0] as Declaration).id !== owner?.id) {
+    return edge(file, ref, (named[0] as Declaration).id, "high");
+  }
+  if (named.length > 0) return null;
   const image = imageTarget(ref.to);
   return image === null ? null : edge(file, ref, image, "high");
 }

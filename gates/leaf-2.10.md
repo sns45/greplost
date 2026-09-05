@@ -9,20 +9,20 @@ and 5.1.
 
 ## Measured numbers (the fixture and the two pinned corpora)
 
-`bench:structural` prints these; S3 is `n/a` for every Dockerfile target (a Dockerfile has no
-call sites at all, and the oracle says so with `unsupported:S3` rather than scoring 0).
+`bench:structural` prints these. S1, S3 and S4 are `n/a` for every Dockerfile target, because
+the format has no import statement, no call site and therefore no import cycle: the oracle says
+so with `unsupported:S1`, `unsupported:S3` and `unsupported:S4` rather than scoring a vacuous
+1.000 for finding nothing (driver ruling 2026-09-05, fix round 1). S2, S5 and S6 are measured
+and gated, and they are everything a Dockerfile says.
 
-| target | files | S1 imports | S2 exports | S5 references | S6 nodes |
-|---|---|---|---|---|---|
-| tiny-docker | 2 | 1.000 / 1.000 (tp 0) | 1.000 / 1.000 (tp 3) | 1.000 / 1.000 (tp 4) | 1.000 / 1.000 (tp 5) |
-| docker-python | 42 | 1.000 / 1.000 (tp 0) | 1.000 / 1.000 (tp 42) | 1.000 / 1.000 (tp 42) | 1.000 / 1.000 (tp 84) |
-| docker-node | 18 | 1.000 / 1.000 (tp 0) | 1.000 / 1.000 (tp 18) | 1.000 / 1.000 (tp 18) | 1.000 / 1.000 (tp 36) |
+| target | files | S1 imports | S2 exports | S3 calls | S4 cycles | S5 references | S6 nodes |
+|---|---|---|---|---|---|---|---|
+| tiny-docker | 2 | n/a | 1.000 / 1.000 (tp 3) | n/a | n/a | 1.000 (tp 4, fp 0, fn 0) | 1.000 (tp 5, fp 0, fn 0) |
+| docker-python | 42 | n/a | 1.000 / 1.000 (tp 42) | n/a | n/a | 1.000 (tp 42, fp 0, fn 0) | 1.000 (tp 84, fp 0, fn 0) |
+| docker-node | 18 | n/a | 1.000 / 1.000 (tp 18) | n/a | n/a | 1.000 (tp 18, fp 0, fn 0) | 1.000 (tp 36, fp 0, fn 0) |
 
 Read honestly, and `RESULTS.md` should say so:
 
-- **S1 and S4 are vacuous for this format.** A Dockerfile has no import statement and therefore
-  no import cycle; `tp 0` on both sides is the two implementations agreeing that there is
-  nothing there, not a measurement of anything.
 - **The corpus is single-stage.** All 60 indexed Dockerfiles in the two repos carry exactly one
   `FROM`, none of them with an `AS` alias, so S2 measures one positional stage name per file and
   S5 measures 60 `from-image` edges to `ext:image/<ref>` — a real check that the tree-sitter
@@ -79,6 +79,22 @@ another leaf can assume are:
    (dockerfile-ast) reads the form correctly, and `bench/test/truth-dockerfile.test.ts` pins the
    difference as a measured miss rather than letting two parsers agree by construction. No file
    the two corpora index hits it.
+7. **Nothing recovered from an `ERROR` region is published as if it had been read** (fix round
+   1). The region begins at the instruction the grammar choked on and runs to the end of the
+   file, so a declaration found inside it carries no `meta.default` — the value the parser
+   managed to read is a prefix of the real one (`ENV NOTE a b c` gives `a`) — and a file holding
+   any `ERROR` gets **no `image` node at all**, because the final stage may be in the part that
+   was lost (`FROM a AS one` / `ENV NOTE a b c` / `FROM a AS two` really builds `two`). Both are
+   misses the oracle catches, never a wrong id.
+8. **A stage cannot copy from itself** (fix round 1). `COPY --from=build` inside stage `build`
+   names a stage, so it is not an image: `ext:image/build` would publish an external image
+   nobody wrote. A `--from` text matching *any* stage name of the file, the owner included,
+   resolves to that stage or is dropped; only a text naming no stage can become an image. The
+   rule is implemented identically on both sides.
+9. **The exec form of `COPY`/`ADD` contributes no source.** `COPY ["a", "b", "/d/"]` is a JSON
+   array rather than a list of path arguments, and neither the extractor nor the oracle takes
+   sources out of one, so it produces no `config` reference on either side. Stated in both
+   module headers.
 
 Three files outside this leaf's ownership were edited and are reported to the driver, each of
 them a seam stub-test row that asserted this leaf was unimplemented:
