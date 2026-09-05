@@ -24,8 +24,23 @@ Suites with no result file in `bench/results/`, rendered as `not run`: agent.
 | Repo | Tier | Lang | Pinned SHA |
 |---|---|---|---|
 | anyq | S | ts | 657f41c2cbe06039c0d82cf81c17759d1149eda2 |
+| bitnami-charts | S | yaml | 8f8032ba37888cdeb20b35a2136fb1e8b5557e97 |
+| coroutines | S | kotlin | f63a04bacb8beeafcc9d49199b1e4bb08931b7eb |
+| docker-node | S | dockerfile | b6ff152e7276a8ab650533769b8cc099883cdffa |
+| docker-python | S | dockerfile | 8f2cb2e1c9cae4d8f772fe61f1427c96acea3257 |
 | gin | S | go | dcaa4296d111981ffb31ac3eba90bb63e1eb5ab9 |
+| gson | S | java | b3f4ca20087f9066de4c340522ff84e0558e1ad1 |
 | hono | M | ts | e2740d5a1bd0b4254e517e3af8b60789284bc7bd |
+| k8s-examples | S | yaml | d6b8cd27eacb51e651a1aa6f7c190a28713eff6e |
+| next-app | S | tsx | 1b5400c92633ca56c81c4c0a670e3416992ef64e |
+| pulumi-go | S | go | 2d507c12f836f67323fb1ba80454035eac082b27 |
+| pulumi-ts | S | ts | 2d507c12f836f67323fb1ba80454035eac082b27 |
+| pydantic | S | python | c23cb86ef197693fc016437614f174252a3d189a |
+| ripgrep | S | rust | 3fce3b5bb0236da2df6d99672afb8a719642eca7 |
+| starter-workflows | S | yaml | e3c451d60f119b71caebf13c98ac45da6e15b4b7 |
+| tanstack-start | S | tsx | 650acb4a894f7bf36bd3591de65d10bca9594254 |
+| tf-aws-eks | S | hcl | 48a429f63cf96361ea2f4b42677d0cc8a9a656e0 |
+| tf-aws-vpc | S | hcl | cf0e3ca46fd51f47bf095957f2a6ac6127c89045 |
 
 ## Versions
 
@@ -60,6 +75,8 @@ greplost against Graphify, Understand-Anything and code-review-graph (tech spec 
 | X8 | <= 50% of best competitor tokens | n/a | n/a | n/a | n/a |  |
 | X9 | fastest, highest hit rate | n/a | n/a | n/a | n/a |  |
 | X10 | works (capability, not a score) | works | n/a | n/a | n/a |  |
+
+X1 to X10 cover TypeScript and Go only; build 2's languages are scored against their own compiler truth in the single-tool table below, with no competitor arm.
 
 > Reading the X1 row: each `vs <tool>` column is greplost against that tool on **call edge precision**, the headline tech spec 10.0 names. greplost's own `Measured` verdict is against **both halves** of the 3.1 target at once (+0.10 on calls and +0.03 on imports), so it can be a `tie` in the same row where every competitor column is a `win`.
 
@@ -252,11 +269,11 @@ greplost measured against its own section 3 targets, one row per metric id. The 
 
 | ID | Metric | Target | Measured | Source |
 |---|---|---|---|---|
-| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | Eval 1, `structural` (hono (248 files)) |
-| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 0.999 | Eval 1, `structural` (hono (248 files)) |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | Eval 1, `structural` (hono (248 files)) |
-| S4 | import cycle Jaccard | = 1.00 | 1 | Eval 1, `structural` (hono (248 files)) |
-| unparsable | files whose tree-sitter parse is broken at the root level | 0 | 5 | Eval 1, `structural` |
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | Eval 1, `structural` (anyq (148 files)) |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | Eval 1, `structural` (anyq (148 files)) |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | Eval 1, `structural` (anyq (148 files)) |
+| S4 | import cycle Jaccard | = 1.00 | 1 | Eval 1, `structural` (anyq (148 files)) |
+| unparsable | files whose tree-sitter parse is broken at the root level | 0 | 6 | Eval 1, `structural` |
 | F1 | `verify` catch rate on stale maps | 100% | 100% | Eval 2, `replay` |
 | F2 | `verify` false positives after `update` | 0% (byte-identical) | 0% | Eval 2, `replay` |
 | P1 | full build, 1k / 10k files | <= 1s / <= 10s (measured on anyq, tier S, 148 files) | 203 ms (p50) | Bench 3, `perf` |
@@ -275,20 +292,274 @@ greplost measured against its own section 3 targets, one row per metric id. The 
 
 > Rows reading `not run` have no result file behind them, not a value of zero; the section below each metric names the command that would produce one.
 
+## Languages, IaC and signals
+
+Every language, IaC flavour and framework signal pass greplost indexes, scored against its own compiler truth. One row per language, filled from the structural payload's `perLang` block; `S1`, `S2`, `S3`, `S5` and `S6` are precision and `S4` is the cycle Jaccard, with recall, the tp/fp/fn counts and the per-repo split in Eval 1 below. A language scored on more than one corpus repo shows the **worst** of its repos, never an average: an average hides the weaker half, and the worst repo is what the gate decided on. `n/a` is a metric this language's oracle does not measure, either because it declared it unsupported or because it produced no number for it: never a pass, never a fail. `n/a for <repo>` means only that repo's oracle sat the metric out and the value beside it is the rest. No competitor was run on any of these languages.
+
+Measured 2026-09-05 at 22f6f67.
+
+| Lang | Corpus | Files | S1 imports P | S2 exports P | S3 calls P | S4 cycles J | S5 reference edges P | S6 signal nodes P | Truth source | Scored |
+|---|---|---|---|---|---|---|---|---|---|---|
+| dockerfile | docker-node, docker-python | 60 | 1 (vacuous) | 1 | n/a | 1 (vacuous) | 1 | 1 | `bench/src/truth/dockerfile.ts` | gated |
+| go | gin, pulumi-go | 97 | 1 | 1 | 1 | 1 | 1 (n/a for gin) | 1 (n/a for gin) | `bench/src/truth/go.ts` | gated |
+| hcl | tf-aws-eks, tf-aws-vpc | 164 | 1 | 1 | n/a | 1 | 1 | 1 | `bench/src/truth/hcl.ts` | gated |
+| java | gson | 95 | 1 | 1 | 1 | 1 | n/a | n/a | `bench/src/truth/java.ts` | gated |
+| kotlin | coroutines | 163 | n/a | n/a | n/a | n/a | n/a | n/a | `bench/src/truth/kotlin.ts` | reported |
+| python | pydantic | 105 | 1 | 1 | 1 | 1 | n/a | n/a | `bench/src/truth/python.ts` | gated |
+| rust | ripgrep | 95 | 1 | 1 | 1 | 1 | n/a | n/a | `bench/src/truth/rust.ts` | gated |
+| ts | anyq, pulumi-ts | 268 | 1 | 0.996 | 1 | 1 | 1 (n/a for anyq) | 1 (n/a for anyq) | `bench/src/truth/ts.ts` | gated |
+| tsx | next-app, tanstack-start | 730 | 0.998 | 1 | 1 | 1 | 0.992 | 1 | `bench/src/truth/ts.ts` | gated |
+| yaml | bitnami-charts, k8s-examples, starter-workflows | 562 | 1 (vacuous) | 1 | n/a | 1 (vacuous) | 1 | 1 (n/a for bitnami-charts) | `bench/src/truth/yaml.ts` | gated |
+
+**What each oracle is, and what it cannot see**
+
+- **dockerfile**: `bench/src/truth/dockerfile.ts`: an independent Dockerfile AST reader (`dockerfile-ast-oracle`). `same-rules-different-parser`: the same rules read by a different parser, not by BuildKit, so this is rule agreement rather than builder truth. A Dockerfile has no calls, so S3 is `n/a`. The two pinned corpora are honestly **below the tier-S band**: no public repository carries a hundred Dockerfiles, and `docker-python` and `docker-node` together are the realistic ceiling for the format.
+- **go**: `bench/src/truth/go.ts` for S1 to S4 (`go/packages` per-file imports and a class-hierarchy call graph) and `bench/src/truth/signals-pulumi-go.ts` for S5 and S6 (`go-types-oracle`, a resource being a type that implements Pulumi's resource interface). `cha-over-approximation`: class-hierarchy analysis resolves an interface call to every implementation of the method, so the oracle's call set is an upper bound and the recall measured against it is a lower bound. `helper-attribution-differs`: a resource constructed inside a helper function is attributed to the helper by one side and to the call site by the other, so a program that wraps its constructors moves nodes between files. A package the loader cannot build is dropped from truth rather than scored, so part of the Pulumi Go corpus is in greplost's map with no oracle opinion about it; the run prints how many on stderr.
+- **hcl**: `bench/src/truth/hcl.ts`: `tfinspect`, built on `terraform-config-inspect` and `hclsyntax` (`terraform-config-inspect`, `hclsyntax-traversals`). `same-rules-different-parser`: references and nodes are scored against an independent re-implementation of the same rules on a different parser, not against Terraform's own evaluator, so S5 and S6 measure two implementations agreeing. `no-call-edges`: HCL has no calls at all, so S3 is `n/a` rather than 0, because there is nothing for either side to be right or wrong about.
+- **java**: `bench/src/truth/java.ts`: `javac`'s own Tree API (`javac-tree-api`) on a source-only classpath (`source-classpath-only`). Third-party jars are deliberately absent, so a file whose dependency is a jar does not compile and is dropped from truth instead of scored (`unresolved-files-dropped`): those files are in greplost's map with no oracle opinion about them, and the run prints how many on stderr. `no-overload-resolution`: a call is matched to a method by name, so two overloads of one name are one target on both sides. `no-inherited-dispatch`: a call that lands on a member inherited from a supertype is attributed to the type that declares it, not to the receiver's type. `module-info-not-scored`: `module-info.java` declares a module rather than a type and carries no scored declaration. The pinned gson subset `**/src/main/**` spans several Maven modules and includes `gson/src/main/java-templates`, a templating-maven-plugin source root whose `GsonBuildConfig.java` Maven filters into the build directory: both sides read the template copy, so gson resolves that dependency inside its own source tree rather than against generated sources.
+- **kotlin**: `bench/src/truth/kotlin.ts`: **reported-only** (`reported-only`, `fixture-oracle-only`, `no-corpus-compiler-truth`). A real `kotlinc` plus `javap -v` classfile oracle covers `fixtures/tiny-kotlin` and nothing else: there is **no corpus compiler truth** for Kotlin, because `kotlin-compiler-embeddable`'s PSI and FIR APIs are internal and unstable and compiling a Gradle multiplatform corpus outside Gradle is not reliable (Appendix C, 2026-09-04). Every corpus metric is therefore `n/a` and the run is gated on the three substitute checks below. Kotlin's accuracy numbers in this repository are fixture numbers: a smoke test, not accuracy against a compiler. JVM synthetics are dropped and a property access is not a call (`jvm-synthetics-dropped`, `property-access-not-a-call`).
+- **python**: `bench/src/truth/python.ts`: `pytruth`, CPython's own `ast` module on Python 3.11 or newer (`ast-only`, `python>=3.11`). It reads source and never executes an import (`no-import-execution`), so a module reached through `importlib`, a module-level `__getattr__` or a runtime `sys.path` edit is in neither side; PEP 420 namespace packages are resolved by directory (`pep420-namespace-packages`).
+- **rust**: `bench/src/truth/rust.ts`: `rusttruth`, a `syn` re-implementation of the extractor's rules (`syn-item-tree`, `cargo-metadata-roots`), **not** `rustc`, which has no stable public name-resolution API. `rule-agreement-oracle`: S1 to S4 on Rust measure two independent implementations of one rule set agreeing (a different parser, a different language, no shared line of code) and not agreement with a compiler, so a rule that is wrong in the specification is wrong on both sides and scores 1.000. `no-trait-dispatch`: a method call on a generic or `dyn` receiver is absent from truth exactly as it is absent from the map, because neither side does type inference, so that whole class of call is unmeasured rather than measured and missed.
+- **ts, tsx**: `bench/src/truth/ts.ts` for S1 to S4 (the TypeScript compiler's own checker) and `bench/src/truth/signals-ts.ts` for S5 and S6 (`tsc-checker-oracle`, `base-type-chain-for-pulumi`, `app-router-path-rules`). Two disclosed emulations: `workspace-entry-mapping` stands in for the installed-and-built state a corpus checkout does not have, and `nearest-tsconfig-resolution` resolves a specifier with the compiler options of the nearest `tsconfig.json` above the importing file, but only after resolution from the repo root has failed, because a corpus of independent example apps keeps its path aliases there and the root config knows none of them. The pinned Pulumi subset is `aws-ts-*/**/*.ts`, which admits TypeScript only: the JavaScript and `.tsx` files in those examples are outside the scored set, so **build 1's CommonJS handling has no corpus coverage at all** (`.js` is parsed with the TypeScript grammar, and nothing in this benchmark measures that).
+- **yaml**: `bench/src/truth/yaml.ts`, dispatching by flavour (`yaml-flavour-dispatch`) to `yaml-k8s.ts`, `yaml-helm.ts` and `yaml-actions.ts`, all reading with `js-yaml` (`js-yaml-oracle`) and, for a chart, `helm template` (`helm-template-render`). YAML has no calls, so S3 is `n/a`. Helm: a template is not valid YAML, so every `{{ ... }}` span is blanked in place before parsing and a templated name falls back to the document index, which is why names are not compared for templates (`names-not-compared-for-templates`) and S6 is `n/a` for a chart. `same-regex-both-sides`: a chart's `.Values.<path>` references are found by one regular expression that both sides apply, so S5 on Helm measures that regex against itself and not two independent implementations. `if-else-arms-both-kept`: blanking keeps both arms of an `if`/`else`, so a chart's document set holds documents a real render would produce only one of. Workflows: a `${{ ... }}` value is chosen when the workflow runs and is never a name in the map.
+
+**Metrics scored on an empty set**
+
+A metric whose true positives, false positives and false negatives are all zero was scored on an empty universe: the 1.000 means there was nothing to be wrong about, not that everything was right. It is marked `(vacuous)` in the table and is not evidence of accuracy.
+
+- **dockerfile** (docker-node, docker-python): S1, S4.
+- **yaml** (bitnami-charts, k8s-examples, starter-workflows): S1, S4.
+
+**What gates a language with no accuracy gate**
+
+A target whose every gated metric is `n/a` would pass `--gate` on an extractor that returned nothing, so the gate becomes three substitute checks instead: the snapshot is byte-identical when built twice, fewer than 1% of the files carry a root-level parse error, and every non-empty file yields at least one declaration or import.
+
+- **kotlin** (coroutines): deterministic rebuild pass, parse error rate 0, silent files 0.
+
 ## Eval 1
 
 Structural accuracy vs compiler truth (S1 to S4)
 
-Measured 2026-09-02 at b5fca0d.
+Measured 2026-09-05 at 22f6f67.
 
-### hono (248 files)
+### anyq (148 files)
 
 | ID | Metric | Target | Measured | Detail |
 |---|---|---|---|---|
-| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 571, fp 0, fn 0 |
-| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 0.999 | tp 1044, fp 0, fn 1 |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.73, tp 665, fp 0, fn 246; all confidences: precision 1, recall 0.778 |
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 339, fp 0, fn 0 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 762, fp 0, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.303, tp 224, fp 0, fn 516; all confidences: precision 1, recall 0.468 |
 | S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+### bitnami-charts (130 files)
+
+| ID | Metric | Target | Measured | Detail |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 0, fp 0, fn 0 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 216, fp 0, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 0, fp 0, fn 0; all confidences: precision 1, recall 1 |
+| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+### coroutines (163 files)
+
+| ID | Metric | Target | Measured | Detail |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 0 / 1 | tp 0, fp 23, fn 0 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 0 / 1 | tp 0, fp 674, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 0 | recall 1, tp 0, fp 499, fn 0; all confidences: precision 0, recall 1 |
+| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+### docker-node (18 files)
+
+| ID | Metric | Target | Measured | Detail |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 0, fp 0, fn 0 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 18, fp 0, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 0, fp 0, fn 0; all confidences: precision 1, recall 1 |
+| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+### docker-python (42 files)
+
+| ID | Metric | Target | Measured | Detail |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 0, fp 0, fn 0 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 42, fp 0, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 0, fp 0, fn 0; all confidences: precision 1, recall 1 |
+| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+### gin (53 files)
+
+| ID | Metric | Target | Measured | Detail |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 20, fp 0, fn 0 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 191, fp 0, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.615, tp 394, fp 0, fn 247; all confidences: precision 1, recall 0.615 |
+| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+### gson (95 files)
+
+| ID | Metric | Target | Measured | Detail |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 0.993 | tp 271, fp 0, fn 2 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 489, fp 0, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.855, tp 721, fp 0, fn 122; all confidences: precision 1, recall 0.855 |
+| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+### k8s-examples (245 files)
+
+| ID | Metric | Target | Measured | Detail |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 0, fp 0, fn 0 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 401, fp 0, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 0, fp 0, fn 0; all confidences: precision 1, recall 1 |
+| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+### next-app (341 files)
+
+| ID | Metric | Target | Measured | Detail |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 116, fp 0, fn 0 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 0.998 | tp 453, fp 0, fn 1 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 27, fp 0, fn 0; all confidences: precision 1, recall 1 |
+| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+### pulumi-go (44 files)
+
+| ID | Metric | Target | Measured | Detail |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 0, fp 0, fn 0 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 14, fp 0, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.958, tp 23, fp 0, fn 1; all confidences: precision 1, recall 0.958 |
+| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+### pulumi-ts (120 files)
+
+| ID | Metric | Target | Measured | Detail |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 47, fp 0, fn 0 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 0.996 / 1 | tp 250, fp 1, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.877, tp 128, fp 0, fn 18; all confidences: precision 1, recall 0.877 |
+| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+### pydantic (105 files)
+
+| ID | Metric | Target | Measured | Detail |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 457, fp 0, fn 0 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 1358, fp 0, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.999, tp 1558, fp 0, fn 1; all confidences: precision 1, recall 1 |
+| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+### ripgrep (95 files)
+
+| ID | Metric | Target | Measured | Detail |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 223, fp 0, fn 0 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 370, fp 0, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.968, tp 1771, fp 0, fn 58; all confidences: precision 1, recall 0.999 |
+| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+### starter-workflows (187 files)
+
+| ID | Metric | Target | Measured | Detail |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 0, fp 0, fn 0 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 211, fp 0, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 0, fp 0, fn 0; all confidences: precision 1, recall 1 |
+| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+### tanstack-start (389 files)
+
+| ID | Metric | Target | Measured | Detail |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 0.998 / 1 | tp 494, fp 1, fn 0 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 1038, fp 0, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.982, tp 168, fp 0, fn 3; all confidences: precision 1, recall 0.982 |
+| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+### tf-aws-eks (87 files)
+
+| ID | Metric | Target | Measured | Detail |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 20, fp 0, fn 0 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 759, fp 0, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 0, fp 0, fn 0; all confidences: precision 1, recall 1 |
+| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+### tf-aws-vpc (77 files)
+
+| ID | Metric | Target | Measured | Detail |
+|---|---|---|---|---|
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 18, fp 0, fn 0 |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 1591, fp 0, fn 0 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 0, fp 0, fn 0; all confidences: precision 1, recall 1 |
+| S4 | import cycle Jaccard | = 1.00 | 1 |  |
+
+> Truth notes (how the oracle was built, Appendix C ruling on 10.3): `ast-only`, `cargo-metadata-roots`, `cha-callgraph`, `cha-over-approximation`, `dockerfile-ast-oracle`, `fixture-oracle-only`, `go-packages-per-file-imports`, `hclsyntax-traversals`, `helm-template-render`, `javac-tree-api`, `js-yaml-oracle`, `jvm-synthetics-dropped`, `kotlinc-javap-classfiles`, `names-not-compared-for-templates`, `nearest-tsconfig-resolution`, `no-call-edges`, `no-corpus-compiler-truth`, `no-import-execution`, `no-trait-dispatch`, `pep420-namespace-packages`, `property-access-not-a-call`, `python>=3.11`, `reported-only`, `rule-agreement-oracle`, `same-rules-different-parser`, `source-classpath-only`, `syn-item-tree`, `terraform-config-inspect`, `unresolved-files-dropped`, `unsupported:S3`, `unsupported:S6`, `workspace-entry-mapping`.
+
+> `ast-only`: the Python oracle reads the source with CPython's `ast` module and never runs the code.
+
+> `cargo-metadata-roots`: crate roots come from `cargo metadata`.
+
+> `cha-callgraph`: the Go oracle built its call graph by class-hierarchy analysis rather than by pointer analysis.
+
+> `cha-over-approximation`: class-hierarchy analysis resolves an interface call to every implementation of the method, so the oracle's call set is an upper bound and the recall measured against it is a lower bound.
+
+> `dockerfile-ast-oracle`: the Dockerfile oracle reads an independent Dockerfile AST, not BuildKit's.
+
+> `fixture-oracle-only`: the oracle covers the fixture only; there is no corpus-scale run of it.
+
+> `go-packages-per-file-imports`: Go import edges come from `go/packages`, per file.
+
+> `hclsyntax-traversals`: reference edges come from `hclsyntax`'s own traversal set.
+
+> `helm-template-render`: chart truth comes from `helm template`; greplost never runs helm.
+
+> `javac-tree-api`: the Java oracle reads `javac`'s own Tree API, not a re-implementation.
+
+> `js-yaml-oracle`: the YAML oracle parses with `js-yaml`, independently of the tree-sitter grammar greplost uses.
+
+> `jvm-synthetics-dropped`: JVM synthetic members the compiler generates are dropped rather than scored.
+
+> `kotlinc-javap-classfiles`: the Kotlin fixture oracle compiles with `kotlinc` and reads the classfiles with `javap -v`.
+
+> `names-not-compared-for-templates`: a templated name falls back to the document index, so names are not compared for a chart's templates.
+
+> `nearest-tsconfig-resolution`: the TypeScript truth generator resolved a specifier with the compiler options of the nearest `tsconfig.json` above the importing file, and only after standard resolution from the repo root had failed to land on a file already in the scored set; a corpus of independent example apps (TanStack `examples/`, Next.js `examples/`) keeps its path aliases there and the root config knows none of them (leaf 2.3 ruling).
+
+> `no-call-edges`: the format has no call edges at all, so S3 is `n/a` rather than 0.
+
+> `no-corpus-compiler-truth`: no compiler truth exists for this language's corpus, so its corpus numbers are `n/a` and its accuracy numbers come from the fixture alone.
+
+> `no-import-execution`: no import is executed, so a module reached through `importlib`, a module-level `__getattr__` or a runtime `sys.path` edit is in neither the map nor the truth.
+
+> `no-trait-dispatch`: a method call on a generic or `dyn` receiver is in neither side, because neither does type inference: that class of call is unmeasured rather than measured and missed.
+
+> `pep420-namespace-packages`: PEP 420 namespace packages are resolved by directory rather than by `__init__.py`.
+
+> `property-access-not-a-call`: a Kotlin property access is not counted as a call, on either side.
+
+> `python>=3.11`: the oracle needs Python 3.11 or newer for the `ast` fields it reads.
+
+> `reported-only`: the oracle cannot measure this target at all, so every metric is `n/a` and the run is gated on the three substitute checks instead (Kotlin, Appendix C 2026-09-04).
+
+> `rule-agreement-oracle`: the oracle re-implements the extractor's rules on a different parser instead of asking a compiler (`rustc` has no stable public name-resolution API), so the metric is two independent implementations of one rule set agreeing, not agreement with the compiler.
+
+> `same-rules-different-parser`: both sides implement the same documented rules with different parsers, so the metric measures two implementations agreeing rather than agreement with the format's own tooling.
+
+> `source-classpath-only`: the classpath is the corpus sources alone: third-party jars are deliberately absent.
+
+> `syn-item-tree`: the Rust oracle walks `syn`'s item tree rather than a compiler's resolved graph.
+
+> `terraform-config-inspect`: the Terraform oracle is built on `terraform-config-inspect`.
+
+> `unresolved-files-dropped`: a file that does not compile on that source-only classpath is dropped from truth rather than scored, so it is in greplost's map with no oracle opinion about it; the run prints how many on stderr.
+
+> `unsupported:S3`: the truth module declares that it does not measure call edges (the format has none), so S3 is `n/a`, which is neither a pass nor a fail.
+
+> `unsupported:S6`: the truth module declares that it does not measure signal nodes, so S6 is `n/a` for it.
+
+> `workspace-entry-mapping`: the TypeScript truth generator emulated the installed-and-built state of workspace packages (package manifests plus tsconfig `outDir`/`rootDir`) so cross-package imports and calls resolve on a corpus checkout that was never installed or built (Appendix C ruling on 10.3).
 
 **S1 to S4 against compiler truth (greplost only)**
 
@@ -296,11 +567,11 @@ Measured 2026-09-02 at b5fca0d.
 %%{init: {"theme": "dark", "themeVariables": {"xyChart": {"backgroundColor": "#000000", "titleColor": "#ffffff", "xAxisLabelColor": "#c3c2b7", "yAxisLabelColor": "#c3c2b7", "xAxisTitleColor": "#ffffff", "yAxisTitleColor": "#ffffff", "plotColorPalette": "#0fa976,#e0561c,#2f86ef"}}}}%%
 xychart-beta
     title "S1 to S4: greplost against compiler truth"
-    x-axis ["S1 imports P", "S1 imports R", "S2 exports P", "S3 calls P", "S4 cycles J", "S2 exports R", "S3 calls R"]
+    x-axis ["S1 imports P", "S1 imports R", "S2 exports P", "S2 exports R", "S3 calls P", "S4 cycles J", "S3 calls R"]
     y-axis "score vs compiler truth" 0 --> 1
-    bar [1, 1, 1, 1, 1, 0.999, 0.73]
+    bar [1, 1, 1, 1, 1, 1, 0.303]
     %% series, in order: greplost
-    %% Precision, recall and cycle agreement on hono (248 files); higher is better.
+    %% Precision, recall and cycle agreement on anyq (148 files); higher is better.
     %% greplost only: these are the single-tool gates of tech spec section 3, not a comparison. S3 is the confidence=high arm, which is the gate; the all-confidence arm is in the table. A dashed stub is a score the payload did not carry.
 ```
 

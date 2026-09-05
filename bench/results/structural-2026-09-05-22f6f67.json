@@ -1,0 +1,1690 @@
+{
+  "corpus": [
+    {
+      "name": "anyq",
+      "sha": "657f41c2cbe06039c0d82cf81c17759d1149eda2"
+    },
+    {
+      "name": "bitnami-charts",
+      "sha": "8f8032ba37888cdeb20b35a2136fb1e8b5557e97"
+    },
+    {
+      "name": "coroutines",
+      "sha": "f63a04bacb8beeafcc9d49199b1e4bb08931b7eb"
+    },
+    {
+      "name": "docker-node",
+      "sha": "b6ff152e7276a8ab650533769b8cc099883cdffa"
+    },
+    {
+      "name": "docker-python",
+      "sha": "8f2cb2e1c9cae4d8f772fe61f1427c96acea3257"
+    },
+    {
+      "name": "gin",
+      "sha": "dcaa4296d111981ffb31ac3eba90bb63e1eb5ab9"
+    },
+    {
+      "name": "gson",
+      "sha": "b3f4ca20087f9066de4c340522ff84e0558e1ad1"
+    },
+    {
+      "name": "k8s-examples",
+      "sha": "d6b8cd27eacb51e651a1aa6f7c190a28713eff6e"
+    },
+    {
+      "name": "next-app",
+      "sha": "1b5400c92633ca56c81c4c0a670e3416992ef64e"
+    },
+    {
+      "name": "pulumi-go",
+      "sha": "2d507c12f836f67323fb1ba80454035eac082b27"
+    },
+    {
+      "name": "pulumi-ts",
+      "sha": "2d507c12f836f67323fb1ba80454035eac082b27"
+    },
+    {
+      "name": "pydantic",
+      "sha": "c23cb86ef197693fc016437614f174252a3d189a"
+    },
+    {
+      "name": "ripgrep",
+      "sha": "3fce3b5bb0236da2df6d99672afb8a719642eca7"
+    },
+    {
+      "name": "starter-workflows",
+      "sha": "e3c451d60f119b71caebf13c98ac45da6e15b4b7"
+    },
+    {
+      "name": "tanstack-start",
+      "sha": "650acb4a894f7bf36bd3591de65d10bca9594254"
+    },
+    {
+      "name": "tf-aws-eks",
+      "sha": "48a429f63cf96361ea2f4b42677d0cc8a9a656e0"
+    },
+    {
+      "name": "tf-aws-vpc",
+      "sha": "cf0e3ca46fd51f47bf095957f2a6ac6127c89045"
+    }
+  ],
+  "date": "2026-09-05",
+  "gate": {
+    "missed": [],
+    "passed": true
+  },
+  "greplostSha": "22f6f67",
+  "machine": {
+    "arch": "arm64",
+    "bun": "1.2.21",
+    "cores": 16,
+    "cpu": "Apple M4 Max",
+    "go": "go version go1.25.3 darwin/arm64",
+    "greplostSha": "22f6f67",
+    "greplostVersion": "0.0.2",
+    "memoryGB": 128,
+    "node": "24.3.0",
+    "os": "Darwin 25.5.0"
+  },
+  "perLang": {
+    "dockerfile": {
+      "gated": true,
+      "repos": [
+        "docker-node",
+        "docker-python"
+      ],
+      "truthSource": "bench/src/truth/dockerfile.ts"
+    },
+    "go": {
+      "gated": true,
+      "repos": [
+        "gin",
+        "pulumi-go"
+      ],
+      "truthSource": "bench/src/truth/go.ts"
+    },
+    "hcl": {
+      "gated": true,
+      "repos": [
+        "tf-aws-eks",
+        "tf-aws-vpc"
+      ],
+      "truthSource": "bench/src/truth/hcl.ts"
+    },
+    "java": {
+      "gated": true,
+      "repos": [
+        "gson"
+      ],
+      "truthSource": "bench/src/truth/java.ts"
+    },
+    "kotlin": {
+      "gated": false,
+      "repos": [
+        "coroutines"
+      ],
+      "truthSource": "bench/src/truth/kotlin.ts"
+    },
+    "python": {
+      "gated": true,
+      "repos": [
+        "pydantic"
+      ],
+      "truthSource": "bench/src/truth/python.ts"
+    },
+    "rust": {
+      "gated": true,
+      "repos": [
+        "ripgrep"
+      ],
+      "truthSource": "bench/src/truth/rust.ts"
+    },
+    "ts": {
+      "gated": true,
+      "repos": [
+        "anyq",
+        "pulumi-ts"
+      ],
+      "truthSource": "bench/src/truth/ts.ts"
+    },
+    "tsx": {
+      "gated": true,
+      "repos": [
+        "next-app",
+        "tanstack-start"
+      ],
+      "truthSource": "bench/src/truth/ts.ts"
+    },
+    "yaml": {
+      "gated": true,
+      "repos": [
+        "bitnami-charts",
+        "k8s-examples",
+        "starter-workflows"
+      ],
+      "truthSource": "bench/src/truth/yaml.ts"
+    }
+  },
+  "recordedAt": "2026-09-05T16:32:21.422Z",
+  "repos": {
+    "anyq": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 339
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 762
+      },
+      "S3": {
+        "f1": 0.46473029045643155,
+        "fn": 516,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.3027027027027027,
+        "tp": 224
+      },
+      "S4": 1,
+      "S5": null,
+      "S6": null,
+      "callsAllConfidences": {
+        "f1": 0.6372007366482505,
+        "fn": 394,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.46756756756756757,
+        "tp": 346
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [
+          "apps/examples/retry-strategies/src/adapters/kafka.ts:28 (apps/examples/retry-strategies/src/adapters/kafka.ts#createKafkaAdapter -> packages/kafka/src/consumer.ts#KafkaConsumer)",
+          "apps/examples/retry-strategies/src/adapters/kafka.ts:28 (apps/examples/retry-strategies/src/adapters/kafka.ts#createKafkaAdapter -> packages/kafka/src/producer.ts#KafkaProducer)",
+          "apps/examples/retry-strategies/src/adapters/nats.ts:28 (apps/examples/retry-strategies/src/adapters/nats.ts#createNatsAdapter -> packages/nats/src/consumer.ts#NATSConsumer)",
+          "apps/examples/retry-strategies/src/adapters/nats.ts:28 (apps/examples/retry-strategies/src/adapters/nats.ts#createNatsAdapter -> packages/nats/src/producer.ts#NATSProducer)",
+          "apps/examples/retry-strategies/src/adapters/rabbitmq.ts:30 (apps/examples/retry-strategies/src/adapters/rabbitmq.ts#createRabbitMQAdapter -> packages/rabbitmq/src/consumer.ts#RabbitMQConsumer)",
+          "apps/examples/retry-strategies/src/adapters/rabbitmq.ts:30 (apps/examples/retry-strategies/src/adapters/rabbitmq.ts#createRabbitMQAdapter -> packages/rabbitmq/src/producer.ts#RabbitMQProducer)",
+          "apps/examples/retry-strategies/src/adapters/redis-streams.ts:33 (apps/examples/retry-strategies/src/adapters/redis-streams.ts#createRedisStreamsAdapter -> packages/redis-streams/src/consumer.ts#RedisStreamsConsumer)",
+          "apps/examples/retry-strategies/src/adapters/redis-streams.ts:33 (apps/examples/retry-strategies/src/adapters/redis-streams.ts#createRedisStreamsAdapter -> packages/redis-streams/src/producer.ts#RedisStreamsProducer)",
+          "apps/examples/retry-strategies/src/examples/backpressure-pause.ts:1 (apps/examples/retry-strategies/src/examples/backpressure-pause.ts -> packages/core/src/strategies/built-ins.ts#backpressurePause)",
+          "apps/examples/retry-strategies/src/examples/custom.ts:1 (apps/examples/retry-strategies/src/examples/custom.ts -> packages/core/src/strategies/built-ins.ts#custom)",
+          "apps/examples/retry-strategies/src/examples/dead-letter-immediate.ts:1 (apps/examples/retry-strategies/src/examples/dead-letter-immediate.ts -> packages/core/src/strategies/built-ins.ts#deadLetterImmediate)",
+          "apps/examples/retry-strategies/src/examples/log-and-fail.ts:1 (apps/examples/retry-strategies/src/examples/log-and-fail.ts -> packages/core/src/strategies/built-ins.ts#logAndFail)",
+          "apps/examples/retry-strategies/src/examples/log-and-skip.ts:1 (apps/examples/retry-strategies/src/examples/log-and-skip.ts -> packages/core/src/strategies/built-ins.ts#logAndSkip)",
+          "apps/examples/retry-strategies/src/examples/retry-then-dead-letter.ts:1 (apps/examples/retry-strategies/src/examples/retry-then-dead-letter.ts -> packages/core/src/strategies/built-ins.ts#retryThenDeadLetter)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/consumer.ts#MemoryConsumer)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/consumer.ts#MemoryConsumer.getDLQ)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/consumer.ts#MemoryConsumer.getQueue)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/producer.ts#MemoryProducer)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/queue.ts#MemoryQueue.size)",
+          "apps/examples/retry-strategies/src/examples/shared.ts:1 (apps/examples/retry-strategies/src/examples/shared.ts -> packages/memory/src/registry.ts#clearAllQueues)"
+        ],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "files": 148,
+      "naMetrics": [],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    },
+    "bitnami-charts": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 216
+      },
+      "S3": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "S4": 1,
+      "S5": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 694
+      },
+      "S6": {
+        "f1": 0,
+        "fn": 0,
+        "fp": 309,
+        "precision": 0,
+        "recall": 1,
+        "tp": 0
+      },
+      "callsAllConfidences": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": [
+          "bitnami/kafka/Chart.yaml:4 (bitnami/kafka/Chart.yaml#module.kafka)",
+          "bitnami/kafka/templates/broker/config-secrets.yaml:8 (bitnami/kafka/templates/broker/config-secrets.yaml#resource.Secret.~0)",
+          "bitnami/kafka/templates/broker/configmap.yaml:15 (bitnami/kafka/templates/broker/configmap.yaml#resource.ConfigMap.~0)",
+          "bitnami/kafka/templates/broker/svc-external-access.yaml:12 (bitnami/kafka/templates/broker/svc-external-access.yaml#resource.Service.~0)",
+          "bitnami/kafka/templates/broker/svc-headless.yaml:8 (bitnami/kafka/templates/broker/svc-headless.yaml#resource.Service.~0)",
+          "bitnami/kafka/templates/ca-cert.yaml:22 (bitnami/kafka/templates/ca-cert.yaml#resource.Certificate.~1)",
+          "bitnami/kafka/templates/ca-cert.yaml:8 (bitnami/kafka/templates/ca-cert.yaml#resource.Issuer.~0)",
+          "bitnami/kafka/templates/ca-cert.yaml:40 (bitnami/kafka/templates/ca-cert.yaml#resource.Issuer.~2)",
+          "bitnami/kafka/templates/cert.yaml:7 (bitnami/kafka/templates/cert.yaml#resource.Certificate.~0)",
+          "bitnami/kafka/templates/controller-eligible/config-secrets.yaml:8 (bitnami/kafka/templates/controller-eligible/config-secrets.yaml#resource.Secret.~0)",
+          "bitnami/kafka/templates/controller-eligible/configmap.yaml:15 (bitnami/kafka/templates/controller-eligible/configmap.yaml#resource.ConfigMap.~0)",
+          "bitnami/kafka/templates/controller-eligible/svc-external-access.yaml:13 (bitnami/kafka/templates/controller-eligible/svc-external-access.yaml#resource.Service.~0)",
+          "bitnami/kafka/templates/controller-eligible/svc-headless.yaml:6 (bitnami/kafka/templates/controller-eligible/svc-headless.yaml#resource.Service.~0)",
+          "bitnami/kafka/templates/log4j2-configmap.yaml:7 (bitnami/kafka/templates/log4j2-configmap.yaml#resource.ConfigMap.~0)",
+          "bitnami/kafka/templates/metrics/jmx-servicemonitor.yaml:7 (bitnami/kafka/templates/metrics/jmx-servicemonitor.yaml#resource.ServiceMonitor.~0)",
+          "bitnami/kafka/templates/metrics/jmx-svc.yaml:7 (bitnami/kafka/templates/metrics/jmx-svc.yaml#resource.Service.~0)",
+          "bitnami/kafka/templates/metrics/prometheusrule.yaml:7 (bitnami/kafka/templates/metrics/prometheusrule.yaml#resource.PrometheusRule.~0)",
+          "bitnami/kafka/templates/provisioning/job.yaml:222 (bitnami/kafka/templates/provisioning/job.yaml#image.kafka-provisioning)",
+          "bitnami/kafka/templates/provisioning/job.yaml:51 (bitnami/kafka/templates/provisioning/job.yaml#image.prepare-config)",
+          "bitnami/kafka/templates/provisioning/job.yaml:174 (bitnami/kafka/templates/provisioning/job.yaml#image.wait-for-available-kafka)"
+        ]
+      },
+      "files": 130,
+      "naMetrics": [
+        "S3",
+        "S6"
+      ],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    },
+    "coroutines": {
+      "S1": {
+        "f1": 0,
+        "fn": 0,
+        "fp": 23,
+        "precision": 0,
+        "recall": 1,
+        "tp": 0
+      },
+      "S2": {
+        "f1": 0,
+        "fn": 0,
+        "fp": 674,
+        "precision": 0,
+        "recall": 1,
+        "tp": 0
+      },
+      "S3": {
+        "f1": 0,
+        "fn": 0,
+        "fp": 499,
+        "precision": 0,
+        "recall": 1,
+        "tp": 0
+      },
+      "S4": 1,
+      "S5": null,
+      "S6": null,
+      "callsAllConfidences": {
+        "f1": 0,
+        "fn": 0,
+        "fp": 499,
+        "precision": 0,
+        "recall": 1,
+        "tp": 0
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "falsePositives": {
+        "S1": [
+          "kotlinx-coroutines-core/common/src/AbstractCoroutine.kt:5 (kotlinx-coroutines-core/common/src/AbstractCoroutine.kt -> kotlinx-coroutines-core/common/src/CoroutineStart.kt)",
+          "kotlinx-coroutines-core/common/src/AbstractCoroutine.kt:8 (kotlinx-coroutines-core/common/src/AbstractCoroutine.kt -> kotlinx-coroutines-core/common/src/internal/Scopes.kt)",
+          "kotlinx-coroutines-core/common/src/Waiter.kt:3 (kotlinx-coroutines-core/common/src/Waiter.kt -> kotlinx-coroutines-core/common/src/internal/ConcurrentLinkedList.kt)",
+          "kotlinx-coroutines-core/common/src/channels/BroadcastChannel.kt:6 (kotlinx-coroutines-core/common/src/channels/BroadcastChannel.kt -> kotlinx-coroutines-core/common/src/channels/BufferOverflow.kt)",
+          "kotlinx-coroutines-core/common/src/channels/BufferedChannel.kt:12 (kotlinx-coroutines-core/common/src/channels/BufferedChannel.kt -> kotlinx-coroutines-core/common/src/selects/Select.kt)",
+          "kotlinx-coroutines-core/common/src/channels/ConflatedBufferedChannel.kt:3 (kotlinx-coroutines-core/common/src/channels/ConflatedBufferedChannel.kt -> kotlinx-coroutines-core/common/src/channels/BufferOverflow.kt)",
+          "kotlinx-coroutines-core/common/src/flow/Builders.kt:12 (kotlinx-coroutines-core/common/src/flow/Builders.kt -> kotlinx-coroutines-core/common/src/flow/internal/SafeCollector.common.kt)",
+          "kotlinx-coroutines-core/common/src/flow/Channels.kt:12 (kotlinx-coroutines-core/common/src/flow/Channels.kt -> kotlinx-coroutines-core/common/src/flow/internal/SafeCollector.common.kt)",
+          "kotlinx-coroutines-core/common/src/flow/SharingStarted.kt:4 (kotlinx-coroutines-core/common/src/flow/SharingStarted.kt -> kotlinx-coroutines-core/common/src/flow/internal/SafeCollector.common.kt)",
+          "kotlinx-coroutines-core/common/src/flow/internal/FlowCoroutine.kt:10 (kotlinx-coroutines-core/common/src/flow/internal/FlowCoroutine.kt -> kotlinx-coroutines-core/common/src/flow/internal/SafeCollector.common.kt)",
+          "kotlinx-coroutines-core/common/src/flow/internal/SafeCollector.common.kt:5 (kotlinx-coroutines-core/common/src/flow/internal/SafeCollector.common.kt -> kotlinx-coroutines-core/common/src/internal/Scopes.kt)",
+          "kotlinx-coroutines-core/common/src/flow/operators/Errors.kt:10 (kotlinx-coroutines-core/common/src/flow/operators/Errors.kt -> kotlinx-coroutines-core/common/src/flow/internal/SafeCollector.common.kt)",
+          "kotlinx-coroutines-core/common/src/flow/operators/Limit.kt:10 (kotlinx-coroutines-core/common/src/flow/operators/Limit.kt -> kotlinx-coroutines-core/common/src/flow/Builders.kt)",
+          "kotlinx-coroutines-core/common/src/flow/operators/Limit.kt:11 (kotlinx-coroutines-core/common/src/flow/operators/Limit.kt -> kotlinx-coroutines-core/common/src/flow/internal/SafeCollector.common.kt)",
+          "kotlinx-coroutines-core/common/src/flow/operators/Merge.kt:12 (kotlinx-coroutines-core/common/src/flow/operators/Merge.kt -> kotlinx-coroutines-core/common/src/flow/internal/SafeCollector.common.kt)",
+          "kotlinx-coroutines-core/common/src/flow/operators/Transform.kt:11 (kotlinx-coroutines-core/common/src/flow/operators/Transform.kt -> kotlinx-coroutines-core/common/src/flow/internal/SafeCollector.common.kt)",
+          "kotlinx-coroutines-core/common/src/flow/operators/Zip.kt:9 (kotlinx-coroutines-core/common/src/flow/operators/Zip.kt -> kotlinx-coroutines-core/common/src/flow/Builders.kt)",
+          "kotlinx-coroutines-core/common/src/flow/operators/Zip.kt:10 (kotlinx-coroutines-core/common/src/flow/operators/Zip.kt -> kotlinx-coroutines-core/common/src/flow/internal/SafeCollector.common.kt)",
+          "kotlinx-coroutines-core/common/src/flow/terminal/Reduce.kt:8 (kotlinx-coroutines-core/common/src/flow/terminal/Reduce.kt -> kotlinx-coroutines-core/common/src/internal/Symbol.kt)",
+          "kotlinx-coroutines-core/jvm/src/debug/internal/DebugProbesImpl.kt:5 (kotlinx-coroutines-core/jvm/src/debug/internal/DebugProbesImpl.kt -> kotlinx-coroutines-core/common/src/internal/Scopes.kt)"
+        ],
+        "S2": [
+          "kotlinx-coroutines-core/common/src/AbstractCoroutine.kt:34 (kotlinx-coroutines-core/common/src/AbstractCoroutine.kt#AbstractCoroutine)",
+          "kotlinx-coroutines-core/common/src/AbstractCoroutine.kt:113 (kotlinx-coroutines-core/common/src/AbstractCoroutine.kt#AbstractCoroutine.afterResume)",
+          "kotlinx-coroutines-core/common/src/AbstractCoroutine.kt:85 (kotlinx-coroutines-core/common/src/AbstractCoroutine.kt#AbstractCoroutine.cancellationExceptionMessage)",
+          "kotlinx-coroutines-core/common/src/AbstractCoroutine.kt:56 (kotlinx-coroutines-core/common/src/AbstractCoroutine.kt#AbstractCoroutine.context)",
+          "kotlinx-coroutines-core/common/src/AbstractCoroutine.kt:62 (kotlinx-coroutines-core/common/src/AbstractCoroutine.kt#AbstractCoroutine.coroutineContext)",
+          "kotlinx-coroutines-core/common/src/AbstractCoroutine.kt:64 (kotlinx-coroutines-core/common/src/AbstractCoroutine.kt#AbstractCoroutine.isActive)",
+          "kotlinx-coroutines-core/common/src/AbstractCoroutine.kt:83 (kotlinx-coroutines-core/common/src/AbstractCoroutine.kt#AbstractCoroutine.onCancelled)",
+          "kotlinx-coroutines-core/common/src/AbstractCoroutine.kt:70 (kotlinx-coroutines-core/common/src/AbstractCoroutine.kt#AbstractCoroutine.onCompleted)",
+          "kotlinx-coroutines-core/common/src/AbstractCoroutine.kt:87 (kotlinx-coroutines-core/common/src/AbstractCoroutine.kt#AbstractCoroutine.onCompletionInternal)",
+          "kotlinx-coroutines-core/common/src/AbstractCoroutine.kt:98 (kotlinx-coroutines-core/common/src/AbstractCoroutine.kt#AbstractCoroutine.resumeWith)",
+          "kotlinx-coroutines-core/common/src/AbstractCoroutine.kt:133 (kotlinx-coroutines-core/common/src/AbstractCoroutine.kt#AbstractCoroutine.start)",
+          "kotlinx-coroutines-core/common/src/Annotations.kt:12 (kotlinx-coroutines-core/common/src/Annotations.kt#DelicateCoroutinesApi)",
+          "kotlinx-coroutines-core/common/src/Annotations.kt:27 (kotlinx-coroutines-core/common/src/Annotations.kt#ExperimentalCoroutinesApi)",
+          "kotlinx-coroutines-core/common/src/Annotations.kt:97 (kotlinx-coroutines-core/common/src/Annotations.kt#ExperimentalForInheritanceCoroutinesApi)",
+          "kotlinx-coroutines-core/common/src/Annotations.kt:56 (kotlinx-coroutines-core/common/src/Annotations.kt#FlowPreview)",
+          "kotlinx-coroutines-core/common/src/Annotations.kt:83 (kotlinx-coroutines-core/common/src/Annotations.kt#InternalCoroutinesApi)",
+          "kotlinx-coroutines-core/common/src/Annotations.kt:109 (kotlinx-coroutines-core/common/src/Annotations.kt#InternalForInheritanceCoroutinesApi)",
+          "kotlinx-coroutines-core/common/src/Annotations.kt:73 (kotlinx-coroutines-core/common/src/Annotations.kt#ObsoleteCoroutinesApi)",
+          "kotlinx-coroutines-core/common/src/Await.kt:35 (kotlinx-coroutines-core/common/src/Await.kt#Collection.awaitAll)",
+          "kotlinx-coroutines-core/common/src/Await.kt:58 (kotlinx-coroutines-core/common/src/Await.kt#Collection.joinAll)"
+        ],
+        "S3": [
+          "kotlinx-coroutines-core/common/src/AbstractCoroutine.kt:115 (kotlinx-coroutines-core/common/src/AbstractCoroutine.kt#AbstractCoroutine.handleOnCompletionException -> kotlinx-coroutines-core/common/src/CoroutineExceptionHandler.kt#handleCoroutineException)",
+          "kotlinx-coroutines-core/common/src/Await.kt:63 (kotlinx-coroutines-core/common/src/Await.kt#AwaitAll.await -> kotlinx-coroutines-core/common/src/CancellableContinuation.kt#suspendCancellableCoroutine)",
+          "kotlinx-coroutines-core/common/src/Await.kt:35 (kotlinx-coroutines-core/common/src/Await.kt#Collection.awaitAll -> kotlinx-coroutines-core/common/src/Await.kt#AwaitAll)",
+          "kotlinx-coroutines-core/common/src/Await.kt:19 (kotlinx-coroutines-core/common/src/Await.kt#awaitAll -> kotlinx-coroutines-core/common/src/Await.kt#AwaitAll)",
+          "kotlinx-coroutines-core/common/src/Builders.common.kt:513 (kotlinx-coroutines-core/common/src/Builders.common.kt#CoroutineDispatcher.invoke -> kotlinx-coroutines-core/common/src/Builders.common.kt#withContext)",
+          "kotlinx-coroutines-core/common/src/Builders.common.kt:284 (kotlinx-coroutines-core/common/src/Builders.common.kt#CoroutineScope.async -> kotlinx-coroutines-core/common/src/Builders.common.kt#DeferredCoroutine)",
+          "kotlinx-coroutines-core/common/src/Builders.common.kt:284 (kotlinx-coroutines-core/common/src/Builders.common.kt#CoroutineScope.async -> kotlinx-coroutines-core/common/src/Builders.common.kt#LazyDeferredCoroutine)",
+          "kotlinx-coroutines-core/common/src/Builders.common.kt:200 (kotlinx-coroutines-core/common/src/Builders.common.kt#CoroutineScope.launch -> kotlinx-coroutines-core/common/src/Builders.common.kt#LazyStandaloneCoroutine)",
+          "kotlinx-coroutines-core/common/src/Builders.common.kt:200 (kotlinx-coroutines-core/common/src/Builders.common.kt#CoroutineScope.launch -> kotlinx-coroutines-core/common/src/Builders.common.kt#StandaloneCoroutine)",
+          "kotlinx-coroutines-core/common/src/Builders.common.kt:585 (kotlinx-coroutines-core/common/src/Builders.common.kt#DispatchedCoroutine.afterResume -> kotlinx-coroutines-core/common/src/CompletionState.kt#recoverResult)",
+          "kotlinx-coroutines-core/common/src/Builders.common.kt:523 (kotlinx-coroutines-core/common/src/Builders.common.kt#StandaloneCoroutine.handleJobException -> kotlinx-coroutines-core/common/src/CoroutineExceptionHandler.kt#handleCoroutineException)",
+          "kotlinx-coroutines-core/common/src/Builders.common.kt:472 (kotlinx-coroutines-core/common/src/Builders.common.kt#withContext -> kotlinx-coroutines-core/common/src/Builders.common.kt#DispatchedCoroutine)",
+          "kotlinx-coroutines-core/common/src/Builders.common.kt:472 (kotlinx-coroutines-core/common/src/Builders.common.kt#withContext -> kotlinx-coroutines-core/common/src/Builders.common.kt#UndispatchedCoroutine)",
+          "kotlinx-coroutines-core/common/src/Builders.common.kt:472 (kotlinx-coroutines-core/common/src/Builders.common.kt#withContext -> kotlinx-coroutines-core/common/src/CoroutineContext.common.kt#withCoroutineContext)",
+          "kotlinx-coroutines-core/common/src/CancellableContinuation.kt:498 (kotlinx-coroutines-core/common/src/CancellableContinuation.kt#CancellableContinuation.disposeOnCancellation -> kotlinx-coroutines-core/common/src/CancellableContinuation.kt#DisposeOnCancel)",
+          "kotlinx-coroutines-core/common/src/CancellableContinuation.kt:465 (kotlinx-coroutines-core/common/src/CancellableContinuation.kt#getOrCreateCancellableContinuation -> kotlinx-coroutines-core/common/src/CancellableContinuationImpl.kt#CancellableContinuationImpl)",
+          "kotlinx-coroutines-core/common/src/CancellableContinuation.kt:428 (kotlinx-coroutines-core/common/src/CancellableContinuation.kt#suspendCancellableCoroutine -> kotlinx-coroutines-core/common/src/CancellableContinuationImpl.kt#CancellableContinuationImpl)",
+          "kotlinx-coroutines-core/common/src/CancellableContinuation.kt:428 (kotlinx-coroutines-core/common/src/CancellableContinuation.kt#suspendCancellableCoroutine -> kotlinx-coroutines-core/common/src/CancellableContinuationImpl.kt#CancellableContinuationImpl.getResult)",
+          "kotlinx-coroutines-core/common/src/CancellableContinuation.kt:428 (kotlinx-coroutines-core/common/src/CancellableContinuation.kt#suspendCancellableCoroutine -> kotlinx-coroutines-core/common/src/CancellableContinuationImpl.kt#CancellableContinuationImpl.initCancellability)",
+          "kotlinx-coroutines-core/common/src/CancellableContinuation.kt:450 (kotlinx-coroutines-core/common/src/CancellableContinuation.kt#suspendCancellableCoroutineReusable -> kotlinx-coroutines-core/common/src/CancellableContinuation.kt#getOrCreateCancellableContinuation)"
+        ],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "files": 163,
+      "naMetrics": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5",
+        "S6"
+      ],
+      "noFiles": false,
+      "substitute": {
+        "deterministic": true,
+        "errorRate": 0,
+        "silentCount": 0,
+        "silentFiles": []
+      },
+      "truthEmpty": false
+    },
+    "docker-node": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 18
+      },
+      "S3": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "S4": 1,
+      "S5": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 18
+      },
+      "S6": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 36
+      },
+      "callsAllConfidences": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "files": 18,
+      "naMetrics": [
+        "S3"
+      ],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    },
+    "docker-python": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 42
+      },
+      "S3": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "S4": 1,
+      "S5": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 42
+      },
+      "S6": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 84
+      },
+      "callsAllConfidences": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "files": 42,
+      "naMetrics": [
+        "S3"
+      ],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    },
+    "gin": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 20
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 191
+      },
+      "S3": {
+        "f1": 0.7613526570048309,
+        "fn": 247,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.6146645865834633,
+        "tp": 394
+      },
+      "S4": 1,
+      "S5": null,
+      "S6": null,
+      "callsAllConfidences": {
+        "f1": 0.7613526570048309,
+        "fn": 247,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.6146645865834633,
+        "tp": 394
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [
+          "auth.go:98 (auth.go#BasicAuthForProxy -> auth.go#authPairs.searchCredential)",
+          "auth.go:98 (auth.go#BasicAuthForProxy -> context.go#Context.AbortWithStatus)",
+          "auth.go:98 (auth.go#BasicAuthForProxy -> context.go#Context.Header)",
+          "auth.go:98 (auth.go#BasicAuthForProxy -> context.go#Context.Set)",
+          "auth.go:98 (auth.go#BasicAuthForProxy -> context.go#Context.requestHeader)",
+          "auth.go:48 (auth.go#BasicAuthForRealm -> auth.go#authPairs.searchCredential)",
+          "auth.go:48 (auth.go#BasicAuthForRealm -> context.go#Context.AbortWithStatus)",
+          "auth.go:48 (auth.go#BasicAuthForRealm -> context.go#Context.Header)",
+          "auth.go:48 (auth.go#BasicAuthForRealm -> context.go#Context.Set)",
+          "auth.go:48 (auth.go#BasicAuthForRealm -> context.go#Context.requestHeader)",
+          "binding/binding.go:122 (binding/binding.go#validate -> binding/default_validator.go#defaultValidator.ValidateStruct)",
+          "binding/default_validator.go:24 (binding/default_validator.go#SliceValidationError.Error -> binding/default_validator.go#SliceValidationError.Error)",
+          "binding/default_validator.go:24 (binding/default_validator.go#SliceValidationError.Error -> errors.go#Error.Error)",
+          "binding/form.go:24 (binding/form.go#formBinding.Bind -> binding/binding.go#validate)",
+          "binding/form.go:55 (binding/form.go#formMultipartBinding.Bind -> binding/binding.go#validate)",
+          "binding/form.go:41 (binding/form.go#formPostBinding.Bind -> binding/binding.go#validate)",
+          "binding/form_mapping.go:323 (binding/form_mapping.go#setWithProperType -> codec/json/json.go#jsonApi.Unmarshal)",
+          "binding/form_mapping.go:145 (binding/form_mapping.go#tryToSetValue -> binding/form_mapping.go#formSource.TrySet)",
+          "binding/form_mapping.go:145 (binding/form_mapping.go#tryToSetValue -> binding/header.go#headerSource.TrySet)",
+          "binding/form_mapping.go:145 (binding/form_mapping.go#tryToSetValue -> binding/multipart_form_mapping.go#multipartRequest.TrySet)"
+        ],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "files": 53,
+      "naMetrics": [],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    },
+    "gson": {
+      "S1": {
+        "f1": 0.9963235294117647,
+        "fn": 2,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9926739926739927,
+        "tp": 271
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 489
+      },
+      "S3": {
+        "f1": 0.921994884910486,
+        "fn": 122,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.8552787663107948,
+        "tp": 721
+      },
+      "S4": 1,
+      "S5": null,
+      "S6": null,
+      "callsAllConfidences": {
+        "f1": 0.921994884910486,
+        "fn": 122,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.8552787663107948,
+        "tp": 721
+      },
+      "falseNegatives": {
+        "S1": [
+          "gson/src/main/java/com/google/gson/Gson.java:1 (gson/src/main/java/com/google/gson/Gson.java -> gson/src/main/java-templates/com/google/gson/internal/GsonBuildConfig.java)",
+          "gson/src/main/java/com/google/gson/internal/reflect/ReflectionHelper.java:1 (gson/src/main/java/com/google/gson/internal/reflect/ReflectionHelper.java -> gson/src/main/java-templates/com/google/gson/internal/GsonBuildConfig.java)"
+        ],
+        "S2": [],
+        "S3": [
+          "extras/src/main/java/com/google/gson/interceptors/InterceptorFactory.java:44 (extras/src/main/java/com/google/gson/interceptors/InterceptorFactory.java#InterceptorFactory.InterceptorAdapter.InterceptorAdapter -> extras/src/main/java/com/google/gson/interceptors/Intercept.java#Intercept.postDeserialize)",
+          "extras/src/main/java/com/google/gson/interceptors/InterceptorFactory.java:44 (extras/src/main/java/com/google/gson/interceptors/InterceptorFactory.java#InterceptorFactory.InterceptorAdapter.InterceptorAdapter -> gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.TypeAdapter)",
+          "extras/src/main/java/com/google/gson/interceptors/InterceptorFactory.java:59 (extras/src/main/java/com/google/gson/interceptors/InterceptorFactory.java#InterceptorFactory.InterceptorAdapter.read -> extras/src/main/java/com/google/gson/interceptors/JsonPostDeserializer.java#JsonPostDeserializer.postDeserialize)",
+          "extras/src/main/java/com/google/gson/typeadapters/UtcDateTypeAdapter.java:1 (extras/src/main/java/com/google/gson/typeadapters/UtcDateTypeAdapter.java#UtcDateTypeAdapter.UtcDateTypeAdapter -> gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.TypeAdapter)",
+          "gson/src/main/java/com/google/gson/FieldNamingPolicy.java:31 (gson/src/main/java/com/google/gson/FieldNamingPolicy.java#FieldNamingPolicy -> gson/src/main/java/com/google/gson/FieldNamingPolicy.java#FieldNamingPolicy)",
+          "gson/src/main/java/com/google/gson/Gson.java:1 (gson/src/main/java/com/google/gson/Gson.java#Gson.FutureTypeAdapter.FutureTypeAdapter -> gson/src/main/java/com/google/gson/internal/bind/SerializationDelegatingTypeAdapter.java#SerializationDelegatingTypeAdapter)",
+          "gson/src/main/java/com/google/gson/Gson.java:1267 (gson/src/main/java/com/google/gson/Gson.java#Gson.FutureTypeAdapter.read -> gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.read)",
+          "gson/src/main/java/com/google/gson/Gson.java:1272 (gson/src/main/java/com/google/gson/Gson.java#Gson.FutureTypeAdapter.write -> gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.write)",
+          "gson/src/main/java/com/google/gson/Gson.java:340 (gson/src/main/java/com/google/gson/Gson.java#Gson.getAdapter -> gson/src/main/java/com/google/gson/TypeAdapterFactory.java#TypeAdapterFactory.create)",
+          "gson/src/main/java/com/google/gson/Gson.java:472 (gson/src/main/java/com/google/gson/Gson.java#Gson.getDelegateAdapter -> gson/src/main/java/com/google/gson/TypeAdapterFactory.java#TypeAdapterFactory.create)",
+          "gson/src/main/java/com/google/gson/LongSerializationPolicy.java:29 (gson/src/main/java/com/google/gson/LongSerializationPolicy.java#LongSerializationPolicy -> gson/src/main/java/com/google/gson/LongSerializationPolicy.java#LongSerializationPolicy)",
+          "gson/src/main/java/com/google/gson/ToNumberPolicy.java:36 (gson/src/main/java/com/google/gson/ToNumberPolicy.java#ToNumberPolicy -> gson/src/main/java/com/google/gson/ToNumberPolicy.java#ToNumberPolicy)",
+          "gson/src/main/java/com/google/gson/ToNumberPolicy.java:36 (gson/src/main/java/com/google/gson/ToNumberPolicy.java#ToNumberPolicy -> gson/src/main/java/com/google/gson/stream/JsonReader.java#JsonReader.getPreviousPath)",
+          "gson/src/main/java/com/google/gson/ToNumberPolicy.java:36 (gson/src/main/java/com/google/gson/ToNumberPolicy.java#ToNumberPolicy -> gson/src/main/java/com/google/gson/stream/JsonReader.java#JsonReader.isLenient)",
+          "gson/src/main/java/com/google/gson/ToNumberPolicy.java:36 (gson/src/main/java/com/google/gson/ToNumberPolicy.java#ToNumberPolicy -> gson/src/main/java/com/google/gson/stream/JsonReader.java#JsonReader.nextDouble)",
+          "gson/src/main/java/com/google/gson/ToNumberPolicy.java:36 (gson/src/main/java/com/google/gson/ToNumberPolicy.java#ToNumberPolicy -> gson/src/main/java/com/google/gson/stream/JsonReader.java#JsonReader.nextString)",
+          "gson/src/main/java/com/google/gson/TypeAdapter.java:1 (gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.NullSafeTypeAdapter.NullSafeTypeAdapter -> gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.TypeAdapter)",
+          "gson/src/main/java/com/google/gson/TypeAdapter.java:309 (gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.NullSafeTypeAdapter.read -> gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.read)",
+          "gson/src/main/java/com/google/gson/TypeAdapter.java:300 (gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.NullSafeTypeAdapter.write -> gson/src/main/java/com/google/gson/TypeAdapter.java#TypeAdapter.write)",
+          "gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java:437 (gson/src/main/java/com/google/gson/internal/ConstructorConstructor.java#ConstructorConstructor.InstanceCreatorConstructor.construct -> gson/src/main/java/com/google/gson/InstanceCreator.java#InstanceCreator.createInstance)"
+        ],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "files": 95,
+      "naMetrics": [],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    },
+    "k8s-examples": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 401
+      },
+      "S3": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "S4": 1,
+      "S5": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 172
+      },
+      "S6": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 401
+      },
+      "callsAllConfidences": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "files": 245,
+      "naMetrics": [
+        "S3"
+      ],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    },
+    "next-app": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 116
+      },
+      "S2": {
+        "f1": 0.9988974641675854,
+        "fn": 1,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9977973568281938,
+        "tp": 453
+      },
+      "S3": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 27
+      },
+      "S4": 1,
+      "S5": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 144
+      },
+      "S6": {
+        "f1": 0.9974511469838573,
+        "fn": 3,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9949152542372881,
+        "tp": 587
+      },
+      "callsAllConfidences": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 27
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [
+          "examples/cms-sanity/app/api/draft-mode/enable/route.ts:1 (examples/cms-sanity/app/api/draft-mode/enable/route.ts#GET)"
+        ],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": [
+          "examples/with-facebook-pixel/app/components/FacebookPixel.js:1 (examples/with-facebook-pixel/app/components/FacebookPixel.js#component.FacebookPixel)",
+          "examples/with-three-js/app/_components/Bird.js:1 (examples/with-three-js/app/_components/Bird.js#component.Bird)",
+          "examples/with-three-js/app/_components/Box.js:1 (examples/with-three-js/app/_components/Box.js#component.Box)"
+        ]
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "files": 341,
+      "naMetrics": [],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    },
+    "pulumi-go": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 14
+      },
+      "S3": {
+        "f1": 0.9787234042553191,
+        "fn": 1,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9583333333333334,
+        "tp": 23
+      },
+      "S4": 1,
+      "S5": {
+        "f1": 0.9972752043596731,
+        "fn": 1,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9945652173913043,
+        "tp": 183
+      },
+      "S6": {
+        "f1": 0.9839816933638443,
+        "fn": 7,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9684684684684685,
+        "tp": 215
+      },
+      "callsAllConfidences": {
+        "f1": 0.9787234042553191,
+        "fn": 1,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9583333333333334,
+        "tp": 23
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [
+          "classic-azure-go-webserver-component/main.go:15 (classic-azure-go-webserver-component/main.go#main -> classic-azure-go-webserver-component/webserver.go#Webserver.GetIPAddress)"
+        ],
+        "S4": [],
+        "S5": [
+          "classic-azure-go-webserver-component/main.go:1 (classic-azure-go-webserver-component/main.go#resource.server -resource-input-> classic-azure-go-webserver-component/main.go#resource.rg)"
+        ],
+        "S6": [
+          "aws-go-s3-folder-component/main.go:1 (aws-go-s3-folder-component/main.go#resource.f)",
+          "classic-azure-go-webserver-component/main.go:1 (classic-azure-go-webserver-component/main.go#resource.server)",
+          "kubernetes-go-guestbook/components/main.go:1 (kubernetes-go-guestbook/components/main.go#resource.frontend)",
+          "kubernetes-go-guestbook/components/main.go:1 (kubernetes-go-guestbook/components/main.go#resource.~0)",
+          "kubernetes-go-guestbook/components/main.go:1 (kubernetes-go-guestbook/components/main.go#resource.~1)",
+          "kubernetes-go-helm-release-wordpress/main.go:1 (kubernetes-go-helm-release-wordpress/main.go#resource.svc)",
+          "testing-unit-go-components/main.go:1 (testing-unit-go-components/main.go#resource.nginx)"
+        ]
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "files": 44,
+      "naMetrics": [],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    },
+    "pulumi-ts": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 47
+      },
+      "S2": {
+        "f1": 0.998003992015968,
+        "fn": 0,
+        "fp": 1,
+        "precision": 0.9960159362549801,
+        "recall": 1,
+        "tp": 250
+      },
+      "S3": {
+        "f1": 0.9343065693430657,
+        "fn": 18,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.8767123287671232,
+        "tp": 128
+      },
+      "S4": 1,
+      "S5": {
+        "f1": 0.9794661190965093,
+        "fn": 20,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.959758551307847,
+        "tp": 477
+      },
+      "S6": {
+        "f1": 0.9814402375649591,
+        "fn": 25,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9635568513119533,
+        "tp": 661
+      },
+      "callsAllConfidences": {
+        "f1": 0.9343065693430657,
+        "fn": 18,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.8767123287671232,
+        "tp": 128
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [
+          "aws-ts-eks-migrate-nodegroups/iam.ts:33 (aws-ts-eks-migrate-nodegroups/iam.ts#createRoles -> aws-ts-eks-migrate-nodegroups/iam.ts#createRole)",
+          "aws-ts-esc-external-adapter-lambda/index.ts:1 (aws-ts-esc-external-adapter-lambda/index.ts -> aws-ts-esc-external-adapter-lambda/index.ts#ESCRequestValidator.validateRequest)",
+          "aws-ts-serverless-datawarehouse/index.ts:1 (aws-ts-serverless-datawarehouse/index.ts -> aws-ts-serverless-datawarehouse/datawarehouse/index.ts#ServerlessDataWarehouse.getInputStream)",
+          "aws-ts-serverless-datawarehouse/index.ts:1 (aws-ts-serverless-datawarehouse/index.ts -> aws-ts-serverless-datawarehouse/datawarehouse/index.ts#ServerlessDataWarehouse.getTable)",
+          "aws-ts-serverless-datawarehouse/index.ts:1 (aws-ts-serverless-datawarehouse/index.ts -> aws-ts-serverless-datawarehouse/datawarehouse/index.ts#ServerlessDataWarehouse.withBatchInputTable)",
+          "aws-ts-serverless-datawarehouse/index.ts:1 (aws-ts-serverless-datawarehouse/index.ts -> aws-ts-serverless-datawarehouse/datawarehouse/index.ts#ServerlessDataWarehouse.withStreamingInputTable)",
+          "aws-ts-serverless-datawarehouse/index.ts:1 (aws-ts-serverless-datawarehouse/index.ts -> aws-ts-serverless-datawarehouse/datawarehouse/index.ts#ServerlessDataWarehouse.withTable)",
+          "aws-ts-stackreference-architecture/application/src/index.ts:1 (aws-ts-stackreference-architecture/application/src/index.ts -> aws-ts-stackreference-architecture/application/src/application.ts#Application.albAddress)",
+          "aws-ts-stackreference-architecture/database/src/index.ts:1 (aws-ts-stackreference-architecture/database/src/index.ts -> aws-ts-stackreference-architecture/database/src/database.ts#RdsInstance.instanceAddress)",
+          "aws-ts-stackreference-architecture/database/src/index.ts:1 (aws-ts-stackreference-architecture/database/src/index.ts -> aws-ts-stackreference-architecture/database/src/database.ts#RdsInstance.instanceEndpoint)",
+          "aws-ts-stackreference-architecture/database/src/index.ts:1 (aws-ts-stackreference-architecture/database/src/index.ts -> aws-ts-stackreference-architecture/database/src/database.ts#RdsInstance.instancePort)",
+          "aws-ts-stackreference-architecture/networking/src/index.ts:1 (aws-ts-stackreference-architecture/networking/src/index.ts -> aws-ts-stackreference-architecture/networking/src/vpc.ts#Vpc.configurePeering)",
+          "aws-ts-stackreference-architecture/networking/src/index.ts:1 (aws-ts-stackreference-architecture/networking/src/index.ts -> aws-ts-stackreference-architecture/networking/src/vpc.ts#Vpc.createPeeredSecurityGroup)",
+          "aws-ts-stackreference-architecture/networking/src/index.ts:1 (aws-ts-stackreference-architecture/networking/src/index.ts -> aws-ts-stackreference-architecture/networking/src/vpc.ts#Vpc.privateSubnetIds)",
+          "aws-ts-stackreference-architecture/networking/src/index.ts:1 (aws-ts-stackreference-architecture/networking/src/index.ts -> aws-ts-stackreference-architecture/networking/src/vpc.ts#Vpc.publicSubnetIds)",
+          "aws-ts-stackreference-architecture/networking/src/index.ts:1 (aws-ts-stackreference-architecture/networking/src/index.ts -> aws-ts-stackreference-architecture/networking/src/vpc.ts#Vpc.vpcId)",
+          "aws-ts-stackreference-architecture/networking/src/vpc.ts:37 (aws-ts-stackreference-architecture/networking/src/vpc.ts#Vpc.constructor -> aws-ts-stackreference-architecture/networking/src/vpc.ts#SubnetDistributor.privateSubnets)",
+          "aws-ts-stackreference-architecture/networking/src/vpc.ts:37 (aws-ts-stackreference-architecture/networking/src/vpc.ts#Vpc.constructor -> aws-ts-stackreference-architecture/networking/src/vpc.ts#SubnetDistributor.publicSubnets)"
+        ],
+        "S4": [],
+        "S5": [
+          "aws-ts-eks-distro/index.ts:1 (aws-ts-eks-distro/index.ts#resource.cluster -resource-input-> aws-ts-eks-distro/index.ts#resource.store)",
+          "aws-ts-eks-distro/index.ts:15 (aws-ts-eks-distro/index.ts#resource.k8sProvider -resource-input-> aws-ts-eks-distro/index.ts#resource.cluster)",
+          "aws-ts-organizations/accountPermissions.ts:94 (aws-ts-organizations/accountPermissions.ts#resource.attachment -resource-input-> aws-ts-organizations/accountPermissions.ts#resource.permissionsBoundary)",
+          "aws-ts-organizations/accountPermissions.ts:152 (aws-ts-organizations/accountPermissions.ts#resource.attachment~2 -resource-input-> aws-ts-organizations/accountPermissions.ts#resource.permissionsBoundary)",
+          "aws-ts-organizations/accountPermissions.ts:131 (aws-ts-organizations/accountPermissions.ts#resource.automationRole -resource-input-> aws-ts-organizations/accountPermissions.ts#resource.permissionsBoundary)",
+          "aws-ts-organizations/accountPermissions.ts:70 (aws-ts-organizations/accountPermissions.ts#resource.role -resource-input-> aws-ts-organizations/accountPermissions.ts#resource.permissionsBoundary)",
+          "aws-ts-organizations/index.ts:1 (aws-ts-organizations/index.ts#resource.backupPolicy -resource-input-> aws-ts-organizations/index.ts#resource.devOrgUnit)",
+          "aws-ts-organizations/tagPolicy.ts:76 (aws-ts-organizations/tagPolicy.ts#resource.attachment -resource-input-> aws-ts-organizations/tagPolicy.ts#resource.orgTagPolicy)",
+          "aws-ts-organizations/tagPolicy.ts:123 (aws-ts-organizations/tagPolicy.ts#resource.attachment~2 -resource-input-> aws-ts-organizations/tagPolicy.ts#resource.orgTagPolicy)",
+          "aws-ts-pern-voting-app/index.ts:1 (aws-ts-pern-voting-app/index.ts#resource.postgresqlVotesTable -resource-input-> aws-ts-pern-voting-app/index.ts#resource.postgresDatabase)",
+          "aws-ts-pern-voting-app/index.ts:1 (aws-ts-pern-voting-app/index.ts#resource.postgresqlVotesTable -resource-input-> aws-ts-pern-voting-app/index.ts#resource.postgresUser)",
+          "aws-ts-pern-voting-app/index.ts:1 (aws-ts-pern-voting-app/index.ts#resource.postgresqlVotesTable -resource-input-> aws-ts-pern-voting-app/index.ts#resource.postgresqlRdsServer)",
+          "aws-ts-serverless-react-postgres/index.ts:1 (aws-ts-serverless-react-postgres/index.ts#resource.edge -resource-input-> aws-ts-serverless-react-postgres/index.ts#resource.database)",
+          "aws-ts-stackreference-architecture/application/src/index.ts:1 (aws-ts-stackreference-architecture/application/src/index.ts#resource.app -resource-input-> aws-ts-stackreference-architecture/application/src/index.ts#resource.databaseStack)",
+          "aws-ts-stackreference-architecture/application/src/index.ts:1 (aws-ts-stackreference-architecture/application/src/index.ts#resource.app -resource-input-> aws-ts-stackreference-architecture/application/src/index.ts#resource.image)",
+          "aws-ts-stackreference-architecture/application/src/index.ts:1 (aws-ts-stackreference-architecture/application/src/index.ts#resource.app -resource-input-> aws-ts-stackreference-architecture/application/src/index.ts#resource.networkingStack)",
+          "aws-ts-stackreference-architecture/database/src/index.ts:1 (aws-ts-stackreference-architecture/database/src/index.ts#resource.rds -resource-input-> aws-ts-stackreference-architecture/database/src/index.ts#resource.networkingStack)",
+          "aws-ts-wordpress-fargate-rds/index.ts:1 (aws-ts-wordpress-fargate-rds/index.ts#resource.db -resource-input-> aws-ts-wordpress-fargate-rds/index.ts#resource.vpc)",
+          "aws-ts-wordpress-fargate-rds/index.ts:1 (aws-ts-wordpress-fargate-rds/index.ts#resource.fe -resource-input-> aws-ts-wordpress-fargate-rds/index.ts#resource.db)",
+          "aws-ts-wordpress-fargate-rds/index.ts:1 (aws-ts-wordpress-fargate-rds/index.ts#resource.fe -resource-input-> aws-ts-wordpress-fargate-rds/index.ts#resource.vpc)"
+        ],
+        "S6": [
+          "aws-ts-ai-app-infrastructure/index.ts:1 (aws-ts-ai-app-infrastructure/index.ts#resource.app)",
+          "aws-ts-eks-distro/index.ts:1 (aws-ts-eks-distro/index.ts#resource.cluster)",
+          "aws-ts-landing-zone/index.ts:1 (aws-ts-landing-zone/index.ts#resource.zone)",
+          "aws-ts-organizations/index.ts:1 (aws-ts-organizations/index.ts#resource.backupPolicy)",
+          "aws-ts-organizations/index.ts:1 (aws-ts-organizations/index.ts#resource.devAccountPermissions)",
+          "aws-ts-organizations/index.ts:1 (aws-ts-organizations/index.ts#resource.tagPolicies)",
+          "aws-ts-pern-voting-app/index.ts:1 (aws-ts-pern-voting-app/index.ts#resource.postgresqlVotesTable)",
+          "aws-ts-production-observability/index.ts:1 (aws-ts-production-observability/index.ts#resource.observableLambda)",
+          "aws-ts-serverless-datawarehouse/datawarehouse/index.ts:1 (aws-ts-serverless-datawarehouse/datawarehouse/index.ts#resource.batchInputJob)",
+          "aws-ts-serverless-datawarehouse/datawarehouse/index.ts:1 (aws-ts-serverless-datawarehouse/datawarehouse/index.ts#resource.partitionRegistrar)",
+          "aws-ts-serverless-datawarehouse/datawarehouse/index.ts:1 (aws-ts-serverless-datawarehouse/datawarehouse/index.ts#resource.~2)",
+          "aws-ts-serverless-datawarehouse/datawarehouse/partitionRegistrar/index.ts:1 (aws-ts-serverless-datawarehouse/datawarehouse/partitionRegistrar/index.ts#resource.partitionLambda)",
+          "aws-ts-serverless-datawarehouse/index.ts:1 (aws-ts-serverless-datawarehouse/index.ts#resource.clicksGenerator)",
+          "aws-ts-serverless-datawarehouse/index.ts:1 (aws-ts-serverless-datawarehouse/index.ts#resource.impressionsGenerator)",
+          "aws-ts-serverless-datawarehouse/index.ts:1 (aws-ts-serverless-datawarehouse/index.ts#resource.~0)",
+          "aws-ts-serverless-datawarehouse/testing/eventGenerator/index.ts:1 (aws-ts-serverless-datawarehouse/testing/eventGenerator/index.ts#resource.eventGenerator)",
+          "aws-ts-serverless-react-postgres/index.ts:1 (aws-ts-serverless-react-postgres/index.ts#resource.database)",
+          "aws-ts-serverless-react-postgres/index.ts:1 (aws-ts-serverless-react-postgres/index.ts#resource.edge)",
+          "aws-ts-stackreference-architecture/application/src/index.ts:1 (aws-ts-stackreference-architecture/application/src/index.ts#resource.app)",
+          "aws-ts-stackreference-architecture/database/src/index.ts:1 (aws-ts-stackreference-architecture/database/src/index.ts#resource.rds)"
+        ]
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [
+          "aws-ts-apigateway/index.ts:54 (aws-ts-apigateway/index.ts#endpoint)"
+        ],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "files": 120,
+      "naMetrics": [],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    },
+    "pydantic": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 457
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 1358
+      },
+      "S3": {
+        "f1": 0.9996791786974655,
+        "fn": 1,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9993585631815266,
+        "tp": 1558
+      },
+      "S4": 1,
+      "S5": null,
+      "S6": null,
+      "callsAllConfidences": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 1559
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [
+          "pydantic/v1/decorator.py:208 (pydantic/v1/decorator.py#ValidatedFunction.create_model -> pydantic/v1/class_validators.py#validator)"
+        ],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "files": 105,
+      "naMetrics": [],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    },
+    "ripgrep": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 223
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 370
+      },
+      "S3": {
+        "f1": 0.9838888888888888,
+        "fn": 58,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9682886823400766,
+        "tp": 1771
+      },
+      "S4": 1,
+      "S5": null,
+      "S6": null,
+      "callsAllConfidences": {
+        "f1": 0.99945295404814,
+        "fn": 2,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9989065062875888,
+        "tp": 1827
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [
+          "crates/core/index/enabled.rs:8 (crates/core/index/enabled.rs#read -> crates/core/flags/hiargs.rs#HiArgs.index_read)",
+          "crates/core/index/enabled.rs:8 (crates/core/index/enabled.rs#read -> crates/core/flags/hiargs.rs#HiArgs.threads)",
+          "crates/core/index/enabled.rs:3 (crates/core/index/enabled.rs#write -> crates/core/flags/hiargs.rs#HiArgs.index_write)",
+          "crates/core/main.rs:241 (crates/core/main.rs#files -> crates/core/flags/hiargs.rs#HiArgs.haystack_builder)",
+          "crates/core/main.rs:241 (crates/core/main.rs#files -> crates/core/flags/hiargs.rs#HiArgs.path_printer_builder)",
+          "crates/core/main.rs:241 (crates/core/main.rs#files -> crates/core/flags/hiargs.rs#HiArgs.quit_after_match)",
+          "crates/core/main.rs:241 (crates/core/main.rs#files -> crates/core/flags/hiargs.rs#HiArgs.sort)",
+          "crates/core/main.rs:241 (crates/core/main.rs#files -> crates/core/flags/hiargs.rs#HiArgs.stdout)",
+          "crates/core/main.rs:241 (crates/core/main.rs#files -> crates/core/flags/hiargs.rs#HiArgs.walk_builder)",
+          "crates/core/main.rs:277 (crates/core/main.rs#files_parallel -> crates/core/flags/hiargs.rs#HiArgs.haystack_builder)",
+          "crates/core/main.rs:277 (crates/core/main.rs#files_parallel -> crates/core/flags/hiargs.rs#HiArgs.path_printer_builder)",
+          "crates/core/main.rs:277 (crates/core/main.rs#files_parallel -> crates/core/flags/hiargs.rs#HiArgs.quit_after_match)",
+          "crates/core/main.rs:277 (crates/core/main.rs#files_parallel -> crates/core/flags/hiargs.rs#HiArgs.stdout)",
+          "crates/core/main.rs:277 (crates/core/main.rs#files_parallel -> crates/core/flags/hiargs.rs#HiArgs.walk_builder)",
+          "crates/core/main.rs:361 (crates/core/main.rs#generate -> crates/core/flags/complete/bash.rs#generate)",
+          "crates/core/main.rs:361 (crates/core/main.rs#generate -> crates/core/flags/complete/fish.rs#generate)",
+          "crates/core/main.rs:361 (crates/core/main.rs#generate -> crates/core/flags/complete/powershell.rs#generate)",
+          "crates/core/main.rs:361 (crates/core/main.rs#generate -> crates/core/flags/complete/zsh.rs#generate)",
+          "crates/core/main.rs:361 (crates/core/main.rs#generate -> crates/core/flags/doc/man.rs#generate)",
+          "crates/core/main.rs:44 (crates/core/main.rs#main -> crates/core/flags/mod.rs#parse)"
+        ],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "files": 95,
+      "naMetrics": [],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    },
+    "starter-workflows": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 211
+      },
+      "S3": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "S4": 1,
+      "S5": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 570
+      },
+      "S6": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 1019
+      },
+      "callsAllConfidences": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "files": 187,
+      "naMetrics": [
+        "S3"
+      ],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    },
+    "tanstack-start": {
+      "S1": {
+        "f1": 0.9989888776541962,
+        "fn": 0,
+        "fp": 1,
+        "precision": 0.997979797979798,
+        "recall": 1,
+        "tp": 494
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 1038
+      },
+      "S3": {
+        "f1": 0.9911504424778761,
+        "fn": 3,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9824561403508771,
+        "tp": 168
+      },
+      "S4": 1,
+      "S5": {
+        "f1": 0.9961685823754789,
+        "fn": 0,
+        "fp": 1,
+        "precision": 0.9923664122137404,
+        "recall": 1,
+        "tp": 130
+      },
+      "S6": {
+        "f1": 0.997979797979798,
+        "fn": 2,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9959677419354839,
+        "tp": 494
+      },
+      "callsAllConfidences": {
+        "f1": 0.9911504424778761,
+        "fn": 3,
+        "fp": 0,
+        "precision": 1,
+        "recall": 0.9824561403508771,
+        "tp": 168
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [
+          "examples/react/start-basic-auth/src/routes/_authed.tsx:1 (examples/react/start-basic-auth/src/routes/_authed.tsx -> examples/react/start-basic-auth/src/prisma-generated/models/User.ts#UserDelegate.findUnique)",
+          "examples/react/start-basic-auth/src/routes/signup.tsx:1 (examples/react/start-basic-auth/src/routes/signup.tsx -> examples/react/start-basic-auth/src/prisma-generated/models/User.ts#UserDelegate.create)",
+          "examples/react/start-basic-auth/src/routes/signup.tsx:1 (examples/react/start-basic-auth/src/routes/signup.tsx -> examples/react/start-basic-auth/src/prisma-generated/models/User.ts#UserDelegate.findUnique)"
+        ],
+        "S4": [],
+        "S5": [],
+        "S6": [
+          "examples/react/start-large/src/typePrimitives.tsx:1 (examples/react/start-large/src/typePrimitives.tsx#component.ListItems)",
+          "examples/react/start-large/src/typePrimitives.tsx:1 (examples/react/start-large/src/typePrimitives.tsx#component.MyLink~2)"
+        ]
+      },
+      "falsePositives": {
+        "S1": [
+          "examples/react/start-convex-trellaux/src/routes/index.tsx:4 (examples/react/start-convex-trellaux/src/routes/index.tsx -> examples/react/start-convex-trellaux/convex/_generated/api.js)"
+        ],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [
+          "examples/react/start-rscs/src/routes/__root.tsx:8 (examples/react/start-rscs/src/routes/__root.tsx#route./ -route-handler-> examples/react/start-rscs/src/components/Layout.tsx#component.Layout)"
+        ],
+        "S6": []
+      },
+      "files": 389,
+      "naMetrics": [],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    },
+    "tf-aws-eks": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 20
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 759
+      },
+      "S3": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "S4": 1,
+      "S5": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 1989
+      },
+      "S6": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 1246
+      },
+      "callsAllConfidences": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "files": 87,
+      "naMetrics": [
+        "S3"
+      ],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    },
+    "tf-aws-vpc": {
+      "S1": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 18
+      },
+      "S2": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 1591
+      },
+      "S3": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "S4": 1,
+      "S5": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 2497
+      },
+      "S6": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 1890
+      },
+      "callsAllConfidences": {
+        "f1": 1,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1,
+        "recall": 1,
+        "tp": 0
+      },
+      "falseNegatives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "falsePositives": {
+        "S1": [],
+        "S2": [],
+        "S3": [],
+        "S4": [],
+        "S5": [],
+        "S6": []
+      },
+      "files": 77,
+      "naMetrics": [
+        "S3"
+      ],
+      "noFiles": false,
+      "substitute": null,
+      "truthEmpty": false
+    }
+  },
+  "suite": "structural",
+  "targets": {
+    "S1": [
+      0.99,
+      0.97
+    ],
+    "S2": [
+      0.99,
+      0.99
+    ],
+    "S3": 0.95,
+    "S4": 1,
+    "S5": 0.95,
+    "S6": 0.95
+  },
+  "truth": {
+    "notes": [
+      "ast-only",
+      "cargo-metadata-roots",
+      "cha-callgraph",
+      "cha-over-approximation",
+      "dockerfile-ast-oracle",
+      "fixture-oracle-only",
+      "go-packages-per-file-imports",
+      "hclsyntax-traversals",
+      "helm-template-render",
+      "javac-tree-api",
+      "js-yaml-oracle",
+      "jvm-synthetics-dropped",
+      "kotlinc-javap-classfiles",
+      "names-not-compared-for-templates",
+      "nearest-tsconfig-resolution",
+      "no-call-edges",
+      "no-corpus-compiler-truth",
+      "no-import-execution",
+      "no-trait-dispatch",
+      "pep420-namespace-packages",
+      "property-access-not-a-call",
+      "python>=3.11",
+      "reported-only",
+      "rule-agreement-oracle",
+      "same-rules-different-parser",
+      "source-classpath-only",
+      "syn-item-tree",
+      "terraform-config-inspect",
+      "unresolved-files-dropped",
+      "unsupported:S3",
+      "unsupported:S6",
+      "workspace-entry-mapping"
+    ]
+  },
+  "unparsable": {
+    "count": 6,
+    "files": [
+      {
+        "path": "bitnami/kafka/templates/metrics/jmx-configmap.yaml",
+        "reason": "error-child",
+        "repo": "bitnami-charts"
+      },
+      {
+        "path": "bitnami/redis/templates/networkpolicy.yaml",
+        "reason": "error-root",
+        "repo": "bitnami-charts"
+      },
+      {
+        "path": "bitnami/redis/templates/podmonitor.yaml",
+        "reason": "error-child",
+        "repo": "bitnami-charts"
+      },
+      {
+        "path": "bitnami/redis/templates/servicemonitor.yaml",
+        "reason": "error-child",
+        "repo": "bitnami-charts"
+      },
+      {
+        "path": "examples/with-next-translate/app/[lang]/page.js",
+        "reason": "error-root",
+        "repo": "next-app"
+      },
+      {
+        "path": "examples/with-next-translate/app/layout.js",
+        "reason": "error-root",
+        "repo": "next-app"
+      }
+    ]
+  }
+}

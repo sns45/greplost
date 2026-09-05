@@ -18,9 +18,41 @@ jobs:
         with: { version: "v3.16.4" }
       - uses: actions/setup-go@v5
         with: { go-version: "1.25" }
+      # The Rust oracle (`bench/truth/rusttruth`) is a cargo program, built once
+      # into bench/.corpus/.tools and named by the hash of its own sources. The
+      # first build on a cold runner needs the network for `cargo fetch`; every
+      # build after that is `--offline`, which is what the registry cache below
+      # is for. python3 is 3.12 on ubuntu-latest and the Python oracle's floor is
+      # 3.11, so it needs no step. kotlinc is deliberately absent: Kotlin ships
+      # reported-only (Appendix C 2026-09-04) and its truth tests skip with a
+      # printed reason when the toolchain is not on PATH.
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache the cargo registry for the Rust truth generator
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ hashFiles('bench/truth/rusttruth/Cargo.lock') }}
+      - name: Cache the Go module downloads for the Go truth generators
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: gomod-${{ hashFiles('bench/truth/*/go.sum') }}
+      # The built oracles, keyed by the sources they are named after: a pinned
+      # dependency change rebuilds them and nothing else does.
+      - name: Cache the built truth generators
+        uses: actions/cache@v4
+        with:
+          path: bench/.corpus/.tools
+          key: truth-tools-${{ hashFiles('bench/truth/*/go.mod', 'bench/truth/*/go.sum', 'bench/truth/*/main.go', 'bench/truth/rusttruth/Cargo.lock', 'bench/truth/rusttruth/Cargo.toml', 'bench/truth/rusttruth/src/**', 'bench/truth/javatruth/**', 'bench/truth/pytruth/**', 'bench/truth/kotlintruth/**') }}
       - run: bun install --frozen-lockfile
-      - name: go modules for the Go truth generator
-        run: cd bench/truth/gocallgraph && go mod download
+      - name: go modules for the Go truth generators
+        run: |
+          set -euo pipefail
+          for tool in gocallgraph tfinspect pulumigotruth; do
+            (cd "bench/truth/$tool" && go mod download)
+          done
       - run: bun run typecheck
       - run: bun test
       - name: build the publishable bundle
@@ -45,8 +77,11 @@ jobs:
         with:
           path: bench/.corpus
           key: corpus-${{ hashFiles('bench/corpus.json') }}
-      - name: "Corpus setup (tiers S and M: anyq, gin, hono, bubbletea)"
+      - name: "Corpus setup (tier S: every pinned repo, one per language and flavour; tier M)"
         run: bun bench/src/cli.ts corpus setup --tier S && bun bench/src/cli.ts corpus setup --tier M
+      # Every language, IaC flavour and signal pass is scored here: the tier-S
+      # corpus is the whole build-2 set, and a target whose oracle measures
+      # nothing is gated on the three substitute checks instead.
       - name: structural accuracy gate (tier S)
         run: bun run bench:structural --tier S --gate
       - name: map quality gate

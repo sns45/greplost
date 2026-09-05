@@ -64,9 +64,28 @@ Status: pre-release 0.0.1. Design: [docs/greplost-tech-spec.md](docs/greplost-te
   config.json              include/exclude, languages, diagram limits
 ```
 
-Languages: TypeScript, TSX, JavaScript, JSX and Go. Imports resolve through tsconfig `paths`, workspace packages, `package.json` `exports` and Go module paths. Call edges are only recorded when the callee resolves to one declaration (`high`) or through a re-export chain (`med`); nothing is guessed.
+### Languages, IaC and framework signals
 
-`greplost init` writes `config.json` once and never rewrites it. Its `languages` start as the TypeScript family (`ts`, `tsx`, `js`, `jsx`), plus `go` when the repository has a `go.mod` anywhere in the indexed file set — both, in a repo that has both. Edit the file to change it; a build that indexes nothing says so on stderr rather than writing an empty map in silence.
+| What | Marker `init` looks for | What you get |
+|---|---|---|
+| TypeScript, TSX, JavaScript, JSX | on by default | imports through tsconfig `paths`, workspace packages and `package.json` `exports`; exports; call edges; cycles |
+| Go | `go.mod` | imports as package directories, exported identifiers, call edges, cycles |
+| Python | `pyproject.toml`, `setup.py` or any `.py` | absolute, relative and namespace-package imports, module exports, call edges |
+| Rust | `Cargo.toml` | `mod`/`use` edges across the crate tree, public items, call edges |
+| Java | `pom.xml`, `build.gradle`, `build.gradle.kts` | package and type imports, public types and members, call edges |
+| Kotlin | `build.gradle.kts` or any `.kt` | imports, declarations and call edges (see the accuracy caveat below) |
+| Terraform (HCL) | any `.tf` | `resource`, `data`, `module`, `variable`, `output`, `provider` and `local` nodes, module edges, and reference edges between them |
+| Kubernetes YAML | a manifest whose first key is `apiVersion` | one node per object, with `configmap`/`secret`/`service` reference edges |
+| Helm charts | `Chart.yaml` | one node per template document plus `.Values` reference edges into `values.yaml` |
+| GitHub Actions | `.github/workflows/*.yml` | `job` and `step` nodes, `needs` edges, and `uses` edges to local actions |
+| Dockerfiles | any `Dockerfile*` or `Containerfile` | one node per build stage, `from-image` and `copy --from` edges |
+| React, TanStack Start, Next.js, Pulumi (TS and Go) | the framework in `package.json` or `go.mod` | components, routes, loaders, app routes and Pulumi resources as nodes on top of the language map |
+
+Things inside a file are nodes with ids of the form `<file>#<kind>.<name>`, and `greplost query` and `greplost impact` take one wherever they take a path. Call edges are only recorded when the callee resolves to one declaration (`high`) or through a re-export chain (`med`); nothing is guessed.
+
+`greplost init` writes `config.json` once and never rewrites it. Its `languages` start as the TypeScript family (`ts`, `tsx`, `js`, `jsx`) and gain every language whose marker above is in the indexed file set, so a repository with both a `go.mod` and a Terraform module gets both; the framework signal passes turn on the same way, from the dependency that names them. Edit the file to change it; a build that indexes nothing says so on stderr rather than writing an empty map in silence.
+
+Accuracy per language, the oracle each is measured against and what that oracle cannot see are published in [bench/RESULTS.md](bench/RESULTS.md) under "Languages, IaC and signals". Kotlin is the one language with no corpus compiler truth: its numbers are fixture numbers and are labelled `reported` rather than `gated`. The head-to-head numbers below cover TypeScript and Go only; no competitor was run on any language build 2 added.
 
 ## Install
 
@@ -108,7 +127,7 @@ claude plugin marketplace add sns45/greplost
 claude plugin install greplost@greplost
 ```
 
-The plugin adds a `SessionStart` hint that the repo has a map, a `PreToolUse` nudge before `Glob` and `Grep` to consult `.greplost/INDEX.md` or `greplost query --json` first, a `PostToolUse` hook that records edited files, and a `Stop` hook that runs an incremental update. It never blocks a tool call and never changes permission decisions. It also ships `/greplost:query`, `/greplost:impact`, `/greplost:verify`, `/greplost:update`, `/greplost:init`, `/greplost:refresh` and a read-only `greplost-navigator` subagent.
+The plugin adds a `SessionStart` hint that the repo has a map and that things inside a file have `<file>#<kind>.<name>` node ids, a `PreToolUse` nudge before `Glob` and `Grep` to consult `.greplost/INDEX.md` or `greplost query --json` first (a node id works there too), a `PostToolUse` hook that records edited files, and a `Stop` hook that runs an incremental update. It never blocks a tool call and never changes permission decisions. It also ships `/greplost:query`, `/greplost:impact`, `/greplost:verify`, `/greplost:update`, `/greplost:init`, `/greplost:refresh` and a read-only `greplost-navigator` subagent.
 
 ## Workspace mode
 
@@ -130,7 +149,7 @@ Writes one-paragraph module summaries and per-package `FLOWS.md` using the `clau
 
 ## Determinism contract
 
-- Node ids are `<path>`, `<path>#Symbol.path`, `pkg:<name>`, `ext:<name>`.
+- Node ids are `<path>`, `<path>#Symbol.path`, `<path>#<kind>.<name>` for a resource, object, job, step or build stage inside a file, `pkg:<name>` and `ext:<name>`. A duplicate name inside one file takes a `~<n>` suffix on the id, never on the name. No artifact path contains a `#`.
 - Every collection is sorted in code-unit order; JSON keys are sorted; JSONL is one compact line per edge.
 - No timestamps, absolute paths or machine names in the structure layer.
 - Mermaid node order is the sorted id order; labels are derived, never hand-edited.
@@ -160,6 +179,8 @@ greplost against Graphify, Understand-Anything and code-review-graph (tech spec 
 | X8 | <= 50% of best competitor tokens | n/a | n/a | n/a | n/a |  |
 | X9 | fastest, highest hit rate | n/a | n/a | n/a | n/a |  |
 | X10 | works (capability, not a score) | works | n/a | n/a | n/a |  |
+
+X1 to X10 cover TypeScript and Go only; build 2's languages are scored against their own compiler truth in the single-tool table below, with no competitor arm.
 
 > Reading the X1 row: each `vs <tool>` column is greplost against that tool on **call edge precision**, the headline tech spec 10.0 names. greplost's own `Measured` verdict is against **both halves** of the 3.1 target at once (+0.10 on calls and +0.03 on imports), so it can be a `tie` in the same row where every competitor column is a `win`.
 
@@ -255,11 +276,11 @@ greplost measured against its own section 3 targets, one row per metric id. The 
 
 | ID | Metric | Target | Measured | Source |
 |---|---|---|---|---|
-| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | Eval 1, `structural` (hono (248 files)) |
-| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 0.999 | Eval 1, `structural` (hono (248 files)) |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | Eval 1, `structural` (hono (248 files)) |
-| S4 | import cycle Jaccard | = 1.00 | 1 | Eval 1, `structural` (hono (248 files)) |
-| unparsable | files whose tree-sitter parse is broken at the root level | 0 | 5 | Eval 1, `structural` |
+| S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | Eval 1, `structural` (anyq (148 files)) |
+| S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | Eval 1, `structural` (anyq (148 files)) |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | Eval 1, `structural` (anyq (148 files)) |
+| S4 | import cycle Jaccard | = 1.00 | 1 | Eval 1, `structural` (anyq (148 files)) |
+| unparsable | files whose tree-sitter parse is broken at the root level | 0 | 6 | Eval 1, `structural` |
 | F1 | `verify` catch rate on stale maps | 100% | 100% | Eval 2, `replay` |
 | F2 | `verify` false positives after `update` | 0% (byte-identical) | 0% | Eval 2, `replay` |
 | P1 | full build, 1k / 10k files | <= 1s / <= 10s (measured on anyq, tier S, 148 files) | 203 ms (p50) | Bench 3, `perf` |
