@@ -411,8 +411,12 @@
 
 ## bench/src/truth/dockerfile.ts
 
-- `const NOTES: readonly string[] = ["not-implemented"]` L15-15
-- `function generateTruth(root: string, files: string[]): Truth` L17-22
+- `const NOTES: readonly string[] = ["dockerfile-ast-oracle", "same-rules-different-parser"]` L53-53
+- `interface OracleConstant` L143-148
+- `type ReferenceTruth = Edge & { readonly refKind: string }` L315-315
+- `function generateTruth(root: string, files: string[]): Truth` L328-343
+- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L353-398
+- `function constantsOf(root: string, files: string[]): Record<string, OracleConstant[]>` L423-428
 
 ## bench/src/truth/go.ts
 

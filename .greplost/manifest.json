@@ -675,14 +675,18 @@
       "blast": 0,
       "exports": [
         "NOTES",
+        "OracleConstant",
+        "ReferenceTruth",
+        "constantsOf",
+        "generateExtra",
         "generateTruth"
       ],
       "fanIn": 0,
-      "fanOut": 1,
+      "fanOut": 2,
       "lang": "ts",
-      "loc": 22,
+      "loc": 439,
       "pkg": "@greplost/bench",
-      "sha256": "1b9b20fab435d2697f98be42c868bc3906ac848e801df2e4022f9602886c9526",
+      "sha256": "9137646e9c58370d1008165f380a2a9216972325d4b1169d40f015afc13e7497",
       "staleSummary": false
     },
     "bench/src/truth/go.ts": {
@@ -1356,11 +1360,11 @@
         "extractDockerfile"
       ],
       "fanIn": 1,
-      "fanOut": 1,
+      "fanOut": 2,
       "lang": "ts",
-      "loc": 18,
+      "loc": 457,
       "pkg": "@greplost/core",
-      "sha256": "fb0c39af5c882276def3ec9d87d3c52f795646a27356faf30063b41ace668f4c",
+      "sha256": "b4058266a3ff1b6b7aa0d121b20329c44a392a97f8d8561c3ee7a17655cb6c0f",
       "staleSummary": false
     },
     "packages/core/src/extract/go.ts": {
@@ -1504,7 +1508,7 @@
       "staleSummary": false
     },
     "packages/core/src/extract/ts-signature.ts": {
-      "blast": 63,
+      "blast": 64,
       "exports": [
         "BODY_VALUES",
         "FUNCTION_VALUES",
@@ -1526,7 +1530,7 @@
         "unwrapValue",
         "variableSignature"
       ],
-      "fanIn": 13,
+      "fanIn": 14,
       "fanOut": 0,
       "lang": "ts",
       "loc": 187,
@@ -1998,14 +2002,15 @@
     "packages/core/src/references/dockerfile.ts": {
       "blast": 40,
       "exports": [
+        "IMAGE_NAMESPACE",
         "resolveDockerfileReferences"
       ],
       "fanIn": 2,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 20,
+      "loc": 176,
       "pkg": "@greplost/core",
-      "sha256": "593ed9dfef52c2e2ea9e58943fd6c436d7aa7464327cb3b840a5dc16b78cf9c7",
+      "sha256": "4c39eb2e88b0017218156558c9d5c38a56a4930475aa958d19b1e931c5d05750",
       "staleSummary": false
     },
     "packages/core/src/references/go.ts": {
@@ -2131,16 +2136,19 @@
     "packages/core/src/resolve/dockerfile.ts": {
       "blast": 68,
       "exports": [
+        "DOCKERFILE_ROOT_DIR_ID",
         "DockerfileCallIndex",
         "createDockerfileResolver",
+        "dockerfileDirectoryOf",
+        "isContextPath",
         "resolveDockerfileCall"
       ],
       "fanIn": 2,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 33,
+      "loc": 110,
       "pkg": "@greplost/core",
-      "sha256": "e579626c9d7c0dab28f6afc97d4511abe7ab587dfa724449396d2729f16113e9",
+      "sha256": "3af4c3fb84ff6e61104e2c80e3132af608c8e5a8f259caecfe1cc305361a96a0",
       "staleSummary": false
     },
     "packages/core/src/resolve/go.ts": {
@@ -2397,7 +2405,7 @@
         "symbolId",
         "unresolvedId"
       ],
-      "fanIn": 125,
+      "fanIn": 126,
       "fanOut": 0,
       "lang": "ts",
       "loc": 498,
@@ -3448,14 +3456,14 @@
         "@greplost/sync"
       ],
       "files": 49,
-      "loc": 24283,
+      "loc": 24700,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 65,
-      "loc": 17037,
+      "loc": 17709,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
