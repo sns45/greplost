@@ -97,6 +97,38 @@ interface PyState {
   readonly ownerByNode: Map<number, string>;
   /** Top-level names this module declares, so an `__all__` entry can tell one from an import. */
   readonly declaredNames: Set<string>;
+  /** Declaration ids already used in this file, so a redeclared name can take a `~<n>` suffix. */
+  readonly usedIds: Set<string>;
+}
+
+/**
+ * `<file>#<name>`, with `~<n>` appended when this file already used that id (driver ruling
+ * 2026-09-04, every language): `m.py#C.value`, then `m.py#C.value~2`.
+ *
+ * Python declares one name twice constantly, and not by accident: `@property def value`
+ * beside `@value.setter def value` is the idiom for a settable attribute, and
+ * `@typing.overload` stacks are three or four `def`s of one name. Left alone all of them
+ * take one id, `query` cannot name any but the first, and `index.members` silently keeps
+ * whichever came first.
+ *
+ * The suffix lives in the **id only**. `Declaration.name` stays exactly as the source wrote
+ * it, because that is what a card renders and what a reader searches for; the getter and the
+ * setter really are both called `value`. `~` cannot occur in a Python identifier, so a
+ * suffixed id can never collide with a real one, and the numbering follows source order so a
+ * new overload never renumbers an older one.
+ */
+function uniqueId(state: PyState, name: string): string {
+  const base = symbolId(state.path, name);
+  if (!state.usedIds.has(base)) {
+    state.usedIds.add(base);
+    return base;
+  }
+  for (let n = 2; ; n += 1) {
+    const candidate = `${base}~${n}`;
+    if (state.usedIds.has(candidate)) continue;
+    state.usedIds.add(candidate);
+    return candidate;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -197,7 +229,7 @@ function addDeclaration(
   const simple = parent === null ? name : name.slice(parent.length + 1);
   const meta = decorators.length === 0 ? undefined : { decorators: [...decorators].sort(compareStrings).join(",") };
   state.decls.push({
-    id: symbolId(state.path, name),
+    id: uniqueId(state, name),
     file: state.path,
     name,
     kind,
@@ -412,6 +444,7 @@ export function extractPython(
     importedFrom: new Map<string, string>(),
     ownerByNode: new Map<number, string>(),
     declaredNames: new Set<string>(),
+    usedIds: new Set<string>(),
   };
 
   collectImports(state, root, false);
