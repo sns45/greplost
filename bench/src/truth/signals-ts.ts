@@ -252,6 +252,9 @@ function analyse(root: string, files: string[]): Scan {
 // per-file rules
 // ---------------------------------------------------------------------------
 
+/** Characters a node name cannot carry (`nodeId`): a logical name holding one is unusable. */
+const UNUSABLE_IN_NAME = /[#\n\0]/u;
+
 /** Node names stay unique inside one file; a duplicate takes `~<n>` from 2 (schema 2). */
 class Names {
   private readonly used = new Map<string, number>();
@@ -787,9 +790,21 @@ function pulumiNodes(file: string, sourceFile: ts.SourceFile, checker: ts.TypeCh
   const visit = (node: ts.Node): void => {
     if (ts.isNewExpression(node) && isPulumiResource(node.expression, checker)) {
       const binding = newBindingName(node);
-      const name = names.take(binding ?? `~${anonymous}`);
-      if (binding === undefined) anonymous += 1;
-      else if (!byBinding.has(binding)) byBinding.set(binding, name);
+      // An unbound resource takes its Pulumi logical name (the first argument, when it is a
+      // string literal) and falls back to its position among the file's remaining unbound
+      // resources. A position is not an identity: one insertion renumbers everything below
+      // it. Ruling of 2026-09-05, and the same rule the Go pass has always applied.
+      const first = node.arguments?.[0];
+      const logical = first !== undefined && ts.isStringLiteralLike(first) ? first.text : undefined;
+      let claimed: string;
+      if (binding !== undefined) claimed = binding;
+      else if (logical !== undefined && logical !== "" && !UNUSABLE_IN_NAME.test(logical)) claimed = `~${logical}`;
+      else {
+        claimed = `~${anonymous}`;
+        anonymous += 1;
+      }
+      const name = names.take(claimed);
+      if (binding !== undefined && !byBinding.has(binding)) byBinding.set(binding, name);
       scan.nodes.add(nodeIdOf(file, "resource", name));
       pending.push({ name, call: node });
     }

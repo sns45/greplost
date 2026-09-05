@@ -13,10 +13,15 @@
  * the pinned corpus would otherwise be resources. Every other `@pulumi/<provider>` package is a
  * provider SDK, whose exported classes are resources.
  *
- * A resource is named after the binding it is assigned to. An unassigned `new` (which is common
- * — a bucket policy nobody refers to again) is named `~<index>` by its position among the
- * unassigned resources of the file: the spec's `#<index>` cannot be used, because `nodeId`
- * refuses a `#` in a name (leaf 2.0 report, concern 1).
+ * A resource is named after the binding it is assigned to. An unassigned `new` (which is common,
+ * a bucket policy nobody refers to again) takes its Pulumi logical name when the first argument
+ * is a string literal (`~site`), and otherwise its position among the file's *remaining*
+ * unassigned resources (`~0`). The literal comes first because a position is not an identity: an
+ * unassigned resource inserted above another shifts every index below it, and the two sides of
+ * the score then disagree about which node is which. This is the rule `signals/pulumi-go.ts`
+ * already applies, extended here by the ruling of 2026-09-05. The spec's `#<index>` cannot be
+ * used at all, because `nodeId` refuses a `#` in a name (leaf 2.0 report, concern 1), which is
+ * also why a logical name containing one falls back to the index.
  *
  * `resource-input`: an argument that reads `<var>.<prop>` where `<var>` is another resource in
  * this file gives a reference. Confidence is the linker's call (`references/ts.ts`).
@@ -59,6 +64,13 @@ const CORE_RESOURCE_CLASSES: ReadonlySet<string> = new Set([
 /** A heritage clause naming one of these, on `pulumi.` or bare, makes a local class a resource. */
 const RESOURCE_BASE = /(^|\.)([A-Za-z0-9_$]*Resource)$/;
 
+/**
+ * Characters a node name cannot carry: `#` separates a file from its node in an id, and a
+ * newline or a NUL cannot be in one at all (`nodeId`). A logical name holding any of them is
+ * not usable as a name, so that resource falls back to its position.
+ */
+const UNUSABLE_IN_NAME = /[#\n\0]/u;
+
 function applies(_path: string, source: string): boolean {
   return source.includes(PULUMI_SCOPE);
 }
@@ -88,8 +100,17 @@ export const pulumiTsPass: SignalPass = {
       if (resource === null) return;
 
       const binding = bindingNameOf(node);
-      const name = names.take(binding ?? `~${anonymous}`);
-      if (binding === null) anonymous += 1;
+      const resourceName = firstStringArgument(node);
+      let claimed: string;
+      if (binding !== null) {
+        claimed = binding;
+      } else if (resourceName !== undefined && resourceName !== "" && !UNUSABLE_IN_NAME.test(resourceName)) {
+        claimed = `~${resourceName}`;
+      } else {
+        claimed = `~${anonymous}`;
+        anonymous += 1;
+      }
+      const name = names.take(claimed);
       if (binding !== null && !resourceByBinding.has(binding)) resourceByBinding.set(binding, name);
 
       decls.push(

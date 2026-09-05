@@ -235,6 +235,25 @@ describe("oracle independence", () => {
     expect(after).not.toContain("infra/index.ts#resource.policy");
   });
 
+  test("an unbound resource is named by its logical name, and by position without one", () => {
+    // Ruling of 2026-09-05: the same rule the Go oracle applies. Both sides have to move
+    // together or every unbound resource in the pinned Pulumi corpus is a scoring
+    // disagreement rather than a node.
+    const root = copyFixture("unbound");
+    writeFileSync(
+      path.join(root, "infra/index.ts"),
+      'import * as aws from "@pulumi/aws";\n\n' +
+        'new aws.s3.Bucket("logs");\n' +
+        "new aws.s3.Bucket(computedName());\n" +
+        "function computedName() {\n  return \"x\";\n}\n",
+    );
+    const nodes = generateExtra(root, fixtureFiles(root)).nodes;
+    expect(nodes.filter((id) => id.startsWith("infra/index.ts#"))).toEqual([
+      "infra/index.ts#resource.~0",
+      "infra/index.ts#resource.~logs",
+    ]);
+  });
+
   test("renaming a route changes the node it reports", () => {
     const root = copyFixture("renamed");
     writeFileSync(
