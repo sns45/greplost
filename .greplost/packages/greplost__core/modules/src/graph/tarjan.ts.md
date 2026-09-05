@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/graph/blast.ts`](blast.ts.md), [`packages/core/src/graph/index.ts`](index.ts.md), [`packages/core/src/graph/link.ts`](link.ts.md), [`packages/core/src/graph/metrics.ts`](metrics.ts.md)
 
-**Blast radius:** 49 files (`greplost impact packages/core/src/graph/tarjan.ts`)
+**Blast radius:** 50 files (`greplost impact packages/core/src/graph/tarjan.ts`)
 
 **Key symbols:**
 - `type GraphEdges = ReadonlyArray<readonly [string, string]>`  L8-8

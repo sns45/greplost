@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/graph/link.ts`](../graph/link.ts.md), [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/resolver.ts`](resolver.ts.md)
 
-**Blast radius:** 67 files (`greplost impact packages/core/src/resolve/kotlin.ts`)
+**Blast radius:** 68 files (`greplost impact packages/core/src/resolve/kotlin.ts`)
 
 **Key symbols:**
 - `const KOTLIN_EXTENSIONS = [".kt", ".kts"] as const`  L33-33

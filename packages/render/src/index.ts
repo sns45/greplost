@@ -22,7 +22,11 @@ export {
   renderCard,
   renderHotspots,
   renderIndex,
+  renderNodeCard,
   renderPackageMap,
   renderRepoMap,
 } from "./render.ts";
 export type { DocContext, RenderInput } from "./render.ts";
+
+/** Schema 2: the non-file node card, and the cap its reference lists obey. */
+export { REFERENCE_CAP, buildNodeCard } from "./docs/node-card.ts";

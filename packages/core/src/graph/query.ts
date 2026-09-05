@@ -7,9 +7,10 @@
  * of committing the structure layer.
  */
 
-import type { CallEdge, Declaration, ImportEdge } from "../schema.ts";
-import { compareDeclarations, compareStrings } from "../schema.ts";
-import { importTargetsOf } from "./directories.ts";
+import type { CallEdge, Declaration, ImportEdge, ReferenceEdge } from "../schema.ts";
+import { compareDeclarations, compareEdges, compareStrings, isNodeKind } from "../schema.ts";
+import type { Structure } from "../serialize/read.ts";
+import { expandDirectoryTargets, importTargetsOf } from "./directories.ts";
 
 /**
  * Declarations matching `needle`, in three tiers, the first non-empty one wins:
@@ -73,6 +74,50 @@ export function callersOf(calls: CallEdge[], symbolId: string): string[] {
     callers.add(edge.from);
   }
   return [...callers].sort(compareStrings);
+}
+
+/**
+ * The non-file nodes `file` declares (schema 2): the declarations whose `kind`
+ * is in `NODE_KINDS`, in span order.
+ *
+ * A node is a `Declaration` and never a manifest entry (spec 4.2), so this is
+ * the only way to ask a committed structure "what does this file contain?" for
+ * a Terraform resource, a workflow job, a Dockerfile stage or a route. The
+ * caller's array is never reordered.
+ */
+export function nodesOf(symbols: readonly Declaration[], file: string): Declaration[] {
+  return sortDeclarations(symbols.filter((decl) => decl.file === file && isNodeKind(decl.kind)));
+}
+
+/** Reference edges leaving `id` (a node id or a file id), sorted with `compareEdges`. */
+export function referencesOf(refs: readonly ReferenceEdge[], id: string): ReferenceEdge[] {
+  return [...refs.filter((edge) => edge.from === id)].sort(compareEdges);
+}
+
+/** Reference edges arriving at `id`, sorted with `compareEdges`. */
+export function referencedBy(refs: readonly ReferenceEdge[], id: string): ReferenceEdge[] {
+  return [...refs.filter((edge) => edge.to === id)].sort(compareEdges);
+}
+
+/**
+ * Every dependency pair of a committed structure: import and re-export edges
+ * (directory targets expanded, exactly as `impact` on a file already sees them)
+ * plus every reference edge, verbatim.
+ *
+ * Both edge kinds point the same way — dependant first, dependency second — so
+ * `impactOf(impactPairs(structure), id)` is one blast radius over a graph that
+ * mixes file ids, node ids and `ext:` ids. Reference targets are left
+ * unexpanded: a reference names one thing, and the one directory target a
+ * reference can carry (a Terraform `module` source) is already reached through
+ * the import edge beside it.
+ *
+ * Sorted, so a caller cannot make the answer depend on edge arrival order.
+ */
+export function impactPairs(structure: Structure): Array<readonly [string, string]> {
+  const pairs = expandDirectoryTargets(structure.imports, Object.keys(structure.manifest.files));
+  for (const edge of structure.references) pairs.push([edge.from, edge.to] as const);
+  pairs.sort((a, b) => compareStrings(a[0], b[0]) || compareStrings(a[1], b[1]));
+  return pairs;
 }
 
 /** Copy before sorting: a query never reorders the caller's array. */

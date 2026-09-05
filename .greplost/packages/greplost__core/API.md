@@ -178,6 +178,7 @@
 - re-exports `GraphEdges` from `./tarjan.ts`
 - re-exports `blastRadius`, `impactOf` from `./blast.ts`
 - re-exports `directoryOf`, `expandDirectoryTargets`, `filesByDirectory`, `importTargetsOf`, `resolvedImportTargets` from `./directories.ts`
+- re-exports `impactPairs`, `nodesOf`, `referencedBy`, `referencesOf` from `./query.ts`
 - re-exports `computeMetrics` from `./metrics.ts`
 - re-exports `ComputedMetrics`, `FileMetrics` from `./metrics.ts`
 
@@ -200,9 +201,13 @@
 
 ## packages/core/src/graph/query.ts
 
-- `function findSymbols(symbols: Declaration[], needle: string): Declaration[]` L28-39
-- `function importersOf(imports: ImportEdge[], file: string): string[]` L52-62
-- `function callersOf(calls: CallEdge[], symbolId: string): string[]` L68-76
+- `function findSymbols(symbols: Declaration[], needle: string): Declaration[]` L29-40
+- `function importersOf(imports: ImportEdge[], file: string): string[]` L53-63
+- `function callersOf(calls: CallEdge[], symbolId: string): string[]` L69-77
+- `function nodesOf(symbols: readonly Declaration[], file: string): Declaration[]` L88-90
+- `function referencesOf(refs: readonly ReferenceEdge[], id: string): ReferenceEdge[]` L93-95
+- `function referencedBy(refs: readonly ReferenceEdge[], id: string): ReferenceEdge[]` L98-100
+- `function impactPairs(structure: Structure): Array<readonly [string, string]>` L116-121
 
 ## packages/core/src/graph/tarjan.ts
 

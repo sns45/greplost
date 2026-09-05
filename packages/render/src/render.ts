@@ -27,13 +27,15 @@ import type {
   Manifest,
   PackageEntry,
   PackageInfo,
+  ReferenceEdge,
   Snapshot,
   SummaryCache,
 } from "@greplost/core/schema";
-import { compareStrings, isFileId } from "@greplost/core/schema";
-import { filesByDirectory } from "@greplost/core/graph";
+import { compareEdges, compareStrings, isFileId, isNodeKind, splitNodeId } from "@greplost/core/schema";
+import { blastRadius, filesByDirectory, impactPairs } from "@greplost/core/graph";
 
-import { cardPath, packageDir } from "./slug.ts";
+import { cardPath, nodeCardPath, packageDir } from "./slug.ts";
+import { buildNodeCard } from "./docs/node-card.ts";
 import { buildIndex } from "./docs/index-doc.ts";
 import { buildRepoMap } from "./docs/repo-map.ts";
 import { buildHotspots } from "./docs/hotspots.ts";
@@ -85,6 +87,24 @@ export interface DocContext {
   callsFrom: Map<string, CallEdge[]>;
   /** Declarations of a file, in line order. */
   declsOf: Map<string, Declaration[]>;
+  /**
+   * Schema 2: the non-file nodes a file declares, span-sorted. Only files that
+   * have at least one are keyed, so `size === 0` is exactly "this repo has no
+   * nodes" and every node-aware block can be skipped in one test.
+   */
+  nodesOf: Map<string, Declaration[]>;
+  /** Every declaration by id, so a reference target can be named and linked. */
+  declById: Map<string, Declaration>;
+  /** Reference edges leaving an id, sorted by target. */
+  referencesFrom: Map<string, ReferenceEdge[]>;
+  /** Reference edges arriving at an id, sorted by source. */
+  referencesTo: Map<string, ReferenceEdge[]>;
+  /**
+   * Reverse-closure size over `impactPairs` per node id: the number a node card
+   * prints and the number `greplost impact <node-id>` prints, by construction.
+   * Empty for a repo with no nodes, which is what keeps that repo's render free.
+   */
+  nodeBlast: Map<string, number>;
   /** The extracted record of a file, when the snapshot carries one. */
   recordOf: Map<string, FileRecord>;
   /** Distinct external package names imported by a package, sorted. */
@@ -94,6 +114,11 @@ export interface DocContext {
   packageOf(file: string): PackageInfo | undefined;
   /** Artifact path of a file's module card, or undefined when the file is unknown. */
   cardPathOf(file: string): string | undefined;
+  /**
+   * Artifact path of a non-file node's card, or undefined when `id` is not a
+   * node id or its file belongs to no package.
+   */
+  nodeCardPathOf(id: string): string | undefined;
 }
 
 /** Builds the shared index. Cheap enough to call per document, linear in the snapshot. */
@@ -188,12 +213,72 @@ export function createContext(input: RenderInput): DocContext {
     decls.sort((a, b) => a.span[0] - b.span[0] || compareStrings(a.id, b.id));
   }
 
+  // Schema 2. Every map below is empty for a repo with no non-file nodes, and
+  // every block that reads one is skipped when it is, so such a repo renders
+  // exactly the bytes build 1 rendered (spec 4.4, "no nodes no change").
+  const declById = new Map<string, Declaration>();
+  const nodesOf = new Map<string, Declaration[]>();
+  for (const decls of declsOf.values()) {
+    for (const decl of decls) {
+      declById.set(decl.id, decl);
+      if (!isNodeKind(decl.kind)) continue;
+      const bucket = nodesOf.get(decl.file);
+      if (bucket) bucket.push(decl);
+      else nodesOf.set(decl.file, [decl]);
+    }
+  }
+
+  const references = snapshot.references ?? [];
+  const referencesFrom = new Map<string, ReferenceEdge[]>();
+  const referencesTo = new Map<string, ReferenceEdge[]>();
+  for (const edge of references) {
+    const from = referencesFrom.get(edge.from);
+    if (from) from.push(edge);
+    else referencesFrom.set(edge.from, [edge]);
+    const to = referencesTo.get(edge.to);
+    if (to) to.push(edge);
+    else referencesTo.set(edge.to, [edge]);
+  }
+  for (const bucket of referencesFrom.values()) bucket.sort(compareEdges);
+  for (const bucket of referencesTo.values()) bucket.sort(compareEdges);
+
   const packageOf = (file: string): PackageInfo | undefined => {
     const pkgName = manifest.files[file]?.pkg;
     return pkgName === undefined ? undefined : packageByName.get(pkgName);
   };
 
   const indexedPackages = packages.filter((pkg) => (filesByPackage.get(pkg.name) ?? []).length > 0);
+
+  // One reverse-closure pass over the whole mixed graph rather than one blast
+  // walk per node: a Terraform monorepo has thousands of nodes, and per-card
+  // `impactOf` would make a render quadratic in them.
+  const nodeBlast = new Map<string, number>();
+  if (nodesOf.size > 0) {
+    const pairs = impactPairs({
+      manifest,
+      imports: snapshot.imports,
+      calls: snapshot.calls,
+      symbols: snapshot.symbols,
+      references,
+    });
+    const ids = new Set<string>(files);
+    for (const id of declById.keys()) ids.add(id);
+    for (const [from, to] of pairs) {
+      ids.add(from);
+      ids.add(to);
+    }
+    const radiusById = blastRadius([...ids].sort(compareStrings), pairs);
+    for (const [id, decl] of declById) {
+      if (isNodeKind(decl.kind)) nodeBlast.set(id, radiusById.get(id) ?? 0);
+    }
+  }
+
+  const nodeCardPathOf = (id: string): string | undefined => {
+    const parts = splitNodeId(id);
+    if (parts === null) return undefined;
+    const pkg = packageOf(parts.file);
+    return pkg === undefined ? undefined : nodeCardPath(pkg, id);
+  };
 
   return {
     snapshot,
@@ -211,6 +296,11 @@ export function createContext(input: RenderInput): DocContext {
     importersOf,
     callsFrom,
     declsOf,
+    nodesOf,
+    declById,
+    referencesFrom,
+    referencesTo,
+    nodeBlast,
     recordOf,
     externalsOf,
     packageEntry: (name) => manifest.packages[name],
@@ -220,6 +310,7 @@ export function createContext(input: RenderInput): DocContext {
       const pkg = packageOf(file);
       return pkg === undefined ? undefined : cardPath(pkg, file);
     },
+    nodeCardPathOf,
   };
 }
 
@@ -239,20 +330,33 @@ export function renderArtifacts(input: RenderInput): Map<string, string> {
   const ctx = createContext(input);
   assertNoSlugCollision(ctx.packages);
   const out = new Map<string, string>();
+  // Every path the render claimed, in emission order and *with* duplicates: a
+  // Map silently keeps the last writer, so the guard needs the raw list.
+  const claimed: string[] = [];
+  const emit = (path: string, text: string): void => {
+    claimed.push(path);
+    out.set(path, text);
+  };
 
-  out.set("INDEX.md", buildIndex(ctx));
-  out.set("repo/MAP.md", buildRepoMap(ctx));
-  out.set("repo/HOTSPOTS.md", buildHotspots(ctx));
+  emit("INDEX.md", buildIndex(ctx));
+  emit("repo/MAP.md", buildRepoMap(ctx));
+  emit("repo/HOTSPOTS.md", buildHotspots(ctx));
 
   for (const pkg of ctx.packages) {
     const dir = packageDir(pkg.name);
-    out.set(`${dir}/MAP.md`, buildPackageMap(ctx, pkg));
-    out.set(`${dir}/API.md`, buildApi(ctx, pkg));
+    emit(`${dir}/MAP.md`, buildPackageMap(ctx, pkg));
+    emit(`${dir}/API.md`, buildApi(ctx, pkg));
     for (const file of ctx.filesByPackage.get(pkg.name) ?? []) {
-      out.set(cardPath(pkg, file), buildCard(ctx, file));
+      emit(cardPath(pkg, file), buildCard(ctx, file));
+      // Each of the file's non-file nodes, immediately after its file card, so
+      // the artifact order is still "package by path, each file in path order".
+      for (const decl of ctx.nodesOf.get(file) ?? []) {
+        emit(nodeCardPath(pkg, decl.id), buildNodeCard(ctx, decl.id));
+      }
     }
   }
 
+  assertNoCardCollision(claimed);
   return out;
 }
 
@@ -270,6 +374,21 @@ function assertNoSlugCollision(packages: readonly PackageInfo[]): void {
       throw new Error(`greplost: package slug collision: ${other} and ${pkg.name} both map to ${dir}`);
     }
     seen.set(dir, pkg.name);
+  }
+}
+
+/**
+ * `nodeSlug` is lossy (`a/b` and `a__b` both slug to `a__b`), and a node card
+ * directory is named after a file, so two artifacts can in principle claim one
+ * path. Silently keeping the last writer would lose a card and leave its
+ * inbound links pointing at another node's page, so this is a hard failure.
+ * Checked in path order, and the message names the path, so it is actionable.
+ */
+function assertNoCardCollision(paths: readonly string[]): void {
+  const seen = new Set<string>();
+  for (const path of [...paths].sort(compareStrings)) {
+    if (seen.has(path)) throw new Error(`greplost: card path collision: two artifacts both claim ${path}`);
+    seen.add(path);
   }
 }
 
@@ -295,4 +414,9 @@ export function renderApi(input: RenderInput, pkg: PackageInfo): string {
 
 export function renderCard(input: RenderInput, file: string): string {
   return buildCard(createContext(input), file);
+}
+
+/** One non-file node's card (schema 2); throws when `id` is not a node this map declares. */
+export function renderNodeCard(input: RenderInput, id: string): string {
+  return buildNodeCard(createContext(input), id);
 }

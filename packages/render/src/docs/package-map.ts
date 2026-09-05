@@ -33,6 +33,10 @@ export function buildPackageMap(ctx: DocContext, pkg: PackageInfo): string {
 
   blocks.push("## Modules", files.length === 0 ? "None." : fence(moduleTree(pkg, files)));
   blocks.push("## Module table", moduleTable(ctx, pkg, files, self));
+  // Schema 2, and only when this package actually holds non-file nodes: a repo
+  // with none renders the same bytes build 1 rendered.
+  const nodes = nodeTable(ctx, pkg, files, self);
+  if (nodes !== undefined) blocks.push("## Nodes", nodes);
   blocks.push("## Components", ...componentDiagrams(ctx, pkg, files));
   blocks.push("## External dependencies", externalDependencies(ctx, pkg));
 
@@ -68,6 +72,34 @@ function moduleTable(ctx: DocContext, pkg: PackageInfo, files: readonly string[]
     );
   }
   return lines.join("\n");
+}
+
+/**
+ * How many non-file nodes each module of this package declares, files with none
+ * left out. Undefined — so the section is omitted — when the package has no
+ * nodes at all (spec 4.4).
+ *
+ * A count rather than a list: a Terraform package can hold thousands of
+ * resources, the module card already lists a file's own nodes, and the package
+ * map's job is telling a reader which file to open.
+ */
+function nodeTable(
+  ctx: DocContext,
+  pkg: PackageInfo,
+  files: readonly string[],
+  self: string,
+): string | undefined {
+  const rows: string[] = [];
+  for (const file of files) {
+    const count = (ctx.nodesOf.get(file) ?? []).length;
+    if (count === 0) continue;
+    const rel = relativeToPackage(pkg, file);
+    const card = ctx.cardPathOf(file);
+    const label = card === undefined ? `\`${rel}\`` : `[\`${rel}\`](${relLink(self, card)})`;
+    rows.push(`| ${label} | ${count} |`);
+  }
+  if (rows.length === 0) return undefined;
+  return ["| File | Nodes |", "|---|---|", ...rows].join("\n");
 }
 
 /**
