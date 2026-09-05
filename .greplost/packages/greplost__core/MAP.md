@@ -137,7 +137,7 @@ Path: `packages/core` · 65 files · 17709 LOC · depends on: none · depended o
 | [`src/resolve/rust.ts`](modules/src/resolve/rust.ts.md) | 657 | 4 | 3 | 2 | 68 |
 | [`src/resolve/tsconfig.ts`](modules/src/resolve/tsconfig.ts.md) | 316 | 3 | 2 | 0 | 69 |
 | [`src/resolve/yaml.ts`](modules/src/resolve/yaml.ts.md) | 29 | 2 | 2 | 2 | 68 |
-| [`src/schema.ts`](modules/src/schema.ts.md) | 498 | 48 | 126 | 0 | 153 |
+| [`src/schema.ts`](modules/src/schema.ts.md) | 498 | 48 | 126 | 0 | 154 |
 | [`src/serialize/index.ts`](modules/src/serialize/index.ts.md) | 4 | 6 | 1 | 3 | 29 |
 | [`src/serialize/json.ts`](modules/src/serialize/json.ts.md) | 35 | 3 | 3 | 1 | 51 |
 | [`src/serialize/read.ts`](modules/src/serialize/read.ts.md) | 72 | 2 | 2 | 2 | 49 |

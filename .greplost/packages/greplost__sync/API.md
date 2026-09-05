@@ -59,9 +59,11 @@
 
 ## packages/sync/src/init.ts
 
-- `interface InitOptions` L30-35
-- `interface InitResult` L37-44
-- `async function init(root: string, opts: InitOptions = {}): Promise<InitResult>` L66-93
+- `interface InitOptions` L37-42
+- `interface InitResult` L44-51
+- `async function init(root: string, opts: InitOptions = {}): Promise<InitResult>` L73-100
+- `interface MarkedLanguages` L114-119
+- `function markedLanguages( files: readonly string[], readText: (rel: string) => string | undefined, ): MarkedLanguages` L158-205
 
 ## packages/sync/src/lock.ts
 

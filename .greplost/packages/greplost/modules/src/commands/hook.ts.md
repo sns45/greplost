@@ -17,14 +17,14 @@
 **Key symbols:**
 - `interface HookPayload`  L37-42
 - `const SEARCH_TOOLS: ReadonlySet<string> = new Set(["Glob", "Grep"])`  L45-45
-- `const SESSION_START_CONTEXT = "This repo has a greplost map: read .greplost/INDEX.md before exploring; " + "use `greplost query`/`impact --json`."`  L47-49
-- `const PRE_TOOL_USE_CONTEXT = "greplost: consult .greplost/INDEX.md or `greplost query <symbol> --json` before grepping."`  L51-52
-- `async function run(ctx: CommandContext): Promise<number>`  L54-63
-- `async function runHook(event: HookEvent, payloadText: string, ctx: CommandContext): Promise<number>`  L70-117
-- `function emit(value: unknown): void`  L120-122
-- `function parsePayload(text: string, event: HookEvent): HookPayload`  L124-135
-- `function hookRoot(ctx: CommandContext, payload: HookPayload): string`  L141-146
-- `function hasMap(root: string): boolean`  L149-151
-- `function editedPaths(payload: HookPayload): string[]`  L159-168
+- `const SESSION_START_CONTEXT = "This repo has a greplost map: read .greplost/INDEX.md before exploring; " + "use `greplost query`/`impact --json`. Things inside a file (a Terraform resource, a " + "Ku…`  L47-51
+- `const PRE_TOOL_USE_CONTEXT = "greplost: consult .greplost/INDEX.md or `greplost query <symbol> --json` before grepping; " + "a node id (`<file>#<kind>.<name>`) works there too."`  L53-55
+- `async function run(ctx: CommandContext): Promise<number>`  L57-66
+- `async function runHook(event: HookEvent, payloadText: string, ctx: CommandContext): Promise<number>`  L73-120
+- `function emit(value: unknown): void`  L123-125
+- `function parsePayload(text: string, event: HookEvent): HookPayload`  L127-138
+- `function hookRoot(ctx: CommandContext, payload: HookPayload): string`  L144-149
+- `function hasMap(root: string): boolean`  L152-154
+- `function editedPaths(payload: HookPayload): string[]`  L162-171
 
 **Calls:** `findRoot` → [`packages/cli/src/args.ts#findRoot`](../args.ts.md) (high), `editedPaths` → [`packages/cli/src/commands/hook.ts#editedPaths`](hook.ts.md) (high), `emit` → [`packages/cli/src/commands/hook.ts#emit`](hook.ts.md) (high), `hasMap` → [`packages/cli/src/commands/hook.ts#hasMap`](hook.ts.md) (high), `hookRoot` → [`packages/cli/src/commands/hook.ts#hookRoot`](hook.ts.md) (high), `parsePayload` → [`packages/cli/src/commands/hook.ts#parsePayload`](hook.ts.md) (high), `runHook` → [`packages/cli/src/commands/hook.ts#runHook`](hook.ts.md) (high), `printError` → [`packages/cli/src/output.ts#printError`](../output.ts.md) (high), `printLine` → [`packages/cli/src/output.ts#printLine`](../output.ts.md) (high), `readStdin` → [`packages/cli/src/output.ts#readStdin`](../output.ts.md) (high), `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../../greplost__core/modules/src/schema.ts.md) (high), `appendDirty` → [`packages/sync/src/dirty.ts#appendDirty`](../../../../greplost__sync/modules/src/dirty.ts.md) (med), `update` → [`packages/sync/src/incremental.ts#update`](../../../../greplost__sync/modules/src/incremental.ts.md) (med)

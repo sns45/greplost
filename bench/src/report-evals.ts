@@ -16,6 +16,7 @@
 import { boxChart, groupedBarChart, lineChart, mermaidXy, type BoxDatum, type ChartSpec } from "./charts.ts";
 import { structuralAccuracyChart } from "./report-charts.ts";
 import {
+  TRUTH_NOTE_GLOSS,
   emptySection,
   type EvalRow,
   type EvalSection,
@@ -131,6 +132,9 @@ export function eval1Section(payload: Payload | null, assetsRel = "docs/assets")
  * Unknown notes are printed with a pointer rather than silently dropped.
  */
 const TRUTH_NOTES: Record<string, string> = {
+  // Build 2's tags, written once in `results-md.ts` next to the per-language
+  // paragraphs that say the same things at greater length (leaf 2.12).
+  ...TRUTH_NOTE_GLOSS,
   "workspace-entry-mapping":
     "the TypeScript truth generator emulated the installed-and-built state of workspace packages (package " +
     "manifests plus tsconfig `outDir`/`rootDir`) so cross-package imports and calls resolve on a corpus " +

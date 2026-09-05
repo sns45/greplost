@@ -17,6 +17,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { compareStrings } from "@greplost/core/schema";
+import type { Lang } from "@greplost/core/schema";
 
 import type { ReportModel, RunTarget } from "./results-md.ts";
 import { provenanceLine } from "./results-md.ts";
@@ -480,4 +481,197 @@ export function agentCategories(payload: Payload): Map<string, Map<string, Condi
     if (inner.size > 0) out.set(category, inner);
   }
   return out;
+}
+
+// ---------------------------------------------------------------------------
+// per-language coverage (build 2)
+// ---------------------------------------------------------------------------
+
+/**
+ * The three substitute checks a target with no gated metric ran instead of an
+ * accuracy gate (`structural.ts`'s `SubstituteChecks`), merged over a language's
+ * repos: deterministic only when every repo was, the worst error rate, and the
+ * total number of silent files.
+ */
+export interface SubstituteSummary {
+  deterministic: boolean;
+  errorRate: number | null;
+  silentCount: number | null;
+}
+
+/**
+ * One language's row in the "Languages, IaC and signals" table.
+ *
+ * `s1` to `s6` are precision, except `s4`, which is the cycle Jaccard: one number
+ * per column, taken from the payload and never computed from anything else. Recall
+ * and the tp/fp/fn counts stay in Eval 1, where there is room for them per repo.
+ *
+ * `na` and `vacuous` are the two ways a number here can fail to be a result, and
+ * they are different claims. `na` is a metric the truth module *declared* it does
+ * not measure (`unsupported:S3` for a format with no calls, `reported-only` for a
+ * language with no corpus oracle): it prints `n/a` and is neither a pass nor a
+ * fail. `vacuous` is a metric that was measured on an empty universe (tp, fp and
+ * fn all zero), so its 1.000 means "there was nothing to be wrong about" rather
+ * than "everything was right". Publishing the second as a score without saying so
+ * is the marketing failure tech spec 10.1 principle 6 names.
+ */
+export interface LangRow {
+  lang: Lang;
+  /** The corpus repos this language was scored on, sorted, comma separated. */
+  corpus: string;
+  files: number | null;
+  s1: number | null;
+  s2: number | null;
+  s3: number | null;
+  s4: number | null;
+  s5: number | null;
+  s6: number | null;
+  truthSource: string;
+  gated: boolean;
+  /**
+   * Metric ids that print `n/a` for the whole language: every one of its repos
+   * either declared the metric unsupported or carried no number for it.
+   */
+  na: string[];
+  /**
+   * Metric id to the repos that declared it unsupported, when some did and some
+   * did not. A language is not one oracle: `yaml` is three, and a Helm chart's
+   * S6 is `n/a` while a plain manifest's is measured. Collapsing that to one
+   * `n/a` would hide two measured corpora, and collapsing it to the measurement
+   * would claim the chart was scored.
+   */
+  partial: Record<string, string[]>;
+  /** Metric ids scored on an empty set, so their 1.000 is vacuous. */
+  vacuous: string[];
+  /** The substitute gate, for a language whose every gated metric is `n/a`. */
+  substitute: SubstituteSummary | null;
+}
+
+/** The metric ids a language row carries, in table order. */
+const LANG_METRICS = ["S1", "S2", "S3", "S4", "S5", "S6"] as const;
+
+/** One metric's number for one repo: precision, except S4, which is a Jaccard. */
+function metricValue(repo: Record<string, unknown>, id: string): number | null {
+  if (id === "S4") return num(repo["S4"]);
+  const block = rec(repo[id]);
+  return block === null ? null : num(block["precision"]);
+}
+
+/** True when this repo's truth module declared the metric unsupported. */
+function declares(repo: Record<string, unknown>, id: string): boolean {
+  return arr(repo["naMetrics"]).some((value) => value === id);
+}
+
+/** True when a metric was scored on an empty universe (tp, fp and fn all zero). */
+function isVacuous(repo: Record<string, unknown>, id: string): boolean {
+  const block = rec(repo[id]);
+  if (block === null) return false;
+  return num(block["tp"]) === 0 && num(block["fp"]) === 0 && num(block["fn"]) === 0;
+}
+
+/**
+ * One row per language in a structural payload's `perLang` block, sorted by
+ * language.
+ *
+ * Nothing here computes a score. A language's cell is the *worst* of its repos:
+ * the minimum, which is one of the numbers the payload carries and is what the
+ * gate actually decided on. That is deliberate: a language with two corpus repos
+ * must not publish an average that no run measured and that hides the weaker
+ * half. A metric no repo carried is `null`, which the renderer prints as
+ * `not run`.
+ *
+ * A payload with no `perLang` block yields no rows at all: this section is build
+ * 2's, and a build-1 result file predates it.
+ */
+export function langRows(structural: Payload | null): LangRow[] {
+  if (structural === null) return [];
+  const perLang = rec(structural.data["perLang"]);
+  if (perLang === null) return [];
+  const repos = rec(structural.data["repos"]) ?? {};
+
+  const rows: LangRow[] = [];
+  for (const lang of Object.keys(perLang).sort(compareStrings)) {
+    const entry = rec(perLang[lang]);
+    if (entry === null) continue;
+    const names = arr(entry["repos"])
+      .filter((name): name is string => typeof name === "string")
+      .sort(compareStrings);
+    const paired = names.flatMap((name) => {
+      const found = rec(repos[name]);
+      return found === null ? [] : [{ name, repo: found }];
+    });
+    const scored = paired.map((entry) => entry.repo);
+
+    const files = scored.reduce<number | null>((total, repo) => {
+      const count = num(repo["files"]);
+      return count === null ? total : (total ?? 0) + count;
+    }, null);
+
+    const worst: Record<string, number | null> = {};
+    const vacuous: string[] = [];
+    const na: string[] = [];
+    const partial: Record<string, string[]> = {};
+    for (const id of LANG_METRICS) {
+      // A repo *contributes* a metric when its oracle did not declare the metric
+      // unsupported and the payload carries a number for it. A declared metric's
+      // block is not a measurement even when a number is sitting in it: the Helm
+      // oracle declares `unsupported:S6` and still records a precision of 0,
+      // because it cannot see the documents it decided not to render. Letting
+      // that 0 into the language's worst-of would publish, as a score, a number
+      // the oracle itself says means nothing.
+      const contributing = paired.filter(
+        ({ repo }) => !declares(repo, id) && metricValue(repo, id) !== null,
+      );
+      const sitting = paired
+        .filter(({ repo }) => declares(repo, id) || metricValue(repo, id) === null)
+        .map(({ name }) => name)
+        .sort(compareStrings);
+
+      const values = contributing
+        .map(({ repo }) => metricValue(repo, id))
+        .filter((value): value is number => value !== null);
+      worst[id] = values.length === 0 ? null : Math.min(...values);
+      if (paired.length > 0 && sitting.length === paired.length) na.push(id);
+      else if (sitting.length > 0) partial[id] = sitting;
+
+      // S4 has no counts of its own: cycles are computed from import edges, so an
+      // import universe that was empty on both sides cannot hold a cycle either.
+      const counted = id === "S4" ? "S1" : id;
+      const seen = contributing.filter(({ repo }) => rec(repo[counted]) !== null);
+      if (seen.length > 0 && seen.every(({ repo }) => isVacuous(repo, counted))) vacuous.push(id);
+    }
+
+    const substitutes = scored.flatMap((repo) => {
+      const found = rec(repo["substitute"]);
+      return found === null ? [] : [found];
+    });
+    const errorRates = substitutes.map((entry_) => num(entry_["errorRate"])).filter((value): value is number => value !== null);
+    const silent = substitutes.map((entry_) => num(entry_["silentCount"])).filter((value): value is number => value !== null);
+
+    rows.push({
+      lang: lang as Lang,
+      corpus: names.join(", "),
+      files,
+      s1: worst["S1"] ?? null,
+      s2: worst["S2"] ?? null,
+      s3: worst["S3"] ?? null,
+      s4: worst["S4"] ?? null,
+      s5: worst["S5"] ?? null,
+      s6: worst["S6"] ?? null,
+      truthSource: str(entry["truthSource"]) ?? "unknown",
+      gated: entry["gated"] === true,
+      na,
+      partial,
+      vacuous,
+      substitute:
+        substitutes.length === 0
+          ? null
+          : {
+              deterministic: substitutes.every((entry_) => entry_["deterministic"] === true),
+              errorRate: errorRates.length === 0 ? null : Math.max(...errorRates),
+              silentCount: silent.length === 0 ? null : silent.reduce((a, b) => a + b, 0),
+            },
+    });
+  }
+  return rows;
 }

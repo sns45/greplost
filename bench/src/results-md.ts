@@ -18,8 +18,15 @@
  *   Eval 5, Map quality
  *
  * The head-to-head table comes before the single-tool evals because that is the
- * order the README reads them in (tech spec 11, "README structure").
+ * order the README reads them in (tech spec 11, "README structure"). Build 2 adds
+ * "Languages, IaC and signals" between the single-tool summary and Eval 1: the
+ * per-language view of the same structural payload, with the disclosure of what
+ * each language's oracle is and what it cannot see.
  */
+
+// Type-only, so nothing at runtime imports back into `report-payload.ts`, which
+// imports `provenanceLine` from here.
+import type { LangRow } from "./report-payload.ts";
 
 // ---------------------------------------------------------------------------
 // the model
@@ -35,6 +42,7 @@ export const SECTION_HEADERS = [
   "Corpus",
   "Versions",
   "Head-to-head",
+  "Languages, IaC and signals",
   "Eval 1",
   "Eval 2",
   "Bench 3",
@@ -42,6 +50,25 @@ export const SECTION_HEADERS = [
   "Eval 5",
   "Map quality",
 ] as const;
+
+/**
+ * The `##` heading of build 2's per-language section. Exported because the gate,
+ * the README sync and the tests all name the same string.
+ */
+export const LANG_SECTION_HEADER = "Languages, IaC and signals";
+
+/**
+ * The one sentence that keeps the published comparison honest.
+ *
+ * It sits directly under the X table because that is where a reader forms the
+ * impression the sentence corrects: the head-to-head suite ran on TypeScript and
+ * Go, no competitor adapter was ever pointed at a build-2 language, and the
+ * per-language table further down is greplost against its own compiler truth
+ * with no second arm (spec 5.4; PLAN.md ruling 2026-09-04).
+ */
+export const HEAD_TO_HEAD_SCOPE =
+  "X1 to X10 cover TypeScript and Go only; build 2's languages are scored against their own compiler " +
+  "truth in the single-tool table below, with no competitor arm.";
 
 /** The string every unmeasured cell carries. One spelling, everywhere. */
 export const NOT_RUN = "not run";
@@ -268,6 +295,11 @@ export interface ReportModel {
    * two of them have to stand on their own.
    */
   singleTool: { rows: SummaryRow[]; notes: string[] };
+  /**
+   * One row per language the structural payload scored (build 2). Empty when no
+   * payload carried a `perLang` block, which is what a build-1 result looks like.
+   */
+  langs: LangRow[];
   sections: Record<"eval1" | "eval2" | "bench3" | "eval4" | "eval5" | "mapquality", EvalSection>;
   /** Anything the reader has to know about how this file was produced. */
   preamble: string[];
@@ -304,6 +336,7 @@ export function renderResultsMd(model: ReportModel): string {
   out.push(...versionsSection(model));
   out.push(...headToHeadSection(model));
   out.push(...singleToolSection(model));
+  out.push(...langsSection(model));
   out.push(...evalSection("Eval 1", "Structural accuracy vs compiler truth (S1 to S4)", model.sections.eval1));
   out.push(...evalSection("Eval 2", "Freshness and sync under commit replay (F1, F2)", model.sections.eval2));
   out.push(...evalSection("Bench 3", "Performance (P1 to P3)", model.sections.bench3));
@@ -401,6 +434,10 @@ function headToHeadSection(model: ReportModel): string[] {
   }
   out.push("");
 
+  // Directly under the table, before anything that reads like a caveat about the
+  // numbers: the scope of the comparison is not a caveat, it is what the table is.
+  out.push(HEAD_TO_HEAD_SCOPE, "");
+
   // One line, because the X1 row's two verdict kinds are not the same comparison and a
   // reader has no way to tell from the cells. The `vs <tool>` columns are decided on
   // call precision alone (tech spec 10.0's headline for X1); greplost's own cell is
@@ -481,6 +518,363 @@ function singleToolSection(model: ReportModel): string[] {
   for (const note of model.singleTool.notes) out.push(`> ${note}`, "");
   return out;
 }
+
+/**
+ * The per-language table and its disclosures (spec 5.4).
+ *
+ * Two rules hold this section together. The first is the one every table in this
+ * file obeys: a cell is a number a suite wrote to disk, an `n/a` a truth module
+ * declared, or `not run`. The second is this section's own: **every language says
+ * what its oracle is and what that oracle cannot see**, in prose, next to its
+ * numbers. A benchmark that publishes 1.000 for a format whose oracle is the same
+ * regular expression the extractor uses, or for a metric scored on an empty set,
+ * is not reporting a result, and a reader has no way to tell the difference from
+ * the digits alone (tech spec 10.1, principle 6).
+ */
+function langsSection(model: ReportModel): string[] {
+  const out = [`## ${LANG_SECTION_HEADER}`, ""];
+  out.push(
+    "Every language, IaC flavour and framework signal pass greplost indexes, scored against its own " +
+      "compiler truth. One row per language, filled from the structural payload's `perLang` block; " +
+      "`S1`, `S2`, `S3`, `S5` and `S6` are precision and `S4` is the cycle Jaccard, with recall, the " +
+      "tp/fp/fn counts and the per-repo split in Eval 1 below. A language scored on more than one corpus " +
+      "repo shows the **worst** of its repos, never an average: an average hides the weaker half, and the " +
+      "worst repo is what the gate decided on. `n/a` is a metric this language's oracle does not measure, " +
+      "either because it declared it unsupported or because it produced no number for it: never a pass, " +
+      "never a fail. `n/a for <repo>` means only that repo's oracle sat the metric out and the value beside " +
+      "it is the rest. No competitor was run on any of these languages.",
+  );
+  out.push("");
+
+  if (model.langs.length === 0) {
+    out.push(
+      `${NOT_RUN}: no structural result carried a \`perLang\` block. Run ` +
+        "`bun run bench:structural --tier S --gate` to fill this section.",
+      "",
+    );
+    return out;
+  }
+
+  if (model.sections.eval1.provenance !== null) out.push(model.sections.eval1.provenance, "");
+
+  const header = [
+    "Lang",
+    "Corpus",
+    "Files",
+    "S1 imports P",
+    "S2 exports P",
+    "S3 calls P",
+    "S4 cycles J",
+    "S5 reference edges P",
+    "S6 signal nodes P",
+    "Truth source",
+    "Scored",
+  ];
+  out.push(`| ${header.join(" | ")} |`);
+  out.push(`|${header.map(() => "---").join("|")}|`);
+  for (const row of model.langs) {
+    const cells = [
+      row.lang,
+      row.corpus.length === 0 ? NOT_RUN : row.corpus,
+      row.files === null ? NOT_RUN : String(row.files),
+      langCell(row, "S1", row.s1),
+      langCell(row, "S2", row.s2),
+      langCell(row, "S3", row.s3),
+      langCell(row, "S4", row.s4),
+      langCell(row, "S5", row.s5),
+      langCell(row, "S6", row.s6),
+      `\`${row.truthSource}\``,
+      row.gated ? "gated" : "reported",
+    ];
+    out.push(`| ${cells.map(cell).join(" | ")} |`);
+  }
+  out.push("");
+
+  out.push(...oracleDisclosures(model.langs));
+  out.push(...vacuousDisclosures(model.langs));
+  out.push(...substituteDisclosures(model.langs));
+  return out;
+}
+
+/**
+ * One metric's cell.
+ *
+ * `n/a` when every one of the language's oracles declared the metric unsupported,
+ * or when the run scored the language and simply produced no number for it: the
+ * suite prints "n/a, not measured by this oracle" for that second case, and
+ * `not run` would say the language was never measured at all. `not run` is kept
+ * for exactly that: a language in the payload whose repos carried no scores.
+ *
+ * A metric only *some* of a language's repos could not measure keeps its value
+ * and names the repos that sat it out, because `yaml` is three oracles and a
+ * chart's `n/a` must not erase two measured corpora.
+ */
+function langCell(row: LangRow, id: string, value: number | null): string {
+  if (row.na.includes(id)) return NOT_APPLICABLE;
+  if (value === null) return row.files === null ? NOT_RUN : NOT_APPLICABLE;
+  const base = row.vacuous.includes(id) ? `${formatNumber(value)} (vacuous)` : formatNumber(value);
+  const sitting = row.partial[id];
+  return sitting === undefined || sitting.length === 0 ? base : `${base} (n/a for ${sitting.join(", ")})`;
+}
+
+/**
+ * The oracle paragraph for each language in the table.
+ *
+ * The four TypeScript dialects share one oracle and one paragraph, so they are
+ * printed once under the langs they cover rather than four times.
+ */
+function oracleDisclosures(langs: readonly LangRow[]): string[] {
+  const byKey = new Map<string, string[]>();
+  for (const row of langs) {
+    const key = TS_FAMILY_LANGS.has(row.lang) ? "ts" : row.lang;
+    byKey.set(key, [...(byKey.get(key) ?? []), row.lang]);
+  }
+  if (byKey.size === 0) return [];
+
+  const out = ["**What each oracle is, and what it cannot see**", ""];
+  for (const key of [...byKey.keys()].sort()) {
+    const covered = (byKey.get(key) ?? []).sort();
+    const text = ORACLE_DISCLOSURES[key];
+    out.push(
+      `- **${covered.join(", ")}**: ${
+        text ??
+        "this report has no disclosure written for that language; read `bench/src/truth/` for what its " +
+          "oracle does, and treat the row above as unlabelled until one is added here."
+      }`,
+    );
+  }
+  out.push("");
+  return out;
+}
+
+/** Metrics whose 1.000 was measured on an empty universe, named per language. */
+function vacuousDisclosures(langs: readonly LangRow[]): string[] {
+  const rows = langs.filter((row) => row.vacuous.some((id) => !row.na.includes(id)));
+  if (rows.length === 0) return [];
+  const out = ["**Metrics scored on an empty set**", ""];
+  out.push(
+    "A metric whose true positives, false positives and false negatives are all zero was scored on an " +
+      "empty universe: the 1.000 means there was nothing to be wrong about, not that everything was " +
+      "right. It is marked `(vacuous)` in the table and is not evidence of accuracy.",
+    "",
+  );
+  for (const row of rows) {
+    const ids = row.vacuous.filter((id) => !row.na.includes(id)).sort();
+    out.push(`- **${row.lang}** (${row.corpus}): ${ids.join(", ")}.`);
+  }
+  out.push("");
+  return out;
+}
+
+/** What gates a language whose every gated metric is `n/a` (spec 5.2). */
+function substituteDisclosures(langs: readonly LangRow[]): string[] {
+  const rows = langs.filter((row) => row.substitute !== null);
+  if (rows.length === 0) return [];
+  const out = ["**What gates a language with no accuracy gate**", ""];
+  out.push(
+    "A target whose every gated metric is `n/a` would pass `--gate` on an extractor that returned " +
+      "nothing, so the gate becomes three substitute checks instead: the snapshot is byte-identical when " +
+      "built twice, fewer than 1% of the files carry a root-level parse error, and every non-empty file " +
+      "yields at least one declaration or import.",
+    "",
+  );
+  for (const row of rows) {
+    const checks = row.substitute;
+    if (checks === null) continue;
+    out.push(
+      `- **${row.lang}** (${row.corpus}): deterministic rebuild ${checks.deterministic ? "pass" : "FAIL"}, ` +
+        `parse error rate ${checks.errorRate === null ? NOT_RUN : formatNumber(checks.errorRate)}, ` +
+        `silent files ${checks.silentCount === null ? NOT_RUN : String(checks.silentCount)}.`,
+    );
+  }
+  out.push("");
+  return out;
+}
+
+/** The four dialects one TypeScript oracle covers. */
+const TS_FAMILY_LANGS: ReadonlySet<string> = new Set(["ts", "tsx", "js", "jsx"]);
+
+/**
+ * What each language's oracle is, and what it structurally cannot see.
+ *
+ * Every tag in these paragraphs is a `NOTES` entry a truth module emits, so a
+ * reader can grep `bench/src/truth/` for it and find the code that made the
+ * choice. They are written here rather than derived because a tag is a name and
+ * this is the sentence the name stands for; the tags a *run* actually recorded
+ * are printed from the payload under Eval 1.
+ */
+const ORACLE_DISCLOSURES: Record<string, string> = {
+  ts:
+    "`bench/src/truth/ts.ts` for S1 to S4 (the TypeScript compiler's own checker) and " +
+    "`bench/src/truth/signals-ts.ts` for S5 and S6 (`tsc-checker-oracle`, `base-type-chain-for-pulumi`, " +
+    "`app-router-path-rules`). Two disclosed emulations: `workspace-entry-mapping` stands in for the " +
+    "installed-and-built state a corpus checkout does not have, and `nearest-tsconfig-resolution` " +
+    "resolves a specifier with the compiler options of the nearest `tsconfig.json` above the importing " +
+    "file, but only after resolution from the repo root has failed, because a corpus of independent " +
+    "example apps keeps its path aliases there and the root config knows none of them. The pinned Pulumi subset " +
+    "is `aws-ts-*/**/*.ts`, which admits TypeScript only: the JavaScript and `.tsx` files in those " +
+    "examples are outside the scored set, so **build 1's CommonJS handling has no corpus coverage at " +
+    "all** (`.js` is parsed with the TypeScript grammar, and nothing in this benchmark measures that).",
+  go:
+    "`bench/src/truth/go.ts` for S1 to S4 (`go/packages` per-file imports and a class-hierarchy call " +
+    "graph) and `bench/src/truth/signals-pulumi-go.ts` for S5 and S6 (`go-types-oracle`, a resource " +
+    "being a type that implements Pulumi's resource interface). `cha-over-approximation`: " +
+    "class-hierarchy analysis resolves an interface call to every implementation of the method, so the " +
+    "oracle's call set is an upper bound and the recall measured against it is a lower bound. " +
+    "`helper-attribution-differs`: a resource constructed inside a helper function is attributed to the " +
+    "helper by one side and to the call site by the other, so a program that wraps its constructors " +
+    "moves nodes between files. A package the loader cannot build is dropped from truth rather than " +
+    "scored, so part of the Pulumi Go corpus is in greplost's map with no oracle opinion about it; the " +
+    "run prints how many on stderr.",
+  python:
+    "`bench/src/truth/python.ts`: `pytruth`, CPython's own `ast` module on Python 3.11 or newer " +
+    "(`ast-only`, `python>=3.11`). It reads source and never executes an import " +
+    "(`no-import-execution`), so a module reached through `importlib`, a module-level `__getattr__` or " +
+    "a runtime `sys.path` edit is in neither side; PEP 420 namespace packages are resolved by directory " +
+    "(`pep420-namespace-packages`).",
+  rust:
+    "`bench/src/truth/rust.ts`: `rusttruth`, a `syn` re-implementation of the extractor's rules " +
+    "(`syn-item-tree`, `cargo-metadata-roots`), **not** `rustc`, which has no stable public " +
+    "name-resolution API. `rule-agreement-oracle`: S1 to S4 on Rust measure two independent " +
+    "implementations of one rule set agreeing (a different parser, a different language, no shared " +
+    "line of code) and not agreement with a compiler, so a rule that is wrong in the specification is " +
+    "wrong on both sides and scores 1.000. `no-trait-dispatch`: a method call on a generic or `dyn` " +
+    "receiver is absent from truth exactly as it is absent from the map, because neither side does type " +
+    "inference, so that whole class of call is unmeasured rather than measured and missed.",
+  java:
+    "`bench/src/truth/java.ts`: `javac`'s own Tree API (`javac-tree-api`) on a source-only classpath " +
+    "(`source-classpath-only`). Third-party jars are deliberately absent, so a file whose dependency is " +
+    "a jar does not compile and is dropped from truth instead of scored (`unresolved-files-dropped`): " +
+    "those files are in greplost's map with no oracle opinion about them, and the run prints how many " +
+    "on stderr. `no-overload-resolution`: a call is matched to a method by name, so two overloads of " +
+    "one name are one target on both sides. `no-inherited-dispatch`: a call that lands on a member " +
+    "inherited from a supertype is attributed to the type that declares it, not to the receiver's type. " +
+    "`module-info-not-scored`: `module-info.java` declares a module rather than a type and carries no " +
+    "scored declaration. The pinned gson subset `**/src/main/**` spans several Maven modules and " +
+    "includes `gson/src/main/java-templates`, a templating-maven-plugin source root whose " +
+    "`GsonBuildConfig.java` Maven filters into the build directory: both sides read the template copy, " +
+    "so gson resolves that dependency inside its own source tree rather than against generated sources.",
+  kotlin:
+    "`bench/src/truth/kotlin.ts`: **reported-only** (`reported-only`, `fixture-oracle-only`, " +
+    "`no-corpus-compiler-truth`). A real `kotlinc` plus `javap -v` classfile oracle covers " +
+    "`fixtures/tiny-kotlin` and nothing else: there is **no corpus compiler truth** for Kotlin, because " +
+    "`kotlin-compiler-embeddable`'s PSI and FIR APIs are internal and unstable and compiling a Gradle " +
+    "multiplatform corpus outside Gradle is not reliable (Appendix C, 2026-09-04). Every corpus metric " +
+    "is therefore `n/a` and the run is gated on the three substitute checks below. Kotlin's accuracy " +
+    "numbers in this repository are fixture numbers: a smoke test, not accuracy against a compiler. " +
+    "JVM synthetics are dropped and a property access is not a call (`jvm-synthetics-dropped`, " +
+    "`property-access-not-a-call`).",
+  hcl:
+    "`bench/src/truth/hcl.ts`: `tfinspect`, built on `terraform-config-inspect` and `hclsyntax` " +
+    "(`terraform-config-inspect`, `hclsyntax-traversals`). `same-rules-different-parser`: references " +
+    "and nodes are scored against an independent re-implementation of the same rules on a different " +
+    "parser, not against Terraform's own evaluator, so S5 and S6 measure two implementations agreeing. " +
+    "`no-call-edges`: HCL has no calls at all, so S3 is `n/a` rather than 0, because there is nothing " +
+    "for either side to be right or wrong about.",
+  yaml:
+    "`bench/src/truth/yaml.ts`, dispatching by flavour (`yaml-flavour-dispatch`) to `yaml-k8s.ts`, " +
+    "`yaml-helm.ts` and `yaml-actions.ts`, all reading with `js-yaml` (`js-yaml-oracle`) and, for a " +
+    "chart, `helm template` (`helm-template-render`). YAML has no calls, so S3 is `n/a`. Helm: a " +
+    "template is not valid YAML, so every `{{ ... }}` span is blanked in place before parsing and a " +
+    "templated name falls back to the document index, which is why names are not compared for templates " +
+    "(`names-not-compared-for-templates`) and S6 is `n/a` for a chart. `same-regex-both-sides`: a " +
+    "chart's `.Values.<path>` references are found by one regular expression that both sides apply, so " +
+    "S5 on Helm measures that regex against itself and not two independent implementations. " +
+    "`if-else-arms-both-kept`: blanking keeps both arms of an `if`/`else`, so a chart's document set " +
+    "holds documents a real render would produce only one of. Workflows: a `${{ ... }}` value is chosen " +
+    "when the workflow runs and is never a name in the map.",
+  dockerfile:
+    "`bench/src/truth/dockerfile.ts`: an independent Dockerfile AST reader (`dockerfile-ast-oracle`). " +
+    "`same-rules-different-parser`: the same rules read by a different parser, not by BuildKit, so this " +
+    "is rule agreement rather than builder truth. A Dockerfile has no calls, so S3 is `n/a`. The two " +
+    "pinned corpora are honestly **below the tier-S band**: no public repository carries a hundred " +
+    "Dockerfiles, and `docker-python` and `docker-node` together are the realistic ceiling for the " +
+    "format.",
+};
+
+/**
+ * One line of English for every `NOTES` tag a build-2 truth module can emit, so
+ * Eval 1 can print the run's own tags without sending the reader to the source.
+ *
+ * It lives here, next to the per-language paragraphs, because the two say the
+ * same things at two lengths and drifting apart would be worse than repeating
+ * them. `report-evals.ts` spreads this map into its own, which keeps build 1's
+ * four entries where they were written.
+ */
+export const TRUTH_NOTE_GLOSS: Record<string, string> = {
+  "unsupported:S1": "the truth module declares that it does not measure import edges, so S1 is `n/a` for it.",
+  "unsupported:S2": "the truth module declares that it does not measure exports, so S2 is `n/a` for it.",
+  "unsupported:S3":
+    "the truth module declares that it does not measure call edges (the format has none), so S3 is `n/a`, " +
+    "which is neither a pass nor a fail.",
+  "unsupported:S4": "the truth module declares that it does not measure import cycles, so S4 is `n/a` for it.",
+  "unsupported:S5": "the truth module declares that it does not measure reference edges, so S5 is `n/a` for it.",
+  "unsupported:S6": "the truth module declares that it does not measure signal nodes, so S6 is `n/a` for it.",
+  "reported-only":
+    "the oracle cannot measure this target at all, so every metric is `n/a` and the run is gated on the " +
+    "three substitute checks instead (Kotlin, Appendix C 2026-09-04).",
+  "ast-only": "the Python oracle reads the source with CPython's `ast` module and never runs the code.",
+  "no-import-execution":
+    "no import is executed, so a module reached through `importlib`, a module-level `__getattr__` or a " +
+    "runtime `sys.path` edit is in neither the map nor the truth.",
+  "pep420-namespace-packages": "PEP 420 namespace packages are resolved by directory rather than by `__init__.py`.",
+  "python>=3.11": "the oracle needs Python 3.11 or newer for the `ast` fields it reads.",
+  "syn-item-tree": "the Rust oracle walks `syn`'s item tree rather than a compiler's resolved graph.",
+  "cargo-metadata-roots": "crate roots come from `cargo metadata`.",
+  "no-trait-dispatch":
+    "a method call on a generic or `dyn` receiver is in neither side, because neither does type inference: " +
+    "that class of call is unmeasured rather than measured and missed.",
+  "rule-agreement-oracle":
+    "the oracle re-implements the extractor's rules on a different parser instead of asking a compiler " +
+    "(`rustc` has no stable public name-resolution API), so the metric is two independent implementations " +
+    "of one rule set agreeing, not agreement with the compiler.",
+  "javac-tree-api": "the Java oracle reads `javac`'s own Tree API, not a re-implementation.",
+  "source-classpath-only":
+    "the classpath is the corpus sources alone: third-party jars are deliberately absent.",
+  "unresolved-files-dropped":
+    "a file that does not compile on that source-only classpath is dropped from truth rather than scored, so " +
+    "it is in greplost's map with no oracle opinion about it; the run prints how many on stderr.",
+  "no-overload-resolution":
+    "a call is matched to a method by name, so two overloads of one name are one target on both sides.",
+  "no-inherited-dispatch":
+    "a call that lands on a member inherited from a supertype is attributed to the type that declares it, " +
+    "not to the receiver's type.",
+  "module-info-not-scored": "`module-info.java` declares a module rather than a type and carries no scored declaration.",
+  "fixture-oracle-only": "the oracle covers the fixture only; there is no corpus-scale run of it.",
+  "no-corpus-compiler-truth":
+    "no compiler truth exists for this language's corpus, so its corpus numbers are `n/a` and its accuracy " +
+    "numbers come from the fixture alone.",
+  "kotlinc-javap-classfiles": "the Kotlin fixture oracle compiles with `kotlinc` and reads the classfiles with `javap -v`.",
+  "jvm-synthetics-dropped": "JVM synthetic members the compiler generates are dropped rather than scored.",
+  "property-access-not-a-call": "a Kotlin property access is not counted as a call, on either side.",
+  "terraform-config-inspect": "the Terraform oracle is built on `terraform-config-inspect`.",
+  "hclsyntax-traversals": "reference edges come from `hclsyntax`'s own traversal set.",
+  "no-call-edges": "the format has no call edges at all, so S3 is `n/a` rather than 0.",
+  "same-rules-different-parser":
+    "both sides implement the same documented rules with different parsers, so the metric measures two " +
+    "implementations agreeing rather than agreement with the format's own tooling.",
+  "yaml-flavour-dispatch": "YAML files are split by flavour (Kubernetes manifest, Helm chart, Actions workflow) and each flavour has its own oracle.",
+  "js-yaml-oracle": "the YAML oracle parses with `js-yaml`, independently of the tree-sitter grammar greplost uses.",
+  "helm-template-render": "chart truth comes from `helm template`; greplost never runs helm.",
+  "names-not-compared-for-templates":
+    "a templated name falls back to the document index, so names are not compared for a chart's templates.",
+  "same-regex-both-sides":
+    "a chart's `.Values.<path>` references are found by one regular expression that both sides apply, so S5 " +
+    "on Helm measures that regex against itself rather than two independent implementations.",
+  "if-else-arms-both-kept":
+    "blanking a template's `{{ ... }}` spans keeps both arms of an `if`/`else`, so a chart's document set " +
+    "holds documents a real render would produce only one of.",
+  "dockerfile-ast-oracle": "the Dockerfile oracle reads an independent Dockerfile AST, not BuildKit's.",
+  "go-packages-per-file-imports": "Go import edges come from `go/packages`, per file.",
+  "tsc-checker-oracle": "the signal oracle asks the TypeScript compiler's checker, not the extractor's heuristics.",
+  "base-type-chain-for-pulumi": "a Pulumi resource is recognised by walking the base type chain in the checker.",
+  "app-router-path-rules": "the Next.js App Router path rules are re-implemented independently of the extractor.",
+  "go-types-oracle": "the Pulumi Go oracle loads the program with `go/types`.",
+  "types-implements-pulumi-resource": "a resource is a type that implements Pulumi's resource interface, decided by the type checker.",
+  "helper-attribution-differs":
+    "a resource constructed inside a helper function is attributed to the helper by one side and to the call " +
+    "site by the other, so a program that wraps its constructors moves nodes between files.",
+};
 
 function evalSection(heading: string, subtitle: string, section: EvalSection): string[] {
   const out = [`## ${heading}`, "", subtitle, ""];

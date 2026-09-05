@@ -31,8 +31,8 @@
 ## packages/cli/src/commands/hook.ts
 
 - `interface HookPayload` L37-42
-- `async function run(ctx: CommandContext): Promise<number>` L54-63
-- `async function runHook(event: HookEvent, payloadText: string, ctx: CommandContext): Promise<number>` L70-117
+- `async function run(ctx: CommandContext): Promise<number>` L57-66
+- `async function runHook(event: HookEvent, payloadText: string, ctx: CommandContext): Promise<number>` L73-120
 
 ## packages/cli/src/commands/impact.ts
 
