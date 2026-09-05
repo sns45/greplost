@@ -54,7 +54,7 @@
 
 ## packages/core/src/extract/java.ts
 
-- `function extractJava( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L587-618
+- `function extractJava( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L625-656
 
 ## packages/core/src/extract/kotlin.ts
 
@@ -351,10 +351,10 @@
 
 ## packages/core/src/resolve/java.ts
 
-- `function createJavaResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L82-133
-- `interface JavaCallIndex` L148-161
-- `function buildJavaCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): JavaCallIndex` L203-253
-- `function resolveJavaCall( file: FileRecord, site: CallSite, index: JavaCallIndex, ): { to: string; confidence: Confidence } | null` L312-365
+- `function createJavaResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L93-144
+- `interface JavaCallIndex` L175-188
+- `function buildJavaCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): JavaCallIndex` L230-282
+- `function resolveJavaCall( file: FileRecord, site: CallSite, index: JavaCallIndex, ): { to: string; confidence: Confidence } | null` L357-412
 
 ## packages/core/src/resolve/kotlin.ts
 

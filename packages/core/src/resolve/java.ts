@@ -66,13 +66,24 @@ function join(dir: string, rest: string): string {
   return rest === "" ? dir : `${dir}/${rest}`;
 }
 
-/** `com.google.gson` -> `maven/com.google:gson`; a shorter name keeps what it has. */
+/**
+ * The external id an unresolved Java name publishes.
+ *
+ * `com.google.gson.Gson` -> `ext:maven/com.google:gson`, from the first two segments as the
+ * group and the third as the artifact (spec 1.4). The artifact is only ever a **package**
+ * segment: a fully qualified Java name ends in the *type*, so `org.junit.Test` has to take
+ * `junit` and not `Test` — publishing a type as an artifact would make one external node per
+ * class of a dependency instead of one per dependency. Anything that is not a `com.`/`org.`
+ * name keeps its first segment, which is what spec 1.4 says.
+ */
 function externalPackage(segments: readonly string[]): string {
   const head = segments[0] ?? "";
   if (!MAVEN_ROOTS.has(head) || segments.length < 2) return head;
   const group = `${head}.${segments[1] ?? ""}`;
-  const artifact = segments[2];
-  return artifact === undefined ? `maven/${head}:${segments[1] ?? ""}` : `maven/${group}:${artifact}`;
+  // With four or more segments the third is a package segment; with three it is the type, so
+  // the group's own last segment is the deepest package name available.
+  const artifact = segments.length >= 4 ? segments[2] : segments[1];
+  return `maven/${group}:${artifact ?? ""}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -145,9 +156,25 @@ interface TypeRef {
   kind: DeclKind;
 }
 
+/**
+ * What one declaration name means inside one file.
+ *
+ * `count` is how many declarations of the file carry the name: more than one is an overload
+ * (or a type and a member colliding), which resolves to nothing. `kind` is the *first* one's
+ * kind, which is all that is ever read, because a name with `count > 1` is dropped before the
+ * kind is consulted. It exists so a call can never land on something that is not callable:
+ * `class Sub extends Base { int size = 7; int total() { return size(); } }` declares a field
+ * named `Sub.size` and calls an inherited `Base.size`, and without the kind the field is a
+ * perfectly unique — and completely wrong — `high` answer.
+ */
+interface MemberEntry {
+  count: number;
+  kind: DeclKind;
+}
+
 export interface JavaCallIndex {
-  /** file -> declaration name -> how many declarations of that file carry it. */
-  members: Map<string, Map<string, number>>;
+  /** file -> declaration name -> how many declarations carry it, and what the first one is. */
+  members: Map<string, Map<string, MemberEntry>>;
   /** file -> simple member name -> the declaration names ending in it. */
   bySimpleName: Map<string, Map<string, string[]>>;
   /** file -> simple type name -> the type it names, or null when the file declares two. */
@@ -223,7 +250,9 @@ export function buildJavaCallIndex(files: readonly FileRecord[], imports: readon
     index.dottedTypes.set(file.path, dotted);
 
     for (const decl of file.decls) {
-      members.set(decl.name, (members.get(decl.name) ?? 0) + 1);
+      const seen = members.get(decl.name);
+      if (seen === undefined) members.set(decl.name, { count: 1, kind: decl.kind });
+      else seen.count += 1;
       const simple = simpleNameOf(decl.name);
       const names = bySimple.get(simple);
       if (names === undefined) bySimple.set(simple, [decl.name]);
@@ -272,10 +301,26 @@ function agreed(
   return answer;
 }
 
-/** A declaration named exactly once in `file`, as a call target. */
-function declared(index: JavaCallIndex, file: string, name: string): { to: string; confidence: Confidence } | null {
-  return index.members.get(file)?.get(name) === 1 ? { to: symbolId(file, name), confidence: "high" } : null;
+/**
+ * A declaration named exactly once in `file` and of a kind a call can land on.
+ *
+ * `wanted` is `"method"` everywhere a call names a member, and the type kinds only for the
+ * `new` fallback, where the target is the class itself because javac generated the constructor.
+ * A field, a constant or an enum constant is never a call target however unique its name is.
+ */
+function declared(
+  index: JavaCallIndex,
+  file: string,
+  name: string,
+  wanted: ReadonlySet<DeclKind>,
+): { to: string; confidence: Confidence } | null {
+  const entry = index.members.get(file)?.get(name);
+  if (entry === undefined || entry.count !== 1 || !wanted.has(entry.kind)) return null;
+  return { to: symbolId(file, name), confidence: "high" };
 }
+
+/** A call on a member can only land on a method: a constructor is one, a field is not. */
+const CALLABLE: ReadonlySet<DeclKind> = new Set<DeclKind>(["method"]);
 
 /** The type a simple name means, seen from `file`: this file, then its imports, then its package. */
 function typeNamed(index: JavaCallIndex, file: string, simple: string): TypeRef | null {
@@ -328,9 +373,11 @@ export function resolveJavaCall(
     const ref = typeNamed(index, file.path, callee.slice(4));
     if (ref === null) return null;
     const constructor = `${ref.dotted}.${simpleNameOf(ref.dotted)}`;
-    const written = index.members.get(ref.file)?.get(constructor) ?? 0;
-    if (written > 0) return written === 1 ? { to: symbolId(ref.file, constructor), confidence: "high" } : null;
-    return declared(index, ref.file, ref.dotted);
+    const written = index.members.get(ref.file)?.get(constructor);
+    if (written !== undefined && written.kind === "method") {
+      return written.count === 1 ? { to: symbolId(ref.file, constructor), confidence: "high" } : null;
+    }
+    return declared(index, ref.file, ref.dotted, TYPE_KINDS);
   }
 
   const dot = callee.indexOf(".");
@@ -338,7 +385,7 @@ export function resolveJavaCall(
   if (dot === -1) {
     // 2. An unqualified call: a method of the enclosing type, or of a type enclosing that one.
     for (let owner = ownerOf(index, file.path, site.caller); owner !== ""; owner = parentOf(owner)) {
-      const hit = declared(index, file.path, `${owner}.${callee}`);
+      const hit = declared(index, file.path, `${owner}.${callee}`, CALLABLE);
       if (hit !== null) return hit;
       if (!owner.includes(".")) break;
     }
@@ -354,14 +401,14 @@ export function resolveJavaCall(
   // 4. `this.method`: the enclosing type owns it.
   if (object === "this") {
     const owner = ownerOf(index, file.path, site.caller);
-    return owner === "" ? null : declared(index, file.path, `${owner}.${member}`);
+    return owner === "" ? null : declared(index, file.path, `${owner}.${member}`, CALLABLE);
   }
 
   // 5. `<Type>.method`: a static call, or a receiver whose declared type the extractor wrote
   //    down. Interface dispatch is dropped rather than pinned to the interface's declaration.
   const ref = typeNamed(index, file.path, object);
   if (ref === null || ref.kind === "interface") return null;
-  return declared(index, ref.file, `${ref.dotted}.${member}`);
+  return declared(index, ref.file, `${ref.dotted}.${member}`, CALLABLE);
 }
 
 /** `Store.Entry` -> `Store`; `Store` -> `""`. */
@@ -385,5 +432,5 @@ function staticMember(
 ): { to: string; confidence: Confidence } | null {
   const candidates = (index.bySimpleName.get(target)?.get(name) ?? []).filter((full) => full.includes("."));
   if (candidates.length !== 1) return null;
-  return declared(index, target, candidates[0] ?? "");
+  return declared(index, target, candidates[0] ?? "", CALLABLE);
 }

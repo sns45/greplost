@@ -77,7 +77,9 @@ export const NOTES: readonly string[] = [
  * the manifests as well. `generateExtra` now returns `nodeFiles` — the chart's own files and
  * never its templates — and S6 scores exactly those (fix round 1).
  */
-const UNSUPPORTED = ["unsupported:S3"] as const;
+// S1 and S4 are vacuous for YAML (no imports, no cycles): stated as unsupported so RESULTS.md prints n/a
+// instead of a 1.000 nobody measured (driver ruling 2026-09-05, shared with the Dockerfile and Actions oracles).
+const UNSUPPORTED = ["unsupported:S1", "unsupported:S3", "unsupported:S4"] as const;
 
 const CHART_FILES: ReadonlySet<string> = new Set(["Chart.yaml", "Chart.yml"]);
 const VALUES_FILES: ReadonlySet<string> = new Set(["values.yaml", "values.yml"]);
