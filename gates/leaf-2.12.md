@@ -57,27 +57,27 @@ outstanding; the entry stays because the ruling asked for the sweep to be record
 - [x] G1: the per-language structural test file passes
   CHECK: bun test bench/test/structural-langs.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 85 expect() calls | Ran 24 tests across 1 file. [126.00ms]
+  EVIDENCE: 139 expect() calls | Ran 34 tests across 1 file. [132.00ms]
 
 - [x] G2: the payload carries one entry per language with its repos, truth source and gated flag; describe('per-lang targets')
   CHECK: bun test bench/test/structural-langs.test.ts -t "per-lang targets" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 34 expect() calls | Ran 6 tests across 1 file. [110.00ms]
+  EVIDENCE: 34 expect() calls | Ran 6 tests across 1 file. [113.00ms]
 
 - [x] G3: an unsupported metric prints `n/a` and is neither a pass nor a fail; describe('n/a metrics')
   CHECK: bun test bench/test/structural-langs.test.ts -t "n/a metrics" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 17 expect() calls | Ran 6 tests across 1 file. [109.00ms]
+  EVIDENCE: 41 expect() calls | Ran 9 tests across 1 file. [113.00ms]
 
 - [x] G4: reference and signal-node precision are scored and gated; describe('S5 and S6')
   CHECK: bun test bench/test/structural-langs.test.ts -t "S5 and S6" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 13 expect() calls | Ran 4 tests across 1 file. [108.00ms]
+  EVIDENCE: 13 expect() calls | Ran 4 tests across 1 file. [109.00ms]
 
 - [x] G5: `--fixture` and `--fixture-go` keep their build-1 meaning; describe('build-1 flags still work')
   CHECK: bun test bench/test/structural-langs.test.ts -t "build-1 flags still work" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 13 expect() calls | Ran 4 tests across 1 file. [106.00ms]
+  EVIDENCE: 13 expect() calls | Ran 4 tests across 1 file. [110.00ms]
 
 - [x] G6: RESULTS.md states the head-to-head scope in one sentence
   CHECK: grep -c 'X1 to X10 cover TypeScript and Go only' bench/RESULTS.md
@@ -112,7 +112,7 @@ outstanding; the entry stays because the ruling asked for the sweep to be record
 - [x] G12: the full suite is green from a frozen install
   CHECK: bun install --frozen-lockfile >/dev/null && bun test 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 17272 expect() calls | Ran 2116 tests across 66 files. [89.45s]
+  EVIDENCE: 17350 expect() calls | Ran 2131 tests across 67 files. [90.42s]
 
 - [x] G13: every package typechecks
   CHECK: bun run typecheck
