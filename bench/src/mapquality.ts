@@ -9,11 +9,11 @@
  * for `bench/.corpus/<name>/.greplost`, or `--fixture` for the golden render dir; default
  * `.greplost` at the repo root), extracts every fenced ```mermaid block, counts node
  * definitions per fence (lines matching `^\s+\S+\["`, i.e. `  id["label"]`; edge lines
- * never contain `[` because edge labels use `|...|`, not brackets — see
+ * never contain `[` because edge labels use `|...|`, not brackets: see
  * `packages/render/src/mermaid.ts`), and parses every fence with `checkMermaid`.
  *
  * `--dry-run` prints the table shape and stops: no fence is parsed, the artifact dir need
- * not exist, and — the point of the flag — no result file is written. `bench all
+ * not exist, and, the point of the flag, no result file is written. `bench all
  * --dry-run` runs every suite, so a dry run that wrote a payload here would make the
  * shape-check the published M1 and M2.
  */
@@ -44,7 +44,7 @@ const NOT_RUN = "not run";
 /**
  * One fenced ```mermaid block. Non-greedy so back-to-back fences are captured separately;
  * this relies on fences never being nested (a mermaid fence's body never itself contains a
- * ``` line), which holds for every artifact `packages/render` emits — its Mermaid fences
+ * ``` line), which holds for every artifact `packages/render` emits: its Mermaid fences
  * hold only diagram syntax (render spec "Documents"), never markdown or other code.
  */
 const MERMAID_FENCE_RE = /```mermaid\r?\n([\s\S]*?)```/g;
@@ -71,7 +71,7 @@ interface Target {
    * What the map was made of, so M1's target keeps its scale.
    *
    * Section 3 words M1 as a budget "at 10k files", and `scopeTarget` (`results-md.ts`)
-   * qualifies a target written against a file count with the scale actually measured —
+   * qualifies a target written against a file count with the scale actually measured:
    * that is why the P rows read "(measured on anyq, tier S, 148 files)". Without the repo
    * and the file count on the payload, M1 printed a 10k-file budget beside a number taken
    * on a 120-file map and invited the reader to take the one for the other.
@@ -151,7 +151,7 @@ export function resolveTarget(options: Options): Target {
   if (options.dirArg !== undefined) {
     const dir = path.resolve(options.dirArg);
     // An arbitrary directory names itself by the tree it is the map of, which is
-    // its parent — `<repo>/.greplost` -> `<repo>`.
+    // its parent, `<repo>/.greplost` -> `<repo>`.
     return { dir, corpus: [], repo: path.basename(path.dirname(dir)), fixture: false, tier: undefined };
   }
   if (options.repo !== undefined) {
@@ -226,7 +226,7 @@ async function execute(options: Options): Promise<number> {
   const relDir = path.relative(REPO_ROOT, target.dir) || ".";
 
   // `--dry-run` produces the output shape and stops, before the dir is required to
-  // exist, before a fence is parsed and — the point of the flag — before anything is
+  // exist, before a fence is parsed and, the point of the flag, before anything is
   // written. This suite used to fall straight through to `writeResult`, so
   // `bun run bench:all --dry-run` left a real `mapquality-*.json` in `bench/results/`
   // and that payload became the published M1 and M2 (review round 3, critical 1).

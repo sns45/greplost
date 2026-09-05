@@ -15,6 +15,6 @@
 **Blast radius:** 2 files (`greplost impact packages/cli/src/commands/init.ts`)
 
 **Key symbols:**
-- `async function run(ctx: CommandContext): Promise<number>`  L19-66
+- `async function run(ctx: CommandContext): Promise<number>`  L19-73
 
 **Calls:** `isWorkspaceRoot` → [`packages/cli/src/commands/workspace.ts#isWorkspaceRoot`](workspace.ts.md) (high), `loadWorkspaceInit` → [`packages/cli/src/commands/workspace.ts#loadWorkspaceInit`](workspace.ts.md) (high), `printError` → [`packages/cli/src/output.ts#printError`](../output.ts.md) (high), `printJson` → [`packages/cli/src/output.ts#printJson`](../output.ts.md) (high), `printLine` → [`packages/cli/src/output.ts#printLine`](../output.ts.md) (high), `init` → [`packages/sync/src/init.ts#init`](../../../../greplost__sync/modules/src/init.ts.md) (med)

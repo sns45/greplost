@@ -8,7 +8,7 @@
  * `helm render` is the other half of the Helm gate, and the one place `helm template` actually
  * decides something: greplost's templated nodes are checked against the kinds, the apiVersions
  * and the per-file document count `helm` produces for `fixtures/tiny-helm`. Names are never
- * compared — a rendered name is a value and greplost's is a template — which is exactly what
+ * compared: a rendered name is a value and greplost's is a template, which is exactly what
  * the `names-not-compared-for-templates` note publishes.
  *
  * `oracle independence` is the integrity check of tech spec 10.1 principle 2: neither oracle
@@ -153,7 +153,7 @@ describe("js-yaml oracle", () => {
     // greplost reads the text a scalar was written with; js-yaml types it. An oracle that
     // refused everything non-string dropped `version: 2` out of a selector and out of a pod's
     // labels, so the two workloads below looked identical to it, its selector matched both and
-    // it drew nothing — scoring greplost's correct, unique edge as a false positive. The same
+    // it drew nothing, scoring greplost's correct, unique edge as a false positive. The same
     // refusal skipped a whole document whose `metadata.name` was a number (fix round 1).
     const workload = (name: string, version: string): string =>
       `apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ${name}\nspec:\n  template:\n    metadata:\n` +
@@ -277,7 +277,7 @@ describe("helm render", () => {
       bucket.push(`${decl.meta?.["kind"] ?? ""}/${decl.meta?.["apiVersion"] ?? ""}`);
       predicted.set(decl.file, bucket);
     }
-    // Kinds, apiVersions and counts — never a name, which is the whole point of the note.
+    // Kinds, apiVersions and counts, never a name, which is the whole point of the note.
     expect([...predicted.entries()].sort()).toEqual([...byFile.entries()].sort());
     for (const decl of snapshot.symbols) {
       if (decl.kind === "resource" && decl.file.startsWith("templates/")) {

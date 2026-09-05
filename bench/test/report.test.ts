@@ -331,8 +331,8 @@ describe("charts", () => {
    *
    * The checker is not run from here: it lives in a skill directory that exists
    * on one machine, and a test that shells out to it would fail everywhere else.
-   * What this test locks is the thing the run was about — the exact hexes, in the
-   * exact order, bound to the exact tools — so a later edit to any of them has to
+   * What this test locks is the thing the run was about, the exact hexes, in the
+   * exact order, bound to the exact tools, so a later edit to any of them has to
    * come with a new run of the command above.
    */
   test("the validated palette is the one the charts draw, bound to the tools", () => {
@@ -1554,7 +1554,7 @@ describe("results-md", () => {
 
   test("the perf suite's actual payload shape fills P1 to P3", () => {
     // `repos` is an ARRAY of { name, files, tier, scenarios: [...] }, and each
-    // scenario is { scenario, ms: { p50, p95 }, peakRssBytes } — not the flat
+    // scenario is { scenario, ms: { p50, p95 }, peakRssBytes }, not the flat
     // `scenarios` object this reader first assumed. Captured from
     // bench/results/perf-2026-09-02-334b337.json.
     const dir = tempDir("perf-real");

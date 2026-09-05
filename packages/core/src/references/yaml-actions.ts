@@ -1,29 +1,29 @@
 /**
  * GitHub Actions reference rules (build 2, spec 2026-09-04 sections 0.3 and 2.4).
  *
- * `extract/yaml-actions.ts` records what a workflow *asks for* — a job id, an action reference,
- * a word out of a `run:` body — and this module decides which node or file that is, or drops
+ * `extract/yaml-actions.ts` records what a workflow *asks for*, a job id, an action reference,
+ * a word out of a `run:` body, and this module decides which node or file that is, or drops
  * it. The rule is the one that governs call edges (tech spec 5.1): `high` when the request
  * lands on exactly one thing, **anything ambiguous dropped, never guessed**.
  *
  * Three mechanisms, and the scope each searches:
  *
- *  - `needs` — a job id against the `job` and `task` nodes of the **same file**. `needs` is
+ *  - `needs`, a job id against the `job` and `task` nodes of the **same file**. `needs` is
  *    scoped to one workflow by the format itself, so a job id that also exists in a sibling
  *    workflow is not a candidate; searching wider would draw an edge Actions would never run.
- *  - `uses` — three shapes, following the Terraform `module` precedent (driver ruling
+ *  - `uses`, three shapes, following the Terraform `module` precedent (driver ruling
  *    2026-09-04):
- *      * `./path` — a repo-local action or reusable workflow. A directory resolves to the
+ *      * `./path`, a repo-local action or reusable workflow. A directory resolves to the
  *        `action.yml` it holds; a `.yml`/`.yaml` path resolves to that file. A path the index
  *        does not cover resolves to nothing: it is a repo path the map does not carry, and
  *        calling it external would invent a dependency on a marketplace action.
- *      * `owner/repo[/subpath]@ref` — an action outside the repo, `ext:action/<owner>/<repo>`,
+ *      * `owner/repo[/subpath]@ref`, an action outside the repo, `ext:action/<owner>/<repo>`,
  *        with the subpath kept when there is one and the `@ref` kept out of the id. The ref is
  *        a *version*, exactly as a Terraform module's `version` is not part of its source, and
  *        it lives in `meta.usesRef` on the step; the subpath stays because
  *        `github/codeql-action/init` and `github/codeql-action/analyze` are two actions.
- *      * anything else (`docker://…`, an expression) — not a repository, so not an edge.
- *  - `config` — a literal token from a `run:` body against the indexed file set. Exactly one
+ *      * anything else (`docker://…`, an expression), not a repository, so not an edge.
+ *  - `config`, a literal token from a `run:` body against the indexed file set. Exactly one
  *    match is `high`; a token matching two paths is two plausible answers, so neither is drawn.
  *    This is the edge that puts a workflow in a script's blast radius (spec 2.4).
  *
@@ -74,7 +74,7 @@ function jobsFor(ctx: ReferenceContext): ReadonlyMap<string, readonly Declaratio
  * proper suffixes at a segment boundary.
  *
  * A `run:` body is written from the repo root most of the time and from a subdirectory the rest
- * of it, so `scripts/x.ts` and `x.ts` both have to be able to find `scripts/x.ts` — and a
+ * of it, so `scripts/x.ts` and `x.ts` both have to be able to find `scripts/x.ts`, and a
  * suffix that two files share is exactly the ambiguity spec 2.4 says to drop.
  */
 function pathsFor(ctx: ReferenceContext): ReadonlyMap<string, readonly string[]> {
@@ -143,7 +143,7 @@ function joinFromFile(fromFile: string, relative: string): string | null {
 }
 
 /**
- * A local `uses` — the file it names.
+ * A local `uses`; the file it names.
  *
  * A local action reference is resolved **from the repository root**, which is what GitHub
  * itself does: `./.github/actions/setup` in a workflow six directories down still means the
@@ -162,7 +162,7 @@ function resolveLocalUses(target: string, ctx: ReferenceContext): string | null 
 }
 
 /**
- * An external `uses` — `ext:action/<owner>/<repo>[/<subpath>]`, the ref left out of the id.
+ * An external `uses`, `ext:action/<owner>/<repo>[/<subpath>]`, the ref left out of the id.
  *
  * `owner/repo` is the smallest thing GitHub will resolve, so a single-segment reference is not
  * an action reference at all and produces nothing.

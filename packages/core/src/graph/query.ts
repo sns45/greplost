@@ -104,7 +104,7 @@ export function referencedBy(refs: readonly ReferenceEdge[], id: string): Refere
  * (directory targets expanded, exactly as `impact` on a file already sees them)
  * plus every reference edge, verbatim.
  *
- * Both edge kinds point the same way — dependant first, dependency second — so
+ * Both edge kinds point the same way, dependant first, dependency second, so
  * `impactOf(impactPairs(structure), id)` is one blast radius over a graph that
  * mixes file ids, node ids and `ext:` ids. Reference targets are left
  * unexpanded: a reference names one thing, and the one directory target a

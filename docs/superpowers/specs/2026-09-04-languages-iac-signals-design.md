@@ -131,7 +131,7 @@ outside `[A-Za-z0-9._-]` replaced by `-`. So `infra/main.tf#resource.aws_s3_buck
 to `packages/<slug>/modules/infra/main.tf/resource.aws_s3_bucket.logs.md`, and
 `app/users/[id]/page.tsx#route./users/[id]` renders to
 `.../modules/app/users/[id]/page.tsx/route.__users__-id-.md`. **No artifact path ever contains
-`#`** — a `#` in a Markdown link is a URL fragment, so the file card and every inbound link
+`#`**, a `#` in a Markdown link is a URL fragment, so the file card and every inbound link
 would silently point at the wrong page.
 
 `packages/render/src/slug.ts` gains `nodeSlug(kind, name)` and `nodeCardPath(pkg, id)`;
@@ -148,7 +148,7 @@ would silently point at the wrong page.
   `med` when it resolves through exactly one documented level of indirection (a Terraform
   `module` output to the module's `output` node, a Helm template `.Values.x` to the
   `values.yaml` key node, a Kubernetes `Service` selector to a workload whose labels are a
-  superset). **Anything ambiguous is dropped, never guessed** — the same rule that governs call
+  superset). **Anything ambiguous is dropped, never guessed**, the same rule that governs call
   edges (tech spec 5.1).
 - A reference never targets `unresolved:`; an unresolvable reference is not emitted.
 - `symbols` carries the language-native address that produced the edge
@@ -173,7 +173,7 @@ fixtures/tiny-<name>/                  the smallest repo exercising every rule
 `extractFile` dispatches on `lang` through a static table in
 `packages/core/src/extract/index.ts` (written whole by leaf 2.0, with a throwing stub per
 language that its leaf replaces). `bench/src/truth/registry.ts` loads
-`./truth/${lang}.ts` by convention and calls its `generateTruth` export — **no shared file is
+`./truth/${lang}.ts` by convention and calls its `generateTruth` export, **no shared file is
 edited when a language lands**, which is what keeps a wave's leaves disjoint.
 
 ### 0.5 Grammars
@@ -262,7 +262,7 @@ known, `kind: "named"`). Python has no `default`; `star` is never emitted.
 
 **Calls.** `call` with `identifier` -> `name`; `attribute` on an identifier -> `obj.method`;
 `attribute` on `self` -> `this.method` (normalised to the schema's `this.` form so the linker
-is shared); a call to a name bound to a class -> `new Name` is **not** used — Python has no
+is shared); a call to a name bound to a class -> `new Name` is **not** used, Python has no
 `new`, so a constructor call is a plain `name` call and the linker resolves it to the class
 declaration. Deeper chains, subscripted callees and calls on call results are dropped.
 
@@ -272,7 +272,7 @@ declaration. Deeper chains, subscripted callees and calls on call results are dr
 `src/` directory when it exists; the repo root. Relative imports (`from . import x`,
 `from ..pkg import y`) resolve against the importing file's package directory, one `.` per
 level above. A specifier that resolves to a directory containing `__init__.py` targets that
-`__init__.py` (a file id, not a directory id — Python packages are files, unlike Go). Anything
+`__init__.py` (a file id, not a directory id, Python packages are files, unlike Go). Anything
 else is `ext:pypi/<top-level segment>` for a known distribution root, otherwise
 `{ type: "external", pkg: <first segment> }`. Standard-library module names come from a
 vendored, sorted list in `resolve/python.ts` (`PY_STDLIB`, generated from `sys.stdlib_module_names`
@@ -381,7 +381,7 @@ Every generator is **independent of tree-sitter** and returns the existing `Trut
 as a small program in its own language, built once and cached under `bench/.corpus/.tools/`
 keyed by a 16-hex hash of its sources, exactly like `bench/truth/gocallgraph`.
 
-**Python — `bench/truth/pytruth/main.py`** (python3 3.14, standard library only). Walks the
+**Python, `bench/truth/pytruth/main.py`** (python3 3.14, standard library only). Walks the
 file list, parses each with `ast.parse(source, type_comments=True)`, and emits one JSON
 document on stdout with the same key set the Go tool uses.
 - imports: every `ast.Import`/`ast.ImportFrom`, resolved with an implementation of PEP 328/420
@@ -390,14 +390,14 @@ document on stdout with the same key set the Go tool uses.
   `FileFinder` over the corpus root only (never the host's site-packages: the finder is given an
   explicit path list, and `sys.path` is not consulted).
 - exports: module-level names not starting with `_`, or `__all__` when present, computed by
-  walking the AST — never by importing the module. **Nothing is executed**; the tool never
+  walking the AST, never by importing the module. **Nothing is executed**; the tool never
   imports corpus code, so a malicious or broken corpus cannot run.
 - calls: `ast.Call` nodes, with a scope-aware binder (module scope, class scope, function
   scope) mapping a callee name to a definition in the same module or to an imported module's
   definition. Ambiguous names are omitted from truth, matching the extractor's "never guess".
 - notes: `["ast-only", "no-import-execution", "pep420-namespace-packages"]`.
 
-**Rust — `bench/truth/rusttruth/`** (a cargo binary crate, edition 2021, `syn` 2 +
+**Rust, `bench/truth/rusttruth/`** (a cargo binary crate, edition 2021, `syn` 2 +
 `proc-macro2` + `cargo_metadata`, `rustc` 1.88). `cargo metadata --no-deps --format-version 1`
 gives the workspace members and each target's crate root; `syn::parse_file` gives the item tree
 per file; the module tree is walked from each crate root so a `mod` item maps to the right file.
@@ -408,7 +408,7 @@ uses, implemented independently. Vendored `Cargo.lock` pins every dependency; th
 fetch as a network prerequisite. notes: `["syn-item-tree", "cargo-metadata-roots",
 "no-trait-dispatch"]`.
 
-**Java — `bench/truth/javatruth/Truth.java`** (javac 21, `com.sun.source` Compiler Tree API,
+**Java, `bench/truth/javatruth/Truth.java`** (javac 21, `com.sun.source` Compiler Tree API,
 compiled and run with the JDK already on the machine, no build tool). Creates a
 `JavacTask` over the corpus's `.java` files with `-proc:none` and a classpath of exactly the
 corpus's own source roots, walks each `CompilationUnitTree`, and resolves every
@@ -417,13 +417,13 @@ jars) are recorded in `errors` and their files are dropped from `Truth.files`, s
 compiler never fully saw is never scored. exports come from `Elements.getAllMembers` filtered to
 `public`. notes: `["javac-tree-api", "source-classpath-only", "unresolved-files-dropped"]`.
 
-**Kotlin — see the ruling in 1.7.**
+**Kotlin: see the ruling in 1.7.**
 
 ### 1.7 Ruling: Kotlin ships reported-only
 
 **Decision.** Build 2 does not build a compiler-grade Kotlin truth generator for the corpus.
 Kotlin's structural numbers are **reported, never gated**, and `RESULTS.md` states the truth
-source as *"greplost fixture oracle; no corpus-scale compiler oracle — see the build-2 ruling"*.
+source as *"greplost fixture oracle; no corpus-scale compiler oracle: see the build-2 ruling"*.
 
 **Why.** `kotlinc` is absent from this machine (a leaf may `brew install kotlin`, and CI must
 install it), and installing it only yields a compiler, not a documented, stable, machine-readable
@@ -538,10 +538,10 @@ id, as for Go, because Terraform loads all `.tf` in a directory as one module); 
 git source is `ext:module/<source>`. `terraform.required_providers` entries become
 `ext:provider/<name>`.
 
-**Truth — `bench/truth/tfinspect/main.go`** (Go, `github.com/hashicorp/terraform-config-inspect`
+**Truth, `bench/truth/tfinspect/main.go`** (Go, `github.com/hashicorp/terraform-config-inspect`
 pinned in `go.mod`; the machine has terraform 1.12 and go). For each directory containing
 `.tf` files, `tfconfig.LoadModule(dir)` yields the module's resources, data sources, variables,
-outputs, provider requirements and module calls, each with a `Pos{Filename, Line}` — which is
+outputs, provider requirements and module calls, each with a `Pos{Filename, Line}`, which is
 exactly the per-file attribution greplost needs. imports = module calls mapped to
 `(callerFile, targetDir)`; exports = variables and outputs per file; calls = **empty** (HCL has
 no calls; `Truth.calls` is `[]` and S3 is `N/A` for HCL, printed as `n/a` rather than 0);
@@ -565,7 +565,7 @@ name = `<containerName>`, `meta.image` = the image reference, `meta.container` =
 
 Helm adds: `Chart.yaml` -> one `module` node named after the chart, `meta.version`,
 `meta.appVersion`; `values.yaml` -> one `variable` node per **top-level** key
-(`meta.path` = the dotted path, values below the top level are not nodes — the cap keeps a
+(`meta.path` = the dotted path, values below the top level are not nodes; the cap keeps a
 1,000-key values file from producing 1,000 nodes).
 
 **Helm template ruling.** A file under `templates/` is not valid YAML: it carries Go template
@@ -586,7 +586,7 @@ more than one match -> dropped. `config-ref`: `configMapRef`, `secretRef`, `conf
 variable node for the path's first segment, `confidence: "med"`.
 `from-image`: an `image` node -> `ext:image/<ref>`, `confidence: "high"`.
 
-**Truth — `bench/src/truth/yaml-k8s.ts`** (TypeScript, `js-yaml` 4, an **independent** parser
+**Truth, `bench/src/truth/yaml-k8s.ts`** (TypeScript, `js-yaml` 4, an **independent** parser
 reading the same files; `js-yaml` is added to `bench/package.json` by leaf 2.0 so no wave leaf
 adds a dependency). `js-yaml.loadAll` over each file gives the document list; the oracle then
 computes the node set, the selector edges and the config edges from the parsed objects, with no
@@ -618,7 +618,7 @@ for `jobs.<id>.uses: ./.github/workflows/y.yml`, `confidence: "high"`.
 the literal token, dropped otherwise. This is the "config file naming a code entry point" edge
 from the schema, and it is what makes a workflow appear in a script's blast radius.
 
-**Truth — `bench/src/truth/yaml-actions.ts`** reads the same files with `js-yaml` and, for the
+**Truth, `bench/src/truth/yaml-actions.ts`** reads the same files with `js-yaml` and, for the
 workflow schema itself, with `@actions/workflow-parser`'s public parse entry point when it
 installs cleanly; if it does not, the oracle is `js-yaml` plus a hand-written schema walk, and
 the note says which was used. `Truth.exports` maps a workflow file to its sorted job ids;
@@ -641,7 +641,7 @@ stage in the same file (`confidence: "high"`), otherwise -> `ext:image/<ref>`.
 `config`: a `COPY`/`ADD` source that names exactly one indexed repo path -> that file id
 (`high`); a glob or a build-context-relative path matching more than one file is dropped.
 
-**Truth — `bench/src/truth/dockerfile.ts`** uses `dockerfile-ast` (added to `bench/package.json`
+**Truth, `bench/src/truth/dockerfile.ts`** uses `dockerfile-ast` (added to `bench/package.json`
 by leaf 2.0), an independent parser, reading the same files: `DockerfileParser.parse(source)`
 gives instructions with ranges; the oracle derives stages, base images, `COPY --from` edges and
 `ARG`/`ENV` from the instruction list. `Truth.exports` maps a file to its sorted stage names;
@@ -708,7 +708,7 @@ still has its `function Button` declaration **and** a `component.Button` node, a
 node's `meta.decl` names the declaration's symbol path so the card can link them.
 
 Passes are enabled by `config.signals` (a new optional key, defaulting to every pass whose
-`applies` returns true) — no config change is needed for the common case, and
+`applies` returns true): no config change is needed for the common case, and
 `{ "signals": [] }` turns the layer off entirely, which is how a repo opts out.
 
 ### 3.2 React components (pass `react`, leaf 2.3)
@@ -731,7 +731,7 @@ A `createFileRoute("<path>")(...)` call gives a `route.<path>` node with
 `meta.framework = "tanstack-start"`, `meta.file` = the route file; `createRootRoute` gives
 `route./`. Inside the options object, a `loader` property gives a
 `handler.loader` node, `beforeLoad` gives `handler.beforeLoad`, `component` gives a
-`route-handler` reference to the referenced component node (or declaration) —
+`route-handler` reference to the referenced component node (or declaration),
 `confidence: "high"` when the property's value is a single identifier that resolves in the same
 file, `med` when it resolves through exactly one import, dropped otherwise. `server routes`
 (`createServerFileRoute`) give `route.<path>` with `meta.server = "1"` and one `handler.<METHOD>`
@@ -798,7 +798,7 @@ rules as 3.5.
 
 ### 3.7 Truth generators (signals)
 
-**Pulumi TS and the TS/TSX signal passes — `bench/src/truth/signals-ts.ts`.** The oracle is the
+**Pulumi TS and the TS/TSX signal passes, `bench/src/truth/signals-ts.ts`.** The oracle is the
 **TypeScript compiler**, reusing the program construction already written for
 `bench/src/truth/ts.ts` (`ts.createProgram` with the workspace emulation from ruling 10.3) but
 none of its edge logic. For each source file it walks the AST with the type checker available:
@@ -806,7 +806,7 @@ none of its edge logic. For each source file it walks the AST with the type chec
   whose declaration is wrapped in `React.memo`/`forwardRef` (checked through the checker's
   symbol of the callee, not the text).
 - Pulumi resources: `new X()` where `checker.getTypeAtLocation(X)`'s declared class has
-  `pulumi.CustomResource` or `pulumi.ComponentResource` in its base-type chain — the exact check
+  `pulumi.CustomResource` or `pulumi.ComponentResource` in its base-type chain, the exact check
   the scope calls for, and one only a checker can make.
 - routes: `createFileRoute` call sites where the callee's symbol resolves to
   `@tanstack/react-start`/`@tanstack/react-router`; Next.js routes are derived from the file
@@ -814,7 +814,7 @@ none of its edge logic. For each source file it walks the AST with the type chec
   exported HTTP-method functions.
 notes: `["tsc-checker-oracle", "base-type-chain-for-pulumi", "app-router-path-rules"]`.
 
-**Pulumi Go — `bench/truth/pulumigotruth/main.go`**, a second Go program next to
+**Pulumi Go, `bench/truth/pulumigotruth/main.go`**, a second Go program next to
 `gocallgraph`, using `golang.org/x/tools/go/packages` with `NeedTypes|NeedTypesInfo` and
 `go/types` to find calls whose result type implements `pulumi.Resource` (the interface is looked
 up in the loaded package set with `types.Implements`). Per-file attribution comes from the
@@ -857,7 +857,7 @@ update and must stay small; a node's blast radius is cheap to compute on demand
 ### 4.3 Contracts
 
 ```ts
-// packages/core/src/serialize/read.ts   — Structure gains one field
+// packages/core/src/serialize/read.ts, Structure gains one field
 export interface Structure { /* … */ references: ReferenceEdge[]; }   // [] when the file is absent
 
 // packages/core/src/graph/query.ts
@@ -875,7 +875,7 @@ export function nodeCardPath(pkg: PackageInfo, id: string): string;
 // packages/render/src/docs/node-card.ts
 export function buildNodeCard(ctx: DocContext, id: string): string;
 
-// packages/render/src/render.ts    — DocContext gains
+// packages/render/src/render.ts, DocContext gains
 nodesOf: Map<string, Declaration[]>;          // file id -> its node declarations, span-sorted
 declById: Map<string, Declaration>;
 referencesFrom: Map<string, ReferenceEdge[]>;
@@ -921,7 +921,7 @@ a Terraform file's 40 resources appear once, under Nodes, not twice.
 
 Package `MAP.md` gains a `## Nodes` section listing node counts per file (only when the package
 has any), and `INDEX.md` gains one column, `nodes`, in the package table (only when the repo has
-any). Neither changes a byte for a repo with no nodes — the M1 token budget is unaffected for
+any). Neither changes a byte for a repo with no nodes, the M1 token budget is unaffected for
 existing users, which is asserted by a test.
 
 ### 4.5 CLI
@@ -945,7 +945,7 @@ export interface QueryMatch {
 
 `greplost impact <path|node-id>`: `resolveFile` first; then an exact node id present in
 `structure.symbols`. For a node target, `radius` is `impactOf(impactPairs(structure), id).length`
-and `files` becomes `nodes: Array<{ id: string; depth: number }>` — the JSON keeps `files` for a
+and `files` becomes `nodes: Array<{ id: string; depth: number }>`; the JSON keeps `files` for a
 file target (no breaking change for existing consumers) and adds `nodes` only for a node target.
 `--depth` filters as before.
 
@@ -986,21 +986,21 @@ touches that file.
 
 | name | repo | commit | tier | lang | subset (counted) |
 |---|---|---|---|---|---|
-| pydantic | pydantic/pydantic | `c23cb86ef197693fc016437614f174252a3d189a` | S | python | `pydantic/` — 105 `.py` |
-| ripgrep | BurntSushi/ripgrep | `3fce3b5bb0236da2df6d99672afb8a719642eca7` | S | rust | `crates/` — 95 `.rs` |
-| gson | google/gson | `b3f4ca20087f9066de4c340522ff84e0558e1ad1` | S | java | `**/src/main/` — 122 `.java` |
-| coroutines | Kotlin/kotlinx.coroutines | `f63a04bacb8beeafcc9d49199b1e4bb08931b7eb` | S | kotlin | `kotlinx-coroutines-core/{common,jvm}/src/` — 163 `.kt` |
-| tf-aws-vpc | terraform-aws-modules/terraform-aws-vpc | `cf0e3ca46fd51f47bf095957f2a6ac6127c89045` | S | hcl | whole repo — 77 `.tf` |
-| tf-aws-eks | terraform-aws-modules/terraform-aws-eks | `48a429f63cf96361ea2f4b42677d0cc8a9a656e0` | S | hcl | whole repo — 87 `.tf` |
-| k8s-examples | kubernetes/examples | `d6b8cd27eacb51e651a1aa6f7c190a28713eff6e` | S | yaml | whole repo — 250 `.yaml` (plain manifests) |
-| bitnami-charts | bitnami/charts | `8f8032ba37888cdeb20b35a2136fb1e8b5557e97` | S | yaml | `bitnami/{wordpress,kafka,postgresql,redis}/` — 130 `.yaml` (Helm) |
-| starter-workflows | actions/starter-workflows | `e3c451d60f119b71caebf13c98ac45da6e15b4b7` | S | yaml | whole repo — 187 workflow `.yml` |
-| docker-python | docker-library/python | `8f2cb2e1c9cae4d8f772fe61f1427c96acea3257` | S | dockerfile | whole repo — 44 Dockerfiles |
-| docker-node | nodejs/docker-node | `b6ff152e7276a8ab650533769b8cc099883cdffa` | S | dockerfile | whole repo — 21 Dockerfiles |
-| pulumi-ts | pulumi/examples | `2d507c12f836f67323fb1ba80454035eac082b27` | S | ts | `aws-ts-*/` — 122 `.ts` |
-| pulumi-go | pulumi/examples | `2d507c12f836f67323fb1ba80454035eac082b27` | S | go | `*-go-*/` — 85 `.go` |
-| tanstack-start | TanStack/router | `650acb4a894f7bf36bd3591de65d10bca9594254` | S | tsx | `examples/react/start-*/` — 391 `.ts`/`.tsx` |
-| next-app | vercel/next.js | `1b5400c92633ca56c81c4c0a670e3416992ef64e` | S | tsx | `examples/*/app/**` — 338 `.ts`/`.tsx` (App Router, 82 apps) |
+| pydantic | pydantic/pydantic | `c23cb86ef197693fc016437614f174252a3d189a` | S | python | `pydantic/`, 105 `.py` |
+| ripgrep | BurntSushi/ripgrep | `3fce3b5bb0236da2df6d99672afb8a719642eca7` | S | rust | `crates/`, 95 `.rs` |
+| gson | google/gson | `b3f4ca20087f9066de4c340522ff84e0558e1ad1` | S | java | `**/src/main/`, 122 `.java` |
+| coroutines | Kotlin/kotlinx.coroutines | `f63a04bacb8beeafcc9d49199b1e4bb08931b7eb` | S | kotlin | `kotlinx-coroutines-core/{common,jvm}/src/`, 163 `.kt` |
+| tf-aws-vpc | terraform-aws-modules/terraform-aws-vpc | `cf0e3ca46fd51f47bf095957f2a6ac6127c89045` | S | hcl | whole repo, 77 `.tf` |
+| tf-aws-eks | terraform-aws-modules/terraform-aws-eks | `48a429f63cf96361ea2f4b42677d0cc8a9a656e0` | S | hcl | whole repo, 87 `.tf` |
+| k8s-examples | kubernetes/examples | `d6b8cd27eacb51e651a1aa6f7c190a28713eff6e` | S | yaml | whole repo, 250 `.yaml` (plain manifests) |
+| bitnami-charts | bitnami/charts | `8f8032ba37888cdeb20b35a2136fb1e8b5557e97` | S | yaml | `bitnami/{wordpress,kafka,postgresql,redis}/`, 130 `.yaml` (Helm) |
+| starter-workflows | actions/starter-workflows | `e3c451d60f119b71caebf13c98ac45da6e15b4b7` | S | yaml | whole repo, 187 workflow `.yml` |
+| docker-python | docker-library/python | `8f2cb2e1c9cae4d8f772fe61f1427c96acea3257` | S | dockerfile | whole repo, 44 Dockerfiles |
+| docker-node | nodejs/docker-node | `b6ff152e7276a8ab650533769b8cc099883cdffa` | S | dockerfile | whole repo, 21 Dockerfiles |
+| pulumi-ts | pulumi/examples | `2d507c12f836f67323fb1ba80454035eac082b27` | S | ts | `aws-ts-*/`, 122 `.ts` |
+| pulumi-go | pulumi/examples | `2d507c12f836f67323fb1ba80454035eac082b27` | S | go | `*-go-*/`, 85 `.go` |
+| tanstack-start | TanStack/router | `650acb4a894f7bf36bd3591de65d10bca9594254` | S | tsx | `examples/react/start-*/`, 391 `.ts`/`.tsx` |
+| next-app | vercel/next.js | `1b5400c92633ca56c81c4c0a670e3416992ef64e` | S | tsx | `examples/*/app/**`, 338 `.ts`/`.tsx` (App Router, 82 apps) |
 
 Two entries are honestly below the tier-S band and are labelled as such in `RESULTS.md`:
 **docker-python (44)** and **docker-node (21)**. No public repository carries 100+ Dockerfiles;
@@ -1011,7 +1011,7 @@ list), so a subset is enforced by the harness rather than remembered by a human.
 
 `CorpusLang` widens from `"ts" | "go"` to `Lang`. `structural.ts`'s local
 `interface CorpusRepo { lang?: string }` is replaced by the typed entry so an unknown language
-can no longer be silently scored as TypeScript — that gap is a bug leaf 2.0 closes.
+can no longer be silently scored as TypeScript; that gap is a bug leaf 2.0 closes.
 
 ### 5.2 Harness changes (all owned by leaf 2.0, so no language leaf edits a shared file)
 

@@ -119,6 +119,17 @@ describe("init", () => {
     expect(result["written"]).toBe(0);
   });
 
+  test("says why no hooks were installed instead of silently installing none", async () => {
+    // The hook installer reports `installed`, `updated` and `notes`; `init` used
+    // to print the first and drop the other two, so a checkout that is not a git
+    // repository (and a lefthook repository, whose hooks may never run) was told
+    // nothing at all.
+    const fresh = copyFixture(TINY_TS, "init-notes");
+    const run = await cli("init", "--root", fresh);
+    expect(run.code).toBe(0);
+    expect(run.stdout).toContain("not a git repository root: no hooks installed");
+  });
+
   test("--workspace outside a workspace names the missing greplost.workspace.json", async () => {
     // The workspace package is part of this build, so the flag is understood;
     // what is missing is the workspace file, and the message says exactly that.
@@ -554,8 +565,8 @@ describe("flows", () => {
 describe("refresh", () => {
   // `--dry-run` throughout: a real refresh spawns `claude -p`, and a test suite
   // that reaches a model is neither hermetic nor free. The seam itself is what
-  // is being checked here — that the command finds `@greplost/semantic`, hands
-  // it the operands, and passes its exit code back — and the semantic package's
+  // is being checked here, that the command finds `@greplost/semantic`, hands
+  // it the operands, and passes its exit code back, and the semantic package's
   // own tests drive the model path through an injected runner.
   test("delegates to the semantic layer and reports what a refresh would do", async () => {
     const run = await cli("refresh", "--dry-run", "--root", ts);

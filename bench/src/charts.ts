@@ -2,7 +2,7 @@
  * Deterministic charts for `RESULTS.md` and `docs/assets/` (tech spec 10.9, 11;
  * bench leaf 1.5.7).
  *
- * SVG is written by hand — no charting library, no template engine — for one
+ * SVG is written by hand, no charting library, no template engine, for one
  * reason: the PNGs are committed, so two runs of `bench report` on the same
  * results must produce the same bytes. That rules out anything that reaches for
  * a clock, a random id, a hash-suffixed class name, or an iteration order that
@@ -47,7 +47,7 @@
  *
  * Rasterisation uses `@resvg/resvg-js` with its default font resolution. Glyph
  * rendering therefore depends on the fonts installed on the machine that ran
- * the report — that is a property of the PNG, not of the SVG, and the SVG is
+ * the report: that is a property of the PNG, not of the SVG, and the SVG is
  * what the golden test locks. Every PNG is passed through `stripPngMetadata`,
  * which drops every ancillary chunk except `pHYs`, so a committed image carries
  * no text, no timestamp and no tool signature.
@@ -382,7 +382,7 @@ export function axisMax(raw: number): number {
  * room for a measured zero, and dropping the zero to get the axis would be the
  * chart lying about the best result it has), and the spread has to cross two
  * decades. Anything narrower reads better linear, and `logY` is never set by
- * taste — the caller asks this function and puts "log scale" in the axis title
+ * taste: the caller asks this function and puts "log scale" in the axis title
  * when it says yes.
  */
 export function logScaleFor(values: readonly (number | null | undefined)[]): boolean {
@@ -442,8 +442,8 @@ export function displayName(name: string): string {
 /**
  * The colour of a series or a category.
  *
- * A tool keeps its own hue wherever it appears. Anything else — an edge kind, a
- * perf scenario — takes a palette slot by position, and a chart with one such
+ * A tool keeps its own hue wherever it appears. Anything else, an edge kind, a
+ * perf scenario, takes a palette slot by position, and a chart with one such
  * series uses slot 1 for every mark rather than colouring by magnitude.
  */
 export function markColor(name: string, index: number): string {
@@ -590,7 +590,7 @@ function startFrame(opts: FrameOptions): Frame {
   // A legend is always present for two or more series, and never for one: with
   // a single colour on the plot the title already says what is plotted, and a
   // box with one swatch restates it. An `n/a` entry is not a series, so a lone
-  // one still prints — it is the only place that tool is named.
+  // one still prints: it is the only place that tool is named.
   const legend = opts.legend.length === 1 && opts.legend[0]?.color !== null ? [] : opts.legend;
   const legendRows = layoutLegend(legend, right);
   const legendGrowth = Math.max(0, legendRows.length - 1) * LEGEND_ROW_HEIGHT;
@@ -801,7 +801,7 @@ function categoryLegend(spec: ChartSpec): LegendEntry[] {
  * than left to run into its neighbour: ten perf scenarios with three-word names
  * printed on one line each is an axis band of overlapping text, which reads as
  * a rendering bug and hides the names it was drawn for. A single word too wide
- * for its slot is still printed whole — cropping the end of a name is worse
+ * for its slot is still printed whole, cropping the end of a name is worse
  * than crowding it.
  */
 function categoryLabel(frame: Frame, x: number, text: string, highlighted: boolean, slot = Infinity): string[] {
@@ -944,7 +944,7 @@ function bars(spec: ChartSpec, series: readonly Series[]): string {
 /**
  * Where each category sits on the x axis, as a fraction of the plot width.
  *
- * Evenly spaced by position, unless every category is a number and they ascend — then
+ * Evenly spaced by position, unless every category is a number and they ascend: then
  * spaced by *value*. The X2 checkpoints are commit indices `0, 12, 24 … 96, 100`, and the
  * last gap is 4 commits, not 12: drawing it the same width as the others stretched the
  * final segment threefold and made the end of every curve look like a slope it does not
@@ -973,7 +973,7 @@ export function categoryOffsets(categories: readonly string[]): number[] {
  * One polyline per series: the X2 staleness curves and the build-time chart.
  *
  * A run of `null`s breaks the line into segments rather than interpolating over
- * a gap, and a series with no finite value at all draws nothing — which is how
+ * a gap, and a series with no finite value at all draws nothing, which is how
  * the hero chart shows "greplost only" honestly (tech spec 10.9).
  *
  * A numeric, ascending x axis is plotted to scale (`categoryOffsets`), so a chart of
@@ -1150,7 +1150,7 @@ export function scatterChart(spec: ScatterSpec): string {
 
   // The Pareto staircase: down from the top at the frontier's first point, then
   // right and down through every point nothing dominates, and out to the right
-  // edge — everything under the line is dominated by something on it.
+  // edge; everything under the line is dominated by something on it.
   const frontier = paretoFrontier(spec.points);
   if (frontier.length > 0) {
     const steps: string[] = [];
@@ -1414,7 +1414,7 @@ const PNG_KEEP = new Set(["IHDR", "PLTE", "IDAT", "IEND", "tRNS", "pHYs"]);
  * A PNG with every chunk but the pixels dropped.
  *
  * These files are committed, so anything the encoder decides to write about
- * itself — a `tEXt` signature, a `tIME` stamp, an `eXIf` block — is a byte that
+ * itself, a `tEXt` signature, a `tIME` stamp, an `eXIf` block, is a byte that
  * can differ between two machines rendering the same chart, and a diff on a
  * binary nobody can read. `pHYs` survives because it is the pixel density a
  * retina display needs, and it is a constant of the image rather than of the

@@ -24,7 +24,7 @@
  *
  * Verdict convention, which `RESULTS.md` repeats: on the `greplost` cell the
  * verdict is against the section 3.1 target; on a competitor's cell it is
- * greplost's verdict *against that tool* — `win` means greplost came out ahead by
+ * greplost's verdict *against that tool*, `win` means greplost came out ahead by
  * the metric's margin.
  *
  *   bun bench/src/cli.ts headtohead --fixture
@@ -70,7 +70,7 @@ const COMPETITORS_DIR = path.join(REPO_ROOT, "bench", ".competitors");
  * `GREPLOST_BENCH_WORK_DIR` redirects it, the way
  * `GREPLOST_BENCH_RESULTS_DIR` redirects the results. The screenshot suite runs
  * a fixture X4 to photograph its output, and without the redirect that run left
- * `bench/.competitors/graphify/tiny-ts` behind — which the agent suite reads as
+ * `bench/.competitors/graphify/tiny-ts` behind, which the agent suite reads as
  * "graphify has artifacts here", so taking a screenshot changed another suite's
  * conditions. A benchmark must not be a side effect of a screenshot.
  */
@@ -237,7 +237,7 @@ export function scaleTitles(metrics: Record<XId, MetricRow>, commits: number): v
 /**
  * Give every `loss` cell a reason, from the numbers, when its metric did not.
  *
- * Not a substitute for a written reason — the metrics that have one keep it —
+ * Not a substitute for a written reason, the metrics that have one keep it,
  * but a backstop, because "every loss carries a one-line reason" is a rule
  * about the published table and not about the diligence of whoever wrote the
  * eleventh metric. `na` cells are left alone: their reasons are collected under
@@ -425,7 +425,7 @@ const INVOCATIONS: Record<CompetitorName, Invocation> = {
     // slash command whose first pass runs an LLM over the repo. `graphify update
     // .` is the documented AST-only rebuild ("re-extract code files and update
     // the graph (no LLM needed)"), which is the only path that can run here
-    // without model credentials — and the only fair one, since greplost's
+    // without model credentials, and the only fair one, since greplost's
     // structure layer is LLM-free too.
     commands: [["update", "."]],
     refresh: [["update", "."]],
@@ -711,7 +711,7 @@ function copyRepo(root: string, dest: string): void {
  * The `git init` is not optional, and the reason is a bug this suite had:
  * `bench/.competitors/` is gitignored by the greplost checkout, so a copy placed
  * there without its own repository is *inside an ignored path*, and greplost's
- * own file discovery — which honours ignore rules — indexed 12 of the fixture's
+ * own file discovery, which honours ignore rules, indexed 12 of the fixture's
  * files as none of them. greplost then scored a flawless zero-line diff on an
  * empty map. Every tool gets its own repository so every tool sees the same tree.
  *
@@ -776,8 +776,8 @@ export function byteDelta(a: Map<string, string>, b: Map<string, string>): { byt
  *
  * The common prefix and the common suffix are trimmed first, and what is left in
  * the middle is the answer: the larger of the two remainders. That is an upper
- * bound on the true edit distance, exact for a single contiguous edit — which is
- * what a rebuild of the same tree produces when it produces anything — and it
+ * bound on the true edit distance, exact for a single contiguous edit, which is
+ * what a rebuild of the same tree produces when it produces anything, and it
  * costs one linear scan from each end.
  *
  * The naive position-wise comparison this replaced called a one-byte insertion
@@ -868,7 +868,7 @@ function hasDifferingTimestamp(a: string, b: string): boolean {
 
 /**
  * Which artifact files a one-line source change moved, and by how many lines
- * each — the same treatment X4's `describeDifference` gives bytes.
+ * each, the same treatment X4's `describeDifference` gives bytes.
  *
  * "40 of 902 lines" is a number. "`INDEX.md` 2 lines, `graph/imports.jsonl` 1
  * line, `packages/core/MAP.md` 6 lines" is a finding: it says whether the churn
@@ -978,7 +978,7 @@ type SyncUpdate = (root: string, opts: { mode: "incremental" | "full"; quiet?: b
  * greplost's own sync mechanism, used the way its git hook uses it: `init` once,
  * then one incremental `update` per commit. The sync API is called in process
  * rather than through the installed hook because a hook resolves its binary from
- * PATH at run time, and a throwaway replay repository has no greplost on PATH —
+ * PATH at run time, and a throwaway replay repository has no greplost on PATH:
  * the hook would degrade to a no-op and the measurement would be of the harness.
  */
 async function loadSync(): Promise<{ init: SyncInit; update: SyncUpdate }> {
@@ -994,7 +994,7 @@ async function loadSync(): Promise<{ init: SyncInit; update: SyncUpdate }> {
  * greplost's committed graph, read off disk.
  *
  * X2 asks how stale each tool's *artifact* is, so greplost is scored on the
- * bytes in `.greplost/graph/*.jsonl` — the thing a reviewer would read — and not
+ * bytes in `.greplost/graph/*.jsonl`, the thing a reviewer would read, and not
  * on a fresh in-memory rebuild, which by definition can never be stale.
  */
 export function readGreplostArtifact(dir: string): { imports: Edge[]; calls: Edge[] } | null {
@@ -1039,7 +1039,7 @@ export async function run(args: string[]): Promise<number> {
     // A corpus checkout is only needed by the metrics that read a repository.
     // X9 is the human study and X10 is a capability probe of the workspace CLI
     // against its own fixture: neither opens a corpus repo, and demanding one
-    // made `bench:headtohead --metrics X10` — a free, hermetic run — impossible
+    // made `bench:headtohead --metrics X10`, a free, hermetic run, impossible
     // on a machine with no corpus (review round 3, important 5).
     if (needsCorpus(options.metrics)) {
       console.error(resolved);
@@ -1124,7 +1124,7 @@ async function execute(options: Options, target: Target): Promise<number> {
     // Only a run that would have invoked the competitors says anything about how they
     // were invoked. A corpus-free run (X9, X10) never reaches for a competitor binary,
     // and its "not installed here" line would land in `RESULTS.md` beside another run's
-    // "ran through `graphify update .`" — two true sentences reading as a contradiction.
+    // "ran through `graphify update .`", two true sentences reading as a contradiction.
     if (!corpusRun) continue;
     if (invocation.caveat !== null && binary !== null) method.push(`${name}: ${invocation.caveat}.`);
     if (binary !== null) {
@@ -1134,7 +1134,7 @@ async function execute(options: Options, target: Target): Promise<number> {
           "machine's real configuration.",
       );
     }
-    if (binary === null) method.push(`${name}: N/A — ${unavailableReason(name, spec)}.`);
+    if (binary === null) method.push(`${name}: N/A, ${unavailableReason(name, spec)}.`);
   }
 
   // One repo copy and one tool run per competitor, reused by X1, X4, X5 and X6.
@@ -1146,13 +1146,13 @@ async function execute(options: Options, target: Target): Promise<number> {
     state.dir = dir;
     if (failure !== null) {
       state.reason = failure;
-      method.push(`${state.name}: run failed — ${failure}.`);
+      method.push(`${state.name}: run failed, ${failure}.`);
       continue;
     }
     const loaded = loadArtifact(state.name, dir, specs.get(state.name)?.version ?? "unknown");
     if (typeof loaded === "string") {
       state.reason = loaded;
-      method.push(`${state.name}: artifact not readable — ${loaded}.`);
+      method.push(`${state.name}: artifact not readable, ${loaded}.`);
     } else {
       state.artifact = loaded;
     }
@@ -1171,7 +1171,7 @@ async function execute(options: Options, target: Target): Promise<number> {
       truth = generateTsTruth(target.root, scoredFiles(snapshot, "ts"));
     } catch (err) {
       oracleFailure = (err as Error).message;
-      method.push(`X1, X2, X5: ${snapshot === null ? "the greplost snapshot" : "the compiler oracle"} could not be built — ${oracleFailure}.`);
+      method.push(`X1, X2, X5: ${snapshot === null ? "the greplost snapshot" : "the compiler oracle"} could not be built, ${oracleFailure}.`);
     }
   }
   // The file universe X1, X2 and X5 score inside: the compiler's file list when
@@ -1358,13 +1358,13 @@ async function metricX1(
    *
    * Both arms are computed for every tool, including greplost. The verdict is
    * decided on `calls`, which is every call edge the tool emitted at any
-   * confidence — the symmetric comparison, and the one tech spec 10.0's claim is
+   * confidence, the symmetric comparison, and the one tech spec 10.0's claim is
    * about ("greplost never emits an unresolved edge; LLM-extracted graphs do"),
    * because that claim is about what a tool *publishes*, not about a subset a
    * reader could filter to.
    *
    * `callsHigh` is the same score restricted to `confidence: "high"` on both
-   * sides — greplost's S3 gate, and the tier graphify calls `EXTRACTED` and crg
+   * sides; greplost's S3 gate, and the tier graphify calls `EXTRACTED` and crg
    * calls its `EXTRACTED` tier. It is reported next to the headline rather than
    * used for it: scoring greplost at `high` while scoring a competitor at every
    * confidence would charge the competitor for edges greplost simply declined to
@@ -1512,7 +1512,7 @@ export const ARM_PREFIX: Record<Arm, string> = {
 export const ARM_DESCRIPTION: Record<Arm, string> = {
   "documented-sync":
     "each tool's own sync mechanism was installed exactly as its README describes and then left alone: the " +
-    "harness commits, and nothing else — with one qualification, for crg. crg keeps its graph in SQLite and " +
+    "harness commits, and nothing else, with one qualification, for crg. crg keeps its graph in SQLite and " +
     "only `code-review-graph visualize --format json` writes the JSON the adapters read, so the harness runs " +
     "that export at each scoring checkpoint. It reads crg's state rather than advancing it (`visualize` does " +
     "not rebuild), and it is outside every timing X3 reports; without it crg would have no artifact to score " +
@@ -1665,8 +1665,8 @@ function processAlive(needle: string): boolean {
  * The measured quantity is **import edge F1**, not the F1 over every edge kind.
  * It is the one where a fresh greplost build already scores 1.0, so a drop in
  * greplost's line is drift rather than a modelling difference. That is not true
- * across tools: they do not model imports alike either — on hono graphify's
- * freshly built artifact scores about 0.13 — which is why the verdict is on each
+ * across tools: they do not model imports alike either, on hono graphify's
+ * freshly built artifact scores about 0.13, which is why the verdict is on each
  * line's *fall* and not on where it sits (`decayVerdict`). Call F1 is recorded
  * next to it in each cell's detail, where the level rather than the shape is the
  * story.
@@ -1744,7 +1744,7 @@ async function replayStaleness(
     // `--root` is not optional, and the reason is a bug this arm had: greplost's
     // own root resolution walks *up* from the working directory until it finds a
     // `.greplost/`, and these copies live under `bench/.competitors/`, inside the
-    // greplost checkout — which has one. Without `--root`, `init` in the copy
+    // greplost checkout, which has one. Without `--root`, `init` in the copy
     // rebuilt the checkout's own map instead (6 files written, 119 parsed) and
     // left the copy empty, so the hook never installed and the walk measured
     // nothing. Once `init` has written `.greplost/` into the copy, the hook's own
@@ -1854,7 +1854,7 @@ async function replayStaleness(
    *
    * Without this point a reader cannot tell decay from coverage, and the
    * difference is the whole finding. graphify ends the hono walk at 0.125 while
-   * greplost holds 1.0, which reads as an eight-fold staleness gap — but
+   * greplost holds 1.0, which reads as an eight-fold staleness gap, but
    * graphify's *fresh* import F1 is about the same 0.13, so almost none of that
    * gap is staleness. The curve has to start where each tool starts (review
    * round 2, critical).
@@ -1984,7 +1984,7 @@ async function replayStaleness(
       `${commits} of its real ones. Each commit appends exactly one resolvable import line to one file, ` +
       "chosen from the repo's own specifiers, so every commit adds exactly one architecture edge and truth " +
       "moves by exactly one edge. There are no deletions, no renames and no file additions in the walk, which " +
-      "is the easy direction for an incremental updater — a real history would also delete and move code. " +
+      "is the easy direction for an incremental updater: a real history would also delete and move code. " +
       `Scored every ${every} commit${every === 1 ? "" : "s"} against compiler truth at that commit. Tech spec ` +
       "10.0 asks for 500 real commits of a corpus checkout; that is not what was run here",
   );
@@ -2079,7 +2079,7 @@ function shimName(tool: string): string {
  *
  * greplost and crg go through the PATH shim, so the wait is exact: a new
  * completed start/end pair in the log. graphify's hook never touches its own
- * launcher — it pins a python interpreter and detaches — so it is waited for
+ * launcher, it pins a python interpreter and detaches, so it is waited for
  * through the hook's own rebuild log plus the process table, and its wall-clock
  * is measured from the commit's return to the moment the detached rebuild is
  * gone. Both methods are recorded in the payload; neither is a sleep.
@@ -2144,7 +2144,7 @@ async function metricX2X3(
       walk = await replayStaleness(target, snapshot, states, commits, arms);
     } catch (err) {
       // A replay that blows up must not take the other nine metrics with it.
-      method.push(`X2: the commit walk failed and X2/X3 fall back to the replay suite's result — ${(err as Error).message}.`);
+      method.push(`X2: the commit walk failed and X2/X3 fall back to the replay suite's result, ${(err as Error).message}.`);
       walk = null;
     }
   }
@@ -2180,7 +2180,7 @@ function fromWalk(
     method.push(`X2 arm \`${arm.arm}\` (\`${ARM_PREFIX[arm.arm]}@<commit>\` in each cell's detail): ${ARM_DESCRIPTION[arm.arm]}.`);
   }
   method.push(
-    "X2 arm `staleF1@<commit>`: each tool's commit-0 artifact scored against truth at that commit — the curve " +
+    "X2 arm `staleF1@<commit>`: each tool's commit-0 artifact scored against truth at that commit, the curve " +
       "a reader gets when a sync mechanism is absent or does not fire. greplost is the only one of the four " +
       "whose `verify` reports that state at all; the others refresh without ever checking.",
   );
@@ -2263,7 +2263,7 @@ function fromWalk(
             "manual `update`, which is no sync in this arm. "
           : "";
       row.tools[state.name] = theirs.atLast === null
-        ? na(x2.target, state.reason ?? `${sentenceOfSync(state)} — its artifact could not be scored during the walk`)
+        ? na(x2.target, state.reason ?? `${sentenceOfSync(state)}: its artifact could not be scored during the walk`)
         : measured(
             // The cell states the decay first, because that is the metric, and
             // carries both absolutes so the reader can see the level too.
@@ -2450,7 +2450,7 @@ export function coverageVersusDecay(
   }
   if (parts.length === 0) return null;
   return (
-    "how much of the gap is coverage and how much is staleness — " +
+    "how much of the gap is coverage and how much is staleness, " +
     `${parts.join("; ")}. X1 is where a coverage difference belongs; X2 is only the fall.`
   );
 }
@@ -2458,7 +2458,7 @@ export function coverageVersusDecay(
 /**
  * greplost's own X3 verdict.
  *
- * The target is a ratio against two tools — "<= 1% of ua, <= 20% of graphify" —
+ * The target is a ratio against two tools, "<= 1% of ua, <= 20% of graphify",
  * and Understand-Anything cannot be run headless here at all, so the ua arm is
  * unevaluable. Printing `win` on that row claimed a comparison nobody made
  * (review round 1, important 7). When graphify was walked, the graphify arm is
@@ -2485,7 +2485,7 @@ export function x3GreplostVerdict(
     verdict: share <= 0.2 ? "win" : "loss",
     reason:
       `evaluated on the graphify arm of the target only: ${round(share * 100, 1)}% of graphify's wall-clock ` +
-      `(target <= 20%). The ua arm cannot be evaluated — Understand-Anything has no headless entry point here, ` +
+      `(target <= 20%). The ua arm cannot be evaluated, Understand-Anything has no headless entry point here, ` +
       "so no cost exists to take 1% of.",
   };
 }
@@ -2528,7 +2528,7 @@ function fromReplayResult(
     for (const state of states.values()) {
       row.tools[state.name] = na(
         x2.target,
-        `${sentenceOfSync(state)} — not walked: pass \`--commits <n>\` to replay every installed tool through ` +
+        `${sentenceOfSync(state)}, not walked: pass \`--commits <n>\` to replay every installed tool through ` +
           "its own documented sync mechanism",
       );
     }
@@ -2551,7 +2551,7 @@ function fromReplayResult(
       minutes === null ? { usd: 0 } : { usd: 0, minutes: round(minutes, 3) },
     );
     method.push(
-      "X3: greplost's USD is 0 by construction — the structure layer makes no model call, so there is no " +
+      "X3: greplost's USD is 0 by construction; the structure layer makes no model call, so there is no " +
         "usage envelope to sum. Its wall-clock is the replay result's incremental p50 times the commit count. " +
         "Competitor USD would come from each tool's own logs or Claude usage envelopes; none was produced here.",
     );
@@ -2580,9 +2580,9 @@ function sentenceOfSync(state: CompetitorState): string {
 /**
  * greplost's structure artifacts, read off disk.
  *
- * `listStructurePaths` from `@greplost/sync` is the canonical list — INDEX.md,
+ * `listStructurePaths` from `@greplost/sync` is the canonical list, INDEX.md,
  * manifest.json, graph/*.jsonl, repo/*.md, packages/*&#47;{MAP,API}.md and the module
- * cards — and excludes config.json, the semantic cache and the runtime files,
+ * cards, and excludes config.json, the semantic cache and the runtime files,
  * which are not the map and are not committed (ruling 2026-09-02).
  */
 async function readStructureArtifacts(dir: string): Promise<Map<string, string>> {
@@ -2830,7 +2830,7 @@ async function metricX5(
       verdictFor({ ours: ourDelta.lines, theirs: delta.lines, higherIsBetter: false, margin: plan.margin }),
       // A reason on both sides of the comparison. The publishing rule asks for
       // one on every loss, and a loss here is the competitor changing *fewer*
-      // lines than greplost — which is exactly the case the old condition left
+      // lines than greplost, which is exactly the case the old condition left
       // empty (review round 2, minor).
       `${delta.lines} of ${delta.total} artifact lines changed against greplost's ${ourDelta.lines} of ` +
         `${ourDelta.total}${delta.lines < ourDelta.lines ? ", a quieter diff than greplost's" : ""}. ` +
@@ -3148,10 +3148,10 @@ function metricX10(metrics: Record<XId, MetricRow>, states: Map<CompetitorName, 
   const plan = PLAN_BY_ID.get("X10") as MetricDef;
   const row = metrics["X10"];
 
-  // Workspace mode is a capability probe, not a score — but it is still a probe that
+  // Workspace mode is a capability probe, not a score, but it is still a probe that
   // has to run something. This used to ask `greplost workspace --help` for an exit code
   // and record `n/a: not a command`, which was true and beside the point: there is no
-  // `workspace` subcommand by design (tech spec 4.4 — `update`, `verify`, `query` and
+  // `workspace` subcommand by design (tech spec 4.4, `update`, `verify`, `query` and
   // `impact` act across repos when run from a directory holding
   // `greplost.workspace.json`). So X10 read `n/a` for a capability the CLI has (review
   // round 3, important 5). The probe now does what the tech spec's X10 says: `greplost
@@ -3197,7 +3197,7 @@ const X10_OTHER_REPO = "repo-b";
  *
  * Runs the real CLI against a throwaway copy: `init --workspace --no-hooks` from the
  * directory holding `greplost.workspace.json`, then `impact <subject> --json`. Nothing
- * here is a score — X10 is a capability row — but the `works` is now something that ran,
+ * here is a score, X10 is a capability row, but the `works` is now something that ran,
  * and every way it can fail returns the reason instead.
  */
 function probeCrossRepoImpact(): { reason: string | null; detail: Record<string, number>; method: string } {
@@ -3213,7 +3213,7 @@ function probeCrossRepoImpact(): { reason: string | null; detail: Record<string,
   prepareCopy(fixture, dir);
 
   // `--root` explicitly, never cwd: `findRoot` walks up looking for a `.greplost`, and
-  // from inside `bench/.competitors/` the first one it meets is greplost's own — which
+  // from inside `bench/.competitors/` the first one it meets is greplost's own, which
   // is how this probe came to report "there is no greplost.workspace.json here" while
   // standing in a directory that has one.
   const call = (args: string[]): { status: number | null; stdout: string; stderr: string } => {
@@ -3224,13 +3224,13 @@ function probeCrossRepoImpact(): { reason: string | null; detail: Record<string,
   const init = call(["init", "--workspace", "--no-hooks"]);
   if (init.status !== 0) {
     const why = (init.stderr || init.stdout).trim().split("\n")[0] ?? `exit ${init.status}`;
-    return { reason: `\`greplost init --workspace\` failed on the fixture: ${why}`, detail: {}, method: `${ran}: init failed — ${why}.` };
+    return { reason: `\`greplost init --workspace\` failed on the fixture: ${why}`, detail: {}, method: `${ran}: init failed, ${why}.` };
   }
 
   const impact = call(["impact", X10_SUBJECT, "--json"]);
   if (impact.status !== 0) {
     const why = (impact.stderr || impact.stdout).trim().split("\n")[0] ?? `exit ${impact.status}`;
-    return { reason: `\`greplost impact\` failed in workspace mode: ${why}`, detail: {}, method: `${ran}: impact failed — ${why}.` };
+    return { reason: `\`greplost impact\` failed in workspace mode: ${why}`, detail: {}, method: `${ran}: impact failed, ${why}.` };
   }
 
   let files: { path?: unknown; depth?: unknown }[];
@@ -3239,7 +3239,7 @@ function probeCrossRepoImpact(): { reason: string | null; detail: Record<string,
     files = Array.isArray(parsed.files) ? (parsed.files as { path?: unknown; depth?: unknown }[]) : [];
   } catch (err) {
     const why = (err as Error).message;
-    return { reason: `\`greplost impact --json\` did not produce readable JSON: ${why}`, detail: {}, method: `${ran}: unreadable JSON — ${why}.` };
+    return { reason: `\`greplost impact --json\` did not produce readable JSON: ${why}`, detail: {}, method: `${ran}: unreadable JSON, ${why}.` };
   }
 
   // Workspace ids are `<repo>::<path within repo>` (tech spec 4.4), so a cross-repo hit
@@ -3264,7 +3264,7 @@ function probeCrossRepoImpact(): { reason: string | null; detail: Record<string,
     },
     method:
       `${ran} returned ${files.length} affected file${files.length === 1 ? "" : "s"}, ` +
-      `${crossRepo.length} of them in \`${X10_OTHER_REPO}\` — the blast radius crossed the repository boundary, ` +
+      `${crossRepo.length} of them in \`${X10_OTHER_REPO}\`: the blast radius crossed the repository boundary, ` +
       "which is the capability tech spec 3.1 X10 asks for. It is not a score: no competitor has an equivalent " +
       "to compare it against.",
   };

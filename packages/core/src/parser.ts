@@ -11,9 +11,26 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Lang } from "./schema.ts";
 
-/** A parser bound to the vendored grammars. `parse` is synchronous by contract. */
+/**
+ * A parser bound to the vendored grammars. `parse` is synchronous by contract.
+ *
+ * A handle owns one wasm `Parser`, and a wasm allocation is not garbage: the emscripten
+ * heap only ever grows, so a handle that is dropped rather than disposed keeps its parse
+ * stack and its subtree pool for the life of the process. One handle per build is
+ * invisible in a CLI run and unbounded in a long-lived one (`bench:replay` builds a repo
+ * once per commit); `dispose` is what bounds it.
+ */
 export interface ParserHandle {
   parse(source: string, lang: Lang): Tree;
+  /**
+   * Release the wasm parser this handle owns. Idempotent, and safe while other handles
+   * live: the compiled grammars are process-wide and shared, so nothing here touches
+   * them. `parse` after this throws rather than reaching into freed wasm memory.
+   *
+   * A `Tree` this handle returned is independent of it and is still the caller's to
+   * `delete`; nothing is retained here that disposal would free on the caller's behalf.
+   */
+  dispose(): void;
 }
 
 /**
@@ -103,9 +120,11 @@ export async function createParser(opts?: { grammarDir?: string }): Promise<Pars
 
   const parser = new Parser();
   let current: string | null = null;
+  let disposed = false;
 
   return {
     parse(source: string, lang: Lang): Tree {
+      if (disposed) throw new Error("greplost: this parser handle has been disposed");
       const file = GRAMMAR_FILE[lang];
       if (file === undefined) {
         throw new Error(`greplost: no grammar is vendored for "${lang}" (see packages/core/grammars/VERSIONS.txt)`);
@@ -119,6 +138,14 @@ export async function createParser(opts?: { grammarDir?: string }): Promise<Pars
       const tree = parser.parse(source);
       if (tree === null) throw new Error(`greplost: tree-sitter failed to parse ${lang} source`);
       return tree;
+    },
+    dispose(): void {
+      if (disposed) return;
+      disposed = true;
+      // `current` is the language the freed parser was set to; clearing it keeps the
+      // handle's own state consistent with the wasm object it no longer owns.
+      current = null;
+      parser.delete();
     },
   };
 }

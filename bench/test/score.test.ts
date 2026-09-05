@@ -315,7 +315,7 @@ describe("results-io", () => {
 /**
  * The S1 to S4 comparison itself, on a hand-built snapshot. `buildSnapshot` (leaf 1.1.5)
  * does not exist yet, so the runner's expensive half cannot be exercised here; its pure
- * half — which side of each comparison an edge lands on, and what the gate concludes — can.
+ * half, which side of each comparison an edge lands on, and what the gate concludes, can.
  */
 describe("structural gate", () => {
   const file = (path: string, extra: Partial<FileRecord> = {}): FileRecord => ({
@@ -642,7 +642,7 @@ describe("structural gate", () => {
  *
  * tree-sitter-typescript 0.23.2 is the newest grammar that exists and hono's generic
  * call signatures hit open upstream issue #335. The extractor recovers around ERROR
- * nodes, so those files still score — but whatever the grammar could not read costs S1
+ * nodes, so those files still score, but whatever the grammar could not read costs S1
  * and S2 recall with nothing in the report saying so. `findUnparsableFiles` is the reader
  * that names them.
  */

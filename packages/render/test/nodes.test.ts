@@ -1,12 +1,12 @@
 /**
  * greplost:render support for non-file nodes (leaf 2.11, spec sections 0.2 and 4).
  *
- * A non-file node — a Terraform resource, a workflow job, a Dockerfile stage, a
- * Kubernetes document, a route, a Pulumi resource — is a `Declaration` whose
+ * A non-file node, a Terraform resource, a workflow job, a Dockerfile stage, a
+ * Kubernetes document, a route, a Pulumi resource, is a `Declaration` whose
  * `kind` is in `NODE_KINDS` and never a manifest entry. This file holds the
  * render half of that contract: the card path (slugged, never carrying a `#`),
  * the card itself, the file card's Nodes block, the caps, the collision guard,
- * and the two goldens — `tiny-terraform` for what nodes look like, `tiny-ts`
+ * and the two goldens, `tiny-terraform` for what nodes look like, `tiny-ts`
  * for the regression that says a repo without them does not move one byte.
  *
  * `GREPLOST_UPDATE_GOLDEN=1 bun test packages/render/test/nodes.test.ts`
@@ -453,11 +453,16 @@ describe("reference caps", () => {
 });
 
 describe("card path collisions", () => {
-  test("two nodes whose names slug the same are a loud failure, not a lost card", () => {
+  test("two nodes whose names slug the same lose the later card, not the whole map", () => {
     const snapshot = synth([
       { path: "main.tf", decls: [decl("main.tf", "resource", "a/b", 1), decl("main.tf", "resource", "a__b", 3)] },
     ]);
-    expect(() => renderArtifacts({ snapshot, summaries: {} })).toThrow(/card path collision/);
+    const warnings: string[] = [];
+    const artifacts = renderArtifacts({ snapshot, summaries: {}, warnings });
+    expect(artifacts.has("packages/root/modules/main.tf/resource.a__b.md")).toBe(true);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("main.tf#resource.a__b");
+    expect(warnings[0]).toContain("main.tf#resource.a/b");
   });
 
   test("a node card that would overwrite a file card is caught too", () => {
@@ -468,18 +473,64 @@ describe("card path collisions", () => {
     expect(() => renderArtifacts({ snapshot, summaries: {} })).toThrow(/card path collision/);
   });
 
-  test("two node cards that differ only by case are a collision, because APFS says so", () => {
+  test("two node cards that differ only by case cost one card and a warning", () => {
     // `resource "aws_vpc" "Main"` beside `resource "aws_vpc" "main"` is legal
-    // Terraform and two distinct ids. On a case-insensitive filesystem — the
-    // macOS and Windows default — the second card overwrites the first, and
-    // `greplost verify` is then permanently red with no way to fix it.
+    // Terraform and two distinct ids. On a case-insensitive filesystem, the
+    // macOS and Windows default, the second card overwrites the first. Aborting
+    // the whole render left the repository with no map at all over one node, so
+    // the ruling of 2026-09-05 is: skip the later card, warn once naming both
+    // ids, and keep building. `verify` stays byte-exact because it renders
+    // through this very function and skips the same card.
     const snapshot = synth([
       {
         path: "main.tf",
         decls: [decl("main.tf", "resource", "aws_vpc.Main", 1), decl("main.tf", "resource", "aws_vpc.main", 3)],
       },
     ]);
-    expect(() => renderArtifacts({ snapshot, summaries: {} })).toThrow(/card path collision/);
+    const warnings: string[] = [];
+    const artifacts = renderArtifacts({ snapshot, summaries: {}, warnings });
+    expect(artifacts.has("packages/root/modules/main.tf/resource.aws_vpc.Main.md")).toBe(true);
+    expect(artifacts.has("packages/root/modules/main.tf/resource.aws_vpc.main.md")).toBe(false);
+    expect(artifacts.has("packages/root/modules/main.tf.md")).toBe(true);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("main.tf#resource.aws_vpc.main");
+    expect(warnings[0]).toContain("main.tf#resource.aws_vpc.Main");
+  });
+
+  test("the file card names the skipped node without linking to another node's card", () => {
+    // The row used to link to `resource.aws_vpc.main.md`, which does not exist: on APFS
+    // that opens `resource.aws_vpc.Main.md`, so a reader following the link lands on the
+    // *other* resource and has no way to know. The row is now plain text and says why.
+    const snapshot = synth([
+      {
+        path: "main.tf",
+        decls: [decl("main.tf", "resource", "aws_vpc.Main", 1), decl("main.tf", "resource", "aws_vpc.main", 3)],
+      },
+    ]);
+    const artifacts = renderArtifacts({ snapshot, summaries: {} });
+    const nodes = block(artifacts.get("packages/root/modules/main.tf.md") as string, "Nodes") as string;
+    expect(nodes).toContain("[`resource.aws_vpc.Main`](main.tf/resource.aws_vpc.Main.md)");
+    expect(nodes).toContain("`resource.aws_vpc.main` (no card: collides with `resource.aws_vpc.Main`)");
+    expect(nodes).not.toContain("(main.tf/resource.aws_vpc.main.md)");
+  });
+
+  test("the skipped card is skipped the same way on the next render, so verify stays exact", () => {
+    const snapshot = synth([
+      {
+        path: "main.tf",
+        decls: [decl("main.tf", "resource", "aws_vpc.Main", 1), decl("main.tf", "resource", "aws_vpc.main", 3)],
+      },
+    ]);
+    const first = renderArtifacts({ snapshot, summaries: {} });
+    const second = renderArtifacts({ snapshot, summaries: {} });
+    expect([...second.keys()]).toEqual([...first.keys()]);
+    for (const [rel, text] of first) expect(`${rel}\n${second.get(rel)}`).toBe(`${rel}\n${text}`);
+  });
+
+  test("a render that collides nothing reports no warning", () => {
+    const warnings: string[] = [];
+    renderArtifacts({ snapshot: tf.snapshot, summaries: tf.summaries, warnings });
+    expect(warnings).toEqual([]);
   });
 
   test("two file cards that differ only by Unicode normalisation are a collision too", () => {

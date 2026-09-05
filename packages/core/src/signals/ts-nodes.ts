@@ -41,7 +41,7 @@ const VALUE_DECLARATIONS: ReadonlySet<string> = new Set(["lexical_declaration", 
  *
  * Deliberately narrow: only the three forms a signal can attach to (a function, a class, or a
  * variable holding a value). Members, namespace contents and anything inside a function body
- * are not top-level bindings and are never signal nodes — a component is a module's export, not
+ * are not top-level bindings and are never signal nodes: a component is a module's export, not
  * a closure's local.
  */
 export function topLevelBindings(tree: Tree): TopLevelBinding[] {

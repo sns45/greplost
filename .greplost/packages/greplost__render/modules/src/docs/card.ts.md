@@ -25,9 +25,9 @@
 - `interface ImportGroup`  L121-124
 - `function importsField( ctx: DocContext, file: string, link: (target: string | undefined) => string | undefined, ): string`  L132-167
 - `function importersField( ctx: DocContext, file: string, link: (target: string | undefined) => string | undefined, ): string`  L169-185
-- `function nodesField( ctx: DocContext, file: string, link: (target: string | undefined) => string | undefined, ): string | undefined`  L197-213
-- `function keySymbolsField(ctx: DocContext, file: string): string`  L215-224
-- `const CONFIDENCE_RANK: Readonly<Record<Confidence, number>> = { high: 2, med: 1 }`  L226-226
-- `function callsField( ctx: DocContext, file: string, link: (target: string | undefined) => string | undefined, ): string | undefined`  L233-260
+- `function nodesField( ctx: DocContext, file: string, link: (target: string | undefined) => string | undefined, ): string | undefined`  L197-222
+- `function keySymbolsField(ctx: DocContext, file: string): string`  L224-233
+- `const CONFIDENCE_RANK: Readonly<Record<Confidence, number>> = { high: 2, med: 1 }`  L235-235
+- `function callsField( ctx: DocContext, file: string, link: (target: string | undefined) => string | undefined, ): string | undefined`  L242-269
 
 **Calls:** `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high), `isNodeDeclaration` → [`packages/core/src/schema.ts#isNodeDeclaration`](../../../../greplost__core/modules/src/schema.ts.md) (high), `exportEntry` → [`packages/render/src/docs/api.ts#exportEntry`](api.ts.md) (high), `keySymbol` → [`packages/render/src/docs/api.ts#keySymbol`](api.ts.md) (high), `localNames` → [`packages/render/src/docs/api.ts#localNames`](api.ts.md) (high), `shortName` → [`packages/render/src/docs/api.ts#shortName`](api.ts.md) (high), `callsField` → [`packages/render/src/docs/card.ts#callsField`](card.ts.md) (high), `exportsField` → [`packages/render/src/docs/card.ts#exportsField`](card.ts.md) (high), `importersField` → [`packages/render/src/docs/card.ts#importersField`](card.ts.md) (high), `importsField` → [`packages/render/src/docs/card.ts#importsField`](card.ts.md) (high), `keySymbolsField` → [`packages/render/src/docs/card.ts#keySymbolsField`](card.ts.md) (high), `nodesField` → [`packages/render/src/docs/card.ts#nodesField`](card.ts.md) (high), `summaryBlocks` → [`packages/render/src/docs/card.ts#summaryBlocks`](card.ts.md) (high), `packageDir` → [`packages/render/src/slug.ts#packageDir`](../slug.ts.md) (high), `relLink` → [`packages/render/src/slug.ts#relLink`](../slug.ts.md) (high)

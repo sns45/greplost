@@ -29,7 +29,7 @@ and 5.1.
   title states. A test asserts renaming one job does not renumber another's steps.
   Fix round 1: the *duplicate* suffix now lands in the id and nowhere else (`…#job.build~2`
   named `build`, `…#step.build.~0~2` named `build.~0`), `exports` publishes one record per name,
-  and a `ReferenceRecord.from` is read back from the id through `splitNodeId` — the rule
+  and a `ReferenceRecord.from` is read back from the id through `splitNodeId`, the rule
   `extract/yaml-k8s.ts` and `extract/hcl.ts` follow.
 
 - [x] G4: `needs` is a high-confidence edge to the named job's node; describe('needs')
@@ -45,7 +45,7 @@ and 5.1.
   EVIDENCE: 8 pass | 21 filtered out | 0 fail. The external id is `ext:action/<owner>/<repo>`
   with the `@ref` in `meta.usesRef` and in the edge's `symbols`, not in the id: the driver's
   2026-09-04 ruling ("external: `ext:action/<owner>/<repo>` with the ref in `meta`") supersedes
-  the `@<ref>` spelling in this gate's title and in spec 0.2, for the Terraform-module reason —
+  the `@<ref>` spelling in this gate's title and in spec 0.2, for the Terraform-module reason;
   a ref is a version, and `terraform`'s `version` is not part of a module's `source` either. A
   subpath is kept (`ext:action/github/codeql-action/init`), because `init` and `analyze` are two
   different actions in one repository and collapsing them would merge two unrelated steps.
@@ -98,7 +98,7 @@ and 5.1.
   EVIDENCE: tiny-actions (3 files); S1 n/a, S2 1.000/1.000 (tp 4), S3 n/a, S4 n/a,
   S5 1.000/1.000 (tp 6), S6 1.000/1.000 (tp 10). The two `config` edges are outside the scored
   universe on both sides (their targets are `.ts`/`.mjs` files, and a yaml target's file set is
-  yaml), which is why S5 counts 6 of the fixture's 8 edges — the `config-precision-unmeasured`
+  yaml), which is why S5 counts 6 of the fixture's 8 edges: the `config-precision-unmeasured`
   note says so. S1 and S4 read `n/a` from fix round 1: a workflow has no import statement and no
   import graph, so a measured 1.000 over an empty universe on both sides was a vacuous pass.
 
@@ -136,7 +136,7 @@ and 5.1.
 S1 and S4 are `n/a` since fix round 1, and that is the honest reading rather than a weakening: a
 workflow has no import statement (`resolve/yaml.ts`, the seam, states the same rule for every
 YAML flavour) and therefore no import graph to find a cycle in, so both sides were scoring an
-empty universe as a perfect 1.000 — the vacuous pass tech spec 10.1 principle 2 exists to stop.
+empty universe as a perfect 1.000, the vacuous pass tech spec 10.1 principle 2 exists to stop.
 S2, S5 and S6 stay measured and gated, so `--gate` still has three metrics that can fail and the
 substitute checks never engage.
 
@@ -181,12 +181,12 @@ Full reasoning is in the leaf report; the five that change what another leaf can
    `js-yaml` in `bench/src/truth/yaml-actions.ts` (`isActionsFile`), so a flavour disagreement
    between the two programs shows up as a score rather than as silence.
 4. **`references/yaml.ts` dispatches on `refKind`, with the path as the fallback.** The two YAML
-   flavours' kinds are already disjoint — that module's own docstring says so — and the path is
+   flavours' kinds are already disjoint, that module's own docstring says so, and the path is
    no longer sufficient now that an Actions file can live anywhere.
 5. **A workflow emits no `ImportRecord`.** Ruling 7's "follow the Terraform module precedent"
    is honoured on the reference side (`uses` resolves to the local directory's `action.yml` or
    the workflow file, exactly as a `module` block's `uses` resolves to the module directory) and
-   not on the import side, because `resolve/yaml.ts` — a seam file — states that a YAML file has
+   not on the import side, because `resolve/yaml.ts`, a seam file, states that a YAML file has
    no import specifiers and that a stray one is an extractor bug. Spec 2.4 lists `uses` under
    References only, and the brief says `Truth.imports` is empty for workflows.
 
@@ -195,15 +195,15 @@ Full reasoning is in the leaf report; the five that change what another leaf can
 Reported to the driver rather than hidden. All three are seam files (leaf 2.0), and leaf 2.8 set
 the precedent for the third:
 
-- `packages/core/src/extract/yaml.ts` — two classification rules (ruling 3), 14 lines.
-- `packages/core/src/references/yaml.ts` — dispatch on `refKind` (ruling 4), 12 lines.
-- `bench/src/truth/yaml.ts` — the `yaml-actions` entry in `EXTRA_GENERATORS` (which the seam
+- `packages/core/src/extract/yaml.ts`, two classification rules (ruling 3), 14 lines.
+- `packages/core/src/references/yaml.ts`, dispatch on `refKind` (ruling 4), 12 lines.
+- `bench/src/truth/yaml.ts`, the `yaml-actions` entry in `EXTRA_GENERATORS` (which the seam
   left `undefined` for this leaf to fill), an optional `root` on `flavourOf`/`groupByFlavour` so
   the content rule can run, and a third `universe` argument to `ExtraGenerator` so a workflow's
   `uses` and `run:` tokens resolve against the whole YAML file set rather than the flavour's own
   group. `flavourOf(file)` and `groupByFlavour(files)` keep their one-argument behaviour, so the
   seam's own `bench/test/registry.test.ts` is untouched.
-- `packages/core/test/references.test.ts` — the two `yaml-actions` stub rows removed, the way
+- `packages/core/test/references.test.ts`, the two `yaml-actions` stub rows removed, the way
   every language leaf before this one removed its own.
 
 ## Fix round 1 (task review, 2026-09-05)
@@ -212,24 +212,24 @@ The review reproduced every number and did not approve. All four findings and al
 are addressed; the corpus numbers are unchanged, which is what a fix to unreachable-on-this-
 corpus defects should look like.
 
-- **C1 (Critical) — the `~<n>` suffix reached `Declaration.name` and `exports`.** `uniqueName`
+- **C1 (Critical), the `~<n>` suffix reached `Declaration.name` and `exports`.** `uniqueName`
   is now `uniqueId`, mirroring what leaf 2.8's fix round did: the suffix is appended to the
   whole id, the name is the text as written, `exports` is deduped by name, and `ref.from` comes
   from `splitNodeId(decl.id)` through a `localPath` helper. Three tests on the reviewer's input
   (two jobs called `build` in one file) pin the ids, the names, the single export and the two
   reference sources.
-- **I1 — the exports sweep re-exported the first document's jobs, and the two sides disagreed on
+- **I1, the exports sweep re-exported the first document's jobs, and the two sides disagreed on
   a duplicate job's step ids.** Exports are now pushed as each job is walked (`addExport`), and
   one rule is stated on both sides: a step is named `<jobId as written>.~<stepIndex>` and a
   collision is settled by the id suffix, so `…#step.build.~0~2` on both sides rather than
   `build.~0~2` against `build~2.~0`. Tested with a two-document file in both programs.
-- **I2 — the oracle classified by path where the extractor classifies by content.**
+- **I2: the oracle classified by path where the extractor classifies by content.**
   `isActionsFile` now restates the extractor's *whole* rule, in order, on js-yaml
   (`classifyDocument`): a file under `.github/workflows/` with no `on:` key is not a workflow,
   a manifest stays a manifest, a chart stays a chart, and a file js-yaml cannot read falls back
   to the path rule (it is covered by no oracle either way). `flavourOf(file, root)` asks it
   before the path rules; `flavourOf(file)` is untouched. Three tests.
-- **I3 — `run:` bodies were tokenised before `${{ … }}` was blanked.** Both sides now blank
+- **I3, `run:` bodies were tokenised before `${{ … }}` was blanked.** Both sides now blank
   every expression span in place with equal-length filler (leaf 2.8's Helm pre-pass trick)
   before splitting, so `echo ${{ hashFiles('scripts/x.ts') }}` offers no candidate while
   `node scripts/x.ts ${{ inputs.flag }}` still resolves. Measured on the pinned corpus: across
@@ -246,5 +246,5 @@ the NOTES. Gate titles G3 and G5 left verbatim for the driver to amend.
 
 `ExtraTruth.nodeFiles` arrived on main in leaf 2.8's fix round and now sits beside this leaf's
 `universe` parameter in `bench/src/truth/yaml.ts`; the Actions flavour states nodes for every
-file it covers, so it names no `nodeFiles` and its whole group goes into the union — verified by
+file it covers, so it names no `nodeFiles` and its whole group goes into the union, verified by
 `bitnami-charts` S6 moving from `n/a` to 1.000 (tp 216) with the Actions corpus unmoved.

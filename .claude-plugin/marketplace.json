@@ -1,13 +1,13 @@
 {
   "name": "greplost",
   "owner": { "name": "Shantanu", "url": "https://github.com/sns45" },
-  "metadata": { "description": "greplost: grep lost. Read the map.", "version": "0.0.1" },
+  "metadata": { "description": "greplost: grep lost. Read the map.", "version": "0.1.0" },
   "plugins": [
     {
       "name": "greplost",
       "source": "./greplost-plugin",
       "description": "A committed, deterministic, always-fresh map of your codebase for humans and coding agents: hooks, a skill, slash commands and a navigator agent around the greplost CLI.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": { "name": "Shantanu", "url": "https://github.com/sns45" },
       "keywords": ["codebase", "map", "architecture", "mermaid", "navigation", "monorepo"]
     }

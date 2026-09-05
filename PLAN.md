@@ -77,12 +77,12 @@ Wave 6 leaf 1.8 also edits `packages/core/src/extract/index.ts` and `packages/co
 
 ## Waves
 
-- wave 1: 1.1.1, 1.1.2, 1.1.3, 1.1.4, 1.2.1, 1.5.1, 1.5.2, 1.5.3 — all code against schema.ts alone; disjoint files.
-- wave 2: 1.1.5, 1.2.2 — need the wave-1 core modules (build composes them; docs need a Snapshot to render and the primitives).
-- wave 3: 1.3.1, 1.5.4 — need buildSnapshot + renderArtifacts (build-verify) and the artifact shape (mapquality).
-- wave 4: 1.3.2 — needs build-verify's write/verify.
-- wave 5: 1.4.1, 1.5.5 — need the full sync API.
-- wave 6: 1.4.2, 1.5.6, 1.5.7, 1.6, 1.7, 1.8 — need the CLI (plugin, agent runner), sync (semantic, workspace), or finished core modules (go).
+- wave 1: 1.1.1, 1.1.2, 1.1.3, 1.1.4, 1.2.1, 1.5.1, 1.5.2, 1.5.3, all code against schema.ts alone; disjoint files.
+- wave 2: 1.1.5, 1.2.2, need the wave-1 core modules (build composes them; docs need a Snapshot to render and the primitives).
+- wave 3: 1.3.1, 1.5.4, need buildSnapshot + renderArtifacts (build-verify) and the artifact shape (mapquality).
+- wave 4: 1.3.2, needs build-verify's write/verify.
+- wave 5: 1.4.1, 1.5.5, need the full sync API.
+- wave 6: 1.4.2, 1.5.6, 1.5.7, 1.6, 1.7, 1.8, need the CLI (plugin, agent runner), sync (semantic, workspace), or finished core modules (go).
 - wave 7: 1.9 driver integration: corpus runs, X1/X2/X4/X5, RESULTS.md, README, dogfood, CI green.
 
 ## Status log
@@ -344,14 +344,14 @@ CLI command files at wave 3, when 1.2.2 and 1.4.1 are long finished.
 
 ## Waves
 
-- wave 0: 2.0 seam — grammars, dispatch tables with stubs, signals registry, reference linker,
+- wave 0: 2.0 seam, grammars, dispatch tables with stubs, signals registry, reference linker,
   truth registry, corpus entries, schema 2, goldens. Everything else waits for it.
-- wave 1: 2.1.1 python, 2.1.2 rust, 2.2.1 terraform, 2.3.1 signals-ts — disjoint files, each
+- wave 1: 2.1.1 python, 2.1.2 rust, 2.2.1 terraform, 2.3.1 signals-ts, disjoint files, each
   against the stubs 2.0 left.
-- wave 2: 2.1.3 java, 2.1.4 kotlin, 2.2.2 k8s-helm, 2.3.2 signals-pulumi-go — disjoint files.
-- wave 3: 2.2.3 actions, 2.2.4 dockerfile, 2.4.1 nodes, 2.5.1 coverage-docs — disjoint files;
+- wave 2: 2.1.3 java, 2.1.4 kotlin, 2.2.2 k8s-helm, 2.3.2 signals-pulumi-go, disjoint files.
+- wave 3: 2.2.3 actions, 2.2.4 dockerfile, 2.4.1 nodes, 2.5.1 coverage-docs, disjoint files;
   2.4.1 needs 2.2.1's fixture for its golden, 2.5.1 needs every language's payload.
-- wave 4: driver integration — full corpus run, RESULTS.md and README regenerated from
+- wave 4: driver integration, full corpus run, RESULTS.md and README regenerated from
   payloads, CI green, dogfood map refreshed, root-2 ledger closed.
 
 ## Status log (build 2)

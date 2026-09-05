@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "greplost",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "grep lost. Read the map.",
   "author": {
     "name": "Shantanu",

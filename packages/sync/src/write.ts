@@ -13,13 +13,13 @@
  * arithmetic. `.greplost/` is committed and git stores symlinks, so a
  * repository can carry a link that points anywhere; `update` then runs
  * unattended from a `post-checkout` hook. So the directory walk never follows a
- * symlink — it unlinks one and puts a real directory in its place — and the
+ * symlink, it unlinks one and puts a real directory in its place, and the
  * containment check is re-made against the resolved path immediately before
  * each write and each delete.
  *
  * Bounded ownership: `writeArtifacts` touches structure paths
- * (`isStructurePath`) and nothing else. Files the map no longer produces — the
- * card of a deleted source file, the docs of a removed package — are pruned,
+ * (`isStructurePath`) and nothing else. Files the map no longer produces, the
+ * card of a deleted source file, the docs of a removed package, are pruned,
  * and the directories that emptied are removed; `config.json`, the caches,
  * `FLOWS.md`, `WORKSPACE.md` and the runtime files are invisible to it. Where
  * something greplost does not own blocks its way, it refuses rather than
@@ -35,7 +35,7 @@
  * What it is not: transactional. Artifacts are written one at a time in path
  * order and pruning happens after, so a refusal or a filesystem error part way
  * through leaves the earlier artifacts written, the later ones untouched and
- * nothing pruned. That is a deliberate trade — a staging directory plus an
+ * nothing pruned. That is a deliberate trade, a staging directory plus an
  * atomic swap would rewrite every inode on every run and destroy the minimal-
  * churn property, which is the whole point of the byte comparison. The
  * incomplete state is not silent: `verify` reports the artifacts that never got
@@ -87,7 +87,7 @@ export const writeSeam = {
 /**
  * Write failures worth clearing the path and retrying once: something is at the
  * path, or on the way to it, that greplost owns and can replace. Everything
- * else — a full disk, a read-only filesystem, a quota — says nothing about the
+ * else, a full disk, a read-only filesystem, a quota, says nothing about the
  * path, and destroying a good committed artifact before failing anyway would be
  * the worst possible response.
  */
@@ -138,14 +138,14 @@ export function writeArtifacts(root: string, files: Map<string, string>): WriteR
  *
  * Those three are written by other modules (`parse-cache.ts`, `state.ts`,
  * `@greplost/semantic`), and each used to reach the disk through a plain
- * `mkdirSync(dir, { recursive: true })` and a write — which resolves every
+ * `mkdirSync(dir, { recursive: true })` and a write, which resolves every
  * component, so a committed `.greplost/cache -> /anywhere` was followed rather
  * than replaced, and an unattended `post-checkout` `update` wrote outside the
  * repository. `.greplost/` is committed and git stores symlinks, so that link
  * arrives on every checkout; this is the same threat `writeArtifacts` was built
  * against, and there is no reason for two answers to it.
  *
- * `rel` is artifact-relative and need not be a structure path — these files are
+ * `rel` is artifact-relative and need not be a structure path: these files are
  * precisely the ones that are not. What it may not be is absolute, empty, or
  * anything that walks upwards.
  */
@@ -180,7 +180,7 @@ function openContained(root: string, rel: string): { artifactRoot: string; targe
 
 /**
  * `rel` as a clean artifact-relative path, or a refusal. Lexical, because it is
- * a check on the *caller* — a path with a `..` in it is a defect in the code
+ * a check on the *caller*, a path with a `..` in it is a defect in the code
  * that produced it, and the filesystem checks that follow are what defend
  * against the repository.
  */
@@ -201,7 +201,7 @@ function artifactRelative(rel: string): string {
  * Make `<root>/.greplost` exist as a directory and return its resolved path,
  * which is the containment boundary for everything below.
  *
- * The artifact root itself may legitimately be a symlink to a real directory —
+ * The artifact root itself may legitimately be a symlink to a real directory,
  * `.greplost` parked on another volume is a reasonable thing for a user to do,
  * and every artifact then lives under the link's target, which is where the
  * boundary belongs. A *dangling* link is a link and nothing else, so it is
@@ -273,7 +273,7 @@ function ensureDirectory(artifactRoot: string, rel: string, ensured: Set<string>
  *
  * When it runs: immediately before each `writeSeam.writeFile` (both the first
  * attempt and the retry), immediately before each `discard` of something
- * occupying an artifact path, and immediately before each `rmSync` in `prune` —
+ * occupying an artifact path, and immediately before each `rmSync` in `prune`,
  * never once per loop iteration with work in between. The window between the
  * check and the syscall is as small as this code can make it.
  *
@@ -282,9 +282,9 @@ function ensureDirectory(artifactRoot: string, rel: string, ensured: Set<string>
  * or unlink through a path that has been *proved* rather than re-resolved. A
  * process that already has write access to `.greplost/` can therefore still win
  * the race by swapping a directory for a symlink between the `realpathSync` and
- * the write. That is a smaller threat than the one this closes — a symlink
+ * the write. That is a smaller threat than the one this closes, a symlink
  * committed to the repository, which lands on every checkout and is walked by
- * an unattended hook — and it needs an attacker who can already write where the
+ * an unattended hook, and it needs an attacker who can already write where the
  * artifacts live.
  */
 function assertInside(artifactRoot: string, dir: string): void {
@@ -306,12 +306,12 @@ function assertInside(artifactRoot: string, dir: string): void {
  * `target` is a structure path, so whatever occupies it is greplost's to
  * replace: a stale file, an unreadable one, a symlink (writing through which
  * would put generated bytes outside `.greplost/`). A *directory* there is
- * replaced only once its contents are known to be artifacts too — see
+ * replaced only once its contents are known to be artifacts too: see
  * `assertOwnedTree`. The byte comparison is only ever an optimisation.
  *
  * Nothing is ever written *into* an existing file. A regular file at an artifact
- * path can be a hard link — one inode carrying a second name outside
- * `.greplost/`, which `lstat` cannot tell from an ordinary file — and an
+ * path can be a hard link, one inode carrying a second name outside
+ * `.greplost/`, which `lstat` cannot tell from an ordinary file, and an
  * in-place write would silently rewrite the file at that other name. So a
  * differing artifact is replaced through a sibling temporary file and a
  * `rename`, which swaps the directory entry: greplost's name points at the new
@@ -320,7 +320,7 @@ function assertInside(artifactRoot: string, dir: string): void {
  * `rename` rather than unlink-then-write, because the two hazards pull in
  * opposite directions. Unlinking first would break the hard link, but it also
  * destroys a good committed artifact when the write that follows fails for a
- * reason the path cannot explain (`ENOSPC`, `EROFS`) — the failure mode this
+ * reason the path cannot explain (`ENOSPC`, `EROFS`), the failure mode this
  * module was already fixed for once. A rename fails or succeeds as a unit: the
  * old artifact survives a failed write untouched, and a reader never sees a
  * half-written one. The unchanged fast path returns before any of this, so a

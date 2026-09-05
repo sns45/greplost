@@ -114,7 +114,7 @@ export function flavourOf(file: string, root?: string): YamlFlavour {
   // Leaf 2.9: the path is neither the whole rule nor a sufficient one, in both directions. A
   // composite action's `action.yml` and a workflow *template* outside `.github/workflows/` are
   // Actions files at other paths (the pinned corpus is 174 of the latter); and a file *under*
-  // `.github/workflows/` with no `on:` key is not a workflow at all — GitHub will not run it and
+  // `.github/workflows/` with no `on:` key is not a workflow at all: GitHub will not run it and
   // `extract/yaml.ts` classifies it `plain`, so an oracle claiming it would demand nodes and
   // exports greplost is right not to have produced (leaf 2.9 fix round 1). `isActionsFile`
   // restates the extractor's whole rule, in order, on js-yaml.

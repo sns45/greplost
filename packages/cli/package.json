@@ -1,6 +1,6 @@
 {
   "name": "greplost",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "grep lost. Read the map. A committed, deterministic, always-fresh map of your codebase in Markdown, ASCII and Mermaid, for humans and coding agents.",
   "license": "Apache-2.0",
   "type": "module",

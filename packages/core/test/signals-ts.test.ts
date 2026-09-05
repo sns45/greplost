@@ -398,9 +398,36 @@ describe("pulumi resources", () => {
     expect(ids(out)).toEqual(["infra/ref.ts#resource.other"]);
   });
 
-  test("an unassigned resource is named by position, never with a #", () => {
+  test("an unassigned resource takes its Pulumi logical name, never a #", () => {
+    // The rule pulumi-go already applies (ruling 2026-09-05): a position is not an
+    // identity, so an unbound resource inserted above another would renumber every node
+    // below it and the two sides of the score would stop agreeing about which is which.
+    // The logical name is the resource's own name in the Pulumi state.
     const source = `${AWS}new aws.s3.Bucket("a");\nnew aws.s3.Bucket("b");\n`;
-    expect(ids(signals("infra/anon.ts", "ts", source))).toEqual(["infra/anon.ts#resource.~0", "infra/anon.ts#resource.~1"]);
+    expect(ids(signals("infra/anon.ts", "ts", source))).toEqual([
+      "infra/anon.ts#resource.~a",
+      "infra/anon.ts#resource.~b",
+    ]);
+  });
+
+  test("an unassigned resource with no usable logical name falls back to its position", () => {
+    // A computed name, and a literal holding a `#` (which `nodeId` refuses): both fall
+    // back to the index among the file's *remaining* unbound resources, exactly as the Go
+    // pass does.
+    const source = `${AWS}new aws.s3.Bucket(nameOf(x));\nnew aws.s3.Bucket("a#b");\nnew aws.s3.Bucket("keep");\n`;
+    expect(ids(signals("infra/anon2.ts", "ts", source))).toEqual([
+      "infra/anon2.ts#resource.~0",
+      "infra/anon2.ts#resource.~1",
+      "infra/anon2.ts#resource.~keep",
+    ]);
+  });
+
+  test("two unassigned resources sharing a logical name are disambiguated with ~2", () => {
+    const source = `${AWS}new aws.s3.Bucket("a");\nnew aws.s3.Bucket("a");\n`;
+    expect(ids(signals("infra/anon3.ts", "ts", source))).toEqual([
+      "infra/anon3.ts#resource.~a",
+      "infra/anon3.ts#resource.~a~2",
+    ]);
   });
 
   test("a duplicate binding name is disambiguated with ~2", () => {

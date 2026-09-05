@@ -36,35 +36,35 @@
 - `function normalizeId(absRoot: string, file: string): string`  L147-150
 - `function readCompilerOptions(absRoot: string): ts.CompilerOptions`  L159-174
 - `function analyse(root: string, files: string[]): Scan`  L176-249
-- `class Names`  L256-268
-- `Names.take(name: string): string`  L258-267
-- `function visitFile(id: string, sourceFile: ts.SourceFile, checker: ts.TypeChecker, scan: Scan): void`  L270-276
-- `function nodeIdOf(file: string, kind: string, name: string): string`  L278-280
-- `function reference( from: string, to: string, refKind: ReferenceEdge["refKind"], symbols: string[], ): ReferenceEdge`  L282-289
-- `function reactApplies(file: string, text: string): boolean`  L293-296
-- `function reactNodes( file: string, sourceFile: ts.SourceFile, checker: ts.TypeChecker, scan: Scan, text: string, ): void`  L298-312
-- `interface Binding`  L314-322
-- `function topLevelBindings(sourceFile: ts.SourceFile): Binding[]`  L324-347
-- `function hasModifier(node: ts.Node, kind: ts.SyntaxKind): boolean`  L349-351
-- `function unwrap(expression: ts.Expression): ts.Expression`  L353-367
-- `function isComponent(binding: Binding, checker: ts.TypeChecker): boolean`  L369-375
-- `function functionOf(binding: Binding): ts.SignatureDeclaration | undefined`  L377-384
-- `function wrappedFunction(value: ts.Expression): ts.SignatureDeclaration | undefined`  L387-397
-- `function isReactWrapped(value: ts.Expression | undefined, checker: ts.TypeChecker): boolean`  L400-416
-- `function returnTypeIsJsx(fn: ts.SignatureDeclaration, checker: ts.TypeChecker): boolean`  L418-427
-- `function functionReturnsJsx(fn: ts.SignatureDeclaration): boolean`  L429-434
-- `function classReturnsJsx(declaration: ts.ClassLikeDeclaration): boolean`  L436-442
-- `function blockReturnsJsx(block: ts.Block): boolean`  L445-458
-- `function isFunctionScope(node: ts.Node): boolean`  L460-468
-- `function holdsJsx(expression: ts.Node): boolean`  L470-484
-- `function isJsx(node: ts.Node): boolean`  L486-488
-- `function tanstackNodes(file: string, sourceFile: ts.SourceFile, checker: ts.TypeChecker, scan: Scan): void`  L492-502
-- `interface TanstackRoute`  L504-508
-- `function tanstackRoute(call: ts.CallExpression, checker: ts.TypeChecker): TanstackRoute | undefined`  L510-530
-- `function isTanstackCallee(expression: ts.Expression, checker: ts.TypeChecker): boolean`  L532-537
-- `function emitTanstackRoute( file: string, sourceFile: ts.SourceFile, route: TanstackRoute, names: Names, scan: Scan, ): void`  L539-564
-- `const HANDLER_KINDS = ["component", "handler"] as const`  L569-569
-- `const AMBIGUOUS = Symbol("ambiguous")`  L572-572
-- … 26 more
+- `const UNUSABLE_IN_NAME = /[#\n\0]/u`  L256-256
+- `class Names`  L259-271
+- `Names.take(name: string): string`  L261-270
+- `function visitFile(id: string, sourceFile: ts.SourceFile, checker: ts.TypeChecker, scan: Scan): void`  L273-279
+- `function nodeIdOf(file: string, kind: string, name: string): string`  L281-283
+- `function reference( from: string, to: string, refKind: ReferenceEdge["refKind"], symbols: string[], ): ReferenceEdge`  L285-292
+- `function reactApplies(file: string, text: string): boolean`  L296-299
+- `function reactNodes( file: string, sourceFile: ts.SourceFile, checker: ts.TypeChecker, scan: Scan, text: string, ): void`  L301-315
+- `interface Binding`  L317-325
+- `function topLevelBindings(sourceFile: ts.SourceFile): Binding[]`  L327-350
+- `function hasModifier(node: ts.Node, kind: ts.SyntaxKind): boolean`  L352-354
+- `function unwrap(expression: ts.Expression): ts.Expression`  L356-370
+- `function isComponent(binding: Binding, checker: ts.TypeChecker): boolean`  L372-378
+- `function functionOf(binding: Binding): ts.SignatureDeclaration | undefined`  L380-387
+- `function wrappedFunction(value: ts.Expression): ts.SignatureDeclaration | undefined`  L390-400
+- `function isReactWrapped(value: ts.Expression | undefined, checker: ts.TypeChecker): boolean`  L403-419
+- `function returnTypeIsJsx(fn: ts.SignatureDeclaration, checker: ts.TypeChecker): boolean`  L421-430
+- `function functionReturnsJsx(fn: ts.SignatureDeclaration): boolean`  L432-437
+- `function classReturnsJsx(declaration: ts.ClassLikeDeclaration): boolean`  L439-445
+- `function blockReturnsJsx(block: ts.Block): boolean`  L448-461
+- `function isFunctionScope(node: ts.Node): boolean`  L463-471
+- `function holdsJsx(expression: ts.Node): boolean`  L473-487
+- `function isJsx(node: ts.Node): boolean`  L489-491
+- `function tanstackNodes(file: string, sourceFile: ts.SourceFile, checker: ts.TypeChecker, scan: Scan): void`  L495-505
+- `interface TanstackRoute`  L507-511
+- `function tanstackRoute(call: ts.CallExpression, checker: ts.TypeChecker): TanstackRoute | undefined`  L513-533
+- `function isTanstackCallee(expression: ts.Expression, checker: ts.TypeChecker): boolean`  L535-540
+- `function emitTanstackRoute( file: string, sourceFile: ts.SourceFile, route: TanstackRoute, names: Names, scan: Scan, ): void`  L542-567
+- `const HANDLER_KINDS = ["component", "handler"] as const`  L572-572
+- … 27 more
 
 **Calls:** `Names` → [`bench/src/truth/signals-ts.ts#Names`](signals-ts.ts.md) (high), `analyse` → [`bench/src/truth/signals-ts.ts#analyse`](signals-ts.ts.md) (high), `appRouteFile` → [`bench/src/truth/signals-ts.ts#appRouteFile`](signals-ts.ts.md) (high), `appRoutePath` → [`bench/src/truth/signals-ts.ts#appRoutePath`](signals-ts.ts.md) (high), `blockReturnsJsx` → [`bench/src/truth/signals-ts.ts#blockReturnsJsx`](signals-ts.ts.md) (high), `classDeclarationOf` → [`bench/src/truth/signals-ts.ts#classDeclarationOf`](signals-ts.ts.md) (high), `classReturnsJsx` → [`bench/src/truth/signals-ts.ts#classReturnsJsx`](signals-ts.ts.md) (high), `defaultExportName` → [`bench/src/truth/signals-ts.ts#defaultExportName`](signals-ts.ts.md) (high), `emitTanstackRoute` → [`bench/src/truth/signals-ts.ts#emitTanstackRoute`](signals-ts.ts.md) (high), `expressionTailName` → [`bench/src/truth/signals-ts.ts#expressionTailName`](signals-ts.ts.md) (high), `extendsPulumiResource` → [`bench/src/truth/signals-ts.ts#extendsPulumiResource`](signals-ts.ts.md) (high), `fromPulumi` → [`bench/src/truth/signals-ts.ts#fromPulumi`](signals-ts.ts.md) (high), `functionOf` → [`bench/src/truth/signals-ts.ts#functionOf`](signals-ts.ts.md) (high), `functionReturnsJsx` → [`bench/src/truth/signals-ts.ts#functionReturnsJsx`](signals-ts.ts.md) (high), `hasModifier` → [`bench/src/truth/signals-ts.ts#hasModifier`](signals-ts.ts.md) (high), `holdsJsx` → [`bench/src/truth/signals-ts.ts#holdsJsx`](signals-ts.ts.md) (high), `identifierName` → [`bench/src/truth/signals-ts.ts#identifierName`](signals-ts.ts.md) (high), `importBindingsFor` → [`bench/src/truth/signals-ts.ts#importBindingsFor`](signals-ts.ts.md) (high), `importSpecifierOf` → [`bench/src/truth/signals-ts.ts#importSpecifierOf`](signals-ts.ts.md) (high), `isComponent` → [`bench/src/truth/signals-ts.ts#isComponent`](signals-ts.ts.md) (high), `isFunctionScope` → [`bench/src/truth/signals-ts.ts#isFunctionScope`](signals-ts.ts.md) (high), `isJsx` → [`bench/src/truth/signals-ts.ts#isJsx`](signals-ts.ts.md) (high), `isPulumiResource` → [`bench/src/truth/signals-ts.ts#isPulumiResource`](signals-ts.ts.md) (high), `isReactWrapped` → [`bench/src/truth/signals-ts.ts#isReactWrapped`](signals-ts.ts.md) (high), `isTanstackCallee` → [`bench/src/truth/signals-ts.ts#isTanstackCallee`](signals-ts.ts.md) (high), `moduleSourceFile` → [`bench/src/truth/signals-ts.ts#moduleSourceFile`](signals-ts.ts.md) (high), `newBindingName` → [`bench/src/truth/signals-ts.ts#newBindingName`](signals-ts.ts.md) (high), `nextNodes` → [`bench/src/truth/signals-ts.ts#nextNodes`](signals-ts.ts.md) (high), `nodeIdOf` → [`bench/src/truth/signals-ts.ts#nodeIdOf`](signals-ts.ts.md) (high), `normalizeId` → [`bench/src/truth/signals-ts.ts#normalizeId`](signals-ts.ts.md) (high), `objectArgument` → [`bench/src/truth/signals-ts.ts#objectArgument`](signals-ts.ts.md) (high), `propertyName` → [`bench/src/truth/signals-ts.ts#propertyName`](signals-ts.ts.md) (high), `pulumiNodes` → [`bench/src/truth/signals-ts.ts#pulumiNodes`](signals-ts.ts.md) (high), `reactApplies` → [`bench/src/truth/signals-ts.ts#reactApplies`](signals-ts.ts.md) (high), `reactNodes` → [`bench/src/truth/signals-ts.ts#reactNodes`](signals-ts.ts.md) (high), `readCompilerOptions` → [`bench/src/truth/signals-ts.ts#readCompilerOptions`](signals-ts.ts.md) (high), `reference` → [`bench/src/truth/signals-ts.ts#reference`](signals-ts.ts.md) (high), `resolveAlias` → [`bench/src/truth/signals-ts.ts#resolveAlias`](signals-ts.ts.md) (high), `resolveHandlerIn` → [`bench/src/truth/signals-ts.ts#resolveHandlerIn`](signals-ts.ts.md) (high), `resolveHandlerThroughImport` → [`bench/src/truth/signals-ts.ts#resolveHandlerThroughImport`](signals-ts.ts.md) (high), `resolveRouteHandlers` → [`bench/src/truth/signals-ts.ts#resolveRouteHandlers`](signals-ts.ts.md) (high), `resourceInputs` → [`bench/src/truth/signals-ts.ts#resourceInputs`](signals-ts.ts.md) (high), `returnTypeIsJsx` → [`bench/src/truth/signals-ts.ts#returnTypeIsJsx`](signals-ts.ts.md) (high), `rootIdentifier` → [`bench/src/truth/signals-ts.ts#rootIdentifier`](signals-ts.ts.md) (high), `stringArgument` → [`bench/src/truth/signals-ts.ts#stringArgument`](signals-ts.ts.md) (high), `tanstackNodes` → [`bench/src/truth/signals-ts.ts#tanstackNodes`](signals-ts.ts.md) (high), `tanstackRoute` → [`bench/src/truth/signals-ts.ts#tanstackRoute`](signals-ts.ts.md) (high), `toPosix` → [`bench/src/truth/signals-ts.ts#toPosix`](signals-ts.ts.md) (high), `topLevelBindings` → [`bench/src/truth/signals-ts.ts#topLevelBindings`](signals-ts.ts.md) (high), `unwrap` → [`bench/src/truth/signals-ts.ts#unwrap`](signals-ts.ts.md) (high), `visitFile` → [`bench/src/truth/signals-ts.ts#visitFile`](signals-ts.ts.md) (high), `wrappedFunction` → [`bench/src/truth/signals-ts.ts#wrappedFunction`](signals-ts.ts.md) (high), `load` → [`bench/src/truth/ts-workspace.ts#WorkspaceEntryMapper.load`](ts-workspace.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high)

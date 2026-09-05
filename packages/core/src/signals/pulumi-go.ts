@@ -15,12 +15,12 @@
  *    **adoption** of a resource that already exists. It is separated from a data source by its
  *    shape and not by widening the `New` regex, because `Get`/`Lookup` is also how a provider
  *    SDK spells a data source, and a data source returns a plain result struct. A data source
- *    is `Get<Thing>(ctx, args, opts)` — two or three arguments, and the second is an args
+ *    is `Get<Thing>(ctx, args, opts)`, two or three arguments, and the second is an args
  *    pointer or `nil`; an adoption constructor takes at least four and names the resource with
  *    a string literal in the second.
  *  - `pulumi.NewStackReference(ctx, name, …)` from the **core SDK**. The core SDK is a library
- *    rather than a provider — `pulumi.NewFileAsset(...)` and `pulumi.NewAssetArchive(...)` are
- *    not resources — and `StackReference` is the one concrete resource it exports, exactly as
+ *    rather than a provider, `pulumi.NewFileAsset(...)` and `pulumi.NewAssetArchive(...)` are
+ *    not resources, and `StackReference` is the one concrete resource it exports, exactly as
  *    `signals/pulumi-ts.ts` treats `@pulumi/pulumi`.
  *
  * One further reading the spec's sentence leaves open: the package identifier is **not** always
@@ -38,7 +38,7 @@
  * should treat it as a label, and `meta.provider` as the reliable half.
  *
  * A resource is named after the identifier its `:=` (or `=`, or `var`) binds. An unbound
- * result — `_, err = s3.NewBucketObject(...)`, or a bare call statement — takes its Pulumi
+ * result, `_, err = s3.NewBucketObject(...)`, or a bare call statement, takes its Pulumi
  * logical name when the second argument is a string literal (`~site`), and otherwise its
  * position among the file's *remaining* unbound resources (`~0`). The literal comes first
  * because a position is not an identity: an unbound resource inserted above another shifts
@@ -55,8 +55,8 @@
  *    `vpc.ID()` and `bucket.Arn` both reduce to the same `selector_expression`, so a method
  *    call and a field read need one rule between them; the reference's `to` is `<var>.<Field>`.
  *  - a bare identifier naming another resource inside one of the four resource options that
- *    name a resource outright — `pulumi.Parent(...)`, `pulumi.DependsOn(...)`,
- *    `pulumi.Provider(...)` and `pulumi.Providers(...)` — whose `to` is the bare `<var>`. Each
+ *    name a resource outright, `pulumi.Parent(...)`, `pulumi.DependsOn(...)`,
+ *    `pulumi.Provider(...)` and `pulumi.Providers(...)`, whose `to` is the bare `<var>`. Each
  *    is a dependency the map would otherwise lose entirely (driver ruling, leaf 2.7 review
  *    item 2 and the follow-up on fix round 1's concern 1). No other option is read, so a bare
  *    identifier anywhere else is never an edge.
@@ -332,7 +332,7 @@ function classify(
       return { ...tokenOf(provider, selected.text.slice(3)), adopted: false, written, args };
     }
     // Adoption: `Get<Type>(ctx, "<name>", id, state, …)`. A data source is `Get<Thing>(ctx,
-    // args, opts)` or `Lookup<Thing>(ctx, args)` — never four arguments with a string-literal
+    // args, opts)` or `Lookup<Thing>(ctx, args)`, never four arguments with a string-literal
     // name in the second, which is what separates the two without naming either.
     if (ADOPTION.test(selected.text) && arity >= ADOPTION_ARITY && logicalNameArgument(args) !== undefined) {
       return { ...tokenOf(provider, selected.text.slice(3)), adopted: true, written, args };

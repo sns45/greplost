@@ -1,26 +1,26 @@
 /**
  * Kubernetes and Helm reference rules (build 2, spec 2026-09-04 sections 0.3 and 2.3).
  *
- * `extract/yaml-k8s.ts` records what a manifest *asks for* — a label set, a `<Kind>/<name>` pair,
- * an image reference, a `.Values` path — and this module decides which node that is, or drops
+ * `extract/yaml-k8s.ts` records what a manifest *asks for*, a label set, a `<Kind>/<name>` pair,
+ * an image reference, a `.Values` path, and this module decides which node that is, or drops
  * it. The rule is the one that governs call edges (tech spec 5.1): `high` when the request
  * lands on exactly one node, `med` for exactly one documented hop, **anything ambiguous
  * dropped, never guessed**.
  *
  * Four mechanisms, and the scope each searches:
  *
- *  - `selector` — a `Service` or `NetworkPolicy` label set against every workload's pod-template
+ *  - `selector`, a `Service` or `NetworkPolicy` label set against every workload's pod-template
  *    labels (`meta.podLabels`, recorded by the extractor because the reference layer sees
  *    declarations and not documents). Subset, not equality: a Service asking for `app=web` picks
  *    a workload labelled `app=web,tier=front`. Exactly one match is `high`; two are two
  *    plausible answers and the edge is dropped.
- *  - `config-ref` — `<Kind>/<name>` against the `resource` nodes named `<Kind>.<name>`. Exactly
+ *  - `config-ref`, `<Kind>/<name>` against the `resource` nodes named `<Kind>.<name>`. Exactly
  *    one is `high`. The scope is the whole indexed repo rather than a namespace, because a
  *    manifest's namespace is frequently set at apply time and a name that is ambiguous inside
  *    the repo is ambiguous, full stop.
- *  - `from-image` — always `ext:image/<ref>`, `high`. The reference is the image the container
+ *  - `from-image`, always `ext:image/<ref>`, `high`. The reference is the image the container
  *    was written with; nothing has to be looked up for it to be true.
- *  - `helm-values` — `.Values.<path>` to the chart's `values.yaml` node for the path's **first**
+ *  - `helm-values`, `.Values.<path>` to the chart's `values.yaml` node for the path's **first**
  *    segment, `med`: one documented hop, from the template to the chart's values file. The chart
  *    root is the nearest ancestor directory of the template that holds an indexed `values.yaml`,
  *    which is exactly the rule `helm` itself applies.
@@ -145,7 +145,7 @@ function resolveConfigRef(file: FileRecord, ref: ReferenceRecord, ctx: Reference
  * The chart's `values.yaml`: the nearest ancestor directory of `from` that holds one.
  *
  * A template lives at `<chart>/templates/…`, so the walk finds the chart root without the
- * extractor ever reading the filesystem — which it may not (tech spec 5.1).
+ * extractor ever reading the filesystem, which it may not (tech spec 5.1).
  */
 function chartValuesFile(from: string, ctx: ReferenceContext): string | null {
   let dir = from.slice(0, Math.max(from.lastIndexOf("/"), 0));

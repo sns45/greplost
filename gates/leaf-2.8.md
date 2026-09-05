@@ -69,8 +69,8 @@ another leaf can assume are:
 4. **A manifest's node names are in `FileRecord.exports`** while `Declaration.exported` stays
    `false` for every node, exactly as spec 2.3 says. `buildExportIndex` never takes a non-file
    node from the declaration side (`isNodeKind`), so the export record is the only route a node
-   name can reach `FileEntry.exports` — the same route `extract/hcl.ts` takes for a Terraform
-   `variable` — and a `ConfigMap` named `web-config` is precisely what another manifest reaches
+   name can reach `FileEntry.exports`, the same route `extract/hcl.ts` takes for a Terraform
+   `variable`, and a `ConfigMap` named `web-config` is precisely what another manifest reaches
    for by name.
 
 Three files outside this leaf's ownership were edited and are reported to the driver:
@@ -80,13 +80,13 @@ module for one, finds none, and S5/S6 are `n/a` for every YAML target);
 `packages/core/src/unparsable.ts` blanks a Helm template before asking whether it parses (without
 it all 122 bitnami templates are reported as files nothing could be read from, which is the
 opposite of true); and `bench/test/score.test.ts`, the seam's own new `nodeFiles` test, which did
-not typecheck against `Score | null` and so broke G13 the moment it landed — made null-safe, no
+not typecheck against `Score | null` and so broke G13 the moment it landed, made null-safe, no
 behaviour changed. All three are commented at the change.
 
 **S6 is no longer switched off by a chart (fix round 1).** `truth/yaml-helm.ts` used to publish
 `unsupported:S6`, and a note is published *target-wide*, so one chart in a repo full of manifests
-scored no nodes at all. It now returns `nodeFiles` — the chart's own `Chart.yaml` and
-`values.yaml`, never its `templates/**` — and the driver's scorer restricts S6 to those, on both
+scored no nodes at all. It now returns `nodeFiles`, the chart's own `Chart.yaml` and
+`values.yaml`, never its `templates/**`, and the driver's scorer restricts S6 to those, on both
 sides. `bench/test/truth-yaml-k8s.test.ts` builds a temp repo of `tiny-k8s` beside `tiny-helm`
 and asserts S6 scores 11 nodes (the 7 manifest nodes, the chart's module node, three values
 keys) with no false positive.
@@ -156,11 +156,11 @@ keys) with no false positive.
   EVIDENCE: bitnami-charts (130 files); S1 1.000/1.000, S2 1.000/1.000 (tp 216), S3 n/a,
   S4 1.000, S5 1.000 (tp 694), S6 1.000 (tp 216, over the four charts' own files). 4 unparsable
   files after the pre-pass, down from 122 before it, and all four are the
-  `{{ if }} key: … {{ else }} key: …` shape the `if-else-arms-both-kept` note names — none of
+  `{{ if }} key: … {{ else }} key: …` shape the `if-else-arms-both-kept` note names, none of
   them is a `{{ define }}` block, which this leaf's first report guessed at and the review
   disproved. The four charts each declare `common` from an OCI registry and ship no `charts/`,
   so `helm template` cannot render them offline and the oracle says so on stderr rather than
-  scoring zero — nothing scored here comes from the render.
+  scoring zero: nothing scored here comes from the render.
 
 - [x] G12: the core and bench suites are green
   CHECK: bun test packages/core bench 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'

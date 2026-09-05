@@ -123,6 +123,32 @@ describe("declarations", () => {
     expect(out.decls.map((d) => d.name)).toEqual(["C", "C.m"]);
   });
 
+  test("a property and its setter are two nodes with two ids and one name", () => {
+    // `@property def value` beside `@value.setter def value` is the commonest shape in
+    // Python and, left alone, both declarations take the id `m.py#C.value`: `query` can
+    // never name the second, and `index.members` keeps whichever came first. The `~<n>`
+    // suffix the other languages carry (driver ruling 2026-09-04) lands on the id only;
+    // the name stays what the source wrote, because that is what a reader searches for.
+    const out = run(
+      "m.py",
+      "class C:\n" +
+        "    @property\n    def value(self):\n        return self._v\n\n" +
+        "    @value.setter\n    def value(self, v):\n        self._v = v\n",
+    );
+    expect(out.decls.map((d) => d.id)).toEqual(["m.py#C", "m.py#C.value", "m.py#C.value~2"]);
+    expect(out.decls.map((d) => d.name)).toEqual(["C", "C.value", "C.value"]);
+  });
+
+  test("a name declared three times in one file numbers from 2 in source order", () => {
+    const out = run("m.py", "def f():\n    pass\n\ndef f():\n    pass\n\ndef f():\n    pass\n");
+    expect(out.decls.map((d) => d.id)).toEqual(["m.py#f", "m.py#f~2", "m.py#f~3"]);
+  });
+
+  test("a redefined module-level name is exported once", () => {
+    const out = run("m.py", "def f():\n    pass\n\ndef f():\n    pass\n");
+    expect(out.exports).toEqual([{ name: "f", kind: "named" }]);
+  });
+
   test("the signature is clipped and whitespace-collapsed", () => {
     const long = "a".repeat(400);
     const out = run("m.py", `def wide(\n    ${long},\n) -> None:\n    pass\n`);

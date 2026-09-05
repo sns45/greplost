@@ -3,10 +3,10 @@
  *
  * Three layers, each tested on inline sources first and then pinned against
  * `fixtures/tiny-terraform` end to end:
- *   - `extractHcl`            — what one `.tf` file says about itself (spec 2.2, "Declarations");
- *   - `createHclResolver`     — a `module` source resolved to a *directory* id for a local
+ *   - `extractHcl`, what one `.tf` file says about itself (spec 2.2, "Declarations");
+ *   - `createHclResolver`, a `module` source resolved to a *directory* id for a local
  *                               path and to `ext:module/<source>` for a registry or git source;
- *   - `resolveHclReferences`  — an address chain resolved to the node it names, at the
+ *   - `resolveHclReferences`, an address chain resolved to the node it names, at the
  *                               confidence spec 0.3 fixes, or dropped rather than guessed.
  *
  * The `describe` names are fixed by spec section 2.6: `blocks`, `module imports`,
@@ -482,7 +482,7 @@ describe("references", () => {
         'resource "aws_sg" "a" {',
         '  dynamic "aws_lb" {',
         // The label is bound in `content`, so `aws_lb.value` is the iterator and not the
-        // resource — but `for_each` is evaluated in the *parent* scope, where `aws_lb.main`
+        // resource, but `for_each` is evaluated in the *parent* scope, where `aws_lb.main`
         // is the resource and nothing else.
         "    for_each = aws_lb.main.subnets",
         "    content {",

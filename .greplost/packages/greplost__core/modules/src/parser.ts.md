@@ -15,19 +15,19 @@
 **Blast radius:** 48 files (`greplost impact packages/core/src/parser.ts`)
 
 **Key symbols:**
-- `interface ParserHandle`  L15-17
-- `const GRAMMAR_FILE: Readonly<Partial<Record<Lang, string>>> = { ts: "tree-sitter-typescript.wasm", js: "tree-sitter-typescript.wasm", tsx: "tree-sitter-tsx.wasm", jsx: "tree-sitter-tsx.wasm", go: "tr…`  L28-41
-- `const RUNTIME_FILE = "web-tree-sitter.wasm"`  L44-44
-- `function grammarDir(): string`  L47-51
-- `let runtimeInit: Promise<void> | null = null`  L58-58
-- `function initRuntime(dir: string): Promise<void>`  L60-68
-- `const languages = new Map<string, Promise<Language>>()`  L71-71
-- `function loadLanguage(file: string): Promise<Language>`  L73-82
-- `function message(cause: unknown): string`  L84-86
-- `async function createParser(opts?: { grammarDir?: string }): Promise<ParserHandle>`  L94-124
-- `let spare: Parser | null = null`  L136-136
-- `let spareLanguage: Language | null = null`  L137-137
-- `function reparse(language: Language, source: string): Tree | null`  L147-154
-- `function disposeSpareParser(): void`  L157-162
+- `interface ParserHandle`  L23-34
+- `const GRAMMAR_FILE: Readonly<Partial<Record<Lang, string>>> = { ts: "tree-sitter-typescript.wasm", js: "tree-sitter-typescript.wasm", tsx: "tree-sitter-tsx.wasm", jsx: "tree-sitter-tsx.wasm", go: "tr…`  L45-58
+- `const RUNTIME_FILE = "web-tree-sitter.wasm"`  L61-61
+- `function grammarDir(): string`  L64-68
+- `let runtimeInit: Promise<void> | null = null`  L75-75
+- `function initRuntime(dir: string): Promise<void>`  L77-85
+- `const languages = new Map<string, Promise<Language>>()`  L88-88
+- `function loadLanguage(file: string): Promise<Language>`  L90-99
+- `function message(cause: unknown): string`  L101-103
+- `async function createParser(opts?: { grammarDir?: string }): Promise<ParserHandle>`  L111-151
+- `let spare: Parser | null = null`  L163-163
+- `let spareLanguage: Language | null = null`  L164-164
+- `function reparse(language: Language, source: string): Tree | null`  L174-181
+- `function disposeSpareParser(): void`  L184-189
 
 **Calls:** `grammarDir` → [`packages/core/src/parser.ts#grammarDir`](parser.ts.md) (high), `initRuntime` → [`packages/core/src/parser.ts#initRuntime`](parser.ts.md) (high), `loadLanguage` → [`packages/core/src/parser.ts#loadLanguage`](parser.ts.md) (high), `message` → [`packages/core/src/parser.ts#message`](parser.ts.md) (high)

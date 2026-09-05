@@ -130,7 +130,7 @@ export function registerWorkspaceHooks(set: SetWorkspaceHook): void {
  * command where the workspace layer must run *because the user asked for it*,
  * not because of where they are standing. Every member repo gets its own map,
  * its `config.json` and its `.gitignore`, and its git hooks unless `--no-hooks`
- * said otherwise — which is exactly what `greplost init` does per repo, done
+ * said otherwise, which is exactly what `greplost init` does per repo, done
  * once for all of them.
  */
 export async function initWorkspace(

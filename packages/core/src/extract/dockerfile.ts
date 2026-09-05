@@ -1,8 +1,8 @@
 /**
  * Dockerfile extraction (build 2, spec 2026-09-04 section 2.5).
  *
- * A Dockerfile is a flat list of instructions with no nesting and no imports, so — like
- * Terraform — its graph is made of *references* rather than calls: this module produces no
+ * A Dockerfile is a flat list of instructions with no nesting and no imports, so, like
+ * Terraform, its graph is made of *references* rather than calls: this module produces no
  * `CallSite` at all (S3 is `n/a` for Dockerfiles, never 0) and fills `FileRecord.refs` with the
  * raw text of everything one instruction names.
  *
@@ -10,8 +10,8 @@
  *
  *  - **Declarations.** One `stage` node per `FROM`, named by its `AS <name>` alias or, when it
  *    has none, by its 0-based position; `meta.base`, `meta.index` and `meta.platform` carry
- *    what the instruction wrote. One `image` node for the **final** stage — the one the build
- *    actually produces — named after that stage, with `meta.entrypoint`/`meta.cmd` clipped to
+ *    what the instruction wrote. One `image` node for the **final** stage, the one the build
+ *    actually produces, named after that stage, with `meta.entrypoint`/`meta.cmd` clipped to
  *    120 characters. `ARG` and `ENV` become `const` declarations named `arg.<N>`/`env.<N>`,
  *    with `meta.default` when the value is a literal.
  *  - **Exports.** Every stage name, which is the file's whole surface: another Dockerfile
@@ -39,8 +39,8 @@
  *  - **Nothing recovered from an `ERROR` region is published as if it had been read.** The walk
  *    descends into an `ERROR` to keep what the grammar did recognise, but a declaration found
  *    there carries no `meta.default` (the text around it is exactly what the parser lost), and
- *    a file holding any `ERROR` gets no `image` node at all, because the final stage — the one
- *    thing an image node can be named after — may be inside the region that was lost.
+ *    a file holding any `ERROR` gets no `image` node at all, because the final stage, the one
+ *    thing an image node can be named after, may be inside the region that was lost.
  *
  * Nothing in this file reads the filesystem or knows about another file (tech spec 5.1).
  */
@@ -192,7 +192,7 @@ interface DockerState {
  * The suffix lives in the **id and nowhere else** (driver ruling 2026-09-04): `name` stays as
  * the file wrote it, because it is what a `COPY --from` writes and what the export index
  * publishes. Two stages with one alias are then correctly *ambiguous* to the linker rather
- * than silently distinguishable — which is right, because `docker build` refuses such a file.
+ * than silently distinguishable, which is right, because `docker build` refuses such a file.
  */
 function uniqueId(state: DockerState, kind: DeclKind, name: string, isNode: boolean): string {
   const base = isNode ? nodeId(state.path, kind, name) : symbolId(state.path, name);
@@ -293,7 +293,7 @@ function collectFrom(state: DockerState, instruction: Node): void {
   addReference(state, base, "from-image", line);
 }
 
-/** `ARG NAME[=default]` — one constant named `arg.<NAME>`. */
+/** `ARG NAME[=default]`, one constant named `arg.<NAME>`. */
 function collectArg(state: DockerState, instruction: Node, recovered: boolean): void {
   const name = instruction.childForFieldName("name");
   if (name === null || !usableName(name.text)) return;
@@ -301,7 +301,7 @@ function collectArg(state: DockerState, instruction: Node, recovered: boolean): 
   addConstant(state, "arg", name.text, value, instruction, recovered);
 }
 
-/** `ENV A=1 B=2`, and the legacy `ENV A 1` — one constant per pair, named `env.<NAME>`. */
+/** `ENV A=1 B=2`, and the legacy `ENV A 1`, one constant per pair, named `env.<NAME>`. */
 function collectEnv(state: DockerState, instruction: Node, recovered: boolean): void {
   for (const pair of namedChildrenOfType(instruction, "env_pair")) {
     const name = pair.childForFieldName("name");
@@ -424,7 +424,7 @@ function walk(state: DockerState, node: Node, recovered: boolean): void {
 /**
  * The `image` node for the final stage, and the stage spans that could only be known at the end.
  *
- * A Dockerfile builds exactly one image — the last stage — and every earlier stage is an
+ * A Dockerfile builds exactly one image, the last stage, and every earlier stage is an
  * intermediate the build throws away, which is why `image` is not one node per `FROM`.
  */
 function finish(state: DockerState): void {
@@ -436,7 +436,7 @@ function finish(state: DockerState): void {
   // A file the grammar could not read whole has an unknown tail, and the image node is named
   // after the *last* stage: `FROM a AS one` / `ENV NOTE a b c` / `FROM a AS two` really builds
   // `two`, and the walk can only see `one`. Publishing `image.one` would be a guess, so a file
-  // holding any `ERROR` gets no image node — a miss the oracle can catch, never a wrong id.
+  // holding any `ERROR` gets no image node, a miss the oracle can catch, never a wrong id.
   const final = state.sawError ? undefined : state.stages[state.stages.length - 1];
   if (final === undefined) return;
   addDeclaration(

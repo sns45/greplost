@@ -465,7 +465,7 @@ export function eval4Section(payload: Payload | null, assetsRel: string): EvalSe
       const entry = rec(winLossTie[condition]);
       return `${condition}: ${fmt(num(entry?.["win"]))}W / ${fmt(num(entry?.["loss"]))}L / ${fmt(num(entry?.["tie"]))}T`;
     });
-    section.notes.push(`Win/loss/tie vs \`base\` — ${parts.join("; ")}.`);
+    section.notes.push(`Win/loss/tie vs \`base\`, ${parts.join("; ")}.`);
   }
 
   const spec: ChartSpec = {
@@ -586,14 +586,14 @@ export function mapqualitySection(payload: Payload | null): EvalSection {
   if (maxNodeCount !== null && maxNodes !== null && maxNodeCount === maxNodes) {
     section.notes.push(
       `M2 has no headroom: the largest fence is ${fmt(maxNodeCount)} nodes against a cap of ${fmt(maxNodes)}. ` +
-        "The metric passes — nothing exceeds the cap — but one more node in that diagram fails it, so the " +
+        "The metric passes, nothing exceeds the cap, but one more node in that diagram fails it, so the " +
         "auto-split is at its limit rather than comfortably inside it.",
     );
   }
   section.notes.push(
     `Artifact dir: \`${dir ?? "not recorded"}\`. Mermaid checker: \`${checker ?? "not recorded"}\`` +
       (checker === "subset"
-        ? " — `mermaid` 11 under jsdom could not run headless here, so fences were validated against a strict " +
+        ? ", `mermaid` 11 under jsdom could not run headless here, so fences were validated against a strict " +
           "grammar for the subset greplost emits (bench spec 1.5.4)."
         : "."),
   );

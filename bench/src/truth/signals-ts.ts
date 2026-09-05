@@ -3,8 +3,8 @@
  *
  * The oracle is the **TypeScript compiler**: a `ts.Program` over the same file list greplost
  * indexed, walked with the type checker available. It reuses `truth/ts.ts`'s program
- * construction — the workspace emulation of ruling 10.3, which stands in for the installed and
- * built state a corpus clone does not have — and **none** of its edge logic. It imports nothing
+ * construction, the workspace emulation of ruling 10.3, which stands in for the installed and
+ * built state a corpus clone does not have, and **none** of its edge logic. It imports nothing
  * from `packages/core/src/signals`; `bench/test/signals-ts.test.ts` asserts that, because an
  * oracle that shares code with what it scores measures nothing at all.
  *
@@ -22,7 +22,7 @@
  *    so a locally defined `memo` is not React's. A syntactic JSX return is the fallback for a
  *    program with no React types on disk, which is every corpus clone.
  *  - **Pulumi resources**: `checker.getTypeAtLocation(X)`'s declared class walked up its
- *    base-type chain for `pulumi.CustomResource` / `pulumi.ComponentResource` — the check only a
+ *    base-type chain for `pulumi.CustomResource` / `pulumi.ComponentResource`, the check only a
  *    checker can make. Where the class has no declaration to walk (a provider SDK that is not
  *    installed), the fallback is the *resolved symbol's* import specifier, which is still a
  *    binding question rather than a text one.
@@ -251,6 +251,9 @@ function analyse(root: string, files: string[]): Scan {
 // ---------------------------------------------------------------------------
 // per-file rules
 // ---------------------------------------------------------------------------
+
+/** Characters a node name cannot carry (`nodeId`): a logical name holding one is unusable. */
+const UNUSABLE_IN_NAME = /[#\n\0]/u;
 
 /** Node names stay unique inside one file; a duplicate takes `~<n>` from 2 (schema 2). */
 class Names {
@@ -579,7 +582,7 @@ type Resolution = string | undefined | typeof AMBIGUOUS;
  * Spec 3.4 lets the target be the referenced **component node or the declaration**, and the
  * name may be imported: `references/ts.ts` looks in the file first and then through exactly one
  * import record. The oracle used to hard-code a same-file `component.<name>`, which scored a
- * rule greplost never implemented — every route whose component lives in another file was a
+ * rule greplost never implemented, every route whose component lives in another file was a
  * false positive on one side and a false negative on the other. This resolves the name the same
  * way, from the compiler's own bindings, and drops anything ambiguous rather than guessing.
  */
@@ -609,7 +612,7 @@ function resolveRouteHandlers(scan: Scan, checker: ts.TypeChecker, absRoot: stri
  * first, then the plain declaration.
  *
  * A file holding both `component.X` and `component.X~2` bound the name twice, so nothing may
- * resolve to either — the same rule `references/ts.ts` applies.
+ * resolve to either, the same rule `references/ts.ts` applies.
  */
 function resolveHandlerIn(
   file: string,
@@ -787,9 +790,21 @@ function pulumiNodes(file: string, sourceFile: ts.SourceFile, checker: ts.TypeCh
   const visit = (node: ts.Node): void => {
     if (ts.isNewExpression(node) && isPulumiResource(node.expression, checker)) {
       const binding = newBindingName(node);
-      const name = names.take(binding ?? `~${anonymous}`);
-      if (binding === undefined) anonymous += 1;
-      else if (!byBinding.has(binding)) byBinding.set(binding, name);
+      // An unbound resource takes its Pulumi logical name (the first argument, when it is a
+      // string literal) and falls back to its position among the file's remaining unbound
+      // resources. A position is not an identity: one insertion renumbers everything below
+      // it. Ruling of 2026-09-05, and the same rule the Go pass has always applied.
+      const first = node.arguments?.[0];
+      const logical = first !== undefined && ts.isStringLiteralLike(first) ? first.text : undefined;
+      let claimed: string;
+      if (binding !== undefined) claimed = binding;
+      else if (logical !== undefined && logical !== "" && !UNUSABLE_IN_NAME.test(logical)) claimed = `~${logical}`;
+      else {
+        claimed = `~${anonymous}`;
+        anonymous += 1;
+      }
+      const name = names.take(claimed);
+      if (binding !== undefined && !byBinding.has(binding)) byBinding.set(binding, name);
       scan.nodes.add(nodeIdOf(file, "resource", name));
       pending.push({ name, call: node });
     }
@@ -809,7 +824,7 @@ function pulumiNodes(file: string, sourceFile: ts.SourceFile, checker: ts.TypeCh
 /**
  * The structural resource check.
  *
- * First the checker's declared class and its base-type chain — the judgement only a checker can
+ * First the checker's declared class and its base-type chain, the judgement only a checker can
  * make. When the class has no declaration in the program (a provider SDK that is not installed,
  * which is every corpus clone), the fallback is the *resolved symbol's* import specifier, with
  * the core SDK narrowed to its resource classes: `new pulumi.Config()` is not a resource.

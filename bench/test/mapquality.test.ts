@@ -545,7 +545,7 @@ describe("resolveTarget (--dir / --repo / --fixture)", () => {
     const realLog = console.log;
     console.log = (): void => {};
     try {
-      // The default target — `.greplost` at the repo root — because that is the one the
+      // The default target, `.greplost` at the repo root, because that is the one the
       // published M1/M2 payload is taken on. An explicit `--dir` names the tree by its
       // own path instead, which is checked above.
       expect(await run([])).toBe(0);

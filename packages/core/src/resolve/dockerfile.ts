@@ -2,14 +2,14 @@
  * Dockerfile resolution (build 2, spec 2026-09-04 section 2.5, "References").
  *
  * One job: turn a `COPY`/`ADD` source into the repo file it names. A Dockerfile has no import
- * statement, so this is the whole of it — `resolveDockerfileCall` exists only to keep the shape
+ * statement, so this is the whole of it, `resolveDockerfileCall` exists only to keep the shape
  * of the language pipeline uniform (spec section 0.4) and can never be reached.
  *
  * The build context is not written down anywhere greplost can read: `docker build -f X .` takes
  * it from the command line, a compose file or a CI job, and a Dockerfile itself never says
  * which directory its sources are relative to. So a source is probed against exactly two
- * contexts — the Dockerfile's own directory (the default when nobody says otherwise) and the
- * repository root (what a monorepo build almost always passes) — and it resolves only when the
+ * contexts, the Dockerfile's own directory (the default when nobody says otherwise) and the
+ * repository root (what a monorepo build almost always passes), and it resolves only when the
  * two agree on **one** indexed file. Two different files is ambiguous and resolves to nothing,
  * which is the rule that governs every edge in greplost (tech spec 5.1).
  *
@@ -74,7 +74,7 @@ function normalizeJoin(dir: string, rest: string): string | null {
  *
  * Nothing here touches the filesystem (tech spec 5.1): a path the repository holds but does not
  * index is honestly unresolved rather than guessed at, which is also why a `COPY package.json`
- * produces no edge — greplost indexes no language that owns a `package.json`.
+ * produces no edge; greplost indexes no language that owns a `package.json`.
  */
 export function createDockerfileResolver(
   ctx: RepoContext,
@@ -96,7 +96,7 @@ export function createDockerfileResolver(
 /**
  * A Dockerfile has no call edges (spec 2.5), so this is never reached: `extractDockerfile`
  * returns `calls: []` for every file. It throws rather than returning null so that a `CallSite`
- * appearing here — which could only come from a bug in the extractor — is a loud failure and
+ * appearing here, which could only come from a bug in the extractor, is a loud failure and
  * not a quietly missing edge.
  */
 export function resolveDockerfileCall(

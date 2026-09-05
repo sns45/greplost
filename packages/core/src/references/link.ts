@@ -4,7 +4,7 @@
  * A reference is a dependency that is neither an import nor a call: a Terraform expression
  * naming another resource, a Kubernetes Service selecting a workload, a workflow job that
  * `needs` another, a Dockerfile's base image. `FileRecord.refs` holds them as the extractor saw
- * them — language-native text, never a node id — and this module turns them into
+ * them, language-native text, never a node id, and this module turns them into
  * `ReferenceEdge`s by dispatching on the owning file's `lang`.
  *
  * Two rules from the spec are enforced here rather than in every language module, so no
@@ -39,7 +39,7 @@ import { resolveYamlReferences } from "./yaml.ts";
 export interface ReferenceContext {
   /** Every indexed file, by repo-relative path. */
   readonly recordByPath: ReadonlyMap<string, FileRecord>;
-  /** Every declaration in the build, by id — the lookup a resolved reference lands on. */
+  /** Every declaration in the build, by id, the lookup a resolved reference lands on. */
   readonly declarationById: ReadonlyMap<string, Declaration>;
   /** Non-file nodes grouped by kind, for rules that search a kind (`selector`, `config-ref`). */
   readonly nodesByKind: ReadonlyMap<DeclKind, readonly Declaration[]>;
@@ -61,7 +61,7 @@ export type ReferenceRule = (
  *
  * `Partial` on purpose: most languages express dependencies as imports and calls and produce no
  * `ReferenceRecord` at all. A language that *does* produce one and has no entry here is a
- * mistake worth an error, not a silent drop — see `linkReferences`.
+ * mistake worth an error, not a silent drop: see `linkReferences`.
  */
 const REFERENCE_RULES: Readonly<Partial<Record<Lang, ReferenceRule>>> = {
   go: resolveGoReferences,

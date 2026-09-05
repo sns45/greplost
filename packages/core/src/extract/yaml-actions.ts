@@ -3,22 +3,22 @@
  *
  * A workflow file declares *work*, not types: jobs, the steps inside them, and the reusable
  * workflows a job delegates to. Like a Kubernetes manifest and a Terraform module it has no
- * calls and no imports at all — `resolve/yaml.ts` says so in as many words — so everything a
+ * calls and no imports at all, `resolve/yaml.ts` says so in as many words, so everything a
  * workflow says about its neighbours is a `ReferenceRecord` that `references/yaml-actions.ts`
  * resolves. Reached through the flavour dispatcher in `extract/yaml.ts`, never from
  * `extractFile` directly.
  *
  * Three kinds of node, and the rule that decides each:
  *
- *  - **`job`** — one per `jobs.<id>`, named by the job id, with `meta.name` (the display name),
+ *  - **`job`**, one per `jobs.<id>`, named by the job id, with `meta.name` (the display name),
  *    `meta.runsOn` and `meta.if`. The id is the name: it is what `needs` spells, what the
  *    Actions API reports, and what a person greps for.
- *  - **`step`** — one per step of a job, named `<jobId>.~<index>` with a 0-based index, carrying
+ *  - **`step`**, one per step of a job, named `<jobId>.~<index>` with a 0-based index, carrying
  *    `meta.uses` or `meta.run` (the run body clipped to 80 characters with its whitespace
- *    collapsed) and `meta.name`. A step has no identity of its own in the format — two steps
- *    may be byte-identical — so the index is a *position*, which is why renaming one job never
+ *    collapsed) and `meta.name`. A step has no identity of its own in the format, two steps
+ *    may be byte-identical, so the index is a *position*, which is why renaming one job never
  *    renumbers another's steps.
- *  - **`task`** — one per job whose body is a reusable-workflow call (`jobs.<id>.uses`), named
+ *  - **`task`**, one per job whose body is a reusable-workflow call (`jobs.<id>.uses`), named
  *    by the job id. Such a job has no steps and no runner; it is a delegation, and calling it a
  *    `job` would put a node in the map that has none of a job's parts.
  *
@@ -30,10 +30,10 @@
  * Three reference kinds leave here as language-native text, resolved by
  * `references/yaml-actions.ts` and never here:
  *
- *  - `needs` — the job id a job waits for, as written;
- *  - `uses`  — the action or workflow reference as written (`actions/checkout@v4`,
+ *  - `needs`, the job id a job waits for, as written;
+ *  - `uses`, the action or workflow reference as written (`actions/checkout@v4`,
  *              `./.github/actions/setup`, `./.github/workflows/ci.yml`);
- *  - `config` — every literal path-shaped token of a `run:` body. The extractor cannot know
+ *  - `config`, every literal path-shaped token of a `run:` body. The extractor cannot know
  *              which of them is a file (tech spec 5.1: a `FileRecord` is what one file can say
  *              about itself), so it offers the candidates and the reference layer keeps the
  *              ones that name exactly one indexed path.
@@ -73,7 +73,7 @@ const EXPRESSION = /\$\{\{/u;
  *
  * Deliberately narrow: one or more path segments of ordinary file characters, optionally
  * prefixed `./`, with no expansion, no glob, no absolute root and no `..`. Everything it lets
- * through is then held to the only test that matters — being an indexed repo path — so the
+ * through is then held to the only test that matters, being an indexed repo path, so the
  * cost of a token that is not one is nothing, while the cost of a *wrong* one would be an
  * invented edge.
  */
@@ -112,7 +112,7 @@ interface ActionsState {
  * id would collide in `graph/symbols.jsonl`. The suffix lives in the **id and nowhere else**
  * (driver ruling 2026-09-04, the rule `extract/hcl.ts` and `extract/yaml-k8s.ts` both follow):
  * `name` stays as the file wrote it, because the name is what a `needs:` writes when it reaches
- * for the job — `needs: build` names *both* of two jobs called `build`, and a suffixed name
+ * for the job, `needs: build` names *both* of two jobs called `build`, and a suffixed name
  * would make the second silently distinguishable and turn an ambiguous reference into a certain
  * one. It is also what the export index publishes, and `build~2` is a name nobody wrote.
  *
@@ -159,7 +159,7 @@ function metaOf(entries: ReadonlyArray<readonly [string, string | null]>): Recor
  * A node's line span, with trailing blank lines cut off.
  *
  * A YAML block node runs to the start of whatever comes next, so its `endPosition` is the line
- * *after* the value — one line past the last thing anybody wrote. The same trim `yaml-k8s.ts`
+ * *after* the value, one line past the last thing anybody wrote. The same trim `yaml-k8s.ts`
  * applies, for the same reason: a card must not claim a line its node does not occupy.
  */
 function trimmedSpan(source: string, node: Node): [number, number] {
@@ -225,8 +225,8 @@ function literal(text: string | null): text is string {
 /**
  * A scalar, or a sequence of scalars, as one comma-joined string.
  *
- * `runs-on` is written all three ways — `ubuntu-latest`, `[self-hosted, linux]`, and a
- * `group`/`labels` mapping — and `meta.runsOn` is evidence rather than an id, so the two shapes
+ * `runs-on` is written all three ways, `ubuntu-latest`, `[self-hosted, linux]`, and a
+ * `group`/`labels` mapping, and `meta.runsOn` is evidence rather than an id, so the two shapes
  * that are plainly a list of labels are recorded and the mapping form is left out.
  */
 function scalarOrList(value: YamlValue | null): string | null {

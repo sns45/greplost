@@ -138,7 +138,7 @@ describe("corpus.json", () => {
     expect(byName.get("gson")?.subset).toBe("**/src/main/**");
     // The pin's own note says "122 .ts under aws-ts-*/", and so does the leaf-2.3 gate. The
     // wider `aws-ts-*/**` swept in 41 more source files from the sample apps embedded in those
-    // examples: 37 JavaScript (36 `.js` plus one `.mjs` Lambda handler — an Express server, a
+    // examples: 37 JavaScript (36 `.js` plus one `.mjs` Lambda handler, an Express server, a
     // CRA client, `next.config.js`) **and 4 `.tsx`** (a Next.js demo app's `layout.tsx` and
     // `page.tsx`, a React website's `App.tsx` and `main.tsx`). None of them is Pulumi
     // TypeScript. The repo and sha are unchanged (build 2, leaf 2.3).

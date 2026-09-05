@@ -12,16 +12,16 @@
  *
  * Cost is the other constraint that shapes the code. Summaries are keyed by the
  * sha256 of the content they describe, so a second refresh on an unchanged
- * repository finds nothing stale and makes zero calls — that is a gate, not an
- * aspiration — and a teammate who pulls the committed cache pays nothing for
+ * repository finds nothing stale and makes zero calls; that is a gate, not an
+ * aspiration, and a teammate who pulls the committed cache pays nothing for
  * code that has not moved. `FLOWS.md` follows the same rule from the other
  * side: it is regenerated when the package it describes was actually
  * resummarised, or when it does not exist yet, and skipped otherwise.
  *
  * Ordering is chosen for what survives a failure, because every failure here
  * happens after money has been spent. Nothing is written until every batch has
- * parsed — each batch gets one retry first, since a model that fumbles its
- * output format once usually does not fumble it twice — so a genuinely bad
+ * parsed, each batch gets one retry first, since a model that fumbles its
+ * output format once usually does not fumble it twice, so a genuinely bad
  * answer leaves the committed cache byte-identical. Once the cache is written
  * the map is rebuilt and only then are the flows asked for, so a fumbled flows
  * call costs a document rather than twelve paragraphs; it is recorded in the
@@ -34,13 +34,13 @@
  * advisory lock, and the manifest is re-read inside it too, so an entry another
  * process committed while this one was waiting on a model is neither pruned as
  * unknown nor overwritten from a stale view of the repository. The lock is
- * never held across a model call — a hook that waits on a language model is a
- * hook that makes the shell feel broken — and it is never held across the
+ * never held across a model call, a hook that waits on a language model is a
+ * hook that makes the shell feel broken, and it is never held across the
  * rebuild either, because `update` takes it itself. Residual window: if the
  * lock cannot be taken within `LOCK_ATTEMPTS` tries the merge proceeds without
  * it rather than discarding summaries that have already been paid for, so two
  * refreshes whose merges interleave in that window can still lose one entry
- * each. The alternative — dropping the work — is worse.
+ * each. The alternative, dropping the work, is worse.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -312,7 +312,7 @@ export interface RefreshCommandOptions {
  *
  * Everything `refreshCommand` would have written, handed back instead: the
  * exit code, the result (absent when the run failed), the one line a human
- * reads, and the stderr warnings. That separation exists for one caller —
+ * reads, and the stderr warnings. That separation exists for one caller,
  * `greplost update --semantic --json`, which has an `UpdateResult` of its own
  * to print. While the semantic layer printed its own document, that command
  * emitted two JSON documents onto one stdout and no parser accepted either.
@@ -454,7 +454,7 @@ function filesInScope(manifest: Manifest, target: PackageInfo | undefined): stri
 /**
  * Stale set (semantic spec "Rules"): the manifest says the summary lags the
  * code, or there has never been one. A file with no summary is not marked
- * `staleSummary` by the core build — there is nothing for it to lag — so the
+ * `staleSummary` by the core build: there is nothing for it to lag, so the
  * missing `summaryHash` is what puts it in scope for a first refresh.
  */
 function isStale(manifest: Manifest, file: string): boolean {
@@ -540,7 +540,7 @@ interface CacheWrite {
 }
 
 /**
- * Read the cache, re-read the manifest, merge, write — under the update lock.
+ * Read the cache, re-read the manifest, merge, write, under the update lock.
  *
  * Both reads happen inside the lock and as late as possible. Model calls take
  * minutes, and in that time another refresh can commit entries, a teammate's
@@ -582,7 +582,7 @@ async function commitCache(
  *
  * `manifest.json` alone, rather than `readStructure`: the only question here is
  * which paths and hashes the map currently describes, and the three graph files
- * `readStructure` also parses can run to megabytes on a real repository — which
+ * `readStructure` also parses can run to megabytes on a real repository, which
  * is not something to do while holding the lock every git hook is waiting on.
  * Same reasoning, and the same shape check, as `@greplost/sync`'s own
  * manifest-only read.
@@ -659,13 +659,13 @@ function delay(ms: number): Promise<void> {
  * Which one is decided by the bytes in the working tree, not by the manifest.
  * That distinction is the whole of it: `manifest.json` describes the last
  * *build*, and the ordinary way to run this command is to edit a file and type
- * `greplost refresh` — no rebuild in between — so the manifest still carries
+ * `greplost refresh`, no rebuild in between, so the manifest still carries
  * the previous content's hash. Trusting it there keeps the summary of code that
  * no longer exists, prunes the one this run just paid for, renders the old text
  * under the stale banner, and charges again next time. Hashing the file as it
  * is now gets both orders right: in the ordinary flow the current hash *is* the
- * one this run was asked about, and in the concurrent one — the file moved on
- * while the model was thinking, and someone else summarised what it became —
+ * one this run was asked about, and in the concurrent one, the file moved on
+ * while the model was thinking, and someone else summarised what it became,
  * the current hash belongs to their entry, which is the one worth keeping.
  */
 function nextCache(
@@ -684,7 +684,7 @@ function nextCache(
   //
   // The file is only read when there is actually a choice to make. A path whose
   // sole entry is the one this run just wrote has no rival to lose to, and that
-  // is every path on a first refresh — which is also the run with the most of
+  // is every path on a first refresh, which is also the run with the most of
   // them, and the one whose merge is holding the lock the longest.
   const hashesByPath = new Map<string, string[]>();
   for (const [hash, entry] of Object.entries(merged)) {

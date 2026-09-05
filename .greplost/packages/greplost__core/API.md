@@ -6,7 +6,7 @@
 
 - `interface ParseCache` L66-69
 - `interface BuildOptions` L71-89
-- `async function buildSnapshot(opts: BuildOptions): Promise<Snapshot>` L99-166
+- `async function buildSnapshot(opts: BuildOptions): Promise<Snapshot>` L99-121
 
 ## packages/core/src/config.ts
 
@@ -62,7 +62,7 @@
 
 ## packages/core/src/extract/python.ts
 
-- `function extractPython( filePath: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L397-423
+- `function extractPython( filePath: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L429-456
 
 ## packages/core/src/extract/rust.ts
 
@@ -248,11 +248,11 @@
 
 ## packages/core/src/parser.ts
 
-- `interface ParserHandle` L15-17
-- `function grammarDir(): string` L47-51
-- `async function createParser(opts?: { grammarDir?: string }): Promise<ParserHandle>` L94-124
-- `function reparse(language: Language, source: string): Tree | null` L147-154
-- `function disposeSpareParser(): void` L157-162
+- `interface ParserHandle` L23-34
+- `function grammarDir(): string` L64-68
+- `async function createParser(opts?: { grammarDir?: string }): Promise<ParserHandle>` L111-151
+- `function reparse(language: Language, source: string): Tree | null` L174-181
+- `function disposeSpareParser(): void` L184-189
 
 ## packages/core/src/references/dockerfile.ts
 
@@ -386,10 +386,10 @@
 
 ## packages/core/src/resolve/rust.ts
 
-- `function createRustResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L189-372
-- `interface RustCallIndex` L386-413
-- `function buildRustCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): RustCallIndex` L476-553
-- `function resolveRustCall( file: FileRecord, site: CallSite, index: RustCallIndex, ): { to: string; confidence: Confidence } | null` L571-623
+- `function createRustResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L213-399
+- `interface RustCallIndex` L413-440
+- `function buildRustCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): RustCallIndex` L503-580
+- `function resolveRustCall( file: FileRecord, site: CallSite, index: RustCallIndex, ): { to: string; confidence: Confidence } | null` L598-650
 
 ## packages/core/src/resolve/tsconfig.ts
 
@@ -502,7 +502,7 @@
 
 ## packages/core/src/signals/pulumi-ts.ts
 
-- `const pulumiTsPass: SignalPass = { id: "pulumi-ts", langs: LANGS, applies, run(input: SignalInput): SignalOutput { const imports = importBindings(input.base.imports); const localResourceClasse…` L66-122
+- `const pulumiTsPass: SignalPass = { id: "pulumi-ts", langs: LANGS, applies, run(input: SignalInput): SignalOutput { const imports = importBindings(input.base.imports); const localResourceClasse…` L78-143
 
 ## packages/core/src/signals/react.ts
 

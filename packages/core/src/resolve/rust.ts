@@ -149,6 +149,30 @@ function join(dir: string, rest: string): string {
   return dir === "" ? rest : `${dir}/${rest}`;
 }
 
+/**
+ * Canonical form of a repo-relative directory: `.`, `..` and empty segments resolved.
+ *
+ * A `[workspace] members` entry is a path relative to its own manifest, and the commonest
+ * entry in the wild is `"."`, the "prevent this from interfering with workspaces" idiom
+ * that ripgrep's `fuzz/Cargo.toml` and thousands like it carry. Joined naively, `fuzz` and
+ * `.` make `fuzz/.`: a *different* string that the filesystem resolves to the same manifest,
+ * which names `.` once more. The crate index then walked `fuzz/./.`, `fuzz/././.`, … for as
+ * long as memory lasted; `bun run bench:replay --repo ripgrep` was killed at 51.9 GB RSS.
+ * Normalising before the `seen` check is what makes the walk terminate: the second visit is
+ * the same directory as the first and stops there.
+ */
+function normalizeDir(dir: string): string {
+  if (!dir.includes(".") && !dir.includes("//")) return dir;
+  const out: string[] = [];
+  for (const segment of dir.split("/")) {
+    if (segment === "" || segment === ".") continue;
+    // A `..` above the repo root has nowhere to go; the root is the right answer.
+    if (segment === "..") out.pop();
+    else out.push(segment);
+  }
+  return out.join("/");
+}
+
 /** `a/b/c.rs` under `a` -> `b/c.rs`; null when `path` is not under `dir`. */
 function relativeTo(dir: string, path: string): string | null {
   if (dir === "") return path;
@@ -229,7 +253,10 @@ export function createRustResolver(ctx: RepoContext): (fromFile: string, specifi
     const seen = new Set<string>();
     const pending: string[] = [];
 
-    const consider = (dir: string): void => {
+    const consider = (raw: string): void => {
+      // Normalised here rather than at the two call sites, so no future caller can
+      // reintroduce the `fuzz/./.` walk by handing this an uncanonical directory.
+      const dir = normalizeDir(raw);
       if (seen.has(dir)) return;
       seen.add(dir);
       const manifest = manifestAt(dir);

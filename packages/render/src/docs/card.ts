@@ -186,8 +186,8 @@ function importersField(
 
 /**
  * The file's non-file nodes, span-sorted, one bullet each, linked to the node
- * card that sits in a directory named after this file. Undefined — so the whole
- * block is omitted — when the file declares none, which is every file of every
+ * card that sits in a directory named after this file. Undefined, so the whole
+ * block is omitted, when the file declares none, which is every file of every
  * repo greplost indexed before schema 2.
  *
  * The label is the node id's `<kind>.<name>` half rather than the bare name: it
@@ -204,6 +204,15 @@ function nodesField(
   const shown = nodes.slice(0, NODE_CAP);
   const lines = shown.map((node) => {
     const label = node.id.slice(node.id.indexOf("#") + 1);
+    // A node whose card collided with another artifact's path has no page to link to, and
+    // linking anyway would open the node that won the path on a case-insensitive
+    // filesystem: a live link to the wrong resource, which nothing on the page would
+    // contradict. The row stays, unlinked, and names the id it collided with.
+    const collision = ctx.skippedNodeCards.get(node.id);
+    if (collision !== undefined) {
+      const other = collision.slice(collision.indexOf("#") + 1);
+      return `- \`${label}\` (no card: collides with \`${other}\`)  L${node.span[0]}-${node.span[1]}`;
+    }
     const card = ctx.nodeCardPathOf(node.id);
     const body = card === undefined ? `\`${label}\`` : `[\`${label}\`](${link(card)})`;
     return `- ${body}  L${node.span[0]}-${node.span[1]}`;

@@ -1,8 +1,8 @@
 /**
  * Java extraction (spec 2026-09-04 section 1.4).
  *
- * Two passes over one compilation unit. The first walks the *declared* type tree — the top
- * level of the file and, recursively, the bodies of the types it declares — and produces
+ * Two passes over one compilation unit. The first walks the *declared* type tree, the top
+ * level of the file and, recursively, the bodies of the types it declares, and produces
  * declarations, imports and exports. The second walks the whole tree for call sites.
  *
  * Java's symbol path is one separator deep and always the same one: `.` for membership.
@@ -22,7 +22,7 @@
  *
  * Overloads share a name, exactly as spec 1.4 requires: `Store.put(String)` and
  * `Store.put(int)` are both `Store.put`, distinguished by their span. Their *ids* cannot
- * collide, though — two lines of `graph/symbols.jsonl` with one id is a broken map — so the
+ * collide, though, two lines of `graph/symbols.jsonl` with one id is a broken map, so the
  * second and later take a `~<n>` suffix counting from 2 in source order (driver ruling
  * 2026-09-04, the same suffix the HCL extractor and the signal passes use). The export set is
  * deduplicated by name, because a compiler reports one exported name, not one per overload.
@@ -239,7 +239,7 @@ function metaOf(node: Node, extra?: Readonly<Record<string, string>>): Record<st
  *
  * A name bound twice in one scope is a shadow, and the two bindings rarely mean the same type.
  * Over-dropping costs recall; under-dropping emits a wrong `high` edge, which is the one thing
- * the structure layer must never do — so a disagreement binds to nothing.
+ * the structure layer must never do, so a disagreement binds to nothing.
  */
 function bind(types: BoundTypes, name: string, type: string | null): void {
   if (!types.has(name)) {
@@ -256,7 +256,7 @@ function bind(types: BoundTypes, name: string, type: string | null): void {
 /**
  * One `import_declaration`.
  *
- * Every Java import is `ImportKind` `"static"` — the schema's word for "resolved at build
+ * Every Java import is `ImportKind` `"static"`, the schema's word for "resolved at build
  * time", which is what a Java import is whether or not the keyword `static` is written. What
  * `import static` changes is the *symbol*: the name it binds is the member, not the type, and
  * `resolve/java.ts` reads that difference off the target file rather than off a flag, because
@@ -494,7 +494,7 @@ function boundNames(node: Node): string[] {
  * A Java file has no top-level code: every call is inside *some* type, even when it is inside
  * no method (a field default, a `static { }` block, an instance initializer). Such a call is
  * attributed to the enclosing type rather than to the file, which is both truer and something
- * the javac oracle can agree with — a compiler sees the same enclosing class.
+ * the javac oracle can agree with: a compiler sees the same enclosing class.
  */
 interface CallContext {
   /** Symbol path of the enclosing method, or of the enclosing type when there is no method. */
@@ -515,7 +515,7 @@ const NO_LOCALS: BoundTypes = new Map();
  * Nodes that own a body with locals of their own.
  *
  * A method that became a declaration is handled first and separately; this set is for the
- * bodies that are *not* declarations and would otherwise see no locals at all — a `static { }`
+ * bodies that are *not* declarations and would otherwise see no locals at all, a `static { }`
  * block, an instance initializer, a field default holding an anonymous class or a lambda, an
  * enum constant's body, and the methods of an anonymous or local class declared in any of them.
  * A call written there is attributed to the enclosing named declaration, so its receivers have
@@ -593,7 +593,7 @@ function collectCalls(state: JavaState, root: Node): void {
       next = { caller, locals: localTypes(node), owner, inMethod: true, scoped: true };
     } else if (!ctx.inMethod && !ctx.scoped && TYPE_KIND[node.type] !== undefined) {
       // A named type met outside any body: its initializers and its constants are attributed to
-      // it. A *local* class, declared inside a body, is not — it has no name a call can be
+      // it. A *local* class, declared inside a body, is not: it has no name a call can be
       // attributed to, so `scoped` keeps the enclosing declaration as the caller, which is
       // where javac's own walk lands too.
       const nameNode = field(node, "name");

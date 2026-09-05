@@ -4,8 +4,8 @@
  *
  * The claim these tests exist to defend is the one the whole product rests on:
  * an incremental update and a full rebuild produce the same `.greplost/`, byte
- * for byte. Incremental is therefore never a different map — only a cheaper
- * route to the same one — and "the map is always in sync" survives contact
+ * for byte. Incremental is therefore never a different map, only a cheaper
+ * route to the same one, and "the map is always in sync" survives contact
  * with the fast path.
  *
  * Everything runs on a temp copy of `fixtures/tiny-ts` with a real git
@@ -35,7 +35,7 @@ import { ARTIFACT_DIR, DEFAULT_CONFIG, SCHEMA_VERSION, stableStringify } from "@
 import type { FileRecord, GreplostConfig } from "@greplost/core/schema";
 
 import { appendDirty, readAndClearDirty } from "../src/dirty.ts";
-import { HOOK_NAMES } from "../src/githooks.ts";
+import { HOOK_END_MARKER, HOOK_MARKER, HOOK_NAMES } from "../src/githooks.ts";
 import { update } from "../src/incremental.ts";
 import { init } from "../src/init.ts";
 import {
@@ -51,6 +51,7 @@ import { verify } from "../src/verify.ts";
 
 const FIXTURE_ROOT = path.resolve(import.meta.dir, "../../../fixtures/tiny-ts");
 const GO_FIXTURE_ROOT = path.resolve(import.meta.dir, "../../../fixtures/tiny-go");
+const JAVA_FIXTURE_ROOT = path.resolve(import.meta.dir, "../../../fixtures/tiny-java");
 
 /** Source files in the fixture, and so the size of a cold build. */
 const FIXTURE_SOURCES = 12;
@@ -413,7 +414,7 @@ describe("dirty", () => {
     writeFileSync(path.join(root, source), "export function thing(): number {\n  return 1;\n}\n");
     writeFileSync(path.join(root, other), "export const other = 2;\n");
 
-    // Porcelain collapses the whole subtree to `packages/newpkg/` by default —
+    // Porcelain collapses the whole subtree to `packages/newpkg/` by default,
     // a path with no extension, no discovery entry and no manifest entry, which
     // every filter would drop.
     expect(git(root, ["status", "--porcelain"])).toContain("packages/newpkg/");
@@ -438,7 +439,7 @@ describe("dirty", () => {
     git(root, ["add", "packages/newpkg"]);
     git(root, ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", "commit", "-q", "-m", "new"]);
 
-    // HEAD moved, so one rebuild — and now the tree does match its commit.
+    // HEAD moved, so one rebuild, and now the tree does match its commit.
     expect((await update(root, { mode: "incremental", quiet: true })).skipped).toBeUndefined();
     expect(readState(root).treeClean).toBe(true);
     expect((await update(root, { mode: "incremental", quiet: true })).skipped).toBe("clean");
@@ -498,7 +499,7 @@ describe("dirty", () => {
     writeFileSync(residue, "half an artifact");
     writeFileSync(inFlight, "mid-rename");
 
-    // Nothing is dirty, so this run takes the fast path — and must still sweep,
+    // Nothing is dirty, so this run takes the fast path, and must still sweep,
     // or a repository that stays clean keeps the residue in its status forever.
     const result = await update(root, { mode: "incremental", quiet: true });
 
@@ -897,9 +898,38 @@ describe("init", () => {
     const result = await init(root, { quiet: true });
 
     expect(result.hooks).toEqual([...HOOK_NAMES]);
+    expect(result.updated).toEqual([]);
+    expect(result.notes).toEqual([]);
     for (const hook of HOOK_NAMES) {
       expect(existsSync(path.join(root, ".git", "hooks", hook))).toBe(true);
     }
+  });
+
+  /**
+   * `installGitHooks` reports three things and `init` used to return one of
+   * them. A lefthook repository was told nothing at all, even though its hooks
+   * are the ones that will not run; and re-running `init` after an upgrade
+   * replaced a stale block and reported it as "nothing happened", because a
+   * replaced hook is not a newly *installed* one.
+   */
+  test("reports the lefthook instruction, and a replaced block as updated", async () => {
+    const root = gitFixture("init-lefthook");
+    writeFileSync(path.join(root, "lefthook.yml"), "pre-commit:\n  commands: {}\n");
+
+    const first = await init(root, { quiet: true });
+    expect(first.hooks).toEqual([...HOOK_NAMES]);
+    expect(first.updated).toEqual([]);
+    expect(first.notes).toHaveLength(1);
+    expect(first.notes[0]).toContain("lefthook.yml found");
+
+    // A stale block, exactly as an upgrade leaves one: the marker is there, the
+    // body is an older release's.
+    const preCommit = path.join(root, ".git", "hooks", "pre-commit");
+    writeFileSync(preCommit, `#!/bin/sh\n${HOOK_MARKER}\necho old\n${HOOK_END_MARKER}\n`);
+
+    const again = await init(root, { quiet: true });
+    expect(again.updated).toContain("pre-commit");
+    expect(again.notes[0]).toContain("lefthook.yml found");
   });
 
   test("works outside a git repository, hooks and all", async () => {
@@ -937,6 +967,29 @@ describe("init", () => {
     };
     const langs = new Set(Object.values(manifest.files).map((file) => file.lang));
     expect([...langs]).toEqual(["go"]);
+  });
+
+  /**
+   * The same failure one language over. Java was marked only by a build file
+   * (`pom.xml`, `build.gradle`, `build.gradle.kts`), and `fixtures/tiny-java` is
+   * four `.java` files and nothing else, which is an ordinary shape for a Java
+   * tree built by bazel, make or an IDE project: `init` wrote a config that
+   * matched nothing and reported a successful build of an empty map.
+   */
+  test("adds java to the languages for a plain tree of .java files", async () => {
+    const root = copyFixture("init-java", JAVA_FIXTURE_ROOT);
+
+    const result = await init(root, { hooks: false, quiet: true });
+
+    const config = JSON.parse(readFileSync(artifact(root, "config.json"), "utf8")) as GreplostConfig;
+    expect(config.languages).toEqual([...DEFAULT_CONFIG.languages, "java"]);
+    expect(result.update.reparsed).toBeGreaterThan(0);
+
+    const manifest = JSON.parse(readFileSync(artifact(root, "manifest.json"), "utf8")) as {
+      files: Record<string, { lang: string }>;
+    };
+    expect([...new Set(Object.values(manifest.files).map((file) => file.lang))]).toEqual(["java"]);
+    expect(Object.keys(manifest.files)).toHaveLength(4);
   });
 
   test("leaves the languages alone in a repo with no go.mod", async () => {

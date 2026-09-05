@@ -4,8 +4,8 @@
  * One job: turn a `module` block's `source` into a target id. Terraform loads *every* `.tf`
  * file in a directory as one module, so a local source (`./x`, `../x`) names a **directory**,
  * exactly as a Go import names a package directory (tech spec Appendix C) and for the same
- * reason: there is no single file to point at. Everything else — a registry address, a git
- * URL, an archive — is outside the repo and becomes `ext:module/<source>`, namespaced so it can
+ * reason: there is no single file to point at. Everything else, a registry address, a git
+ * URL, an archive, is outside the repo and becomes `ext:module/<source>`, namespaced so it can
  * never collide with an npm or Go package id (spec section 0.2).
  *
  * A local source naming a directory that holds no indexed `.tf` file is **unresolved**, not
@@ -47,8 +47,8 @@ export function hclDirectoryOf(filePath: string): string {
  * A module source Terraform reads from the local filesystem.
  *
  * Terraform's own rule (module source types): a source is local exactly when it begins with
- * `./` or `../`. Everything else — including a bare `foo/bar/baz`, which is a *registry*
- * address and not a path — is fetched from somewhere outside this repo.
+ * `./` or `../`. Everything else, including a bare `foo/bar/baz`, which is a *registry*
+ * address and not a path, is fetched from somewhere outside this repo.
  */
 export function isLocalModuleSource(source: string): boolean {
   return /^\.\.?\//.test(source) || source === "." || source === "..";
@@ -118,8 +118,8 @@ export function createHclResolver(ctx: RepoContext): (fromFile: string, specifie
 
 /**
  * HCL has no call edges (spec 2.2), so this is never reached: `extractHcl` returns `calls: []`
- * for every file. It throws rather than returning null so that a `CallSite` appearing here —
- * which could only come from a bug in the extractor — is a loud failure and not a quietly
+ * for every file. It throws rather than returning null so that a `CallSite` appearing here,
+ * which could only come from a bug in the extractor, is a loud failure and not a quietly
  * missing edge.
  */
 export function resolveHclCall(

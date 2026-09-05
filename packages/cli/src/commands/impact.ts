@@ -40,8 +40,8 @@ export interface ImpactFiles {
 
 /**
  * A non-file node target (schema 2): the same two fields, and `nodes` in place
- * of `files`. `radius` is the reverse closure over `impactPairs` — import,
- * re-export and reference edges together — which is the figure the node card
+ * of `files`. `radius` is the reverse closure over `impactPairs`, import,
+ * re-export and reference edges together, which is the figure the node card
  * prints, because a node has no manifest entry to read one from.
  */
 export interface ImpactNodes {

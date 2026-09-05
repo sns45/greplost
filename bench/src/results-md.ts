@@ -1,8 +1,8 @@
 /**
  * The `bench/RESULTS.md` template (tech spec 10.9, 10.10; bench leaf 1.5.7).
  *
- * This file is pure: it takes a `ReportModel` — the numbers `report.ts` read out
- * of `bench/results/*.json` — and returns markdown. It never reads a file, never
+ * This file is pure: it takes a `ReportModel`, the numbers `report.ts` read out
+ * of `bench/results/*.json`, and returns markdown. It never reads a file, never
  * asks the clock and never invents a value. That is the point of the split: the
  * rule from the tech spec is that the measured column is "filled by the harness,
  * never by hand", and the only way to keep that rule mechanically is for the
@@ -108,7 +108,7 @@ export interface MetricRow {
    * different runs with different costs, so the head-to-head table is often
    * filled from two payloads. A single provenance line above such a table would
    * put one run's corpus under the other run's numbers, which is the same
-   * defect as printing a tier-M target against a fixture — so the scale travels
+   * defect as printing a tier-M target against a fixture, so the scale travels
    * on the row.
    */
   run?: RunTarget;
@@ -263,7 +263,7 @@ export function scopeTarget(target: string, run: RunTarget | undefined, scaleTex
   return `${target} (${describeRun(run)})`;
 }
 
-/** `measured on anyq, tier S, 148 files` — the scale a row was actually taken at. */
+/** `measured on anyq, tier S, 148 files`, the scale a row was actually taken at. */
 function describeRun(run: RunTarget): string {
   const where = run.repo === undefined
     ? "measured on an unnamed corpus"
@@ -275,6 +275,13 @@ function describeRun(run: RunTarget): string {
 
 export interface ReportModel {
   machine: Record<string, unknown> | null;
+  /**
+   * The suite whose payload recorded `machine`, and the build the structural payload was
+   * measured on. Every suite is pinned and re-run separately, so the profile at the top of
+   * the document belongs to one run and its `greplostVersion` is that run's, not the
+   * document's; without this the header claimed a version the scores below never used.
+   */
+  machineSource: { suite: string; structural: { version: string; sha: string } | null } | null;
   corpus: { name: string; sha?: string; tier?: string; lang?: string }[];
   versions: { name: string; value: string }[];
   headToHead: {
@@ -352,6 +359,22 @@ function machineSection(model: ReportModel): string[] {
   if (model.machine === null) {
     out.push(`${NOT_RUN}: no result file carried a machine profile.`, "");
     return out;
+  }
+  const source = model.machineSource;
+  if (source !== null) {
+    // Which run this profile belongs to, and which build the language and accuracy
+    // numbers under it were measured on. Each suite is pinned and re-run on its own, so
+    // the two are routinely different releases and the reader has no other way to tell.
+    const structural =
+      source.structural === null
+        ? ""
+        : ` The structural numbers below were measured on greplost ${source.structural.version}` +
+          ` (\`${source.structural.sha}\`); see Versions.`;
+    out.push(
+      `The profile of the run that recorded it: the \`${source.suite}\` payload.` +
+        ` Its \`greplostVersion\` and \`greplostSha\` are that run's.${structural}`,
+      "",
+    );
   }
   out.push("| Field | Value |", "|---|---|");
   for (const key of Object.keys(model.machine).sort()) {
@@ -505,8 +528,8 @@ function singleToolSection(model: ReportModel): string[] {
   out.push("");
   out.push("| ID | Metric | Target | Measured | Source |", "|---|---|---|---|---|");
   for (const row of model.singleTool.rows) {
-    // The scale claim can sit in either column — P1's "1k / 10k files" is in the
-    // metric, X6's "(tier M)" is in the target — so both are offered to
+    // The scale claim can sit in either column, P1's "1k / 10k files" is in the
+    // metric, X6's "(tier M)" is in the target, so both are offered to
     // `scopeTarget`, and the qualifier lands in the target the reader compares
     // the measurement against.
     const target = scopeTarget(row.target, row.run, `${row.metric} ${row.target}`);
@@ -736,8 +759,9 @@ const ORACLE_DISCLOSURES: Record<string, string> = {
     "all** (`.js` is parsed with the TypeScript grammar, and nothing in this benchmark measures that).",
   go:
     "`bench/src/truth/go.ts` for S1 to S4 (`go/packages` per-file imports and a class-hierarchy call " +
-    "graph) and `bench/src/truth/signals-pulumi-go.ts` for S5 and S6 (`go-types-oracle`, a resource " +
-    "being a type that implements Pulumi's resource interface). `cha-over-approximation`: " +
+    "graph) and `bench/src/truth/signals-pulumi-go.ts` for S5 and S6 (`go-types-oracle`, which loads " +
+    "the program with `go/types`, and `types-implements-pulumi-resource`: a resource is a type that " +
+    "implements Pulumi's resource interface, decided by the type checker). `cha-over-approximation`: " +
     "class-hierarchy analysis resolves an interface call to every implementation of the method, so the " +
     "oracle's call set is an upper bound and the recall measured against it is a lower bound. " +
     "`helper-attribution-differs`: a resource built inside a helper function is filed under the file the " +

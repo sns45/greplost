@@ -234,6 +234,25 @@ class ModuleFacts:
     defined: dict[str, str] = field(default_factory=dict)
     # Every symbol path the module declares, `Class.method` included.
     symbols: set[str] = field(default_factory=set)
+    # Every declaration's id suffix, in source order, with `~<n>` from 2 on a repeat:
+    # ["C", "C.value", "C.value~2"]. Python declares one name twice as a matter of course
+    # (`@property def value` beside `@value.setter def value`, a stack of `@overload`s), and
+    # greplost's ids carry the same `~<n>` so each declaration keeps an id of its own
+    # (driver ruling 2026-09-04, every language). Recorded here so both sides say the same
+    # thing about what a name is worth: an *id* names one declaration, and the plain,
+    # unsuffixed id is the first one. That is what a call edge targets on both sides -
+    # `symbol_id` below is the only place this oracle turns a name into an id.
+    symbol_ids: list[str] = field(default_factory=list)
+
+    def symbol_id(self, symbol: str) -> str | None:
+        """The id of the *first* declaration of ``symbol``, or None when there is none.
+
+        The first declaration keeps the plain id, so this is `symbol` itself whenever the
+        module declares it at all. Written as a lookup rather than a `symbol in symbols`
+        test so that the suffix rule has one home on this side too: a later rule that
+        pointed an edge at a *later* declaration would change this function and nothing else.
+        """
+        return symbol if symbol in self.symbols else None
     # Local name -> (module specifier text, level, imported name or "*" for the module).
     bindings: dict[str, tuple[str, int, str]] = field(default_factory=dict)
     # Entries of a literal `__all__`, or None when the module states none it can read.
@@ -295,6 +314,22 @@ COMPOUND = (ast.If, ast.Try, ast.TryStar, ast.With, ast.AsyncWith, ast.For, ast.
 DEFINITIONS = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
 
 
+def _unique_id(facts: ModuleFacts, name: str) -> str:
+    """``name``, then ``name~2``, ``name~3`` for each further declaration of it in this file.
+
+    The mirror of greplost's rule: the suffix is part of the *id* only, never of the name a
+    reader sees, and the numbering follows source order so a new overload never renumbers an
+    older one. ``~`` cannot occur in a Python identifier, so a suffixed id can never collide
+    with one somebody wrote.
+    """
+    if name not in facts.symbols:
+        return name
+    n = 2
+    while f"{name}~{n}" in facts.symbol_ids:
+        n += 1
+    return f"{name}~{n}"
+
+
 def walk_scope(body: list[ast.stmt], parent: str, facts: ModuleFacts) -> None:
     """Names a module body or a class body binds, descending through compound statements.
 
@@ -304,6 +339,7 @@ def walk_scope(body: list[ast.stmt], parent: str, facts: ModuleFacts) -> None:
     for statement in body:
         if isinstance(statement, DEFINITIONS):
             name = statement.name if parent == "" else f"{parent}.{statement.name}"
+            facts.symbol_ids.append(_unique_id(facts, name))
             facts.symbols.add(name)
             if parent == "":
                 facts.defined.setdefault(statement.name, "class" if isinstance(statement, ast.ClassDef) else "def")
@@ -758,11 +794,11 @@ class Truth:
             owner = site.caller.partition(".")[0]
             if owner == "":
                 return None
-            symbol = f"{owner}.{member}"
-            return f"{path}#{symbol}" if symbol in facts.symbols else None
+            symbol = facts.symbol_id(f"{owner}.{member}")
+            return None if symbol is None else f"{path}#{symbol}"
         if obj in facts.defined:
-            symbol = f"{obj}.{member}"
-            return f"{path}#{symbol}" if symbol in facts.symbols else None
+            symbol = facts.symbol_id(f"{obj}.{member}")
+            return None if symbol is None else f"{path}#{symbol}"
         binding = facts.bindings.get(obj)
         if binding is None:
             return None
@@ -777,8 +813,10 @@ class Truth:
         if found is None:
             return None
         other = self.facts.get(found[0])
-        symbol = f"{found[1]}.{member}"
-        return f"{found[0]}#{symbol}" if other is not None and symbol in other.symbols else None
+        if other is None:
+            return None
+        symbol = other.symbol_id(f"{found[1]}.{member}")
+        return None if symbol is None else f"{found[0]}#{symbol}"
 
     def calls(self) -> list[dict[str, str]]:
         edges: set[tuple[str, str]] = set()

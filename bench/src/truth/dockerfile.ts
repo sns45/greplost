@@ -7,7 +7,7 @@
  * back the instruction list with its ranges, and everything below is computed from that.
  *
  * That makes it an *independent implementation of the same documented rules*, which is the most
- * an oracle can be for a format whose semantics are "what the file says" — the
+ * an oracle can be for a format whose semantics are "what the file says", the
  * `same-rules-different-parser` note states the residual plainly. Where the two parsers really
  * do disagree, and it matters:
  *
@@ -24,7 +24,7 @@
  *
  *   files       the Dockerfiles it could read; the harness intersects both sides with this;
  *   imports     always empty: a Dockerfile has no import statement at all;
- *   exports     each file's sorted stage names — a Dockerfile's public surface is its stages,
+ *   exports     each file's sorted stage names, a Dockerfile's public surface is its stages,
  *               reachable by alias with `COPY --from=<name>` and by position with
  *               `COPY --from=<index>`;
  *   calls       always empty, which is why S3 is `n/a` for Dockerfiles and never 0;
@@ -33,7 +33,7 @@
  *               edges (S6).
  *
  * Two things it deliberately does not state. `meta.entrypoint`/`meta.cmd` are declaration
- * *attributes*, and nothing scores an attribute — S6 compares node ids — so reading `ENTRYPOINT`
+ * *attributes*, and nothing scores an attribute, S6 compares node ids, so reading `ENTRYPOINT`
  * and `CMD` here would be a derivation no gate could ever check. And the exec form of
  * `COPY`/`ADD` (`COPY ["a", "b", "/d/"]`) is a JSON array rather than a list of path arguments:
  * neither this module nor `packages/core/src/extract/dockerfile.ts` takes sources out of one, so
@@ -384,7 +384,7 @@ export function generateExtra(root: string, files: string[]): { references: Edge
         references.push(edge(request.from, (named[0] as OracleStage).id, request.refKind, request.text));
         continue;
       }
-      // A text naming a stage of this file names a stage — ambiguously when two carry the
+      // A text naming a stage of this file names a stage, ambiguously when two carry the
       // alias, and itself when the stage copies from itself, which is a file docker refuses.
       // Either way it is dropped rather than turned into an image reference nobody wrote.
       if (named.length > 0) continue;
@@ -399,8 +399,8 @@ export function generateExtra(root: string, files: string[]): { references: Edge
 }
 
 /**
- * A `COPY`/`ADD` source resolved against the two contexts a build plausibly uses — the
- * Dockerfile's own directory and the repository root — or null when they do not agree on one
+ * A `COPY`/`ADD` source resolved against the two contexts a build plausibly uses, the
+ * Dockerfile's own directory and the repository root, or null when they do not agree on one
  * scored file.
  */
 function resolveContextPath(file: string, source: string, indexed: ReadonlySet<string>): string | null {
@@ -418,7 +418,7 @@ function resolveContextPath(file: string, source: string, indexed: ReadonlySet<s
  * declarations.
  *
  * They are not node ids, so S6 never scores them and `generateExtra` leaves them out. This is
- * how the derivation stays exercised rather than written and forgotten — `truth-dockerfile.
+ * how the derivation stays exercised rather than written and forgotten, `truth-dockerfile.
  * test.ts` pins it against the fixture.
  */
 export function constantsOf(root: string, files: string[]): Record<string, OracleConstant[]> {

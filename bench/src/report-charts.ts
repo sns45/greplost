@@ -4,7 +4,7 @@
  * Each builder turns already-read numbers into a `ChartRef`: a caption, an
  * inline `xychart-beta` fence and the SVG `report.ts` rasterises into
  * `docs/assets/`. Kept apart from the section builders because a chart has one
- * obligation the tables do not — it must not draw a measurement that was never
+ * obligation the tables do not: it must not draw a measurement that was never
  * taken. A missing tool is a gap or an omitted category, never a zero, and every
  * chart's note names the arm, the corpus and the walk length it came from.
  *
@@ -46,7 +46,7 @@ const ARMS: readonly { prefix: string; slug: string; title: string; arm: string;
     arm: "documented-sync",
     caption: "X2 (hero chart): freshness under each tool's own sync mechanism over a synthetic commit walk, F1 vs commit",
     note:
-      "Arm: documented-sync — each tool's sync mechanism was installed exactly as its README describes and " +
+      "Arm: documented-sync; each tool's sync mechanism was installed exactly as its README describes and " +
       "then left alone; the harness only commits, except that crg's `visualize --format json` export is run " +
       "at each scoring checkpoint because nothing else writes the JSON its artifact is read from (it is " +
       "outside every timing and does not rebuild). This is the arm tech spec 10.0 X2 words. Read the FALL of " +
@@ -60,7 +60,7 @@ const ARMS: readonly { prefix: string; slug: string; title: string; arm: string;
     arm: "refresh-every-commit",
     caption: "X2 companion: artifact F1 when the harness invokes every tool's refresh after every commit",
     note:
-      "Arm: refresh-every-commit — the harness invoked each tool's documented refresh command after every " +
+      "Arm: refresh-every-commit; the harness invoked each tool's documented refresh command after every " +
       "commit. Nothing decays here for anyone, so this is a comparison of incremental accuracy and not a " +
       "staleness curve.",
   },
@@ -71,7 +71,7 @@ const ARMS: readonly { prefix: string; slug: string; title: string; arm: string;
     arm: "refresh-every-commit",
     caption: "X2 companion: artifact F1 when the harness invokes every tool's refresh after every commit",
     note:
-      "Arm: refresh-every-commit (a payload written before the arms were named apart) — the harness invoked " +
+      "Arm: refresh-every-commit (a payload written before the arms were named apart); the harness invoked " +
       "each tool's documented refresh after every commit, so no line decays and this is not a staleness curve.",
   },
   {
@@ -81,7 +81,7 @@ const ARMS: readonly { prefix: string; slug: string; title: string; arm: string;
     arm: "no-refresh",
     caption: "X2 companion: the same artifacts, never updated",
     note:
-      "Arm: no-refresh — each tool's commit-0 artifact scored against truth at that commit, which is what a " +
+      "Arm: no-refresh, each tool's commit-0 artifact scored against truth at that commit, which is what a " +
       "reader gets when a sync mechanism is absent or silently does not fire. greplost is the only one of the " +
       "four that can report this state mechanically, through `verify`.",
   },
@@ -111,10 +111,10 @@ export const SYNTHETIC_WALK_NOTE =
  */
 const QUADRANT_NOTE =
   " The shaded corner is a reading aid, not a threshold: it covers the cheapest 40% of the x axis and the " +
-  "best 40% of the y axis, and no measurement decides where it sits. The dotted line is the Pareto front — " +
+  "best 40% of the y axis, and no measurement decides where it sits. The dotted line is the Pareto front: " +
   "a tool is on it when nothing else is at least as good on both axes and better on one.";
 
-/** ` corpus hono, tier M (248 files); 100 replayed commits` — the scale, without a verb. */
+/** ` corpus hono, tier M (248 files); 100 replayed commits`, the scale, without a verb. */
 export function scaleParts(target: RunTarget | undefined, commits: number | null): string {
   const parts: string[] = [];
   if (target?.repo !== undefined) {
@@ -245,7 +245,7 @@ export function headToHeadCharts(
     note:
       "Two builds of the same tree, each in its own process, compared over that tool's own documented " +
       "artifact files; viewer and database files are excluded per competitor and each cell's caveat says " +
-      "which. A bar at the baseline is a measured zero — the best result this metric has — and a dashed " +
+      "which. A bar at the baseline is a measured zero, the best result this metric has, and a dashed " +
       "stub is a tool that could not be run.",
   }));
 
@@ -322,8 +322,8 @@ function metricBarChart(
  *
  * Both plot a cost the reader pays on x against the quality it bought on y, so
  * the cheap-and-good corner is up and to the left. Each is built from two
- * metrics of the *same* run — freshness from X2 and X3 (the commit walk),
- * accuracy from X1 and X6 (the corpus run) — because pairing two runs on two
+ * metrics of the *same* run, freshness from X2 and X3 (the commit walk),
+ * accuracy from X1 and X6 (the corpus run), because pairing two runs on two
  * corpora would make an axis a reader cannot check.
  */
 export function quadrantCharts(
@@ -441,8 +441,8 @@ function walkLength(x2: MetricRow | undefined): number | null {
 /**
  * The hero chart (tech spec 10.9, capture #9) and its companions.
  *
- * The hero is produced unconditionally — with every line, with one, or with
- * none — because the README leads with it and a missing file there is a broken
+ * The hero is produced unconditionally, with every line, with one, or with
+ * none, because the README leads with it and a missing file there is a broken
  * page, not an absent measurement. What is missing is said in the caption and
  * in the chart's own note, never drawn as a zero.
  *
@@ -452,7 +452,7 @@ function walkLength(x2: MetricRow | undefined): number | null {
  *   x2-staleness.png              the documented-sync arm: each tool's own
  *                                 mechanism installed and left to fire (hero)
  *   x2-no-refresh.png             each tool's commit-0 artifact against later
- *                                 truth — the curve that actually decays
+ *                                 truth, the curve that actually decays
  *   x2-refresh-every-commit.png   the harness driving every refresh by hand,
  *                                 which is an accuracy comparison, not decay
  *
@@ -517,7 +517,7 @@ export function stalenessCharts(
         series = [{ name: "greplost", values: categories.map(() => f1Value) }];
         subtitle = `Arm: none; the replay suite's \`verify\` catch rate over ${walked} commits, drawn flat.`;
         note =
-          "Arm: none — no per-tool walk has been run (`bench headtohead --commits <n>`), so this is the " +
+          "Arm: none; no per-tool walk has been run (`bench headtohead --commits <n>`), so this is the " +
           `replay suite's \`verify\` catch rate drawn flat across its ${walked} commits.`;
       }
     }
@@ -569,8 +569,8 @@ export function freshnessNote(
     const decay = x2.tools[series.name]?.detail?.["decay"] ?? null;
     if (at0 === null) continue;
     starts.push(`${series.name} ${at0.toFixed(3)}`);
-    // Signed the way the table's `decay` column is signed — F1 at commit 0
-    // minus F1 at the last commit — so the chart and the row cannot appear to
+    // Signed the way the table's `decay` column is signed, F1 at commit 0
+    // minus F1 at the last commit, so the chart and the row cannot appear to
     // disagree about which way a tool moved.
     if (decay !== null) falls.push(`${series.name} ${decay > 0 ? "+" : ""}${decay.toFixed(3)}`);
   }

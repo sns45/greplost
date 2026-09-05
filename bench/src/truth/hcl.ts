@@ -10,7 +10,7 @@
  *   files       the `.tf` files it read; the harness intersects both sides with this list;
  *   imports     one edge per (calling file, called in-repo module **directory**), because a
  *               Terraform module is a directory and not a file;
- *   exports     each file's variables and outputs — a module's whole public surface;
+ *   exports     each file's variables and outputs, a module's whole public surface;
  *   calls       always empty: HCL has no call edges, which is why S3 is `n/a` and never 0;
  *   references  the fifth metric's truth: every expression address resolved to the one block
  *               it names, at the confidence spec 0.3 fixes;
@@ -166,8 +166,8 @@ function runToolUncached(root: string): TfToolOutput {
 }
 
 /**
- * One helper run per target, memoised so `generateTruth` and `generateExtra` — two views of the
- * same read, both of which the structural runner calls — do not parse the repository twice.
+ * One helper run per target, memoised so `generateTruth` and `generateExtra`, two views of the
+ * same read, both of which the structural runner calls, do not parse the repository twice.
  *
  * The key is the root, the requested file list, and a fingerprint of those files' size and
  * mtime. The fingerprint is what makes the memo safe: `headtohead` and `replay` check the
@@ -273,7 +273,7 @@ export function generateTruth(root: string, files: string[]): Truth {
  * The reference and node sets S5 is scored on (`TruthModule.generateExtra`, bench spec 5.2).
  *
  * Both sides are restricted to the covered files first, so greplost is never punished for an
- * edge whose ends the oracle was not shown. An `ext:` target survives — an `ext:module/…` or
+ * edge whose ends the oracle was not shown. An `ext:` target survives, an `ext:module/…` or
  * `ext:provider/…` is a real reference and both sides can produce it.
  */
 export function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] } {
@@ -305,7 +305,7 @@ export function generateExtra(root: string, files: string[]): { references: Edge
     }))
     .sort(compareEdges);
 
-  // S6 scores *node ids*, so an id the schema cannot read back is not truth about a node — it
+  // S6 scores *node ids*, so an id the schema cannot read back is not truth about a node; it
   // is a key greplost could never produce, and every one of them would be counted as a miss.
   // `main.go` already stops emitting the one case there is (`<file>#terraform`, the `terraform`
   // settings block, which is a symbol and not a node); this is the standing guard, so a future

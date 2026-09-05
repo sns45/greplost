@@ -48,7 +48,7 @@ S1 is no longer vacuous: `tp 0` became `tp 18` and `tp 20` when the scorer began
 directory targets a Terraform module import always names. S5's count rose with the same change
 (2431 -> 2497, 1876 -> 1989) because `ext:module/…`, `ext:provider/…` and module-directory
 targets entered the universe; precision and recall were 1.000 before and after, so nothing about
-this leaf's edges changed — only how many of them were in scope to be scored.
+this leaf's edges changed, only how many of them were in scope to be scored.
 
 - [x] G1: the HCL extraction test file passes
   CHECK: bun test packages/core/test/extract-hcl.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'

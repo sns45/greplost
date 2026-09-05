@@ -27,7 +27,16 @@ import { compareStrings, stableStringify } from "@greplost/core/schema";
 
 import { boxChart, groupedBarChart, lineChart, mermaidXy, writeChart, type BoxDatum, type ChartSpec } from "./charts.ts";
 import { latestResult, orderedResults, resultsDir } from "./results-io.ts";
-import { assumptions, firstMachine, langRows, mergeCorpus, resetAssumptions, versionRows, type Payload } from "./report-payload.ts";
+import {
+  assumptions,
+  buildOf,
+  langRows,
+  machineWithSource,
+  mergeCorpus,
+  resetAssumptions,
+  versionRows,
+  type Payload,
+} from "./report-payload.ts";
 import { headToHeadFrom, singleTool } from "./report-sections.ts";
 import {
   bench3Section,
@@ -275,10 +284,19 @@ export function buildModel(options: BuildOptions = {}): ReportModel {
   const headtoheads = loadAll("headtohead", dir);
   const human = load("human");
 
+  const machineSource = machineWithSource([headtohead, structural, perf, mapquality, replay, agent]);
+  const structuralBuild = buildOf(structural);
   const model: ReportModel = {
-    machine: firstMachine([headtohead, structural, perf, mapquality, replay, agent]),
+    machine: machineSource?.machine ?? null,
+    machineSource:
+      machineSource === null
+        ? null
+        : {
+            suite: machineSource.suite,
+            structural: machineSource.suite === "structural" ? null : structuralBuild,
+          },
     corpus: mergeCorpus([headtohead, structural, replay, perf, agent, mapquality]),
-    versions: versionRows(agent, headtohead),
+    versions: versionRows(agent, headtohead, structural),
     headToHead: headToHeadFrom(headtoheads, replay, assetsRel),
     singleTool: { rows: [], notes: [] },
     // Build 2's per-language view of the same structural payload. A build-1

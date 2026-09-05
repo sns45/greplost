@@ -40,7 +40,7 @@
 <text x="24" y="321" fill="#C3C2B7" font-size="11" text-anchor="middle" transform="rotate(-90 24 321)">call edge F1 vs compiler truth</text>
 <text x="622" y="586" fill="#C3C2B7" font-size="11" text-anchor="middle">seconds from a fresh checkout to a first usable map (lower is better)</text>
 <text x="32" y="610" fill="#8A8983" font-size="10">y is the harmonic mean of the call edge precision and recall each cell carries, computed from those two numbers and not measured separately; x is X6, timed from a fresh copy of the repo with no cache and no artifact.</text>
-<text x="32" y="623" fill="#8A8983" font-size="10">The shaded corner is a reading aid, not a threshold: it covers the cheapest 40% of the x axis and the best 40% of the y axis, and no measurement decides where it sits. The dotted line is the Pareto front — a tool is on</text>
+<text x="32" y="623" fill="#8A8983" font-size="10">The shaded corner is a reading aid, not a threshold: it covers the cheapest 40% of the x axis and the best 40% of the y axis, and no measurement decides where it sits. The dotted line is the Pareto front: a tool is on</text>
 <text x="32" y="636" fill="#8A8983" font-size="10">it when nothing else is at least as good on both axes and better on one. Measured on corpus anyq, tier S (148 files).</text>
 <polyline points="205.8,126 205.8,184.66 1160,184.66" fill="none" stroke="#C3C2B7" stroke-width="2" stroke-dasharray="2 6"/>
 <circle cx="205.8" cy="184.66" r="5" fill="#0fa976" stroke="#FFFFFF" stroke-width="2"/>

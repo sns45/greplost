@@ -486,6 +486,44 @@ describe("fixture truth", () => {
     expect(keys(out.imports)).toEqual([]);
   });
 
+  test("a name declared twice is one export and one call target, on this side too", () => {
+    // `@property def value` beside `@value.setter def value` is two declarations of one
+    // name, and greplost gives the second the id `…#C.value~2` so each keeps a card and a
+    // `query` answer (driver ruling 2026-09-04). The suffix is part of the *id* only: the
+    // export surface still names `helper` once and a call edge still targets the first
+    // declaration's plain id, which is what keeps S2 and S3 agreeing across the change.
+    const root = scratchRepo({
+      "pyproject.toml": "[project]\nname = 'dup'\n",
+      "dup/__init__.py": "",
+      "dup/mod.py": [
+        "class C:",
+        "    @property",
+        "    def value(self):",
+        "        return self._v",
+        "",
+        "    @value.setter",
+        "    def value(self, v):",
+        "        self._v = v",
+        "",
+        "",
+        "def helper():",
+        "    return 1",
+        "",
+        "",
+        "def helper():",
+        "    return 2",
+        "",
+        "",
+        "def go():",
+        "    return helper()",
+        "",
+      ].join("\n"),
+    });
+    const out = generateTruth(root, ["dup/__init__.py", "dup/mod.py"]);
+    expect(out.exports["dup/mod.py"]).toEqual(["C", "go", "helper"]);
+    expect(keys(out.calls)).toEqual(["dup/mod.py#go -> dup/mod.py#helper"]);
+  });
+
   test("a namespace package's submodule is an edge on this side too", () => {
     // The driver's probe repo. `ns/` has no `__init__.py`, so `from ns import mod` names its
     // module through the imported symbol; the oracle sees the symbol directly, and must reach

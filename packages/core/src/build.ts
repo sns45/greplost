@@ -82,7 +82,7 @@ export interface BuildOptions {
   /**
    * Out-parameter: discovery appends, sorted, every candidate path it had to
    * skip because the path itself cannot be a map id (it holds a `#`, a newline
-   * or a NUL — see `isMappablePath`). A caller that passes one can report the
+   * or a NUL; see `isMappablePath`). A caller that passes one can report the
    * count; one that does not still gets the same snapshot.
    */
   skipped?: string[];
@@ -107,7 +107,34 @@ export async function buildSnapshot(opts: BuildOptions): Promise<Snapshot> {
   );
   const sources = await readSources(discovered);
 
-  const files = await extractAll(sources, opts, config.signals);
+  // A parser this build had to create for itself, released when the build ends. A
+  // handle the caller passed in is the caller's and is never disposed here: a host
+  // that builds twice with one parser (every test file that keeps one in `beforeAll`,
+  // and `buildArtifacts` with `opts.parser`) would otherwise get freed wasm memory on
+  // its second build.
+  const owned: { handle: ParserHandle | null } = { handle: null };
+  try {
+    return await assemble(root, config, sources, opts, owned);
+  } finally {
+    owned.handle?.dispose();
+  }
+}
+
+/**
+ * Everything after the reads: extraction, resolution, linking and the manifest.
+ *
+ * Split out of `buildSnapshot` only so the parser it may create has one `finally` that
+ * covers the whole of it, including the throwing paths (an unparsable file, a resolver
+ * error), which are exactly the runs a leak would otherwise accumulate on.
+ */
+async function assemble(
+  root: string,
+  config: GreplostConfig,
+  sources: SourceFile[],
+  opts: BuildOptions,
+  owned: { handle: ParserHandle | null },
+): Promise<Snapshot> {
+  const files = await extractAll(sources, opts, config.signals, owned);
 
   const paths = files.map((file) => file.path);
   const packages = detectPackages(root, paths, config);
@@ -210,6 +237,7 @@ async function extractAll(
   sources: SourceFile[],
   opts: BuildOptions,
   signals: readonly SignalPassId[] | undefined,
+  owned: { handle: ParserHandle | null },
 ): Promise<FileRecord[]> {
   const cache = opts.cache;
   const files = new Array<FileRecord | undefined>(sources.length);
@@ -241,7 +269,11 @@ async function extractAll(
   }
 
   if (misses.length > 0) {
-    const parser = opts.parser ?? (await createParser());
+    let parser = opts.parser;
+    if (parser === undefined) {
+      parser = await createParser();
+      owned.handle = parser;
+    }
     for (const i of misses) {
       const source = sources[i] as SourceFile;
       const record = freezeRecord(extract(source, parser, signals));
@@ -316,7 +348,7 @@ function freezeRecord(record: FileRecord): FileRecord {
  * Schema 2: a non-file node's id is `<file>#<kind>.<name>` and not
  * `<file>#<name>`, so re-addressing has to ask which form the declaration
  * takes. `symbolId` alone silently dropped the kind, which only shows up when
- * two files have *identical bytes* — 727 of terraform-aws-vpc's 1,909
+ * two files have *identical bytes*, 727 of terraform-aws-vpc's 1,909
  * declarations, because its per-example `outputs.tf` files are copies of one
  * another.
  *

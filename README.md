@@ -24,7 +24,7 @@ greplost is not a search tool. It is the map you read so you do not have to sear
 
 *On this corpus no tool decays once its own hook is installed: greplost stays at 1.000, graphify and code-review-graph hold their (lower) starting accuracy. The gap is coverage, not staleness; the decay that appears when no sync is installed is the companion chart in [bench/RESULTS.md](bench/RESULTS.md). Every number behind both charts is there, with the losses.*
 
-Status: pre-release 0.0.1. Design: [docs/greplost-tech-spec.md](docs/greplost-tech-spec.md).
+Status: pre-release 0.1.0. Design: [docs/greplost-tech-spec.md](docs/greplost-tech-spec.md).
 
 
 <details>
@@ -72,20 +72,20 @@ Status: pre-release 0.0.1. Design: [docs/greplost-tech-spec.md](docs/greplost-te
 | Go | `go.mod` | imports as package directories, exported identifiers, call edges, cycles |
 | Python | `pyproject.toml`, `setup.py` or any `.py` | absolute, relative and namespace-package imports, module exports, call edges |
 | Rust | `Cargo.toml` | `mod`/`use` edges across the crate tree, public items, call edges |
-| Java | `pom.xml`, `build.gradle`, `build.gradle.kts` | package and type imports, public types and members, call edges |
+| Java | `pom.xml`, `build.gradle`, `build.gradle.kts` or any `.java` | package and type imports, public types and members, call edges |
 | Kotlin | any `.kt` or `.kts`, which includes a `build.gradle.kts` | imports, declarations and call edges (see the accuracy caveat below) |
 | Terraform (HCL) | any `.tf` | `resource`, `data`, `module`, `variable`, `output`, `provider` and `local` nodes, module edges, and reference edges between them |
 | Kubernetes YAML | a manifest whose first key is `apiVersion` | one node per object and per container image, with `selector`, `config-ref` and `from-image` edges |
 | Helm charts | `Chart.yaml` | the chart, its top-level values and one node per template document, with `helm-values` edges from a `.Values.<path>` back to the value it reads |
-| GitHub Actions | `.github/workflows/*.yml` | `job` and `step` nodes, `needs` edges between jobs, and `uses` edges to actions and reusable workflows |
-| Dockerfiles | any `Dockerfile*` or `Containerfile` | a node per build stage and per final image, `ARG`/`ENV` constants, and `from-image`, `copy-from` and `config` edges |
+| GitHub Actions | any `.yml` or `.yaml` under `.github/workflows/` | `job` and `step` nodes, `needs` edges between jobs, and `uses` edges to actions and reusable workflows |
+| Dockerfiles | `Dockerfile`, `Containerfile` or `Dockerfile.<suffix>` | a node per build stage and per final image, `ARG`/`ENV` constants, and `from-image`, `copy-from` and `config` edges |
 | React, TanStack Start, Next.js, Pulumi (TS and Go) | the framework in `package.json` or `go.mod` | components, routes, loaders, app routes and Pulumi resources as nodes on top of the language map |
 
 Things inside a file are nodes with ids of the form `<file>#<kind>.<name>`, and `greplost query` and `greplost impact` take one wherever they take a path. Call edges are only recorded when the callee resolves to one declaration (`high`) or through a re-export chain (`med`); nothing is guessed.
 
 `greplost init` writes `config.json` once and never rewrites it. Its `languages` start as the TypeScript family (`ts`, `tsx`, `js`, `jsx`) and gain every language whose marker above is in the indexed file set, so a repository with both a `go.mod` and a Terraform module gets both; the framework signal passes turn on the same way, from the dependency that names them. Edit the file to change it; a build that indexes nothing says so on stderr rather than writing an empty map in silence.
 
-Accuracy per language, the oracle each is measured against and what that oracle cannot see are published in [bench/RESULTS.md](bench/RESULTS.md) under "Languages, IaC and signals". Kotlin is the one language with no corpus compiler truth: its numbers are fixture numbers and are labelled `reported` rather than `gated`. The head-to-head numbers below cover TypeScript and Go only; no competitor was run on any language build 2 added.
+Accuracy per language, the oracle each is measured against and what that oracle cannot see are published in [bench/RESULTS.md](bench/RESULTS.md) under "Languages, IaC and signals". Kotlin is the one language with no corpus oracle: its numbers are fixture numbers and are labelled `reported` rather than `gated`. The head-to-head numbers below cover TypeScript and Go only; no competitor was run on any language build 2 added.
 
 ## Install
 
@@ -95,6 +95,10 @@ greplost --version
 ```
 
 Requires Bun 1.2 or Node 20. Grammars ship inside the package; nothing is downloaded at runtime.
+
+### Upgrading from 0.0.x
+
+Run `greplost update --full` once and commit the result. 0.1.0 moves the manifest schema from 1 to 2, so `.greplost/manifest.json` carries `"version": "2"` and, until the map is rebuilt, `greplost verify` reports that version line as drift. One full update and one commit is the whole migration. `config.json` is never rewritten, so a repository that wants a language build 2 added has to add it there itself.
 
 ## Quick start
 
@@ -221,7 +225,7 @@ X1 to X10 cover TypeScript and Go only; build 2's languages are scored against t
 > graphify sync mechanism (X2, from bench/competitors.json): git hooks.
 > ua sync mechanism (X2, from bench/competitors.json): git post-commit hook, opt-in.
 > crg sync mechanism (X2, from bench/competitors.json): platform hooks plus a watcher.
-> X2: the commit walk is **synthetic**. It is generated over the corpus repo's pinned checkout rather than replayed from its real history: each commit appends exactly one resolvable import line to one file, so truth moves by exactly one edge per commit, and the walk contains no deletions, no renames and no new files — the easy direction for an incremental updater. Tech spec 10.0 X2 asks for 500 real commits of a corpus checkout; that is not what was run.
+> X2: the commit walk is **synthetic**. It is generated over the corpus repo's pinned checkout rather than replayed from its real history: each commit appends exactly one resolvable import line to one file, so truth moves by exactly one edge per commit, and the walk contains no deletions, no renames and no new files, the easy direction for an incremental updater. Tech spec 10.0 X2 asks for 500 real commits of a corpus checkout; that is not what was run.
 > Mechanical staleness check (tech spec 10.0 X2): greplost has `verify` (byte comparison against a rebuild, exit 1 on drift). None of the three competitors ships an equivalent: their artifacts are refreshed, never checked.
 > X10 (greplost): `greplost init --workspace --no-hooks` then `greplost impact repo-a/src/greet.ts --json` on a copy of `fixtures/two-repo-workspace` returned 3 affected files, 2 of them in `repo-b` — the blast radius crossed the repository boundary, which is the capability tech spec 3.1 X10 asks for. It is not a score: no competitor has an equivalent to compare it against.
 > X10: a capability row, not a score (tech spec 3.1). Each competitor's cell says what it would need to do this.
@@ -293,9 +297,9 @@ greplost measured against its own section 3 targets, one row per metric id. The 
 | A3 | agent answer accuracy vs baseline | non-inferior; +10pt on blast radius | not run | Eval 4, `agent` |
 | A4 | agent wall-clock per task vs baseline | <= 60% | not run | Eval 4, `agent` |
 
-> F2 rests on 1 full-vs-incremental comparison over a walk of 100 commits. It compares the structure artifacts that `listStructurePaths` enumerates — `INDEX.md`, `manifest.json`, `graph/*.jsonl`, `repo/*.md`, `packages/*/{MAP,API}.md` and `packages/*/modules/**` — and not the whole `.greplost/` directory: `config.json`, `cache/` and the runtime files (`.dirty`, `.lock`, `.state.json`) are excluded, because they are not the map and are not committed (ruling 2026-09-02).
+> F2 rests on 1 full-vs-incremental comparison over a walk of 100 commits. It compares the structure artifacts that `listStructurePaths` enumerates, `INDEX.md`, `manifest.json`, `graph/*.jsonl`, `repo/*.md`, `packages/*/{MAP,API}.md` and `packages/*/modules/**`, and not the whole `.greplost/` directory: `config.json`, `cache/` and the runtime files (`.dirty`, `.lock`, `.state.json`) are excluded, because they are not the map and are not committed (ruling 2026-09-02).
 
-> `unparsable` counts files whose tree-sitter parse root is an ERROR node or has one as a direct child: the top level of the file is not a program the grammar recognises (`findUnparsableFiles` in `@greplost/core`, Appendix C ruling 2026-09-03). The extractor recovers around ERROR nodes, so these files are still scored — which is the problem: whatever the grammar could not read costs S1 and S2 recall with no line saying so unless it is counted here. tree-sitter-typescript 0.23.2 is the newest grammar that exists, and hono's generic call signatures hit open upstream issue https://github.com/tree-sitter/tree-sitter-typescript/issues/335. The count is read from the structural payload when it reports one, and otherwise derived from it — a file every one of whose truth items was missed is a file nothing was extracted from — and it is `n/a` with `not measured` when the payload carries neither. Nothing about it is asserted here.
+> `unparsable` counts files whose tree-sitter parse root is an ERROR node or has one as a direct child: the top level of the file is not a program the grammar recognises (`findUnparsableFiles` in `@greplost/core`, Appendix C ruling 2026-09-03). The extractor recovers around ERROR nodes, so these files are still scored, which is the problem: whatever the grammar could not read costs S1 and S2 recall with no line saying so unless it is counted here. tree-sitter-typescript 0.23.2 is the newest grammar that exists, and hono's generic call signatures hit open upstream issue https://github.com/tree-sitter/tree-sitter-typescript/issues/335. The count is read from the structural payload when it reports one, and otherwise derived from it, a file every one of whose truth items was missed is a file nothing was extracted from, and it is `n/a` with `not measured` when the payload carries neither. Nothing about it is asserted here.
 
 > Rows reading `not run` have no result file behind them, not a value of zero; the section below each metric names the command that would produce one.
 <!-- singletool:end -->

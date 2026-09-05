@@ -2,8 +2,8 @@
  * The on-disk extraction cache (tech spec 8.2 to 8.3, Appendix C; sync spec
  * "parse-cache.ts").
  *
- * Parsing is what an update costs. Everything after it — resolution, linking,
- * metrics, rendering — is fast arithmetic over records that are already in
+ * Parsing is what an update costs. Everything after it, resolution, linking,
+ * metrics, rendering, is fast arithmetic over records that are already in
  * memory, so the only work worth skipping between two runs is the tree-sitter
  * pass over files whose bytes have not moved. That is exactly what this cache
  * stores: `.greplost/cache/parse.json`, one `FileRecord` per `(language,
@@ -93,8 +93,8 @@ export const PARSE_CACHE_STAMP = `${SCHEMA_VERSION}/${PARSE_CACHE_VERSION}`;
  * differs with it: a `.tsx` file yields `component.*` nodes with the default (every pass) and
  * none under `signals: []`. The `(lang, sha256)` key carries neither the config nor anything
  * derived from it, so two builds of one checkout under different settings would share entries
- * and each inherit the other's records. A version bump cannot fix that — a version is bumped
- * once, and this differs between two *concurrent* configurations — so the setting goes into the
+ * and each inherit the other's records. A version bump cannot fix that: a version is bumped
+ * once, and this differs between two *concurrent* configurations, so the setting goes into the
  * stamp instead, and a cache written under a different one reads as empty.
  *
  * `undefined` is the default (every applicable pass runs) and keeps the bare stamp, so the

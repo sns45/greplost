@@ -1,6 +1,6 @@
 # Gates: greplost build 2 (root)
 
-Scope: the complete build-2 deliverable — Python, Rust, Java, Kotlin, Terraform, Kubernetes and
+Scope: the complete build-2 deliverable, Python, Rust, Java, Kotlin, Terraform, Kubernetes and
 Helm, GitHub Actions, Dockerfiles, the framework signal layer, non-file nodes in the map and the
 CLI, and a measured, published benchmark row for every one of them. The head-to-head suite is
 untouched and says so.

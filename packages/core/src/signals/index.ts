@@ -9,7 +9,7 @@
  *
  * Determinism: passes run in `id` order, their outputs are concatenated and then sorted
  * (`compareDeclarations` for declarations, `(from, to, refKind, line)` for references). A pass
- * may not read the filesystem, the clock or the environment — everything it is allowed to see
+ * may not read the filesystem, the clock or the environment: everything it is allowed to see
  * is in `SignalInput`.
  *
  * The registry was complete on day one with an inert stub per pass (`applies` returns false), so
@@ -54,7 +54,7 @@ export interface SignalPass {
    * What this pass reads from the path, beyond the file's language; `""` when it reads only
    * the source. Optional, because most passes answer `""`.
    *
-   * Extraction is cached and deduplicated by `(lang, sha256)` — two files with the same bytes
+   * Extraction is cached and deduplicated by `(lang, sha256)`, two files with the same bytes
    * are parsed once and the record is re-stamped with the second file's path. That is sound
    * only while nothing in the record depends on the path, which stopped being true the moment
    * a pass named a node after it: Next.js's `app/a/page.tsx` and `app/b/page.tsx` can be
@@ -85,7 +85,7 @@ export { tanstackPass } from "./tanstack.ts";
  *
  * `extractAll` folds this into the extraction cache key. `applies` is not consulted, because it
  * needs the source and the key must be computable from the path alone; the answer is therefore
- * conservative, which is the safe direction — an extra key never produces a wrong record.
+ * conservative, which is the safe direction, an extra key never produces a wrong record.
  */
 export function signalPathKey(path: string, lang: Lang, enabled?: readonly SignalPassId[]): string {
   const wanted = enabled === undefined ? null : new Set<string>(enabled);

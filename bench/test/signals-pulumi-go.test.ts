@@ -138,7 +138,7 @@ describe("go types oracle", () => {
     () => {
       // `s3.GetBucket(ctx, args)` returns a plain result struct that implements nothing;
       // `s3.GetBucketPolicy(ctx, "name", id, nil)` returns the resource itself. The oracle
-      // never reads either name — the result type decides, and the two differ.
+      // never reads either name, the result type decides, and the two differ.
       const root = copyFixture("adoption");
       writeFileSync(
         path.join(root, "adopt.go"),

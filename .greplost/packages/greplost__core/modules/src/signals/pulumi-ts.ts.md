@@ -15,23 +15,24 @@
 **Blast radius:** 36 files (`greplost impact packages/core/src/signals/pulumi-ts.ts`)
 
 **Key symbols:**
-- `const LANGS: ReadonlySet<Lang> = new Set<Lang>(["ts", "tsx", "js", "jsx"])`  L40-40
-- `const PULUMI_SCOPE = "@pulumi/"`  L42-42
-- `const PULUMI_CORE = "@pulumi/pulumi"`  L44-44
-- `const CORE_RESOURCE_CLASSES: ReadonlySet<string> = new Set([ "ComponentResource", "CustomResource", "ProviderResource", "Resource", "StackReference", ])`  L51-57
-- `const RESOURCE_BASE = /(^|\.)([A-Za-z0-9_$]*Resource)$/`  L60-60
-- `function applies(_path: string, source: string): boolean`  L62-64
-- `const pulumiTsPass: SignalPass = { id: "pulumi-ts", langs: LANGS, applies, run(input: SignalInput): SignalOutput { const imports = importBindings(input.base.imports); const localResourceClasse…`  L66-122
-- `interface ResourceClass`  L125-129
-- `function classify( path: string, imports: ReadonlyMap<string, ImportBinding>, localResourceClasses: ReadonlySet<string>, ): ResourceClass | null`  L137-172
-- `function providerOf(specifier: string): string`  L175-179
-- `function specifierModules(specifier: string): string[]`  L182-186
-- `function lowerFirst(name: string): string`  L188-190
-- `function resourceClassesIn(root: Node, imports: ReadonlyMap<string, ImportBinding>): ReadonlySet<string>`  L199-211
-- `function heritageIsPulumiResource(heritage: Node, imports: ReadonlyMap<string, ImportBinding>): boolean`  L213-227
-- `function bindingNameOf(call: Node): string | null`  L230-242
-- `function firstStringArgument(call: Node): string | undefined`  L245-251
-- `function signatureOf(call: Node): string`  L253-258
-- `function resourceInputs( call: Node, resourceByBinding: ReadonlyMap<string, string>, self: string, ): ReferenceRecord[]`  L267-290
+- `const LANGS: ReadonlySet<Lang> = new Set<Lang>(["ts", "tsx", "js", "jsx"])`  L45-45
+- `const PULUMI_SCOPE = "@pulumi/"`  L47-47
+- `const PULUMI_CORE = "@pulumi/pulumi"`  L49-49
+- `const CORE_RESOURCE_CLASSES: ReadonlySet<string> = new Set([ "ComponentResource", "CustomResource", "ProviderResource", "Resource", "StackReference", ])`  L56-62
+- `const RESOURCE_BASE = /(^|\.)([A-Za-z0-9_$]*Resource)$/`  L65-65
+- `const UNUSABLE_IN_NAME = /[#\n\0]/u`  L72-72
+- `function applies(_path: string, source: string): boolean`  L74-76
+- `const pulumiTsPass: SignalPass = { id: "pulumi-ts", langs: LANGS, applies, run(input: SignalInput): SignalOutput { const imports = importBindings(input.base.imports); const localResourceClasse…`  L78-143
+- `interface ResourceClass`  L146-150
+- `function classify( path: string, imports: ReadonlyMap<string, ImportBinding>, localResourceClasses: ReadonlySet<string>, ): ResourceClass | null`  L158-193
+- `function providerOf(specifier: string): string`  L196-200
+- `function specifierModules(specifier: string): string[]`  L203-207
+- `function lowerFirst(name: string): string`  L209-211
+- `function resourceClassesIn(root: Node, imports: ReadonlyMap<string, ImportBinding>): ReadonlySet<string>`  L220-232
+- `function heritageIsPulumiResource(heritage: Node, imports: ReadonlyMap<string, ImportBinding>): boolean`  L234-248
+- `function bindingNameOf(call: Node): string | null`  L251-263
+- `function firstStringArgument(call: Node): string | undefined`  L266-272
+- `function signatureOf(call: Node): string`  L274-279
+- `function resourceInputs( call: Node, resourceByBinding: ReadonlyMap<string, string>, self: string, ): ReferenceRecord[]`  L288-311
 
 **Calls:** `field` → [`packages/core/src/extract/ts-signature.ts#field`](../extract/ts-signature.ts.md) (med), `spanOf` → [`packages/core/src/extract/ts-signature.ts#spanOf`](../extract/ts-signature.ts.md) (med), `stringOf` → [`packages/core/src/extract/ts-signature.ts#stringOf`](../extract/ts-signature.ts.md) (med), `bindingNameOf` → [`packages/core/src/signals/pulumi-ts.ts#bindingNameOf`](pulumi-ts.ts.md) (high), `classify` → [`packages/core/src/signals/pulumi-ts.ts#classify`](pulumi-ts.ts.md) (high), `firstStringArgument` → [`packages/core/src/signals/pulumi-ts.ts#firstStringArgument`](pulumi-ts.ts.md) (high), `heritageIsPulumiResource` → [`packages/core/src/signals/pulumi-ts.ts#heritageIsPulumiResource`](pulumi-ts.ts.md) (high), `lowerFirst` → [`packages/core/src/signals/pulumi-ts.ts#lowerFirst`](pulumi-ts.ts.md) (high), `providerOf` → [`packages/core/src/signals/pulumi-ts.ts#providerOf`](pulumi-ts.ts.md) (high), `resourceClassesIn` → [`packages/core/src/signals/pulumi-ts.ts#resourceClassesIn`](pulumi-ts.ts.md) (high), `resourceInputs` → [`packages/core/src/signals/pulumi-ts.ts#resourceInputs`](pulumi-ts.ts.md) (high), `signatureOf` → [`packages/core/src/signals/pulumi-ts.ts#signatureOf`](pulumi-ts.ts.md) (high), `specifierModules` → [`packages/core/src/signals/pulumi-ts.ts#specifierModules`](pulumi-ts.ts.md) (high), `NameAllocator` → [`packages/core/src/signals/ts-nodes.ts#NameAllocator`](ts-nodes.ts.md) (high), `importBindings` → [`packages/core/src/signals/ts-nodes.ts#importBindings`](ts-nodes.ts.md) (high), `memberPath` → [`packages/core/src/signals/ts-nodes.ts#memberPath`](ts-nodes.ts.md) (high), `signalNode` → [`packages/core/src/signals/ts-nodes.ts#signalNode`](ts-nodes.ts.md) (high), `walk` → [`packages/core/src/signals/ts-nodes.ts#walk`](ts-nodes.ts.md) (high)

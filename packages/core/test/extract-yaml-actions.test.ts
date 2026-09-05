@@ -3,11 +3,11 @@
  *
  * Three layers, each tested on inline sources first and then pinned against
  * `fixtures/tiny-actions` end to end:
- *   - `extractYamlActions`           — the `job`, `step` and `task` nodes one workflow makes
+ *   - `extractYamlActions`, the `job`, `step` and `task` nodes one workflow makes
  *                                      (spec 2.4, "Declarations");
- *   - `resolveYamlActionsReferences` — `needs`, `uses` and `config` resolved to the one node or
+ *   - `resolveYamlActionsReferences`, `needs`, `uses` and `config` resolved to the one node or
  *                                      file each names, or dropped rather than guessed;
- *   - the fixture                    — every rule at once, through `buildSnapshot`.
+ *   - the fixture, every rule at once, through `buildSnapshot`.
  *
  * The `describe` names are fixed by spec section 2.6: `jobs`, `steps`, `needs`, `uses`,
  * `run scripts`, `tiny-actions`.

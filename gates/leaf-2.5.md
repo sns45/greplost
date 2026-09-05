@@ -86,7 +86,7 @@ Spec: `docs/superpowers/specs/2026-09-04-languages-iac-signals-design.md` sectio
   never fully saw. S1 1.000/0.993 (tp 271, fp 0, fn 2), S2 1.000/1.000 (tp 489, fp 0, fn 0),
   S3 1.000 with recall 0.904 (tp 752, fp 0, fn 80), S4 1.000. structural: GATE PASS. The 80
   missed call edges are 32 interface dispatch, 28 whose receiver is a chain, a field access or
-  a generic witness, 19 `super()`/`this()` between constructors, and 1 inherited member — none
+  a generic witness, 19 `super()`/`this()` between constructors, and 1 inherited member, none
   of them an overload.
 
 - [x] G11: the core and bench suites are green

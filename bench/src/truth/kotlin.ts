@@ -1,5 +1,5 @@
 /**
- * Kotlin truth for Eval 1 — the fixture only, by ruling (spec 2026-09-04 section 1.7).
+ * Kotlin truth for Eval 1, the fixture only, by ruling (spec 2026-09-04 section 1.7).
  *
  * Build 2 does not build a corpus-scale Kotlin oracle. `kotlin-compiler-embeddable`'s PSI and
  * FIR APIs are internal and change shape between minor versions, and the pinned corpus

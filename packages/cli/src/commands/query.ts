@@ -214,7 +214,7 @@ export function queryStructure(structure: Structure, root: string, needle: strin
 
 /**
  * Reference edges bucketed by both endpoints, each bucket sorted with
- * `compareEdges` — the same order `referencesOf`/`referencedBy` produce, which
+ * `compareEdges`, the same order `referencesOf`/`referencedBy` produce, which
  * is what keeps a `query` answer and a node card listing the same edges in the
  * same sequence.
  *

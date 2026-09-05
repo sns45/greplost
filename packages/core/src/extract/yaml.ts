@@ -21,8 +21,8 @@
  * Ruling (leaf 2.0, 2026-09-04): spec 2.1's helm rule reads "lives under a directory holding a
  * `Chart.yaml`", which only a filesystem probe can answer, and an extractor may not read the
  * filesystem (tech spec 5.1: a `FileRecord` is what one file can say about itself). The rule is
- * therefore evaluated from the path alone — the two well-known chart filenames, plus any path
- * with a `templates/` segment — and the difference is recorded here rather than hidden. Leaf
+ * therefore evaluated from the path alone, the two well-known chart filenames, plus any path
+ * with a `templates/` segment, and the difference is recorded here rather than hidden. Leaf
  * 2.8 may narrow it further from inside `extract/yaml-helm.ts` without touching this file.
  *
  * A file is classified as a whole: its flavour is that of its first non-`plain` document, so a
@@ -124,7 +124,7 @@ function findMapping(node: Node): Node | null {
  *
  * Ruling (leaf 2.9, 2026-09-04): the path rule alone cannot see the two Actions files spec 2.4
  * requires. A composite action's `action.yml` is never under `.github/workflows/`, and a
- * workflow *template* is a workflow that has not been installed yet — the pinned corpus
+ * workflow *template* is a workflow that has not been installed yet: the pinned corpus
  * (`actions/starter-workflows`) keeps 174 of its 183 workflows in `ci/`, `deployments/`,
  * `code-scanning/` and `pages/`, so a path-only rule would have scored nine files and reported
  * the result as a measurement of 187.

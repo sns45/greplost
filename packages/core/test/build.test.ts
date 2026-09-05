@@ -118,6 +118,8 @@ function countingParser(inner: ParserHandle): { handle: ParserHandle; parses(): 
         parses += 1;
         return inner.parse(source, lang);
       },
+      // The wrapper does not own `inner`, so disposal is the caller's to do.
+      dispose() {},
     },
     parses: () => parses,
   };
@@ -552,5 +554,46 @@ describe("options", () => {
   test("the snapshot root is absolute and the config is the loaded one", async () => {
     expect(path.isAbsolute(snapshot.root)).toBe(true);
     expect(snapshot.config).toEqual(DEFAULT_CONFIG);
+  });
+});
+
+describe("parser lifetime", () => {
+  /**
+   * `buildSnapshot` is called once per commit by `bench:replay` and once per save by the
+   * watcher, so anything it retains per build is unbounded in the processes that matter.
+   * This is the bound on that: fifty builds of one fixture, measured after the process is
+   * warm, must not grow RSS by more than `BOUND_BYTES`.
+   *
+   * Measured on this fixture, warm: 9.3, 12.0 and 12.9 MB over the fifty builds, which is
+   * JS heap growth and not a leak. The bound is 40 MB, about three times the worst of
+   * those, so it catches a regression that retains ~0.8 MB a build or more and cannot be
+   * tripped by ordinary variance. The warm-up matters: the first few builds compile the
+   * grammars and let the JIT settle, and measuring across them reads 55 MB of one-off
+   * start-up as growth.
+   *
+   * What this does *not* measure is the wasm allocation `ParserHandle.dispose` frees: the
+   * emscripten heap never shrinks, so a freed parser and a leaked one look identical from
+   * outside the process. `parser.test.ts` covers the handle's contract, and the honest
+   * measurement of the whole pipeline is the replay gate's own peak RSS.
+   */
+  const BOUND_BYTES = 40 * 1024 * 1024;
+  const WARMUP_BUILDS = 10;
+
+  test("fifty builds of one fixture do not grow RSS without bound", async () => {
+    for (let i = 0; i < WARMUP_BUILDS; i++) await buildSnapshot({ root: TINY_TS });
+    const before = process.memoryUsage.rss();
+    for (let i = 0; i < 50; i++) await buildSnapshot({ root: TINY_TS });
+    const growth = process.memoryUsage.rss() - before;
+    expect(growth, `RSS grew ${(growth / 1048576).toFixed(1)} MB over 50 builds`).toBeLessThan(BOUND_BYTES);
+  }, 60_000);
+
+  test("a caller's own parser survives the build it was passed to", async () => {
+    const own = await createParser();
+    await buildSnapshot({ root: TINY_TS, parser: own });
+    // The handle is the caller's; a build that disposed it would break every
+    // caller that builds twice with one parser (this file's own `beforeAll`).
+    const second = await buildSnapshot({ root: TINY_TS, parser: own });
+    expect(second.files.length).toBeGreaterThan(0);
+    own.dispose();
   });
 });

@@ -6,7 +6,7 @@
  * `React.memo` / `forwardRef`. It gains a `component.<Name>` node; the language declaration it
  * came from is untouched, and `meta.decl` names it so a card can link the two.
  *
- * `meta.hooks` is the sorted, comma-joined set of `use*` calls in the component's own body —
+ * `meta.hooks` is the sorted, comma-joined set of `use*` calls in the component's own body:
  * its own body, not its subtree: a component that declares a nested helper is not credited
  * with the helper's hooks. `meta.props` is the props type name when the signature names one.
  *
@@ -190,7 +190,7 @@ function holdsJsx(expression: Node): boolean {
 /**
  * The sorted, comma-joined `use*` calls in `body`, deduplicated.
  *
- * `undefined` when there are none, so a hookless component carries no `hooks` key at all — the
+ * `undefined` when there are none, so a hookless component carries no `hooks` key at all, the
  * same shape `props` already had. `""` is not a fact about the component, and a meta key that is
  * always present but usually empty is noise in every card and every golden.
  */

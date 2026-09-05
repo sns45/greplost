@@ -28,7 +28,7 @@ export async function run(ctx: CommandContext): Promise<number> {
   //
   // Both exit 2, not 1: the command line contradicted the checkout and nothing
   // ran, which is precisely what the CLI's usage code means. Exit 1 is "drift
-  // or not found" — an answer — and a caller that retries on it would retry
+  // or not found", an answer, and a caller that retries on it would retry
   // this forever.
   if (ctx.options.workspace === true) {
     if (!workspace) {
@@ -62,5 +62,12 @@ export async function run(ctx: CommandContext): Promise<number> {
 
   if (result.created.length > 0) printLine(`greplost: created ${result.created.join(", ")}`);
   if (result.hooks.length > 0) printLine(`greplost: installed git hooks ${result.hooks.join(", ")}`);
+  // A replaced block is what an upgrade does, and saying nothing about it made
+  // `init` after an upgrade look like a no-op.
+  if (result.updated.length > 0) printLine(`greplost: updated git hooks ${result.updated.join(", ")}`);
+  // Whatever the installer needs the user to act on: no git repository, or a
+  // lefthook that may take the hooks over. On stdout with the rest of init's
+  // report, because it is part of what this command did, not a failure.
+  for (const note of result.notes) printLine(`greplost: ${note}`);
   return 0;
 }

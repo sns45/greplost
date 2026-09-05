@@ -5,7 +5,7 @@
  * here imports greplost's extractor, its resolver, or tree-sitter. The oracle is
  * `bench/truth/javatruth/Truth.java`, a program that drives a real `JavacTask` through the
  * `com.sun.source` Compiler Tree API over the corpus's own sources, with `-proc:none` and a
- * classpath of exactly those source roots, and prints — in greplost's own id vocabulary:
+ * classpath of exactly those source roots, and prints, in greplost's own id vocabulary:
  *
  *   files    the requested `.java` files javac parsed *and* type-checked without an error. A
  *            file whose third-party jar is missing reports an unresolved symbol, goes into
@@ -31,7 +31,7 @@
  *
  * The helper is compiled once into `bench/.corpus/.tools/javatruth-<16 hex>/`, named by a hash
  * of its own source, so a change to the oracle rebuilds it and nothing else does. It needs a
- * JDK — `javac`, not just `java` — of at least the pinned major version; the pin is a floor,
+ * JDK, `javac`, not just `java`, of at least the pinned major version; the pin is a floor,
  * not an exact match, and the version is never read into the output.
  */
 import { execFileSync } from "node:child_process";
@@ -85,7 +85,7 @@ interface JavaToolOutput {
 /**
  * Deterministic code-unit order. Written out rather than imported from `@greplost/core/schema`,
  * because an oracle that shares a line of runtime code with the thing it scores is not an
- * oracle — and `oracle independence` in the test file enforces exactly that.
+ * oracle, and `oracle independence` in the test file enforces exactly that.
  */
 function compare(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
@@ -123,7 +123,7 @@ function toolHash(): string {
  * A floor, never an exact match (driver ruling 2026-09-04): the Compiler Tree API this oracle
  * uses has been stable since 21, so any later JDK is fine, and pinning an exact build would
  * make the benchmark unrunnable on every machine but one. The number is checked and thrown
- * away — it never reaches the truth set, which must depend on the corpus alone.
+ * away: it never reaches the truth set, which must depend on the corpus alone.
  */
 function javacMajor(): number {
   let out: string;
@@ -349,7 +349,7 @@ export function generateTruth(root: string, files: string[]): Truth {
 
   if (tool.errors.length > 0) {
     // Type-checking is best effort: a file whose dependency is a jar this oracle deliberately
-    // does not have contributes nothing and is dropped, rather than failing the whole run —
+    // does not have contributes nothing and is dropped, rather than failing the whole run,
     // but the harness must be able to say how much of the corpus that was.
     console.error(
       `truth-java: ${tool.errors.length} file(s) with compile errors in ${absRoot}; ` +

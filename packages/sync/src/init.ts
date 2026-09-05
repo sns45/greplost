@@ -48,12 +48,24 @@ export interface InitResult {
   update: UpdateResult;
   /** Hooks newly installed; empty outside a git repository or when hooks were declined. */
   hooks: string[];
+  /**
+   * Hooks whose stale greplost block this call replaced. A replaced hook is not a newly
+   * installed one, so without this an upgrade reported that nothing had happened.
+   */
+  updated: string[];
+  /**
+   * Anything the hook installer needs the user to know: no git repository, or a
+   * `lefthook.yml` that may take `core.hooksPath` over and leave the installed hooks
+   * unrun. Dropping these was the difference between a lefthook repository being told
+   * what to add and being told nothing at all.
+   */
+  notes: string[];
 }
 
 /**
  * Everything the runtime writes and nothing anyone should commit: the dirty
  * queue, the lock, the last-indexed commit, and the parse cache. The rest of
- * `.greplost/` — the map itself, `config.json`, the semantic summaries — is
+ * `.greplost/`, the map itself, `config.json`, the semantic summaries, is
  * meant to be in the repository; that is the whole point of it being there.
  */
 const GITIGNORE_ENTRIES: readonly string[] = [
@@ -94,9 +106,18 @@ export async function init(root: string, opts: InitOptions = {}): Promise<InitRe
 
   // After the build, so the first commit a user makes is the one that fires a
   // hook, rather than the hook racing the build that is still running.
-  const hooks = opts.hooks === false ? [] : installGitHooks(absoluteRoot).installed;
+  const installed =
+    opts.hooks === false
+      ? { installed: [], updated: [], notes: [] }
+      : installGitHooks(absoluteRoot);
 
-  return { created, update: result, hooks };
+  return {
+    created,
+    update: result,
+    hooks: installed.installed,
+    updated: installed.updated,
+    notes: installed.notes,
+  };
 }
 
 /** Write `config.json` from the defaults unless the repo already has one. */
@@ -174,7 +195,13 @@ export function markedLanguages(
 
     if (base === "pyproject.toml" || base === "setup.py" || file.endsWith(".py")) marked.add("python");
     if (base === "Cargo.toml") marked.add("rust");
-    if (base === "pom.xml" || base === "build.gradle" || base === "build.gradle.kts") marked.add("java");
+    // A build file, or the source extension itself. Marking only on a build file left a
+    // plain tree of `.java` mapping empty, which is exactly the failure the marker table
+    // exists to close: bazel, make and IDE-project builds are all common in Java, and
+    // python and kotlin already mark on their extension.
+    if (base === "pom.xml" || base === "build.gradle" || base === "build.gradle.kts" || file.endsWith(".java")) {
+      marked.add("java");
+    }
     if (file.endsWith(".kt") || file.endsWith(".kts")) marked.add("kotlin");
     if (file.endsWith(".tf")) marked.add("hcl");
     if (base === "Dockerfile" || base === "Containerfile" || base.startsWith(DOCKERFILE_PREFIX)) {

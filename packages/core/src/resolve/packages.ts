@@ -91,7 +91,7 @@ export function packageOf(filePath: string, packages: PackageInfo[]): PackageInf
  * `manifest.packages`, every `manifest.files[*].pkg`, the `packages/<slug>/`
  * artifact directory and the INDEX/MAP titles, so deriving it from the
  * directory would make two clones of one repository produce two different maps
- * and `greplost verify` fail across machines — exactly what the determinism
+ * and `greplost verify` fail across machines, exactly what the determinism
  * contract of tech spec 5.3 forbids.
  */
 function rootPackageName(read: (rel: string) => string | null): string {

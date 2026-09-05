@@ -170,7 +170,7 @@ function hasEnoughHistory(dir: string, sha: string): boolean {
  * Makes sure `repoDir(entry.name)` is a git repo with `origin` pointed at
  * `entry.url`: `git init -q <dir>` + `git remote add origin <url>` if the
  * directory is absent, or present but not a git repo (a leftover non-git
- * directory — an interrupted clone, stray files, ... — can't be reused, so
+ * directory, an interrupted clone, stray files, ..., can't be reused, so
  * it's removed first and rebuilt clean).
  */
 function ensureRepoInitialized(entry: CorpusRepoEntry): string {
@@ -202,7 +202,7 @@ function ensureRepoInitialized(entry: CorpusRepoEntry): string {
  * `uploadpack.allowReachableSHA1InWant`) serves an arbitrary reachable
  * commit by id, so `git fetch --depth=<depth> --filter=blob:none origin
  * <sha>` bounds the fetch the same way whether this is the first fetch for
- * a fresh repo or a later fetch for a sha that has changed — an L/XL repo
+ * a fresh repo or a later fetch for a sha that has changed, an L/XL repo
  * (grafana, TypeScript) never pulls its full 100k+-commit history. Skips
  * the fetch (no network) when `entry.sha` is already present locally, so
  * re-running at the same sha is idempotent; a checkout of a different sha
@@ -226,7 +226,7 @@ export function fetchAndCheckout(entry: CorpusRepoEntry, depth: number = HISTORY
 
 /**
  * Widens a shallow clone to HISTORY_DEPTH (600) commits behind `entry.sha`
- * via `git fetch --deepen=600` — a no-op (no network) when the repo isn't
+ * via `git fetch --deepen=600`, a no-op (no network) when the repo isn't
  * shallow, and harmlessly saturates at the repo's actual root commit when
  * it has fewer than 600 commits in total (e.g. anyq).
  */
@@ -242,7 +242,7 @@ export function deepenHistory(entry: CorpusRepoEntry): void {
 
 /**
  * Clones (or reuses) `entry` into `repoDir(entry.name)`, checks out
- * `entry.sha`, and ensures HISTORY_DEPTH commits of history behind it — see
+ * `entry.sha`, and ensures HISTORY_DEPTH commits of history behind it; see
  * `fetchAndCheckout` and `deepenHistory`. `depth` is a test-only override of
  * the initial fetch's `--depth`; real callers should omit it.
  */

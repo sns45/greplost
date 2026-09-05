@@ -76,7 +76,7 @@ function moduleTable(ctx: DocContext, pkg: PackageInfo, files: readonly string[]
 
 /**
  * How many non-file nodes each module of this package declares, files with none
- * left out. Undefined — so the section is omitted — when the package has no
+ * left out. Undefined, so the section is omitted, when the package has no
  * nodes at all (spec 4.4).
  *
  * A count rather than a list: a Terraform package can hold thousands of
@@ -108,7 +108,7 @@ function nodeTable(
  * sorted path order; labels are the file's basename, per the Mermaid rule.
  *
  * The diagram root is the package's path, except for the root package, whose
- * path is "." — a title of `.` says nothing, and every non-monorepo has exactly
+ * path is ".", a title of `.` says nothing, and every non-monorepo has exactly
  * one such package, so the root package titles its diagrams with its name. The
  * root only feeds titles and the synthetic overview node ids; grouping is
  * driven by each node's `dir`, so nothing else changes. Titles are only
