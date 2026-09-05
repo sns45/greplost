@@ -18,7 +18,7 @@ and 5.1.
   is a reusable-workflow call is a `task` node named after the job, and the file's `exports` are
   its job ids, which is what `Truth.exports` is scored against.
 
-- [x] G3: step nodes are named `<jobId>.#<index>` from a 0-based position, with `meta.uses` or `meta.run`; describe('steps')
+- [x] G3: step nodes are named `<jobId>.~<index>` from a 0-based position (ruling 2026-09-04: `nodeId` refuses `#`), with `meta.uses` or `meta.run`; describe('steps')
   CHECK: bun test packages/core/test/extract-yaml-actions.test.ts -t steps 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
   EVIDENCE: 6 pass | 23 filtered out | 0 fail. The index suffix is spelled `~` and not `#`:
@@ -39,7 +39,7 @@ and 5.1.
   naming a `task` job resolves to the task node, and `needs` never leaves its own file (a job id
   that exists only in a sibling workflow is dropped, because Actions would never run that edge).
 
-- [x] G5: a step `uses` resolves to `ext:action/<owner>/<repo>@<ref>`, a local action file or a reusable workflow file; describe('uses')
+- [x] G5: a step `uses` resolves to `ext:action/<owner>/<repo>[/<subpath>]` with the ref in `meta.usesRef` (ruling 2026-09-05), a local action file or a reusable workflow file; describe('uses')
   CHECK: bun test packages/core/test/extract-yaml-actions.test.ts -t uses 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
   EVIDENCE: 8 pass | 21 filtered out | 0 fail. The external id is `ext:action/<owner>/<repo>`
