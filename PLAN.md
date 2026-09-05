@@ -397,3 +397,4 @@ Append-only. One line per event.
 - 2026-09-05 kotlin fix round 1 plus follow-up (toolchain floor probe, explicit compile timeouts, compilerStamp read stderr) merged; leaf 2.6 complete
 - 2026-09-05 actions fix round 1 re-reviewed (all addressed) and merged; leaf 2.9 complete; G3/G5 titles amended to the ruled spellings. dockerfile and pulumi-go fix rounds done, scoped re-reviews dispatched
 - 2026-09-05 dockerfile fix round 1 re-reviewed (all addressed) and merged; leaf 2.10 complete
+- 2026-09-05 nodes fix round 1 re-reviewed (all addressed) and merged; leaf 2.11 complete. Spec 4.4 amendment pending: same-file reference labels are kind-qualified
