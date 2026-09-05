@@ -823,6 +823,7 @@
 {"confidence":"high","from":"bench/src/structural.ts#scoreAgainstTruth","kind":"call","to":"bench/src/structural.ts#sameCycle"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreAgainstTruth","kind":"call","to":"bench/src/structural.ts#scoredFiles"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreAgainstTruth","kind":"call","to":"packages/core/src/schema.ts#isFileId"}
+{"confidence":"high","from":"bench/src/structural.ts#scoreAgainstTruth","kind":"call","to":"packages/core/src/schema.ts#isNodeKind"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreAgainstTruth","kind":"call","to":"packages/core/src/schema.ts#splitNodeId"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreTarget","kind":"call","to":"bench/src/structural.ts#buildOptionsFor"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreTarget","kind":"call","to":"bench/src/structural.ts#everyGatedMetricIsNa"}
@@ -2029,7 +2030,7 @@
 {"confidence":"high","from":"packages/core/src/graph/link.ts#buildExportIndex","kind":"call","to":"packages/core/src/graph/link.ts#resolvedSpecifiers"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#buildExportIndex","kind":"call","to":"packages/core/src/graph/link.ts#topLevelDeclarations"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#buildExportIndex","kind":"call","to":"packages/core/src/graph/tarjan.ts#sccComponents"}
-{"confidence":"high","from":"packages/core/src/graph/link.ts#isNodeDeclaration","kind":"call","to":"packages/core/src/schema.ts#splitNodeId"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts#isNodeDeclaration","kind":"call","to":"packages/core/src/schema.ts#isNodeKind"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#importBindings"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#isNodeDeclaration"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#resolveMember"}

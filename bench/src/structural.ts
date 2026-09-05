@@ -42,7 +42,7 @@ import {
   type Lang,
   type Snapshot,
 } from "@greplost/core/schema";
-import { splitNodeId } from "@greplost/core/schema";
+import { isNodeKind, splitNodeId } from "@greplost/core/schema";
 
 /** Languages whose import edges name a directory (a Go package, a Terraform module) rather than a file. */
 const DIRECTORY_IMPORT_LANGS: ReadonlySet<string> = new Set(["go", "hcl"]);
@@ -50,7 +50,7 @@ import { exportKeys, jaccardCycles, scoreEdges, scoreSet, type Score } from "./s
 import { writeResult } from "./results-io.ts";
 import { generateTsTruth, type Truth } from "./truth/ts.ts";
 import { FIXTURES, fixtureNames } from "./fixtures.ts";
-import { loadTruth, type TruthModule, type TruthTarget } from "./truth/registry.ts";
+import { loadTruth, type ExtraTruth, type TruthModule, type TruthTarget } from "./truth/registry.ts";
 import type { CorpusRepoEntry } from "./corpus.ts";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
@@ -595,7 +595,7 @@ async function extraFor(
   target: Target,
   snapshot: Snapshot,
   files: string[],
-): Promise<{ references: Edge[]; nodes: string[] } | null> {
+): Promise<ExtraTruth | null> {
   const scored = new Set(files);
   const predictedNodes = snapshot.symbols.some(
     (decl) => scored.has(decl.file) && decl.meta?.["signal"] !== undefined,
@@ -748,7 +748,7 @@ export function scoreAgainstTruth(
   snapshot: Snapshot,
   truth: Truth,
   lang: TruthLang,
-  extra: { references: Edge[]; nodes: string[] } | null = null,
+  extra: ExtraTruth | null = null,
 ): RepoScores {
   // The universe is what *both* sides could speak about: the snapshot's files for this
   // language, intersected with the files the truth generator actually covered. A file the
@@ -789,10 +789,12 @@ export function scoreAgainstTruth(
   // every other metric: a node in a file the oracle never loaded is not a false positive.
   // `S5` is scored as a key set rather than with `scoreEdges` because a reference edge's
   // identity is `(from, to, refKind)` and `scoreEdges` does not know about `refKind`.
-  // S6 counts every declaration whose id is a schema node id (`splitNodeId`), on both sides,
+  // S6 counts every declaration of a node kind whose id is a schema node id, on both sides (the
+  // kind is authoritative: `pipeline.go#step.Run` is a method on a lowercase type, not a node),
   // so IaC nodes and framework signal nodes are scored the same way (driver ruling 2026-09-04).
+  const nodeFiles = extra?.nodeFiles === undefined ? fileSet : new Set(extra.nodeFiles.filter((file) => fileSet.has(file)));
   const predNodes = snapshot.symbols
-    .filter((decl) => fileSet.has(decl.file) && splitNodeId(decl.id) !== null)
+    .filter((decl) => nodeFiles.has(decl.file) && isNodeKind(decl.kind) && splitNodeId(decl.id) !== null)
     .map((decl) => decl.id);
   // S5 identity is (from, to, refKind) when the oracle carries kinds; an oracle that scores
   // references by endpoints only (Terraform's) is compared by (from, to) on both sides.
@@ -805,7 +807,7 @@ export function scoreAgainstTruth(
     .filter((edge) => fileSet.has(fileOf(edge.from)) && coveredReferenceTarget(edge.to))
     .map(keyOf);
   // Both node sets are held to the schema's node-id shape so an oracle cannot publish an id the map cannot carry.
-  const truthNodes = extra === null ? [] : extra.nodes.filter((id) => fileSet.has(fileOf(id)) && splitNodeId(id) !== null);
+  const truthNodes = extra === null ? [] : extra.nodes.filter((id) => nodeFiles.has(fileOf(id)) && splitNodeId(id) !== null);
   const truthReferences =
     extra === null
       ? []
@@ -834,8 +836,13 @@ export function scoreAgainstTruth(
         `(check the repo root and .greplost/config.json "languages")`,
     );
   }
+  // A reported-only target (Kotlin's corpus by ruling) offers no compiler truth on purpose; that is
+  // not an empty oracle, so the banner and the payload's `truthEmpty` stay quiet for it.
+  const reportedOnly = truth.notes.includes("reported-only");
   const truthEmpty =
-    offered > 0 && (files.length === 0 || (truthImports.length === 0 && exportKeys(truthExports).length === 0));
+    !reportedOnly &&
+    offered > 0 &&
+    (files.length === 0 || (truthImports.length === 0 && exportKeys(truthExports).length === 0));
   if (truthEmpty) {
     console.error(
       `${SUITE}: compiler truth for ${name} is empty across ${offered} files ` +

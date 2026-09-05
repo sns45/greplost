@@ -185,9 +185,9 @@
 - `interface ExportTarget` L43-61
 - `type ExportIndex = Map<string, Map<string, ExportTarget>>` L64-64
 - `function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge[]` L84-126
-- `function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex` L230-463
-- `function exportNames(index: ExportIndex, file: string): string[]` L466-469
-- `function linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[]` L484-568
+- `function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex` L232-465
+- `function exportNames(index: ExportIndex, file: string): string[]` L468-471
+- `function linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[]` L486-570
 
 ## packages/core/src/graph/metrics.ts
 

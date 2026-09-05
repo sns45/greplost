@@ -638,9 +638,9 @@
       "fanIn": 1,
       "fanOut": 7,
       "lang": "ts",
-      "loc": 1207,
+      "loc": 1214,
       "pkg": "@greplost/bench",
-      "sha256": "24b298618ca782e92c25e4f5cabd77f8f50fc0d1860ca4f4cd1c34ab504a354b",
+      "sha256": "ae043e9368678b8613aeb4ac3a40ce139b018a09dd8ddd4ec856da4e4f710179",
       "staleSummary": false
     },
     "bench/src/tasks.ts": {
@@ -769,6 +769,7 @@
     "bench/src/truth/registry.ts": {
       "blast": 2,
       "exports": [
+        "ExtraTruth",
         "TruthModule",
         "TruthTarget",
         "loadTruth"
@@ -776,9 +777,9 @@
       "fanIn": 1,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 75,
+      "loc": 87,
       "pkg": "@greplost/bench",
-      "sha256": "e72a71d23b791876c83acac785a06678e18451ed313826d5852484313be7a9f2",
+      "sha256": "951638bbd07eeea90ab8c4368768305dbcb24ace1c42bf867e591a15df03eb17",
       "staleSummary": false
     },
     "bench/src/truth/rust.ts": {
@@ -1715,9 +1716,9 @@
       "fanIn": 1,
       "fanOut": 7,
       "lang": "ts",
-      "loc": 625,
+      "loc": 627,
       "pkg": "@greplost/core",
-      "sha256": "dcd4f7a4a267d3e7459d440cab90d9884220497e8aecf79fe20bf18be48c0af0",
+      "sha256": "7988424ec1ae05fd6f167b83dd7d3516626a361e3b254ef27f4b0fc01787f1d6",
       "staleSummary": false
     },
     "packages/core/src/graph/metrics.ts": {
@@ -3439,14 +3440,14 @@
         "@greplost/sync"
       ],
       "files": 49,
-      "loc": 23797,
+      "loc": 23816,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 65,
-      "loc": 16393,
+      "loc": 16395,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",

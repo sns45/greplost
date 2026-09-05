@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/bench` ([map](../../../MAP.md))
 
-**Exports:** `TruthModule (interface)`, `TruthTarget (type)`, `loadTruth(lang: TruthTarget): Promise<TruthModule>`
+**Exports:** `ExtraTruth (interface)`, `TruthModule (interface)`, `TruthTarget (type)`, `loadTruth(lang: TruthTarget): Promise<TruthModule>`
 
 **Imports:** [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Edge, Lang), [`./ts.ts`](ts.ts.md) (Truth)
 
@@ -16,8 +16,9 @@
 
 **Key symbols:**
 - `type TruthTarget = | Lang | "yaml-k8s" | "yaml-helm" | "yaml-actions" | "signals-ts" | "signals-pulumi-go"`  L21-27
-- `interface TruthModule`  L29-34
-- `function legacyName(target: TruthTarget): string`  L42-45
-- `async function loadTruth(lang: TruthTarget): Promise<TruthModule>`  L48-75
+- `interface ExtraTruth`  L35-39
+- `interface TruthModule`  L41-46
+- `function legacyName(target: TruthTarget): string`  L54-57
+- `async function loadTruth(lang: TruthTarget): Promise<TruthModule>`  L60-87
 
 **Calls:** `legacyName` → [`bench/src/truth/registry.ts#legacyName`](registry.ts.md) (high)

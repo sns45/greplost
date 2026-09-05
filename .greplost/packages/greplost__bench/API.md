@@ -384,11 +384,11 @@
 - `function buildOptionsFor(target: Target): { root: string; config?: GreplostConfig }` L506-532
 - `function unsupportedMetrics(notes: readonly string[]): string[]` L634-642
 - `function scoredFiles(snapshot: Snapshot, lang: TruthLang): string[]` L728-738
-- `function scoreAgainstTruth( name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang, extra: { references: Edge[]; nodes: string[] } | null = null, ): RepoScores` L746-889
-- `function perLangSummary( targets: readonly Target[], scores: readonly RepoScores[], ): Record<string, { repos: string[]; gated: boolean; truthSource: string }>` L923-944
-- `function unparsableBucket( scores: readonly RepoScores[], ): { count: number; files: { repo: string; path: string; reason: string }[] }` L973-980
-- `function missedMetrics(scores: RepoScores): string[]` L992-1023
-- `function locate(snapshot: Snapshot, key: string, kind: "import" | "call" | "export"): string` L1077-1089
+- `function scoreAgainstTruth( name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang, extra: ExtraTruth | null = null, ): RepoScores` L746-896
+- `function perLangSummary( targets: readonly Target[], scores: readonly RepoScores[], ): Record<string, { repos: string[]; gated: boolean; truthSource: string }>` L930-951
+- `function unparsableBucket( scores: readonly RepoScores[], ): { count: number; files: { repo: string; path: string; reason: string }[] }` L980-987
+- `function missedMetrics(scores: RepoScores): string[]` L999-1030
+- `function locate(snapshot: Snapshot, key: string, kind: "import" | "call" | "export"): string` L1084-1096
 
 ## bench/src/tasks.ts
 
@@ -453,8 +453,9 @@
 ## bench/src/truth/registry.ts
 
 - `type TruthTarget = | Lang | "yaml-k8s" | "yaml-helm" | "yaml-actions" | "signals-ts" | "signals-pulumi-go"` L21-27
-- `interface TruthModule` L29-34
-- `async function loadTruth(lang: TruthTarget): Promise<TruthModule>` L48-75
+- `interface ExtraTruth` L35-39
+- `interface TruthModule` L41-46
+- `async function loadTruth(lang: TruthTarget): Promise<TruthModule>` L60-87
 
 ## bench/src/truth/rust.ts
 
