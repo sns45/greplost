@@ -52,9 +52,9 @@ graph LR
 |---|---|---|---|---|---|
 | greplost-monorepo | . | 2 | 137 | none | [MAP](../packages/greplost-monorepo/MAP.md) |
 | @greplost/bench | bench | 49 | 24919 | @greplost/core, @greplost/sync | [MAP](../packages/greplost__bench/MAP.md) |
-| greplost | packages/cli | 18 | 2163 | @greplost/core, @greplost/render, @greplost/semantic, @greplost/sync, @greplost/workspace | [MAP](../packages/greplost/MAP.md) |
-| @greplost/core | packages/core | 65 | 17872 | none | [MAP](../packages/greplost__core/MAP.md) |
-| @greplost/render | packages/render | 15 | 2223 | @greplost/core | [MAP](../packages/greplost__render/MAP.md) |
+| greplost | packages/cli | 18 | 2217 | @greplost/core, @greplost/render, @greplost/semantic, @greplost/sync, @greplost/workspace | [MAP](../packages/greplost/MAP.md) |
+| @greplost/core | packages/core | 65 | 17916 | none | [MAP](../packages/greplost__core/MAP.md) |
+| @greplost/render | packages/render | 15 | 2274 | @greplost/core | [MAP](../packages/greplost__render/MAP.md) |
 | @greplost/semantic | packages/semantic | 5 | 1509 | @greplost/core, @greplost/render, @greplost/sync | [MAP](../packages/greplost__semantic/MAP.md) |
-| @greplost/sync | packages/sync | 12 | 3187 | @greplost/core, @greplost/render | [MAP](../packages/greplost__sync/MAP.md) |
+| @greplost/sync | packages/sync | 12 | 3209 | @greplost/core, @greplost/render | [MAP](../packages/greplost__sync/MAP.md) |
 | @greplost/workspace | packages/workspace | 8 | 1903 | @greplost/core, @greplost/render, @greplost/sync | [MAP](../packages/greplost__workspace/MAP.md) |
