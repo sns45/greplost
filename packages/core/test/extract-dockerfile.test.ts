@@ -156,6 +156,30 @@ describe("stages", () => {
     expect(out.calls).toEqual([]);
   });
 
+  test("nothing recovered from an ERROR region is published as if it had been read", () => {
+    // tree-sitter-dockerfile v0.2.0 cannot read the legacy `ENV NAME a b c` form and wraps it,
+    // and every instruction after it, in one `ERROR`. What the walk recovers from inside that
+    // region is a fragment, so it is published as a fragment: the stage before it is real, the
+    // constant is real but its value is not, and the final stage — the only thing an `image`
+    // node can be named after — was never seen at all.
+    const out = run("Dockerfile", "FROM alpine AS one\nENV NOTE a b c\nFROM alpine AS two\n");
+    expect(out.decls.filter((d) => d.kind === "stage").map((d) => d.id)).toEqual(["Dockerfile#stage.one"]);
+    // The real value is `a b c`; the grammar saw `a`. A default it cannot vouch for is dropped.
+    expect(byId(out, "Dockerfile#env.NOTE").meta).toBeUndefined();
+    // The real final stage is `two`. `image.one` would be a guess, so there is no image node.
+    expect(out.decls.filter((d) => d.kind === "image")).toEqual([]);
+  });
+
+  test("an ERROR anywhere suppresses the image node, even for a stage read cleanly", () => {
+    const out = run("Dockerfile", "FROM alpine AS one\nENV NOTE a b c\n");
+    expect(out.decls.filter((d) => d.kind === "image")).toEqual([]);
+    // A file the grammar reads whole still gets its image node, so the rule is the ERROR and
+    // not the shape of the file.
+    const clean = run("Dockerfile", "FROM alpine AS one\nENV NOTE=abc\n");
+    expect(clean.decls.filter((d) => d.kind === "image").map((d) => d.id)).toEqual(["Dockerfile#image.one"]);
+    expect(byId(clean, "Dockerfile#env.NOTE").meta).toEqual({ default: "abc" });
+  });
+
   test("an entrypoint or cmd longer than 120 characters is clipped", () => {
     const long = "x".repeat(400);
     const out = run("Dockerfile", `FROM a\nCMD ${long}\n`);
@@ -256,6 +280,16 @@ describe("copy from", () => {
       // The source names an indexed file, and must still not become a `config` edge.
     });
     expect(referenceKeys(snapshot).filter((key) => key.includes("-config->"))).toEqual([]);
+  });
+
+  test("a stage cannot copy from itself: the self reference is dropped, never an image", async () => {
+    // `COPY --from=build` inside stage `build` names a stage, so it is not an image reference;
+    // `ext:image/build` would publish an external image nobody wrote.
+    const snapshot = await snapshotOf({ Dockerfile: "FROM node:20 AS build\nCOPY --from=build /a /b\n" });
+    expect(edgesFrom(snapshot, "Dockerfile#stage.build")).toEqual([["ext:image/node:20", "node:20", "high"]]);
+    // The same for the positional form.
+    const byIndex = await snapshotOf({ Dockerfile: "FROM node:20 AS build\nCOPY --from=0 /a /b\n" });
+    expect(edgesFrom(byIndex, "Dockerfile#stage.build")).toEqual([["ext:image/node:20", "node:20", "high"]]);
   });
 
   test("an ambiguous or absent stage index is dropped rather than guessed", async () => {
