@@ -166,3 +166,4 @@ assertion, since no `Lang` is stubbed any more) and `bench/test/registry.test.ts
 
 - [x] G13: core and bench typecheck
   CHECK: bunx tsc -p packages/core/tsconfig.json --noEmit && bunx tsc -p bench/tsconfig.json --noEmit
+  EVIDENCE: (no output)
