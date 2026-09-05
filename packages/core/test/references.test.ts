@@ -296,9 +296,9 @@ describe("stubs", () => {
       // stubs: their own test files (extract-python/rust/java/kotlin.test.ts) hold them to the
       // contract now.
       ["Dockerfile", (p) => extractDockerfile(p, "dockerfile", "", NO_TREE), /dockerfile extractor .* leaf 2\.10/],
-      // yaml-k8s and yaml-helm (leaf 2.8) are no longer stubs: `extract-yaml-k8s.test.ts`
-      // holds them to the contract now.
-      ["ci.yml", (p) => extractYamlActions(p, "yaml", "", NO_TREE), /yaml-actions extractor .* build-2 leaf 2\.9/],
+      // yaml-k8s and yaml-helm (leaf 2.8) and yaml-actions (leaf 2.9) are no longer stubs:
+      // `extract-yaml-k8s.test.ts` and `extract-yaml-actions.test.ts` hold them to the
+      // contract now.
     ];
     for (const [file, call, pattern] of cases) {
       expect(() => call(file), file).toThrow(pattern);
@@ -360,9 +360,9 @@ describe("stubs", () => {
     // yaml-k8s landed with leaf 2.8 and behaves the same way: a selector nothing answers is
     // dropped rather than guessed, and `extract-yaml-k8s.test.ts` owns the assertions.
     expect(resolveYamlK8sReferences(record({ lang: "yaml" }), ref({ refKind: "selector" }), ctx)).toBeNull();
-    expect(() =>
-      resolveYamlActionsReferences(record({ lang: "yaml" }), ref({ refKind: "needs" }), ctx),
-    ).toThrow(/yaml-actions reference resolution .* leaf 2\.9/);
+    // yaml-actions landed with leaf 2.9: `needs` that names no job in the same file is dropped
+    // rather than guessed, and `extract-yaml-actions.test.ts` owns the assertions.
+    expect(resolveYamlActionsReferences(record({ lang: "yaml" }), ref({ refKind: "needs" }), ctx)).toBeNull();
     expect(() =>
       resolveDockerfileReferences(record({ lang: "dockerfile" }), ref({ refKind: "from-image" }), ctx),
     ).toThrow(/dockerfile reference resolution .* leaf 2\.10/);

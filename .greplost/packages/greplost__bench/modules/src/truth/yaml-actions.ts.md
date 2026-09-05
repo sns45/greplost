@@ -6,14 +6,46 @@
 
 **Package:** `@greplost/bench` ([map](../../../MAP.md))
 
-**Exports:** `NOTES (const)`, `generateTruth(root: string, files: string[]): Truth`
+**Exports:** `NOTES (const)`, `ReferenceTruth (type)`, `generateExtra( root: string, files: string[], universe: string[] = files, ): { references: Edge[]; nodes: string[] }`, `generateTruth(root: string, files: string[]): Truth`, `isActionsFile(root: string, file: string): boolean`
 
-**Imports:** [`./ts.ts`](ts.ts.md) (Truth)
+**Imports:** `node:fs` (readFileSync), `node:path` (default), `js-yaml` (loadAll), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Edge, compareEdges, compareStrings), [`./ts.ts`](ts.ts.md) (Truth)
 
 **Imported by:** [`bench/src/truth/yaml.ts`](yaml.ts.md)
 
 **Blast radius:** 1 file (`greplost impact bench/src/truth/yaml-actions.ts`)
 
 **Key symbols:**
-- `const NOTES: readonly string[] = ["not-implemented"]`  L15-15
-- `function generateTruth(root: string, files: string[]): Truth`  L17-22
+- `const NOTES: readonly string[] = ["js-yaml-oracle"]`  L51-51
+- `const UNSUPPORTED = ["unsupported:S3"] as const`  L58-58
+- `const COMPOSITE_JOB_ID = "runs"`  L61-61
+- `const EXPRESSION = /\$\{\{/u`  L64-64
+- `const PATH_TOKEN = /^(?:\.\/)?[A-Za-z0-9._@+-]+(?:\/[A-Za-z0-9._@+-]+)*$/u`  L67-67
+- `const SHELL_SEPARATORS = /[\s;&|()<>"'`=,]+/u`  L70-70
+- `const ACTION_FILES: readonly string[] = ["action.yml", "action.yaml"]`  L73-73
+- `type Plain = Record<string, unknown>`  L79-79
+- `function isPlain(value: unknown): value is Plain`  L81-83
+- `function text(value: unknown): string | null`  L86-88
+- `function documentsOf(root: string, file: string): unknown[] | null`  L91-107
+- `function basename(file: string): string`  L109-112
+- `function isActionDefinitionName(file: string): boolean`  L115-118
+- `function isActionsFile(root: string, file: string): boolean`  L130-139
+- `function runPathTokens(body: string): string[]`  L148-162
+- `function usableName(value: string | null): value is string`  L165-167
+- `function literal(value: string | null): value is string`  L170-172
+- `function stringList(value: unknown): string[]`  L175-179
+- `interface FileReading`  L185-196
+- `function emptyReading(): FileReading`  L198-200
+- `function readFile(root: string, file: string): FileReading | null`  L203-274
+- `function fromRepoRoot(relative: string): string | null`  L281-293
+- `function localUsesTarget(uses: string, universe: ReadonlySet<string>): string | null`  L296-305
+- `function externalUsesTarget(uses: string): string | null`  L313-321
+- `function pathsByToken(universe: readonly string[]): Map<string, string[]>`  L327-343
+- `interface Run`  L349-352
+- `function coveredRun(root: string, files: string[]): Run`  L358-372
+- `type ReferenceTruth = Edge & { readonly refKind: string }`  L378-378
+- `function edge(from: string, to: string, refKind: string, symbol: string): ReferenceTruth`  L380-382
+- `function generateTruth(root: string, files: string[]): Truth`  L391-405
+- `function generateExtra( root: string, files: string[], universe: string[] = files, ): { references: Edge[]; nodes: string[] }`  L416-460
+- `function dedupe(edges: readonly ReferenceTruth[]): ReferenceTruth[]`  L463-471
+
+**Calls:** `basename` → [`bench/src/truth/yaml-actions.ts#basename`](yaml-actions.ts.md) (high), `coveredRun` → [`bench/src/truth/yaml-actions.ts#coveredRun`](yaml-actions.ts.md) (high), `dedupe` → [`bench/src/truth/yaml-actions.ts#dedupe`](yaml-actions.ts.md) (high), `documentsOf` → [`bench/src/truth/yaml-actions.ts#documentsOf`](yaml-actions.ts.md) (high), `edge` → [`bench/src/truth/yaml-actions.ts#edge`](yaml-actions.ts.md) (high), `emptyReading` → [`bench/src/truth/yaml-actions.ts#emptyReading`](yaml-actions.ts.md) (high), `externalUsesTarget` → [`bench/src/truth/yaml-actions.ts#externalUsesTarget`](yaml-actions.ts.md) (high), `fromRepoRoot` → [`bench/src/truth/yaml-actions.ts#fromRepoRoot`](yaml-actions.ts.md) (high), `isActionDefinitionName` → [`bench/src/truth/yaml-actions.ts#isActionDefinitionName`](yaml-actions.ts.md) (high), `isPlain` → [`bench/src/truth/yaml-actions.ts#isPlain`](yaml-actions.ts.md) (high), `literal` → [`bench/src/truth/yaml-actions.ts#literal`](yaml-actions.ts.md) (high), `localUsesTarget` → [`bench/src/truth/yaml-actions.ts#localUsesTarget`](yaml-actions.ts.md) (high), `pathsByToken` → [`bench/src/truth/yaml-actions.ts#pathsByToken`](yaml-actions.ts.md) (high), `readFile` → [`bench/src/truth/yaml-actions.ts#readFile`](yaml-actions.ts.md) (high), `runPathTokens` → [`bench/src/truth/yaml-actions.ts#runPathTokens`](yaml-actions.ts.md) (high), `stringList` → [`bench/src/truth/yaml-actions.ts#stringList`](yaml-actions.ts.md) (high), `text` → [`bench/src/truth/yaml-actions.ts#text`](yaml-actions.ts.md) (high), `usableName` → [`bench/src/truth/yaml-actions.ts#usableName`](yaml-actions.ts.md) (high), `compareEdges` → [`packages/core/src/schema.ts#compareEdges`](../../../../greplost__core/modules/src/schema.ts.md) (high)

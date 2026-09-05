@@ -210,6 +210,10 @@
 {"confidence":"high","from":"bench/src/truth/ts.ts","importKind":"static","kind":"import","specifier":"typescript","symbols":["default"],"to":"ext:typescript"}
 {"confidence":"high","from":"bench/src/truth/ts.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["Edge","compareEdges","compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/truth/yaml-actions.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
+{"confidence":"high","from":"bench/src/truth/yaml-actions.ts","importKind":"static","kind":"import","specifier":"js-yaml","symbols":["loadAll"],"to":"ext:js-yaml"}
+{"confidence":"high","from":"bench/src/truth/yaml-actions.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["readFileSync"],"to":"ext:node:fs"}
+{"confidence":"high","from":"bench/src/truth/yaml-actions.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
+{"confidence":"high","from":"bench/src/truth/yaml-actions.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["Edge","compareEdges","compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/truth/yaml-helm.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
 {"confidence":"high","from":"bench/src/truth/yaml-helm.ts","importKind":"type","kind":"import","specifier":"./yaml-k8s.ts","symbols":["ReferenceTruth"],"to":"bench/src/truth/yaml-k8s.ts"}
 {"confidence":"high","from":"bench/src/truth/yaml-helm.ts","importKind":"static","kind":"import","specifier":"js-yaml","symbols":["loadAll"],"to":"ext:js-yaml"}
@@ -223,7 +227,7 @@
 {"confidence":"high","from":"bench/src/truth/yaml-k8s.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
 {"confidence":"high","from":"bench/src/truth/yaml-k8s.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["Edge","compareEdges","compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/truth/yaml.ts","importKind":"type","kind":"import","specifier":"./ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
-{"confidence":"high","from":"bench/src/truth/yaml.ts","importKind":"static","kind":"import","specifier":"./yaml-actions.ts","symbols":["generateTruth"],"to":"bench/src/truth/yaml-actions.ts"}
+{"confidence":"high","from":"bench/src/truth/yaml.ts","importKind":"static","kind":"import","specifier":"./yaml-actions.ts","symbols":["generateExtra","generateTruth","isActionsFile"],"to":"bench/src/truth/yaml-actions.ts"}
 {"confidence":"high","from":"bench/src/truth/yaml.ts","importKind":"static","kind":"import","specifier":"./yaml-helm.ts","symbols":["generateExtra","generateTruth"],"to":"bench/src/truth/yaml-helm.ts"}
 {"confidence":"high","from":"bench/src/truth/yaml.ts","importKind":"static","kind":"import","specifier":"./yaml-k8s.ts","symbols":["generateExtra","generateTruth"],"to":"bench/src/truth/yaml-k8s.ts"}
 {"confidence":"high","from":"bench/src/truth/yaml.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["Edge"],"to":"packages/core/src/schema.ts"}
@@ -466,8 +470,12 @@
 {"confidence":"high","from":"packages/core/src/extract/ts.ts","importKind":"static","kind":"import","specifier":"../parser.ts","symbols":["reparse"],"to":"packages/core/src/parser.ts"}
 {"confidence":"high","from":"packages/core/src/extract/ts.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","DeclKind","Declaration","ExportRecord","FileRecord","ImportRecord","Lang"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/extract/ts.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["symbolId"],"to":"packages/core/src/schema.ts"}
-{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Tree"],"to":"ext:web-tree-sitter"}
-{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","Lang"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Node","Tree"],"to":"ext:web-tree-sitter"}
+{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts","importKind":"static","kind":"import","specifier":"./ts-signature.ts","symbols":["clip","lineOf"],"to":"packages/core/src/extract/ts-signature.ts"}
+{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts","importKind":"type","kind":"import","specifier":"./yaml-doc.ts","symbols":["YamlValue"],"to":"packages/core/src/extract/yaml-doc.ts"}
+{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts","importKind":"static","kind":"import","specifier":"./yaml-doc.ts","symbols":["documentValue","mapGet","mapPath","scalarAt","seqItems","yamlDocuments"],"to":"packages/core/src/extract/yaml-doc.ts"}
+{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["DeclKind","Declaration","ExportRecord","FileRecord","Lang","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings","nodeId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-doc.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Node"],"to":"ext:web-tree-sitter"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-helm.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Tree"],"to":"ext:web-tree-sitter"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-helm.ts","importKind":"static","kind":"import","specifier":"./ts-signature.ts","symbols":["clip"],"to":"packages/core/src/extract/ts-signature.ts"}
@@ -483,7 +491,7 @@
 {"confidence":"high","from":"packages/core/src/extract/yaml-k8s.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["DeclKind","Declaration","ExportRecord","FileRecord","Lang","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-k8s.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings","nodeId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/extract/yaml.ts","importKind":"type","kind":"import","specifier":"web-tree-sitter","symbols":["Node","Tree"],"to":"ext:web-tree-sitter"}
-{"confidence":"high","from":"packages/core/src/extract/yaml.ts","importKind":"static","kind":"import","specifier":"./yaml-actions.ts","symbols":["extractYamlActions"],"to":"packages/core/src/extract/yaml-actions.ts"}
+{"confidence":"high","from":"packages/core/src/extract/yaml.ts","importKind":"static","kind":"import","specifier":"./yaml-actions.ts","symbols":["extractYamlActions","isActionDefinitionPath"],"to":"packages/core/src/extract/yaml-actions.ts"}
 {"confidence":"high","from":"packages/core/src/extract/yaml.ts","importKind":"static","kind":"import","specifier":"./yaml-helm.ts","symbols":["extractYamlHelm"],"to":"packages/core/src/extract/yaml-helm.ts"}
 {"confidence":"high","from":"packages/core/src/extract/yaml.ts","importKind":"static","kind":"import","specifier":"./yaml-k8s.ts","symbols":["extractYamlK8s"],"to":"packages/core/src/extract/yaml-k8s.ts"}
 {"confidence":"high","from":"packages/core/src/extract/yaml.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","Lang"],"to":"packages/core/src/schema.ts"}
@@ -575,7 +583,9 @@
 {"confidence":"high","from":"packages/core/src/references/ts.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","ReferenceEdge","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/references/ts.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["nodeId","symbolId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/references/yaml-actions.ts","importKind":"type","kind":"import","specifier":"./link.ts","symbols":["ReferenceContext"],"to":"packages/core/src/references/link.ts"}
-{"confidence":"high","from":"packages/core/src/references/yaml-actions.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","ReferenceEdge","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/references/yaml-actions.ts","importKind":"static","kind":"import","specifier":"./link.ts","symbols":["referenceSource"],"to":"packages/core/src/references/link.ts"}
+{"confidence":"high","from":"packages/core/src/references/yaml-actions.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["Declaration","FileRecord","ReferenceEdge","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/references/yaml-actions.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["externalId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/references/yaml-k8s.ts","importKind":"type","kind":"import","specifier":"./link.ts","symbols":["ReferenceContext"],"to":"packages/core/src/references/link.ts"}
 {"confidence":"high","from":"packages/core/src/references/yaml-k8s.ts","importKind":"static","kind":"import","specifier":"./link.ts","symbols":["referenceSource"],"to":"packages/core/src/references/link.ts"}
 {"confidence":"high","from":"packages/core/src/references/yaml-k8s.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["Declaration","FileRecord","ReferenceEdge","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
@@ -584,7 +594,7 @@
 {"confidence":"high","from":"packages/core/src/references/yaml.ts","importKind":"type","kind":"import","specifier":"./link.ts","symbols":["ReferenceContext"],"to":"packages/core/src/references/link.ts"}
 {"confidence":"high","from":"packages/core/src/references/yaml.ts","importKind":"static","kind":"import","specifier":"./yaml-actions.ts","symbols":["resolveYamlActionsReferences"],"to":"packages/core/src/references/yaml-actions.ts"}
 {"confidence":"high","from":"packages/core/src/references/yaml.ts","importKind":"static","kind":"import","specifier":"./yaml-k8s.ts","symbols":["resolveYamlK8sReferences"],"to":"packages/core/src/references/yaml-k8s.ts"}
-{"confidence":"high","from":"packages/core/src/references/yaml.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","ReferenceEdge","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/references/yaml.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","RefKind","ReferenceEdge","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/resolve/dockerfile.ts","importKind":"type","kind":"import","specifier":"./resolver.ts","symbols":["RepoContext","ResolvedTarget"],"to":"packages/core/src/resolve/resolver.ts"}
 {"confidence":"high","from":"packages/core/src/resolve/dockerfile.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","Confidence","FileRecord"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/resolve/go.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallSite","Confidence","FileRecord","ImportEdge"],"to":"packages/core/src/schema.ts"}
