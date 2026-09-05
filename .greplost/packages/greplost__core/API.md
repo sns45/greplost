@@ -53,7 +53,7 @@
 
 ## packages/core/src/extract/java.ts
 
-- `function extractJava( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L587-618
+- `function extractJava( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L625-656
 
 ## packages/core/src/extract/kotlin.ts
 
@@ -134,18 +134,19 @@
 
 ## packages/core/src/extract/yaml-helm.ts
 
-- `function templateSpans(source: string): Array<[number, number]>` L77-97
-- `function blankTemplates(source: string): string` L103-129
-- `function extractYamlHelm(path: string, _lang: Lang, source: string, tree: Tree): YamlParts` L312-343
+- `function templateSpans(source: string): Array<[number, number]>` L98-120
+- `function blankTemplates(source: string): string` L126-152
+- `function extractYamlHelm(path: string, _lang: Lang, source: string, tree: Tree): YamlParts` L356-387
 
 ## packages/core/src/extract/yaml-k8s.ts
 
 - `type K8sFlavour = "k8s" | "helm"` L51-51
 - `interface K8sInput` L100-107
-- `function labelKey(labels: ReadonlyMap<string, string>): string | null` L279-287
-- `type YamlParts = Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L428-428
-- `function extractK8sDocuments(input: K8sInput): YamlParts` L436-458
-- `function extractYamlK8s(path: string, _lang: Lang, source: string, tree: Tree): YamlParts` L464-466
+- `function trimmedSpanIn(source: string, node: Node): [number, number]` L284-293
+- `function labelKey(labels: ReadonlyMap<string, string>): string | null` L309-317
+- `type YamlParts = Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L461-461
+- `function extractK8sDocuments(input: K8sInput): YamlParts` L469-492
+- `function extractYamlK8s(path: string, _lang: Lang, source: string, tree: Tree): YamlParts` L498-500
 
 ## packages/core/src/extract/yaml.ts
 
@@ -349,10 +350,10 @@
 
 ## packages/core/src/resolve/java.ts
 
-- `function createJavaResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L82-133
-- `interface JavaCallIndex` L148-161
-- `function buildJavaCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): JavaCallIndex` L203-253
-- `function resolveJavaCall( file: FileRecord, site: CallSite, index: JavaCallIndex, ): { to: string; confidence: Confidence } | null` L312-365
+- `function createJavaResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L93-144
+- `interface JavaCallIndex` L175-188
+- `function buildJavaCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): JavaCallIndex` L230-282
+- `function resolveJavaCall( file: FileRecord, site: CallSite, index: JavaCallIndex, ): { to: string; confidence: Confidence } | null` L357-412
 
 ## packages/core/src/resolve/kotlin.ts
 

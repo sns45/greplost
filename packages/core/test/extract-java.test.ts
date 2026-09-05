@@ -283,6 +283,20 @@ import static tiny.Retry.attempts;
     });
   });
 
+  test("an on-demand import whose prefix names a type resolves to that type's file", () => {
+    const resolve = resolver({
+      "src/main/java/tiny/Consts.java": "package tiny;\npublic final class Consts { public static final int MAX = 1; }\n",
+      "src/main/java/tiny/App.java": "package tiny;\n",
+    });
+    // `import static tiny.Consts.*` reaches a type, so it is an edge to that type's file;
+    // `import tiny.*` reaches a package, which is not a file and never an edge.
+    expect(resolve("src/main/java/tiny/App.java", "tiny.Consts")).toEqual({
+      type: "file",
+      path: "src/main/java/tiny/Consts.java",
+    });
+    expect(resolve("src/main/java/tiny/App.java", "tiny")).toEqual({ type: "external", pkg: "tiny" });
+  });
+
   test("a file outside any src/main/java resolves against the repo root", () => {
     const resolve = resolver({ "tiny/Store.java": "package tiny;\npublic class Store {}\n" });
     expect(resolve("tiny/App.java", "tiny.Store")).toEqual({ type: "file", path: "tiny/Store.java" });
@@ -306,6 +320,12 @@ import static tiny.Retry.attempts;
     expect(resolve("src/main/java/tiny/App.java", "org.junit.jupiter.api.Test")).toEqual({
       type: "external",
       pkg: "maven/org.junit:jupiter",
+    });
+    // The artifact is never the last segment, which is the *type*: `org.junit.Test` publishes
+    // the JUnit 4 artifact, not one external node per test class.
+    expect(resolve("src/main/java/tiny/App.java", "org.junit.Test")).toEqual({
+      type: "external",
+      pkg: "maven/org.junit:junit",
     });
     // Anything else falls back to its first segment.
     expect(resolve("src/main/java/tiny/App.java", "io.netty.buffer.ByteBuf")).toEqual({ type: "external", pkg: "io" });
@@ -450,6 +470,63 @@ public class Child extends Base {
     expect(edges).toEqual([]);
   });
 
+  test("a call never resolves to a field that happens to share the method's name", () => {
+    const edges = callEdges({
+      "src/main/java/tiny/Base.java": `package tiny;
+public class Base { public int size() { return 0; } }
+`,
+      "src/main/java/tiny/Sub.java": `package tiny;
+public class Sub extends Base {
+  private final int size = 7;
+  public int total() { return size() + size; }
+}
+`,
+    });
+    // javac resolves `size()` to the inherited `Base.size`, which spec 1.4 drops. The field
+    // `Sub.size` is not callable and must never stand in for it: only a `method` — or, for a
+    // `new`, a type — is a call target.
+    expect(edges).toEqual([]);
+  });
+
+  test("a call written outside a collected method body still reads its own locals", () => {
+    const edges = callEdges({
+      "src/main/java/tiny/Store.java": STORE,
+      "src/main/java/tiny/Holder.java": `package tiny;
+public class Holder {
+  static {
+    Store booted = new Store("boot");
+    booted.put("a");
+  }
+  private final Runnable task = new Runnable() {
+    public void run() {
+      Store inner = new Store("inner");
+      inner.put("b");
+    }
+  };
+  enum Mode {
+    ONE {
+      void go() {
+        Store each = new Store("each");
+        each.put("c");
+      }
+    };
+    void go() {}
+  }
+}
+`,
+    });
+    // A static block, a field initializer's anonymous class and an enum constant's body each
+    // bind their own locals; the caller stays the nearest *named* declaration, which is where
+    // javac attributes them too.
+    expect(edges).toEqual([
+      "src/main/java/tiny/Holder.java#Holder -> src/main/java/tiny/Store.java#Store.Store (high)",
+      "src/main/java/tiny/Holder.java#Holder -> src/main/java/tiny/Store.java#Store.put (high)",
+      "src/main/java/tiny/Holder.java#Holder.Mode -> src/main/java/tiny/Store.java#Store.Store (high)",
+      "src/main/java/tiny/Holder.java#Holder.Mode -> src/main/java/tiny/Store.java#Store.put (high)",
+      "src/main/java/tiny/Store.java#Store.put -> src/main/java/tiny/Store.java#Store.record (high)",
+    ]);
+  });
+
   test("an ambiguous member name inside one file resolves to nothing", () => {
     const edges = callEdges({
       "src/main/java/tiny/Store.java": `package tiny;
@@ -528,7 +605,7 @@ describe("tiny-java", () => {
     expect(edge?.to).toBe(`${SRC}/Store.java`);
   });
 
-  test("the static import and nothing else reaches Retry", () => {
+  test("both static import forms and the plain one are the only in-repo edges", () => {
     expect(
       snapshot.imports
         .filter((e) => e.to.endsWith(".java"))
@@ -536,6 +613,9 @@ describe("tiny-java", () => {
     ).toEqual([
       `${SRC}/App.java -> ${SRC}/Retry.java (tiny.Retry.attempts)`,
       `${SRC}/App.java -> ${SRC}/Store.java (tiny.Store)`,
+      // `import static tiny.Retry.*` names a *type*, so it is a dependency on that type's file
+      // exactly as the named form is. Only a package on-demand import points at nothing.
+      `${SRC}/Store.java -> ${SRC}/Retry.java (tiny.Retry)`,
     ]);
   });
 

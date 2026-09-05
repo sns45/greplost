@@ -433,9 +433,9 @@
 
 ## bench/src/truth/java.ts
 
-- `const NOTES: readonly string[] = ["javac-tree-api", "source-classpath-only", "unresolved-files-dropped"]` L59-59
-- `function javaTruthTool(): string` L144-163
-- `function generateTruth(root: string, files: string[]): Truth` L291-347
+- `const NOTES: readonly string[] = [ "javac-tree-api", "source-classpath-only", "unresolved-files-dropped", "no-overload-resolution", "no-inherited-dispatch", "module-info-not-scored", ]` L66-73
+- `function javaTruthTool(): string` L158-177
+- `function generateTruth(root: string, files: string[]): Truth` L305-361
 
 ## bench/src/truth/kotlin.ts
 
@@ -516,28 +516,29 @@
 
 ## bench/src/truth/yaml-helm.ts
 
-- `const NOTES: readonly string[] = [ "js-yaml-oracle", "helm-template-render", "names-not-compared-for-templates", ]` L48-52
-- `function helmBinary(): string` L86-100
-- `interface RenderedDocument` L103-108
-- `function helmRender(chartDir: string): RenderedDocument[] | null` L117-154
-- `function chartsOf(root: string, files: readonly string[]): Chart[]` L175-204
-- `function generateTruth(root: string, files: string[]): Truth` L298-314
-- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L323-367
+- `const NOTES: readonly string[] = [ "js-yaml-oracle", "helm-template-render", "names-not-compared-for-templates", "same-regex-both-sides", "if-else-arms-both-kept", ]` L62-68
+- `function helmBinary(): string` L108-122
+- `interface RenderedDocument` L125-130
+- `function helmRender(chartDir: string): RenderedDocument[] | null` L139-176
+- `function chartsOf(files: readonly string[]): Chart[]` L197-226
+- `function literalImages(source: string, file: string): Array<{ from: string; image: string }>` L283-350
+- `function generateTruth(root: string, files: string[]): Truth` L415-431
+- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }` L451-527
 
 ## bench/src/truth/yaml-k8s.ts
 
 - `const NOTES: readonly string[] = ["js-yaml-oracle"]` L45-45
-- `type ReferenceTruth = Edge & { readonly refKind: string }` L310-310
-- `function generateTruth(root: string, files: string[]): Truth` L323-337
-- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L347-402
+- `type ReferenceTruth = Edge & { readonly refKind: string }` L329-329
+- `function generateTruth(root: string, files: string[]): Truth` L342-359
+- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }` L370-431
 
 ## bench/src/truth/yaml.ts
 
 - `const NOTES: readonly string[] = ["yaml-flavour-dispatch"]` L25-25
 - `type YamlFlavour = "yaml-actions" | "yaml-helm" | "yaml-k8s"` L30-30
-- `function isWorkflowFile(file: string): boolean` L78-85
-- `function isHelmFile(file: string): boolean` L88-91
-- `function flavourOf(file: string, root?: string): YamlFlavour` L100-111
-- `function groupByFlavour(files: readonly string[], root?: string): Array<[YamlFlavour, string[]]>` L114-126
-- `function generateTruth(root: string, files: string[]): Truth` L128-134
-- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L137-150
+- `function isWorkflowFile(file: string): boolean` L84-91
+- `function isHelmFile(file: string): boolean` L94-97
+- `function flavourOf(file: string, root?: string): YamlFlavour` L106-117
+- `function groupByFlavour(files: readonly string[], root?: string): Array<[YamlFlavour, string[]]>` L120-132
+- `function generateTruth(root: string, files: string[]): Truth` L134-140
+- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }` L143-166

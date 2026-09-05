@@ -22,22 +22,24 @@
 - `const SOURCE_ROOT_SUFFIXES = ["src/main/java", "src/test/java"] as const`  L53-53
 - `function parentDir(path: string): string`  L59-62
 - `function join(dir: string, rest: string): string`  L64-67
-- `function externalPackage(segments: readonly string[]): string`  L70-76
-- `function createJavaResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`  L82-133
-- `interface TypeRef`  L140-146
-- `interface JavaCallIndex`  L148-161
-- `const EMPTY_INDEX: JavaCallIndex = { members: new Map(), bySimpleName: new Map(), typesInFile: new Map(), typesInDir: new Map(), dottedTypes: new Map(), bindings: new Map(), }`  L163-170
-- `const TYPE_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>(["class", "enum", "interface", "record"])`  L173-173
-- `function nest<V>(map: Map<string, Map<string, V>>, key: string): Map<string, V>`  L175-181
-- `function offer(table: Map<string, TypeRef | null>, simple: string, ref: TypeRef): void`  L184-193
-- `function simpleNameOf(dotted: string): string`  L195-197
-- `function buildJavaCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): JavaCallIndex`  L203-253
-- `function agreed( candidates: ReadonlyArray<{ to: string; confidence: Confidence } | null>, ): { to: string; confidence: Confidence } | null`  L260-273
-- `function declared(index: JavaCallIndex, file: string, name: string): { to: string; confidence: Confidence } | null`  L276-278
-- `function typeNamed(index: JavaCallIndex, file: string, simple: string): TypeRef | null`  L281-296
-- `function ownerOf(index: JavaCallIndex, file: string, caller: string): string`  L299-303
-- `function resolveJavaCall( file: FileRecord, site: CallSite, index: JavaCallIndex, ): { to: string; confidence: Confidence } | null`  L312-365
-- `function parentOf(dotted: string): string`  L368-371
-- `function staticMember( index: JavaCallIndex, target: string, name: string, ): { to: string; confidence: Confidence } | null`  L381-389
+- `function externalPackage(segments: readonly string[]): string`  L79-87
+- `function createJavaResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`  L93-144
+- `interface TypeRef`  L151-157
+- `interface MemberEntry`  L170-173
+- `interface JavaCallIndex`  L175-188
+- `const EMPTY_INDEX: JavaCallIndex = { members: new Map(), bySimpleName: new Map(), typesInFile: new Map(), typesInDir: new Map(), dottedTypes: new Map(), bindings: new Map(), }`  L190-197
+- `const TYPE_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>(["class", "enum", "interface", "record"])`  L200-200
+- `function nest<V>(map: Map<string, Map<string, V>>, key: string): Map<string, V>`  L202-208
+- `function offer(table: Map<string, TypeRef | null>, simple: string, ref: TypeRef): void`  L211-220
+- `function simpleNameOf(dotted: string): string`  L222-224
+- `function buildJavaCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): JavaCallIndex`  L230-282
+- `function agreed( candidates: ReadonlyArray<{ to: string; confidence: Confidence } | null>, ): { to: string; confidence: Confidence } | null`  L289-302
+- `function declared( index: JavaCallIndex, file: string, name: string, wanted: ReadonlySet<DeclKind>, ): { to: string; confidence: Confidence } | null`  L311-320
+- `const CALLABLE: ReadonlySet<DeclKind> = new Set<DeclKind>(["method"])`  L323-323
+- `function typeNamed(index: JavaCallIndex, file: string, simple: string): TypeRef | null`  L326-341
+- `function ownerOf(index: JavaCallIndex, file: string, caller: string): string`  L344-348
+- `function resolveJavaCall( file: FileRecord, site: CallSite, index: JavaCallIndex, ): { to: string; confidence: Confidence } | null`  L357-412
+- `function parentOf(dotted: string): string`  L415-418
+- `function staticMember( index: JavaCallIndex, target: string, name: string, ): { to: string; confidence: Confidence } | null`  L428-436
 
 **Calls:** `agreed` → [`packages/core/src/resolve/java.ts#agreed`](java.ts.md) (high), `declared` → [`packages/core/src/resolve/java.ts#declared`](java.ts.md) (high), `externalPackage` → [`packages/core/src/resolve/java.ts#externalPackage`](java.ts.md) (high), `join` → [`packages/core/src/resolve/java.ts#join`](java.ts.md) (high), `nest` → [`packages/core/src/resolve/java.ts#nest`](java.ts.md) (high), `offer` → [`packages/core/src/resolve/java.ts#offer`](java.ts.md) (high), `ownerOf` → [`packages/core/src/resolve/java.ts#ownerOf`](java.ts.md) (high), `parentDir` → [`packages/core/src/resolve/java.ts#parentDir`](java.ts.md) (high), `parentOf` → [`packages/core/src/resolve/java.ts#parentOf`](java.ts.md) (high), `simpleNameOf` → [`packages/core/src/resolve/java.ts#simpleNameOf`](java.ts.md) (high), `staticMember` → [`packages/core/src/resolve/java.ts#staticMember`](java.ts.md) (high), `typeNamed` → [`packages/core/src/resolve/java.ts#typeNamed`](java.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)
