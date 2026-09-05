@@ -816,9 +816,9 @@
       "fanIn": 0,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 248,
+      "loc": 268,
       "pkg": "@greplost/bench",
-      "sha256": "5574968be4bc315cba4e447125c7088b24878af51e172285fedac3c7c8ca24d3",
+      "sha256": "13af094b20b5633b8c526424b1313e36f2fb4b7a49269741b88f98a03bbb700d",
       "staleSummary": false
     },
     "bench/src/truth/signals-ts.ts": {
@@ -978,9 +978,9 @@
       "fanIn": 0,
       "fanOut": 0,
       "lang": "go",
-      "loc": 484,
+      "loc": 588,
       "pkg": "@greplost/bench",
-      "sha256": "8c9a51049b6655f329807006ae1ba75d462f10349e4d32115c4e3af8c4bc16f3",
+      "sha256": "42ebf165f59f4ede23e15d52be6c5ad4a90f17b9c418249d5b9097d2c40e24e5",
       "staleSummary": false
     },
     "bench/truth/tfinspect/main.go": {
@@ -2523,9 +2523,9 @@
       "fanIn": 1,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 350,
+      "loc": 489,
       "pkg": "@greplost/core",
-      "sha256": "9a289db07400c11a18ae4566a4b996527a1981f82ea83fbe6afb170263c96040",
+      "sha256": "c5fe3a5ffb265279114437914245a7926a1a133821bf7f1f9bd77f6fd3b301df",
       "staleSummary": false
     },
     "packages/core/src/signals/pulumi-ts.ts": {
@@ -3462,14 +3462,14 @@
         "@greplost/sync"
       ],
       "files": 49,
-      "loc": 25128,
+      "loc": 25252,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 65,
-      "loc": 18217,
+      "loc": 18356,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",

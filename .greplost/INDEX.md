@@ -20,9 +20,9 @@
 | Package | Path | Files | LOC | Deps | Fan-in | Fan-out | Map |
 |---|---|---|---|---|---|---|---|
 | greplost-monorepo | . | 2 | 137 | 3 | 0 | 0 | [MAP](packages/greplost-monorepo/MAP.md) |
-| @greplost/bench | bench | 49 | 25128 | 35 | 0 | 2 | [MAP](packages/greplost__bench/MAP.md) |
+| @greplost/bench | bench | 49 | 25252 | 35 | 0 | 2 | [MAP](packages/greplost__bench/MAP.md) |
 | greplost | packages/cli | 18 | 2217 | 4 | 0 | 5 | [MAP](packages/greplost/MAP.md) |
-| @greplost/core | packages/core | 65 | 18217 | 10 | 6 | 0 | [MAP](packages/greplost__core/MAP.md) |
+| @greplost/core | packages/core | 65 | 18356 | 10 | 6 | 0 | [MAP](packages/greplost__core/MAP.md) |
 | @greplost/render | packages/render | 15 | 2274 | 1 | 4 | 1 | [MAP](packages/greplost__render/MAP.md) |
 | @greplost/semantic | packages/semantic | 5 | 1509 | 4 | 1 | 3 | [MAP](packages/greplost__semantic/MAP.md) |
 | @greplost/sync | packages/sync | 12 | 3209 | 4 | 4 | 2 | [MAP](packages/greplost__sync/MAP.md) |

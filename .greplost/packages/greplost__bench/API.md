@@ -472,11 +472,11 @@
 
 ## bench/src/truth/signals-pulumi-go.ts
 
-- `const NOTES: readonly string[] = ["go-types-oracle", "types-implements-pulumi-resource"]` L45-45
-- `interface SignalExtra` L66-69
-- `function generateExtra(root: string, files: string[]): SignalExtra` L71-74
-- `function generateTruth(root: string, files: string[]): Truth` L80-92
-- `function pulumiGoTruthTool(): string` L121-139
+- `const NOTES: readonly string[] = [ "go-types-oracle", "types-implements-pulumi-resource", "helper-attribution-differs", "test-files-not-loaded", ]` L60-65
+- `interface SignalExtra` L86-89
+- `function generateExtra(root: string, files: string[]): SignalExtra` L91-94
+- `function generateTruth(root: string, files: string[]): Truth` L100-112
+- `function pulumiGoTruthTool(): string` L141-159
 
 ## bench/src/truth/signals-ts.ts
 
