@@ -6,18 +6,22 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `callersOf(calls: CallEdge[], symbolId: string): string[]`, `findSymbols(symbols: Declaration[], needle: string): Declaration[]`, `importersOf(imports: ImportEdge[], file: string): string[]`
+**Exports:** `callersOf(calls: CallEdge[], symbolId: string): string[]`, `findSymbols(symbols: Declaration[], needle: string): Declaration[]`, `impactPairs(structure: Structure): Array<readonly [string, string]>`, `importersOf(imports: ImportEdge[], file: string): string[]`, `nodesOf(symbols: readonly Declaration[], file: string): Declaration[]`, `referencedBy(refs: readonly ReferenceEdge[], id: string): ReferenceEdge[]`, `referencesOf(refs: readonly ReferenceEdge[], id: string): ReferenceEdge[]`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (CallEdge, Declaration, ImportEdge, compareDeclarations, compareStrings), [`./directories.ts`](directories.ts.md) (importTargetsOf)
+**Imports:** [`../schema.ts`](../schema.ts.md) (CallEdge, Declaration, ImportEdge, ReferenceEdge, compareDeclarations, compareEdges, compareStrings, isNodeKind), [`../serialize/read.ts`](../serialize/read.ts.md) (Structure), [`./directories.ts`](directories.ts.md) (expandDirectoryTargets, importTargetsOf)
 
-**Imported by:** [`packages/core/src/index.ts`](../index.ts.md)
+**Imported by:** [`packages/core/src/graph/index.ts`](index.ts.md), [`packages/core/src/index.ts`](../index.ts.md)
 
-**Blast radius:** 29 files (`greplost impact packages/core/src/graph/query.ts`)
+**Blast radius:** 47 files (`greplost impact packages/core/src/graph/query.ts`)
 
 **Key symbols:**
-- `function findSymbols(symbols: Declaration[], needle: string): Declaration[]`  L28-39
-- `function importersOf(imports: ImportEdge[], file: string): string[]`  L52-62
-- `function callersOf(calls: CallEdge[], symbolId: string): string[]`  L68-76
-- `function sortDeclarations(found: Declaration[]): Declaration[]`  L79-81
+- `function findSymbols(symbols: Declaration[], needle: string): Declaration[]`  L29-40
+- `function importersOf(imports: ImportEdge[], file: string): string[]`  L53-63
+- `function callersOf(calls: CallEdge[], symbolId: string): string[]`  L69-77
+- `function nodesOf(symbols: readonly Declaration[], file: string): Declaration[]`  L88-90
+- `function referencesOf(refs: readonly ReferenceEdge[], id: string): ReferenceEdge[]`  L93-95
+- `function referencedBy(refs: readonly ReferenceEdge[], id: string): ReferenceEdge[]`  L98-100
+- `function impactPairs(structure: Structure): Array<readonly [string, string]>`  L116-121
+- `function sortDeclarations(found: Declaration[]): Declaration[]`  L124-126
 
-**Calls:** `importTargetsOf` → [`packages/core/src/graph/directories.ts#importTargetsOf`](directories.ts.md) (high), `sortDeclarations` → [`packages/core/src/graph/query.ts#sortDeclarations`](query.ts.md) (high)
+**Calls:** `expandDirectoryTargets` → [`packages/core/src/graph/directories.ts#expandDirectoryTargets`](directories.ts.md) (high), `importTargetsOf` → [`packages/core/src/graph/directories.ts#importTargetsOf`](directories.ts.md) (high), `sortDeclarations` → [`packages/core/src/graph/query.ts#sortDeclarations`](query.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `isNodeKind` → [`packages/core/src/schema.ts#isNodeKind`](../schema.ts.md) (high)

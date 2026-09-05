@@ -10,9 +10,9 @@
 
 **Imports:** `node:fs` (existsSync, readFileSync), `node:path` (default), [`../schema.ts`](../schema.ts.md) (ARTIFACT_PATHS, CallEdge, Declaration, ImportEdge, Manifest, ReferenceEdge), [`./json.ts`](json.ts.md) (parseJsonl)
 
-**Imported by:** [`packages/core/src/serialize/index.ts`](index.ts.md)
+**Imported by:** [`packages/core/src/graph/query.ts`](../graph/query.ts.md), [`packages/core/src/serialize/index.ts`](index.ts.md)
 
-**Blast radius:** 30 files (`greplost impact packages/core/src/serialize/read.ts`)
+**Blast radius:** 49 files (`greplost impact packages/core/src/serialize/read.ts`)
 
 **Key symbols:**
 - `interface Structure`  L12-23

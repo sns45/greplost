@@ -10,9 +10,9 @@
 
 **Imports:** `web-tree-sitter` (Node)
 
-**Imported by:** [`packages/core/src/extract/yaml-helm.ts`](yaml-helm.ts.md), [`packages/core/src/extract/yaml-k8s.ts`](yaml-k8s.ts.md)
+**Imported by:** [`packages/core/src/extract/yaml-actions.ts`](yaml-actions.ts.md), [`packages/core/src/extract/yaml-helm.ts`](yaml-helm.ts.md), [`packages/core/src/extract/yaml-k8s.ts`](yaml-k8s.ts.md)
 
-**Blast radius:** 46 files (`greplost impact packages/core/src/extract/yaml-doc.ts`)
+**Blast radius:** 47 files (`greplost impact packages/core/src/extract/yaml-doc.ts`)
 
 **Key symbols:**
 - `type YamlValue = | { readonly shape: "map"; readonly node: Node; readonly entries: readonly YamlEntry[] } | { readonly shape: "seq"; readonly node: Node; readonly items: readonly YamlValue[] }…`  L28-32

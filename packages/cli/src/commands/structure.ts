@@ -16,9 +16,9 @@ import path from "node:path";
 import { langOf, readStructure } from "@greplost/core";
 import type { Structure } from "@greplost/core";
 import { expandDirectoryTargets, resolvedImportTargets } from "@greplost/core/graph";
-import type { Manifest, PackageInfo } from "@greplost/core/schema";
-import { ARTIFACT_DIR, compareStrings } from "@greplost/core/schema";
-import { cardPath } from "@greplost/render";
+import type { Declaration, Manifest, PackageInfo } from "@greplost/core/schema";
+import { ARTIFACT_DIR, compareStrings, isNodeKind, splitNodeId } from "@greplost/core/schema";
+import { cardPath, nodeCardPath } from "@greplost/render";
 
 /** The committed structure at `root`, or a "not indexed" error. */
 export function loadStructure(root: string): Structure {
@@ -48,8 +48,25 @@ export function toRepoRelative(root: string, argument: string): string {
  * for the same reason `retry.ts` does: it is a name the map can actually hold.
  */
 export function looksLikePath(candidate: string): boolean {
+  // Schema 2: a `#` separates an id's file from what it names, so a candidate
+  // carrying one is a symbol id or a node id and never a path. Without this,
+  // `main.tf#resource.aws_vpc.main` reads as a path (it holds a `/` as soon as
+  // the file is nested) and `resolveFile` gets first refusal on a node id.
+  if (candidate.includes("#")) return false;
   if (candidate.includes("/")) return true;
   return langOf(candidate) !== undefined;
+}
+
+/**
+ * The non-file node an argument names, or undefined.
+ *
+ * Exact ids only: a node id is machine-produced (it comes off a card, a
+ * `query` answer or `graph/symbols.jsonl`), so there is nothing to guess at,
+ * and a fuzzy match here would shadow `findSymbols`, which is the tier below.
+ */
+export function resolveNode(structure: Structure, candidate: string): Declaration | undefined {
+  if (candidate === "" || !candidate.includes("#")) return undefined;
+  return structure.symbols.find((decl) => decl.id === candidate && isNodeKind(decl.kind));
 }
 
 /**
@@ -89,6 +106,19 @@ export function cardOf(manifest: Manifest, file: string): string {
   if (entry === undefined) return "";
   const pkg = packageInfoOf(manifest, entry.pkg);
   return pkg === undefined ? "" : cardPath(pkg, file);
+}
+
+/**
+ * `.greplost`-relative node card path for a node id, or `""` when the id names
+ * no node or its file is not indexed. Slugged, so it never contains a `#`.
+ */
+export function nodeCardOf(manifest: Manifest, id: string): string {
+  const parts = splitNodeId(id);
+  if (parts === null) return "";
+  const entry = manifest.files[parts.file];
+  if (entry === undefined) return "";
+  const pkg = packageInfoOf(manifest, entry.pkg);
+  return pkg === undefined ? "" : nodeCardPath(pkg, id);
 }
 
 /**

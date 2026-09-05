@@ -42,7 +42,7 @@ import {
   type Lang,
   type Snapshot,
 } from "@greplost/core/schema";
-import { splitNodeId } from "@greplost/core/schema";
+import { isNodeKind, splitNodeId } from "@greplost/core/schema";
 
 /** Languages whose import edges name a directory (a Go package, a Terraform module) rather than a file. */
 const DIRECTORY_IMPORT_LANGS: ReadonlySet<string> = new Set(["go", "hcl"]);
@@ -789,11 +789,12 @@ export function scoreAgainstTruth(
   // every other metric: a node in a file the oracle never loaded is not a false positive.
   // `S5` is scored as a key set rather than with `scoreEdges` because a reference edge's
   // identity is `(from, to, refKind)` and `scoreEdges` does not know about `refKind`.
-  // S6 counts every declaration whose id is a schema node id (`splitNodeId`), on both sides,
+  // S6 counts every declaration of a node kind whose id is a schema node id, on both sides (the
+  // kind is authoritative: `pipeline.go#step.Run` is a method on a lowercase type, not a node),
   // so IaC nodes and framework signal nodes are scored the same way (driver ruling 2026-09-04).
   const nodeFiles = extra?.nodeFiles === undefined ? fileSet : new Set(extra.nodeFiles.filter((file) => fileSet.has(file)));
   const predNodes = snapshot.symbols
-    .filter((decl) => nodeFiles.has(decl.file) && splitNodeId(decl.id) !== null)
+    .filter((decl) => nodeFiles.has(decl.file) && isNodeKind(decl.kind) && splitNodeId(decl.id) !== null)
     .map((decl) => decl.id);
   // S5 identity is (from, to, refKind) when the oracle carries kinds; an oracle that scores
   // references by endpoints only (Terraform's) is compared by (from, to) on both sides.
@@ -835,8 +836,13 @@ export function scoreAgainstTruth(
         `(check the repo root and .greplost/config.json "languages")`,
     );
   }
+  // A reported-only target (Kotlin's corpus by ruling) offers no compiler truth on purpose; that is
+  // not an empty oracle, so the banner and the payload's `truthEmpty` stay quiet for it.
+  const reportedOnly = truth.notes.includes("reported-only");
   const truthEmpty =
-    offered > 0 && (files.length === 0 || (truthImports.length === 0 && exportKeys(truthExports).length === 0));
+    !reportedOnly &&
+    offered > 0 &&
+    (files.length === 0 || (truthImports.length === 0 && exportKeys(truthExports).length === 0));
   if (truthEmpty) {
     console.error(
       `${SUITE}: compiler truth for ${name} is empty across ${offered} files ` +
