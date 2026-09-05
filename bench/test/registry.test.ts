@@ -44,14 +44,16 @@ describe("loadTruth", () => {
     expect(typeof go.generateTruth).toBe("function");
   });
 
-  test("an unimplemented oracle throws a sentence naming its file and its leaf", async () => {
+  test("no truth target is a stub any more: every oracle answers for its own language", async () => {
     // `python` was the example here until leaf 2.1 implemented it, `java` until leaf 2.5,
-    // `kotlin` until leaf 2.6 and `dockerfile` until leaf 2.10; `yaml-actions` is the last
-    // still-stubbed one (leaf 2.9, wave 3), and the test goes with it when that lands.
-    const mod = await loadTruth("yaml-actions");
-    expect(() => mod.generateTruth("/repo", [".github/workflows/ci.yml"])).toThrow(
-      /greplost: the yaml-actions truth generator is not implemented yet .* build-2 leaf 2\.9/,
-    );
+    // `kotlin` until leaf 2.6, `yaml-actions` until leaf 2.9 and `dockerfile` until leaf 2.10.
+    // Build 2 landed them all, so what is left to hold is that none of them is still the seam's
+    // throwing stub — a stub is the only module that declares `not-implemented`.
+    for (const target of TARGETS) {
+      const mod = await loadTruth(target);
+      expect(typeof mod.generateTruth, `${target}.generateTruth`).toBe("function");
+      expect(mod.NOTES ?? [], `${target}.NOTES`).not.toContain("not-implemented");
+    }
   });
 
   test("an implemented oracle is reachable and discloses its notes", async () => {
