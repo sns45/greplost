@@ -447,11 +447,12 @@
 - `function unresolvedId(specifier: string): string` L436-438
 - `const NODE_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>([ "resource", "data", "variable", "output", "provider", "module", "local", "job", "step", "stage", "image", "component", "route", "h…` L441-444
 - `function isNodeKind(kind: DeclKind): boolean` L446-448
-- `function nodeId(file: string, kind: DeclKind, name: string): string` L451-454
-- `function splitNodeId(id: string): { file: string; kind: DeclKind; name: string } | null` L457-468
-- `function isFileId(id: string): boolean` L470-472
-- `function packageSlug(name: string): string` L478-480
-- `function stableStringify(value: unknown, indent = 0): string` L483-485
+- `function isNodeDeclaration(decl: Pick<Declaration, "id" | "kind">): boolean` L456-458
+- `function nodeId(file: string, kind: DeclKind, name: string): string` L461-464
+- `function splitNodeId(id: string): { file: string; kind: DeclKind; name: string } | null` L467-478
+- `function isFileId(id: string): boolean` L480-482
+- `function packageSlug(name: string): string` L488-490
+- `function stableStringify(value: unknown, indent = 0): string` L493-495
 
 ## packages/core/src/serialize/index.ts
 

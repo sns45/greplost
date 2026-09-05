@@ -26,7 +26,7 @@ import type {
   RefKind,
   ReferenceEdge,
 } from "@greplost/core/schema";
-import { compareDeclarations, compareEdges, compareStrings, isNodeKind } from "@greplost/core/schema";
+import { compareDeclarations, compareEdges, compareStrings, isNodeDeclaration } from "@greplost/core/schema";
 
 import type { CommandContext } from "../args.ts";
 import { fields, printError, printJson, printLine, summarise, table } from "../output.ts";
@@ -275,7 +275,7 @@ function describe(
   edges: ReferenceIndex,
 ): QueryMatch {
   const entry = manifest.files[decl.file];
-  const node = isNodeKind(decl.kind);
+  const node = isNodeDeclaration(decl);
   const match: QueryMatch = {
     id: decl.id,
     file: decl.file,

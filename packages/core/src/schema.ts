@@ -447,6 +447,16 @@ export function isNodeKind(kind: DeclKind): boolean {
   return NODE_KINDS.has(kind);
 }
 
+/**
+ * A node declaration is one of a node kind whose id is a node id. Both halves are required:
+ * Rust `mod` items carry the `module` kind with a plain symbol id, and a Go method on a
+ * lowercase type named `step` has an id that parses like a node id with the `method` kind.
+ * Neither is a node (driver ruling 2026-09-05).
+ */
+export function isNodeDeclaration(decl: Pick<Declaration, "id" | "kind">): boolean {
+  return isNodeKind(decl.kind) && splitNodeId(decl.id) !== null;
+}
+
 /** `<file>#<kind>.<name>`; throws when `name` contains "#", a newline or NUL (schema 2). */
 export function nodeId(file: string, kind: DeclKind, name: string): string {
   if (/[#\n\0]/.test(name)) throw new Error(`greplost: node name "${name}" may not contain "#", a newline or NUL`);

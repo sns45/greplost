@@ -8,63 +8,63 @@
 
 **Exports:** `RepoScores (interface)`, `SubstituteChecks (interface)`, `TARGETS (const)`, `TruthLang (type)`, `buildOptionsFor(target: Target): { root: string; config?: GreplostConfig }`, `locate(snapshot: Snapshot, key: string, kind: "import" | "call" | "export"): string`, `missedMetrics(scores: RepoScores): string[]`, `perLangSummary( targets: readonly Target[], scores: readonly RepoScores[], ): Record<string, { repos: string[]; gated: boolean; truthSource: string }>`, `resultSuite(fixture: boolean): string`, `run(args: string[]): Promise<number>`, `scoreAgainstTruth( name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang, extra: ExtraTruth | null = null, ): RepoScores`, `scoredFiles(snapshot: Snapshot, lang: TruthLang): string[]`, `truthTargetFor(lang: Lang): TruthTarget`, `unparsableBucket( scores: readonly RepoScores[], ): { count: number; files: { repo: string; path: string; reason: string }[] }`, `unsupportedMetrics(notes: readonly string[]): string[]`
 
-**Imports:** `node:fs` (existsSync, readFileSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, DEFAULT_CONFIG, Edge, GreplostConfig, Lang, Snapshot, compareStrings, isFileId, isNodeKind, splitNodeId), [`./score.ts`](score.ts.md) (Score, exportKeys, jaccardCycles, scoreEdges, scoreSet), [`./results-io.ts`](results-io.ts.md) (writeResult), [`./truth/ts.ts`](truth/ts.ts.md) (Truth, generateTsTruth), [`./fixtures.ts`](fixtures.ts.md) (FIXTURES, fixtureNames), [`./truth/registry.ts`](truth/registry.ts.md) (ExtraTruth, TruthModule, TruthTarget, loadTruth), [`./corpus.ts`](corpus.ts.md) (CorpusRepoEntry)
+**Imports:** `node:fs` (existsSync, readFileSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, DEFAULT_CONFIG, Edge, GreplostConfig, Lang, Snapshot, compareStrings, isFileId, isNodeDeclaration, isNodeKind, splitNodeId), [`./score.ts`](score.ts.md) (Score, exportKeys, jaccardCycles, scoreEdges, scoreSet), [`./results-io.ts`](results-io.ts.md) (writeResult), [`./truth/ts.ts`](truth/ts.ts.md) (Truth, generateTsTruth), [`./fixtures.ts`](fixtures.ts.md) (FIXTURES, fixtureNames), [`./truth/registry.ts`](truth/registry.ts.md) (ExtraTruth, TruthModule, TruthTarget, loadTruth), [`./corpus.ts`](corpus.ts.md) (CorpusRepoEntry)
 
 **Imported by:** [`bench/src/headtohead.ts`](headtohead.ts.md)
 
 **Blast radius:** 1 file (`greplost impact bench/src/structural.ts`)
 
 **Key symbols:**
-- `const DIRECTORY_IMPORT_LANGS: ReadonlySet<string> = new Set(["go", "hcl"])`  L48-48
-- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L56-56
-- `const SUITE = "structural"`  L57-57
-- `function resultSuite(fixture: boolean): string`  L69-71
-- `const TARGETS = { S1: [0.99, 0.97], S2: [0.99, 0.99], S3: 0.95, S4: 1.0, S5: 0.95, S6: 0.95 } as const`  L78-78
-- `const EPSILON = 1e-9`  L80-80
-- `const MAX_REPORTED_FALSE_POSITIVES = 20`  L81-81
-- `const METRIC_IDS = ["S1", "S2", "S3", "S4", "S5", "S6"] as const`  L83-83
-- `const MAX_PARSE_ERROR_RATE = 0.01`  L86-86
-- `type TruthLang = Lang`  L95-95
-- `const TS_FAMILY: ReadonlySet<string> = new Set(["ts", "tsx", "js", "jsx"])`  L98-98
-- `function isTsFamily(lang: string): boolean`  L101-103
-- `function truthTargetFor(lang: Lang): TruthTarget`  L106-108
-- `interface Options`  L110-125
-- `interface Target`  L127-135
-- `interface RepoScores`  L138-200
-- `interface SubstituteChecks`  L210-219
-- `async function run(args: string[]): Promise<number>`  L221-233
-- `async function execute(options: Options): Promise<number>`  L235-293
-- `function warnOnRedirectedResults(): void`  L303-310
-- `function parseArgs(args: string[]): Options`  L312-351
-- `type CorpusRepo = Partial<CorpusRepoEntry> & { name: string }`  L358-358
-- `function readCorpus(): CorpusRepo[] | null`  L360-365
-- `const KNOWN_LANGS: ReadonlySet<string> = new Set<Lang>([ "ts", "tsx", "js", "jsx", "go", "python", "rust", "java", "kotlin", "hcl", "yaml", "dockerfile", ])`  L368-381
-- `function asLang(value: string | undefined): Lang | null`  L383-385
-- `function resolveTargets(options: Options): Target[] | string`  L388-441
-- `type BuildSnapshot = (opts: { root: string; config?: GreplostConfig }) => Promise<Snapshot>`  L448-448
-- `async function loadBuildSnapshot(): Promise<BuildSnapshot>`  L450-460
-- `async function loadGoTruth(): Promise<(root: string, files: string[]) => Truth>`  L467-481
-- `async function loadMachine(): Promise<unknown>`  L484-493
-- `function buildOptionsFor(target: Target): { root: string; config?: GreplostConfig }`  L506-532
-- `async function scoreTarget(target: Target, options: Options): Promise<RepoScores>`  L534-551
-- `async function truthFor( target: Target, files: string[], options: Options, ): Promise<{ truth: Truth; na: string[] }>`  L560-574
-- `async function extraFor( target: Target, snapshot: Snapshot, files: string[], ): Promise<ExtraTruth | null>`  L594-625
-- `function unsupportedMetrics(notes: readonly string[]): string[]`  L634-642
-- `const GATED_METRICS: readonly string[] = ["S1", "S2", "S3", "S4"]`  L645-645
-- `function everyGatedMetricIsNa(na: readonly string[]): boolean`  L647-650
-- `async function runSubstituteChecks( target: Target, snapshot: Snapshot, files: string[], unparsable: readonly { path: string }[], ): Promise<SubstituteChecks>`  L657-682
-- `function snapshotDigest(snapshot: Snapshot): string`  L691-699
-- `async function findUnparsable(root: string, files: string[]): Promise<{ path: string; reason: string }[]>`  L709-725
-- `function scoredFiles(snapshot: Snapshot, lang: TruthLang): string[]`  L728-738
-- `function scoreAgainstTruth( name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang, extra: ExtraTruth | null = null, ): RepoScores`  L746-896
-- `function referenceKey(edge: Edge & { refKind?: string }): string`  L905-907
-- `function keysWithLocation(snapshot: Snapshot, keys: readonly string[]): string[]`  L910-916
-- `function perLangSummary( targets: readonly Target[], scores: readonly RepoScores[], ): Record<string, { repos: string[]; gated: boolean; truthSource: string }>`  L930-951
-- `function printSubstitute(scores: readonly RepoScores[]): void`  L954-972
-- `function unparsableBucket( scores: readonly RepoScores[], ): { count: number; files: { repo: string; path: string; reason: string }[] }`  L980-987
-- `function isFixtureRun(options: Options): boolean`  L995-997
-- `function missedMetrics(scores: RepoScores): string[]`  L999-1030
-- `function serializeScores(scores: RepoScores): Record<string, unknown>`  L1032-1057
+- `const DIRECTORY_IMPORT_LANGS: ReadonlySet<string> = new Set(["go", "hcl"])`  L38-38
+- `const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")`  L46-46
+- `const SUITE = "structural"`  L47-47
+- `function resultSuite(fixture: boolean): string`  L59-61
+- `const TARGETS = { S1: [0.99, 0.97], S2: [0.99, 0.99], S3: 0.95, S4: 1.0, S5: 0.95, S6: 0.95 } as const`  L68-68
+- `const EPSILON = 1e-9`  L70-70
+- `const MAX_REPORTED_FALSE_POSITIVES = 20`  L71-71
+- `const METRIC_IDS = ["S1", "S2", "S3", "S4", "S5", "S6"] as const`  L73-73
+- `const MAX_PARSE_ERROR_RATE = 0.01`  L76-76
+- `type TruthLang = Lang`  L85-85
+- `const TS_FAMILY: ReadonlySet<string> = new Set(["ts", "tsx", "js", "jsx"])`  L88-88
+- `function isTsFamily(lang: string): boolean`  L91-93
+- `function truthTargetFor(lang: Lang): TruthTarget`  L96-98
+- `interface Options`  L100-115
+- `interface Target`  L117-125
+- `interface RepoScores`  L128-190
+- `interface SubstituteChecks`  L200-209
+- `async function run(args: string[]): Promise<number>`  L211-223
+- `async function execute(options: Options): Promise<number>`  L225-283
+- `function warnOnRedirectedResults(): void`  L293-300
+- `function parseArgs(args: string[]): Options`  L302-341
+- `type CorpusRepo = Partial<CorpusRepoEntry> & { name: string }`  L348-348
+- `function readCorpus(): CorpusRepo[] | null`  L350-355
+- `const KNOWN_LANGS: ReadonlySet<string> = new Set<Lang>([ "ts", "tsx", "js", "jsx", "go", "python", "rust", "java", "kotlin", "hcl", "yaml", "dockerfile", ])`  L358-371
+- `function asLang(value: string | undefined): Lang | null`  L373-375
+- `function resolveTargets(options: Options): Target[] | string`  L378-431
+- `type BuildSnapshot = (opts: { root: string; config?: GreplostConfig }) => Promise<Snapshot>`  L438-438
+- `async function loadBuildSnapshot(): Promise<BuildSnapshot>`  L440-450
+- `async function loadGoTruth(): Promise<(root: string, files: string[]) => Truth>`  L457-471
+- `async function loadMachine(): Promise<unknown>`  L474-483
+- `function buildOptionsFor(target: Target): { root: string; config?: GreplostConfig }`  L496-522
+- `async function scoreTarget(target: Target, options: Options): Promise<RepoScores>`  L524-541
+- `async function truthFor( target: Target, files: string[], options: Options, ): Promise<{ truth: Truth; na: string[] }>`  L550-564
+- `async function extraFor( target: Target, snapshot: Snapshot, files: string[], ): Promise<ExtraTruth | null>`  L584-615
+- `function unsupportedMetrics(notes: readonly string[]): string[]`  L624-632
+- `const GATED_METRICS: readonly string[] = ["S1", "S2", "S3", "S4"]`  L635-635
+- `function everyGatedMetricIsNa(na: readonly string[]): boolean`  L637-640
+- `async function runSubstituteChecks( target: Target, snapshot: Snapshot, files: string[], unparsable: readonly { path: string }[], ): Promise<SubstituteChecks>`  L647-672
+- `function snapshotDigest(snapshot: Snapshot): string`  L681-689
+- `async function findUnparsable(root: string, files: string[]): Promise<{ path: string; reason: string }[]>`  L699-715
+- `function scoredFiles(snapshot: Snapshot, lang: TruthLang): string[]`  L718-728
+- `function scoreAgainstTruth( name: string, snapshot: Snapshot, truth: Truth, lang: TruthLang, extra: ExtraTruth | null = null, ): RepoScores`  L736-886
+- `function referenceKey(edge: Edge & { refKind?: string }): string`  L895-897
+- `function keysWithLocation(snapshot: Snapshot, keys: readonly string[]): string[]`  L900-906
+- `function perLangSummary( targets: readonly Target[], scores: readonly RepoScores[], ): Record<string, { repos: string[]; gated: boolean; truthSource: string }>`  L920-941
+- `function printSubstitute(scores: readonly RepoScores[]): void`  L944-962
+- `function unparsableBucket( scores: readonly RepoScores[], ): { count: number; files: { repo: string; path: string; reason: string }[] }`  L970-977
+- `function isFixtureRun(options: Options): boolean`  L985-987
+- `function missedMetrics(scores: RepoScores): string[]`  L989-1020
+- `function serializeScores(scores: RepoScores): Record<string, unknown>`  L1022-1047
 - … 11 more
 
-**Calls:** `fixtureNames` → [`bench/src/fixtures.ts#fixtureNames`](fixtures.ts.md) (high), `writeResult` → [`bench/src/results-io.ts#writeResult`](results-io.ts.md) (high), `exportKeys` → [`bench/src/score.ts#exportKeys`](score.ts.md) (high), `jaccardCycles` → [`bench/src/score.ts#jaccardCycles`](score.ts.md) (high), `scoreEdges` → [`bench/src/score.ts#scoreEdges`](score.ts.md) (high), `scoreSet` → [`bench/src/score.ts#scoreSet`](score.ts.md) (high), `asLang` → [`bench/src/structural.ts#asLang`](structural.ts.md) (high), `buildOptionsFor` → [`bench/src/structural.ts#buildOptionsFor`](structural.ts.md) (high), `counts` → [`bench/src/structural.ts#counts`](structural.ts.md) (high), `everyGatedMetricIsNa` → [`bench/src/structural.ts#everyGatedMetricIsNa`](structural.ts.md) (high), `execute` → [`bench/src/structural.ts#execute`](structural.ts.md) (high), `extraFor` → [`bench/src/structural.ts#extraFor`](structural.ts.md) (high), `fileOf` → [`bench/src/structural.ts#fileOf`](structural.ts.md) (high), `findUnparsable` → [`bench/src/structural.ts#findUnparsable`](structural.ts.md) (high), `isFixtureRun` → [`bench/src/structural.ts#isFixtureRun`](structural.ts.md) (high), `isTsFamily` → [`bench/src/structural.ts#isTsFamily`](structural.ts.md) (high), `keysWithLocation` → [`bench/src/structural.ts#keysWithLocation`](structural.ts.md) (high), `loadBuildSnapshot` → [`bench/src/structural.ts#loadBuildSnapshot`](structural.ts.md) (high), `loadGoTruth` → [`bench/src/structural.ts#loadGoTruth`](structural.ts.md) (high), `loadMachine` → [`bench/src/structural.ts#loadMachine`](structural.ts.md) (high), `locate` → [`bench/src/structural.ts#locate`](structural.ts.md) (high), `locateAll` → [`bench/src/structural.ts#locateAll`](structural.ts.md) (high), `num` → [`bench/src/structural.ts#num`](structural.ts.md) (high), `parseArgs` → [`bench/src/structural.ts#parseArgs`](structural.ts.md) (high), `perLangSummary` → [`bench/src/structural.ts#perLangSummary`](structural.ts.md) (high), `printMisses` → [`bench/src/structural.ts#printMisses`](structural.ts.md) (high), `printSubstitute` → [`bench/src/structural.ts#printSubstitute`](structural.ts.md) (high), `printTable` → [`bench/src/structural.ts#printTable`](structural.ts.md) (high), `readCorpus` → [`bench/src/structural.ts#readCorpus`](structural.ts.md) (high), `referenceKey` → [`bench/src/structural.ts#referenceKey`](structural.ts.md) (high), `resolveTargets` → [`bench/src/structural.ts#resolveTargets`](structural.ts.md) (high), `resultSuite` → [`bench/src/structural.ts#resultSuite`](structural.ts.md) (high), `runSubstituteChecks` → [`bench/src/structural.ts#runSubstituteChecks`](structural.ts.md) (high), `sameCycle` → [`bench/src/structural.ts#sameCycle`](structural.ts.md) (high), `scoreAgainstTruth` → [`bench/src/structural.ts#scoreAgainstTruth`](structural.ts.md) (high), `scoreTarget` → [`bench/src/structural.ts#scoreTarget`](structural.ts.md) (high), `scoredFiles` → [`bench/src/structural.ts#scoredFiles`](structural.ts.md) (high), `serializeScores` → [`bench/src/structural.ts#serializeScores`](structural.ts.md) (high), `snapshotDigest` → [`bench/src/structural.ts#snapshotDigest`](structural.ts.md) (high), `truthFor` → [`bench/src/structural.ts#truthFor`](structural.ts.md) (high), `truthTargetFor` → [`bench/src/structural.ts#truthTargetFor`](structural.ts.md) (high), `unparsableBucket` → [`bench/src/structural.ts#unparsableBucket`](structural.ts.md) (high), `unsupportedMetrics` → [`bench/src/structural.ts#unsupportedMetrics`](structural.ts.md) (high), `warnOnRedirectedResults` → [`bench/src/structural.ts#warnOnRedirectedResults`](structural.ts.md) (high), `loadTruth` → [`bench/src/truth/registry.ts#loadTruth`](truth/registry.ts.md) (high), `generateTsTruth` → [`bench/src/truth/ts.ts#generateTsTruth`](truth/ts.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high), `isFileId` → [`packages/core/src/schema.ts#isFileId`](../../../greplost__core/modules/src/schema.ts.md) (high), `isNodeKind` → [`packages/core/src/schema.ts#isNodeKind`](../../../greplost__core/modules/src/schema.ts.md) (high), `splitNodeId` → [`packages/core/src/schema.ts#splitNodeId`](../../../greplost__core/modules/src/schema.ts.md) (high)
+**Calls:** `fixtureNames` → [`bench/src/fixtures.ts#fixtureNames`](fixtures.ts.md) (high), `writeResult` → [`bench/src/results-io.ts#writeResult`](results-io.ts.md) (high), `exportKeys` → [`bench/src/score.ts#exportKeys`](score.ts.md) (high), `jaccardCycles` → [`bench/src/score.ts#jaccardCycles`](score.ts.md) (high), `scoreEdges` → [`bench/src/score.ts#scoreEdges`](score.ts.md) (high), `scoreSet` → [`bench/src/score.ts#scoreSet`](score.ts.md) (high), `asLang` → [`bench/src/structural.ts#asLang`](structural.ts.md) (high), `buildOptionsFor` → [`bench/src/structural.ts#buildOptionsFor`](structural.ts.md) (high), `counts` → [`bench/src/structural.ts#counts`](structural.ts.md) (high), `everyGatedMetricIsNa` → [`bench/src/structural.ts#everyGatedMetricIsNa`](structural.ts.md) (high), `execute` → [`bench/src/structural.ts#execute`](structural.ts.md) (high), `extraFor` → [`bench/src/structural.ts#extraFor`](structural.ts.md) (high), `fileOf` → [`bench/src/structural.ts#fileOf`](structural.ts.md) (high), `findUnparsable` → [`bench/src/structural.ts#findUnparsable`](structural.ts.md) (high), `isFixtureRun` → [`bench/src/structural.ts#isFixtureRun`](structural.ts.md) (high), `isTsFamily` → [`bench/src/structural.ts#isTsFamily`](structural.ts.md) (high), `keysWithLocation` → [`bench/src/structural.ts#keysWithLocation`](structural.ts.md) (high), `loadBuildSnapshot` → [`bench/src/structural.ts#loadBuildSnapshot`](structural.ts.md) (high), `loadGoTruth` → [`bench/src/structural.ts#loadGoTruth`](structural.ts.md) (high), `loadMachine` → [`bench/src/structural.ts#loadMachine`](structural.ts.md) (high), `locate` → [`bench/src/structural.ts#locate`](structural.ts.md) (high), `locateAll` → [`bench/src/structural.ts#locateAll`](structural.ts.md) (high), `num` → [`bench/src/structural.ts#num`](structural.ts.md) (high), `parseArgs` → [`bench/src/structural.ts#parseArgs`](structural.ts.md) (high), `perLangSummary` → [`bench/src/structural.ts#perLangSummary`](structural.ts.md) (high), `printMisses` → [`bench/src/structural.ts#printMisses`](structural.ts.md) (high), `printSubstitute` → [`bench/src/structural.ts#printSubstitute`](structural.ts.md) (high), `printTable` → [`bench/src/structural.ts#printTable`](structural.ts.md) (high), `readCorpus` → [`bench/src/structural.ts#readCorpus`](structural.ts.md) (high), `referenceKey` → [`bench/src/structural.ts#referenceKey`](structural.ts.md) (high), `resolveTargets` → [`bench/src/structural.ts#resolveTargets`](structural.ts.md) (high), `resultSuite` → [`bench/src/structural.ts#resultSuite`](structural.ts.md) (high), `runSubstituteChecks` → [`bench/src/structural.ts#runSubstituteChecks`](structural.ts.md) (high), `sameCycle` → [`bench/src/structural.ts#sameCycle`](structural.ts.md) (high), `scoreAgainstTruth` → [`bench/src/structural.ts#scoreAgainstTruth`](structural.ts.md) (high), `scoreTarget` → [`bench/src/structural.ts#scoreTarget`](structural.ts.md) (high), `scoredFiles` → [`bench/src/structural.ts#scoredFiles`](structural.ts.md) (high), `serializeScores` → [`bench/src/structural.ts#serializeScores`](structural.ts.md) (high), `snapshotDigest` → [`bench/src/structural.ts#snapshotDigest`](structural.ts.md) (high), `truthFor` → [`bench/src/structural.ts#truthFor`](structural.ts.md) (high), `truthTargetFor` → [`bench/src/structural.ts#truthTargetFor`](structural.ts.md) (high), `unparsableBucket` → [`bench/src/structural.ts#unparsableBucket`](structural.ts.md) (high), `unsupportedMetrics` → [`bench/src/structural.ts#unsupportedMetrics`](structural.ts.md) (high), `warnOnRedirectedResults` → [`bench/src/structural.ts#warnOnRedirectedResults`](structural.ts.md) (high), `loadTruth` → [`bench/src/truth/registry.ts#loadTruth`](truth/registry.ts.md) (high), `generateTsTruth` → [`bench/src/truth/ts.ts#generateTsTruth`](truth/ts.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high), `isFileId` → [`packages/core/src/schema.ts#isFileId`](../../../greplost__core/modules/src/schema.ts.md) (high), `isNodeDeclaration` → [`packages/core/src/schema.ts#isNodeDeclaration`](../../../greplost__core/modules/src/schema.ts.md) (high), `splitNodeId` → [`packages/core/src/schema.ts#splitNodeId`](../../../greplost__core/modules/src/schema.ts.md) (high)

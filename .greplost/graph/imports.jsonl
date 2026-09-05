@@ -140,7 +140,7 @@
 {"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"./truth/ts.ts","symbols":["Truth","generateTsTruth"],"to":"bench/src/truth/ts.ts"}
 {"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","readFileSync"],"to":"ext:node:fs"}
 {"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
-{"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["ARTIFACT_DIR","ARTIFACT_PATHS","DEFAULT_CONFIG","Edge","GreplostConfig","Lang","Snapshot","compareStrings","isFileId"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["ARTIFACT_DIR","ARTIFACT_PATHS","DEFAULT_CONFIG","Edge","GreplostConfig","Lang","Snapshot","compareStrings","isFileId","isNodeDeclaration"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/structural.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["isNodeKind","splitNodeId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"bench/src/tasks.ts","importKind":"type","kind":"import","specifier":"./truth/ts.ts","symbols":["Truth"],"to":"bench/src/truth/ts.ts"}
 {"confidence":"high","from":"bench/src/tasks.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","readFileSync"],"to":"ext:node:fs"}
@@ -316,7 +316,7 @@
 {"confidence":"high","from":"packages/cli/src/commands/query.ts","importKind":"type","kind":"import","specifier":"@greplost/core","symbols":["Structure"],"to":"packages/core/src/index.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts","importKind":"static","kind":"import","specifier":"@greplost/core","symbols":["callersOf","findSymbols","importersOf"],"to":"packages/core/src/index.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["Confidence","DeclKind","Declaration","ImportEdge","Manifest","RefKind","ReferenceEdge"],"to":"packages/core/src/schema.ts"}
-{"confidence":"high","from":"packages/cli/src/commands/query.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareDeclarations","compareEdges","compareStrings","isNodeKind"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/cli/src/commands/query.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareDeclarations","compareEdges","compareStrings","isNodeDeclaration"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/refresh.ts","importKind":"type","kind":"import","specifier":"../args.ts","symbols":["CommandContext"],"to":"packages/cli/src/args.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/refresh.ts","importKind":"static","kind":"import","specifier":"../output.ts","symbols":["printError"],"to":"packages/cli/src/output.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/refresh.ts","importKind":"dynamic","kind":"import","specifier":"@greplost/semantic","symbols":["*"],"to":"packages/semantic/src/index.ts"}
@@ -326,7 +326,7 @@
 {"confidence":"high","from":"packages/cli/src/commands/structure.ts","importKind":"static","kind":"import","specifier":"@greplost/core/graph","symbols":["expandDirectoryTargets","resolvedImportTargets"],"to":"packages/core/src/graph/index.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/structure.ts","importKind":"type","kind":"import","specifier":"@greplost/core","symbols":["Structure"],"to":"packages/core/src/index.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/structure.ts","importKind":"static","kind":"import","specifier":"@greplost/core","symbols":["langOf","readStructure"],"to":"packages/core/src/index.ts"}
-{"confidence":"high","from":"packages/cli/src/commands/structure.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["ARTIFACT_DIR","compareStrings","isNodeKind","splitNodeId"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/cli/src/commands/structure.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["ARTIFACT_DIR","compareStrings","isNodeDeclaration","splitNodeId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/structure.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["Declaration","Manifest","PackageInfo"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/structure.ts","importKind":"static","kind":"import","specifier":"@greplost/render","symbols":["cardPath","nodeCardPath"],"to":"packages/render/src/index.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/update.ts","importKind":"type","kind":"import","specifier":"../args.ts","symbols":["CommandContext"],"to":"packages/cli/src/args.ts"}
@@ -527,7 +527,7 @@
 {"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../resolve/python.ts","symbols":["buildPythonCallIndex","resolvePythonCall"],"to":"packages/core/src/resolve/python.ts"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../resolve/rust.ts","symbols":["buildRustCallIndex","resolveRustCall"],"to":"packages/core/src/resolve/rust.ts"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallEdge","Confidence","DeclKind","Declaration","FileRecord","ImportEdge","Lang"],"to":"packages/core/src/schema.ts"}
-{"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareEdges","compareStrings","externalId","isNodeKind","symbolId","unresolvedId"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareEdges","compareStrings","externalId","isNodeDeclaration","symbolId","unresolvedId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/graph/metrics.ts","importKind":"static","kind":"import","specifier":"./blast.ts","symbols":["blastRadius"],"to":"packages/core/src/graph/blast.ts"}
 {"confidence":"high","from":"packages/core/src/graph/metrics.ts","importKind":"static","kind":"import","specifier":"./directories.ts","symbols":["expandDirectoryTargets","resolvedImportTargets"],"to":"packages/core/src/graph/directories.ts"}
 {"confidence":"high","from":"packages/core/src/graph/metrics.ts","importKind":"static","kind":"import","specifier":"./tarjan.ts","symbols":["stronglyConnected"],"to":"packages/core/src/graph/tarjan.ts"}
@@ -536,7 +536,7 @@
 {"confidence":"high","from":"packages/core/src/graph/metrics.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/graph/query.ts","importKind":"static","kind":"import","specifier":"./directories.ts","symbols":["expandDirectoryTargets","importTargetsOf"],"to":"packages/core/src/graph/directories.ts"}
 {"confidence":"high","from":"packages/core/src/graph/query.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["CallEdge","Declaration","ImportEdge","ReferenceEdge"],"to":"packages/core/src/schema.ts"}
-{"confidence":"high","from":"packages/core/src/graph/query.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareDeclarations","compareEdges","compareStrings","isNodeKind"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/graph/query.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareDeclarations","compareEdges","compareStrings","isNodeDeclaration"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/graph/query.ts","importKind":"type","kind":"import","specifier":"../serialize/read.ts","symbols":["Structure"],"to":"packages/core/src/serialize/read.ts"}
 {"confidence":"high","from":"packages/core/src/graph/tarjan.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/hash.ts","importKind":"static","kind":"import","specifier":"node:crypto","symbols":["createHash"],"to":"ext:node:crypto"}
@@ -592,7 +592,7 @@
 {"confidence":"high","from":"packages/core/src/references/link.ts","importKind":"static","kind":"import","specifier":"./yaml.ts","symbols":["resolveYamlReferences"],"to":"packages/core/src/references/yaml.ts"}
 {"confidence":"high","from":"packages/core/src/references/link.ts","importKind":"type","kind":"import","specifier":"../resolve/resolver.ts","symbols":["RepoContext","Resolver"],"to":"packages/core/src/resolve/resolver.ts"}
 {"confidence":"high","from":"packages/core/src/references/link.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["DeclKind","Declaration","FileRecord","Lang","ReferenceEdge","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
-{"confidence":"high","from":"packages/core/src/references/link.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings","isNodeKind","symbolId"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/core/src/references/link.ts","importKind":"static","kind":"import","specifier":"../schema.ts","symbols":["compareStrings","isNodeDeclaration","symbolId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/core/src/references/ts.ts","importKind":"type","kind":"import","specifier":"./link.ts","symbols":["ReferenceContext"],"to":"packages/core/src/references/link.ts"}
 {"confidence":"high","from":"packages/core/src/references/ts.ts","importKind":"static","kind":"import","specifier":"./link.ts","symbols":["referenceSource"],"to":"packages/core/src/references/link.ts"}
 {"confidence":"high","from":"packages/core/src/references/ts.ts","importKind":"type","kind":"import","specifier":"../schema.ts","symbols":["FileRecord","ReferenceEdge","ReferenceRecord"],"to":"packages/core/src/schema.ts"}
@@ -727,7 +727,7 @@
 {"confidence":"high","from":"packages/render/src/docs/api.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/render/src/docs/api.ts","importKind":"type","kind":"import","specifier":"../render.ts","symbols":["DocContext"],"to":"packages/render/src/render.ts"}
 {"confidence":"high","from":"packages/render/src/docs/card.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["CallEdge","Confidence","ImportRecord"],"to":"packages/core/src/schema.ts"}
-{"confidence":"high","from":"packages/render/src/docs/card.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareStrings","isNodeKind"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/render/src/docs/card.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareStrings","isNodeDeclaration"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/render/src/docs/card.ts","importKind":"static","kind":"import","specifier":"./api.ts","symbols":["exportEntry","keySymbol","localNames","shortName"],"to":"packages/render/src/docs/api.ts"}
 {"confidence":"high","from":"packages/render/src/docs/card.ts","importKind":"type","kind":"import","specifier":"../render.ts","symbols":["DocContext"],"to":"packages/render/src/render.ts"}
 {"confidence":"high","from":"packages/render/src/docs/card.ts","importKind":"static","kind":"import","specifier":"../slug.ts","symbols":["packageDir","relLink"],"to":"packages/render/src/slug.ts"}
@@ -744,7 +744,7 @@
 {"confidence":"high","from":"packages/render/src/docs/index-doc.ts","importKind":"static","kind":"import","specifier":"../slug.ts","symbols":["packageDir","relLink"],"to":"packages/render/src/slug.ts"}
 {"confidence":"high","from":"packages/render/src/docs/index-doc.ts","importKind":"static","kind":"import","specifier":"../tokens.ts","symbols":["INDEX_TOKEN_BUDGET","estimateTokens"],"to":"packages/render/src/tokens.ts"}
 {"confidence":"high","from":"packages/render/src/docs/node-card.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["Declaration","ReferenceEdge"],"to":"packages/core/src/schema.ts"}
-{"confidence":"high","from":"packages/render/src/docs/node-card.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareStrings","isNodeKind","splitNodeId"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/render/src/docs/node-card.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareStrings","isNodeDeclaration","splitNodeId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/render/src/docs/node-card.ts","importKind":"type","kind":"import","specifier":"../render.ts","symbols":["DocContext"],"to":"packages/render/src/render.ts"}
 {"confidence":"high","from":"packages/render/src/docs/node-card.ts","importKind":"static","kind":"import","specifier":"../slug.ts","symbols":["packageDir","relLink"],"to":"packages/render/src/slug.ts"}
 {"confidence":"high","from":"packages/render/src/docs/package-map.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["PackageInfo"],"to":"packages/core/src/schema.ts"}
@@ -777,7 +777,7 @@
 {"confidence":"high","from":"packages/render/src/mermaid.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/render/src/render.ts","importKind":"static","kind":"import","specifier":"@greplost/core/graph","symbols":["blastRadius","filesByDirectory","impactPairs"],"to":"packages/core/src/graph/index.ts"}
 {"confidence":"high","from":"packages/render/src/render.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["CallEdge","Declaration","FileEntry","FileRecord","GreplostConfig","ImportEdge","Manifest","PackageEntry","PackageInfo","ReferenceEdge","Snapshot","SummaryCache"],"to":"packages/core/src/schema.ts"}
-{"confidence":"high","from":"packages/render/src/render.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareEdges","compareStrings","isFileId","isNodeKind","splitNodeId"],"to":"packages/core/src/schema.ts"}
+{"confidence":"high","from":"packages/render/src/render.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareEdges","compareStrings","isFileId","isNodeDeclaration","splitNodeId"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/render/src/render.ts","importKind":"static","kind":"import","specifier":"./docs/api.ts","symbols":["buildApi"],"to":"packages/render/src/docs/api.ts"}
 {"confidence":"high","from":"packages/render/src/render.ts","importKind":"static","kind":"import","specifier":"./docs/card.ts","symbols":["buildCard"],"to":"packages/render/src/docs/card.ts"}
 {"confidence":"high","from":"packages/render/src/render.ts","importKind":"static","kind":"import","specifier":"./docs/hotspots.ts","symbols":["buildHotspots"],"to":"packages/render/src/docs/hotspots.ts"}

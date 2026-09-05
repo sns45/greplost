@@ -15,7 +15,7 @@
  */
 
 import type { Declaration, ReferenceEdge } from "@greplost/core/schema";
-import { compareStrings, isNodeKind, splitNodeId } from "@greplost/core/schema";
+import { compareStrings, isNodeDeclaration, splitNodeId } from "@greplost/core/schema";
 
 import type { DocContext } from "../render.ts";
 import { packageDir, relLink } from "../slug.ts";
@@ -26,7 +26,7 @@ export const REFERENCE_CAP = 50;
 export function buildNodeCard(ctx: DocContext, id: string): string {
   const parts = splitNodeId(id);
   const decl = parts === null ? undefined : ctx.declById.get(id);
-  if (parts === null || decl === undefined || !isNodeKind(decl.kind)) {
+  if (parts === null || decl === undefined || !isNodeDeclaration(decl)) {
     throw new Error(`greplost: no node card for ${id}: not a node this map declares`);
   }
   const pkg = ctx.packageOf(parts.file);
@@ -131,7 +131,7 @@ function cardFor(ctx: DocContext, target: string): string | undefined {
   const decl = ctx.declById.get(target);
   // A plain symbol has no card of its own, so an edge that names one (a route
   // handler, say) links to the module card that documents it.
-  if (decl !== undefined) return isNodeKind(decl.kind) ? ctx.nodeCardPathOf(target) : ctx.cardPathOf(decl.file);
+  if (decl !== undefined) return isNodeDeclaration(decl) ? ctx.nodeCardPathOf(target) : ctx.cardPathOf(decl.file);
   return target.includes("#") ? undefined : ctx.cardPathOf(target);
 }
 

@@ -8,7 +8,7 @@
  */
 
 import type { CallEdge, Declaration, ImportEdge, ReferenceEdge } from "../schema.ts";
-import { compareDeclarations, compareEdges, compareStrings, isNodeKind } from "../schema.ts";
+import { compareDeclarations, compareEdges, compareStrings, isNodeDeclaration } from "../schema.ts";
 import type { Structure } from "../serialize/read.ts";
 import { expandDirectoryTargets, importTargetsOf } from "./directories.ts";
 
@@ -86,7 +86,7 @@ export function callersOf(calls: CallEdge[], symbolId: string): string[] {
  * caller's array is never reordered.
  */
 export function nodesOf(symbols: readonly Declaration[], file: string): Declaration[] {
-  return sortDeclarations(symbols.filter((decl) => decl.file === file && isNodeKind(decl.kind)));
+  return sortDeclarations(symbols.filter((decl) => decl.file === file && isNodeDeclaration(decl)));
 }
 
 /** Reference edges leaving `id` (a node id or a file id), sorted with `compareEdges`. */

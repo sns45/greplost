@@ -31,17 +31,7 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import {
-  ARTIFACT_DIR,
-  ARTIFACT_PATHS,
-  DEFAULT_CONFIG,
-  compareStrings,
-  isFileId,
-  type Edge,
-  type GreplostConfig,
-  type Lang,
-  type Snapshot,
-} from "@greplost/core/schema";
+import { ARTIFACT_DIR, ARTIFACT_PATHS, DEFAULT_CONFIG, compareStrings, isFileId, isNodeDeclaration, type Edge, type GreplostConfig, type Lang, type Snapshot } from "@greplost/core/schema";
 import { isNodeKind, splitNodeId } from "@greplost/core/schema";
 
 /** Languages whose import edges name a directory (a Go package, a Terraform module) rather than a file. */
@@ -794,7 +784,7 @@ export function scoreAgainstTruth(
   // so IaC nodes and framework signal nodes are scored the same way (driver ruling 2026-09-04).
   const nodeFiles = extra?.nodeFiles === undefined ? fileSet : new Set(extra.nodeFiles.filter((file) => fileSet.has(file)));
   const predNodes = snapshot.symbols
-    .filter((decl) => nodeFiles.has(decl.file) && isNodeKind(decl.kind) && splitNodeId(decl.id) !== null)
+    .filter((decl) => nodeFiles.has(decl.file) && isNodeDeclaration(decl))
     .map((decl) => decl.id);
   // S5 identity is (from, to, refKind) when the oracle carries kinds; an oracle that scores
   // references by endpoints only (Terraform's) is compared by (from, to) on both sides.

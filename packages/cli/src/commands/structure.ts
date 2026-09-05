@@ -17,7 +17,7 @@ import { langOf, readStructure } from "@greplost/core";
 import type { Structure } from "@greplost/core";
 import { expandDirectoryTargets, resolvedImportTargets } from "@greplost/core/graph";
 import type { Declaration, Manifest, PackageInfo } from "@greplost/core/schema";
-import { ARTIFACT_DIR, compareStrings, isNodeKind, splitNodeId } from "@greplost/core/schema";
+import { ARTIFACT_DIR, compareStrings, isNodeDeclaration, splitNodeId } from "@greplost/core/schema";
 import { cardPath, nodeCardPath } from "@greplost/render";
 
 /** The committed structure at `root`, or a "not indexed" error. */
@@ -66,7 +66,7 @@ export function looksLikePath(candidate: string): boolean {
  */
 export function resolveNode(structure: Structure, candidate: string): Declaration | undefined {
   if (candidate === "" || !candidate.includes("#")) return undefined;
-  return structure.symbols.find((decl) => decl.id === candidate && isNodeKind(decl.kind));
+  return structure.symbols.find((decl) => decl.id === candidate && isNodeDeclaration(decl));
 }
 
 /**

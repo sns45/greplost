@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/core` ([map](../../MAP.md))
 
-**Exports:** `ARTIFACT_DIR (const)`, `ARTIFACT_PATHS (const)`, `CallEdge (interface)`, `CallSite (interface)`, `Confidence (type)`, `DEFAULT_CONFIG (const)`, `DOCKERFILE_PREFIX (const)`, `DeclKind (type)`, `Declaration (interface)`, `DiagramConfig (interface)`, `Edge (interface)`, `ExportRecord (interface)`, `FileEntry (interface)`, `FileRecord (interface)`, `GreplostConfig (interface)`, `ImportEdge (interface)`, `ImportKind (type)`, `ImportRecord (interface)`, `ImportedSymbol (interface)`, `LANG_BY_BASENAME (const)`, `LANG_BY_EXTENSION (const)`, `Lang (type)`, `Manifest (interface)`, `Metrics (interface)`, `NODE_KINDS (const)`, `PackageEdge (interface)`, `PackageEntry (interface)`, `PackageInfo (interface)`, `RefKind (type)`, `ReferenceEdge (interface)`, `ReferenceRecord (interface)`, `SCHEMA_VERSION (const)`, `Snapshot (interface)`, `SummaryCache (type)`, `SummaryEntry (interface)`, `compareDeclarations(a: Declaration, b: Declaration): number`, `compareEdges(a: Edge, b: Edge): number`, `compareStrings(a: string, b: string): number`, `externalId(pkg: string): string`, `isFileId(id: string): boolean`, `isNodeKind(kind: DeclKind): boolean`, `nodeId(file: string, kind: DeclKind, name: string): string`, `packageId(name: string): string`, `packageSlug(name: string): string`, `splitNodeId(id: string): { file: string; kind: DeclKind; name: string } | null`, `stableStringify(value: unknown, indent = 0): string`, `symbolId(file: string, symbolPath: string): string`, `unresolvedId(specifier: string): string`
+**Exports:** `ARTIFACT_DIR (const)`, `ARTIFACT_PATHS (const)`, `CallEdge (interface)`, `CallSite (interface)`, `Confidence (type)`, `DEFAULT_CONFIG (const)`, `DOCKERFILE_PREFIX (const)`, `DeclKind (type)`, `Declaration (interface)`, `DiagramConfig (interface)`, `Edge (interface)`, `ExportRecord (interface)`, `FileEntry (interface)`, `FileRecord (interface)`, `GreplostConfig (interface)`, `ImportEdge (interface)`, `ImportKind (type)`, `ImportRecord (interface)`, `ImportedSymbol (interface)`, `LANG_BY_BASENAME (const)`, `LANG_BY_EXTENSION (const)`, `Lang (type)`, `Manifest (interface)`, `Metrics (interface)`, `NODE_KINDS (const)`, `PackageEdge (interface)`, `PackageEntry (interface)`, `PackageInfo (interface)`, `RefKind (type)`, `ReferenceEdge (interface)`, `ReferenceRecord (interface)`, `SCHEMA_VERSION (const)`, `Snapshot (interface)`, `SummaryCache (type)`, `SummaryEntry (interface)`, `compareDeclarations(a: Declaration, b: Declaration): number`, `compareEdges(a: Edge, b: Edge): number`, `compareStrings(a: string, b: string): number`, `externalId(pkg: string): string`, `isFileId(id: string): boolean`, `isNodeDeclaration(decl: Pick<Declaration, "id" | "kind">): boolean`, `isNodeKind(kind: DeclKind): boolean`, `nodeId(file: string, kind: DeclKind, name: string): string`, `packageId(name: string): string`, `packageSlug(name: string): string`, `splitNodeId(id: string): { file: string; kind: DeclKind; name: string } | null`, `stableStringify(value: unknown, indent = 0): string`, `symbolId(file: string, symbolPath: string): string`, `unresolvedId(specifier: string): string`
 
 **Imports:** None.
 
@@ -58,11 +58,12 @@
 - `function unresolvedId(specifier: string): string`  L436-438
 - `const NODE_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>([ "resource", "data", "variable", "output", "provider", "module", "local", "job", "step", "stage", "image", "component", "route", "h…`  L441-444
 - `function isNodeKind(kind: DeclKind): boolean`  L446-448
-- `function nodeId(file: string, kind: DeclKind, name: string): string`  L451-454
-- `function splitNodeId(id: string): { file: string; kind: DeclKind; name: string } | null`  L457-468
-- `function isFileId(id: string): boolean`  L470-472
-- `function packageSlug(name: string): string`  L478-480
-- `function stableStringify(value: unknown, indent = 0): string`  L483-485
-- `function sortKeys(value: unknown): unknown`  L487-498
+- `function isNodeDeclaration(decl: Pick<Declaration, "id" | "kind">): boolean`  L456-458
+- `function nodeId(file: string, kind: DeclKind, name: string): string`  L461-464
+- `function splitNodeId(id: string): { file: string; kind: DeclKind; name: string } | null`  L467-478
+- `function isFileId(id: string): boolean`  L480-482
+- `function packageSlug(name: string): string`  L488-490
+- `function stableStringify(value: unknown, indent = 0): string`  L493-495
+- `function sortKeys(value: unknown): unknown`  L497-508
 
-**Calls:** `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high), `sortKeys` → [`packages/core/src/schema.ts#sortKeys`](schema.ts.md) (high)
+**Calls:** `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high), `isNodeKind` → [`packages/core/src/schema.ts#isNodeKind`](schema.ts.md) (high), `sortKeys` → [`packages/core/src/schema.ts#sortKeys`](schema.ts.md) (high), `splitNodeId` → [`packages/core/src/schema.ts#splitNodeId`](schema.ts.md) (high)

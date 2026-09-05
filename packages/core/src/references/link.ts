@@ -27,7 +27,7 @@ import type {
   ReferenceEdge,
   ReferenceRecord,
 } from "../schema.ts";
-import { compareStrings, isNodeKind, symbolId } from "../schema.ts";
+import { compareStrings, isNodeDeclaration, symbolId } from "../schema.ts";
 import type { RepoContext, Resolver } from "../resolve/resolver.ts";
 import { resolveDockerfileReferences } from "./dockerfile.ts";
 import { resolveGoReferences } from "./go.ts";
@@ -165,7 +165,7 @@ function buildReferenceContext(
     recordByPath.set(file.path, file);
     for (const decl of file.decls) {
       declarationById.set(decl.id, decl);
-      if (!isNodeKind(decl.kind)) continue;
+      if (!isNodeDeclaration(decl)) continue;
       const bucket = nodesByKind.get(decl.kind);
       if (bucket === undefined) nodesByKind.set(decl.kind, [decl]);
       else bucket.push(decl);

@@ -8,7 +8,7 @@
 
 **Exports:** `REFERENCE_CAP (const)`, `buildNodeCard(ctx: DocContext, id: string): string`
 
-**Imports:** [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Declaration, ReferenceEdge, compareStrings, isNodeKind, splitNodeId), [`../render.ts`](../render.ts.md) (DocContext), [`../slug.ts`](../slug.ts.md) (packageDir, relLink)
+**Imports:** [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Declaration, ReferenceEdge, compareStrings, isNodeDeclaration, splitNodeId), [`../render.ts`](../render.ts.md) (DocContext), [`../slug.ts`](../slug.ts.md) (packageDir, relLink)
 
 **Imported by:** [`packages/render/src/index.ts`](../index.ts.md), [`packages/render/src/render.ts`](../render.ts.md)
 
@@ -22,4 +22,4 @@
 - `function cardFor(ctx: DocContext, target: string): string | undefined`  L130-136
 - `function shortLabel(target: string, file: string): string`  L143-147
 
-**Calls:** `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high), `isNodeKind` → [`packages/core/src/schema.ts#isNodeKind`](../../../../greplost__core/modules/src/schema.ts.md) (high), `splitNodeId` → [`packages/core/src/schema.ts#splitNodeId`](../../../../greplost__core/modules/src/schema.ts.md) (high), `attributesField` → [`packages/render/src/docs/node-card.ts#attributesField`](node-card.ts.md) (high), `cardFor` → [`packages/render/src/docs/node-card.ts#cardFor`](node-card.ts.md) (high), `edgesField` → [`packages/render/src/docs/node-card.ts#edgesField`](node-card.ts.md) (high), `shortLabel` → [`packages/render/src/docs/node-card.ts#shortLabel`](node-card.ts.md) (high), `packageDir` → [`packages/render/src/slug.ts#packageDir`](../slug.ts.md) (high), `relLink` → [`packages/render/src/slug.ts#relLink`](../slug.ts.md) (high)
+**Calls:** `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high), `isNodeDeclaration` → [`packages/core/src/schema.ts#isNodeDeclaration`](../../../../greplost__core/modules/src/schema.ts.md) (high), `splitNodeId` → [`packages/core/src/schema.ts#splitNodeId`](../../../../greplost__core/modules/src/schema.ts.md) (high), `attributesField` → [`packages/render/src/docs/node-card.ts#attributesField`](node-card.ts.md) (high), `cardFor` → [`packages/render/src/docs/node-card.ts#cardFor`](node-card.ts.md) (high), `edgesField` → [`packages/render/src/docs/node-card.ts#edgesField`](node-card.ts.md) (high), `shortLabel` → [`packages/render/src/docs/node-card.ts#shortLabel`](node-card.ts.md) (high), `packageDir` → [`packages/render/src/slug.ts#packageDir`](../slug.ts.md) (high), `relLink` → [`packages/render/src/slug.ts#relLink`](../slug.ts.md) (high)

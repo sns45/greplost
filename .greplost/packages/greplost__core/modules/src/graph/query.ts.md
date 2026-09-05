@@ -8,7 +8,7 @@
 
 **Exports:** `callersOf(calls: CallEdge[], symbolId: string): string[]`, `findSymbols(symbols: Declaration[], needle: string): Declaration[]`, `impactPairs(structure: Structure): Array<readonly [string, string]>`, `importersOf(imports: ImportEdge[], file: string): string[]`, `nodesOf(symbols: readonly Declaration[], file: string): Declaration[]`, `referencedBy(refs: readonly ReferenceEdge[], id: string): ReferenceEdge[]`, `referencesOf(refs: readonly ReferenceEdge[], id: string): ReferenceEdge[]`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (CallEdge, Declaration, ImportEdge, ReferenceEdge, compareDeclarations, compareEdges, compareStrings, isNodeKind), [`../serialize/read.ts`](../serialize/read.ts.md) (Structure), [`./directories.ts`](directories.ts.md) (expandDirectoryTargets, importTargetsOf)
+**Imports:** [`../schema.ts`](../schema.ts.md) (CallEdge, Declaration, ImportEdge, ReferenceEdge, compareDeclarations, compareEdges, compareStrings, isNodeDeclaration), [`../serialize/read.ts`](../serialize/read.ts.md) (Structure), [`./directories.ts`](directories.ts.md) (expandDirectoryTargets, importTargetsOf)
 
 **Imported by:** [`packages/core/src/graph/index.ts`](index.ts.md), [`packages/core/src/index.ts`](../index.ts.md)
 
@@ -24,4 +24,4 @@
 - `function impactPairs(structure: Structure): Array<readonly [string, string]>`  L116-121
 - `function sortDeclarations(found: Declaration[]): Declaration[]`  L124-126
 
-**Calls:** `expandDirectoryTargets` → [`packages/core/src/graph/directories.ts#expandDirectoryTargets`](directories.ts.md) (high), `importTargetsOf` → [`packages/core/src/graph/directories.ts#importTargetsOf`](directories.ts.md) (high), `sortDeclarations` → [`packages/core/src/graph/query.ts#sortDeclarations`](query.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `isNodeKind` → [`packages/core/src/schema.ts#isNodeKind`](../schema.ts.md) (high)
+**Calls:** `expandDirectoryTargets` → [`packages/core/src/graph/directories.ts#expandDirectoryTargets`](directories.ts.md) (high), `importTargetsOf` → [`packages/core/src/graph/directories.ts#importTargetsOf`](directories.ts.md) (high), `sortDeclarations` → [`packages/core/src/graph/query.ts#sortDeclarations`](query.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `isNodeDeclaration` → [`packages/core/src/schema.ts#isNodeDeclaration`](../schema.ts.md) (high)

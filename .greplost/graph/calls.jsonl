@@ -843,7 +843,7 @@
 {"confidence":"high","from":"bench/src/structural.ts#scoreAgainstTruth","kind":"call","to":"bench/src/structural.ts#sameCycle"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreAgainstTruth","kind":"call","to":"bench/src/structural.ts#scoredFiles"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreAgainstTruth","kind":"call","to":"packages/core/src/schema.ts#isFileId"}
-{"confidence":"high","from":"bench/src/structural.ts#scoreAgainstTruth","kind":"call","to":"packages/core/src/schema.ts#isNodeKind"}
+{"confidence":"high","from":"bench/src/structural.ts#scoreAgainstTruth","kind":"call","to":"packages/core/src/schema.ts#isNodeDeclaration"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreAgainstTruth","kind":"call","to":"packages/core/src/schema.ts#splitNodeId"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreTarget","kind":"call","to":"bench/src/structural.ts#buildOptionsFor"}
 {"confidence":"high","from":"bench/src/structural.ts#scoreTarget","kind":"call","to":"bench/src/structural.ts#everyGatedMetricIsNa"}
@@ -1338,7 +1338,7 @@
 {"confidence":"high","from":"packages/cli/src/commands/query.ts#describe","kind":"call","to":"packages/cli/src/commands/structure.ts#cardOf"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts#describe","kind":"call","to":"packages/cli/src/commands/structure.ts#nodeCardOf"}
 {"confidence":"med","from":"packages/cli/src/commands/query.ts#describe","kind":"call","to":"packages/core/src/graph/query.ts#callersOf"}
-{"confidence":"high","from":"packages/cli/src/commands/query.ts#describe","kind":"call","to":"packages/core/src/schema.ts#isNodeKind"}
+{"confidence":"high","from":"packages/cli/src/commands/query.ts#describe","kind":"call","to":"packages/core/src/schema.ts#isNodeDeclaration"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts#describeFile","kind":"call","to":"packages/cli/src/commands/structure.ts#cardOf"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts#describeFile","kind":"call","to":"packages/cli/src/commands/structure.ts#importsOfFile"}
 {"confidence":"med","from":"packages/cli/src/commands/query.ts#describeFile","kind":"call","to":"packages/core/src/graph/query.ts#importersOf"}
@@ -1395,7 +1395,7 @@
 {"confidence":"high","from":"packages/cli/src/commands/structure.ts#nodeCardOf","kind":"call","to":"packages/core/src/schema.ts#splitNodeId"}
 {"confidence":"med","from":"packages/cli/src/commands/structure.ts#nodeCardOf","kind":"call","to":"packages/render/src/slug.ts#nodeCardPath"}
 {"confidence":"high","from":"packages/cli/src/commands/structure.ts#resolveFile","kind":"call","to":"packages/cli/src/commands/structure.ts#looksLikePath"}
-{"confidence":"high","from":"packages/cli/src/commands/structure.ts#resolveNode","kind":"call","to":"packages/core/src/schema.ts#isNodeKind"}
+{"confidence":"high","from":"packages/cli/src/commands/structure.ts#resolveNode","kind":"call","to":"packages/core/src/schema.ts#isNodeDeclaration"}
 {"confidence":"high","from":"packages/cli/src/commands/update.ts#run","kind":"call","to":"packages/cli/src/commands/refresh.ts#loadRefreshOutcome"}
 {"confidence":"high","from":"packages/cli/src/commands/update.ts#run","kind":"call","to":"packages/cli/src/commands/update.ts#updateOptions"}
 {"confidence":"high","from":"packages/cli/src/commands/update.ts#run","kind":"call","to":"packages/cli/src/commands/workspace.ts#dispatchWorkspace"}
@@ -2212,7 +2212,7 @@
 {"confidence":"high","from":"packages/core/src/graph/link.ts#buildExportIndex","kind":"call","to":"packages/core/src/graph/link.ts#resolvedSpecifiers"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#buildExportIndex","kind":"call","to":"packages/core/src/graph/link.ts#topLevelDeclarations"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#buildExportIndex","kind":"call","to":"packages/core/src/graph/tarjan.ts#sccComponents"}
-{"confidence":"high","from":"packages/core/src/graph/link.ts#isNodeDeclaration","kind":"call","to":"packages/core/src/schema.ts#isNodeKind"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts#isNodeDeclaration","kind":"call","to":"packages/core/src/schema.ts#isNodeDeclaration"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#importBindings"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#isNodeDeclaration"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#resolveMember"}
@@ -2253,7 +2253,7 @@
 {"confidence":"high","from":"packages/core/src/graph/query.ts#impactPairs","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
 {"confidence":"high","from":"packages/core/src/graph/query.ts#importersOf","kind":"call","to":"packages/core/src/graph/directories.ts#importTargetsOf"}
 {"confidence":"high","from":"packages/core/src/graph/query.ts#nodesOf","kind":"call","to":"packages/core/src/graph/query.ts#sortDeclarations"}
-{"confidence":"high","from":"packages/core/src/graph/query.ts#nodesOf","kind":"call","to":"packages/core/src/schema.ts#isNodeKind"}
+{"confidence":"high","from":"packages/core/src/graph/query.ts#nodesOf","kind":"call","to":"packages/core/src/schema.ts#isNodeDeclaration"}
 {"confidence":"high","from":"packages/core/src/graph/tarjan.ts#buildAdjacency","kind":"call","to":"packages/core/src/graph/tarjan.ts#at"}
 {"confidence":"high","from":"packages/core/src/graph/tarjan.ts#sccComponents","kind":"call","to":"packages/core/src/graph/tarjan.ts#at"}
 {"confidence":"high","from":"packages/core/src/graph/tarjan.ts#sccComponents","kind":"call","to":"packages/core/src/graph/tarjan.ts#buildAdjacency"}
@@ -2301,7 +2301,7 @@
 {"confidence":"high","from":"packages/core/src/references/hcl.ts#resolveHclReferences","kind":"call","to":"packages/core/src/references/hcl.ts#resolveUses"}
 {"confidence":"high","from":"packages/core/src/references/hcl.ts#resolveUses","kind":"call","to":"packages/core/src/references/hcl.ts#edge"}
 {"confidence":"high","from":"packages/core/src/references/hcl.ts#resolveUses","kind":"call","to":"packages/core/src/schema.ts#externalId"}
-{"confidence":"high","from":"packages/core/src/references/link.ts#buildReferenceContext","kind":"call","to":"packages/core/src/schema.ts#isNodeKind"}
+{"confidence":"high","from":"packages/core/src/references/link.ts#buildReferenceContext","kind":"call","to":"packages/core/src/schema.ts#isNodeDeclaration"}
 {"confidence":"high","from":"packages/core/src/references/link.ts#compareReferenceEdges","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
 {"confidence":"high","from":"packages/core/src/references/link.ts#dedupe","kind":"call","to":"packages/core/src/references/link.ts#compareReferenceEdges"}
 {"confidence":"high","from":"packages/core/src/references/link.ts#linkReferences","kind":"call","to":"packages/core/src/references/link.ts#buildReferenceContext"}
@@ -2523,6 +2523,8 @@
 {"confidence":"high","from":"packages/core/src/resolve/tsconfig.ts#resolveExtends","kind":"call","to":"packages/core/src/resolve/tsconfig.ts#parentDir"}
 {"confidence":"high","from":"packages/core/src/schema.ts#compareDeclarations","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
 {"confidence":"high","from":"packages/core/src/schema.ts#compareEdges","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
+{"confidence":"high","from":"packages/core/src/schema.ts#isNodeDeclaration","kind":"call","to":"packages/core/src/schema.ts#isNodeKind"}
+{"confidence":"high","from":"packages/core/src/schema.ts#isNodeDeclaration","kind":"call","to":"packages/core/src/schema.ts#splitNodeId"}
 {"confidence":"high","from":"packages/core/src/schema.ts#sortKeys","kind":"call","to":"packages/core/src/schema.ts#sortKeys"}
 {"confidence":"high","from":"packages/core/src/schema.ts#stableStringify","kind":"call","to":"packages/core/src/schema.ts#sortKeys"}
 {"confidence":"high","from":"packages/core/src/serialize/json.ts#toJson","kind":"call","to":"packages/core/src/schema.ts#stableStringify"}
@@ -2702,7 +2704,7 @@
 {"confidence":"high","from":"packages/render/src/docs/card.ts#exportsField","kind":"call","to":"packages/render/src/docs/api.ts#exportEntry"}
 {"confidence":"high","from":"packages/render/src/docs/card.ts#exportsField","kind":"call","to":"packages/render/src/docs/api.ts#localNames"}
 {"confidence":"high","from":"packages/render/src/docs/card.ts#exportsField","kind":"call","to":"packages/render/src/docs/api.ts#shortName"}
-{"confidence":"high","from":"packages/render/src/docs/card.ts#keySymbolsField","kind":"call","to":"packages/core/src/schema.ts#isNodeKind"}
+{"confidence":"high","from":"packages/render/src/docs/card.ts#keySymbolsField","kind":"call","to":"packages/core/src/schema.ts#isNodeDeclaration"}
 {"confidence":"high","from":"packages/render/src/docs/card.ts#keySymbolsField","kind":"call","to":"packages/render/src/docs/api.ts#keySymbol"}
 {"confidence":"high","from":"packages/render/src/docs/hotspots.ts#buildHotspots","kind":"call","to":"packages/render/src/docs/hotspots.ts#cycleBlocks"}
 {"confidence":"high","from":"packages/render/src/docs/hotspots.ts#buildHotspots","kind":"call","to":"packages/render/src/docs/hotspots.ts#packageCycles"}
@@ -2729,13 +2731,13 @@
 {"confidence":"high","from":"packages/render/src/docs/index-doc.ts#tableBlocks","kind":"call","to":"packages/render/src/slug.ts#relLink"}
 {"confidence":"high","from":"packages/render/src/docs/index-doc.ts#topPackagesByLoc","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
 {"confidence":"high","from":"packages/render/src/docs/index-doc.ts#treeBlock","kind":"call","to":"packages/render/src/docs/repo-map.ts#packageTree"}
-{"confidence":"high","from":"packages/render/src/docs/node-card.ts#buildNodeCard","kind":"call","to":"packages/core/src/schema.ts#isNodeKind"}
+{"confidence":"high","from":"packages/render/src/docs/node-card.ts#buildNodeCard","kind":"call","to":"packages/core/src/schema.ts#isNodeDeclaration"}
 {"confidence":"high","from":"packages/render/src/docs/node-card.ts#buildNodeCard","kind":"call","to":"packages/core/src/schema.ts#splitNodeId"}
 {"confidence":"high","from":"packages/render/src/docs/node-card.ts#buildNodeCard","kind":"call","to":"packages/render/src/docs/node-card.ts#attributesField"}
 {"confidence":"high","from":"packages/render/src/docs/node-card.ts#buildNodeCard","kind":"call","to":"packages/render/src/docs/node-card.ts#edgesField"}
 {"confidence":"high","from":"packages/render/src/docs/node-card.ts#buildNodeCard","kind":"call","to":"packages/render/src/slug.ts#packageDir"}
 {"confidence":"high","from":"packages/render/src/docs/node-card.ts#buildNodeCard","kind":"call","to":"packages/render/src/slug.ts#relLink"}
-{"confidence":"high","from":"packages/render/src/docs/node-card.ts#cardFor","kind":"call","to":"packages/core/src/schema.ts#isNodeKind"}
+{"confidence":"high","from":"packages/render/src/docs/node-card.ts#cardFor","kind":"call","to":"packages/core/src/schema.ts#isNodeDeclaration"}
 {"confidence":"high","from":"packages/render/src/docs/node-card.ts#edgesField","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
 {"confidence":"high","from":"packages/render/src/docs/node-card.ts#edgesField","kind":"call","to":"packages/render/src/docs/node-card.ts#cardFor"}
 {"confidence":"high","from":"packages/render/src/docs/node-card.ts#edgesField","kind":"call","to":"packages/render/src/docs/node-card.ts#shortLabel"}
@@ -2778,7 +2780,7 @@
 {"confidence":"med","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/core/src/graph/query.ts#impactPairs"}
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/core/src/schema.ts#isFileId"}
-{"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/core/src/schema.ts#isNodeKind"}
+{"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/core/src/schema.ts#isNodeDeclaration"}
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/core/src/schema.ts#splitNodeId"}
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/render/src/render.ts#blastUniverse"}
 {"confidence":"high","from":"packages/render/src/render.ts#createContext","kind":"call","to":"packages/render/src/render.ts#fileOfSymbol"}

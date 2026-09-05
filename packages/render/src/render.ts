@@ -31,7 +31,7 @@ import type {
   Snapshot,
   SummaryCache,
 } from "@greplost/core/schema";
-import { compareEdges, compareStrings, isFileId, isNodeKind, splitNodeId } from "@greplost/core/schema";
+import { compareEdges, compareStrings, isFileId, isNodeDeclaration, splitNodeId } from "@greplost/core/schema";
 import { blastRadius, filesByDirectory, impactPairs } from "@greplost/core/graph";
 
 import { cardPath, nodeCardPath, packageDir } from "./slug.ts";
@@ -246,7 +246,7 @@ export function createContext(input: RenderInput): DocContext {
   for (const decls of declsOf.values()) {
     for (const decl of decls) {
       declById.set(decl.id, decl);
-      if (!isNodeKind(decl.kind)) continue;
+      if (!isNodeDeclaration(decl)) continue;
       const bucket = nodesOf.get(decl.file);
       if (bucket) bucket.push(decl);
       else nodesOf.set(decl.file, [decl]);

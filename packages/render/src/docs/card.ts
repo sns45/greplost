@@ -10,7 +10,7 @@
  */
 
 import type { CallEdge, Confidence, ImportRecord } from "@greplost/core/schema";
-import { compareStrings, isNodeKind } from "@greplost/core/schema";
+import { compareStrings, isNodeDeclaration } from "@greplost/core/schema";
 
 import type { DocContext } from "../render.ts";
 import { packageDir, relLink } from "../slug.ts";
@@ -215,7 +215,7 @@ function nodesField(
 function keySymbolsField(ctx: DocContext, file: string): string {
   // Nodes have their own block and their own cards; listing them here as well
   // would put a Terraform file's forty resources on one card twice.
-  const decls = (ctx.declsOf.get(file) ?? []).filter((decl) => !isNodeKind(decl.kind));
+  const decls = (ctx.declsOf.get(file) ?? []).filter((decl) => !isNodeDeclaration(decl));
   if (decls.length === 0) return " None.";
   const shown = decls.slice(0, KEY_SYMBOL_CAP);
   const lines = shown.map((d) => `- \`${keySymbol(d)}\`  L${d.span[0]}-${d.span[1]}`);
