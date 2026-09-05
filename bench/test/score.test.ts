@@ -421,9 +421,13 @@ describe("structural gate", () => {
     });
     const snapshot = snapshotOf({ symbols: [node("a.ts", "x"), node("b.ts", "y")] });
     const scoped = scoreAgainstTruth("tiny", snapshot, truthOf(), "ts", { references: [], nodes: ["a.ts#resource.x"], nodeFiles: ["a.ts"] });
-    expect([scoped.S6.tp, scoped.S6.fp, scoped.S6.fn]).toEqual([1, 0, 0]);
+    // `S6` is `Score | null` - `null` is the `n/a` an oracle that measures nothing reports - so
+    // the assertion says both things: it was measured, and it measured this.
+    expect(scoped.S6).not.toBeNull();
+    expect([scoped.S6?.tp, scoped.S6?.fp, scoped.S6?.fn]).toEqual([1, 0, 0]);
     const whole = scoreAgainstTruth("tiny", snapshot, truthOf(), "ts", { references: [], nodes: ["a.ts#resource.x"] });
-    expect([whole.S6.tp, whole.S6.fp, whole.S6.fn]).toEqual([1, 1, 0]);
+    expect(whole.S6).not.toBeNull();
+    expect([whole.S6?.tp, whole.S6?.fp, whole.S6?.fn]).toEqual([1, 1, 0]);
   });
 
   test("a wrong import edge fails S1 and is located at the import line", () => {

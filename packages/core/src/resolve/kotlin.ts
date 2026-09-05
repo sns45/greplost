@@ -453,6 +453,27 @@ function packageSiblings(index: KotlinCallIndex, file: string): string[] {
   return index.siblings.get(index.packageOf.get(file) ?? "") ?? [];
 }
 
+/**
+ * The one candidate a call site means, or null when the file cannot say.
+ *
+ * A package usually declares a name once, and then there is nothing to choose. Kotlin
+ * multiplatform is the exception: `expect fun sleep()` in the common source set and
+ * `actual fun sleep()` in the platform one are **one** declaration written twice, and 44 of the
+ * 48 same-package collisions in the pinned corpus are exactly that. Dropping the call would be
+ * wrong - the language binds it - and picking a half at random would be a guess, so the tie is
+ * broken the way the compiler breaks it: a call binds to the declaration in the caller's own
+ * source set. The directory is that source set (`<module>/<sourceSet>/src/...`), which is why
+ * the directory survives here as a tie-break even though the *package* decides who is a
+ * sibling. Two declarers in the caller's own directory really are ambiguous, and are dropped.
+ */
+function pickCandidate<T extends { file: string }>(hits: readonly T[], fromFile: string): T | null {
+  if (hits.length === 1) return hits[0] ?? null;
+  if (hits.length === 0) return null;
+  const dir = parentDir(fromFile);
+  const local = hits.filter((hit) => parentDir(hit.file) === dir);
+  return local.length === 1 ? (local[0] ?? null) : null;
+}
+
 /** Files whose top-level declarations this file can name without qualifying them. */
 function visibleFiles(index: KotlinCallIndex, file: FileRecord): string[] {
   const out = [file.path];
@@ -476,7 +497,7 @@ function uniqueDeclarer(
     const symbol = declaredSymbol(index, candidate, name);
     if (symbol !== null) hits.push({ file: candidate, symbol });
   }
-  return hits.length === 1 ? (hits[0] ?? null) : null;
+  return pickCandidate(hits, file.path);
 }
 
 /**
@@ -518,8 +539,8 @@ export function resolveKotlinCall(
       const symbol = declaredSymbol(index, sibling, callee);
       if (symbol !== null) hits.push({ file: sibling, symbol });
     }
-    const only = hits.length === 1 ? hits[0] : undefined;
-    return only === undefined ? null : { to: symbolId(only.file, only.symbol), confidence: "high" };
+    const only = pickCandidate(hits, file.path);
+    return only === null ? null : { to: symbolId(only.file, only.symbol), confidence: "high" };
   }
 
   const object = callee.slice(0, dot);

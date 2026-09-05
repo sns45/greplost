@@ -44,10 +44,19 @@ here with the reason (rulings, leaf 2.0 and leaf 2.6, 2026-09-04):
          0.3.8's, so `extract/kotlin.ts` reads the same tree either way (one addition: main
          wraps an extension receiver in a `receiver_type` node).
 
+         One defect of the vendored grammar, measured and pinned by a test in
+         packages/core/test/extract-kotlin.test.ts: a one-line **object** body
+         (`object A { fun b() {} }`) parses as an expression - an object literal applied to a
+         lambda - so the file yields no declaration, and because there is no ERROR node
+         `findUnparsableFiles` does not report it either. A one-line *class* body is read
+         correctly, and both are fine written over two lines, which is how Kotlin is written.
+         The pinned corpus has no instance.
+
          The alternative considered and rejected: `@tree-sitter-grammars/tree-sitter-kotlin`
          1.1.0, the fork under the tree-sitter-grammars org, which ships a wasm and parses
          `fun interface` but leaves 2 of the 163 files with a root-level ERROR, silently
-         mis-parses an annotated `annotation class` as an expression, and renames every node
+         mis-parses an annotated `annotation class` as an expression (and a one-line class body,
+         which the vendored grammar reads), and renames every node
          (`identifier` for both `simple_identifier` and `type_identifier`, `import` for
          `import_header`). Recorded so the choice is not made again by coin flip (ruling,
          leaf 2.6).

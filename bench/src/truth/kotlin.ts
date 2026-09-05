@@ -24,6 +24,13 @@
  * `./gradlew compileKotlin` inside the corpus, then point this same `javap -v` reader at the
  * Gradle-produced classfiles.
  *
+ * Numbers `RESULTS.md` should carry next to Kotlin's row, measured on the pinned corpus
+ * (kotlinx.coroutines, 163 files) at leaf 2.6 fix round 1: of 515 import records, 77 are named
+ * imports and 438 are wildcards. The named ones give 24 in-repo file edges; a wildcard names a
+ * package rather than a file and is left `unresolved` rather than guessed, and 193 of those
+ * sites have exactly one in-repo declarer of the name actually used - so a per-symbol use
+ * analysis would recover them. That is a build-3 job, not a threshold to move here.
+ *
  * The oracle's output is cached under `bench/.corpus/.tools/`, keyed by a 16-hex hash of the
  * tool's own sources and of the sources it is asked about, exactly as `truth/go.ts` caches its
  * built helper: a fixture edit invalidates the cache and nothing else does. The host's
@@ -55,6 +62,17 @@ const MAX_BUFFER = 128 * 1024 * 1024;
  * `reported-only` is deliberately absent here and added per run, for a corpus root only: in
  * `NOTES` it would make the *fixture* gate vacuous too, and the fixture is the one place Kotlin
  * has compiler truth.
+ *
+ * The last two tags are the oracle's two known disagreements with the map, both measured and
+ * both kept out of the fixture rather than papered over:
+ *
+ *  - `internal-class-is-public-in-bytecode`: Kotlin mangles an `internal` *member* to
+ *    `name$module`, which this reader drops, so it agrees with the map that an internal member
+ *    is not exported - but an `internal` *class* stays `ACC_PUBLIC`, so the oracle would call
+ *    it exported where the map does not (an S2 false positive on the truth side).
+ *  - `object-protocol-overrides-dropped`: `equals`, `hashCode` and `toString` at their standard
+ *    descriptors are dropped, because every data class generates them; a hand-written
+ *    `override fun toString()` is dropped with them (an S2 false negative on the truth side).
  */
 export const NOTES: readonly string[] = [
   "fixture-oracle-only",
@@ -62,6 +80,8 @@ export const NOTES: readonly string[] = [
   "kotlinc-javap-classfiles",
   "jvm-synthetics-dropped",
   "property-access-not-a-call",
+  "internal-class-is-public-in-bytecode",
+  "object-protocol-overrides-dropped",
 ];
 
 /** The note that turns every metric into `n/a` for a target this oracle cannot measure. */
@@ -141,9 +161,37 @@ function stderrOf(cause: unknown): string {
   return text.length > 2000 ? `${text.slice(0, 2000)}…` : text;
 }
 
-/** sha256 of the oracle's sources and of the sources it is asked about, as 16 hex characters. */
+/**
+ * The compiler's own version banner, or "" when it cannot be read.
+ *
+ * It goes into the **cache key** and nowhere else. A cached document is only valid for the
+ * compiler that produced it - two kotlinc versions disagree about which synthetics they emit -
+ * and a key is not output, so this puts no fact about the machine into an artifact (driver
+ * ruling 2026-09-04). `generateTruth` never sees it.
+ */
+function compilerStamp(): string {
+  try {
+    return execFileSync("kotlinc", ["-version"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+      timeout: RUN_TIMEOUT_MS,
+    }).trim();
+  } catch (cause) {
+    // kotlinc prints its banner on stderr, so a non-zero exit still carries the version.
+    const err = cause as { stderr?: Buffer | string };
+    const stderr = typeof err.stderr === "string" ? err.stderr : err.stderr?.toString("utf8");
+    return (stderr ?? "").trim();
+  }
+}
+
+/**
+ * sha256 of the oracle's sources, of the compiler that will run them, and of the sources it is
+ * asked about, as 16 hex characters.
+ */
 function runHash(root: string, files: readonly string[]): string {
   const hash = createHash("sha256");
+  hash.update(compilerStamp());
+  hash.update("\n");
   for (const name of TOOL_SOURCES) {
     const file = path.join(TOOL_SOURCE_DIR, name);
     if (!existsSync(file)) {

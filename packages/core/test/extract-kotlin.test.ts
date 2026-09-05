@@ -660,6 +660,37 @@ fun main() {
     });
   });
 
+  test("an expect/actual pair is one declaration, and the caller's own source set says which", () => {
+    // Kotlin multiplatform splits one declaration over two source sets, so the package holds
+    // the name twice - 44 of the pinned corpus's 48 same-package collisions are exactly this.
+    // Dropping the call would be wrong (the language binds it), and picking either half blindly
+    // would be a guess; the caller's own source set is what the compiler uses, and the
+    // directory is that source set.
+    const sources = {
+      "core/common/src/Sleep.kt": "package tiny\n\nexpect fun sleep()\n",
+      "core/jvm/src/Sleep.kt": "package tiny\n\nactual fun sleep() {}\n",
+      "core/common/src/App.kt": "package tiny\n\nfun common() {\n    sleep()\n}\n",
+      "core/jvm/src/Main.kt": "package tiny\n\nfun main() {\n    sleep()\n}\n",
+    };
+    expect(callTo(sources, "core/common/src/App.kt", "sleep")).toEqual({
+      to: "core/common/src/Sleep.kt#sleep",
+      confidence: "high",
+    });
+    expect(callTo(sources, "core/jvm/src/Main.kt", "sleep")).toEqual({
+      to: "core/jvm/src/Sleep.kt#sleep",
+      confidence: "high",
+    });
+  });
+
+  test("two declarers in the caller's own source set stay ambiguous, and are dropped", () => {
+    const sources = {
+      "core/jvm/src/a.kt": "package tiny\n\nfun sleep() {}\n",
+      "core/jvm/src/b.kt": "package tiny\n\nfun sleep(ms: Int) {}\n",
+      "core/jvm/src/Main.kt": "package tiny\n\nfun main() {\n    sleep()\n}\n",
+    };
+    expect(callTo(sources, "core/jvm/src/Main.kt", "sleep")).toBeNull();
+  });
+
   test("a file in another package is not a same-package sibling, whatever the directory says", () => {
     const sources = {
       "src/tiny/Store.kt": "package tiny.other\n\nfun store() {}\n",

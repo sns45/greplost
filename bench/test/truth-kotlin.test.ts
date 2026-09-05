@@ -62,11 +62,21 @@ function copyFixture(): string {
 describe.skipIf(!toolchain)("kotlin fixture oracle", () => {
   const truth = toolchain ? generateTruth(fixtureRoot, FIXTURE_FILES) : null;
 
+  test("no version string reaches the truth document", () => {
+    // The positive half of the ruling: whatever the machine's kotlinc is, the document this
+    // oracle hands the harness carries no trace of it.
+    expect(JSON.stringify(truth)).not.toMatch(/\d+\.\d+\.\d+/u);
+  });
+
   test("the oracle compiles the fixture and reads the classfiles back", () => {
     // `run.sh` is what compiles; a run that never reached `javap` could not know any of this.
     expect(existsSync(kotlinTruthTool())).toBe(true);
     expect(truth?.files).toEqual(FIXTURE_FILES);
     expect(truth?.notes).toEqual([...NOTES]);
+    // The two disagreements with the map that the fixture deliberately does not contain are
+    // disclosed rather than hidden (leaf 2.6 fix round 1).
+    expect([...NOTES]).toContain("internal-class-is-public-in-bytecode");
+    expect([...NOTES]).toContain("object-protocol-overrides-dropped");
   });
 
   test("a class is attributed to its .kt file by the SourceFile attribute, not by its name", () => {
@@ -80,6 +90,8 @@ describe.skipIf(!toolchain)("kotlin fixture oracle", () => {
       "Box.Companion",
       "Box.Companion.of",
       "Box.item",
+      "Handler",
+      "Handler.handle",
       "Item",
       "Item.id",
       "Item.label",
@@ -122,6 +134,7 @@ describe.skipIf(!toolchain)("kotlin fixture oracle", () => {
       "src/tiny/App.kt#main -> src/tiny/Store.kt#Item",
       "src/tiny/App.kt#main -> src/tiny/Store.kt#Item.label",
       "src/tiny/App.kt#main -> src/tiny/Store.kt#Store.put",
+      "src/tiny/App.kt#main -> src/tiny/util/Retry.kt#String.shout",
       "src/tiny/App.kt#main -> src/tiny/util/Retry.kt#retry",
       "src/tiny/Store.kt#Box.Companion.of -> src/tiny/Store.kt#Box",
       "src/tiny/Store.kt#Store.put -> src/tiny/Store.kt#Store.accept",
@@ -129,6 +142,11 @@ describe.skipIf(!toolchain)("kotlin fixture oracle", () => {
     // A constructor call is an edge to the type (Kotlin has no `new`), and a coroutine's
     // synthetic continuation class is not a caller of anything.
     expect(keys(truth?.calls ?? []).some((key) => key.includes("main$1"))).toBe(false);
+    // `"kt".shout()` is a literal receiver: the classfile names it `String.shout` through the
+    // `$this$shout` marker, and so does the map, so it is one edge on both sides.
+    // A SAM construction (`Handler { true }`) compiles to an `invokedynamic`, which is not an
+    // `invoke*` to a method of an indexed class, so neither side has an edge for it.
+    expect(keys(truth?.calls ?? []).some((key) => key.endsWith("#Handler"))).toBe(false);
   });
 
   test("the run is cached by content under bench/.corpus/.tools", () => {
@@ -214,17 +232,18 @@ describe("reported only", () => {
     }
   });
 
-  test("the oracle never reads the host toolchain version into its output", () => {
+  test("the compiler's version reaches the cache key and never the output", () => {
     // A benchmark artifact may not carry a fact about the machine that made it (driver ruling
-    // 2026-09-04): the version belongs in the leaf's gate evidence, not in `Truth`.
+    // 2026-09-04). A cache *key* is not an artifact, and a document produced by one kotlinc is
+    // not valid for another, so the version belongs there - and nowhere else.
     const source = readFileSync(path.join(repoRoot, "bench", "src", "truth", "kotlin.ts"), "utf8");
-    const notes = [...NOTES].join(" ");
-    expect(notes).not.toMatch(/\d+\.\d+\.\d+/u);
-    // Every mention of `-version` is a row of the boolean availability probe, whose output is
-    // ignored; nothing assigns a version string, and none reaches `NOTES` or `Truth`.
-    const versionLines = source.split("\n").filter((line) => line.includes("-version"));
-    expect(versionLines.length).toBeGreaterThan(0);
-    expect(versionLines.every((line) => /^\s*\["\w+", \["--?version"\]\],$/u.test(line))).toBe(true);
+    expect([...NOTES].join(" ")).not.toMatch(/\d+\.\d+\.\d+/u);
+    // The banner is read in exactly one place, and its one caller is the hash.
+    expect(source.match(/^function compilerStamp\(\)/gmu)?.length ?? 0).toBe(1);
+    expect(source.match(/compilerStamp\(\)/gu)?.length ?? 0).toBe(2);
+    const runHash = source.slice(source.indexOf("function runHash("), source.indexOf("function parseOutput("));
+    expect(runHash).toContain("hash.update(compilerStamp())");
+    // The other probe is the boolean one, whose output is discarded.
     expect(source).toContain('stdio: "ignore"');
   });
 });
