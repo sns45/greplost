@@ -453,11 +453,16 @@ describe("reference caps", () => {
 });
 
 describe("card path collisions", () => {
-  test("two nodes whose names slug the same are a loud failure, not a lost card", () => {
+  test("two nodes whose names slug the same lose the later card, not the whole map", () => {
     const snapshot = synth([
       { path: "main.tf", decls: [decl("main.tf", "resource", "a/b", 1), decl("main.tf", "resource", "a__b", 3)] },
     ]);
-    expect(() => renderArtifacts({ snapshot, summaries: {} })).toThrow(/card path collision/);
+    const warnings: string[] = [];
+    const artifacts = renderArtifacts({ snapshot, summaries: {}, warnings });
+    expect(artifacts.has("packages/root/modules/main.tf/resource.a__b.md")).toBe(true);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("main.tf#resource.a__b");
+    expect(warnings[0]).toContain("main.tf#resource.a/b");
   });
 
   test("a node card that would overwrite a file card is caught too", () => {
@@ -468,18 +473,47 @@ describe("card path collisions", () => {
     expect(() => renderArtifacts({ snapshot, summaries: {} })).toThrow(/card path collision/);
   });
 
-  test("two node cards that differ only by case are a collision, because APFS says so", () => {
+  test("two node cards that differ only by case cost one card and a warning", () => {
     // `resource "aws_vpc" "Main"` beside `resource "aws_vpc" "main"` is legal
-    // Terraform and two distinct ids. On a case-insensitive filesystem — the
-    // macOS and Windows default — the second card overwrites the first, and
-    // `greplost verify` is then permanently red with no way to fix it.
+    // Terraform and two distinct ids. On a case-insensitive filesystem, the
+    // macOS and Windows default, the second card overwrites the first. Aborting
+    // the whole render left the repository with no map at all over one node, so
+    // the ruling of 2026-09-05 is: skip the later card, warn once naming both
+    // ids, and keep building. `verify` stays byte-exact because it renders
+    // through this very function and skips the same card.
     const snapshot = synth([
       {
         path: "main.tf",
         decls: [decl("main.tf", "resource", "aws_vpc.Main", 1), decl("main.tf", "resource", "aws_vpc.main", 3)],
       },
     ]);
-    expect(() => renderArtifacts({ snapshot, summaries: {} })).toThrow(/card path collision/);
+    const warnings: string[] = [];
+    const artifacts = renderArtifacts({ snapshot, summaries: {}, warnings });
+    expect(artifacts.has("packages/root/modules/main.tf/resource.aws_vpc.Main.md")).toBe(true);
+    expect(artifacts.has("packages/root/modules/main.tf/resource.aws_vpc.main.md")).toBe(false);
+    expect(artifacts.has("packages/root/modules/main.tf.md")).toBe(true);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("main.tf#resource.aws_vpc.main");
+    expect(warnings[0]).toContain("main.tf#resource.aws_vpc.Main");
+  });
+
+  test("the skipped card is skipped the same way on the next render, so verify stays exact", () => {
+    const snapshot = synth([
+      {
+        path: "main.tf",
+        decls: [decl("main.tf", "resource", "aws_vpc.Main", 1), decl("main.tf", "resource", "aws_vpc.main", 3)],
+      },
+    ]);
+    const first = renderArtifacts({ snapshot, summaries: {} });
+    const second = renderArtifacts({ snapshot, summaries: {} });
+    expect([...second.keys()]).toEqual([...first.keys()]);
+    for (const [rel, text] of first) expect(`${rel}\n${second.get(rel)}`).toBe(`${rel}\n${text}`);
+  });
+
+  test("a render that collides nothing reports no warning", () => {
+    const warnings: string[] = [];
+    renderArtifacts({ snapshot: tf.snapshot, summaries: tf.summaries, warnings });
+    expect(warnings).toEqual([]);
   });
 
   test("two file cards that differ only by Unicode normalisation are a collision too", () => {

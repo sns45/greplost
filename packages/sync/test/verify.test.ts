@@ -399,3 +399,35 @@ describe("diff cap", () => {
     expect(lines).toContain("-one hand-written line");
   });
 });
+
+describe("colliding node cards", () => {
+  test("a case-only node collision costs one card, and verify is still clean", async () => {
+    // `resource "aws_vpc" "Main"` beside `resource "aws_vpc" "main"` is legal
+    // Terraform and two node ids that are one file on APFS. The render skips the
+    // later card and warns (ruling 2026-09-05); the half that matters to CI is
+    // here: the map is still written, and `verify` renders the same artifact set
+    // and reports clean, rather than the build failing outright over one node.
+    const dir = mkdtempSync(path.join(tmpdir(), "greplost-verify-collide-"));
+    temporaries.push(dir);
+    const root = path.join(dir, "repo");
+    mkdirSync(path.join(root, ".greplost"), { recursive: true });
+    writeFileSync(path.join(root, ".greplost", "config.json"), JSON.stringify({ languages: ["hcl"] }));
+    writeFileSync(
+      path.join(root, "main.tf"),
+      'resource "aws_vpc" "Main" {\n  cidr_block = "10.0.0.0/16"\n}\n\n' +
+        'resource "aws_vpc" "main" {\n  cidr_block = "10.1.0.0/16"\n}\n',
+    );
+
+    const built = await buildArtifacts(root, { parser });
+    expect(built.warnings).toHaveLength(1);
+    expect(built.warnings[0]).toContain("main.tf#resource.aws_vpc.main");
+    expect(built.warnings[0]).toContain("main.tf#resource.aws_vpc.Main");
+    // The map was still built: the file card and the surviving node card are there.
+    expect(built.files.has("packages/root/modules/main.tf.md")).toBe(true);
+    expect(built.files.has("packages/root/modules/main.tf/resource.aws_vpc.Main.md")).toBe(true);
+
+    writeArtifacts(root, built.files);
+    const result = await verify(root, { parser });
+    expect([result.ok, result.changed, result.missing, result.extra]).toEqual([true, [], [], []]);
+  });
+});

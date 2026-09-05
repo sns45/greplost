@@ -194,7 +194,7 @@ async function runUpdate(root: string, opts: UpdateOptions, started: number): Pr
     // repair for a cache someone has corrupted.
     const cache = new CountingCache(store, incremental);
 
-    const { snapshot, files, skipped } = await buildArtifacts(root, { cache });
+    const { snapshot, files, skipped, warnings } = await buildArtifacts(root, { cache });
     store.save(usedKeys(snapshot));
 
     // An empty map is a legitimate answer — a repository really can have no
@@ -221,6 +221,11 @@ async function runUpdate(root: string, opts: UpdateOptions, started: number): Pr
           'whose path contains "#", a newline or NUL and so cannot be a map id',
       );
     }
+
+    // A node whose card path another artifact already claims. One line each and
+    // not a count: there is normally none, a repository that has one has one or
+    // two, and each names two ids the user has to look at to fix it.
+    for (const warning of warnings) console.error(warning);
 
     const written = writeArtifacts(root, files);
     // The commit read before the build, not after: a commit that landed while

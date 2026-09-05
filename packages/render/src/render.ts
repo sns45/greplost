@@ -46,6 +46,13 @@ import { buildCard } from "./docs/card.ts";
 export interface RenderInput {
   snapshot: Snapshot;
   summaries: SummaryCache;
+  /**
+   * Out-parameter: `renderArtifacts` appends, in emission order, one line per node card it
+   * had to skip because another artifact already claims that path on a case-insensitive
+   * filesystem. A caller that passes one can report them; one that does not gets the same
+   * artifacts, because the skip is a property of the snapshot and not of the caller.
+   */
+  warnings?: string[];
 }
 
 /** The generated-by line every artifact carries under its level-1 title. */
@@ -352,31 +359,61 @@ export function renderArtifacts(input: RenderInput): Map<string, string> {
   // Every path the render claimed, in emission order and *with* duplicates: a
   // Map silently keeps the last writer, so the guard needs the raw list.
   const claimed: string[] = [];
-  const emit = (path: string, text: string): void => {
+  /** Folded path -> what claimed it, for the node-card skip below. */
+  const claimedBy = new Map<string, string>();
+  const emit = (path: string, text: string, claimant: string): void => {
     claimed.push(path);
+    claimedBy.set(foldPath(path), claimant);
     out.set(path, text);
   };
 
-  emit("INDEX.md", buildIndex(ctx));
-  emit("repo/MAP.md", buildRepoMap(ctx));
-  emit("repo/HOTSPOTS.md", buildHotspots(ctx));
+  emit("INDEX.md", buildIndex(ctx), "INDEX.md");
+  emit("repo/MAP.md", buildRepoMap(ctx), "repo/MAP.md");
+  emit("repo/HOTSPOTS.md", buildHotspots(ctx), "repo/HOTSPOTS.md");
 
   for (const pkg of ctx.packages) {
     const dir = packageDir(pkg.name);
-    emit(`${dir}/MAP.md`, buildPackageMap(ctx, pkg));
-    emit(`${dir}/API.md`, buildApi(ctx, pkg));
+    emit(`${dir}/MAP.md`, buildPackageMap(ctx, pkg), `${dir}/MAP.md`);
+    emit(`${dir}/API.md`, buildApi(ctx, pkg), `${dir}/API.md`);
     for (const file of ctx.filesByPackage.get(pkg.name) ?? []) {
-      emit(cardPath(pkg, file), buildCard(ctx, file));
+      emit(cardPath(pkg, file), buildCard(ctx, file), file);
       // Each of the file's non-file nodes, immediately after its file card, so
       // the artifact order is still "package by path, each file in path order".
       for (const decl of ctx.nodesOf.get(file) ?? []) {
-        emit(nodeCardPath(pkg, decl.id), buildNodeCard(ctx, decl.id));
+        const path = nodeCardPath(pkg, decl.id);
+        // Two node ids can name one file: `resource "aws_vpc" "Main"` beside
+        // `resource "aws_vpc" "main"` is legal Terraform and two distinct ids,
+        // and `nodeSlug` is lossy besides (`a/b` and `a__b` slug the same).
+        // Failing the whole render left the repository with no map at all over
+        // one node, so the later card is skipped with a warning naming both ids
+        // and the build carries on (ruling 2026-09-05). `verify` renders through
+        // this same function, so it skips the same card and stays byte-exact.
+        const other = claimedBy.get(foldPath(path));
+        if (other !== undefined) {
+          input.warnings?.push(
+            `greplost: no card for ${decl.id}: ${path} is already claimed by ${other}. ` +
+              "Two ids that differ only by case or Unicode normalisation are one file on " +
+              "macOS and Windows; rename one of them to give both a card.",
+          );
+          continue;
+        }
+        emit(path, buildNodeCard(ctx, decl.id), decl.id);
       }
     }
   }
 
   assertNoCardCollision(claimed);
   return out;
+}
+
+/**
+ * A path as the filesystem the map is written to compares it: NFC-normalised and
+ * case-folded. `toLowerCase`, not `toLocaleLowerCase`, because a render must not depend
+ * on the machine's locale (Turkish dotless i would fold two different paths here and not
+ * on the next machine).
+ */
+function foldPath(path: string): string {
+  return path.normalize("NFC").toLowerCase();
 }
 
 /**
@@ -397,28 +434,25 @@ function assertNoSlugCollision(packages: readonly PackageInfo[]): void {
 }
 
 /**
- * `nodeSlug` is lossy (`a/b` and `a__b` both slug to `a__b`), and a node card
- * directory is named after a file, so two artifacts can in principle claim one
- * path. Silently keeping the last writer would lose a card and leave its
- * inbound links pointing at another node's page, so this is a hard failure.
- * Checked in path order, and the message names both paths, so it is actionable.
+ * The last-resort guard: after the node-card skip above, no two artifacts may
+ * still claim one path.
+ *
+ * What reaches here is a collision between things that are not node cards, and
+ * a repository can do nothing about those from greplost's side: a composed
+ * `café.tf` beside a decomposed one, or a file whose own path collides with a
+ * node card directory. Silently keeping the last writer would lose an artifact
+ * and leave its inbound links pointing at another page, and `greplost verify`
+ * would then be red on every run, so this is a hard failure. Checked in path
+ * order, and the message names both paths, so it is actionable.
  *
  * Paths are compared **case-folded and NFC-normalised**, because the filesystem
- * the map is written to does the same. `resource "aws_vpc" "Main"` beside
- * `resource "aws_vpc" "main"` is legal Terraform and two distinct ids, but one
- * file on APFS and NTFS; so is a composed `café.tf` beside a decomposed one.
- * An exact-string check passes, the second card silently overwrites the first,
- * and `greplost verify` is then red on every run with nothing the user can do
- * about it. The comparison is folded; the artifact is still written under the
+ * the map is written to does the same; the artifact is still written under the
  * path the id produced.
  */
 function assertNoCardCollision(paths: readonly string[]): void {
   const seen = new Map<string, string>();
   for (const path of [...paths].sort(compareStrings)) {
-    // `toLowerCase`, not `toLocaleLowerCase`: a render must not depend on the
-    // machine's locale (Turkish dotless i would fold two different paths here
-    // and not on the next machine).
-    const folded = path.normalize("NFC").toLowerCase();
+    const folded = foldPath(path);
     const other = seen.get(folded);
     if (other === path) {
       throw new Error(`greplost: card path collision: two artifacts both claim ${path}`);

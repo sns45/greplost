@@ -45,6 +45,13 @@ export interface BuildResult {
    * file is not drift.
    */
   skipped: string[];
+  /**
+   * One line per node card the render had to skip because another artifact
+   * already claims its path on a case-insensitive filesystem (ruling
+   * 2026-09-05). Empty for every normal repo. Not drift either: the skip is a
+   * property of the snapshot, so `verify` renders the same artifact set.
+   */
+  warnings: string[];
 }
 
 /**
@@ -117,8 +124,9 @@ export async function buildArtifacts(root: string, opts: BuildArtifactsOptions =
       merged.set(rel, contents);
     }
   };
+  const warnings: string[] = [];
   add("serializeSnapshot", serializeSnapshot(snapshot));
-  add("renderArtifacts", renderArtifacts({ snapshot, summaries }));
+  add("renderArtifacts", renderArtifacts({ snapshot, summaries, warnings }));
 
   // Sorted, so the map's iteration order does not depend on which producer ran
   // first; `verify` reports "the first divergent path" and means this order.
@@ -127,7 +135,7 @@ export async function buildArtifacts(root: string, opts: BuildArtifactsOptions =
     files.set(rel, merged.get(rel) as string);
   }
 
-  return { snapshot, files, skipped };
+  return { snapshot, files, skipped, warnings };
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
