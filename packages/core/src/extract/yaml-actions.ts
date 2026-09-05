@@ -259,8 +259,8 @@ function scalarList(value: YamlValue | null): Array<{ text: string; node: Node }
  * equal-length rule so offsets stay truthful. Without it a path *inside* an expression looks
  * like a path the step runs: `echo ${{ hashFiles('scripts/x.ts') }}` splits on the quote and
  * offers `scripts/x.ts`, which is a file the workflow never executes. `hashFiles`, `format`,
- * `fromJSON` and `inputs` all take path-shaped arguments, and 207 of the pinned corpus's
- * candidate tokens came from expression interiors (leaf 2.9 fix round 1).
+ * `fromJSON` and `inputs` all take path-shaped arguments: across the 266 `run:` bodies of the
+ * pinned corpus, blanking removes 102 of 239 candidate tokens (leaf 2.9 fix round 1).
  *
  * An unterminated `${{` blanks to the end of the body: whatever follows is inside an expression
  * as far as anyone can tell, and guessing otherwise is how a fragment becomes an edge.

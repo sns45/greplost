@@ -57,7 +57,7 @@ describe("workflow oracle", () => {
     expect(actions.NOTES).toEqual(NOTES);
     // `@actions/workflow-parser` would be a manifest edit this leaf may not make, so the note
     // says what actually read the files.
-    expect(NOTES).toEqual(["js-yaml-oracle"]);
+    expect(NOTES[0]).toBe("js-yaml-oracle");
     expect(FIXTURES["tiny-actions"]?.lang).toBe("yaml");
   });
 
@@ -131,6 +131,81 @@ describe("workflow oracle", () => {
     expect(() => generateTruth(empty, ["nowhere.yml"])).toThrow(/yaml-actions truth is empty/);
     // No files requested is not an empty truth, it is no question: it answers without throwing.
     expect(generateTruth(empty, []).files).toEqual([]);
+  });
+
+  test("the notes disclose every metric this oracle cannot measure and every divergence", () => {
+    expect(NOTES).toEqual(["js-yaml-oracle", "anchors-not-expanded", "config-precision-unmeasured"]);
+    expect(truth.notes).toContain("unsupported:S1");
+    expect(truth.notes).toContain("unsupported:S3");
+    expect(truth.notes).toContain("unsupported:S4");
+  });
+
+  test("a path inside a ${{ }} expression is not a path the step runs", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "greplost-actions-expr-"));
+    temporaryDirs.push(dir);
+    mkdirSync(path.join(dir, ".github", "workflows"), { recursive: true });
+    mkdirSync(path.join(dir, "scripts"), { recursive: true });
+    writeFileSync(path.join(dir, "scripts", "x.ts"), "export const x = 1;\n");
+    writeFileSync(
+      path.join(dir, CI),
+      "on: push\njobs:\n  j:\n    steps:\n      - run: echo ${{ hashFiles('scripts/x.ts') }}\n",
+    );
+    const universe = [CI, "scripts/x.ts"];
+    expect(keys(generateExtra(dir, [CI], universe).references)).toEqual([]);
+
+    // A real path beside an expression still resolves: the span is blanked, not the line.
+    writeFileSync(
+      path.join(dir, CI),
+      "on: push\njobs:\n  j:\n    steps:\n      - run: node scripts/x.ts ${{ inputs.flag }}\n",
+    );
+    expect(keys(generateExtra(dir, [CI], universe).references)).toEqual([`${CI}#step.j.~0 -> scripts/x.ts`]);
+  });
+
+  test("a file under .github/workflows with no `on` key is not a workflow", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "greplost-actions-noon-"));
+    temporaryDirs.push(dir);
+    mkdirSync(path.join(dir, ".github", "workflows"), { recursive: true });
+    const noon = ".github/workflows/noon.yml";
+    writeFileSync(path.join(dir, noon), "jobs:\n  build:\n    steps:\n      - run: true\n");
+    // GitHub will not run it, and `extract/yaml.ts` classifies it `plain`; the oracle must agree
+    // or it demands nodes and exports greplost is right not to have produced.
+    expect(isActionsFile(dir, noon)).toBe(false);
+    expect(flavourOf(noon, dir)).toBe("yaml-k8s");
+    // Without a root the path rules are all the dispatcher has, which is the seam's contract.
+    expect(flavourOf(noon)).toBe("yaml-actions");
+  });
+
+  test("two documents in one file export each job id once, not once per document", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "greplost-actions-docs-"));
+    temporaryDirs.push(dir);
+    mkdirSync(path.join(dir, ".github", "workflows"), { recursive: true });
+    writeFileSync(
+      path.join(dir, CI),
+      "on: push\njobs:\n  one:\n    steps:\n      - run: true\n---\n" +
+        "on: push\njobs:\n  one:\n    steps:\n      - run: true\n  two:\n    steps:\n      - run: true\n",
+    );
+    expect(generateTruth(dir, [CI]).exports[CI]).toEqual(["one", "two"]);
+    // The second `one` is a second node with the same name: the id takes the suffix, the name
+    // does not, and the step under it is `one.~0` with the suffix on its id (driver ruling).
+    expect(generateExtra(dir, [CI], [CI]).nodes).toEqual([
+      `${CI}#job.one`,
+      `${CI}#job.one~2`,
+      `${CI}#job.two`,
+      `${CI}#step.one.~0`,
+      `${CI}#step.one.~0~2`,
+      `${CI}#step.two.~0`,
+    ]);
+  });
+
+  test("a manifest is a manifest even when it spells `on` beside `jobs`", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "greplost-actions-crd-"));
+    temporaryDirs.push(dir);
+    writeFileSync(
+      path.join(dir, "crd.yaml"),
+      "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: c\non: push\njobs:\n  a: {}\n",
+    );
+    expect(isActionsFile(dir, "crd.yaml")).toBe(false);
+    expect(flavourOf("crd.yaml", dir)).toBe("yaml-k8s");
   });
 
   test("a workflow outside .github/workflows is still a workflow, by its content", () => {

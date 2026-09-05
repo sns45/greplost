@@ -104,16 +104,46 @@ export function isHelmFile(file: string): boolean {
  * document from an ordinary YAML file, so it is the one that has to see both.
  */
 export function flavourOf(file: string, root?: string): YamlFlavour {
-  if (isWorkflowFile(file)) return "yaml-actions";
+  // Without a root, the path rules are all there is: the seam's original contract, and what its
+  // own `flavourOf(file)` callers expect.
+  if (root === undefined) {
+    if (isWorkflowFile(file)) return "yaml-actions";
+    if (isHelmFile(file)) return "yaml-helm";
+    return "yaml-k8s";
+  }
+  // Leaf 2.9: the path is neither the whole rule nor a sufficient one, in both directions. A
+  // composite action's `action.yml` and a workflow *template* outside `.github/workflows/` are
+  // Actions files at other paths (the pinned corpus is 174 of the latter); and a file *under*
+  // `.github/workflows/` with no `on:` key is not a workflow at all — GitHub will not run it and
+  // `extract/yaml.ts` classifies it `plain`, so an oracle claiming it would demand nodes and
+  // exports greplost is right not to have produced (leaf 2.9 fix round 1). `isActionsFile`
+  // restates the extractor's whole rule, in order, on js-yaml.
+  if (cachedIsActionsFile(root, file)) return "yaml-actions";
   if (isHelmFile(file)) return "yaml-helm";
-  // Leaf 2.9: the path is not the whole rule. A composite action's `action.yml` and a workflow
-  // *template* outside `.github/workflows/` are both Actions files at other paths, and the
-  // pinned corpus is 174 of the latter, so the content rule `extract/yaml.ts` applies is
-  // restated here — on js-yaml, independently — whenever the caller can say where the files
-  // live. Without a root the path rules are all there is, which is what the seam's own
-  // `flavourOf(file)` callers expect.
-  if (root !== undefined && isActionsFile(root, file)) return "yaml-actions";
   return "yaml-k8s";
+}
+
+/**
+ * `isActionsFile` memoised per `(root, file)`.
+ *
+ * `generateTruth` and `generateExtra` each call `groupByFlavour`, and `structural.ts` calls both
+ * for one target, so a 187-file corpus would otherwise read and parse every file four times
+ * before any truth is computed. Nested maps rather than a joined key, so no separator has to be
+ * a character a path cannot contain.
+ */
+const ACTIONS_FILE_CACHE = new Map<string, Map<string, boolean>>();
+
+function cachedIsActionsFile(root: string, file: string): boolean {
+  let byFile = ACTIONS_FILE_CACHE.get(root);
+  if (byFile === undefined) {
+    byFile = new Map<string, boolean>();
+    ACTIONS_FILE_CACHE.set(root, byFile);
+  }
+  const cached = byFile.get(file);
+  if (cached !== undefined) return cached;
+  const answer = isActionsFile(root, file);
+  byFile.set(file, answer);
+  return answer;
 }
 
 /** Group the file list by flavour, dropping empty groups, in a fixed flavour order. */
