@@ -21,7 +21,6 @@ import { expandDirectoryTargets, impactOf } from "../src/graph/index.ts";
 import { impactPairs, nodesOf, referencedBy, referencesOf } from "../src/graph/query.ts";
 import { compareReferenceEdges, linkReferences, referenceSource } from "../src/references/index.ts";
 import { createResolver } from "../src/resolve/index.ts";
-import { extractDockerfile } from "../src/extract/dockerfile.ts";
 import { extractHcl } from "../src/extract/hcl.ts";
 import { extractPython } from "../src/extract/python.ts";
 import { extractRust } from "../src/extract/rust.ts";
@@ -305,11 +304,14 @@ describe("stubs", () => {
       // python (leaf 2.1), rust (leaf 2.4), java (leaf 2.5) and kotlin (leaf 2.6) are no longer
       // stubs: their own test files (extract-python/rust/java/kotlin.test.ts) hold them to the
       // contract now.
-      ["Dockerfile", (p) => extractDockerfile(p, "dockerfile", "", NO_TREE), /dockerfile extractor .* leaf 2\.10/],
-      // yaml-k8s and yaml-helm (leaf 2.8) and yaml-actions (leaf 2.9) are no longer stubs:
-      // `extract-yaml-k8s.test.ts` and `extract-yaml-actions.test.ts` hold them to the
-      // contract now.
+      // yaml-k8s and yaml-helm (leaf 2.8), yaml-actions (leaf 2.9) and dockerfile (leaf 2.10)
+      // are no longer stubs either: `extract-yaml-k8s.test.ts`, `extract-yaml-actions.test.ts`
+      // and `extract-dockerfile.test.ts` hold them to the contract now.
     ];
+    // Leaf 2.10 was the last one, so the list is empty and this test now states that: every
+    // `Lang` the dispatch table names reaches a real extractor. The loop stays, because a
+    // language added after build 2 lands here first.
+    expect(cases).toEqual([]);
     for (const [file, call, pattern] of cases) {
       expect(() => call(file), file).toThrow(pattern);
       // Every message names the file it happened on, so a failing build is actionable.
@@ -317,14 +319,12 @@ describe("stubs", () => {
     }
   });
 
-  test("every unimplemented resolver builds for free and throws on the first specifier", () => {
-    const ctx = emptyContext([]);
-    const cases: ReadonlyArray<readonly [ReturnType<typeof createDockerfileResolver>, RegExp]> = [
-      [createDockerfileResolver(ctx), /dockerfile resolver .* build-2 leaf 2\.10/],
-    ];
-    for (const [resolve, pattern] of cases) {
-      expect(() => resolve("a/b", "x")).toThrow(pattern);
-    }
+  test("the Dockerfile resolver is implemented: a COPY source nothing indexes is unresolved", () => {
+    // Leaf 2.10 landed, so no language resolver is a stub any more: the module answers for
+    // every specifier and never throws. `extract-dockerfile.test.ts` owns the rules.
+    const resolve = createDockerfileResolver(emptyContext(["Dockerfile"]));
+    expect(resolve("Dockerfile", "package.json")).toEqual({ type: "unresolved" });
+    expect(resolve("Dockerfile", "Dockerfile")).toEqual({ type: "file", path: "Dockerfile" });
   });
 
   test("the Rust resolver is implemented: a `use` of an absent crate is external, not a throw", () => {
@@ -373,9 +373,11 @@ describe("stubs", () => {
     // yaml-actions landed with leaf 2.9: `needs` that names no job in the same file is dropped
     // rather than guessed, and `extract-yaml-actions.test.ts` owns the assertions.
     expect(resolveYamlActionsReferences(record({ lang: "yaml" }), ref({ refKind: "needs" }), ctx)).toBeNull();
-    expect(() =>
-      resolveDockerfileReferences(record({ lang: "dockerfile" }), ref({ refKind: "from-image" }), ctx),
-    ).toThrow(/dockerfile reference resolution .* leaf 2\.10/);
+    // dockerfile landed with leaf 2.10 and behaves the same way: a base image built from a
+    // build variable names no image, so it is dropped rather than turned into an `ext:` node.
+    expect(
+      resolveDockerfileReferences(record({ lang: "dockerfile" }), ref({ refKind: "from-image", to: "$BASE" }), ctx),
+    ).toBeNull();
   });
 
   test("a stub never returns: an empty answer would read as an empty file", () => {
