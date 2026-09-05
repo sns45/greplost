@@ -41,6 +41,13 @@
  * came from the render.
  *
  * `helm` missing from the PATH is a clear `greplost:` error rather than a silent zero.
+ *
+ * `if-else-arms-both-kept` publishes the one class of template greplost reads only partly: the
+ * pre-pass blanks actions and keeps everything between them, so a `{{ if }} egress: … {{ else }}
+ * egress: … {{ end }}` leaves one document with a duplicate key and the grammar recovers what it
+ * can. Choosing an arm would mean evaluating the condition, which means running helm. It is 4
+ * of the pinned corpus's 122 templates, and it costs recall, never precision: the file simply
+ * contributes fewer nodes, and the oracle sees the same file the same way.
  */
 
 import { execFileSync } from "node:child_process";
@@ -57,6 +64,7 @@ export const NOTES: readonly string[] = [
   "helm-template-render",
   "names-not-compared-for-templates",
   "same-regex-both-sides",
+  "if-else-arms-both-kept",
 ];
 
 /**

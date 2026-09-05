@@ -281,8 +281,7 @@ function read(state: K8sState, value: YamlValue | null, ...keys: readonly string
  * span ends on a closing brace, so the difference would show up only here, as a card claiming a
  * line the node does not occupy.
  */
-function trimmedSpan(state: K8sState, node: Node): [number, number] {
-  const source = state.input.source;
+export function trimmedSpanIn(source: string, node: Node): [number, number] {
   let end = node.endIndex;
   let rows = node.endPosition.row + 1;
   while (end > node.startIndex && /\s/u.test(source[end - 1] as string)) {
@@ -291,6 +290,10 @@ function trimmedSpan(state: K8sState, node: Node): [number, number] {
   }
   const start = node.startPosition.row + 1;
   return [start, Math.max(start, rows)];
+}
+
+function trimmedSpan(state: K8sState, node: Node): [number, number] {
+  return trimmedSpanIn(state.input.source, node);
 }
 
 /** A name that `nodeId` will accept: no `#`, newline or NUL, and not empty. */

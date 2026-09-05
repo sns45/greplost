@@ -72,6 +72,9 @@ describe("js-yaml oracle", () => {
       // The `.Values` set is one regular expression written twice, so S5 witnesses agreement
       // and not correctness; only S2 is independently witnessed for a chart (fix round 1).
       "same-regex-both-sides",
+      // Both arms of an `if`/`else` survive the pre-pass, so a template that writes one key in
+      // each leaves a duplicate key and is read only as far as the grammar recovers.
+      "if-else-arms-both-kept",
     ]);
 
     // The `yaml` dispatcher is what `structural.ts` actually asks, so it has to offer both.
@@ -144,6 +147,42 @@ describe("js-yaml oracle", () => {
     expect(dup.nodes).toContain("cm.yaml#resource.ConfigMap.web-config~2");
     // Two candidates for one written name: spec 2.3 drops the edge rather than guessing.
     expect(dup.references.filter((edge) => (edge as { refKind?: string }).refKind === "config-ref")).toEqual([]);
+  });
+
+  test("a scalar YAML types as a number is still a name and a label on both sides", async () => {
+    // greplost reads the text a scalar was written with; js-yaml types it. An oracle that
+    // refused everything non-string dropped `version: 2` out of a selector and out of a pod's
+    // labels, so the two workloads below looked identical to it, its selector matched both and
+    // it drew nothing — scoring greplost's correct, unique edge as a false positive. The same
+    // refusal skipped a whole document whose `metadata.name` was a number (fix round 1).
+    const workload = (name: string, version: string): string =>
+      `apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ${name}\nspec:\n  template:\n    metadata:\n` +
+      `      labels:\n        app: api\n        version: ${version}\n    spec:\n      containers:\n` +
+      `        - name: app\n          image: nginx:1.27\n`;
+    const dir = mkdtempSync(path.join(tmpdir(), "greplost-k8s-scalars-"));
+    temporaryDirs.push(dir);
+    writeFileSync(
+      path.join(dir, "n.yaml"),
+      `${workload("old", "1")}---\n${workload("new", "2")}---\n` +
+        "apiVersion: v1\nkind: Service\nmetadata:\n  name: api\nspec:\n  selector:\n    app: api\n    version: 2\n" +
+        "---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: 2024\n",
+    );
+    const files = ["n.yaml"];
+    const numeric = generateExtra(dir, files);
+    // The numeric label picks exactly one of the two workloads.
+    expect(keys(numeric.references)).toContain("n.yaml#resource.Service.api -> n.yaml#resource.Deployment.new");
+    // The numeric name is a name.
+    expect(numeric.nodes).toContain("n.yaml#resource.ConfigMap.2024");
+    expect(generateTruth(dir, files).exports["n.yaml"]).toContain("ConfigMap.2024");
+
+    const { buildSnapshot } = await import("@greplost/core");
+    const snapshot = await buildSnapshot({ root: dir, config: YAML_CONFIG });
+    const key = (edge: { from: string; to: string; refKind?: string }): string =>
+      `${edge.from} -${edge.refKind ?? ""}-> ${edge.to}`;
+    const S5 = scoreSet((snapshot.references ?? []).map(key), numeric.references.map((e) => key(e as never)));
+    expect([S5.fp, S5.fn]).toEqual([0, 0]);
+    const S6 = scoreSet(snapshot.symbols.map((decl) => decl.id), numeric.nodes);
+    expect([S6.fp, S6.fn]).toEqual([0, 0]);
   });
 
   test("an empty truth is an error, never a score", () => {

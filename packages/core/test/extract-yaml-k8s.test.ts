@@ -436,6 +436,17 @@ describe("helm templates", () => {
     expect(blankTemplates(src)).toHaveLength(src.length);
   });
 
+  test("a comment action closes on its own terminator, however much whitespace opens it", () => {
+    // `{{-`, a newline and an indented comment is still one action: the probe that decides
+    // whether a span is a comment has to read past the whitespace to find the opener.
+    const src = "a: 1\n{{-\n          /* }} not the end }} */ -}}\nb: 2\n";
+    const blanked = blankTemplates(src);
+    expect(blanked).toHaveLength(src.length);
+    expect(blanked.split("\n")[3]).toBe("b: 2");
+    // The whole comment is one span: nothing of it survives as text.
+    expect(blanked).not.toContain("not the end");
+  });
+
   test("newlines inside an action survive, so every later line keeps its number", () => {
     const src = "a: {{ include \"x\"\n  (dict) }}\nb: 1\n";
     const blanked = blankTemplates(src);
@@ -517,6 +528,20 @@ describe("values", () => {
     const out = run("values.yaml", "image:\n  repository: nginx\n  tag: \"1.27\"\nreplicaCount: 1\n");
     expect(out.decls.map((d) => d.id)).toEqual(["values.yaml#variable.image", "values.yaml#variable.replicaCount"]);
     expect(decl(out, "image").meta).toEqual({ flavour: "helm", path: "image" });
+  });
+
+  test("a chart node's span stops on the last line the chart file wrote", () => {
+    // `nodeId` builds the id, and the span is trimmed of the trailing blank the block node
+    // swallows, so both match every other node kind in the map (fix round 1).
+    const chart = run("Chart.yaml", "apiVersion: v2\nname: tiny\nversion: 0.1.0\n\n");
+    expect(chart.decls[0]?.id).toBe("Chart.yaml#module.tiny");
+    expect(chart.decls[0]?.span).toEqual([1, 3]);
+
+    const values = run("values.yaml", "image:\n  repository: nginx\n  tag: \"1.27\"\n\nreplicaCount: 1\n");
+    expect(values.decls.map((d) => [d.id, d.span])).toEqual([
+      ["values.yaml#variable.image", [1, 3]],
+      ["values.yaml#variable.replicaCount", [5, 5]],
+    ]);
   });
 
   test("Chart.yaml yields one module node named after the chart", () => {

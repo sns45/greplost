@@ -85,12 +85,25 @@ function isPlain(value: unknown): value is Plain {
 /**
  * A scalar as the text a name would have been written with.
  *
- * js-yaml has already typed the value; a Kubernetes name, a label value and an image reference
- * are all strings, so anything that is not a string is not one of them and is refused rather
- * than stringified into something that only looks like a name.
+ * A Kubernetes name, a label value and an image reference are all strings *in the file*, but
+ * `version: 2` and `enabled: true` are scalars YAML types on the way in, and js-yaml hands them
+ * back as a number and a boolean. greplost reads the text as written, so an oracle that refused
+ * everything non-string dropped exactly those out of a selector, out of a pod's labels and out
+ * of a `metadata.name`, and then scored greplost's correct edges and nodes as false positives.
+ * Both sides therefore accept the same three scalar types (fix round 1).
+ *
+ * A collection, and `null`, are refused: neither is a scalar and neither can be a name.
+ *
+ * One residue is left, and is smaller than the bug it replaces: js-yaml has already *parsed* a
+ * number, so an unquoted `1.10` comes back as `1.1` and greplost keeps `1.10`. Quoting is the
+ * norm for a version-shaped label and the corpora carry no such case, but a repo that wrote one
+ * would see it as a genuine one-edge difference rather than as a whole metric collapsing.
  */
 function text(value: unknown): string | null {
-  return typeof value === "string" ? value : null;
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return Number.isFinite(value) ? String(value) : null;
+  if (typeof value === "boolean") return String(value);
+  return null;
 }
 
 function get(value: unknown, ...keys: readonly string[]): unknown {
