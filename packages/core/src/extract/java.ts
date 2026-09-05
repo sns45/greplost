@@ -505,9 +505,41 @@ interface CallContext {
   readonly owner: string;
   /** True once a declared method has been entered, so a nested type does not take the caller. */
   readonly inMethod: boolean;
+  /** True once some body's locals have been gathered, so an inner block does not gather again. */
+  readonly scoped: boolean;
 }
 
 const NO_LOCALS: BoundTypes = new Map();
+
+/**
+ * Nodes that own a body with locals of their own.
+ *
+ * A method that became a declaration is handled first and separately; this set is for the
+ * bodies that are *not* declarations and would otherwise see no locals at all — a `static { }`
+ * block, an instance initializer, a field default holding an anonymous class or a lambda, an
+ * enum constant's body, and the methods of an anonymous or local class declared in any of them.
+ * A call written there is attributed to the enclosing named declaration, so its receivers have
+ * to be typed here or the call is silently dropped: on gson that was 32 of the missed call
+ * edges.
+ */
+const SCOPE_NODES: ReadonlySet<string> = new Set([
+  "block",
+  "compact_constructor_declaration",
+  "constant_declaration",
+  "constructor_declaration",
+  "enum_constant",
+  "field_declaration",
+  "method_declaration",
+  "static_initializer",
+]);
+
+/** Outer bindings plus the ones a body of its own introduces; a shadow with a new type binds nothing. */
+function merged(outer: BoundTypes, inner: BoundTypes): BoundTypes {
+  if (outer.size === 0) return inner;
+  const out: BoundTypes = new Map(outer);
+  for (const [name, type] of inner) bind(out, name, type);
+  return out;
+}
 
 /**
  * The type a receiver name is written as: `undefined` when the name is not bound here at all
@@ -558,13 +590,19 @@ function collectCalls(state: JavaState, root: Node): void {
       // class body is *not* one: its calls belong to the method that contains it, which is what
       // the javac oracle says too (an anonymous class has no name to attribute them to).
       const owner = caller.slice(0, Math.max(caller.lastIndexOf("."), 0));
-      next = { caller, locals: localTypes(node), owner, inMethod: true };
-    } else if (!ctx.inMethod && TYPE_KIND[node.type] !== undefined) {
+      next = { caller, locals: localTypes(node), owner, inMethod: true, scoped: true };
+    } else if (!ctx.inMethod && !ctx.scoped && TYPE_KIND[node.type] !== undefined) {
+      // A named type met outside any body: its initializers and its constants are attributed to
+      // it. A *local* class, declared inside a body, is not — it has no name a call can be
+      // attributed to, so `scoped` keeps the enclosing declaration as the caller, which is
+      // where javac's own walk lands too.
       const nameNode = field(node, "name");
       if (nameNode !== null) {
         const dotted = ctx.owner === "" ? nameNode.text : `${ctx.owner}.${nameNode.text}`;
-        next = { caller: dotted, locals: NO_LOCALS, owner: dotted, inMethod: false };
+        next = { caller: dotted, locals: NO_LOCALS, owner: dotted, inMethod: false, scoped: false };
       }
+    } else if (!ctx.scoped && SCOPE_NODES.has(node.type)) {
+      next = { ...ctx, locals: merged(ctx.locals, localTypes(node)), scoped: true };
     }
 
     if (node.type === "method_invocation" || node.type === "object_creation_expression") {
@@ -576,7 +614,7 @@ function collectCalls(state: JavaState, root: Node): void {
       if (child !== null) walk(child, next);
     }
   };
-  walk(root, { caller: "", locals: NO_LOCALS, owner: "", inMethod: false });
+  walk(root, { caller: "", locals: NO_LOCALS, owner: "", inMethod: false, scoped: false });
 }
 
 // ---------------------------------------------------------------------------

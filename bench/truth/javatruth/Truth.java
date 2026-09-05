@@ -408,7 +408,17 @@ public final class Truth {
       Tree identifier = tree.getQualifiedIdentifier();
       if (identifier == null) continue;
       String fqn = identifier.toString().replaceAll("\\s+", "");
-      if (fqn.endsWith(".*")) continue;
+      if (fqn.endsWith(".*")) {
+        // An on-demand import names either a package (`java.util.*`, no file to point at) or a
+        // *type* whose static members are being pulled in (`import static p.Consts.*`). The
+        // second is a dependency on that type's file and greplost resolves it as one, so the
+        // oracle has to as well or every such import is a false positive by construction.
+        fqn = fqn.substring(0, fqn.length() - 2);
+        TypeElement onDemand = elements.getTypeElement(fqn);
+        if (onDemand == null) continue;
+        addImport(file, fileOf(onDemand), out);
+        continue;
+      }
       TypeElement type = null;
       for (String candidate = fqn; candidate.contains("."); ) {
         type = elements.getTypeElement(candidate);
@@ -416,12 +426,20 @@ public final class Truth {
         candidate = candidate.substring(0, candidate.lastIndexOf('.'));
       }
       if (type == null) continue;
-      String target = fileOf(type);
-      // A file importing a nested type of its own is not an edge; greplost's linker drops a
-      // self-import for every language, so the oracle must not carry one either.
-      if (target.isEmpty() || target.equals(file) || !seen.contains(target)) continue;
-      out.add(file + " " + target);
+      addImport(file, fileOf(type), out);
     }
+  }
+
+  /**
+   * One import edge, if it is one at all.
+   *
+   * A file importing a nested type of its own is not an edge: greplost's linker drops a
+   * self-import for every language, so the oracle must not carry one either. The separator is
+   * NUL because a repo-relative path may contain a space but never a NUL.
+   */
+  private void addImport(String file, String target, Set<String> out) {
+    if (target.isEmpty() || target.equals(file) || !seen.contains(target)) return;
+    out.add(file + "\0" + target);
   }
 
   // -------------------------------------------------------------------------
@@ -439,10 +457,7 @@ public final class Truth {
 
           @Override
           public Void visitNewClass(NewClassTree node, Void unused) {
-            // `RED, GREEN` in an enum body is a `new` the compiler wrote, not the author: it
-            // would otherwise be an edge from the enum to itself that nobody can read in the
-            // source and that greplost, reading only what is written, never emits.
-            if (!isEnumConstant(getCurrentPath().getParentPath())) record(getCurrentPath(), out);
+            record(getCurrentPath(), out);
             return super.visitNewClass(node, unused);
           }
         };
@@ -456,7 +471,48 @@ public final class Truth {
     return element != null && element.getKind() == ElementKind.ENUM_CONSTANT;
   }
 
+  /**
+   * True when a call sits inside a member javac generated rather than read.
+   *
+   * javac fills the tree in as it goes: an enum gets a constructor calling `Enum(String,int)`,
+   * and a *bodied* enum constant (`A { int n(){…} }`) gets a whole anonymous subclass whose
+   * generated constructor calls the enum's own. Nobody wrote either `super()`, and greplost —
+   * which reads only what is written — emits neither, so the second one showed up as an
+   * unreadable edge from the enum to itself. The enclosing member's `Origin` is the compiler's
+   * own answer to "did a human write this": `MANDATED` for both, `EXPLICIT` for real code.
+   *
+   * The walk stops at the first enclosing method, so a call inside a constant's body that a
+   * human *did* write is still truth.
+   */
+  private boolean generatedContext(TreePath path) {
+    for (TreePath current = path.getParentPath(); current != null; current = current.getParentPath()) {
+      if (!(current.getLeaf() instanceof MethodTree)) continue;
+      Element enclosing = trees.getElement(current);
+      if (enclosing == null || writtenInSource(enclosing)) return false;
+      return !isAuthoredAnonymousClass(current.getParentPath());
+    }
+    return false;
+  }
+
+  /**
+   * True when this path is the body of a `new X() { … }` an author actually wrote.
+   *
+   * The distinction the rule above turns on. javac gives such a body a constructor of its own
+   * whose `super()` calls `X`'s — and that `super()` is precisely what the author's `new` means,
+   * the edge a reader wants and the one greplost publishes from the `new` itself. A *bodied
+   * enum constant* compiles to the same shape from source nobody wrote as a `new` at all, so
+   * its `super()` is an edge from the enum to itself that appears in no source file.
+   */
+  private boolean isAuthoredAnonymousClass(TreePath path) {
+    if (path == null || !(path.getLeaf() instanceof ClassTree)) return false;
+    Element element = trees.getElement(path);
+    if (!(element instanceof TypeElement type) || type.getNestingKind() != NestingKind.ANONYMOUS) return false;
+    TreePath creation = path.getParentPath();
+    return creation == null || !isEnumConstant(creation.getParentPath());
+  }
+
   private void record(TreePath path, Set<String> out) {
+    if (generatedContext(path)) return;
     Element target = trees.getElement(path);
     if (!(target instanceof ExecutableElement callee)) return;
     String targetFile = fileOf(target);
@@ -471,6 +527,9 @@ public final class Truth {
       // type itself; any other generated member (a record accessor, an enum's `values`) has
       // nothing to point at and the call is not truth.
       if (callee.getKind() != ElementKind.CONSTRUCTOR) return;
+      // A bare `RED, GREEN` is a construction the compiler wrote: the constant *is* the `new`,
+      // so there is no generated method around it for `generatedContext` to catch.
+      if (isEnumConstant(path.getParentPath())) return;
       to = ownerName;
     } else {
       to = ownerName + "." + simpleName(callee, owner);
@@ -479,7 +538,7 @@ public final class Truth {
 
     String from = callerOf(path);
     if (from == null) return;
-    out.add(from + " " + targetFile + "#" + to);
+    out.add(from + "\0" + targetFile + "#" + to);
   }
 
   private int count(String file, String name) {
@@ -545,7 +604,7 @@ public final class Truth {
     out.append('[');
     boolean first = true;
     for (String edge : edges) {
-      int at = edge.indexOf(' ');
+      int at = edge.indexOf('\0');
       if (at < 0) continue;
       if (!first) out.append(',');
       first = false;

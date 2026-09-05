@@ -76,8 +76,17 @@ describe("java tool", () => {
   });
 
   test("the oracle discloses how it was built", () => {
-    expect([...NOTES]).toEqual(["javac-tree-api", "source-classpath-only", "unresolved-files-dropped"]);
+    expect([...NOTES]).toEqual([
+      "javac-tree-api",
+      "source-classpath-only",
+      "unresolved-files-dropped",
+      "no-overload-resolution",
+      "no-inherited-dispatch",
+      "module-info-not-scored",
+    ]);
     expect(truth.notes).toEqual([...NOTES]);
+    // Disclosure, never a gate: no note here is one of the two spellings the harness reads.
+    expect(NOTES.some((note) => note.startsWith("unsupported:") || note === "reported-only")).toBe(false);
   });
 });
 
@@ -86,16 +95,23 @@ describe("fixture truth", () => {
     expect(truth.files).toEqual(FIXTURE_FILES);
   });
 
-  test("the plain import and the static import are both edges", () => {
+  test("the plain, named-static and on-demand-static imports are all edges", () => {
     expect(keys(truth.imports)).toEqual([
       `${SRC}/App.java -> ${SRC}/Retry.java`,
       `${SRC}/App.java -> ${SRC}/Store.java`,
+      // `import static tiny.Retry.*` in Store.java: an on-demand import whose prefix names a
+      // *type* is a dependency on that type's file, and greplost resolves it as one, so an
+      // oracle that skipped every on-demand import would make it a false positive by
+      // construction.
+      `${SRC}/Store.java -> ${SRC}/Retry.java`,
     ]);
     expect(truth.imports.every((e) => e.kind === "import" && e.confidence === "high")).toBe(true);
   });
 
   test("a JDK import and a same-package reference are never edge targets", () => {
-    // `Store.java` imports `java.util.*` and uses `Marker` with no import at all.
+    // `Store.java` imports `java.util.ArrayList` and `java.util.List`, neither of which is a
+    // file of this repo, and it implements `Marker` with no import at all: they share a
+    // package, which is the one Java dependency that has no import statement behind it.
     expect(truth.imports.some((e) => e.to.startsWith("ext:") || e.to.includes("java/util"))).toBe(false);
     expect(keys(truth.imports)).not.toContain(`${SRC}/Store.java -> ${SRC}/Marker.java`);
   });
@@ -145,6 +161,35 @@ describe("fixture truth", () => {
     expect(truth.calls.some((e) => e.to === `${SRC}/App.java#App.Colour`)).toBe(false);
   });
 
+  test("a call inside a member javac generated is never truth", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "greplost-java-enum-"));
+    temps.push(root);
+    writeFileSync(
+      path.join(root, "Bodied.java"),
+      [
+        "public enum Bodied {",
+        "  A {",
+        "    public int n() {",
+        "      return 1;",
+        "    }",
+        "  },",
+        "  B;",
+        "",
+        "  public int n() {",
+        "    return 0;",
+        "  }",
+        "}",
+        "",
+      ].join("\n"),
+    );
+    // A bodied enum constant compiles to an anonymous subclass whose *generated* constructor
+    // calls the enum's own, which used to surface as an unreadable `Bodied -> Bodied` edge.
+    // Nobody wrote that `super()`, so it is not a call, and neither is the bare `B`.
+    const generated = generateTruth(root, ["Bodied.java"]);
+    expect(keys(generated.calls)).toEqual([]);
+    expect(generated.exports["Bodied.java"]).toEqual(["Bodied", "Bodied.A", "Bodied.B", "Bodied.n"]);
+  });
+
   test("the fixture has no import cycle", () => {
     expect(truth.cycles).toEqual([]);
   });
@@ -157,7 +202,8 @@ describe("fixture truth", () => {
   test("a caller file list narrows the universe on both ends", () => {
     const narrowed = generateTruth(fixtureRoot, [`${SRC}/Retry.java`, `${SRC}/Store.java`]);
     expect(narrowed.files).toEqual([`${SRC}/Retry.java`, `${SRC}/Store.java`]);
-    expect(keys(narrowed.imports)).toEqual([]);
+    // `App`'s two imports leave the universe; `Store`'s on-demand static import stays.
+    expect(keys(narrowed.imports)).toEqual([`${SRC}/Store.java -> ${SRC}/Retry.java`]);
     // `App`'s calls leave the universe and are dropped from both ends.
     expect(keys(narrowed.calls)).toEqual([
       `${SRC}/Retry.java#Retry.warm -> ${SRC}/Retry.java#Retry.attempts`,
@@ -231,7 +277,10 @@ describe("oracle independence", () => {
     const after = generateTruth(root, FIXTURE_FILES);
     // `Store` is still reachable — it is a sibling in the same package — so the file still
     // compiles and the calls stay, but the *import* edge is gone.
-    expect(keys(after.imports)).toEqual([`${SRC}/App.java -> ${SRC}/Retry.java`]);
+    expect(keys(after.imports)).toEqual([
+      `${SRC}/App.java -> ${SRC}/Retry.java`,
+      `${SRC}/Store.java -> ${SRC}/Retry.java`,
+    ]);
     expect(keys(after.calls)).toContain(`${SRC}/App.java#App.run -> ${SRC}/Store.java#Store.put`);
   });
 });

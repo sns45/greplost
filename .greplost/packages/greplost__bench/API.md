@@ -433,9 +433,9 @@
 
 ## bench/src/truth/java.ts
 
-- `const NOTES: readonly string[] = ["javac-tree-api", "source-classpath-only", "unresolved-files-dropped"]` L59-59
-- `function javaTruthTool(): string` L144-163
-- `function generateTruth(root: string, files: string[]): Truth` L291-347
+- `const NOTES: readonly string[] = [ "javac-tree-api", "source-classpath-only", "unresolved-files-dropped", "no-overload-resolution", "no-inherited-dispatch", "module-info-not-scored", ]` L66-73
+- `function javaTruthTool(): string` L158-177
+- `function generateTruth(root: string, files: string[]): Truth` L305-361
 
 ## bench/src/truth/kotlin.ts
 
@@ -517,20 +517,20 @@
 ## bench/src/truth/yaml-helm.ts
 
 - `const NOTES: readonly string[] = [ "js-yaml-oracle", "helm-template-render", "names-not-compared-for-templates", "same-regex-both-sides", "if-else-arms-both-kept", ]` L62-68
-- `function helmBinary(): string` L106-120
-- `interface RenderedDocument` L123-128
-- `function helmRender(chartDir: string): RenderedDocument[] | null` L137-174
-- `function chartsOf(files: readonly string[]): Chart[]` L195-224
-- `function literalImages(source: string, file: string): Array<{ from: string; image: string }>` L281-348
-- `function generateTruth(root: string, files: string[]): Truth` L413-429
-- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }` L449-525
+- `function helmBinary(): string` L108-122
+- `interface RenderedDocument` L125-130
+- `function helmRender(chartDir: string): RenderedDocument[] | null` L139-176
+- `function chartsOf(files: readonly string[]): Chart[]` L197-226
+- `function literalImages(source: string, file: string): Array<{ from: string; image: string }>` L283-350
+- `function generateTruth(root: string, files: string[]): Truth` L415-431
+- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }` L451-527
 
 ## bench/src/truth/yaml-k8s.ts
 
 - `const NOTES: readonly string[] = ["js-yaml-oracle"]` L45-45
-- `type ReferenceTruth = Edge & { readonly refKind: string }` L327-327
-- `function generateTruth(root: string, files: string[]): Truth` L340-357
-- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }` L368-429
+- `type ReferenceTruth = Edge & { readonly refKind: string }` L329-329
+- `function generateTruth(root: string, files: string[]): Truth` L342-359
+- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }` L370-431
 
 ## bench/src/truth/yaml.ts
 
