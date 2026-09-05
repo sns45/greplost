@@ -24,13 +24,20 @@
  * `./gradlew compileKotlin` inside the corpus, then point this same `javap -v` reader at the
  * Gradle-produced classfiles.
  *
+ * Numbers `RESULTS.md` should carry next to Kotlin's row, measured on the pinned corpus
+ * (kotlinx.coroutines, 163 files) at leaf 2.6 fix round 1: of 515 import records, 77 are named
+ * imports and 438 are wildcards. The named ones give 24 in-repo file edges; a wildcard names a
+ * package rather than a file and is left `unresolved` rather than guessed, and 193 of those
+ * sites have exactly one in-repo declarer of the name actually used - so a per-symbol use
+ * analysis would recover them. That is a build-3 job, not a threshold to move here.
+ *
  * The oracle's output is cached under `bench/.corpus/.tools/`, keyed by a 16-hex hash of the
  * tool's own sources and of the sources it is asked about, exactly as `truth/go.ts` caches its
  * built helper: a fixture edit invalidates the cache and nothing else does. The host's
  * `kotlinc` version is deliberately **not** part of the key and never reaches the output (driver
  * ruling 2026-09-04): a benchmark artifact may not carry a fact about the machine that made it.
  */
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -55,6 +62,17 @@ const MAX_BUFFER = 128 * 1024 * 1024;
  * `reported-only` is deliberately absent here and added per run, for a corpus root only: in
  * `NOTES` it would make the *fixture* gate vacuous too, and the fixture is the one place Kotlin
  * has compiler truth.
+ *
+ * The last two tags are the oracle's two known disagreements with the map, both measured and
+ * both kept out of the fixture rather than papered over:
+ *
+ *  - `internal-class-is-public-in-bytecode`: Kotlin mangles an `internal` *member* to
+ *    `name$module`, which this reader drops, so it agrees with the map that an internal member
+ *    is not exported - but an `internal` *class* stays `ACC_PUBLIC`, so the oracle would call
+ *    it exported where the map does not (an S2 false positive on the truth side).
+ *  - `object-protocol-overrides-dropped`: `equals`, `hashCode` and `toString` at their standard
+ *    descriptors are dropped, because every data class generates them; a hand-written
+ *    `override fun toString()` is dropped with them (an S2 false negative on the truth side).
  */
 export const NOTES: readonly string[] = [
   "fixture-oracle-only",
@@ -62,6 +80,8 @@ export const NOTES: readonly string[] = [
   "kotlinc-javap-classfiles",
   "jvm-synthetics-dropped",
   "property-access-not-a-call",
+  "internal-class-is-public-in-bytecode",
+  "object-protocol-overrides-dropped",
 ];
 
 /** The note that turns every metric into `n/a` for a target this oracle cannot measure. */
@@ -108,24 +128,62 @@ export function kotlinTruthTool(): string {
 }
 
 /**
- * True when this machine can run the oracle at all.
+ * The oldest kotlinc this oracle is written against, as [major, minor].
  *
- * A boolean, never the version string: the version is a fact about the machine and belongs in
- * the leaf's gate evidence, not in a benchmark artifact (driver ruling 2026-09-04).
+ * `parse_javap.py` reads `kotlin.Metadata`'s `k` field and the `$this$<name>` receiver marker;
+ * both are stable, but which synthetics a compiler emits is not, and the fixture's pinned edge
+ * lists were measured against 2.4. An older compiler is not a failure of this leaf, so the tests
+ * skip on it rather than reporting a difference nobody can act on. CI installs 2.4.10 ahead of
+ * the runner image's own copy; the probe reads the **first** `kotlinc` on `PATH`, which is that
+ * one - `execFileSync` resolves a bare command name the way `execvp` does.
  */
-export function hasKotlinToolchain(): boolean {
+export const KOTLINC_FLOOR: readonly [number, number] = [2, 4];
+
+/** `info: kotlinc-jvm 2.4.10 (JRE 24.0.2+12)` -> [2, 4, 10]; null when the banner says nothing. */
+export function kotlincVersion(banner: string): [number, number, number] | null {
+  const match = /kotlinc-jvm (\d+)\.(\d+)\.(\d+)/u.exec(banner);
+  if (match === null) return null;
+  return [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+
+/**
+ * Why this machine cannot run the oracle, as one sentence, or null when it can.
+ *
+ * The version is compared, never returned: what reaches a caller is a reason to skip, and what
+ * reaches an artifact is nothing at all (driver ruling 2026-09-04).
+ */
+export function kotlinToolchainProblem(): string | null {
+  const banner = compilerStamp();
+  if (banner === "") {
+    return 'no kotlinc on PATH (install it with "brew install kotlin"; CI installs 2.4.10)';
+  }
+  const version = kotlincVersion(banner);
+  if (version === null) return "the kotlinc on PATH printed no recognisable version banner";
+  const [major, minor] = KOTLINC_FLOOR;
+  if (version[0] < major || (version[0] === major && version[1] < minor)) {
+    return `the kotlinc on PATH is ${version[0]}.${version[1]}, older than the ${major}.${minor} floor this oracle is written against`;
+  }
   for (const [command, args] of [
-    ["kotlinc", ["-version"]],
     ["javap", ["-version"]],
     ["python3", ["--version"]],
   ] as const) {
     try {
       execFileSync(command, [...args], { stdio: "ignore", timeout: RUN_TIMEOUT_MS });
     } catch {
-      return false;
+      return `${command} is not on PATH (the oracle needs a JDK's javap and python3)`;
     }
   }
-  return true;
+  return null;
+}
+
+/**
+ * True when this machine can run the oracle at all.
+ *
+ * A boolean, never the version string: the version is a fact about the machine and belongs in
+ * the leaf's gate evidence, not in a benchmark artifact (driver ruling 2026-09-04).
+ */
+export function hasKotlinToolchain(): boolean {
+  return kotlinToolchainProblem() === null;
 }
 
 /** True when `root` is one of this repo's own fixtures, which is all this oracle measures. */
@@ -141,9 +199,33 @@ function stderrOf(cause: unknown): string {
   return text.length > 2000 ? `${text.slice(0, 2000)}…` : text;
 }
 
-/** sha256 of the oracle's sources and of the sources it is asked about, as 16 hex characters. */
+/**
+ * The compiler's own version banner, or "" when it cannot be read.
+ *
+ * It is used in two places and reaches no third: the **cache key**, because a cached document
+ * is only valid for the compiler that produced it (two kotlinc versions disagree about which
+ * synthetics they emit), and the toolchain floor check below. A key is not output and a floor
+ * check returns a reason, so no fact about the machine reaches an artifact (driver ruling
+ * 2026-09-04). `generateTruth` never sees it.
+ */
+function compilerStamp(): string {
+  // `spawnSync`, not `execFileSync`: kotlinc prints `info: kotlinc-jvm 2.4.10 (JRE ...)` on
+  // **stderr** and exits 0, and `execFileSync` returns only stdout on success - it would hand
+  // back an empty string for a healthy compiler, which is how a version silently stopped
+  // reaching the cache key before the floor check caught it (CI, 2026-09-05).
+  const run = spawnSync("kotlinc", ["-version"], { encoding: "utf8", timeout: RUN_TIMEOUT_MS });
+  if (run.error !== undefined) return "";
+  return `${run.stdout ?? ""}${run.stderr ?? ""}`.trim();
+}
+
+/**
+ * sha256 of the oracle's sources, of the compiler that will run them, and of the sources it is
+ * asked about, as 16 hex characters.
+ */
 function runHash(root: string, files: readonly string[]): string {
   const hash = createHash("sha256");
+  hash.update(compilerStamp());
+  hash.update("\n");
   for (const name of TOOL_SOURCES) {
     const file = path.join(TOOL_SOURCE_DIR, name);
     if (!existsSync(file)) {
