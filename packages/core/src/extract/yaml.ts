@@ -133,14 +133,19 @@ function findMapping(node: Node): Node | null {
  * top-level `on` *and* `jobs` is a GitHub Actions workflow and nothing else writes that pair
  * (GitLab CI has no `on`, CircleCI no `on`, Azure Pipelines `trigger` rather than `on`), and
  * `runs` at the top level of a file literally named `action.yml` is the action definition
- * format. They sit *after* the Helm rule, so no chart file changes flavour.
+ * format. They sit *after* the Helm and Kubernetes rules, so neither a chart file nor a
+ * manifest can change flavour: a content rule only ever claims a document nothing else wanted.
  */
 export function classifyYamlDocument(path: string, keys: readonly string[]): YamlFlavour {
   if (isWorkflowPath(path) && keys.includes("on")) return "actions";
   if (isHelmPath(path)) return "helm";
+  // The two content rules sit *below* `apiVersion`+`kind`, so a manifest is a manifest even if
+  // some CRD one day spells a key `jobs` beside a key `on` (leaf 2.9 fix round 1): the older,
+  // narrower rule keeps precedence, and the new one only ever claims a document nothing else
+  // wanted.
+  if (keys.includes("apiVersion") && keys.includes("kind")) return "k8s";
   if (keys.includes("on") && keys.includes("jobs")) return "actions";
   if (isActionDefinitionPath(path) && keys.includes("runs")) return "actions";
-  if (keys.includes("apiVersion") && keys.includes("kind")) return "k8s";
   return "plain";
 }
 
