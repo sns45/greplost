@@ -8,42 +8,53 @@ Numbers are never typed by hand: every measured cell comes from a committed payl
 - [x] N1: the child gates file is fully met
   CHECK: node ~/.claude/skills/unlazy/scripts/gate-check.mjs --status gates/leaf-2.12.md
   EXPECT: ALL MET
+  EVIDENCE: gates/leaf-2.12.md: 13 gates | ALL MET (13 met)
 
 - [x] N2: bench typechecks
   CHECK: bunx tsc -p bench/tsconfig.json --noEmit
+  EVIDENCE: (no output)
 
 - [x] N3: the bench suite is green
   CHECK: bun test bench 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
+  EVIDENCE: 3728 expect() calls | Ran 641 tests across 22 files. [78.26s]
 
 - [x] N4: a dry run of every suite still writes a complete RESULTS.md and no payload
   CHECK: bun run bench:all --dry-run 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: report: wrote bench/RESULTS.md
+  EVIDENCE: headtohead: dry-run ok | report: wrote bench/RESULTS.md
 
 - [x] N5: every build-2 language has a row with a named truth source; describe('per-lang targets')
   CHECK: bun test bench/test/structural-langs.test.ts -t "per-lang targets" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
+  EVIDENCE: 34 expect() calls | Ran 6 tests across 1 file. [120.00ms]
 
 - [x] N6: RESULTS.md states the head-to-head scope in one sentence
   CHECK: grep -c 'X1 to X10 cover TypeScript and Go only' bench/RESULTS.md
   EXPECT: /^[1-9]/m
+  EVIDENCE: 1
 
 - [x] N7: RESULTS.md names Kotlin as reported-only with its reason
   CHECK: grep -qi 'kotlin' bench/RESULTS.md && grep -q 'reported-only' bench/RESULTS.md && echo "kotlin: reported-only, documented"
   EXPECT: kotlin: reported-only, documented
+  EVIDENCE: kotlin: reported-only, documented
 
 - [x] N8: the README is in step with RESULTS.md and every image it references exists and is tracked
   CHECK: bun run readme:check 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: sync-readme: README.md up to date
+  EVIDENCE: $ bun scripts/sync-readme.ts --check | sync-readme: README.md up to date
 
 - [x] N9: the README shows numbers only with a link to RESULTS.md
   CHECK: grep -c 'bench/RESULTS.md' README.md
   EXPECT: /^[1-9]/m
+  EVIDENCE: 9
 
 - [x] N10: greplost verifies its own committed map after the config gained yaml and dockerfile
   CHECK: bun packages/cli/src/main.ts verify --diff 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: map is in sync
+  EVIDENCE: greplost: map is in sync
 
 - [x] N11: the full suite is green from a frozen install
   CHECK: bun install --frozen-lockfile >/dev/null && bun test 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
+  EVIDENCE: 17272 expect() calls | Ran 2116 tests across 66 files. [108.67s]
