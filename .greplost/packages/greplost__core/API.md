@@ -109,7 +109,11 @@
 
 ## packages/core/src/extract/yaml-actions.ts
 
-- `function extractYamlActions( path: string, _lang: Lang, _source: string, _tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L12-19
+- `const COMPOSITE_JOB_ID = "runs"` L60-60
+- `function runPathTokens(body: string): string[]` L243-259
+- `function refOf(uses: string): string | null` L306-309
+- `function isActionDefinitionPath(path: string): boolean` L381-385
+- `function extractYamlActions(path: string, _lang: Lang, source: string, tree: Tree): YamlParts` L422-434
 
 ## packages/core/src/extract/yaml-doc.ts
 
@@ -149,9 +153,9 @@
 - `function isWorkflowPath(path: string): boolean` L62-70
 - `function isHelmPath(path: string): boolean` L73-76
 - `function documentKeys(document: Node): string[]` L96-106
-- `function classifyYamlDocument(path: string, keys: readonly string[]): YamlFlavour` L123-128
-- `function classifyYamlFile(path: string, tree: Tree): YamlFlavour` L134-144
-- `function extractYaml( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L146-162
+- `function classifyYamlDocument(path: string, keys: readonly string[]): YamlFlavour` L138-145
+- `function classifyYamlFile(path: string, tree: Tree): YamlFlavour` L151-161
+- `function extractYaml( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L163-179
 
 ## packages/core/src/graph/blast.ts
 
@@ -280,7 +284,8 @@
 
 ## packages/core/src/references/yaml-actions.ts
 
-- `function resolveYamlActionsReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null` L12-21
+- `function externalUsesId(uses: string): string | null` L170-178
+- `function resolveYamlActionsReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L204-219
 
 ## packages/core/src/references/yaml-k8s.ts
 
@@ -288,7 +293,7 @@
 
 ## packages/core/src/references/yaml.ts
 
-- `function resolveYamlReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L24-32
+- `function resolveYamlReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L36-44
 
 ## packages/core/src/resolve/dockerfile.ts
 

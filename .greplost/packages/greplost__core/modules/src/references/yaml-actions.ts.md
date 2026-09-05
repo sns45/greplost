@@ -6,13 +6,28 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `resolveYamlActionsReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null`
+**Exports:** `externalUsesId(uses: string): string | null`, `resolveYamlActionsReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null`
 
-**Imports:** [`../schema.ts`](../schema.ts.md) (FileRecord, ReferenceEdge, ReferenceRecord), [`./link.ts`](link.ts.md) (ReferenceContext)
+**Imports:** [`../schema.ts`](../schema.ts.md) (Declaration, FileRecord, ReferenceEdge, ReferenceRecord, externalId), [`./link.ts`](link.ts.md) (ReferenceContext, referenceSource)
 
 **Imported by:** [`packages/core/src/references/index.ts`](index.ts.md), [`packages/core/src/references/yaml.ts`](yaml.ts.md)
 
 **Blast radius:** 40 files (`greplost impact packages/core/src/references/yaml-actions.ts`)
 
 **Key symbols:**
-- `function resolveYamlActionsReferences( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null`  L12-21
+- `const ACTION_NAMESPACE = "action/"`  L40-40
+- `const ACTION_FILES: readonly string[] = ["action.yml", "action.yaml"]`  L43-43
+- `const JOBS_BY_CONTEXT = new WeakMap<ReferenceContext, ReadonlyMap<string, readonly Declaration[]>>()`  L51-51
+- `const PATHS_BY_CONTEXT = new WeakMap<ReferenceContext, ReadonlyMap<string, readonly string[]>>()`  L52-52
+- `function jobsFor(ctx: ReferenceContext): ReadonlyMap<string, readonly Declaration[]>`  L55-70
+- `function pathsFor(ctx: ReferenceContext): ReadonlyMap<string, readonly string[]>`  L80-100
+- `function edge( file: FileRecord, ref: ReferenceRecord, to: string, confidence: ReferenceEdge["confidence"], ): ReferenceEdge`  L102-117
+- `function resolveNeeds(file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext): ReferenceEdge | null`  L120-127
+- `function joinFromFile(fromFile: string, relative: string): string | null`  L130-143
+- `function resolveLocalUses(target: string, ctx: ReferenceContext): string | null`  L153-162
+- `function externalUsesId(uses: string): string | null`  L170-178
+- `function resolveUses(file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext): ReferenceEdge | null`  L181-188
+- `function resolveConfig(file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext): ReferenceEdge | null`  L191-198
+- `function resolveYamlActionsReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null`  L204-219
+
+**Calls:** `referenceSource` → [`packages/core/src/references/link.ts#referenceSource`](link.ts.md) (high), `edge` → [`packages/core/src/references/yaml-actions.ts#edge`](yaml-actions.ts.md) (high), `externalUsesId` → [`packages/core/src/references/yaml-actions.ts#externalUsesId`](yaml-actions.ts.md) (high), `jobsFor` → [`packages/core/src/references/yaml-actions.ts#jobsFor`](yaml-actions.ts.md) (high), `joinFromFile` → [`packages/core/src/references/yaml-actions.ts#joinFromFile`](yaml-actions.ts.md) (high), `pathsFor` → [`packages/core/src/references/yaml-actions.ts#pathsFor`](yaml-actions.ts.md) (high), `resolveConfig` → [`packages/core/src/references/yaml-actions.ts#resolveConfig`](yaml-actions.ts.md) (high), `resolveLocalUses` → [`packages/core/src/references/yaml-actions.ts#resolveLocalUses`](yaml-actions.ts.md) (high), `resolveNeeds` → [`packages/core/src/references/yaml-actions.ts#resolveNeeds`](yaml-actions.ts.md) (high), `resolveUses` → [`packages/core/src/references/yaml-actions.ts#resolveUses`](yaml-actions.ts.md) (high), `externalId` → [`packages/core/src/schema.ts#externalId`](../schema.ts.md) (high)

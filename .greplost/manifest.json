@@ -885,14 +885,17 @@
       "blast": 1,
       "exports": [
         "NOTES",
-        "generateTruth"
+        "ReferenceTruth",
+        "generateExtra",
+        "generateTruth",
+        "isActionsFile"
       ],
       "fanIn": 1,
-      "fanOut": 1,
+      "fanOut": 2,
       "lang": "ts",
-      "loc": 22,
+      "loc": 471,
       "pkg": "@greplost/bench",
-      "sha256": "a8434a48a57c2d2f6364bf8c67f0ec1634b4412cee68a783a6d139d3c2d8bcb7",
+      "sha256": "22ffdbd6d603a05450e466f629898f61dee1e5191e98ead5480af5f1ba4ef4bd",
       "staleSummary": false
     },
     "bench/src/truth/yaml-helm.ts": {
@@ -945,9 +948,9 @@
       "fanIn": 0,
       "fanOut": 5,
       "lang": "ts",
-      "loc": 164,
+      "loc": 182,
       "pkg": "@greplost/bench",
-      "sha256": "0c229fb51893c6fbe4647f959cf27c9e72e291cb8051197b6be174a3e9719f76",
+      "sha256": "d84e25c74da6ba33c3d4794fa6460f65c248ccf9b0a14f91b788246db40b1050",
       "staleSummary": false
     },
     "bench/truth/gocallgraph/main.go": {
@@ -1494,7 +1497,7 @@
       "staleSummary": false
     },
     "packages/core/src/extract/ts-signature.ts": {
-      "blast": 62,
+      "blast": 63,
       "exports": [
         "BODY_VALUES",
         "FUNCTION_VALUES",
@@ -1516,7 +1519,7 @@
         "unwrapValue",
         "variableSignature"
       ],
-      "fanIn": 12,
+      "fanIn": 13,
       "fanOut": 0,
       "lang": "ts",
       "loc": 187,
@@ -1541,18 +1544,22 @@
     "packages/core/src/extract/yaml-actions.ts": {
       "blast": 44,
       "exports": [
-        "extractYamlActions"
+        "COMPOSITE_JOB_ID",
+        "extractYamlActions",
+        "isActionDefinitionPath",
+        "refOf",
+        "runPathTokens"
       ],
       "fanIn": 2,
-      "fanOut": 1,
+      "fanOut": 3,
       "lang": "ts",
-      "loc": 19,
+      "loc": 434,
       "pkg": "@greplost/core",
-      "sha256": "602a21e3fe72cab4443ea9c27e6bffba7d204f198ab4b8579005ef6cdc652233",
+      "sha256": "c6add0a910186974b988b8b34da95fabf66698afdcb8f5e84b11393dc552ec9a",
       "staleSummary": false
     },
     "packages/core/src/extract/yaml-doc.ts": {
-      "blast": 46,
+      "blast": 47,
       "exports": [
         "YamlEntry",
         "YamlValue",
@@ -1569,7 +1576,7 @@
         "walk",
         "yamlDocuments"
       ],
-      "fanIn": 2,
+      "fanIn": 3,
       "fanOut": 0,
       "lang": "ts",
       "loc": 257,
@@ -1624,9 +1631,9 @@
       "fanIn": 3,
       "fanOut": 4,
       "lang": "ts",
-      "loc": 162,
+      "loc": 179,
       "pkg": "@greplost/core",
-      "sha256": "7f394df23ae1f120f92d0635e7be90c80a11d5a5d8ee8247c7ad6bab171fbf98",
+      "sha256": "379633e5fccac42d0c87cd87d92ceb4bf17cbffc1ebf2f0bc9a40be8b4dbe9f0",
       "staleSummary": false
     },
     "packages/core/src/graph/blast.ts": {
@@ -2065,14 +2072,15 @@
     "packages/core/src/references/yaml-actions.ts": {
       "blast": 40,
       "exports": [
+        "externalUsesId",
         "resolveYamlActionsReferences"
       ],
       "fanIn": 2,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 21,
+      "loc": 219,
       "pkg": "@greplost/core",
-      "sha256": "346cd59d1c94adc2075a225d356dfb63c93139cfad567718ee30eaf3cf1dbec7",
+      "sha256": "7ce7e23c23283df1089151be7a1ecc25ed58d165e1d7f22c950c3060dff99e40",
       "staleSummary": false
     },
     "packages/core/src/references/yaml-k8s.ts": {
@@ -2096,9 +2104,9 @@
       "fanIn": 2,
       "fanOut": 5,
       "lang": "ts",
-      "loc": 32,
+      "loc": 44,
       "pkg": "@greplost/core",
-      "sha256": "ac6434ab092c962714fb4b50ea2fd5df19516502fb0c43312d7e8e4a8d5c7e20",
+      "sha256": "ebd40d19aa5ac27eaefa575a3357cd94b305b29472079f21a463b43d9d527c2b",
       "staleSummary": false
     },
     "packages/core/src/resolve/dockerfile.ts": {
@@ -2370,7 +2378,7 @@
         "symbolId",
         "unresolvedId"
       ],
-      "fanIn": 123,
+      "fanIn": 124,
       "fanOut": 0,
       "lang": "ts",
       "loc": 498,
@@ -3399,14 +3407,14 @@
         "@greplost/sync"
       ],
       "files": 49,
-      "loc": 23816,
+      "loc": 24283,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 65,
-      "loc": 16349,
+      "loc": 16991,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
