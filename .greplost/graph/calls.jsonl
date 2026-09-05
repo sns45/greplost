@@ -1499,9 +1499,9 @@
 {"confidence":"high","from":"packages/core/src/extract/dockerfile.ts#collectEnv","kind":"call","to":"packages/core/src/extract/dockerfile.ts#usableName"}
 {"confidence":"high","from":"packages/core/src/extract/dockerfile.ts#collectFrom","kind":"call","to":"packages/core/src/extract/dockerfile.ts#addDeclaration"}
 {"confidence":"high","from":"packages/core/src/extract/dockerfile.ts#collectFrom","kind":"call","to":"packages/core/src/extract/dockerfile.ts#addReference"}
-{"confidence":"high","from":"packages/core/src/extract/dockerfile.ts#collectFrom","kind":"call","to":"packages/core/src/extract/dockerfile.ts#childOfType"}
 {"confidence":"high","from":"packages/core/src/extract/dockerfile.ts#collectFrom","kind":"call","to":"packages/core/src/extract/dockerfile.ts#flagValue"}
 {"confidence":"high","from":"packages/core/src/extract/dockerfile.ts#collectFrom","kind":"call","to":"packages/core/src/extract/dockerfile.ts#metaOf"}
+{"confidence":"high","from":"packages/core/src/extract/dockerfile.ts#collectFrom","kind":"call","to":"packages/core/src/extract/dockerfile.ts#namedChildOfType"}
 {"confidence":"high","from":"packages/core/src/extract/dockerfile.ts#collectFrom","kind":"call","to":"packages/core/src/extract/dockerfile.ts#usableName"}
 {"confidence":"high","from":"packages/core/src/extract/dockerfile.ts#collectFrom","kind":"call","to":"packages/core/src/extract/ts-signature.ts#clip"}
 {"confidence":"high","from":"packages/core/src/extract/dockerfile.ts#collectFrom","kind":"call","to":"packages/core/src/extract/ts-signature.ts#lineOf"}

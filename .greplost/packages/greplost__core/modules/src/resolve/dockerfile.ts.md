@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `DOCKERFILE_ROOT_DIR_ID (const)`, `DockerfileCallIndex (type)`, `createDockerfileResolver( ctx: RepoContext, ): (fromFile: string, specifier: string) => ResolvedTarget`, `dockerfileDirectoryOf(filePath: string): string`, `isContextPath(source: string): boolean`, `resolveDockerfileCall( file: FileRecord, _site: CallSite, _index: DockerfileCallIndex, ): { to: string; confidence: Confidence } | null`
+**Exports:** `createDockerfileResolver( ctx: RepoContext, ): (fromFile: string, specifier: string) => ResolvedTarget`, `resolveDockerfileCall( file: FileRecord, _site: CallSite, _index: DockerfileCallIndex, ): { to: string; confidence: Confidence } | null`
 
 **Imports:** [`../schema.ts`](../schema.ts.md) (CallSite, Confidence, FileRecord), [`./resolver.ts`](resolver.ts.md) (RepoContext, ResolvedTarget)
 

@@ -684,9 +684,9 @@
       "fanIn": 0,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 439,
+      "loc": 440,
       "pkg": "@greplost/bench",
-      "sha256": "9137646e9c58370d1008165f380a2a9216972325d4b1169d40f015afc13e7497",
+      "sha256": "34d2c14a60832af3573c9ad4dd94ba4f3ef6018fea463c979bc7f9f2715372cf",
       "staleSummary": false
     },
     "bench/src/truth/go.ts": {
@@ -1366,9 +1366,9 @@
       "fanIn": 1,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 457,
+      "loc": 493,
       "pkg": "@greplost/core",
-      "sha256": "b4058266a3ff1b6b7aa0d121b20329c44a392a97f8d8561c3ee7a17655cb6c0f",
+      "sha256": "13b6bdcf333aeb3cb93427e4b15bc0871079428aa553fec7e131ec1e22d6dd0c",
       "staleSummary": false
     },
     "packages/core/src/extract/go.ts": {
@@ -2008,15 +2008,14 @@
     "packages/core/src/references/dockerfile.ts": {
       "blast": 40,
       "exports": [
-        "IMAGE_NAMESPACE",
         "resolveDockerfileReferences"
       ],
       "fanIn": 2,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 176,
+      "loc": 186,
       "pkg": "@greplost/core",
-      "sha256": "4c39eb2e88b0017218156558c9d5c38a56a4930475aa958d19b1e931c5d05750",
+      "sha256": "1b56682fd8e48f72a1696b3d25b7b84c9d750eab51513c9a56be18368cc40924",
       "staleSummary": false
     },
     "packages/core/src/references/go.ts": {
@@ -2142,11 +2141,7 @@
     "packages/core/src/resolve/dockerfile.ts": {
       "blast": 68,
       "exports": [
-        "DOCKERFILE_ROOT_DIR_ID",
-        "DockerfileCallIndex",
         "createDockerfileResolver",
-        "dockerfileDirectoryOf",
-        "isContextPath",
         "resolveDockerfileCall"
       ],
       "fanIn": 2,
@@ -2154,7 +2149,7 @@
       "lang": "ts",
       "loc": 110,
       "pkg": "@greplost/core",
-      "sha256": "3af4c3fb84ff6e61104e2c80e3132af608c8e5a8f259caecfe1cc305361a96a0",
+      "sha256": "b29f6fd8b24e558a72f7a70dccd8ea549121a8bb736a0e903913abbe405d206e",
       "staleSummary": false
     },
     "packages/core/src/resolve/go.ts": {
@@ -3463,14 +3458,14 @@
         "@greplost/sync"
       ],
       "files": 49,
-      "loc": 25127,
+      "loc": 25128,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 65,
-      "loc": 18127,
+      "loc": 18173,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",

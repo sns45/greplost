@@ -21,7 +21,7 @@
 
 ## packages/core/src/extract/dockerfile.ts
 
-- `function extractDockerfile( path: string, _lang: Lang, _source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L429-457
+- `function extractDockerfile( path: string, _lang: Lang, _source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L464-493
 
 ## packages/core/src/extract/go.ts
 
@@ -255,8 +255,7 @@
 
 ## packages/core/src/references/dockerfile.ts
 
-- `const IMAGE_NAMESPACE = "image/"` L37-37
-- `function resolveDockerfileReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L161-176
+- `function resolveDockerfileReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L171-186
 
 ## packages/core/src/references/go.ts
 
@@ -305,10 +304,6 @@
 
 ## packages/core/src/resolve/dockerfile.ts
 
-- `const DOCKERFILE_ROOT_DIR_ID = "."` L25-25
-- `type DockerfileCallIndex = Readonly<Record<string, never>>` L30-30
-- `function dockerfileDirectoryOf(filePath: string): string` L36-39
-- `function isContextPath(source: string): boolean` L48-55
 - `function createDockerfileResolver( ctx: RepoContext, ): (fromFile: string, specifier: string) => ResolvedTarget` L79-94
 - `function resolveDockerfileCall( file: FileRecord, _site: CallSite, _index: DockerfileCallIndex, ): { to: string; confidence: Confidence } | null` L102-110
 
