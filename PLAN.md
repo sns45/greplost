@@ -400,3 +400,4 @@ Append-only. One line per event.
 - 2026-09-05 nodes fix round 1 re-reviewed (all addressed) and merged; leaf 2.11 complete. Spec 4.4 amendment pending: same-file reference labels are kind-qualified
 - 2026-09-05 pulumi-go fix round 1 plus follow-up re-reviewed (all addressed) and merged; leaf 2.7 complete (S5 tp 225 fn 1, S6 tp 216 fn 6). Every leaf except 2.12 is complete
 - 2026-09-05 sweep on main 096339a: typecheck clean, 2077 tests pass, all 18 corpus gates PASS (anyq, hono, gin, tf-aws-vpc, tf-aws-eks, pulumi-ts, tanstack-start, next-app, ripgrep, pydantic, gson, coroutines, k8s-examples, bitnami-charts, starter-workflows, docker-python, docker-node, pulumi-go). Waiting on 2.12 and CI
+- 2026-09-05 coverage-docs 2.12 merged (bd8093e); review dispatched; four start-anchored EXPECT regexes in root.md, root-2.md, node-2.5.md given the m flag. Node-2.* and root-2 gates being verified from main
