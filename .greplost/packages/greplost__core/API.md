@@ -21,7 +21,7 @@
 
 ## packages/core/src/extract/dockerfile.ts
 
-- `function extractDockerfile( path: string, _lang: Lang, _source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L429-457
+- `function extractDockerfile( path: string, _lang: Lang, _source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L464-493
 
 ## packages/core/src/extract/go.ts
 
@@ -53,11 +53,11 @@
 
 ## packages/core/src/extract/java.ts
 
-- `function extractJava( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L587-618
+- `function extractJava( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L625-656
 
 ## packages/core/src/extract/kotlin.ts
 
-- `function extractKotlin( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L701-724
+- `function extractKotlin( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L747-772
 
 ## packages/core/src/extract/python.ts
 
@@ -110,10 +110,11 @@
 ## packages/core/src/extract/yaml-actions.ts
 
 - `const COMPOSITE_JOB_ID = "runs"` L60-60
-- `function runPathTokens(body: string): string[]` L243-259
-- `function refOf(uses: string): string | null` L306-309
-- `function isActionDefinitionPath(path: string): boolean` L381-385
-- `function extractYamlActions(path: string, _lang: Lang, source: string, tree: Tree): YamlParts` L422-434
+- `function blankExpressions(body: string): string` L268-280
+- `function runPathTokens(body: string): string[]` L291-307
+- `function refOf(uses: string): string | null` L354-357
+- `function isActionDefinitionPath(path: string): boolean` L445-449
+- `function extractYamlActions(path: string, _lang: Lang, source: string, tree: Tree): YamlParts` L481-500
 
 ## packages/core/src/extract/yaml-doc.ts
 
@@ -134,18 +135,19 @@
 
 ## packages/core/src/extract/yaml-helm.ts
 
-- `function templateSpans(source: string): Array<[number, number]>` L77-97
-- `function blankTemplates(source: string): string` L103-129
-- `function extractYamlHelm(path: string, _lang: Lang, source: string, tree: Tree): YamlParts` L312-343
+- `function templateSpans(source: string): Array<[number, number]>` L98-120
+- `function blankTemplates(source: string): string` L126-152
+- `function extractYamlHelm(path: string, _lang: Lang, source: string, tree: Tree): YamlParts` L356-387
 
 ## packages/core/src/extract/yaml-k8s.ts
 
 - `type K8sFlavour = "k8s" | "helm"` L51-51
 - `interface K8sInput` L100-107
-- `function labelKey(labels: ReadonlyMap<string, string>): string | null` L279-287
-- `type YamlParts = Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L428-428
-- `function extractK8sDocuments(input: K8sInput): YamlParts` L436-458
-- `function extractYamlK8s(path: string, _lang: Lang, source: string, tree: Tree): YamlParts` L464-466
+- `function trimmedSpanIn(source: string, node: Node): [number, number]` L284-293
+- `function labelKey(labels: ReadonlyMap<string, string>): string | null` L309-317
+- `type YamlParts = Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L461-461
+- `function extractK8sDocuments(input: K8sInput): YamlParts` L469-492
+- `function extractYamlK8s(path: string, _lang: Lang, source: string, tree: Tree): YamlParts` L498-500
 
 ## packages/core/src/extract/yaml.ts
 
@@ -153,9 +155,9 @@
 - `function isWorkflowPath(path: string): boolean` L62-70
 - `function isHelmPath(path: string): boolean` L73-76
 - `function documentKeys(document: Node): string[]` L96-106
-- `function classifyYamlDocument(path: string, keys: readonly string[]): YamlFlavour` L138-145
-- `function classifyYamlFile(path: string, tree: Tree): YamlFlavour` L151-161
-- `function extractYaml( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L163-179
+- `function classifyYamlDocument(path: string, keys: readonly string[]): YamlFlavour` L139-150
+- `function classifyYamlFile(path: string, tree: Tree): YamlFlavour` L156-166
+- `function extractYaml( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">` L168-184
 
 ## packages/core/src/graph/blast.ts
 
@@ -253,8 +255,7 @@
 
 ## packages/core/src/references/dockerfile.ts
 
-- `const IMAGE_NAMESPACE = "image/"` L37-37
-- `function resolveDockerfileReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L161-176
+- `function resolveDockerfileReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null` L171-186
 
 ## packages/core/src/references/go.ts
 
@@ -303,10 +304,6 @@
 
 ## packages/core/src/resolve/dockerfile.ts
 
-- `const DOCKERFILE_ROOT_DIR_ID = "."` L25-25
-- `type DockerfileCallIndex = Readonly<Record<string, never>>` L30-30
-- `function dockerfileDirectoryOf(filePath: string): string` L36-39
-- `function isContextPath(source: string): boolean` L48-55
 - `function createDockerfileResolver( ctx: RepoContext, ): (fromFile: string, specifier: string) => ResolvedTarget` L79-94
 - `function resolveDockerfileCall( file: FileRecord, _site: CallSite, _index: DockerfileCallIndex, ): { to: string; confidence: Confidence } | null` L102-110
 
@@ -349,19 +346,20 @@
 
 ## packages/core/src/resolve/java.ts
 
-- `function createJavaResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L82-133
-- `interface JavaCallIndex` L148-161
-- `function buildJavaCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): JavaCallIndex` L203-253
-- `function resolveJavaCall( file: FileRecord, site: CallSite, index: JavaCallIndex, ): { to: string; confidence: Confidence } | null` L312-365
+- `function createJavaResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L93-144
+- `interface JavaCallIndex` L175-188
+- `function buildJavaCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): JavaCallIndex` L230-282
+- `function resolveJavaCall( file: FileRecord, site: CallSite, index: JavaCallIndex, ): { to: string; confidence: Confidence } | null` L357-412
 
 ## packages/core/src/resolve/kotlin.ts
 
-- `function kotlinPackageOf(source: string): string` L67-78
-- `function kotlinTopLevelNames(source: string): Set<string>` L88-109
-- `function createKotlinResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L126-231
-- `interface KotlinCallIndex` L244-255
-- `function buildKotlinCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): KotlinCallIndex` L275-341
-- `function resolveKotlinCall( file: FileRecord, site: CallSite, index: KotlinCallIndex, ): { to: string; confidence: Confidence } | null` L377-429
+- `function kotlinStripped(source: string): string` L91-145
+- `function kotlinPackageOf(source: string): string` L154-165
+- `function kotlinTopLevelNames(source: string): Set<string>` L175-196
+- `function createKotlinResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget` L213-316
+- `interface KotlinCallIndex` L337-348
+- `function buildKotlinCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): KotlinCallIndex` L368-439
+- `function resolveKotlinCall( file: FileRecord, site: CallSite, index: KotlinCallIndex, ): { to: string; confidence: Confidence } | null` L510-565
 
 ## packages/core/src/resolve/packages.ts
 

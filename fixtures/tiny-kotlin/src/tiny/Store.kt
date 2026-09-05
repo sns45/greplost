@@ -8,6 +8,11 @@ interface Sink {
     fun accept(item: Item): Boolean
 }
 
+/** A `fun interface` is a SAM type: the grammar this repo pins is the one that reads it. */
+fun interface Handler {
+    fun handle(item: Item): Boolean
+}
+
 /** An `object` is a class with `meta.object = "1"`; its members are methods. */
 object Store : Sink {
     private var total: Int = 0

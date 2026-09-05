@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `IMAGE_NAMESPACE (const)`, `resolveDockerfileReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null`
+**Exports:** `resolveDockerfileReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null`
 
 **Imports:** [`../schema.ts`](../schema.ts.md) (Declaration, FileRecord, ReferenceEdge, ReferenceRecord, externalId, symbolId), [`./link.ts`](link.ts.md) (ReferenceContext, referenceSource)
 
@@ -25,8 +25,8 @@
 - `function stageAt(file: FileRecord, position: number, owner: Declaration | null): Declaration | null`  L100-103
 - `function imageTarget(reference: string): string | null`  L112-115
 - `function resolveFromImage( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null`  L118-130
-- `function resolveCopyFrom( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null`  L133-150
-- `function resolveConfig(file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext): ReferenceEdge | null`  L153-156
-- `function resolveDockerfileReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null`  L161-176
+- `function resolveCopyFrom( file: FileRecord, ref: ReferenceRecord, _ctx: ReferenceContext, ): ReferenceEdge | null`  L141-160
+- `function resolveConfig(file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext): ReferenceEdge | null`  L163-166
+- `function resolveDockerfileReferences( file: FileRecord, ref: ReferenceRecord, ctx: ReferenceContext, ): ReferenceEdge | null`  L171-186
 
 **Calls:** `edge` → [`packages/core/src/references/dockerfile.ts#edge`](dockerfile.ts.md) (high), `imageTarget` → [`packages/core/src/references/dockerfile.ts#imageTarget`](dockerfile.ts.md) (high), `indexOf` → [`packages/core/src/references/dockerfile.ts#indexOf`](dockerfile.ts.md) (high), `ownerOf` → [`packages/core/src/references/dockerfile.ts#ownerOf`](dockerfile.ts.md) (high), `resolveConfig` → [`packages/core/src/references/dockerfile.ts#resolveConfig`](dockerfile.ts.md) (high), `resolveCopyFrom` → [`packages/core/src/references/dockerfile.ts#resolveCopyFrom`](dockerfile.ts.md) (high), `resolveFromImage` → [`packages/core/src/references/dockerfile.ts#resolveFromImage`](dockerfile.ts.md) (high), `stageAt` → [`packages/core/src/references/dockerfile.ts#stageAt`](dockerfile.ts.md) (high), `stagesNamed` → [`packages/core/src/references/dockerfile.ts#stagesNamed`](dockerfile.ts.md) (high), `stagesOf` → [`packages/core/src/references/dockerfile.ts#stagesOf`](dockerfile.ts.md) (high), `referenceSource` → [`packages/core/src/references/link.ts#referenceSource`](link.ts.md) (high), `externalId` → [`packages/core/src/schema.ts#externalId`](../schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)

@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `KotlinCallIndex (interface)`, `buildKotlinCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): KotlinCallIndex`, `createKotlinResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`, `kotlinPackageOf(source: string): string`, `kotlinTopLevelNames(source: string): Set<string>`, `resolveKotlinCall( file: FileRecord, site: CallSite, index: KotlinCallIndex, ): { to: string; confidence: Confidence } | null`
+**Exports:** `KotlinCallIndex (interface)`, `buildKotlinCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): KotlinCallIndex`, `createKotlinResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`, `kotlinPackageOf(source: string): string`, `kotlinStripped(source: string): string`, `kotlinTopLevelNames(source: string): Set<string>`, `resolveKotlinCall( file: FileRecord, site: CallSite, index: KotlinCallIndex, ): { to: string; confidence: Confidence } | null`
 
 **Imports:** [`../schema.ts`](../schema.ts.md) (CallSite, Confidence, DeclKind, FileRecord, ImportEdge, compareStrings, symbolId), [`./resolver.ts`](resolver.ts.md) (RepoContext, ResolvedTarget)
 
@@ -17,21 +17,27 @@
 **Key symbols:**
 - `const KOTLIN_EXTENSIONS = [".kt", ".kts"] as const`  L33-33
 - `const EXTERNAL_ROOTS: ReadonlySet<string> = new Set(["java", "javax", "kotlin", "jdk", "sun"])`  L36-36
-- `const DECLARATION_KEYWORDS: ReadonlySet<string> = new Set([ "class", "interface", "object", "fun", "val", "var", "typealias", ])`  L39-47
-- `const UNRESOLVED: ResolvedTarget = { type: "unresolved" }`  L49-49
-- `function parentDir(path: string): string`  L51-54
-- `function isKotlin(path: string): boolean`  L56-58
-- `function kotlinPackageOf(source: string): string`  L67-78
-- `function kotlinTopLevelNames(source: string): Set<string>`  L88-109
-- `function createKotlinResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`  L126-231
-- `interface Binding`  L238-242
-- `interface KotlinCallIndex`  L244-255
-- `const EMPTY_INDEX: KotlinCallIndex = { topLevel: new Map(), symbols: new Map(), ambiguous: new Map(), bindings: new Map(), siblings: new Map(), }`  L257-263
-- `function baseName(name: string): string | null`  L266-269
-- `function buildKotlinCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): KotlinCallIndex`  L275-341
-- `function declares(index: KotlinCallIndex, file: string, symbol: string): boolean`  L344-347
-- `function visibleFiles(index: KotlinCallIndex, file: FileRecord): string[]`  L350-359
-- `function uniqueDeclarer(index: KotlinCallIndex, file: FileRecord, symbol: string): string | null`  L362-368
-- `function resolveKotlinCall( file: FileRecord, site: CallSite, index: KotlinCallIndex, ): { to: string; confidence: Confidence } | null`  L377-429
+- `const MAVEN_ROOTS: ReadonlySet<string> = new Set(["com", "org"])`  L43-43
+- `const DECLARATION_KEYWORDS: ReadonlySet<string> = new Set([ "class", "interface", "object", "fun", "val", "var", "typealias", ])`  L46-54
+- `const UNRESOLVED: ResolvedTarget = { type: "unresolved" }`  L56-56
+- `function parentDir(path: string): string`  L58-61
+- `function isKotlin(path: string): boolean`  L63-65
+- `function externalPackage(segments: readonly string[]): string`  L74-80
+- `function kotlinStripped(source: string): string`  L91-145
+- `function kotlinPackageOf(source: string): string`  L154-165
+- `function kotlinTopLevelNames(source: string): Set<string>`  L175-196
+- `function createKotlinResolver(ctx: RepoContext): (fromFile: string, specifier: string) => ResolvedTarget`  L213-316
+- `interface Binding`  L323-327
+- `interface Member`  L330-335
+- `interface KotlinCallIndex`  L337-348
+- `const EMPTY_INDEX: KotlinCallIndex = { topLevel: new Map(), members: new Map(), bindings: new Map(), siblings: new Map(), packageOf: new Map(), }`  L350-356
+- `function symbolOf(id: string): string`  L359-362
+- `function buildKotlinCallIndex( files: readonly FileRecord[], imports: readonly ImportEdge[], ): KotlinCallIndex`  L368-439
+- `function declaredSymbol(index: KotlinCallIndex, file: string, name: string): string | null`  L446-449
+- `function packageSiblings(index: KotlinCallIndex, file: string): string[]`  L452-454
+- `function pickCandidate<T extends { file: string }>(hits: readonly T[], fromFile: string): T | null`  L469-475
+- `function visibleFiles(index: KotlinCallIndex, file: FileRecord): string[]`  L478-487
+- `function uniqueDeclarer( index: KotlinCallIndex, file: FileRecord, name: string, ): { file: string; symbol: string } | null`  L490-501
+- `function resolveKotlinCall( file: FileRecord, site: CallSite, index: KotlinCallIndex, ): { to: string; confidence: Confidence } | null`  L510-565
 
-**Calls:** `baseName` → [`packages/core/src/resolve/kotlin.ts#baseName`](kotlin.ts.md) (high), `declares` → [`packages/core/src/resolve/kotlin.ts#declares`](kotlin.ts.md) (high), `isKotlin` → [`packages/core/src/resolve/kotlin.ts#isKotlin`](kotlin.ts.md) (high), `kotlinPackageOf` → [`packages/core/src/resolve/kotlin.ts#kotlinPackageOf`](kotlin.ts.md) (high), `kotlinTopLevelNames` → [`packages/core/src/resolve/kotlin.ts#kotlinTopLevelNames`](kotlin.ts.md) (high), `parentDir` → [`packages/core/src/resolve/kotlin.ts#parentDir`](kotlin.ts.md) (high), `uniqueDeclarer` → [`packages/core/src/resolve/kotlin.ts#uniqueDeclarer`](kotlin.ts.md) (high), `visibleFiles` → [`packages/core/src/resolve/kotlin.ts#visibleFiles`](kotlin.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)
+**Calls:** `declaredSymbol` → [`packages/core/src/resolve/kotlin.ts#declaredSymbol`](kotlin.ts.md) (high), `externalPackage` → [`packages/core/src/resolve/kotlin.ts#externalPackage`](kotlin.ts.md) (high), `isKotlin` → [`packages/core/src/resolve/kotlin.ts#isKotlin`](kotlin.ts.md) (high), `kotlinPackageOf` → [`packages/core/src/resolve/kotlin.ts#kotlinPackageOf`](kotlin.ts.md) (high), `kotlinStripped` → [`packages/core/src/resolve/kotlin.ts#kotlinStripped`](kotlin.ts.md) (high), `kotlinTopLevelNames` → [`packages/core/src/resolve/kotlin.ts#kotlinTopLevelNames`](kotlin.ts.md) (high), `packageSiblings` → [`packages/core/src/resolve/kotlin.ts#packageSiblings`](kotlin.ts.md) (high), `parentDir` → [`packages/core/src/resolve/kotlin.ts#parentDir`](kotlin.ts.md) (high), `pickCandidate` → [`packages/core/src/resolve/kotlin.ts#pickCandidate`](kotlin.ts.md) (high), `symbolOf` → [`packages/core/src/resolve/kotlin.ts#symbolOf`](kotlin.ts.md) (high), `uniqueDeclarer` → [`packages/core/src/resolve/kotlin.ts#uniqueDeclarer`](kotlin.ts.md) (high), `visibleFiles` → [`packages/core/src/resolve/kotlin.ts#visibleFiles`](kotlin.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)

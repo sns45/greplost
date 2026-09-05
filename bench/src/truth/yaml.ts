@@ -45,8 +45,15 @@ const GENERATORS: Readonly<Record<YamlFlavour, (root: string, files: string[]) =
  * flavour's group: a workflow's `uses` and `run:` tokens can name a file of another flavour, so
  * a generator that resolved against its own group alone would report an edge greplost drew as a
  * false positive (leaf 2.9). A generator that does not need it simply declares two parameters.
+ *
+ * `nodeFiles` is optional and names the files whose nodes that flavour is willing to have S6
+ * scored over; a flavour that omits it stands behind every file it was given (leaf 2.8).
  */
-type ExtraGenerator = (root: string, files: string[], universe: string[]) => { references: Edge[]; nodes: string[] };
+type ExtraGenerator = (
+  root: string,
+  files: string[],
+  universe: string[],
+) => { references: Edge[]; nodes: string[]; nodeFiles?: string[] };
 
 /**
  * Added by leaf 2.8, which needed S5 and S6 measured for `yaml` and found the dispatcher
@@ -54,10 +61,9 @@ type ExtraGenerator = (root: string, files: string[], universe: string[]) => { r
  * `generateExtra`, and for every YAML target that module is this one. Reported to the driver
  * as an edit to a seam file.
  *
- * `undefined` means "this flavour's oracle does not measure references and nodes yet", which is
- * where `yaml-actions` sits until leaf 2.9 lands: its group contributes nothing rather than
- * contributing an empty set, because an empty truth set would score every real edge greplost
- * found in a workflow as a false positive.
+ * `undefined` would mean "this flavour's oracle does not measure references and nodes yet": its
+ * group would contribute nothing rather than an empty set, because an empty truth set scores
+ * every real edge greplost found as a false positive. All three flavours measure them now.
  */
 const EXTRA_GENERATORS: Readonly<Record<YamlFlavour, ExtraGenerator | undefined>> = {
   "yaml-actions": generateActionsExtra,
@@ -98,16 +104,46 @@ export function isHelmFile(file: string): boolean {
  * document from an ordinary YAML file, so it is the one that has to see both.
  */
 export function flavourOf(file: string, root?: string): YamlFlavour {
-  if (isWorkflowFile(file)) return "yaml-actions";
+  // Without a root, the path rules are all there is: the seam's original contract, and what its
+  // own `flavourOf(file)` callers expect.
+  if (root === undefined) {
+    if (isWorkflowFile(file)) return "yaml-actions";
+    if (isHelmFile(file)) return "yaml-helm";
+    return "yaml-k8s";
+  }
+  // Leaf 2.9: the path is neither the whole rule nor a sufficient one, in both directions. A
+  // composite action's `action.yml` and a workflow *template* outside `.github/workflows/` are
+  // Actions files at other paths (the pinned corpus is 174 of the latter); and a file *under*
+  // `.github/workflows/` with no `on:` key is not a workflow at all — GitHub will not run it and
+  // `extract/yaml.ts` classifies it `plain`, so an oracle claiming it would demand nodes and
+  // exports greplost is right not to have produced (leaf 2.9 fix round 1). `isActionsFile`
+  // restates the extractor's whole rule, in order, on js-yaml.
+  if (cachedIsActionsFile(root, file)) return "yaml-actions";
   if (isHelmFile(file)) return "yaml-helm";
-  // Leaf 2.9: the path is not the whole rule. A composite action's `action.yml` and a workflow
-  // *template* outside `.github/workflows/` are both Actions files at other paths, and the
-  // pinned corpus is 174 of the latter, so the content rule `extract/yaml.ts` applies is
-  // restated here — on js-yaml, independently — whenever the caller can say where the files
-  // live. Without a root the path rules are all there is, which is what the seam's own
-  // `flavourOf(file)` callers expect.
-  if (root !== undefined && isActionsFile(root, file)) return "yaml-actions";
   return "yaml-k8s";
+}
+
+/**
+ * `isActionsFile` memoised per `(root, file)`.
+ *
+ * `generateTruth` and `generateExtra` each call `groupByFlavour`, and `structural.ts` calls both
+ * for one target, so a 187-file corpus would otherwise read and parse every file four times
+ * before any truth is computed. Nested maps rather than a joined key, so no separator has to be
+ * a character a path cannot contain.
+ */
+const ACTIONS_FILE_CACHE = new Map<string, Map<string, boolean>>();
+
+function cachedIsActionsFile(root: string, file: string): boolean {
+  let byFile = ACTIONS_FILE_CACHE.get(root);
+  if (byFile === undefined) {
+    byFile = new Map<string, boolean>();
+    ACTIONS_FILE_CACHE.set(root, byFile);
+  }
+  const cached = byFile.get(file);
+  if (cached !== undefined) return cached;
+  const answer = isActionsFile(root, file);
+  byFile.set(file, answer);
+  return answer;
 }
 
 /** Group the file list by flavour, dropping empty groups, in a fixed flavour order. */
@@ -134,19 +170,29 @@ export function generateTruth(root: string, files: string[]): Truth {
 }
 
 /** The reference and node sets for a file list, merged across the flavours it holds. */
-export function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] } {
+export function generateExtra(
+  root: string,
+  files: string[],
+): { references: Edge[]; nodes: string[]; nodeFiles: string[] } {
   const references: Edge[] = [];
   const nodes: string[] = [];
+  // The union of what each flavour is willing to have S6 scored over. A flavour that names no
+  // `nodeFiles` states nodes for every file it was given, so its whole group goes in: otherwise
+  // one chart's restriction would silently turn S6 off for a repo's manifests as well, which is
+  // exactly the bug `nodeFiles` replaced `unsupported:S6` to fix (leaf 2.8, fix round 1).
+  const nodeFiles: string[] = [];
   for (const [flavour, group] of groupByFlavour(files, root)) {
     const generate = EXTRA_GENERATORS[flavour];
     if (generate === undefined) continue;
     const extra = generate(root, group, files);
     references.push(...extra.references);
     nodes.push(...extra.nodes);
+    nodeFiles.push(...(extra.nodeFiles ?? group));
   }
   references.sort((a, b) => compare(a.from, b.from) || compare(a.to, b.to));
   nodes.sort(compare);
-  return { references, nodes };
+  nodeFiles.sort(compare);
+  return { references, nodes, nodeFiles };
 }
 
 /**

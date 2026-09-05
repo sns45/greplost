@@ -42,7 +42,7 @@ import type {
   Lang,
   ReferenceRecord,
 } from "../schema.ts";
-import { compareStrings, nodeId } from "../schema.ts";
+import { compareStrings, nodeId, splitNodeId } from "../schema.ts";
 import { clip, lineOf } from "./ts-signature.ts";
 import type { YamlValue } from "./yaml-doc.ts";
 import { documentValue, mapPath, scalarMap, seqItems, walk, yamlDocuments } from "./yaml-doc.ts";
@@ -113,44 +113,67 @@ interface K8sState {
   readonly refs: ReferenceRecord[];
   /** Declaration ids already used in this file, so a duplicate name can take a `~<n>` suffix. */
   readonly usedIds: Set<string>;
+  /** Exported names already recorded, so two documents with one name are one export record. */
+  readonly exportedNames: Set<string>;
 }
 
 /**
  * True for a manifest, false for a Helm template: whether this file's *names* are names.
  *
- * A chart template's object names, labels and image references are values chosen when the chart
- * is rendered, not names anything else in the repository can reach for — spec 2.3 says the same
- * thing as "names are not compared". So a template's record exports nothing, and the only
- * reference greplost draws from one is `helm-values`, the single edge whose two ends are both
- * real unrendered files: the template, and a key of the chart's `values.yaml`. A `selector`
- * built from the handful of labels a chart happens to write literally would be a fragment of a
- * graph that only exists after `helm template` has run (leaf 2.8 ruling).
+ * A chart template's object *names* are values chosen when the chart is rendered, not names
+ * anything else in the repository can reach for — spec 2.3 says the same thing as "names are
+ * not compared". So a template's record exports nothing, and neither `selector` nor
+ * `config-ref` is drawn from one: both are lookups by name, and one built from the handful of
+ * labels a chart happens to write literally would be a fragment of a graph that only exists
+ * after `helm template` has run (leaf 2.8 ruling).
+ *
+ * It does **not** cover `from-image`. A literal `image: busybox:1.36` in a template is fully
+ * rendered text that names the image which will run, so that edge is drawn in a chart exactly
+ * as in a manifest; only an image built out of a template action is withheld, and that test is
+ * `image.templated`, not this one (fix round 1).
  */
 function namesAreNames(state: K8sState): boolean {
   return state.input.flavour === "k8s";
 }
 
 /**
- * A node name made unique within the file: `web`, then `web~2`, then `web~3`.
+ * A declaration id made unique within the file: `…#resource.ConfigMap.web`, then `…~2`.
  *
- * `~` rather than the `#<index>` spec 0.2 sketches, because `nodeId` refuses `#` in a name
- * (driver ruling 2026-09-04, which amends that text); `~` cannot occur in a Kubernetes name, so
- * a suffixed name can never be mistaken for one somebody wrote. The same substitution is what
- * turns the spec's `<kind>.#<docIndex>` fallback into `<kind>.~<docIndex>`.
+ * The suffix lives in the **id and nowhere else** (driver ruling 2026-09-04, the same rule
+ * `extract/hcl.ts` follows): `name` stays as the file wrote it, because the name is what every
+ * other manifest writes when it reaches for the object — `configMapRef: { name: web-config }`
+ * names *both* of two same-named ConfigMaps, and a suffixed name would make the second one
+ * silently distinguishable and turn an ambiguous reference into a certain one. It is also what
+ * the export index publishes, and `ConfigMap.web-config~2` is a name nobody wrote.
+ *
+ * `~` rather than the `#<index>` spec 0.2 sketches, because a `#` in the name segment would
+ * make the id unreadable by `splitNodeId`; `~` cannot occur in a Kubernetes name, so a suffixed
+ * id can never collide with one somebody wrote. The same substitution turns the spec's
+ * `<kind>.#<docIndex>` fallback into `<kind>.~<docIndex>`.
  */
-function uniqueName(state: K8sState, kind: DeclKind, name: string): string {
-  const idFor = (candidate: string): string => nodeId(state.input.path, kind, candidate);
-  if (!state.usedIds.has(idFor(name))) {
-    state.usedIds.add(idFor(name));
-    return name;
+function uniqueId(state: K8sState, kind: DeclKind, name: string): string {
+  const base = nodeId(state.input.path, kind, name);
+  if (!state.usedIds.has(base)) {
+    state.usedIds.add(base);
+    return base;
   }
   for (let n = 2; ; n += 1) {
-    const candidate = `${name}~${n}`;
-    const id = idFor(candidate);
-    if (state.usedIds.has(id)) continue;
-    state.usedIds.add(id);
+    const candidate = `${base}~${n}`;
+    if (state.usedIds.has(candidate)) continue;
+    state.usedIds.add(candidate);
     return candidate;
   }
+}
+
+/**
+ * The part of a declaration's id after the `#`: what a `ReferenceRecord.from` must carry.
+ *
+ * Read back through `splitNodeId` rather than rebuilt from `kind` and `name`, so the suffix
+ * that distinguishes two same-named documents reaches the reference and the bare name does not.
+ */
+function localPath(declaration: Declaration): string {
+  const parts = splitNodeId(declaration.id);
+  return parts === null ? declaration.name : `${parts.kind}.${parts.name}`;
 }
 
 /** `meta` with sorted keys, dropping every absent entry; undefined when nothing was recorded. */
@@ -171,14 +194,13 @@ function metaOf(entries: ReadonlyArray<readonly [string, string | null]>): Recor
 function addNode(
   state: K8sState,
   kind: DeclKind,
-  rawName: string,
+  name: string,
   signature: string,
   node: Node,
   meta: Record<string, string> | undefined,
 ): Declaration {
-  const name = uniqueName(state, kind, rawName);
   const declaration: Declaration = {
-    id: nodeId(state.input.path, kind, name),
+    id: uniqueId(state, kind, name),
     file: state.input.path,
     name,
     kind,
@@ -188,7 +210,12 @@ function addNode(
     ...(meta === undefined ? {} : { meta }),
   };
   state.decls.push(declaration);
-  if (namesAreNames(state)) state.exports.push({ name, kind: "named" });
+  // One record per exported *name*: two `ConfigMap`s called `web-config` are one export, not
+  // two, and never a `web-config~2` nobody wrote.
+  if (namesAreNames(state) && !state.exportedNames.has(name)) {
+    state.exportedNames.add(name);
+    state.exports.push({ name, kind: "named" });
+  }
   return declaration;
 }
 
@@ -254,8 +281,7 @@ function read(state: K8sState, value: YamlValue | null, ...keys: readonly string
  * span ends on a closing brace, so the difference would show up only here, as a card claiming a
  * line the node does not occupy.
  */
-function trimmedSpan(state: K8sState, node: Node): [number, number] {
-  const source = state.input.source;
+export function trimmedSpanIn(source: string, node: Node): [number, number] {
   let end = node.endIndex;
   let rows = node.endPosition.row + 1;
   while (end > node.startIndex && /\s/u.test(source[end - 1] as string)) {
@@ -264,6 +290,10 @@ function trimmedSpan(state: K8sState, node: Node): [number, number] {
   }
   const start = node.startPosition.row + 1;
   return [start, Math.max(start, rows)];
+}
+
+function trimmedSpan(state: K8sState, node: Node): [number, number] {
+  return trimmedSpanIn(state.input.source, node);
 }
 
 /** A name that `nodeId` will accept: no `#`, newline or NUL, and not empty. */
@@ -344,7 +374,7 @@ function collectDocument(state: K8sState, document: Node, index: number): void {
       ["templated", templated && name.raw !== null ? "1" : null],
     ]),
   );
-  const owner = `resource.${resource.name}`;
+  const owner = localPath(resource);
 
   collectImages(state, value, index);
   collectSelector(state, value, kind.text, owner);
@@ -384,9 +414,12 @@ function collectImages(state: K8sState, document: YamlValue, index: number): voi
         ]),
       );
       // An image reference built from a template action is not an image reference: greplost
-      // never runs helm, so `ext:image/______:____` would be an invented external node.
-      if (image.text !== null && !image.templated && namesAreNames(state)) {
-        addReference(state, `image.${node.name}`, image.text, "from-image", lineOf(container.node));
+      // never runs helm, so `ext:image/______:____` would be an invented external node. A
+      // *literal* one is different, in a chart as much as in a manifest — `image: busybox:1.36`
+      // is fully rendered text and names the image that will actually run — so this is the one
+      // reference a template does draw besides `helm-values` (fix round 1).
+      if (image.text !== null && !image.templated) {
+        addReference(state, localPath(node), image.text, "from-image", lineOf(container.node));
       }
     }
   });
@@ -440,6 +473,7 @@ export function extractK8sDocuments(input: K8sInput): YamlParts {
     exports: [],
     refs: [],
     usedIds: new Set<string>(),
+    exportedNames: new Set<string>(),
   };
 
   const documents = yamlDocuments(input.tree.rootNode);

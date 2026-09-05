@@ -48,6 +48,25 @@ import { clip, lineOf, spanOf } from "./ts-signature.ts";
 /** Node types that open a declaration container: their children are members, not statements. */
 const TYPE_BODIES: ReadonlySet<string> = new Set(["class_body", "enum_class_body"]);
 
+/**
+ * The Kotlin type of a literal receiver, so `"x".shout()` reads as `String.shout`.
+ *
+ * A literal writes its own type down - there is nothing to infer - and it is what both the
+ * compiler and the classfile call the extension's receiver, so the map and the oracle agree.
+ * A `real_literal` is deliberately absent: Kotlin's default is `Double`, but a `1.0f` suffix
+ * makes it `Float`, and this layer does not guess.
+ */
+const LITERAL_TYPES: Readonly<Record<string, string>> = {
+  string_literal: "String",
+  multiline_string_literal: "String",
+  integer_literal: "Int",
+  long_literal: "Long",
+  hex_literal: "Int",
+  bin_literal: "Int",
+  boolean_literal: "Boolean",
+  character_literal: "Char",
+};
+
 /** Modifier keywords that make a declaration unexported (spec 1.5: the inverse of Java's rule). */
 const HIDDEN: ReadonlySet<string> = new Set(["private", "internal"]);
 
@@ -183,29 +202,36 @@ interface KotlinState {
   readonly imports: ImportRecord[];
   readonly exports: ExportRecord[];
   readonly calls: CallSite[];
-  /** Symbol ids already used in this file, so a duplicate name can take a `~<n>` suffix. */
+  /** Declaration ids already used in this file, so a duplicate name can take a `~<n>` suffix. */
   readonly usedIds: Set<string>;
   /** Export names already emitted, so an overloaded name is exported once. */
   readonly exported: Set<string>;
   /** `@file:JvmName("X")`, recorded in `meta` and ignored for resolution (spec 1.5). */
   jvmName: string | null;
+  /** The file's `package` header, or "" for the default package. */
+  packageName: string;
 }
 
 /**
- * A symbol path made unique within the file: `Store.put`, then `Store.put~2` (driver ruling
- * 2026-09-04: `~<n>` from 2 in source order, for symbol ids as well as node ids, never `#<n>`,
- * which `nodeId` refuses and which a reader would read as a URL fragment).
+ * `<file>#<name>`, with `~<n>` appended when this file already used that id (driver ruling
+ * 2026-09-04, every language): `src/A.kt#Store.put`, then `src/A.kt#Store.put~2`.
+ *
+ * The suffix lives in the **id only**. `Declaration.name` stays exactly as the source wrote it,
+ * because that is what a card renders and what a reader searches for; two overloads really are
+ * both called `put`. `~` cannot occur in a Kotlin identifier, so a suffixed id can never
+ * collide with a real one, and the numbering follows source order so a new overload never
+ * renumbers an older one.
  */
-function uniqueName(state: KotlinState, name: string): string {
-  if (!state.usedIds.has(symbolId(state.path, name))) {
-    state.usedIds.add(symbolId(state.path, name));
-    return name;
+function uniqueId(state: KotlinState, name: string): string {
+  const base = symbolId(state.path, name);
+  if (!state.usedIds.has(base)) {
+    state.usedIds.add(base);
+    return base;
   }
   for (let n = 2; ; n += 1) {
-    const candidate = `${name}~${n}`;
-    const id = symbolId(state.path, candidate);
-    if (state.usedIds.has(id)) continue;
-    state.usedIds.add(id);
+    const candidate = `${base}~${n}`;
+    if (state.usedIds.has(candidate)) continue;
+    state.usedIds.add(candidate);
     return candidate;
   }
 }
@@ -236,10 +262,10 @@ interface DeclarationInput {
 
 /** Register one declaration and, when it and every ancestor are visible, its export record. */
 function addDeclaration(state: KotlinState, input: DeclarationInput): string {
-  const name = uniqueName(state, `${input.scope.prefix}${input.name}`);
+  const name = `${input.scope.prefix}${input.name}`;
   const meta = input.meta;
   state.decls.push({
-    id: symbolId(state.path, name),
+    id: uniqueId(state, name),
     file: state.path,
     name,
     kind: input.kind,
@@ -251,10 +277,9 @@ function addDeclaration(state: KotlinState, input: DeclarationInput): string {
   });
   // Spec 1.4: one `named` record per exported type and per exported member of an exported
   // type. An overload exports its name once - two `put`s are one exported name.
-  const raw = `${input.scope.prefix}${input.name}`;
-  if (input.exported && input.scope.visible && !state.exported.has(raw)) {
-    state.exported.add(raw);
-    state.exports.push({ name: raw, kind: "named" });
+  if (input.exported && input.scope.visible && !state.exported.has(name)) {
+    state.exported.add(name);
+    state.exports.push({ name, kind: "named" });
   }
   return name;
 }
@@ -262,6 +287,21 @@ function addDeclaration(state: KotlinState, input: DeclarationInput): string {
 // ---------------------------------------------------------------------------
 // file header: `@file:JvmName` and imports
 // ---------------------------------------------------------------------------
+
+/**
+ * The `package` header, or "" for the default package.
+ *
+ * Kotlin does not tie a package to a directory, so this is the only thing that says which
+ * package a file is in - and `resolve/kotlin.ts` needs it to know which files are siblings.
+ * `FileRecord` has no field for it (that would be a schema change), so it is recorded on the
+ * file's top-level declarations, which are exactly the ones the package qualifies.
+ */
+function filePackage(root: Node): string {
+  const header = firstOfType(root, "package_header");
+  if (header === null) return "";
+  const identifier = firstOfType(header, "identifier") ?? firstOfType(header, "qualified_identifier");
+  return identifier === null ? "" : identifier.text.replace(/[\s`]+/gu, "");
+}
 
 /** `@file:JvmName("AppMain")` -> `AppMain`; any other file annotation is ignored. */
 function fileJvmName(root: Node): string | null {
@@ -419,6 +459,9 @@ function metaOf(
   // `@file:JvmName` renames the class the file's *top-level* functions and properties compile
   // into, so those are the declarations it is recorded on. It never changes resolution.
   if (state.jvmName !== null && scope.parent === undefined) meta["jvmName"] = state.jvmName;
+  // The package qualifies the file's top-level names, and nothing below them: a member is
+  // reached through its type. The default package writes no key at all.
+  if (state.packageName !== "" && scope.parent === undefined) meta["package"] = state.packageName;
   return meta;
 }
 
@@ -668,6 +711,9 @@ function calleeText(node: Node, ctx: CallContext): string | null {
   if (member === null) return null;
 
   if (value.type === "this_expression") return `this.${member.text}`;
+  // A literal receiver: `"x".shout()` is `String.shout`, the name the compiler gives it.
+  const literal = LITERAL_TYPES[value.type];
+  if (literal !== undefined) return `${literal}.${member.text}`;
   if (value.type !== NAME) return null;
 
   // A local this file can type becomes `<Type>.m`, so an extension call and a method call
@@ -714,9 +760,11 @@ export function extractKotlin(
     usedIds: new Set<string>(),
     exported: new Set<string>(),
     jvmName: null,
+    packageName: "",
   };
 
   state.jvmName = fileJvmName(tree.rootNode);
+  state.packageName = filePackage(tree.rootNode);
   collectImports(state, tree.rootNode);
   collectContainer(state, tree.rootNode, FILE_SCOPE);
 

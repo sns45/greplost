@@ -29,6 +29,19 @@
  * with no usable name. The index is a position, never a hash, so adding a stage renumbers only
  * what comes after it.
  *
+ * Two limits worth stating, because both are shared with the oracle and neither is a bug to be
+ * found later:
+ *
+ *  - **The exec form of `COPY`/`ADD` contributes no source.** `COPY ["a", "b", "/d/"]` is a JSON
+ *    array, not a list of `path` nodes, and neither this module nor `bench/src/truth/
+ *    dockerfile.ts` takes sources out of it. Such an instruction produces no `config`
+ *    reference on either side rather than a half-parsed one.
+ *  - **Nothing recovered from an `ERROR` region is published as if it had been read.** The walk
+ *    descends into an `ERROR` to keep what the grammar did recognise, but a declaration found
+ *    there carries no `meta.default` (the text around it is exactly what the parser lost), and
+ *    a file holding any `ERROR` gets no `image` node at all, because the final stage — the one
+ *    thing an image node can be named after — may be inside the region that was lost.
+ *
  * Nothing in this file reads the filesystem or knows about another file (tech spec 5.1).
  */
 
@@ -68,7 +81,7 @@ const PLATFORM_FLAG = "platform";
 // tree helpers
 // ---------------------------------------------------------------------------
 
-function childOfType(node: Node, type: string): Node | null {
+function namedChildOfType(node: Node, type: string): Node | null {
   for (const child of node.namedChildren) if (child.type === type) return child;
   return null;
 }
@@ -163,6 +176,14 @@ interface DockerState {
   readonly usedIds: Set<string>;
   /** Exported names already recorded, so two stages with one alias are one export. */
   readonly exportedNames: Set<string>;
+  /**
+   * True once the walk has seen an `ERROR` node anywhere in the file.
+   *
+   * The grammar's `ERROR` swallows the instruction it choked on *and every instruction after
+   * it*, so a file holding one has an unknown tail: the stage the walk thinks is last may not
+   * be, and an `image` node named after it would be a guess wearing an id.
+   */
+  sawError: boolean;
 }
 
 /**
@@ -238,9 +259,9 @@ function addReference(state: DockerState, to: string, refKind: RefKind, line: nu
 
 function collectFrom(state: DockerState, instruction: Node): void {
   const index = state.stages.length;
-  const spec = childOfType(instruction, "image_spec");
+  const spec = namedChildOfType(instruction, "image_spec");
   const base = spec === null ? "" : spec.text;
-  const alias = childOfType(instruction, "image_alias");
+  const alias = namedChildOfType(instruction, "image_alias");
   const named = alias !== null && usableName(alias.text);
   const name = named ? (alias as Node).text : `~${index}`;
   const line = lineOf(instruction);
@@ -273,30 +294,39 @@ function collectFrom(state: DockerState, instruction: Node): void {
 }
 
 /** `ARG NAME[=default]` — one constant named `arg.<NAME>`. */
-function collectArg(state: DockerState, instruction: Node): void {
+function collectArg(state: DockerState, instruction: Node, recovered: boolean): void {
   const name = instruction.childForFieldName("name");
   if (name === null || !usableName(name.text)) return;
   const value = instruction.childForFieldName("default");
-  addConstant(state, "arg", name.text, value, instruction);
+  addConstant(state, "arg", name.text, value, instruction, recovered);
 }
 
 /** `ENV A=1 B=2`, and the legacy `ENV A 1` — one constant per pair, named `env.<NAME>`. */
-function collectEnv(state: DockerState, instruction: Node): void {
+function collectEnv(state: DockerState, instruction: Node, recovered: boolean): void {
   for (const pair of namedChildrenOfType(instruction, "env_pair")) {
     const name = pair.childForFieldName("name");
     if (name === null || !usableName(name.text)) continue;
-    addConstant(state, "env", name.text, pair.childForFieldName("value"), pair);
+    addConstant(state, "env", name.text, pair.childForFieldName("value"), pair, recovered);
   }
 }
 
+/**
+ * One `ARG`/`ENV` constant.
+ *
+ * `recovered` says the declaration was found *inside* an `ERROR` region, and it is the reason
+ * `meta.default` is dropped there: the grammar choked on this very instruction, so the value it
+ * managed to read is a prefix of the real one (`ENV NOTE a b c` yields `a`). The name survives
+ * because it is the part the parser did get right; a value it cannot vouch for does not.
+ */
 function addConstant(
   state: DockerState,
   prefix: "arg" | "env",
   name: string,
   value: Node | null,
   node: Node,
+  recovered: boolean,
 ): void {
-  const text = value === null ? null : tokenText(value);
+  const text = value === null || recovered ? null : tokenText(value);
   addDeclaration(
     state,
     "const",
@@ -343,16 +373,16 @@ function collectCommand(state: DockerState, instruction: Node, key: "entrypoint"
 // the walk
 // ---------------------------------------------------------------------------
 
-function collectInstruction(state: DockerState, instruction: Node): void {
+function collectInstruction(state: DockerState, instruction: Node, recovered: boolean): void {
   switch (instruction.type) {
     case FROM:
       collectFrom(state, instruction);
       return;
     case ARG:
-      collectArg(state, instruction);
+      collectArg(state, instruction, recovered);
       break;
     case ENV:
-      collectEnv(state, instruction);
+      collectEnv(state, instruction, recovered);
       break;
     case COPY:
     case ADD:
@@ -380,13 +410,14 @@ function collectInstruction(state: DockerState, instruction: Node): void {
  * that node recovers what can be recovered; the rest of the file is genuinely lost to the
  * grammar, and `unparsable.ts` is what reports it.
  */
-function walk(state: DockerState, node: Node): void {
+function walk(state: DockerState, node: Node, recovered: boolean): void {
   for (const child of node.namedChildren) {
     if (child.type === "ERROR") {
-      walk(state, child);
+      state.sawError = true;
+      walk(state, child, true);
       continue;
     }
-    collectInstruction(state, child);
+    collectInstruction(state, child, recovered);
   }
 }
 
@@ -402,7 +433,11 @@ function finish(state: DockerState): void {
     stage.declaration.span = [start, Math.max(stage.lastLine, start)];
   }
 
-  const final = state.stages[state.stages.length - 1];
+  // A file the grammar could not read whole has an unknown tail, and the image node is named
+  // after the *last* stage: `FROM a AS one` / `ENV NOTE a b c` / `FROM a AS two` really builds
+  // `two`, and the walk can only see `one`. Publishing `image.one` would be a guess, so a file
+  // holding any `ERROR` gets no image node — a miss the oracle can catch, never a wrong id.
+  const final = state.sawError ? undefined : state.stages[state.stages.length - 1];
   if (final === undefined) return;
   addDeclaration(
     state,
@@ -440,9 +475,10 @@ export function extractDockerfile(
     stages: [],
     usedIds: new Set<string>(),
     exportedNames: new Set<string>(),
+    sawError: false,
   };
 
-  walk(state, tree.rootNode);
+  walk(state, tree.rootNode, false);
   finish(state);
 
   return {

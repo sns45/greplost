@@ -417,12 +417,12 @@
 
 ## bench/src/truth/dockerfile.ts
 
-- `const NOTES: readonly string[] = ["dockerfile-ast-oracle", "same-rules-different-parser"]` L53-53
-- `interface OracleConstant` L143-148
-- `type ReferenceTruth = Edge & { readonly refKind: string }` L315-315
-- `function generateTruth(root: string, files: string[]): Truth` L328-343
-- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L353-398
-- `function constantsOf(root: string, files: string[]): Record<string, OracleConstant[]>` L423-428
+- `const NOTES: readonly string[] = ["dockerfile-ast-oracle", "same-rules-different-parser"]` L60-60
+- `interface OracleConstant` L145-150
+- `type ReferenceTruth = Edge & { readonly refKind: string }` L317-317
+- `function generateTruth(root: string, files: string[]): Truth` L330-345
+- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L355-399
+- `function constantsOf(root: string, files: string[]): Record<string, OracleConstant[]>` L424-429
 
 ## bench/src/truth/go.ts
 
@@ -439,18 +439,21 @@
 
 ## bench/src/truth/java.ts
 
-- `const NOTES: readonly string[] = ["javac-tree-api", "source-classpath-only", "unresolved-files-dropped"]` L59-59
-- `function javaTruthTool(): string` L144-163
-- `function generateTruth(root: string, files: string[]): Truth` L291-347
+- `const NOTES: readonly string[] = [ "javac-tree-api", "source-classpath-only", "unresolved-files-dropped", "no-overload-resolution", "no-inherited-dispatch", "module-info-not-scored", ]` L66-73
+- `function javaTruthTool(): string` L158-177
+- `function generateTruth(root: string, files: string[]): Truth` L305-361
 
 ## bench/src/truth/kotlin.ts
 
-- `const NOTES: readonly string[] = [ "fixture-oracle-only", "no-corpus-compiler-truth", "kotlinc-javap-classfiles", "jvm-synthetics-dropped", "property-access-not-a-call", ]` L59-65
-- `function kotlinTruthTool(): string` L102-108
-- `function hasKotlinToolchain(): boolean` L116-129
-- `function isFixtureRoot(root: string): boolean` L132-135
-- `function kotlinToolOutput(root: string, files: readonly string[]): KotlinToolOutput` L188-212
-- `function generateTruth(root: string, files: string[]): Truth` L272-347
+- `const NOTES: readonly string[] = [ "fixture-oracle-only", "no-corpus-compiler-truth", "kotlinc-javap-classfiles", "jvm-synthetics-dropped", "property-access-not-a-call", "internal-class-is-pub…` L77-85
+- `function kotlinTruthTool(): string` L122-128
+- `const KOTLINC_FLOOR: readonly [number, number] = [2, 4]` L140-140
+- `function kotlincVersion(banner: string): [number, number, number] | null` L143-147
+- `function kotlinToolchainProblem(): string | null` L155-177
+- `function hasKotlinToolchain(): boolean` L185-187
+- `function isFixtureRoot(root: string): boolean` L190-193
+- `function kotlinToolOutput(root: string, files: readonly string[]): KotlinToolOutput` L270-294
+- `function generateTruth(root: string, files: string[]): Truth` L354-429
 
 ## bench/src/truth/python.ts
 
@@ -514,36 +517,37 @@
 
 ## bench/src/truth/yaml-actions.ts
 
-- `const NOTES: readonly string[] = ["js-yaml-oracle"]` L51-51
-- `function isActionsFile(root: string, file: string): boolean` L130-139
-- `type ReferenceTruth = Edge & { readonly refKind: string }` L378-378
-- `function generateTruth(root: string, files: string[]): Truth` L391-405
-- `function generateExtra( root: string, files: string[], universe: string[] = files, ): { references: Edge[]; nodes: string[] }` L416-460
+- `const NOTES: readonly string[] = ["js-yaml-oracle", "anchors-not-expanded", "config-precision-unmeasured"]` L62-62
+- `function isActionsFile(root: string, file: string): boolean` L188-196
+- `type ReferenceTruth = Edge & { readonly refKind: string }` L472-472
+- `function generateTruth(root: string, files: string[]): Truth` L485-501
+- `function generateExtra( root: string, files: string[], universe: string[] = files, ): { references: Edge[]; nodes: string[] }` L512-556
 
 ## bench/src/truth/yaml-helm.ts
 
-- `const NOTES: readonly string[] = [ "js-yaml-oracle", "helm-template-render", "names-not-compared-for-templates", ]` L48-52
-- `function helmBinary(): string` L86-100
-- `interface RenderedDocument` L103-108
-- `function helmRender(chartDir: string): RenderedDocument[] | null` L117-154
-- `function chartsOf(root: string, files: readonly string[]): Chart[]` L175-204
-- `function generateTruth(root: string, files: string[]): Truth` L298-314
-- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L323-367
+- `const NOTES: readonly string[] = [ "js-yaml-oracle", "helm-template-render", "names-not-compared-for-templates", "same-regex-both-sides", "if-else-arms-both-kept", ]` L62-68
+- `function helmBinary(): string` L108-122
+- `interface RenderedDocument` L125-130
+- `function helmRender(chartDir: string): RenderedDocument[] | null` L139-176
+- `function chartsOf(files: readonly string[]): Chart[]` L197-226
+- `function literalImages(source: string, file: string): Array<{ from: string; image: string }>` L283-350
+- `function generateTruth(root: string, files: string[]): Truth` L415-431
+- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }` L451-527
 
 ## bench/src/truth/yaml-k8s.ts
 
 - `const NOTES: readonly string[] = ["js-yaml-oracle"]` L45-45
-- `type ReferenceTruth = Edge & { readonly refKind: string }` L310-310
-- `function generateTruth(root: string, files: string[]): Truth` L323-337
-- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L347-402
+- `type ReferenceTruth = Edge & { readonly refKind: string }` L329-329
+- `function generateTruth(root: string, files: string[]): Truth` L342-359
+- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }` L370-431
 
 ## bench/src/truth/yaml.ts
 
 - `const NOTES: readonly string[] = ["yaml-flavour-dispatch"]` L25-25
 - `type YamlFlavour = "yaml-actions" | "yaml-helm" | "yaml-k8s"` L30-30
-- `function isWorkflowFile(file: string): boolean` L78-85
-- `function isHelmFile(file: string): boolean` L88-91
-- `function flavourOf(file: string, root?: string): YamlFlavour` L100-111
-- `function groupByFlavour(files: readonly string[], root?: string): Array<[YamlFlavour, string[]]>` L114-126
-- `function generateTruth(root: string, files: string[]): Truth` L128-134
-- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }` L137-150
+- `function isWorkflowFile(file: string): boolean` L84-91
+- `function isHelmFile(file: string): boolean` L94-97
+- `function flavourOf(file: string, root?: string): YamlFlavour` L106-124
+- `function groupByFlavour(files: readonly string[], root?: string): Array<[YamlFlavour, string[]]>` L150-162
+- `function generateTruth(root: string, files: string[]): Truth` L164-170
+- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }` L173-196

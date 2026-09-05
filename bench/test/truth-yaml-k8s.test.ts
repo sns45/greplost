@@ -65,7 +65,17 @@ describe("js-yaml oracle", () => {
     const helm = await loadTruth("yaml-helm");
     expect(typeof helm.generateTruth).toBe("function");
     expect(typeof helm.generateExtra).toBe("function");
-    expect(HELM_NOTES).toEqual(["js-yaml-oracle", "helm-template-render", "names-not-compared-for-templates"]);
+    expect(HELM_NOTES).toEqual([
+      "js-yaml-oracle",
+      "helm-template-render",
+      "names-not-compared-for-templates",
+      // The `.Values` set is one regular expression written twice, so S5 witnesses agreement
+      // and not correctness; only S2 is independently witnessed for a chart (fix round 1).
+      "same-regex-both-sides",
+      // Both arms of an `if`/`else` survive the pre-pass, so a template that writes one key in
+      // each leaves a duplicate key and is read only as far as the grammar recovers.
+      "if-else-arms-both-kept",
+    ]);
 
     // The `yaml` dispatcher is what `structural.ts` actually asks, so it has to offer both.
     const yaml = await loadTruth("yaml");
@@ -113,6 +123,66 @@ describe("js-yaml oracle", () => {
     ]);
     // Every edge carries its `refKind`, which is what makes the S5 key (from, to, refKind).
     expect(extra.references.every((edge) => typeof (edge as { refKind?: string }).refKind === "string")).toBe(true);
+  });
+
+  test("two documents with one name are one export name and no config-ref candidate", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "greplost-k8s-dup-"));
+    temporaryDirs.push(dir);
+    writeFileSync(
+      path.join(dir, "cm.yaml"),
+      "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: web-config\n  namespace: a\n---\n" +
+        "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: web-config\n  namespace: b\n",
+    );
+    writeFileSync(
+      path.join(dir, "deploy.yaml"),
+      "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web\nspec:\n  template:\n    spec:\n" +
+        "      containers:\n        - name: app\n          image: nginx:1.27\n          envFrom:\n" +
+        "            - configMapRef:\n                name: web-config\n",
+    );
+    const files = ["cm.yaml", "deploy.yaml"];
+    // The suffix is on the id, never on the name.
+    expect(generateTruth(dir, files).exports["cm.yaml"]).toEqual(["ConfigMap.web-config"]);
+    const dup = generateExtra(dir, files);
+    expect(dup.nodes).toContain("cm.yaml#resource.ConfigMap.web-config");
+    expect(dup.nodes).toContain("cm.yaml#resource.ConfigMap.web-config~2");
+    // Two candidates for one written name: spec 2.3 drops the edge rather than guessing.
+    expect(dup.references.filter((edge) => (edge as { refKind?: string }).refKind === "config-ref")).toEqual([]);
+  });
+
+  test("a scalar YAML types as a number is still a name and a label on both sides", async () => {
+    // greplost reads the text a scalar was written with; js-yaml types it. An oracle that
+    // refused everything non-string dropped `version: 2` out of a selector and out of a pod's
+    // labels, so the two workloads below looked identical to it, its selector matched both and
+    // it drew nothing — scoring greplost's correct, unique edge as a false positive. The same
+    // refusal skipped a whole document whose `metadata.name` was a number (fix round 1).
+    const workload = (name: string, version: string): string =>
+      `apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ${name}\nspec:\n  template:\n    metadata:\n` +
+      `      labels:\n        app: api\n        version: ${version}\n    spec:\n      containers:\n` +
+      `        - name: app\n          image: nginx:1.27\n`;
+    const dir = mkdtempSync(path.join(tmpdir(), "greplost-k8s-scalars-"));
+    temporaryDirs.push(dir);
+    writeFileSync(
+      path.join(dir, "n.yaml"),
+      `${workload("old", "1")}---\n${workload("new", "2")}---\n` +
+        "apiVersion: v1\nkind: Service\nmetadata:\n  name: api\nspec:\n  selector:\n    app: api\n    version: 2\n" +
+        "---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: 2024\n",
+    );
+    const files = ["n.yaml"];
+    const numeric = generateExtra(dir, files);
+    // The numeric label picks exactly one of the two workloads.
+    expect(keys(numeric.references)).toContain("n.yaml#resource.Service.api -> n.yaml#resource.Deployment.new");
+    // The numeric name is a name.
+    expect(numeric.nodes).toContain("n.yaml#resource.ConfigMap.2024");
+    expect(generateTruth(dir, files).exports["n.yaml"]).toContain("ConfigMap.2024");
+
+    const { buildSnapshot } = await import("@greplost/core");
+    const snapshot = await buildSnapshot({ root: dir, config: YAML_CONFIG });
+    const key = (edge: { from: string; to: string; refKind?: string }): string =>
+      `${edge.from} -${edge.refKind ?? ""}-> ${edge.to}`;
+    const S5 = scoreSet((snapshot.references ?? []).map(key), numeric.references.map((e) => key(e as never)));
+    expect([S5.fp, S5.fn]).toEqual([0, 0]);
+    const S6 = scoreSet(snapshot.symbols.map((decl) => decl.id), numeric.nodes);
+    expect([S6.fp, S6.fn]).toEqual([0, 0]);
   });
 
   test("an empty truth is an error, never a score", () => {
@@ -173,7 +243,7 @@ describe("helm render", () => {
   });
 
   test("the chart grouping finds the chart root, its values file and its templates", () => {
-    expect(chartsOf(helmRoot, HELM_FILES)).toEqual([
+    expect(chartsOf(HELM_FILES)).toEqual([
       {
         dir: "",
         chartFile: "Chart.yaml",
@@ -226,7 +296,10 @@ describe("helm render", () => {
       "templates/service.yaml": [],
       "values.yaml": ["image", "replicaCount", "service"],
     });
-    expect(helmTruth.notes).toContain("unsupported:S6");
+    // S6 is no longer switched off target-wide: `nodeFiles` restricts it to the chart's own
+    // files instead, so a repo holding manifests beside a chart still scores its manifests.
+    expect(helmTruth.notes).not.toContain("unsupported:S6");
+    expect(helmTruth.notes).toContain("unsupported:S3");
     expect(helmTruth.notes).toContain("names-not-compared-for-templates");
   });
 
@@ -239,16 +312,27 @@ describe("helm render", () => {
       "templates/deployment.yaml -> values.yaml#variable.image .Values.image.tag",
       "templates/deployment.yaml -> values.yaml#variable.replicaCount .Values.replicaCount",
       "templates/deployment.yaml -> values.yaml#variable.service .Values.service.port",
+      // A literal image in a template is fully rendered text, so the oracle states it too.
+      "templates/deployment.yaml#image.wait -> ext:image/busybox:1.36 busybox:1.36",
       "templates/service.yaml -> values.yaml#variable.service .Values.service.port",
     ]);
-    expect(helmExtra.nodes).toEqual([]);
+    // S6 is scored over the chart's own files, never its templates.
+    expect(helmExtra.nodeFiles).toEqual(["Chart.yaml", "values.yaml"]);
+    expect(helmExtra.nodes).toEqual([
+      "Chart.yaml#module.tiny",
+      "values.yaml#variable.image",
+      "values.yaml#variable.replicaCount",
+      "values.yaml#variable.service",
+    ]);
 
     const { buildSnapshot } = await import("@greplost/core");
     const snapshot = await buildSnapshot({ root: helmRoot, config: YAML_CONFIG });
     const predicted = new Set(keys(snapshot.references ?? []));
     for (const edge of keys(helmExtra.references)) expect(predicted.has(edge)).toBe(true);
-    // A chart draws no other kind of reference: everything else in it is a value, not a name.
-    expect((snapshot.references ?? []).every((edge) => edge.refKind === "helm-values")).toBe(true);
+    // A chart draws two kinds of reference and no more: `helm-values`, and `from-image` for an
+    // image literal enough to name itself. Everything else in a chart is a value, not a name.
+    const kinds = new Set((snapshot.references ?? []).map((edge) => edge.refKind));
+    expect([...kinds].sort()).toEqual(["from-image", "helm-values"]);
   });
 
   test("the yaml dispatcher merges both flavours without losing either", () => {
@@ -256,6 +340,33 @@ describe("helm render", () => {
     expect(merged.files).toEqual(HELM_FILES);
     const mergedExtra = generateYamlExtra(helmRoot, HELM_FILES);
     expect(keys(mergedExtra.references)).toEqual(keys(generateHelmExtra(helmRoot, HELM_FILES).references));
+  });
+
+  test("a repo of manifests beside a chart still scores its manifest nodes", async () => {
+    // The regression `nodeFiles` replaced `unsupported:S6` to fix: a note is published
+    // target-wide, so one chart used to switch S6 off for every manifest in the repo.
+    const dir = mkdtempSync(path.join(tmpdir(), "greplost-yaml-mixed-"));
+    temporaryDirs.push(dir);
+    cpSync(k8sRoot, dir, { recursive: true });
+    cpSync(helmRoot, dir, { recursive: true });
+
+    const files = [...K8S_FILES, ...HELM_FILES].sort();
+    const mixed = generateYamlTruth(dir, files);
+    expect(mixed.files).toEqual(files);
+    expect(mixed.notes).not.toContain("unsupported:S6");
+
+    const mixedExtra = generateYamlExtra(dir, files);
+    // Every manifest is scored; the chart contributes its own two files and not its templates.
+    expect(mixedExtra.nodeFiles).toEqual(["Chart.yaml", ...K8S_FILES, "values.yaml"].sort());
+    expect(mixedExtra.nodes.filter((id) => K8S_FILES.some((file) => id.startsWith(`${file}#`)))).toEqual(extra.nodes);
+
+    const { buildSnapshot } = await import("@greplost/core");
+    const { scoreAgainstTruth } = await import("../src/structural.ts");
+    const snapshot = await buildSnapshot({ root: dir, config: YAML_CONFIG });
+    const scores = scoreAgainstTruth("mixed", snapshot, mixed, "yaml", mixedExtra);
+    expect(scores.S6).not.toBeNull();
+    // The 7 manifest nodes plus the chart's module node and its three values keys.
+    expect([scores.S6?.tp, scores.S6?.fp, scores.S6?.fn]).toEqual([11, 0, 0]);
   });
 });
 

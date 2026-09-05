@@ -24,8 +24,8 @@
 - `function keyText(node: Node): string`  L79-87
 - `function documentKeys(document: Node): string[]`  L96-106
 - `function findMapping(node: Node): Node | null`  L109-120
-- `function classifyYamlDocument(path: string, keys: readonly string[]): YamlFlavour`  L138-145
-- `function classifyYamlFile(path: string, tree: Tree): YamlFlavour`  L151-161
-- `function extractYaml( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L163-179
+- `function classifyYamlDocument(path: string, keys: readonly string[]): YamlFlavour`  L139-150
+- `function classifyYamlFile(path: string, tree: Tree): YamlFlavour`  L156-166
+- `function extractYaml( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L168-184
 
 **Calls:** `extractYamlActions` → [`packages/core/src/extract/yaml-actions.ts#extractYamlActions`](yaml-actions.ts.md) (high), `isActionDefinitionPath` → [`packages/core/src/extract/yaml-actions.ts#isActionDefinitionPath`](yaml-actions.ts.md) (high), `extractYamlHelm` → [`packages/core/src/extract/yaml-helm.ts#extractYamlHelm`](yaml-helm.ts.md) (high), `extractYamlK8s` → [`packages/core/src/extract/yaml-k8s.ts#extractYamlK8s`](yaml-k8s.ts.md) (high), `basenameOf` → [`packages/core/src/extract/yaml.ts#basenameOf`](yaml.ts.md) (high), `classifyYamlDocument` → [`packages/core/src/extract/yaml.ts#classifyYamlDocument`](yaml.ts.md) (high), `classifyYamlFile` → [`packages/core/src/extract/yaml.ts#classifyYamlFile`](yaml.ts.md) (high), `documentKeys` → [`packages/core/src/extract/yaml.ts#documentKeys`](yaml.ts.md) (high), `findMapping` → [`packages/core/src/extract/yaml.ts#findMapping`](yaml.ts.md) (high), `isHelmPath` → [`packages/core/src/extract/yaml.ts#isHelmPath`](yaml.ts.md) (high), `isWorkflowPath` → [`packages/core/src/extract/yaml.ts#isWorkflowPath`](yaml.ts.md) (high), `keyText` → [`packages/core/src/extract/yaml.ts#keyText`](yaml.ts.md) (high), `nothing` → [`packages/core/src/extract/yaml.ts#nothing`](yaml.ts.md) (high)

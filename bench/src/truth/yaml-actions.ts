@@ -47,15 +47,33 @@ import { loadAll } from "js-yaml";
 import { compareEdges, compareStrings, type Edge } from "@greplost/core/schema";
 import type { Truth } from "./ts.ts";
 
-/** Oracle choices this generator applies, for `RESULTS.md` to disclose. */
-export const NOTES: readonly string[] = ["js-yaml-oracle"];
+/**
+ * Oracle choices this generator applies, for `RESULTS.md` to disclose.
+ *
+ *  - `js-yaml-oracle`               — which reader actually ran (see the module docstring).
+ *  - `anchors-not-expanded`         — js-yaml resolves anchors, aliases and merge keys (`<<:`)
+ *    and greplost reads the text as written; a workflow that uses one is a real divergence and
+ *    is scored as one rather than papered over.
+ *  - `config-precision-unmeasured`  — the `config` refKind has no corpus-scale measurement. A
+ *    YAML target is indexed with `languages: ["yaml"]`, so a `run:` body naming `scripts/x.ts`
+ *    resolves to nothing on either side, and even the fixture's two `config` edges fall outside
+ *    S5 because their targets are not scored YAML files. Leaf 2.12 discloses this.
+ */
+export const NOTES: readonly string[] = ["js-yaml-oracle", "anchors-not-expanded", "config-precision-unmeasured"];
 
 /**
- * S3 is not a miss for a workflow, it is unmeasurable: YAML has no call edges at all, so there
- * is nothing for an oracle to be right or wrong about. `structural.ts` reads this spelling out
- * of the notes and prints `n/a` (leaf 2.0 ruling R10); nothing is inferred.
+ * Metrics a workflow oracle cannot measure, because a workflow has none of the things they
+ * count. `structural.ts` reads these out of the notes and prints `n/a` (leaf 2.0 ruling R10);
+ * nothing is inferred.
+ *
+ * S3 (calls) and S1 (imports) are both structurally absent — spec 2.4 gives a workflow neither,
+ * and `resolve/yaml.ts` says the same on greplost's side — and S4 is the cycle set over an
+ * import graph that does not exist. Reporting them as a measured 1.000 over an empty universe
+ * on both sides is the vacuous pass tech spec 10.1 principle 2 exists to stop. S2, S5 and S6
+ * stay measured and gated, so `--gate` is never left with nothing to fail (leaf 2.9 fix
+ * round 1).
  */
-const UNSUPPORTED = ["unsupported:S3"] as const;
+const UNSUPPORTED = ["unsupported:S1", "unsupported:S3", "unsupported:S4"] as const;
 
 /** The synthetic job id a composite action's steps hang from (spec 2.4). */
 const COMPOSITE_JOB_ID = "runs";
@@ -117,25 +135,85 @@ function isActionDefinitionName(file: string): boolean {
   return base === "action.yml" || base === "action.yaml";
 }
 
+/** Chart files that mark a directory as a Helm chart, whatever else is in it. */
+const CHART_FILES: ReadonlySet<string> = new Set(["Chart.yaml", "Chart.yml", "values.yaml", "values.yml"]);
+
+/** True for `.github/workflows/<name>.yml` and `.yaml`, at any repo depth. */
+function isWorkflowPathName(file: string): boolean {
+  const index = file.indexOf(".github/workflows/");
+  if (index === -1) return false;
+  if (index !== 0 && file[index - 1] !== "/") return false;
+  const rest = file.slice(index + ".github/workflows/".length);
+  if (rest.includes("/") || rest === "") return false;
+  return rest.endsWith(".yml") || rest.endsWith(".yaml");
+}
+
+/** True for a chart file or anything under a chart's `templates/` directory. */
+function isHelmPathName(file: string): boolean {
+  if (CHART_FILES.has(basename(file))) return true;
+  return file.startsWith("templates/") || file.includes("/templates/");
+}
+
+/** The four flavours `packages/core/src/extract/yaml.ts` tells apart. */
+type Flavour = "actions" | "helm" | "k8s" | "plain";
+
 /**
- * True when a file is a GitHub Actions file by its *content*: a document with top-level `on`
- * and `jobs`, or an `action.yml` with a top-level `runs`.
+ * One document's flavour: `classifyYamlDocument` restated, in order, on js-yaml's objects.
+ *
+ * Restated and not shared — that is what makes a flavour disagreement between the two programs
+ * show up as a score rather than as silence. The order is the extractor's, including the two
+ * facts the review turned up: a file under `.github/workflows/` with **no `on` key** is not a
+ * workflow (GitHub will not run it, and greplost classifies it `plain`), and the content rules
+ * sit below `apiVersion`+`kind` so a manifest stays a manifest.
+ */
+function classifyDocument(file: string, document: unknown): Flavour {
+  if (!isPlain(document)) return isHelmPathName(file) ? "helm" : "plain";
+  if (isWorkflowPathName(file) && "on" in document) return "actions";
+  if (isHelmPathName(file)) return "helm";
+  if ("apiVersion" in document && "kind" in document) return "k8s";
+  if ("on" in document && "jobs" in document) return "actions";
+  if (isActionDefinitionName(file) && "runs" in document) return "actions";
+  return "plain";
+}
+
+/**
+ * True when this file is one the Actions oracle owns: the first of its documents that is not
+ * `plain` is a workflow or an action definition.
  *
  * `bench/src/truth/yaml.ts` asks this so its flavour split matches the one
- * `packages/core/src/extract/yaml.ts` makes — the same rule stated twice, in two programs, on
- * two parsers, which is the only way a flavour disagreement can ever show up as a score rather
- * than as silence. The path rule (`.github/workflows/…`) is the dispatcher's own and is checked
- * before this.
+ * `packages/core/src/extract/yaml.ts` makes. A file js-yaml cannot read at all falls back to the
+ * path rule, which is all the seam's own `flavourOf(file)` ever had; such a file is covered by
+ * no oracle and drops out of `truth.files`, so it is scored on neither side either way.
  */
 export function isActionsFile(root: string, file: string): boolean {
   const documents = documentsOf(root, file);
-  if (documents === null) return false;
+  if (documents === null) return isWorkflowPathName(file);
   for (const document of documents) {
-    if (!isPlain(document)) continue;
-    if ("on" in document && "jobs" in document) return true;
-    if (isActionDefinitionName(file) && "runs" in document) return true;
+    const flavour = classifyDocument(file, document);
+    if (flavour !== "plain") return flavour === "actions";
   }
   return false;
+}
+
+/**
+ * A `run:` body with every `${{ … }}` span replaced by spaces of the same length.
+ *
+ * Restated from spec 2.4's "literal token", not shared with greplost: a path *inside* an
+ * expression is an argument to `hashFiles` or `format`, not a file the step runs, and blanking
+ * the span (rather than the line) keeps a real path written beside one.
+ */
+function blankExpressions(body: string): string {
+  let out = "";
+  let index = 0;
+  for (;;) {
+    const start = body.indexOf("${{", index);
+    if (start === -1) return out + body.slice(index);
+    const end = body.indexOf("}}", start + 3);
+    out += body.slice(index, start);
+    if (end === -1) return out + " ".repeat(body.length - start);
+    out += " ".repeat(end + 2 - start);
+    index = end + 2;
+  }
 }
 
 /**
@@ -143,12 +221,13 @@ export function isActionsFile(root: string, file: string): boolean {
  *
  * The rule of spec 2.4, restated: a word that could spell a repo-relative path, with no
  * expansion, no glob, no absolute root and no `..`, and with either a separator or an extension
- * so a bare command (`make`, `bun`) is never a candidate.
+ * so a bare command (`make`, `bun`) is never a candidate, read from a body whose expression
+ * spans have been blanked.
  */
 function runPathTokens(body: string): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const raw of body.split(SHELL_SEPARATORS)) {
+  for (const raw of blankExpressions(body).split(SHELL_SEPARATORS)) {
     if (raw === "" || raw.includes("$") || raw.includes("*") || raw.includes("?")) continue;
     const token = raw.startsWith("./") ? raw.slice(2) : raw;
     if (token === "" || token.startsWith("/") || token.includes("..")) continue;
@@ -185,8 +264,8 @@ function stringList(value: unknown): string[] {
 interface FileReading {
   /** Every node id this file declares, in source order. */
   readonly nodes: string[];
-  /** The job ids this file declares, in source order (the file's exports). */
-  readonly jobIds: string[];
+  /** The job ids this file declares, in source order and each one once (the file's exports). */
+  readonly jobIds: Set<string>;
   /** `job`/`task` node ids by job id, for the `needs` lookup inside this file. */
   readonly jobsById: Map<string, string[]>;
   /** Requests, before resolution. */
@@ -196,7 +275,14 @@ interface FileReading {
 }
 
 function emptyReading(): FileReading {
-  return { nodes: [], jobIds: [], jobsById: new Map<string, string[]>(), needs: [], uses: [], config: [] };
+  return {
+    nodes: [],
+    jobIds: new Set<string>(),
+    jobsById: new Map<string, string[]>(),
+    needs: [],
+    uses: [],
+    config: [],
+  };
 }
 
 /** Everything one workflow or action file declares and asks for, by the rules of spec 2.4. */
@@ -206,12 +292,20 @@ function readFile(root: string, file: string): FileReading | null {
 
   const reading = emptyReading();
   const used = new Set<string>();
-  /** The uniqueness suffix rule, restated: `build`, then `build~2` (driver ruling 2026-09-04). */
+  /**
+   * The uniqueness suffix rule, restated: the suffix lands on the **id** and nowhere else, so
+   * two jobs called `build` are `…#job.build` and `…#job.build~2` and both are *named* `build`
+   * (driver ruling 2026-09-04).
+   *
+   * One rule covers a step under a duplicated job, the same one `extract/yaml-actions.ts`
+   * states: the step's name is always `<jobId as written>.~<stepIndex>`, so the second job's
+   * first step is `step.build.~0` and its id takes the suffix (`…#step.build.~0~2`). Spelling a
+   * job id nobody wrote inside a step name is the alternative, and it is worse.
+   */
   const add = (kind: string, rawName: string): string => {
-    let name = rawName;
-    for (let n = 2; used.has(`${kind}.${name}`); n += 1) name = `${rawName}~${n}`;
-    used.add(`${kind}.${name}`);
-    const id = `${file}#${kind}.${name}`;
+    let id = `${file}#${kind}.${rawName}`;
+    for (let n = 2; used.has(id); n += 1) id = `${file}#${kind}.${rawName}~${n}`;
+    used.add(id);
     reading.nodes.push(id);
     return id;
   };
@@ -242,7 +336,7 @@ function readFile(root: string, file: string): FileReading | null {
         const uses = text(body["uses"]);
         if (uses !== null) {
           const id = add("task", jobId);
-          reading.jobIds.push(jobId);
+          reading.jobIds.add(jobId);
           const bucket = reading.jobsById.get(jobId);
           if (bucket === undefined) reading.jobsById.set(jobId, [id]);
           else bucket.push(id);
@@ -251,7 +345,7 @@ function readFile(root: string, file: string): FileReading | null {
           continue;
         }
         const id = add("job", jobId);
-        reading.jobIds.push(jobId);
+        reading.jobIds.add(jobId);
         const bucket = reading.jobsById.get(jobId);
         if (bucket === undefined) reading.jobsById.set(jobId, [id]);
         else bucket.push(id);
@@ -392,6 +486,8 @@ export function generateTruth(root: string, files: string[]): Truth {
   const { covered, readings } = coveredRun(root, files);
   const exports: Record<string, string[]> = {};
   for (const file of covered) {
+    // One entry per job *name*: two documents that both declare `build` publish one export, and
+    // never a `build~2` nobody wrote (driver ruling 2026-09-04; leaf 2.9 fix round 1).
     exports[file] = [...(readings.get(file) as FileReading).jobIds].sort(compareStrings);
   }
   return {

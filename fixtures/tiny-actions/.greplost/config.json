@@ -6,8 +6,19 @@
   "exclude": [
     "**/node_modules/**",
     "**/dist/**",
+    "**/build/**",
     "**/.git/**",
-    "**/.greplost/**"
+    "**/.greplost/**",
+    "**/*.d.ts",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/__tests__/**",
+    "**/testdata/**",
+    "**/*_test.go",
+    "**/test_*.py",
+    "**/*_test.py",
+    "**/conftest.py",
+    "**/vendor/**"
   ],
   "include": [
     "**"

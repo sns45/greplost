@@ -49,7 +49,9 @@ export const NOTES: readonly string[] = ["js-yaml-oracle"];
  * is nothing for an oracle to be right or wrong about. `structural.ts` reads this spelling out
  * of the notes and prints `n/a` (leaf 2.0 ruling R10); nothing is inferred.
  */
-const UNSUPPORTED = ["unsupported:S3"] as const;
+// S1 and S4 are vacuous for YAML (no imports, no cycles): stated as unsupported so RESULTS.md prints n/a
+// instead of a 1.000 nobody measured (driver ruling 2026-09-05, shared with the Dockerfile and Actions oracles).
+const UNSUPPORTED = ["unsupported:S1", "unsupported:S3", "unsupported:S4"] as const;
 
 /** Keys whose value is a list of containers, wherever in a document they appear. */
 const CONTAINER_KEYS: ReadonlySet<string> = new Set(["containers", "initContainers", "ephemeralContainers"]);
@@ -85,12 +87,25 @@ function isPlain(value: unknown): value is Plain {
 /**
  * A scalar as the text a name would have been written with.
  *
- * js-yaml has already typed the value; a Kubernetes name, a label value and an image reference
- * are all strings, so anything that is not a string is not one of them and is refused rather
- * than stringified into something that only looks like a name.
+ * A Kubernetes name, a label value and an image reference are all strings *in the file*, but
+ * `version: 2` and `enabled: true` are scalars YAML types on the way in, and js-yaml hands them
+ * back as a number and a boolean. greplost reads the text as written, so an oracle that refused
+ * everything non-string dropped exactly those out of a selector, out of a pod's labels and out
+ * of a `metadata.name`, and then scored greplost's correct edges and nodes as false positives.
+ * Both sides therefore accept the same three scalar types (fix round 1).
+ *
+ * A collection, and `null`, are refused: neither is a scalar and neither can be a name.
+ *
+ * One residue is left, and is smaller than the bug it replaces: js-yaml has already *parsed* a
+ * number, so an unquoted `1.10` comes back as `1.1` and greplost keeps `1.10`. Quoting is the
+ * norm for a version-shaped label and the corpora carry no such case, but a repo that wrote one
+ * would see it as a genuine one-edge difference rather than as a whole metric collapsing.
  */
 function text(value: unknown): string | null {
-  return typeof value === "string" ? value : null;
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return Number.isFinite(value) ? String(value) : null;
+  if (typeof value === "boolean") return String(value);
+  return null;
 }
 
 function get(value: unknown, ...keys: readonly string[]): unknown {
@@ -210,16 +225,20 @@ function readFile(root: string, file: string): FileReading | null {
 
   const reading = emptyReading();
   const used = new Set<string>();
-  /** The uniqueness suffix rule, restated: `web`, then `web~2` (driver ruling 2026-09-04). */
-  const unique = (kind: string, name: string): string => {
-    let candidate = name;
-    for (let n = 2; used.has(`${kind}.${candidate}`); n += 1) candidate = `${name}~${n}`;
-    used.add(`${kind}.${candidate}`);
+  /**
+   * The uniqueness suffix rule, restated: the **id** takes `~2`, the name never does (driver
+   * ruling 2026-09-04). Two `ConfigMap`s called `web-config` are two nodes and one name, so a
+   * `configMapRef` naming it finds two candidates and resolves to nothing.
+   */
+  const uniqueId = (kind: string, name: string): string => {
+    const base = `${file}#${kind}.${name}`;
+    let candidate = base;
+    for (let n = 2; used.has(candidate); n += 1) candidate = `${base}~${n}`;
+    used.add(candidate);
     return candidate;
   };
-  const add = (kind: string, rawName: string): OracleNode => {
-    const name = unique(kind, rawName);
-    const node: OracleNode = { id: `${file}#${kind}.${name}`, name, file };
+  const add = (kind: string, name: string): OracleNode => {
+    const node: OracleNode = { id: uniqueId(kind, name), name, file };
     reading.nodes.push(node);
     return node;
   };
@@ -324,7 +343,10 @@ export function generateTruth(root: string, files: string[]): Truth {
   const { covered, readings } = coveredRun(root, files);
   const exports: Record<string, string[]> = {};
   for (const file of covered) {
-    exports[file] = (readings.get(file) as FileReading).nodes.map((node) => node.name).sort(compareStrings);
+    // Sorted node *names*, deduplicated: two documents with one name are one export record,
+    // exactly as `extract/yaml-k8s.ts` writes it.
+    const names = new Set((readings.get(file) as FileReading).nodes.map((node) => node.name));
+    exports[file] = [...names].sort(compareStrings);
   }
   return {
     files: covered,
@@ -341,10 +363,14 @@ export function generateTruth(root: string, files: string[]): Truth {
  *
  * Resolution is repo-wide and unique, exactly as spec 2.3 states it: a selector whose labels are
  * a subset of exactly one workload's pod labels, a `<Kind>/<name>` matching exactly one resource
- * node. Anything ambiguous produces no edge on this side either, so an oracle can never demand
+ * node **by written name**, so two same-named `ConfigMap`s are two candidates and neither side
+ * draws an edge. Anything ambiguous produces no edge here either, so an oracle can never demand
  * a guess.
  */
-export function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] } {
+export function generateExtra(
+  root: string,
+  files: string[],
+): { references: Edge[]; nodes: string[]; nodeFiles: string[] } {
   const { covered, readings } = coveredRun(root, files);
 
   const workloads: Array<{ id: string; labels: ReadonlyMap<string, string> }> = [];
@@ -398,7 +424,10 @@ export function generateExtra(root: string, files: string[]): { references: Edge
   }
 
   references.sort(compareEdges);
-  return { references: dedupe(references), nodes: nodes.sort(compareStrings) };
+  // Every covered manifest states its own nodes, so S6 scores all of them. The field exists for
+  // the flavour that cannot say that of every file it covers (`truth/yaml-helm.ts`), and naming
+  // the files here is what keeps a merged YAML truth from inheriting that restriction.
+  return { references: dedupe(references), nodes: nodes.sort(compareStrings), nodeFiles: [...covered] };
 }
 
 /** Adjacent duplicates only: the list is already sorted by every field that identifies an edge. */

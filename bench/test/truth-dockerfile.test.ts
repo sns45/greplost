@@ -55,8 +55,27 @@ describe("dockerfile-ast oracle", () => {
     expect(truth.imports).toEqual([]);
     expect(truth.calls).toEqual([]);
     expect(truth.cycles).toEqual([]);
-    expect(truth.notes).toContain("unsupported:S3");
     expect(truth.notes).toContain("dockerfile-ast-oracle");
+    // A Dockerfile has no call site, no import statement and therefore no import cycle. All
+    // three are declared unmeasurable so `RESULTS.md` prints `n/a` rather than a vacuous 1.000
+    // (driver ruling 2026-09-05); S5 and S6 stay gated, and they are what this format measures.
+    expect(truth.notes).toContain("unsupported:S1");
+    expect(truth.notes).toContain("unsupported:S3");
+    expect(truth.notes).toContain("unsupported:S4");
+    expect(truth.notes).not.toContain("unsupported:S2");
+    expect(truth.notes).not.toContain("unsupported:S5");
+    expect(truth.notes).not.toContain("unsupported:S6");
+  });
+
+  test("a stage that copies from itself is dropped on this side too", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "greplost-docker-self-"));
+    temporaryDirs.push(dir);
+    writeFileSync(path.join(dir, "Dockerfile"), "FROM node:20 AS build\nCOPY --from=build /a /b\nCOPY --from=0 /c /d\n");
+    // Only the base image: `--from=build` and `--from=0` both name the stage doing the copying,
+    // which is not an image reference and must not become `ext:image/build`.
+    expect(keys(generateExtra(dir, ["Dockerfile"]).references)).toEqual([
+      "Dockerfile#stage.build -> ext:image/node:20",
+    ]);
   });
 
   test("exports are each file's sorted stage names, and every covered file is a key", () => {

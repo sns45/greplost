@@ -114,6 +114,31 @@ jobs:
         run: node scripts/announce.mjs
 `;
 
+/** Two jobs with one id: only tree-sitter's error-recovering parse ever reads this. */
+const DUPLICATE_JOBS = `on: push
+jobs:
+  build:
+    steps:
+      - uses: actions/checkout@v4
+  build:
+    steps:
+      - uses: actions/setup-node@v4
+`;
+
+/** Two workflow documents in one file: each one's exports are its own. */
+const TWO_DOCUMENTS = `on: push
+jobs:
+  one:
+    steps:
+      - run: true
+---
+on: push
+jobs:
+  two:
+    steps:
+      - run: true
+`;
+
 const SETUP_YML = `name: Setup
 description: Install the toolchain this repository builds with.
 
@@ -169,6 +194,48 @@ describe("jobs", () => {
     const out = run(CI, CI_YML);
     expect(out.imports).toEqual([]);
     expect(out.calls).toEqual([]);
+  });
+
+  test("two jobs with one id keep the name as written; only the id takes the ~<n> suffix", () => {
+    const out = run(CI, DUPLICATE_JOBS);
+    expect(out.decls.filter((d) => d.kind === "job").map((d) => [d.id, d.name])).toEqual([
+      [`${CI}#job.build`, "build"],
+      [`${CI}#job.build~2`, "build"],
+    ]);
+    // One export per *name*: `build~2` is a name nobody wrote, and publishing it would make the
+    // second job reachable by a spelling that does not exist in the file.
+    expect(out.exports.map((e) => e.name)).toEqual(["build"]);
+  });
+
+  test("a step under a suffixed job takes the suffix on its id, never inside its name", () => {
+    const out = run(CI, DUPLICATE_JOBS);
+    expect(out.decls.filter((d) => d.kind === "step").map((d) => [d.id, d.name])).toEqual([
+      [`${CI}#step.build.~0`, "build.~0"],
+      [`${CI}#step.build.~0~2`, "build.~0"],
+    ]);
+  });
+
+  test("a reference from a suffixed node starts at the id, not at the bare name", () => {
+    const out = run(CI, DUPLICATE_JOBS);
+    expect(out.refs?.map((r) => `${r.from} -${r.refKind}-> ${r.to}`)).toEqual([
+      "step.build.~0 -uses-> actions/checkout@v4",
+      "step.build.~0~2 -uses-> actions/setup-node@v4",
+    ]);
+  });
+
+  test("a second document does not re-export the first document's jobs", () => {
+    const out = run(CI, TWO_DOCUMENTS);
+    expect(out.exports.map((e) => e.name)).toEqual(["one", "two"]);
+    expect(out.decls.filter((d) => d.kind === "job").map((d) => d.id)).toEqual([
+      `${CI}#job.one`,
+      `${CI}#job.two`,
+    ]);
+  });
+
+  test("a workflow file with no `on` key is not a workflow, whatever its path", () => {
+    const out = run(".github/workflows/noon.yml", "jobs:\n  build:\n    steps:\n      - run: true\n");
+    expect(out.decls).toEqual([]);
+    expect(out.exports).toEqual([]);
   });
 
   test("a YAML file that is not a workflow contributes nothing through this flavour", () => {
@@ -337,6 +404,22 @@ describe("run scripts", () => {
       "scripts/x.ts": "export const x = 1;\n",
     });
     expect(references(snapshot).filter((line) => line.includes("-config->"))).toEqual([]);
+  });
+
+  test("a path inside a ${{ }} expression is not a path the workflow runs", async () => {
+    const snapshot = await snapshotOf({
+      [CI]: "on: push\njobs:\n  j:\n    steps:\n      - run: echo ${{ hashFiles('scripts/x.ts') }}\n",
+      "scripts/x.ts": "export const x = 1;\n",
+    });
+    expect(references(snapshot).filter((line) => line.includes("-config->"))).toEqual([]);
+  });
+
+  test("an expression is blanked in place, so a real path beside it still resolves", async () => {
+    const snapshot = await snapshotOf({
+      [CI]: "on: push\njobs:\n  j:\n    steps:\n      - run: node scripts/x.ts ${{ inputs.flag }}\n",
+      "scripts/x.ts": "export const x = 1;\n",
+    });
+    expect(references(snapshot)).toContain(`${CI}#step.j.~0 -config-> scripts/x.ts [scripts/x.ts] high`);
   });
 
   test("a token holding a shell expansion is never a literal path", async () => {

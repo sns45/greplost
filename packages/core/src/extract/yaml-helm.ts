@@ -23,6 +23,26 @@
  * `meta.nameTemplate` / `meta.imageTemplate`. A document whose *kind* is templated makes no node
  * at all: see `extract/yaml-k8s.ts`.
  *
+ * **The limitation the pre-pass cannot reach, stated plainly.** Blanking removes the *actions*
+ * and keeps everything between them, so both arms of a branch survive into one document. A
+ * template written as
+ *
+ *     {{- if .Values.allowExternalEgress }}
+ *     egress:
+ *       - {}
+ *     {{- else }}
+ *     egress:
+ *       …
+ *     {{- end }}
+ *
+ * blanks to a mapping with `egress:` twice, which is not YAML, and the file is read as far as
+ * the grammar can recover and no further. Picking an arm would mean evaluating the condition,
+ * which means running helm — so greplost reports the file as unparsable rather than choosing.
+ * Measured on the pinned corpus: 4 of `bitnami/charts`'s 122 templates, all four this shape
+ * (`redis/templates/{networkpolicy,podmonitor,servicemonitor}.yaml`,
+ * `kafka/templates/metrics/jmx-configmap.yaml`); none of them is a `{{ define }}` block, which
+ * an earlier note in this leaf's report guessed at and which the review disproved.
+ *
  * **The chart files.** `Chart.yaml` is one `module` node named after the chart; `values.yaml` is
  * one `variable` node per **top-level** key, a deliberate cap that keeps a thousand-key values
  * file from producing a thousand nodes.
@@ -37,11 +57,12 @@
 
 import type { Tree } from "web-tree-sitter";
 import type { Lang } from "../schema.ts";
+import { nodeId } from "../schema.ts";
 import { reparse } from "../parser.ts";
 import { clip } from "./ts-signature.ts";
 import { documentValue, mapEntries, scalarAt, yamlDocuments } from "./yaml-doc.ts";
 import type { K8sInput, YamlParts } from "./yaml-k8s.ts";
-import { extractK8sDocuments } from "./yaml-k8s.ts";
+import { extractK8sDocuments, trimmedSpanIn } from "./yaml-k8s.ts";
 
 /** Chart metadata files, by basename. */
 const CHART_FILES: ReadonlySet<string> = new Set(["Chart.yaml", "Chart.yml"]);
@@ -81,8 +102,10 @@ export function templateSpans(source: string): Array<[number, number]> {
     const open = source.indexOf("{{", at);
     if (open === -1) return spans;
     let from = open + 2;
-    // `{{/*`, and `{{- /*` with any whitespace between: a comment closes on `*/` first.
-    const head = source.slice(from, from + 8);
+    // `{{/*`, and `{{- /*` with any whitespace between: a comment closes on `*/` first. The
+    // probe reads far enough that an action opening with a long run of whitespace — a `{{-`
+    // followed by a newline and an indented comment — is still recognised as one.
+    const head = source.slice(from, from + 64);
     const comment = /^-?\s*\/\*/u.exec(head);
     if (comment !== null) {
       const closeComment = source.indexOf("*/", from + comment[0].length);
@@ -202,7 +225,7 @@ function nothing(): YamlParts {
 }
 
 /** `Chart.yaml` -> one `module` node named after the chart. */
-function extractChart(path: string, tree: Tree): YamlParts {
+function extractChart(path: string, source: string, tree: Tree): YamlParts {
   const parts = nothing();
   const first = yamlDocuments(tree.rootNode)[0];
   if (first === undefined) return parts;
@@ -217,13 +240,13 @@ function extractChart(path: string, tree: Tree): YamlParts {
   if (version !== null && version !== "") meta["version"] = version;
 
   parts.decls.push({
-    id: `${path}#module.${name}`,
+    id: nodeId(path, "module", name),
     file: path,
     name,
     kind: "module",
     signature: clip(`chart ${name}${version === null ? "" : ` ${version}`}`),
     exported: false,
-    span: [first.startPosition.row + 1, first.endPosition.row + 1],
+    span: trimmedSpanIn(source, first),
     meta: sortedMeta(meta),
   });
   parts.exports.push({ name, kind: "named" });
@@ -237,7 +260,7 @@ function extractChart(path: string, tree: Tree): YamlParts {
  * chart contributing nine hundred: `bitnami/kafka`'s values file has 2,600 keys and nothing
  * below the first level names something another file can reach for.
  */
-function extractValues(path: string, tree: Tree): YamlParts {
+function extractValues(path: string, source: string, tree: Tree): YamlParts {
   const parts = nothing();
   const first = yamlDocuments(tree.rootNode)[0];
   if (first === undefined) return parts;
@@ -246,13 +269,16 @@ function extractValues(path: string, tree: Tree): YamlParts {
     if (entry.key === "" || /[#\n\0]/u.test(entry.key) || seen.has(entry.key)) continue;
     seen.add(entry.key);
     parts.decls.push({
-      id: `${path}#variable.${entry.key}`,
+      id: nodeId(path, "variable", entry.key),
       file: path,
       name: entry.key,
       kind: "variable",
       signature: clip(entry.key),
       exported: false,
-      span: [entry.keyNode.startPosition.row + 1, entry.value.node.endPosition.row + 1],
+      span: [
+        entry.keyNode.startPosition.row + 1,
+        Math.max(entry.keyNode.startPosition.row + 1, trimmedSpanIn(source, entry.value.node)[1]),
+      ],
       meta: sortedMeta({ flavour: "helm", path: entry.key }),
     });
     parts.exports.push({ name: entry.key, kind: "named" });
@@ -270,11 +296,28 @@ function sortedMeta(meta: Record<string, string>): Record<string, string> {
 // `.Values` references
 // ---------------------------------------------------------------------------
 
-/** The 1-based line an offset falls on. */
-function lineAt(source: string, offset: number): number {
+/**
+ * A cursor over one source's line numbers.
+ *
+ * The offsets it is asked about arrive in increasing order (one regex sweep, left to right), so
+ * it counts each newline once for the whole file rather than re-counting from byte zero for
+ * every match — which on a 2,600-line values file was quadratic for no reason.
+ */
+function lineCounter(source: string): (offset: number) => number {
+  let at = 0;
   let line = 1;
-  for (let i = 0; i < offset && i < source.length; i += 1) if (source[i] === "\n") line += 1;
-  return line;
+  return (offset: number): number => {
+    const target = Math.min(offset, source.length);
+    if (target < at) {
+      at = 0;
+      line = 1;
+    }
+    while (at < target) {
+      if (source[at] === "\n") line += 1;
+      at += 1;
+    }
+    return line;
+  };
 }
 
 /**
@@ -283,6 +326,7 @@ function lineAt(source: string, offset: number): number {
  */
 function valuesReferences(source: string, parts: YamlParts): void {
   const seen = new Set<string>();
+  const lineAt = lineCounter(source);
   for (const match of source.matchAll(VALUES_PATH)) {
     const address = `.Values${match[1] as string}`;
     if (seen.has(address)) continue;
@@ -291,7 +335,7 @@ function valuesReferences(source: string, parts: YamlParts): void {
       from: "",
       to: address,
       refKind: "helm-values",
-      line: lineAt(source, match.index),
+      line: lineAt(match.index),
     });
   }
 }
@@ -311,8 +355,8 @@ function valuesReferences(source: string, parts: YamlParts): void {
  */
 export function extractYamlHelm(path: string, _lang: Lang, source: string, tree: Tree): YamlParts {
   const base = basenameOf(path);
-  if (CHART_FILES.has(base)) return extractChart(path, tree);
-  if (VALUES_FILES.has(base)) return extractValues(path, tree);
+  if (CHART_FILES.has(base)) return extractChart(path, source, tree);
+  if (VALUES_FILES.has(base)) return extractValues(path, source, tree);
 
   const blanks = templateSpans(source);
   const input = (blanked: string, parsed: Tree): K8sInput => ({

@@ -55,8 +55,22 @@ const BUILD_TIMEOUT_MS = 5 * 60 * 1000;
 const RUN_TIMEOUT_MS = 15 * 60 * 1000;
 const MAX_BUFFER = 512 * 1024 * 1024;
 
-/** Oracle choices this generator applies, for `RESULTS.md` to disclose. */
-export const NOTES: readonly string[] = ["javac-tree-api", "source-classpath-only", "unresolved-files-dropped"];
+/**
+ * Oracle choices this generator applies, for `RESULTS.md` to disclose.
+ *
+ * The first three name how truth is produced; the last three name what it deliberately leaves
+ * out, so a reader of a recall number can see which calls neither side was ever asked about.
+ * None of them is a gating spelling (`unsupported:S<n>` and `reported-only` are), so they are
+ * disclosure and nothing else.
+ */
+export const NOTES: readonly string[] = [
+  "javac-tree-api",
+  "source-classpath-only",
+  "unresolved-files-dropped",
+  "no-overload-resolution",
+  "no-inherited-dispatch",
+  "module-info-not-scored",
+];
 
 /** The document `Truth` prints. */
 interface JavaToolOutput {

@@ -18,7 +18,7 @@ and 5.1.
   is a reusable-workflow call is a `task` node named after the job, and the file's `exports` are
   its job ids, which is what `Truth.exports` is scored against.
 
-- [x] G3: step nodes are named `<jobId>.#<index>` from a 0-based position, with `meta.uses` or `meta.run`; describe('steps')
+- [x] G3: step nodes are named `<jobId>.~<index>` from a 0-based position (ruling 2026-09-04: `nodeId` refuses `#`), with `meta.uses` or `meta.run`; describe('steps')
   CHECK: bun test packages/core/test/extract-yaml-actions.test.ts -t steps 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
   EVIDENCE: 6 pass | 23 filtered out | 0 fail. The index suffix is spelled `~` and not `#`:
@@ -27,6 +27,10 @@ and 5.1.
   `build.~0`, `build.~1`, `test.~0` and a composite action's are `runs.~0`, `runs.~1`; the
   0-based position, the `meta.uses`/`meta.run` rule and the 80-character clip are as the gate
   title states. A test asserts renaming one job does not renumber another's steps.
+  Fix round 1: the *duplicate* suffix now lands in the id and nowhere else (`…#job.build~2`
+  named `build`, `…#step.build.~0~2` named `build.~0`), `exports` publishes one record per name,
+  and a `ReferenceRecord.from` is read back from the id through `splitNodeId` — the rule
+  `extract/yaml-k8s.ts` and `extract/hcl.ts` follow.
 
 - [x] G4: `needs` is a high-confidence edge to the named job's node; describe('needs')
   CHECK: bun test packages/core/test/extract-yaml-actions.test.ts -t needs 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -35,7 +39,7 @@ and 5.1.
   naming a `task` job resolves to the task node, and `needs` never leaves its own file (a job id
   that exists only in a sibling workflow is dropped, because Actions would never run that edge).
 
-- [x] G5: a step `uses` resolves to `ext:action/<owner>/<repo>@<ref>`, a local action file or a reusable workflow file; describe('uses')
+- [x] G5: a step `uses` resolves to `ext:action/<owner>/<repo>[/<subpath>]` with the ref in `meta.usesRef` (ruling 2026-09-05), a local action file or a reusable workflow file; describe('uses')
   CHECK: bun test packages/core/test/extract-yaml-actions.test.ts -t uses 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
   EVIDENCE: 8 pass | 21 filtered out | 0 fail. The external id is `ext:action/<owner>/<repo>`
@@ -70,8 +74,9 @@ and 5.1.
 - [x] G8: the Actions truth generator test file passes
   CHECK: bun test bench/test/truth-yaml-actions.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 12 pass | 0 fail | 49 expect() calls | Ran 12 tests across 1 file. The oracle is
-  `js-yaml` (`NOTES = ["js-yaml-oracle"]`, plus `unsupported:S3`). `@actions/workflow-parser`
+  EVIDENCE: 18 pass | 0 fail | Ran 18 tests across 1 file. The oracle is `js-yaml`
+  (`NOTES = ["js-yaml-oracle", "anchors-not-expanded", "config-precision-unmeasured"]`, plus
+  `unsupported:S1`, `unsupported:S3` and `unsupported:S4`). `@actions/workflow-parser`
   publishes (0.3.61) but adding it is an edit to `bench/package.json`, which the build-2
   contract forbids a leaf; it is also not much more of an oracle, since its public entry point
   parses with a YAML reader and then validates GitHub's schema. Reported to the driver.
@@ -90,24 +95,30 @@ and 5.1.
 - [x] G10: S1 to S5 pass on the fixture
   CHECK: bun run bench:structural --fixture tiny-actions --lang yaml --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: structural: GATE PASS
-  EVIDENCE: tiny-actions (3 files); S1 1.000/1.000 (tp 0), S2 1.000/1.000 (tp 4), S3 n/a,
-  S4 1.000, S5 1.000/1.000 (tp 6), S6 1.000/1.000 (tp 10). The two `config` edges are outside
-  the scored universe on both sides (their targets are `.ts`/`.mjs` files, and a yaml target's
-  file set is yaml), which is why S5 counts 6 of the fixture's 8 edges.
+  EVIDENCE: tiny-actions (3 files); S1 n/a, S2 1.000/1.000 (tp 4), S3 n/a, S4 n/a,
+  S5 1.000/1.000 (tp 6), S6 1.000/1.000 (tp 10). The two `config` edges are outside the scored
+  universe on both sides (their targets are `.ts`/`.mjs` files, and a yaml target's file set is
+  yaml), which is why S5 counts 6 of the fixture's 8 edges — the `config-precision-unmeasured`
+  note says so. S1 and S4 read `n/a` from fix round 1: a workflow has no import statement and no
+  import graph, so a measured 1.000 over an empty universe on both sides was a vacuous pass.
 
 - [x] G11: S1 to S5 pass on the pinned corpus repo (starter-workflows, whole repo, 187 workflow `.yml`)
   CHECK: bun bench/src/cli.ts corpus setup --repo starter-workflows >/dev/null && bun run bench:structural --repo starter-workflows --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: structural: GATE PASS
-  EVIDENCE: starter-workflows @ e3c451d (187 files); S1 1.000/1.000 (tp 0), S2 1.000/1.000
-  (tp 211 job ids), S3 n/a, S4 1.000, S5 1.000/1.000 (tp 570), S6 1.000/1.000 (tp 1019), fp 0
-  and fn 0 on every metric. 187 files is the whole pinned corpus, and getting there needed the
+  EVIDENCE: starter-workflows @ e3c451d (187 files); S1 n/a, S2 1.000/1.000 (tp 211 job ids),
+  S3 n/a, S4 n/a, S5 1.000/1.000 (tp 570), S6 1.000/1.000 (tp 1019), fp 0 and fn 0 on every
+  measured metric. Unchanged by fix round 1, which is the point: the four defects it closed were
+  each unreachable on this corpus (js-yaml refuses a duplicate job id, no file has two workflow
+  documents, every `.github/workflows/` file has an `on:` key, and the 102 expression-interior
+  tokens blanking removes named no indexed YAML file). 187 files is the whole pinned corpus, and getting there needed the
   classification ruling recorded below: 174 of this repo's 183 workflows live in `ci/`,
   `deployments/`, `code-scanning/`, `automation/` and `pages/`, not in `.github/workflows/`.
 
 - [x] G12: the core and bench suites are green
   CHECK: bun test packages/core bench 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 1440 pass | 0 fail (after `git merge main`; whole-repo `bun test` is 1915 pass, 0 fail)
+  EVIDENCE: 1501 pass | 0 fail | 5826 expect() calls | Ran 1501 tests across 45 files (after the
+  fix-round-1 merge of main at 49d106e)
 
 - [x] G13: core and bench typecheck
   CHECK: bunx tsc -p packages/core/tsconfig.json --noEmit && bunx tsc -p bench/tsconfig.json --noEmit
@@ -119,20 +130,36 @@ and 5.1.
 
 | target | files | S1 imports | S2 exports | S5 references | S6 nodes |
 |---|---|---|---|---|---|
-| tiny-actions | 3 | 1.000 / 1.000 (tp 0) | 1.000 / 1.000 (tp 4) | 1.000 / 1.000 (tp 6) | 1.000 / 1.000 (tp 10) |
-| starter-workflows | 187 | 1.000 / 1.000 (tp 0) | 1.000 / 1.000 (tp 211) | 1.000 / 1.000 (tp 570) | 1.000 / 1.000 (tp 1019) |
+| tiny-actions | 3 | n/a | 1.000 / 1.000 (tp 4) | 1.000 / 1.000 (tp 6) | 1.000 / 1.000 (tp 10) |
+| starter-workflows | 187 | n/a | 1.000 / 1.000 (tp 211) | 1.000 / 1.000 (tp 570) | 1.000 / 1.000 (tp 1019) |
 
-S1 is `tp 0` on both sides and not vacuous by accident: a workflow has no import statement, and
-both `extract/yaml-actions.ts` and the oracle say so rather than failing to find any —
-`resolve/yaml.ts` (the seam) states the same rule for every YAML flavour.
+S1 and S4 are `n/a` since fix round 1, and that is the honest reading rather than a weakening: a
+workflow has no import statement (`resolve/yaml.ts`, the seam, states the same rule for every
+YAML flavour) and therefore no import graph to find a cycle in, so both sides were scoring an
+empty universe as a perfect 1.000 — the vacuous pass tech spec 10.1 principle 2 exists to stop.
+S2, S5 and S6 stay measured and gated, so `--gate` still has three metrics that can fail and the
+substitute checks never engage.
 
 Regression check on the two YAML corpora this leaf's dispatcher edits could have moved:
 `k8s-examples` 245 files, S2 tp 401, S5 tp 172, S6 tp 401, GATE PASS; `bitnami-charts` 130
-files, S2 tp 216, S5 tp 694, S6 n/a, GATE PASS. Both unchanged.
+files, S2 tp 216, S5 tp 694, S6 1.000 (tp 216), GATE PASS. Unchanged by this leaf; bitnami's S6
+moved from `n/a` to measured with main's `nodeFiles`, which is leaf 2.8's fix round, not this
+one.
 
 ## Rulings this leaf made
 
 Full reasoning is in the leaf report; the five that change what another leaf can assume:
+
+0. **The `~<n>` duplicate suffix lives in the id and nowhere else** (fix round 1, C1 and I1).
+   `Declaration.name` stays as the file wrote it and `exports` publishes one record per name:
+   `needs: build` names *both* of two jobs called `build`, so a suffixed name would make the
+   second silently distinguishable and turn an ambiguous reference into a certain one. A
+   `ReferenceRecord.from` is read back from the id through `splitNodeId`. One rule covers a step
+   under a duplicated job, stated identically in the extractor and the oracle: the step's name
+   is always `<jobId as written>.~<stepIndex>`, so the second `build`'s first step is named
+   `build.~0` and its *id* takes the suffix (`…#step.build.~0~2`). Exports are collected as each
+   job is walked rather than from a sweep of `state.decls`, so a second workflow document in one
+   file does not re-publish the first document's jobs.
 
 1. **The step index suffix is `~<index>`, not `#<index>`.** `nodeId` throws on a `#` in a name,
    and the driver's 2026-09-04 ruling already replaced spec 0.2's sketch for duplicates. Spec
@@ -178,3 +205,46 @@ the precedent for the third:
   seam's own `bench/test/registry.test.ts` is untouched.
 - `packages/core/test/references.test.ts` — the two `yaml-actions` stub rows removed, the way
   every language leaf before this one removed its own.
+
+## Fix round 1 (task review, 2026-09-05)
+
+The review reproduced every number and did not approve. All four findings and all five minors
+are addressed; the corpus numbers are unchanged, which is what a fix to unreachable-on-this-
+corpus defects should look like.
+
+- **C1 (Critical) — the `~<n>` suffix reached `Declaration.name` and `exports`.** `uniqueName`
+  is now `uniqueId`, mirroring what leaf 2.8's fix round did: the suffix is appended to the
+  whole id, the name is the text as written, `exports` is deduped by name, and `ref.from` comes
+  from `splitNodeId(decl.id)` through a `localPath` helper. Three tests on the reviewer's input
+  (two jobs called `build` in one file) pin the ids, the names, the single export and the two
+  reference sources.
+- **I1 — the exports sweep re-exported the first document's jobs, and the two sides disagreed on
+  a duplicate job's step ids.** Exports are now pushed as each job is walked (`addExport`), and
+  one rule is stated on both sides: a step is named `<jobId as written>.~<stepIndex>` and a
+  collision is settled by the id suffix, so `…#step.build.~0~2` on both sides rather than
+  `build.~0~2` against `build~2.~0`. Tested with a two-document file in both programs.
+- **I2 — the oracle classified by path where the extractor classifies by content.**
+  `isActionsFile` now restates the extractor's *whole* rule, in order, on js-yaml
+  (`classifyDocument`): a file under `.github/workflows/` with no `on:` key is not a workflow,
+  a manifest stays a manifest, a chart stays a chart, and a file js-yaml cannot read falls back
+  to the path rule (it is covered by no oracle either way). `flavourOf(file, root)` asks it
+  before the path rules; `flavourOf(file)` is untouched. Three tests.
+- **I3 — `run:` bodies were tokenised before `${{ … }}` was blanked.** Both sides now blank
+  every expression span in place with equal-length filler (leaf 2.8's Helm pre-pass trick)
+  before splitting, so `echo ${{ hashFiles('scripts/x.ts') }}` offers no candidate while
+  `node scripts/x.ts ${{ inputs.flag }}` still resolves. Measured on the pinned corpus: across
+  266 `run:` bodies, blanking removes 102 of 239 candidate tokens. Four tests. The
+  `config-precision-unmeasured` note is added for leaf 2.12.
+
+Minors: the `on`+`jobs` and `action.yml`+`runs` rules moved below `apiVersion`+`kind` in
+`packages/core/src/extract/yaml.ts`; `unsupported:S1` and `unsupported:S4` added to the actions
+NOTES (the report says what the driver should decide for the k8s and Helm oracles); the fixture
+config restored to `DEFAULT_CONFIG`'s full exclude list plus nothing, with only `languages`
+narrowed; `isActionsFile` memoised per `(root, file)` in `bench/src/truth/yaml.ts` (nested maps,
+so no separator has to be a character a path cannot contain); `anchors-not-expanded` added to
+the NOTES. Gate titles G3 and G5 left verbatim for the driver to amend.
+
+`ExtraTruth.nodeFiles` arrived on main in leaf 2.8's fix round and now sits beside this leaf's
+`universe` parameter in `bench/src/truth/yaml.ts`; the Actions flavour states nodes for every
+file it covers, so it names no `nodeFiles` and its whole group goes into the union — verified by
+`bitnami-charts` S6 moving from `n/a` to 1.000 (tp 216) with the Actions corpus unmoved.

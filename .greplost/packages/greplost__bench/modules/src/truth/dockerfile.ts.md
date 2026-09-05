@@ -15,32 +15,30 @@
 **Blast radius:** 0 files (`greplost impact bench/src/truth/dockerfile.ts`)
 
 **Key symbols:**
-- `const NOTES: readonly string[] = ["dockerfile-ast-oracle", "same-rules-different-parser"]`  L53-53
-- `const UNSUPPORTED = ["unsupported:S3"] as const`  L60-60
-- `const MAX_COMMAND = 120`  L63-63
-- `const GLOB_CHARACTERS = /[*?[\]{}]/u`  L66-66
-- `const STAGE_INDEX = /^\d+$/u`  L69-69
-- `function usableName(value: string | null): value is string`  L76-78
-- `function isLiteral(text: string): boolean`  L81-83
-- `function clipCommand(text: string): string`  L86-89
-- `function directoryOf(file: string): string`  L92-95
-- `function normalizeJoin(dir: string, rest: string): string | null`  L98-110
-- `function isContextPath(source: string): boolean`  L113-120
-- `function flagValue(instruction: { getFlags(): Array<{ getName(): string; getValue(): string | null }> }, name: string): string | null`  L123-128
-- `interface OracleStage`  L135-140
-- `interface OracleConstant`  L143-148
-- `interface OracleRequest`  L151-157
-- `interface FileReading`  L159-165
-- `function sourceOf(root: string, file: string): string | null`  L168-174
-- `function readFile(root: string, file: string): FileReading | null`  L177-269
-- `interface Run`  L275-278
-- `function coveredRun(root: string, files: string[]): Run`  L284-309
-- `type ReferenceTruth = Edge & { readonly refKind: string }`  L315-315
-- `function edge(from: string, to: string, refKind: string, symbol: string): ReferenceTruth`  L317-319
-- `function generateTruth(root: string, files: string[]): Truth`  L328-343
-- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }`  L353-398
-- `function resolveContextPath(file: string, source: string, indexed: ReadonlySet<string>): string | null`  L405-413
-- `function constantsOf(root: string, files: string[]): Record<string, OracleConstant[]>`  L423-428
-- `function dedupe(edges: readonly ReferenceTruth[]): ReferenceTruth[]`  L431-439
+- `const NOTES: readonly string[] = ["dockerfile-ast-oracle", "same-rules-different-parser"]`  L60-60
+- `const UNSUPPORTED = ["unsupported:S1", "unsupported:S3", "unsupported:S4"] as const`  L71-71
+- `const GLOB_CHARACTERS = /[*?[\]{}]/u`  L74-74
+- `const STAGE_INDEX = /^\d+$/u`  L77-77
+- `function usableName(value: string | null): value is string`  L84-86
+- `function isLiteral(text: string): boolean`  L89-91
+- `function directoryOf(file: string): string`  L94-97
+- `function normalizeJoin(dir: string, rest: string): string | null`  L100-112
+- `function isContextPath(source: string): boolean`  L115-122
+- `function flagValue(instruction: { getFlags(): Array<{ getName(): string; getValue(): string | null }> }, name: string): string | null`  L125-130
+- `interface OracleStage`  L137-142
+- `interface OracleConstant`  L145-150
+- `interface OracleRequest`  L153-159
+- `interface FileReading`  L161-167
+- `function sourceOf(root: string, file: string): string | null`  L170-176
+- `function readFile(root: string, file: string): FileReading | null`  L179-271
+- `interface Run`  L277-280
+- `function coveredRun(root: string, files: string[]): Run`  L286-311
+- `type ReferenceTruth = Edge & { readonly refKind: string }`  L317-317
+- `function edge(from: string, to: string, refKind: string, symbol: string): ReferenceTruth`  L319-321
+- `function generateTruth(root: string, files: string[]): Truth`  L330-345
+- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }`  L355-399
+- `function resolveContextPath(file: string, source: string, indexed: ReadonlySet<string>): string | null`  L406-414
+- `function constantsOf(root: string, files: string[]): Record<string, OracleConstant[]>`  L424-429
+- `function dedupe(edges: readonly ReferenceTruth[]): ReferenceTruth[]`  L432-440
 
 **Calls:** `coveredRun` → [`bench/src/truth/dockerfile.ts#coveredRun`](dockerfile.ts.md) (high), `dedupe` → [`bench/src/truth/dockerfile.ts#dedupe`](dockerfile.ts.md) (high), `directoryOf` → [`bench/src/truth/dockerfile.ts#directoryOf`](dockerfile.ts.md) (high), `edge` → [`bench/src/truth/dockerfile.ts#edge`](dockerfile.ts.md) (high), `flagValue` → [`bench/src/truth/dockerfile.ts#flagValue`](dockerfile.ts.md) (high), `isContextPath` → [`bench/src/truth/dockerfile.ts#isContextPath`](dockerfile.ts.md) (high), `isLiteral` → [`bench/src/truth/dockerfile.ts#isLiteral`](dockerfile.ts.md) (high), `normalizeJoin` → [`bench/src/truth/dockerfile.ts#normalizeJoin`](dockerfile.ts.md) (high), `readFile` → [`bench/src/truth/dockerfile.ts#readFile`](dockerfile.ts.md) (high), `resolveContextPath` → [`bench/src/truth/dockerfile.ts#resolveContextPath`](dockerfile.ts.md) (high), `sourceOf` → [`bench/src/truth/dockerfile.ts#sourceOf`](dockerfile.ts.md) (high), `usableName` → [`bench/src/truth/dockerfile.ts#usableName`](dockerfile.ts.md) (high), `compareEdges` → [`packages/core/src/schema.ts#compareEdges`](../../../../greplost__core/modules/src/schema.ts.md) (high)

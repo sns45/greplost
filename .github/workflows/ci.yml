@@ -16,6 +16,11 @@ jobs:
         with: { distribution: temurin, java-version: "21" }
       - uses: azure/setup-helm@v4
         with: { version: "v3.16.4" }
+      - name: kotlin compiler for the Kotlin fixture oracle
+        run: |
+          curl -sSL -o /tmp/kotlinc.zip https://github.com/JetBrains/kotlin/releases/download/v2.4.10/kotlin-compiler-2.4.10.zip
+          unzip -q /tmp/kotlinc.zip -d /opt
+          echo "/opt/kotlinc/bin" >> "$GITHUB_PATH"
       - uses: actions/setup-go@v5
         with: { go-version: "1.25" }
       # The Rust oracle (`bench/truth/rusttruth`) is a cargo program, built once

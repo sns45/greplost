@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/bench` ([map](../../../MAP.md))
 
-**Exports:** `NOTES (const)`, `RenderedDocument (interface)`, `chartsOf(root: string, files: readonly string[]): Chart[]`, `generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }`, `generateTruth(root: string, files: string[]): Truth`, `helmBinary(): string`, `helmRender(chartDir: string): RenderedDocument[] | null`
+**Exports:** `NOTES (const)`, `RenderedDocument (interface)`, `chartsOf(files: readonly string[]): Chart[]`, `generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }`, `generateTruth(root: string, files: string[]): Truth`, `helmBinary(): string`, `helmRender(chartDir: string): RenderedDocument[] | null`, `literalImages(source: string, file: string): Array<{ from: string; image: string }>`
 
 **Imports:** `node:child_process` (execFileSync), `node:fs` (existsSync, readFileSync), `node:path` (default), `js-yaml` (loadAll), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Edge, compareEdges, compareStrings), [`./ts.ts`](ts.ts.md) (Truth), [`./yaml-k8s.ts`](yaml-k8s.ts.md) (ReferenceTruth)
 
@@ -15,25 +15,29 @@
 **Blast radius:** 1 file (`greplost impact bench/src/truth/yaml-helm.ts`)
 
 **Key symbols:**
-- `const NOTES: readonly string[] = [ "js-yaml-oracle", "helm-template-render", "names-not-compared-for-templates", ]`  L48-52
-- `const UNSUPPORTED = ["unsupported:S3", "unsupported:S6"] as const`  L60-60
-- `const CHART_FILES: ReadonlySet<string> = new Set(["Chart.yaml", "Chart.yml"])`  L62-62
-- `const VALUES_FILES: ReadonlySet<string> = new Set(["values.yaml", "values.yml"])`  L63-63
-- `const VALUES_PATH = /\.Values((?:\.[A-Za-z_][A-Za-z0-9_-]*)+)/gu`  L66-66
-- `const RUN_TIMEOUT_MS = 5 * 60 * 1000`  L68-68
-- `const MAX_BUFFER = 256 * 1024 * 1024`  L69-69
-- `function basename(file: string): string`  L71-74
-- `function dirname(file: string): string`  L76-79
-- `function helmBinary(): string`  L86-100
-- `interface RenderedDocument`  L103-108
-- `function helmRender(chartDir: string): RenderedDocument[] | null`  L117-154
-- `interface Chart`  L160-166
-- `function chartsOf(root: string, files: readonly string[]): Chart[]`  L175-204
-- `function firstDocument(file: string): Record<string, unknown> | null`  L207-224
-- `function valuesKeys(file: string): string[]`  L227-233
-- `interface Run`  L239-245
-- `function coveredRun(root: string, files: string[], render: boolean): Run`  L247-288
-- `function generateTruth(root: string, files: string[]): Truth`  L298-314
-- `function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] }`  L323-367
+- `const NOTES: readonly string[] = [ "js-yaml-oracle", "helm-template-render", "names-not-compared-for-templates", "same-regex-both-sides", "if-else-arms-both-kept", ]`  L62-68
+- `const UNSUPPORTED = ["unsupported:S1", "unsupported:S3", "unsupported:S4"] as const`  L82-82
+- `const CHART_FILES: ReadonlySet<string> = new Set(["Chart.yaml", "Chart.yml"])`  L84-84
+- `const VALUES_FILES: ReadonlySet<string> = new Set(["values.yaml", "values.yml"])`  L85-85
+- `const VALUES_PATH = /\.Values((?:\.[A-Za-z_][A-Za-z0-9_-]*)+)/gu`  L88-88
+- `const RUN_TIMEOUT_MS = 5 * 60 * 1000`  L90-90
+- `const MAX_BUFFER = 256 * 1024 * 1024`  L91-91
+- `function basename(file: string): string`  L93-96
+- `function dirname(file: string): string`  L98-101
+- `function helmBinary(): string`  L108-122
+- `interface RenderedDocument`  L125-130
+- `function helmRender(chartDir: string): RenderedDocument[] | null`  L139-176
+- `interface Chart`  L182-188
+- `function chartsOf(files: readonly string[]): Chart[]`  L197-226
+- `function firstDocument(file: string): Record<string, unknown> | null`  L229-246
+- `function valuesKeys(file: string): string[]`  L249-255
+- `const CONTAINER_KEYS: ReadonlySet<string> = new Set(["containers", "initContainers", "ephemeralContainers"])`  L262-262
+- `const LINE = /^(\s*)(-\s+)?([A-Za-z_][A-Za-z0-9_.\-\/]*):[ \t]*(.*?)[ \t]*$/u`  L265-265
+- `function templated(value: string): boolean`  L268-270
+- `function literalImages(source: string, file: string): Array<{ from: string; image: string }>`  L283-350
+- `interface Run`  L356-362
+- `function coveredRun(root: string, files: string[], render: boolean): Run`  L364-405
+- `function generateTruth(root: string, files: string[]): Truth`  L415-431
+- `function generateExtra( root: string, files: string[], ): { references: Edge[]; nodes: string[]; nodeFiles: string[] }`  L451-527
 
-**Calls:** `basename` → [`bench/src/truth/yaml-helm.ts#basename`](yaml-helm.ts.md) (high), `chartsOf` → [`bench/src/truth/yaml-helm.ts#chartsOf`](yaml-helm.ts.md) (high), `coveredRun` → [`bench/src/truth/yaml-helm.ts#coveredRun`](yaml-helm.ts.md) (high), `dirname` → [`bench/src/truth/yaml-helm.ts#dirname`](yaml-helm.ts.md) (high), `firstDocument` → [`bench/src/truth/yaml-helm.ts#firstDocument`](yaml-helm.ts.md) (high), `helmBinary` → [`bench/src/truth/yaml-helm.ts#helmBinary`](yaml-helm.ts.md) (high), `helmRender` → [`bench/src/truth/yaml-helm.ts#helmRender`](yaml-helm.ts.md) (high), `valuesKeys` → [`bench/src/truth/yaml-helm.ts#valuesKeys`](yaml-helm.ts.md) (high), `compareEdges` → [`packages/core/src/schema.ts#compareEdges`](../../../../greplost__core/modules/src/schema.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high)
+**Calls:** `basename` → [`bench/src/truth/yaml-helm.ts#basename`](yaml-helm.ts.md) (high), `chartsOf` → [`bench/src/truth/yaml-helm.ts#chartsOf`](yaml-helm.ts.md) (high), `coveredRun` → [`bench/src/truth/yaml-helm.ts#coveredRun`](yaml-helm.ts.md) (high), `dirname` → [`bench/src/truth/yaml-helm.ts#dirname`](yaml-helm.ts.md) (high), `firstDocument` → [`bench/src/truth/yaml-helm.ts#firstDocument`](yaml-helm.ts.md) (high), `helmBinary` → [`bench/src/truth/yaml-helm.ts#helmBinary`](yaml-helm.ts.md) (high), `helmRender` → [`bench/src/truth/yaml-helm.ts#helmRender`](yaml-helm.ts.md) (high), `literalImages` → [`bench/src/truth/yaml-helm.ts#literalImages`](yaml-helm.ts.md) (high), `templated` → [`bench/src/truth/yaml-helm.ts#templated`](yaml-helm.ts.md) (high), `valuesKeys` → [`bench/src/truth/yaml-helm.ts#valuesKeys`](yaml-helm.ts.md) (high), `compareEdges` → [`packages/core/src/schema.ts#compareEdges`](../../../../greplost__core/modules/src/schema.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high)
