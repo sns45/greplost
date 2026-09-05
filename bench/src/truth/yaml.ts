@@ -45,8 +45,15 @@ const GENERATORS: Readonly<Record<YamlFlavour, (root: string, files: string[]) =
  * flavour's group: a workflow's `uses` and `run:` tokens can name a file of another flavour, so
  * a generator that resolved against its own group alone would report an edge greplost drew as a
  * false positive (leaf 2.9). A generator that does not need it simply declares two parameters.
+ *
+ * `nodeFiles` is optional and names the files whose nodes that flavour is willing to have S6
+ * scored over; a flavour that omits it stands behind every file it was given (leaf 2.8).
  */
-type ExtraGenerator = (root: string, files: string[], universe: string[]) => { references: Edge[]; nodes: string[] };
+type ExtraGenerator = (
+  root: string,
+  files: string[],
+  universe: string[],
+) => { references: Edge[]; nodes: string[]; nodeFiles?: string[] };
 
 /**
  * Added by leaf 2.8, which needed S5 and S6 measured for `yaml` and found the dispatcher
@@ -54,10 +61,9 @@ type ExtraGenerator = (root: string, files: string[], universe: string[]) => { r
  * `generateExtra`, and for every YAML target that module is this one. Reported to the driver
  * as an edit to a seam file.
  *
- * `undefined` means "this flavour's oracle does not measure references and nodes yet", which is
- * where `yaml-actions` sits until leaf 2.9 lands: its group contributes nothing rather than
- * contributing an empty set, because an empty truth set would score every real edge greplost
- * found in a workflow as a false positive.
+ * `undefined` would mean "this flavour's oracle does not measure references and nodes yet": its
+ * group would contribute nothing rather than an empty set, because an empty truth set scores
+ * every real edge greplost found as a false positive. All three flavours measure them now.
  */
 const EXTRA_GENERATORS: Readonly<Record<YamlFlavour, ExtraGenerator | undefined>> = {
   "yaml-actions": generateActionsExtra,
@@ -134,19 +140,29 @@ export function generateTruth(root: string, files: string[]): Truth {
 }
 
 /** The reference and node sets for a file list, merged across the flavours it holds. */
-export function generateExtra(root: string, files: string[]): { references: Edge[]; nodes: string[] } {
+export function generateExtra(
+  root: string,
+  files: string[],
+): { references: Edge[]; nodes: string[]; nodeFiles: string[] } {
   const references: Edge[] = [];
   const nodes: string[] = [];
+  // The union of what each flavour is willing to have S6 scored over. A flavour that names no
+  // `nodeFiles` states nodes for every file it was given, so its whole group goes in: otherwise
+  // one chart's restriction would silently turn S6 off for a repo's manifests as well, which is
+  // exactly the bug `nodeFiles` replaced `unsupported:S6` to fix (leaf 2.8, fix round 1).
+  const nodeFiles: string[] = [];
   for (const [flavour, group] of groupByFlavour(files, root)) {
     const generate = EXTRA_GENERATORS[flavour];
     if (generate === undefined) continue;
     const extra = generate(root, group, files);
     references.push(...extra.references);
     nodes.push(...extra.nodes);
+    nodeFiles.push(...(extra.nodeFiles ?? group));
   }
   references.sort((a, b) => compare(a.from, b.from) || compare(a.to, b.to));
   nodes.sort(compare);
-  return { references, nodes };
+  nodeFiles.sort(compare);
+  return { references, nodes, nodeFiles };
 }
 
 /**
