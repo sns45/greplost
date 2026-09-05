@@ -56,6 +56,9 @@ export function buildNodeCard(ctx: DocContext, id: string): string {
   blocks.push(`**References:** ${edgesField(ctx, from, (edge) => edge.to, parts.file, link)}`);
   blocks.push(`**Referenced by:** ${edgesField(ctx, to, (edge) => edge.from, parts.file, link)}`);
 
+  // Nodes, not files, and over imports *plus* reference edges — the file card's
+  // `**Blast radius:** N files` is the manifest's import-only figure, and the
+  // two are deliberately different questions about the same source line.
   const blast = ctx.nodeBlast.get(id) ?? 0;
   blocks.push(`**Blast radius:** ${blast} node(s) (\`greplost impact ${id}\`)`);
   blocks.push(`**Source:** L${decl.span[0]}-${decl.span[1]}`);
@@ -81,11 +84,15 @@ function attributesField(decl: Declaration): string | undefined {
  * One reference list, sorted by the id at the far end, capped, each entry
  * labelled with its `refKind`.
  *
- * The label is the target's node *name* when it lives in the same file (spec
- * 4.4's `aws_kms_key.logs`), and its full id otherwise, so a cross-file edge
- * still says which file it crossed to. Where two entries would read the same —
- * the `~<n>` duplicate case, whose suffix lives in the id only — both fall back
- * to the id, because a list with two identical labels is worse than a long one.
+ * The label is the id's `<kind>.<name>` half when the target lives in the same
+ * file, and the full id otherwise, so a cross-file edge says which file it
+ * crossed to. Spec 4.4's example renders the bare name (`aws_kms_key.logs`);
+ * that was amended in fix round 1 because the bare name of a `local`, a
+ * `provider` or a `module` is a single opaque word — `tags`, `aws`, `logs` —
+ * with nothing to say what kind of thing it is. The kind-qualified form is also
+ * exactly what the file card's Nodes block prints, so one node reads the same
+ * on both cards, and it is unique within a file by construction (the `~<n>`
+ * duplicate suffix lives in the id), so no two entries can collide.
  */
 function edgesField(
   ctx: DocContext,
@@ -100,14 +107,10 @@ function edgesField(
   );
   const shown = sorted.slice(0, REFERENCE_CAP);
 
-  const labels = shown.map((edge) => shortLabel(ctx, endpoint(edge), file));
-  const collided = new Set(labels.filter((label, index) => labels.indexOf(label) !== index));
-
   const listed = shown
-    .map((edge, index) => {
+    .map((edge) => {
       const target = endpoint(edge);
-      const preferred = labels[index] ?? target;
-      const label = collided.has(preferred) ? target : preferred;
+      const label = shortLabel(target, file);
       const card = cardFor(ctx, target);
       const body = card === undefined ? `\`${label}\`` : `[\`${label}\`](${link(card)})`;
       return `${body} (${edge.refKind})`;
@@ -132,9 +135,13 @@ function cardFor(ctx: DocContext, target: string): string | undefined {
   return target.includes("#") ? undefined : ctx.cardPathOf(target);
 }
 
-/** A reference endpoint as a card reads it: the bare node name at home, the id abroad. */
-function shortLabel(ctx: DocContext, target: string, file: string): string {
+/**
+ * A reference endpoint as a card reads it: `<kind>.<name>` at home, the full id
+ * abroad. Taken off the id rather than the declaration, so it is right even for
+ * a target the map mentions without declaring.
+ */
+function shortLabel(target: string, file: string): string {
   const parts = splitNodeId(target);
   if (parts === null || parts.file !== file) return target;
-  return ctx.declById.get(target)?.name ?? target;
+  return target.slice(target.indexOf("#") + 1);
 }

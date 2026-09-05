@@ -25,11 +25,18 @@
 //
 //	file      -> repo-relative slash path ("aws-go-s3-folder/main.go")
 //	resource  -> "<file>#resource.<name>", where <name> is the identifier the
-//	             constructor's result is bound to, "~<index>" by position among
-//	             the file's unbound resources when it is bound to nothing, and
-//	             "<name>~<n>" from 2 when one file binds the same name twice
-//	reference -> from the constructed resource to the resource whose field or
-//	             method its arguments read, refKind "resource-input"
+//	             constructor's result is bound to; when it is bound to nothing,
+//	             the Pulumi logical name in the second argument ("~site") and
+//	             only failing that the position among the file's remaining
+//	             unbound resources ("~0"); "<name>~<n>" from 2 when one file
+//	             takes the same name twice
+//	reference -> from the constructed resource to a resource its arguments name,
+//	             refKind "resource-input", either by reading a field or method
+//	             of it or by naming it outright in a resource option
+//
+// The logical name comes before the position because a position is not an
+// identity: an unbound resource inserted above another shifts every index below
+// it, and the two sides of the score then disagree about which node is which.
 //
 // Names are shared vocabulary, not shared judgement: which calls are resources and
 // which identifiers hold resources are both decided by the type checker, and the
@@ -48,10 +55,12 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
+	"go/token"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -93,6 +102,9 @@ const (
 	sdkPrefix   = "github.com/pulumi/pulumi/sdk/"
 	sdkPkgSufix = "/go/pulumi"
 	resourceIfc = "Resource"
+	// The declaration kind every node this program reports carries, which is also
+	// the receiver type name whose methods a node id could collide with.
+	nodeKind = "resource"
 )
 
 func main() {
@@ -301,6 +313,14 @@ func scanFile(
 ) {
 	bound := bindings(syntax)
 	names := newAllocator()
+	// Seeded with the file's own declarations, exactly as greplost seeds from the
+	// records its extractor produced: a Go method on a lower-case type named
+	// `resource` has the symbol path `resource.bucket`, which is the id a
+	// `resource.bucket` node would otherwise claim. Both sides have to move the
+	// node to `~2`, or they disagree about a file neither of them got wrong.
+	for _, name := range declaredNodeNames(syntax) {
+		names.take(name)
+	}
 	byBinding := map[string]string{}
 	type resourceCall struct {
 		name string
@@ -319,8 +339,12 @@ func scanFile(
 		binding, hasBinding := bound[call]
 		name := binding
 		if !hasBinding {
-			name = fmt.Sprintf("~%d", anonymous)
-			anonymous++
+			if logical, ok := logicalName(call); ok {
+				name = "~" + logical
+			} else {
+				name = fmt.Sprintf("~%d", anonymous)
+				anonymous++
+			}
 		}
 		name = names.take(name)
 		if hasBinding {
@@ -346,6 +370,70 @@ func scanFile(
 			refs[ref.From+" -> "+ref.To+" ("+read.text+")"] = ref
 		}
 	}
+}
+
+// declaredNodeNames is every method name of a type named `resource`, in source
+// order.
+//
+// A Go symbol path is the declaration's own name, except for a method, which is
+// "<receiver type>.<name>" — so a `resource.` prefix can come from nothing else.
+// The allocator only has to know the names a node could collide with.
+func declaredNodeNames(syntax *ast.File) []string {
+	var out []string
+	for _, decl := range syntax.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok || fn.Recv == nil || len(fn.Recv.List) == 0 || fn.Name == nil {
+			continue
+		}
+		if receiverTypeName(fn.Recv.List[0].Type) != nodeKind {
+			continue
+		}
+		out = append(out, fn.Name.Name)
+	}
+	return out
+}
+
+// receiverTypeName is a method receiver's base type name, with the pointer and
+// the type parameters of a generic receiver taken off: `*Store[T]` -> `Store`.
+func receiverTypeName(expr ast.Expr) string {
+	for {
+		switch typed := expr.(type) {
+		case *ast.StarExpr:
+			expr = typed.X
+		case *ast.IndexExpr:
+			expr = typed.X
+		case *ast.IndexListExpr:
+			expr = typed.X
+		case *ast.ParenExpr:
+			expr = typed.X
+		case *ast.Ident:
+			return typed.Name
+		default:
+			return ""
+		}
+	}
+}
+
+// logicalName is the Pulumi logical name a constructor was called with: its
+// second argument, when that is a string literal.
+//
+// Every resource constructor and adoption function in every Pulumi Go SDK takes
+// the context first and the name second. A name a node id cannot hold ("#", a
+// newline, a NUL, or nothing at all) is refused, so the caller falls back to the
+// index exactly where greplost does.
+func logicalName(call *ast.CallExpr) (string, bool) {
+	if len(call.Args) < 2 {
+		return "", false
+	}
+	lit, ok := call.Args[1].(*ast.BasicLit)
+	if !ok || lit.Kind != token.STRING {
+		return "", false
+	}
+	value, err := strconv.Unquote(lit.Value)
+	if err != nil || value == "" || strings.ContainsAny(value, "#\n\x00") {
+		return "", false
+	}
+	return value, true
 }
 
 // isResource is the whole judgement of this program.
@@ -404,11 +492,18 @@ type address struct {
 	text    string
 }
 
-// inputsOf is every read of another resource's field or method in `call`'s arguments.
+// inputsOf is every mention of another resource in `call`'s arguments.
 //
-// Two conditions, and the first one is the type checker's: the identifier's object
-// must itself be a value whose type implements `pulumi.Resource`, and it must name a
-// resource this file constructed, so the edge has somewhere to land.
+// Two forms, one judgement. `bucket.ID()` and `vpc.Arn` read a field or a method of
+// a resource, and are recorded as "<var>.<Field>". A bare `bucket` — which is how
+// `pulumi.Parent(bucket)` and `pulumi.DependsOn([]pulumi.Resource{bucket})` name a
+// dependency, and the only way those two say anything at all — is recorded as
+// "<var>". A selector whose operand is an identifier is never also counted bare.
+//
+// The judgement is the type checker's, and it is deliberately not the syntactic
+// rule greplost uses: the identifier's own object must be a value whose type
+// implements `pulumi.Resource`. It must also name a resource this file
+// constructed, so the edge has somewhere to land.
 func inputsOf(
 	call *ast.CallExpr,
 	info *types.Info,
@@ -418,30 +513,39 @@ func inputsOf(
 ) []address {
 	seen := map[string]bool{}
 	var out []address
+	record := func(ident *ast.Ident, text string) bool {
+		object := info.ObjectOf(ident)
+		if object == nil || !isResource(object.Type(), iface) {
+			return false
+		}
+		node, known := byBinding[ident.Name]
+		if !known || node == self {
+			return false
+		}
+		if seen[text] {
+			return true
+		}
+		seen[text] = true
+		out = append(out, address{binding: ident.Name, text: text})
+		return true
+	}
 	for _, arg := range call.Args {
 		ast.Inspect(arg, func(node ast.Node) bool {
-			selector, ok := node.(*ast.SelectorExpr)
-			if !ok {
-				return true
+			switch expr := node.(type) {
+			case *ast.SelectorExpr:
+				ident, ok := expr.X.(*ast.Ident)
+				if !ok {
+					// `a.b.c`: the operand is itself a selector, so keep going until
+					// the innermost one, which is where the identifier is.
+					return true
+				}
+				record(ident, ident.Name+"."+expr.Sel.Name)
+				// Either way the operand has been considered; it is not also bare.
+				return false
+			case *ast.Ident:
+				record(expr, expr.Name)
+				return false
 			}
-			ident, ok := selector.X.(*ast.Ident)
-			if !ok {
-				return true
-			}
-			object := info.ObjectOf(ident)
-			if object == nil || !isResource(object.Type(), iface) {
-				return true
-			}
-			node_, known := byBinding[ident.Name]
-			if !known || node_ == self {
-				return true
-			}
-			text := ident.Name + "." + selector.Sel.Name
-			if seen[text] {
-				return true
-			}
-			seen[text] = true
-			out = append(out, address{binding: ident.Name, text: text})
 			return true
 		})
 	}

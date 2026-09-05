@@ -41,8 +41,28 @@ const TOOL_SOURCES = ["go.mod", "go.sum", "main.go"] as const;
 const LOAD_TIMEOUT_MS = 30 * 60 * 1000;
 const MAX_BUFFER = 512 * 1024 * 1024;
 
-/** Oracle choices this generator applies, for `RESULTS.md`. */
-export const NOTES: readonly string[] = ["go-types-oracle", "types-implements-pulumi-resource"];
+/**
+ * Oracle choices this generator applies, for `RESULTS.md` to disclose.
+ *
+ *  - `go-types-oracle` / `types-implements-pulumi-resource`: what decides resourceness.
+ *  - `helper-attribution-differs`: a resource built inside a helper (`buildProvider(ctx)`,
+ *    `createLambdas(ctx)`) is attributed by this oracle to the **file the constructor is
+ *    written in**, because that is where the `token.FileSet` puts the call. greplost agrees,
+ *    for the same reason — but a reader looking at a program that calls a helper from
+ *    `main.go` will find the resource filed under the helper's file, not under the call site,
+ *    and both S5 and S6 are scored per file. It costs neither side a point, and it is a real
+ *    difference between what the map says and where a person would look (leaf 2.7 review,
+ *    item 6).
+ *  - `test-files-not-loaded`: the loader runs with `Tests: false`, so `_test.go` files are
+ *    outside the covered universe entirely. A Pulumi program's unit tests construct resources
+ *    (`testing-unit-go-components/main_test.go` does), and none of them are scored.
+ */
+export const NOTES: readonly string[] = [
+  "go-types-oracle",
+  "types-implements-pulumi-resource",
+  "helper-attribution-differs",
+  "test-files-not-loaded",
+];
 
 /**
  * S1 to S4 are not this oracle's business. Declaring them unsupported is what stops a caller

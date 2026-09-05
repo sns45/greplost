@@ -16,6 +16,7 @@ export * from "./text.ts";
 
 export {
   GENERATED_LINE,
+  blastUniverse,
   createContext,
   renderApi,
   renderArtifacts,

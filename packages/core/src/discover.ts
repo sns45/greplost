@@ -108,27 +108,62 @@ async function globCandidates(root: string, config: GreplostConfig): Promise<str
  * belongs in the config it is about to write, and `go.mod` has no extension
  * this map would ever match.
  */
-export async function discoverCandidates(root: string, config: GreplostConfig): Promise<string[]> {
+/**
+ * True when a repo-relative path is one the map can actually hold.
+ *
+ * A path is not only a location, it is an *id* (tech spec 5.3): `<file>` names
+ * a file, `<file>#<symbol>` a declaration, and schema 2's `<file>#<kind>.<name>`
+ * a non-file node. A path containing a `#` is therefore indistinguishable from
+ * a symbol id — `splitNodeId` would read `we#ird.tf` as the file `we` — and
+ * `nodeCardPath` cannot slug a directory out of it. A path containing a newline
+ * or a NUL cannot survive `graph/*.jsonl`, which is one record per line.
+ *
+ * Build 1 indexed such a file and wrote it a card no link could reach; schema 2
+ * would abort the whole render on one. Skipping it, and saying so once, is the
+ * only honest option, and it costs nothing real: no ecosystem this tool indexes
+ * puts a `#` in a source path.
+ */
+export function isMappablePath(relPath: string): boolean {
+  return !/[#\n\0]/.test(relPath);
+}
+
+export async function discoverCandidates(
+  root: string,
+  config: GreplostConfig,
+  skipped?: string[],
+): Promise<string[]> {
   const candidates = isGitRepo(root) ? gitCandidates(root) : await globCandidates(root, config);
 
   const includeMatch = picomatch(config.include, { dot: true });
   const excludeMatch = picomatch(config.exclude, { dot: true });
 
   const kept = new Set<string>();
+  const dropped = new Set<string>();
   for (const relPath of candidates) {
     if (relPath === ARTIFACT_DIR || relPath.startsWith(`${ARTIFACT_DIR}/`)) continue;
     if (!includeMatch(relPath)) continue;
     if (excludeMatch(relPath)) continue;
+    // After include/exclude, so a repo that already excludes its odd paths is
+    // never warned about them, and before anything asks for a language.
+    if (!isMappablePath(relPath)) {
+      dropped.add(relPath);
+      continue;
+    }
     kept.add(relPath);
   }
 
+  if (skipped !== undefined) for (const relPath of [...dropped].sort(compareStrings)) skipped.push(relPath);
   return [...kept].sort(compareStrings);
 }
 
-export async function discoverFiles(root: string, config: GreplostConfig): Promise<DiscoveredFile[]> {
+export async function discoverFiles(
+  root: string,
+  config: GreplostConfig,
+  skipped?: string[],
+): Promise<DiscoveredFile[]> {
   const results: DiscoveredFile[] = [];
 
-  for (const relPath of await discoverCandidates(root, config)) {
+  for (const relPath of await discoverCandidates(root, config, skipped)) {
     const lang = langOf(relPath);
     if (!lang) continue;
     if (!config.languages.includes(lang)) continue;

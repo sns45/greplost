@@ -35,8 +35,15 @@ const realDiscoverFiles = discoverModule.discoverFiles;
 let reorder: ((files: DiscoveredFile[]) => DiscoveredFile[]) | null = null;
 
 mock.module("../src/discover.ts", () => ({
-  discoverFiles: async (root: string, config: GreplostConfig): Promise<DiscoveredFile[]> => {
-    const files = await realDiscoverFiles(root, config);
+  // Every parameter is forwarded, `skipped` included: the mock outlives this
+  // file inside one bun process, so a wrapper that quietly dropped an argument
+  // would make `discover.test.ts` fail only when the suites run together.
+  discoverFiles: async (
+    root: string,
+    config: GreplostConfig,
+    skipped?: string[],
+  ): Promise<DiscoveredFile[]> => {
+    const files = await realDiscoverFiles(root, config, skipped);
     return reorder === null ? files : reorder([...files]);
   },
 }));

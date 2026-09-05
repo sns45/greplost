@@ -8,7 +8,7 @@
 
 **References:** None.
 
-**Referenced by:** [`tags`](local.tags.md) (hcl-ref)
+**Referenced by:** [`local.tags`](local.tags.md) (hcl-ref)
 
 **Blast radius:** 5 node(s) (`greplost impact main.tf#local.name`)
 

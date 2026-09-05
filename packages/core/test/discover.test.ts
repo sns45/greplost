@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
 
-import { discoverFiles } from "../src/discover.ts";
+import { discoverCandidates, discoverFiles, isMappablePath } from "../src/discover.ts";
 import { sha256Hex, countLoc } from "../src/hash.ts";
 import { DEFAULT_CONFIG } from "../src/schema.ts";
 import type { GreplostConfig } from "../src/schema.ts";
@@ -278,5 +278,59 @@ describe("tiny-ts", () => {
     for (const f of found) {
       expect(f.lang).toBe("ts");
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Leaf 2.11 fix round 1. A repo-relative path is also an *id* (tech spec 5.3):
+// `<file>`, `<file>#<symbol>`, `<file>#<kind>.<name>`. A path holding a `#`
+// therefore cannot be told from a symbol id, cannot be slugged into a node card
+// directory, and cannot be linked to from Markdown; a path holding a newline or
+// a NUL cannot survive `graph/*.jsonl` at all. Build 1 wrote an unlinkable card
+// for such a file; schema 2 aborts the render on one. Skipping is the honest
+// behaviour, and the count is reported once by `init`/`update`.
+// ---------------------------------------------------------------------------
+
+describe("unmappable paths", () => {
+  test("a path holding '#', a newline or a NUL is not a path the map can hold", () => {
+    expect(isMappablePath("src/a.ts")).toBe(true);
+    expect(isMappablePath("weird dir/a b.ts")).toBe(true);
+    expect(isMappablePath("we#ird.ts")).toBe(false);
+    expect(isMappablePath("src/#/a.ts")).toBe(false);
+    expect(isMappablePath("we\nird.ts")).toBe(false);
+    expect(isMappablePath("we\u0000ird.ts")).toBe(false);
+  });
+
+  test("discovery skips them and reports them, in a git repo and outside one", async () => {
+    for (const useGit of [false, true]) {
+      const dir = tempDir(`greplost-unmappable-${useGit ? "git" : "glob"}-`);
+      if (useGit) git(dir, "init", "-q");
+      write(dir, "good.ts", "export const a = 1;\n");
+      write(dir, "we#ird.ts", "export const b = 2;\n");
+      write(dir, "sub/al#so.ts", "export const c = 3;\n");
+      write(dir, "sub/fine.ts", "export const d = 4;\n");
+      if (useGit) gitCommit(dir, "initial");
+
+      const skipped: string[] = [];
+      const found = await discoverFiles(dir, config({ languages: ["ts"] }), skipped);
+      expect(paths(found), String(useGit)).toEqual(["good.ts", "sub/fine.ts"]);
+      expect(skipped, String(useGit)).toEqual(["sub/al#so.ts", "we#ird.ts"]);
+
+      // `discoverCandidates` is the same walk with the language step left off,
+      // so `greplost init` cannot pick a language off an unmappable marker file.
+      const candidateSkips: string[] = [];
+      const candidates = await discoverCandidates(dir, config({ languages: ["ts"] }), candidateSkips);
+      expect(candidates.includes("we#ird.ts"), String(useGit)).toBe(false);
+      expect(candidateSkips, String(useGit)).toEqual(["sub/al#so.ts", "we#ird.ts"]);
+    }
+  });
+
+  test("the out-parameter is optional and a clean repo appends nothing", async () => {
+    const dir = tempDir("greplost-unmappable-clean-");
+    write(dir, "good.ts", "export const a = 1;\n");
+    const skipped: string[] = [];
+    expect(paths(await discoverFiles(dir, config({ languages: ["ts"] }), skipped))).toEqual(["good.ts"]);
+    expect(skipped).toEqual([]);
+    expect(paths(await discoverFiles(dir, config({ languages: ["ts"] })))).toEqual(["good.ts"]);
   });
 });

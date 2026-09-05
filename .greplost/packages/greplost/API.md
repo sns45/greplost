@@ -11,11 +11,11 @@
 - `interface ParsedCommand` L67-75
 - `type ParseResult = { ok: true; command: ParsedCommand } | { ok: false; message: string }` L77-77
 - `interface CommandContext` L83-93
-- `const USAGE = `usage: greplost <command> [options] ${COMMAND_USAGE.map(([, synopsis, summary]) => usageLine(synopsis, summary)).join("\n")} ${USAGE_FOOTER}`` L137-141
-- `function usageFor(name: string): string` L144-148
-- `function parseArgs(argv: string[]): ParseResult` L191-214
-- `function findRoot(cwd: string): string` L479-487
-- `function resolveRoot(cwd: string, explicit: string | undefined): string` L495-500
+- `const USAGE = `usage: greplost <command> [options] ${COMMAND_USAGE.map(([, synopsis, summary]) => usageLine(synopsis, summary)).join("\n")} ${USAGE_FOOTER}`` L140-144
+- `function usageFor(name: string): string` L147-151
+- `function parseArgs(argv: string[]): ParseResult` L194-217
+- `function findRoot(cwd: string): string` L482-490
+- `function resolveRoot(cwd: string, explicit: string | undefined): string` L498-503
 
 ## packages/cli/src/commands/bench.ts
 
@@ -36,10 +36,10 @@
 
 ## packages/cli/src/commands/impact.ts
 
-- `interface ImpactFiles` L26-31
-- `interface ImpactNodes` L39-43
-- `type ImpactResult = ImpactFiles | ImpactNodes` L45-45
-- `async function run(ctx: CommandContext): Promise<number>` L47-97
+- `interface ImpactFiles` L34-39
+- `interface ImpactNodes` L47-51
+- `type ImpactResult = ImpactFiles | ImpactNodes` L53-53
+- `async function run(ctx: CommandContext): Promise<number>` L55-105
 
 ## packages/cli/src/commands/init.ts
 
@@ -47,14 +47,14 @@
 
 ## packages/cli/src/commands/query.ts
 
-- `interface QueryMatch` L45-74
-- `interface ReferenceOut` L77-81
-- `interface ReferenceIn` L84-88
-- `interface QueryNode` L95-109
-- `interface QueryFile` L112-123
-- `interface QueryResult` L125-131
-- `async function run(ctx: CommandContext): Promise<number>` L133-170
-- `function queryStructure(structure: Structure, root: string, needle: string): QueryResult` L173-200
+- `interface QueryMatch` L46-79
+- `interface ReferenceOut` L82-86
+- `interface ReferenceIn` L89-93
+- `interface QueryNode` L106-120
+- `interface QueryFile` L123-134
+- `interface QueryResult` L136-142
+- `async function run(ctx: CommandContext): Promise<number>` L144-181
+- `function queryStructure(structure: Structure, root: string, needle: string): QueryResult` L184-213
 
 ## packages/cli/src/commands/refresh.ts
 

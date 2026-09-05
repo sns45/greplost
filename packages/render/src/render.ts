@@ -121,6 +121,31 @@ export interface DocContext {
   nodeCardPathOf(id: string): string | undefined;
 }
 
+/**
+ * The id universe a node's blast pass runs over: every indexed file, every node
+ * id, and every endpoint of an `impactPairs` pair. Sorted and deduplicated.
+ *
+ * Plain symbols are deliberately absent. `blastRadius` allocates one bitset row
+ * of `ceil(V / 32)` words per strongly connected component, so the universe is
+ * quadratic in its own size — seeding it with `declById` (every declaration in
+ * the repo) cost about V^2 / 8 bytes, roughly 800 MB on an 80k-declaration
+ * checkout, to compute closures for ids that no import, re-export or reference
+ * pair can ever name. A symbol reaches a card through `callsFrom`, never here.
+ */
+export function blastUniverse(
+  files: readonly string[],
+  nodeIds: Iterable<string>,
+  pairs: ReadonlyArray<readonly [string, string]>,
+): string[] {
+  const ids = new Set<string>(files);
+  for (const id of nodeIds) ids.add(id);
+  for (const [from, to] of pairs) {
+    ids.add(from);
+    ids.add(to);
+  }
+  return [...ids].sort(compareStrings);
+}
+
 /** Builds the shared index. Cheap enough to call per document, linear in the snapshot. */
 export function createContext(input: RenderInput): DocContext {
   const { snapshot } = input;
@@ -253,7 +278,9 @@ export function createContext(input: RenderInput): DocContext {
   // walk per node: a Terraform monorepo has thousands of nodes, and per-card
   // `impactOf` would make a render quadratic in them.
   const nodeBlast = new Map<string, number>();
-  if (nodesOf.size > 0) {
+  const nodeIds: string[] = [];
+  for (const bucket of nodesOf.values()) for (const decl of bucket) nodeIds.push(decl.id);
+  if (nodeIds.length > 0) {
     const pairs = impactPairs({
       manifest,
       imports: snapshot.imports,
@@ -261,16 +288,8 @@ export function createContext(input: RenderInput): DocContext {
       symbols: snapshot.symbols,
       references,
     });
-    const ids = new Set<string>(files);
-    for (const id of declById.keys()) ids.add(id);
-    for (const [from, to] of pairs) {
-      ids.add(from);
-      ids.add(to);
-    }
-    const radiusById = blastRadius([...ids].sort(compareStrings), pairs);
-    for (const [id, decl] of declById) {
-      if (isNodeKind(decl.kind)) nodeBlast.set(id, radiusById.get(id) ?? 0);
-    }
+    const radiusById = blastRadius(blastUniverse(files, nodeIds, pairs), pairs);
+    for (const id of nodeIds) nodeBlast.set(id, radiusById.get(id) ?? 0);
   }
 
   const nodeCardPathOf = (id: string): string | undefined => {
@@ -382,13 +401,35 @@ function assertNoSlugCollision(packages: readonly PackageInfo[]): void {
  * directory is named after a file, so two artifacts can in principle claim one
  * path. Silently keeping the last writer would lose a card and leave its
  * inbound links pointing at another node's page, so this is a hard failure.
- * Checked in path order, and the message names the path, so it is actionable.
+ * Checked in path order, and the message names both paths, so it is actionable.
+ *
+ * Paths are compared **case-folded and NFC-normalised**, because the filesystem
+ * the map is written to does the same. `resource "aws_vpc" "Main"` beside
+ * `resource "aws_vpc" "main"` is legal Terraform and two distinct ids, but one
+ * file on APFS and NTFS; so is a composed `café.tf` beside a decomposed one.
+ * An exact-string check passes, the second card silently overwrites the first,
+ * and `greplost verify` is then red on every run with nothing the user can do
+ * about it. The comparison is folded; the artifact is still written under the
+ * path the id produced.
  */
 function assertNoCardCollision(paths: readonly string[]): void {
-  const seen = new Set<string>();
+  const seen = new Map<string, string>();
   for (const path of [...paths].sort(compareStrings)) {
-    if (seen.has(path)) throw new Error(`greplost: card path collision: two artifacts both claim ${path}`);
-    seen.add(path);
+    // `toLowerCase`, not `toLocaleLowerCase`: a render must not depend on the
+    // machine's locale (Turkish dotless i would fold two different paths here
+    // and not on the next machine).
+    const folded = path.normalize("NFC").toLowerCase();
+    const other = seen.get(folded);
+    if (other === path) {
+      throw new Error(`greplost: card path collision: two artifacts both claim ${path}`);
+    }
+    if (other !== undefined) {
+      throw new Error(
+        `greplost: card path collision: ${other} and ${path} differ only by case or Unicode ` +
+          "normalisation, and are one file on a case-insensitive filesystem",
+      );
+    }
+    seen.set(folded, path);
   }
 }
 

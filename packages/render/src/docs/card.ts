@@ -55,6 +55,8 @@ export function buildCard(ctx: DocContext, file: string): string {
   blocks.push(`**Exports:** ${exportsField(ctx, file)}`);
   blocks.push(`**Imports:** ${importsField(ctx, file, link)}`);
   blocks.push(`**Imported by:** ${importersField(ctx, file, link)}`);
+  // Files, over import and re-export edges only. A node card's radius counts
+  // nodes and also follows reference edges, so the two never have to agree.
   const blast = `${entry.blast} file${entry.blast === 1 ? "" : "s"}`;
   blocks.push(`**Blast radius:** ${blast} (\`greplost impact ${file}\`)`);
   blocks.push(`**Key symbols:**${keySymbolsField(ctx, file)}`);
