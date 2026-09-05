@@ -4,7 +4,7 @@ Scope: leaves 2.2.1 terraform, 2.2.2 k8s-helm, 2.2.3 actions and 2.2.4 dockerfil
 are the four formats that produce non-file nodes and reference edges, so this node is also where
 `graph/references.jsonl` is proven end to end. Spec sections 2.1 to 2.6.
 
-- [ ] N1: every child gates file is fully met
+- [x] N1: every child gates file is fully met
   CHECK: node ~/.claude/skills/unlazy/scripts/gate-check.mjs --status gates/leaf-2.2.md gates/leaf-2.8.md gates/leaf-2.9.md gates/leaf-2.10.md
   EXPECT: ALL MET
 
