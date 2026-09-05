@@ -62,5 +62,12 @@ export async function run(ctx: CommandContext): Promise<number> {
 
   if (result.created.length > 0) printLine(`greplost: created ${result.created.join(", ")}`);
   if (result.hooks.length > 0) printLine(`greplost: installed git hooks ${result.hooks.join(", ")}`);
+  // A replaced block is what an upgrade does, and saying nothing about it made
+  // `init` after an upgrade look like a no-op.
+  if (result.updated.length > 0) printLine(`greplost: updated git hooks ${result.updated.join(", ")}`);
+  // Whatever the installer needs the user to act on: no git repository, or a
+  // lefthook that may take the hooks over. On stdout with the rest of init's
+  // report, because it is part of what this command did, not a failure.
+  for (const note of result.notes) printLine(`greplost: ${note}`);
   return 0;
 }

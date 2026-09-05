@@ -46,11 +46,15 @@ describe("language markers", () => {
     expect(added({ "crates/core/Cargo.toml": "" })).toEqual(["rust"]);
   });
 
-  test("java: pom.xml, build.gradle or build.gradle.kts", () => {
+  test("java: pom.xml, build.gradle, build.gradle.kts or any .java", () => {
     expect(added({ "pom.xml": "" })).toEqual(["java"]);
     expect(added({ "build.gradle": "" })).toEqual(["java"]);
     // `build.gradle.kts` is a Kotlin build script, so it marks both.
     expect(added({ "build.gradle.kts": "" })).toEqual(["java", "kotlin"]);
+    // A build file is not the rule: python and kotlin both mark on the source
+    // extension, and a tree of `.java` with an unrecognised build system (bazel,
+    // make, an IDE project) mapped empty.
+    expect(added({ "src/main/java/com/example/App.java": "" })).toEqual(["java"]);
   });
 
   test("kotlin: build.gradle.kts or any .kt", () => {
