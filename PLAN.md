@@ -398,3 +398,4 @@ Append-only. One line per event.
 - 2026-09-05 actions fix round 1 re-reviewed (all addressed) and merged; leaf 2.9 complete; G3/G5 titles amended to the ruled spellings. dockerfile and pulumi-go fix rounds done, scoped re-reviews dispatched
 - 2026-09-05 dockerfile fix round 1 re-reviewed (all addressed) and merged; leaf 2.10 complete
 - 2026-09-05 nodes fix round 1 re-reviewed (all addressed) and merged; leaf 2.11 complete. Spec 4.4 amendment pending: same-file reference labels are kind-qualified
+- 2026-09-05 pulumi-go fix round 1 plus follow-up re-reviewed (all addressed) and merged; leaf 2.7 complete (S5 tp 225 fn 1, S6 tp 216 fn 6). Every leaf except 2.12 is complete
