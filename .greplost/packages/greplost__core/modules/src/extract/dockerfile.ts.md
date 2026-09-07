@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md)
 
-**Blast radius:** 31 files (`greplost impact packages/core/src/extract/dockerfile.ts`)
+**Blast radius:** 35 files (`greplost impact packages/core/src/extract/dockerfile.ts`)
 
 **Key symbols:**
 - `const MAX_COMMAND = 120`  L62-62

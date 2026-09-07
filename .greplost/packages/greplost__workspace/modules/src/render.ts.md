@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/workspace/src/build.ts`](build.ts.md), [`packages/workspace/src/index.ts`](index.ts.md)
 
-**Blast radius:** 10 files (`greplost impact packages/workspace/src/render.ts`)
+**Blast radius:** 12 files (`greplost impact packages/workspace/src/render.ts`)
 
 **Key symbols:**
 - `interface RepoSummary`  L23-32

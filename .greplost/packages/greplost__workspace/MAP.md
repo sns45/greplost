@@ -22,14 +22,14 @@ Path: `packages/workspace` · 8 files · 1903 LOC · depends on: @greplost/core,
 
 | File | LOC | Exports | Fan-in | Fan-out | Blast |
 |---|---|---|---|---|---|
-| [`src/build.ts`](modules/src/build.ts.md) | 279 | 5 | 1 | 5 | 9 |
-| [`src/config.ts`](modules/src/config.ts.md) | 190 | 11 | 5 | 1 | 14 |
-| [`src/cross.ts`](modules/src/cross.ts.md) | 346 | 7 | 5 | 5 | 13 |
-| [`src/entry.ts`](modules/src/entry.ts.md) | 194 | 5 | 1 | 1 | 14 |
-| [`src/impact.ts`](modules/src/impact.ts.md) | 194 | 5 | 2 | 4 | 10 |
-| [`src/index.ts`](modules/src/index.ts.md) | 351 | 40 | 1 | 8 | 8 |
-| [`src/query.ts`](modules/src/query.ts.md) | 215 | 4 | 1 | 6 | 9 |
-| [`src/render.ts`](modules/src/render.ts.md) | 134 | 4 | 2 | 4 | 10 |
+| [`src/build.ts`](modules/src/build.ts.md) | 279 | 5 | 1 | 5 | 11 |
+| [`src/config.ts`](modules/src/config.ts.md) | 190 | 11 | 5 | 1 | 16 |
+| [`src/cross.ts`](modules/src/cross.ts.md) | 346 | 7 | 5 | 5 | 15 |
+| [`src/entry.ts`](modules/src/entry.ts.md) | 194 | 5 | 1 | 1 | 16 |
+| [`src/impact.ts`](modules/src/impact.ts.md) | 194 | 5 | 2 | 4 | 12 |
+| [`src/index.ts`](modules/src/index.ts.md) | 351 | 40 | 1 | 8 | 10 |
+| [`src/query.ts`](modules/src/query.ts.md) | 215 | 4 | 1 | 6 | 11 |
+| [`src/render.ts`](modules/src/render.ts.md) | 134 | 4 | 2 | 4 | 12 |
 
 ## Components
 

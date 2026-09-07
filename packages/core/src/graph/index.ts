@@ -7,6 +7,7 @@ export {
   directoryOf,
   expandDirectoryTargets,
   filesByDirectory,
+  filesUnder,
   importTargetsOf,
   resolvedImportTargets,
 } from "./directories.ts";

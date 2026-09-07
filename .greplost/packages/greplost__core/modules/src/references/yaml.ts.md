@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/references/index.ts`](index.ts.md), [`packages/core/src/references/link.ts`](link.ts.md)
 
-**Blast radius:** 40 files (`greplost impact packages/core/src/references/yaml.ts`)
+**Blast radius:** 44 files (`greplost impact packages/core/src/references/yaml.ts`)
 
 **Key symbols:**
 - `const ACTIONS_REF_KINDS: ReadonlySet<RefKind> = new Set<RefKind>(["needs", "uses", "config"])`  L34-34

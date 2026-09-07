@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/graph/index.ts`](index.ts.md), [`packages/core/src/index.ts`](../index.ts.md)
 
-**Blast radius:** 47 files (`greplost impact packages/core/src/graph/query.ts`)
+**Blast radius:** 51 files (`greplost impact packages/core/src/graph/query.ts`)
 
 **Key symbols:**
 - `function findSymbols(symbols: Declaration[], needle: string): Declaration[]`  L29-40

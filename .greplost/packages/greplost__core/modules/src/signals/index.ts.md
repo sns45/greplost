@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/build.ts`](../build.ts.md), [`packages/core/src/extract/index.ts`](../extract/index.ts.md), [`packages/core/src/index.ts`](../index.ts.md), [`packages/core/src/signals/next.ts`](next.ts.md), [`packages/core/src/signals/pulumi-go.ts`](pulumi-go.ts.md), [`packages/core/src/signals/pulumi-ts.ts`](pulumi-ts.ts.md), [`packages/core/src/signals/react.ts`](react.ts.md), [`packages/core/src/signals/tanstack.ts`](tanstack.ts.md)
 
-**Blast radius:** 36 files (`greplost impact packages/core/src/signals/index.ts`)
+**Blast radius:** 40 files (`greplost impact packages/core/src/signals/index.ts`)
 
 **Key symbols:**
 - `type SignalPassId = "next" | "pulumi-go" | "pulumi-ts" | "react" | "tanstack"`  L30-30

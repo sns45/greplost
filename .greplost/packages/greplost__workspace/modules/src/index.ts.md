@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/cli/src/commands/workspace.ts`](../../../greplost/modules/src/commands/workspace.ts.md)
 
-**Blast radius:** 8 files (`greplost impact packages/workspace/src/index.ts`)
+**Blast radius:** 10 files (`greplost impact packages/workspace/src/index.ts`)
 
 **Key symbols:**
 - `type WorkspaceHookName = "update" | "verify" | "impact" | "query"`  L65-65

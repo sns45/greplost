@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md)
 
-**Blast radius:** 31 files (`greplost impact packages/core/src/extract/kotlin.ts`)
+**Blast radius:** 35 files (`greplost impact packages/core/src/extract/kotlin.ts`)
 
 **Key symbols:**
 - `const TYPE_BODIES: ReadonlySet<string> = new Set(["class_body", "enum_class_body"])`  L49-49

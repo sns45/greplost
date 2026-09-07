@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md)
 
-**Blast radius:** 31 files (`greplost impact packages/core/src/extract/java.ts`)
+**Blast radius:** 35 files (`greplost impact packages/core/src/extract/java.ts`)
 
 **Key symbols:**
 - `const TYPE_KIND: Readonly<Record<string, DeclKind>> = { annotation_type_declaration: "interface", class_declaration: "class", enum_declaration: "enum", interface_declaration: "interface", record_decl…`  L63-69

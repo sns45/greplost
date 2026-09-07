@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/workspace/src/build.ts`](build.ts.md), [`packages/workspace/src/impact.ts`](impact.ts.md), [`packages/workspace/src/index.ts`](index.ts.md), [`packages/workspace/src/query.ts`](query.ts.md), [`packages/workspace/src/render.ts`](render.ts.md)
 
-**Blast radius:** 13 files (`greplost impact packages/workspace/src/cross.ts`)
+**Blast radius:** 15 files (`greplost impact packages/workspace/src/cross.ts`)
 
 **Key symbols:**
 - `interface CrossEdge`  L44-54

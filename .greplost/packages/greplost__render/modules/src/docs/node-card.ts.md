@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/render/src/index.ts`](../index.ts.md), [`packages/render/src/render.ts`](../render.ts.md)
 
-**Blast radius:** 38 files (`greplost impact packages/render/src/docs/node-card.ts`)
+**Blast radius:** 41 files (`greplost impact packages/render/src/docs/node-card.ts`)
 
 **Key symbols:**
 - `const REFERENCE_CAP = 50`  L24-24

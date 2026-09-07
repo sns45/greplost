@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/workspace/src/index.ts`](index.ts.md)
 
-**Blast radius:** 9 files (`greplost impact packages/workspace/src/query.ts`)
+**Blast radius:** 11 files (`greplost impact packages/workspace/src/query.ts`)
 
 **Key symbols:**
 - `interface WorkspaceQueryMatch`  L25-42

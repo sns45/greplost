@@ -15,7 +15,7 @@ import path from "node:path";
 
 import { langOf, readStructure } from "@greplost/core";
 import type { Structure } from "@greplost/core";
-import { expandDirectoryTargets, resolvedImportTargets } from "@greplost/core/graph";
+import { expandDirectoryTargets, filesUnder, resolvedImportTargets } from "@greplost/core/graph";
 import type { Declaration, Manifest, PackageInfo } from "@greplost/core/schema";
 import { ARTIFACT_DIR, compareStrings, isNodeDeclaration, splitNodeId } from "@greplost/core/schema";
 import { cardPath, nodeCardPath } from "@greplost/render";
@@ -88,6 +88,22 @@ export function resolveFile(manifest: Manifest, candidate: string): string | und
 }
 
 /**
+ * The directory an argument names, or `undefined` when the map holds no file
+ * under it (leaf 2.15).
+ *
+ * Exact only, and never a file: `resolveFile` has already had its turn by the
+ * time this is asked, and a suffix rule here would make `src` mean whichever of
+ * five `src` directories happened to sort first. `"."` and `""` name the repo
+ * root, which is what a directory id of `"."` means everywhere else.
+ */
+export function resolveDirectory(manifest: Manifest, candidate: string): string | undefined {
+  if (candidate === "" || candidate.includes("#")) return undefined;
+  if (manifest.files[candidate] !== undefined) return undefined;
+  const directory = candidate === "" ? "." : candidate;
+  return filesUnder(Object.keys(manifest.files), directory).length > 0 ? directory : undefined;
+}
+
+/**
  * The `PackageInfo` the card-path rule needs for `file`.
  *
  * `source` is not part of that rule and `cardPath` never reads it; the manifest
@@ -100,17 +116,31 @@ function packageInfoOf(manifest: Manifest, name: string): PackageInfo | undefine
   return { name, path: entry.path, source: "package.json" };
 }
 
-/** `.greplost`-relative module card path for `file`, or `""` when it has none. */
+/**
+ * A card path as a reader opens it: repo-relative, `.greplost/` and all
+ * (leaf 2.15).
+ *
+ * `cardPath` and `nodeCardPath` produce artifact-relative paths, because that
+ * is what a link *inside* the map has to be. A `query` answer is read from
+ * outside the map, where the same string is not a path to anything: the
+ * evaluation reported having to prefix every `card` by hand before it could
+ * open one. The map directory is a constant, so the CLI adds it once, here.
+ */
+function repoRelativeCard(artifactRelative: string): string {
+  return artifactRelative === "" ? "" : `${ARTIFACT_DIR}/${artifactRelative}`;
+}
+
+/** Repo-relative module card path for `file`, or `""` when it has none. */
 export function cardOf(manifest: Manifest, file: string): string {
   const entry = manifest.files[file];
   if (entry === undefined) return "";
   const pkg = packageInfoOf(manifest, entry.pkg);
-  return pkg === undefined ? "" : cardPath(pkg, file);
+  return pkg === undefined ? "" : repoRelativeCard(cardPath(pkg, file));
 }
 
 /**
- * `.greplost`-relative node card path for a node id, or `""` when the id names
- * no node or its file is not indexed. Slugged, so it never contains a `#`.
+ * Repo-relative node card path for a node id, or `""` when the id names no node
+ * or its file is not indexed. Slugged, so it never contains a `#`.
  */
 export function nodeCardOf(manifest: Manifest, id: string): string {
   const parts = splitNodeId(id);
@@ -118,7 +148,7 @@ export function nodeCardOf(manifest: Manifest, id: string): string {
   const entry = manifest.files[parts.file];
   if (entry === undefined) return "";
   const pkg = packageInfoOf(manifest, entry.pkg);
-  return pkg === undefined ? "" : nodeCardPath(pkg, id);
+  return pkg === undefined ? "" : repoRelativeCard(nodeCardPath(pkg, id));
 }
 
 /**

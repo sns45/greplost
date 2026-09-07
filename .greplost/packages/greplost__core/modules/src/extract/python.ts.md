@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md)
 
-**Blast radius:** 31 files (`greplost impact packages/core/src/extract/python.ts`)
+**Blast radius:** 35 files (`greplost impact packages/core/src/extract/python.ts`)
 
 **Key symbols:**
 - `const SCREAMING_SNAKE = /^[A-Z][A-Z0-9_]*$/`  L54-54

@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/references/index.ts`](index.ts.md), [`packages/core/src/references/link.ts`](link.ts.md)
 
-**Blast radius:** 40 files (`greplost impact packages/core/src/references/dockerfile.ts`)
+**Blast radius:** 44 files (`greplost impact packages/core/src/references/dockerfile.ts`)
 
 **Key symbols:**
 - `const IMAGE_NAMESPACE = "image/"`  L37-37

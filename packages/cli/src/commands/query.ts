@@ -1,45 +1,45 @@
 /**
- * `greplost query <symbol|path>` (tech spec 9, plugin-cli spec "--json shapes").
+ * `greplost query <symbol|path|directory|node-id>` (tech spec 9, plugin-cli
+ * spec "--json shapes").
  *
  * The command an agent reaches for instead of grepping: where a symbol is
  * declared, what it looks like, which package owns it, which card documents it,
  * who imports the file it lives in and who calls it, all read out of the
  * committed structure, never parsed.
  *
- * One argument, two questions. A path that the map knows about is a question
- * about a file, so it also answers with the `file` block; anything else is a
- * question about a symbol. The tie is broken by the manifest rather than by
- * shape alone, so a symbol called `a/b` (impossible in practice) or a file that
- * was never indexed both still fall through to the symbol search instead of
- * dead-ending.
+ * One argument, four questions, answered in this order: an indexed file, an
+ * exact node id, a directory the map holds files under, then the symbol search.
+ * The tie is broken by the manifest rather than by shape alone, so a symbol
+ * called `a/b` (impossible in practice) or a file that was never indexed both
+ * still fall through to the symbol search instead of dead-ending.
+ *
+ * Every answer carries a `status` (leaf 2.15). A miss is not one thing: a typo,
+ * a file the config excludes and a file written since the last update need
+ * three different next actions, and only the last of them is `greplost update`.
+ * `status.ts` decides which, from the checkout rather than from the map, and a
+ * miss that names nothing at all gets the nearest ids the map does hold.
  */
 
-import { callersOf, findSymbols, importersOf } from "@greplost/core";
+import { findSymbols } from "@greplost/core";
 import type { Structure } from "@greplost/core";
-import { impactOf, impactPairs, importTargetsOf } from "@greplost/core/graph";
-import type {
-  Confidence,
-  DeclKind,
-  Declaration,
-  ImportEdge,
-  Manifest,
-  RefKind,
-  ReferenceEdge,
-} from "@greplost/core/schema";
-import { compareDeclarations, compareEdges, compareStrings, isNodeDeclaration } from "@greplost/core/schema";
+import type { Confidence, DeclKind, Declaration, RefKind } from "@greplost/core/schema";
+import { compareDeclarations } from "@greplost/core/schema";
 
 import type { CommandContext } from "../args.ts";
-import { fields, printError, printJson, printLine, summarise, table } from "../output.ts";
+import { printError, printJson, printLine } from "../output.ts";
 import {
-  cardOf,
-  importsOfFile,
-  loadStructure,
-  looksLikePath,
-  nodeCardOf,
-  resolveFile,
-  resolveNode,
-  toRepoRelative,
-} from "./structure.ts";
+  describe,
+  describeDirectory,
+  describeFile,
+  describeNode,
+  importEdgesByTarget,
+  indexReferences,
+} from "./query-describe.ts";
+import { printDirectory, printFile, printMatches, printNode, printSuggestions } from "./query-print.ts";
+import { statusOf } from "./status.ts";
+import type { QueryStatus } from "./status.ts";
+import { loadStructure, resolveDirectory, resolveFile, resolveNode, toRepoRelative } from "./structure.ts";
+import { nearestIds } from "./suggest.ts";
 import { dispatchWorkspace } from "./workspace.ts";
 
 /** One declaration and everything the map knows about it. */
@@ -92,12 +92,6 @@ export interface ReferenceIn {
   confidence: Confidence;
 }
 
-/** Reference edges bucketed by both endpoints, built once per `queryStructure`. */
-interface ReferenceIndex {
-  from: Map<string, ReferenceEdge[]>;
-  to: Map<string, ReferenceEdge[]>;
-}
-
 /**
  * The node block, present when the argument named a non-file node. Mirrors
  * `QueryFile`: a node is the other thing a map holds that is not a symbol, and
@@ -133,12 +127,53 @@ export interface QueryFile {
   loc: number;
 }
 
+/**
+ * One row of a directory answer: the same four figures the file block carries,
+ * with `exports` as a count rather than a list, because a directory answer is a
+ * table and a table cell is not the place to read forty names.
+ */
+export interface QueryDirectoryFile {
+  path: string;
+  loc: number;
+  /** Number of exported names, not the names: `query <file>` lists those. */
+  exports: number;
+  fanIn: number;
+  fanOut: number;
+}
+
+/**
+ * The directory block, present when the argument named a directory the map
+ * holds files under (leaf 2.15). The evaluation asked `greplost query
+ * packages/pgmq` and was told to run an update; a directory is a perfectly
+ * ordinary thing to ask about, and the map already knows every file below it.
+ */
+export interface QueryDirectory {
+  path: string;
+  /** Every indexed file under it, at any depth, sorted. */
+  files: QueryDirectoryFile[];
+}
+
 export interface QueryResult {
   query: string;
+  /**
+   * Why this answer is what it is (leaf 2.15): `found`, `absent` (nothing
+   * matches and nothing is on disk under that path), `excluded` (on disk, and
+   * the config drops it) or `stale` (on disk, and the map does not describe it
+   * or no longer describes these bytes).
+   */
+  status: QueryStatus;
   matches: QueryMatch[];
   file?: QueryFile;
   /** Schema 2: present when the argument was an exact non-file node id. */
   node?: QueryNode;
+  /** Present when the argument named a directory the map holds files under. */
+  directory?: QueryDirectory;
+  /** The `exclude` pattern that drops the path, when `status` is `excluded`. */
+  excludedBy?: string;
+  /** One line explaining a `status` that is not `found`; the text mode's error. */
+  message?: string;
+  /** Up to five nearest ids the map does hold; present only when nothing matched. */
+  suggestions?: string[];
 }
 
 export async function run(ctx: CommandContext): Promise<number> {
@@ -148,53 +183,106 @@ export async function run(ctx: CommandContext): Promise<number> {
   const needle = ctx.operands[0] as string;
   const structure = loadStructure(ctx.root);
   const result = queryStructure(structure, ctx.root, needle);
+  const answered = hasAnswer(result);
+  applyStatus(result, structure, ctx.root, needle, answered);
 
   if (ctx.json) {
     printJson(result);
-    return result.file === undefined && result.matches.length === 0 ? 1 : 0;
+    return answered ? 0 : 1;
+  }
+
+  if (!answered) {
+    printError(result.message ?? `no match for "${needle}"`);
+    printSuggestions(result.suggestions ?? []);
+    return 1;
   }
 
   if (result.node !== undefined) {
     printNode(result.node);
-    return 0;
+  } else if (result.directory !== undefined) {
+    printDirectory(result.directory);
+  } else {
+    if (result.file !== undefined) printFile(result.file, ctx.options.brief === true);
+    if (result.matches.length > 0) {
+      if (result.file !== undefined) printLine();
+      printMatches(result.matches, ctx.options.brief === true);
+    }
   }
 
-  if (result.file === undefined && result.matches.length === 0) {
-    // An argument that reads like a path almost never means "look for a symbol
-    // spelled like this"; it means the file is not indexed, and the actionable
-    // answer is the one that says so.
-    const relative = toRepoRelative(ctx.root, needle);
-    printError(
-      looksLikePath(relative)
-        ? `${relative} is not in the map; run \`greplost update\` or check the path`
-        : `no match for "${needle}"`,
-    );
-    return 1;
-  }
-
-  if (result.file !== undefined) printFile(result.file);
-  if (result.matches.length > 0) {
-    if (result.file !== undefined) printLine();
-    printMatches(result.matches);
+  // A stale answer is still an answer, so it goes to stdout under the answer it
+  // qualifies rather than to stderr, where it would look like a failure.
+  if (result.status !== "found" && result.message !== undefined) {
+    printLine();
+    printLine(result.message);
   }
   return 0;
+}
+
+/** True when the map answered at all: a file, a node, a directory or a symbol. */
+function hasAnswer(result: QueryResult): boolean {
+  return (
+    result.file !== undefined ||
+    result.node !== undefined ||
+    result.directory !== undefined ||
+    result.matches.length > 0
+  );
+}
+
+/**
+ * Fill in `status`, its message, and the suggestions, from the checkout.
+ *
+ * Separate from `queryStructure` because that function is pure and this half is
+ * not: it stats and hashes files, reads `config.json` and, on a miss, ranks
+ * every id in the map. A `query` that answered pays for one hash of one file;
+ * only a miss pays for the ranking.
+ */
+function applyStatus(
+  result: QueryResult,
+  structure: Structure,
+  root: string,
+  needle: string,
+  answered: boolean,
+): void {
+  const relative = toRepoRelative(root, needle);
+  const target = result.file ?? result.directory;
+  const verdict = statusOf(
+    root,
+    structure.manifest,
+    target === undefined ? (needle.includes("#") ? "" : relative) : (target as { path: string }).path,
+    answered,
+    needle,
+  );
+  result.status = verdict.status;
+  if (verdict.excludedBy !== undefined) result.excludedBy = verdict.excludedBy;
+  if (verdict.message !== undefined) result.message = verdict.message;
+  if (!answered) result.suggestions = nearestIds(structure, needle);
 }
 
 /** The whole answer, as `--json` serialises it. Pure: no output, no filesystem. */
 export function queryStructure(structure: Structure, root: string, needle: string): QueryResult {
   const manifest = structure.manifest;
-  // The ladder, in this order and no other (spec 4.5): an indexed file first
-  // and still first, then an exact non-file node id, then the symbol search. A
-  // node id can never be mistaken for a path, because `looksLikePath` rejects
-  // anything holding a `#`.
-  const asFile = resolveFile(manifest, toRepoRelative(root, needle));
+  // The ladder, in this order and no other (spec 4.5, extended by leaf 2.15):
+  // an indexed file first and still first, then an exact non-file node id, then
+  // a directory the map holds files under, then the symbol search. A node id
+  // can never be mistaken for a path, because `looksLikePath` rejects anything
+  // holding a `#`, and a directory is tried before symbols because a path that
+  // names a real directory is never a symbol name.
+  const relative = toRepoRelative(root, needle);
+  const asFile = resolveFile(manifest, relative);
   const asNode = asFile === undefined ? resolveNode(structure, needle) : undefined;
+  const asDirectory =
+    asFile === undefined && asNode === undefined ? resolveDirectory(manifest, relative) : undefined;
 
   let declarations: Declaration[];
   if (asFile !== undefined) {
     declarations = [...structure.symbols.filter((decl) => decl.file === asFile)].sort(compareDeclarations);
   } else if (asNode !== undefined) {
     declarations = [asNode];
+  } else if (asDirectory !== undefined) {
+    // A directory answer is its file table. Listing every declaration of every
+    // file under it would answer a question nobody asked and, on a package of
+    // seventy files, would bury the table it did ask for.
+    declarations = [];
   } else {
     declarations = findSymbols(structure.symbols, needle);
   }
@@ -206,259 +294,13 @@ export function queryStructure(structure: Structure, root: string, needle: strin
   const edges = indexReferences(structure.references);
   const matches = declarations.map((decl) => describe(structure, manifest, decl, byTarget, edges));
 
-  const result: QueryResult = { query: needle, matches };
+  // The map's own verdict, refined by `applyStatus` once the checkout has been
+  // consulted; a caller of this pure function still gets a usable one.
+  const result: QueryResult = { query: needle, status: "absent", matches };
   if (asFile !== undefined) result.file = describeFile(structure, manifest, asFile);
   if (asNode !== undefined) result.node = describeNode(structure, manifest, asNode, edges);
+  if (asDirectory !== undefined) result.directory = describeDirectory(manifest, asDirectory);
+  if (hasAnswer(result)) result.status = "found";
   return result;
 }
 
-/**
- * Reference edges bucketed by both endpoints, each bucket sorted with
- * `compareEdges`, the same order `referencesOf`/`referencedBy` produce, which
- * is what keeps a `query` answer and a node card listing the same edges in the
- * same sequence.
- *
- * Built once per invocation. The two core helpers each scan the whole edge list,
- * so calling them per declaration made a query on a 400-resource Terraform file
- * 800 linear scans of `graph/references.jsonl`.
- */
-function indexReferences(references: readonly ReferenceEdge[]): ReferenceIndex {
-  const from = new Map<string, ReferenceEdge[]>();
-  const to = new Map<string, ReferenceEdge[]>();
-  for (const edge of references) {
-    const out = from.get(edge.from);
-    if (out === undefined) from.set(edge.from, [edge]);
-    else out.push(edge);
-    const back = to.get(edge.to);
-    if (back === undefined) to.set(edge.to, [edge]);
-    else back.push(edge);
-  }
-  for (const bucket of from.values()) bucket.sort(compareEdges);
-  for (const bucket of to.values()) bucket.sort(compareEdges);
-  return { from, to };
-}
-
-/**
- * Import and re-export edges into each declaring file *or the package
- * directory it sits in*, indexed once by the id the edge actually targets.
- *
- * Both ids are collected because a Go import names a package rather than a
- * file, so the edge that makes `cmd/app/main.go` an importer of `Store` targets
- * `internal/store`, not `internal/store/store.go` (tech spec Appendix C).
- * `importTargetsOf` is core's shared expansion rule, and a target id is either
- * a file path or a directory path but never both, so the two buckets can never
- * fold two different modules together.
- */
-function importEdgesByTarget(structure: Structure, declarations: Declaration[]): Map<string, ImportEdge[]> {
-  const wanted = new Set<string>();
-  for (const decl of declarations) {
-    for (const target of importTargetsOf(decl.file)) wanted.add(target);
-  }
-  const byTarget = new Map<string, ImportEdge[]>();
-  if (wanted.size === 0) return byTarget;
-
-  for (const edge of structure.imports) {
-    if (edge.kind !== "import" && edge.kind !== "reexport") continue;
-    if (!wanted.has(edge.to)) continue;
-    const bucket = byTarget.get(edge.to);
-    if (bucket === undefined) byTarget.set(edge.to, [edge]);
-    else bucket.push(edge);
-  }
-  return byTarget;
-}
-
-function describe(
-  structure: Structure,
-  manifest: Manifest,
-  decl: Declaration,
-  byTarget: Map<string, ImportEdge[]>,
-  edges: ReferenceIndex,
-): QueryMatch {
-  const entry = manifest.files[decl.file];
-  const node = isNodeDeclaration(decl);
-  const match: QueryMatch = {
-    id: decl.id,
-    file: decl.file,
-    name: decl.name,
-    kind: decl.kind,
-    signature: decl.signature,
-    span: decl.span,
-    exported: decl.exported,
-    package: entry?.pkg ?? "",
-    // A node's card is its own; everything else is documented by its file's.
-    card: node ? nodeCardOf(manifest, decl.id) : cardOf(manifest, decl.file),
-    importers: symbolImporters(byTarget, decl),
-    callers: callersOf(structure.calls, decl.id),
-    references: outboundReferences(edges, decl.id),
-    referencedBy: inboundReferences(edges, decl.id),
-  };
-  if (decl.meta !== undefined) match.meta = decl.meta;
-  return match;
-}
-
-function outboundReferences(edges: ReferenceIndex, id: string): ReferenceOut[] {
-  return (edges.from.get(id) ?? []).map((edge) => ({
-    to: edge.to,
-    refKind: edge.refKind,
-    confidence: edge.confidence,
-  }));
-}
-
-function inboundReferences(edges: ReferenceIndex, id: string): ReferenceIn[] {
-  return (edges.to.get(id) ?? []).map((edge) => ({
-    from: edge.from,
-    refKind: edge.refKind,
-    confidence: edge.confidence,
-  }));
-}
-
-/**
- * The node block. `blast` is the reverse closure over `impactPairs`, the same
- * figure `greplost impact <node-id>` reports and the same one the node card
- * prints, so a reader never sees three numbers for one question.
- */
-function describeNode(
-  structure: Structure,
-  manifest: Manifest,
-  decl: Declaration,
-  edges: ReferenceIndex,
-): QueryNode {
-  const node: QueryNode = {
-    id: decl.id,
-    file: decl.file,
-    kind: decl.kind,
-    name: decl.name,
-    package: manifest.files[decl.file]?.pkg ?? "",
-    card: nodeCardOf(manifest, decl.id),
-    references: outboundReferences(edges, decl.id),
-    referencedBy: inboundReferences(edges, decl.id),
-    blast: impactOf(impactPairs(structure), decl.id).length,
-    span: decl.span,
-  };
-  if (decl.meta !== undefined) node.meta = decl.meta;
-  return node;
-}
-
-/**
- * Files that import `decl`'s file *and name this symbol*: the exported name is
- * the root of the symbol path, so a caller of `Registry.register` is found
- * through an import of `Registry`. A namespace import (`*`) names everything,
- * so it counts; a side-effect import names nothing, so it does not.
- *
- * Plus, for a language whose imports target a package directory rather than a
- * file, every import of the package. A Go import statement names the package
- * and nothing finer, so it cannot be filtered by symbol at all, and importing
- * `internal/store` imports every exported declaration the package holds
- * (ruling, fix round 1). Unexported declarations are excluded, because no
- * importer can reach them however the package was imported.
- */
-function symbolImporters(byTarget: Map<string, ImportEdge[]>, decl: Declaration): string[] {
-  const [file, directory] = importTargetsOf(decl.file);
-  const exportedName = decl.name.split(".")[0] as string;
-  const importers = new Set<string>();
-
-  for (const edge of byTarget.get(file) ?? []) {
-    const symbols = edge.symbols ?? [];
-    if (symbols.includes("*") || symbols.includes(exportedName)) importers.add(edge.from);
-  }
-
-  if (decl.exported) {
-    for (const edge of byTarget.get(directory) ?? []) {
-      if (edge.from !== decl.file) importers.add(edge.from);
-    }
-  }
-
-  return [...importers].sort(compareStrings);
-}
-
-function describeFile(structure: Structure, manifest: Manifest, file: string): QueryFile {
-  const entry = manifest.files[file];
-  return {
-    path: file,
-    package: entry?.pkg ?? "",
-    card: cardOf(manifest, file),
-    exports: entry?.exports ?? [],
-    imports: importsOfFile(structure, file),
-    importers: importersOf(structure.imports, file),
-    fanIn: entry?.fanIn ?? 0,
-    fanOut: entry?.fanOut ?? 0,
-    blast: entry?.blast ?? 0,
-    loc: entry?.loc ?? 0,
-  };
-}
-
-function printFile(file: QueryFile): void {
-  printLine(file.path);
-  for (const line of fields([
-    ["package", file.package],
-    ["card", file.card],
-    ["loc", String(file.loc)],
-    ["fan-in", String(file.fanIn)],
-    ["fan-out", String(file.fanOut)],
-    ["blast", String(file.blast)],
-    ["exports", summarise(file.exports, 8)],
-    ["imports", summarise(file.imports)],
-    ["importers", summarise(file.importers)],
-  ])) {
-    printLine(line);
-  }
-}
-
-/**
- * A node reads as one block, not as a row in a table of one: everything the map
- * knows about it fits in eight aligned fields, and the table form would waste
- * four columns on a single answer.
- */
-function printNode(node: QueryNode): void {
-  printLine(node.id);
-  const attributes = Object.entries(node.meta ?? {})
-    .sort(([a], [b]) => compareStrings(a, b))
-    .map(([key, value]) => `${key}: ${value}`)
-    .join(", ");
-  for (const line of fields([
-    ["kind", node.kind],
-    ["file", node.file],
-    ["package", node.package],
-    ["card", node.card],
-    ["source", `L${node.span[0]}-${node.span[1]}`],
-    ["attributes", attributes],
-    ["blast", String(node.blast)],
-    ["references", summarise(node.references.map((r) => `${r.to} (${r.refKind})`))],
-    ["referenced by", summarise(node.referencedBy.map((r) => `${r.from} (${r.refKind})`))],
-  ])) {
-    printLine(line);
-  }
-}
-
-function printMatches(matches: QueryMatch[]): void {
-  for (const line of table(
-    ["NAME", "KIND", "LOCATION", "PACKAGE"],
-    matches.map((match) => [
-      match.name,
-      match.kind,
-      `${match.file}:${match.span[0]}-${match.span[1]}`,
-      match.package,
-    ]),
-  )) {
-    printLine(line);
-  }
-
-  const only = matches.length === 1 ? matches[0] : undefined;
-  if (only === undefined) {
-    if (matches.length > 1) {
-      printLine();
-      printLine(`${matches.length} matches; run \`greplost query <id>\` for one of them`);
-    }
-    return;
-  }
-
-  printLine();
-  for (const line of fields([
-    ["signature", only.signature],
-    ["card", only.card],
-    ["importers", summarise(only.importers)],
-    ["callers", summarise(only.callers)],
-  ])) {
-    printLine(line);
-  }
-}

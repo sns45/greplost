@@ -4,18 +4,15 @@
 
 ## packages/cli/src/args.ts
 
-- `type CommandName = | "init" | "update" | "verify" | "query" | "impact" | "flows" | "refresh" | "bench" | "screenshots" | "hook" | "version" | "help"` L22-34
-- `const HOOK_EVENTS = ["session-start", "pre-tool-use", "post-tool-use", "stop"] as const` L37-37
-- `type HookEvent = (typeof HOOK_EVENTS)[number]` L39-39
-- `interface CommandOptions` L42-65
-- `interface ParsedCommand` L67-75
-- `type ParseResult = { ok: true; command: ParsedCommand } | { ok: false; message: string }` L77-77
-- `interface CommandContext` L83-93
-- `const USAGE = `usage: greplost <command> [options] ${COMMAND_USAGE.map(([, synopsis, summary]) => usageLine(synopsis, summary)).join("\n")} ${USAGE_FOOTER}`` L140-144
-- `function usageFor(name: string): string` L147-151
-- `function parseArgs(argv: string[]): ParseResult` L194-217
-- `function findRoot(cwd: string): string` L482-490
-- `function resolveRoot(cwd: string, explicit: string | undefined): string` L498-503
+- `interface CommandOptions` L32-57
+- `interface ParsedCommand` L59-67
+- `type ParseResult = { ok: true; command: ParsedCommand } | { ok: false; message: string }` L69-69
+- `interface CommandContext` L75-85
+- `function parseArgs(argv: string[]): ParseResult` L128-151
+- `function findRoot(cwd: string): string` L421-429
+- `function resolveRoot(cwd: string, explicit: string | undefined): string` L437-442
+- re-exports `HOOK_EVENTS`, `USAGE`, `usageFor` from `./usage.ts`
+- re-exports `CommandName`, `HookEvent` from `./usage.ts`
 
 ## packages/cli/src/commands/bench.ts
 
@@ -36,25 +33,45 @@
 
 ## packages/cli/src/commands/impact.ts
 
-- `interface ImpactFiles` L34-39
-- `interface ImpactNodes` L47-51
-- `type ImpactResult = ImpactFiles | ImpactNodes` L53-53
-- `async function run(ctx: CommandContext): Promise<number>` L55-105
+- `interface ImpactFiles` L36-45
+- `interface ImpactNodes` L53-59
+- `type ImpactResult = ImpactFiles | ImpactNodes` L61-61
+- `async function run(ctx: CommandContext): Promise<number>` L63-130
 
 ## packages/cli/src/commands/init.ts
 
 - `async function run(ctx: CommandContext): Promise<number>` L19-73
+
+## packages/cli/src/commands/query-describe.ts
+
+- `interface ReferenceIndex` L28-31
+- `function describeDirectory(manifest: Manifest, directory: string): QueryDirectory` L34-46
+- `function indexReferences(references: readonly ReferenceEdge[]): ReferenceIndex` L58-72
+- `function importEdgesByTarget(structure: Structure, declarations: Declaration[]): Map<string, ImportEdge[]>` L85-101
+- `function describe( structure: Structure, manifest: Manifest, decl: Declaration, byTarget: Map<string, ImportEdge[]>, edges: ReferenceIndex, ): QueryMatch` L103-130
+- `function describeNode( structure: Structure, manifest: Manifest, decl: Declaration, edges: ReferenceIndex, ): QueryNode` L153-173
+- `function describeFile(structure: Structure, manifest: Manifest, file: string): QueryFile` L207-221
+
+## packages/cli/src/commands/query-print.ts
+
+- `function printFile(file: QueryFile, brief = false): void` L29-44
+- `function printNode(node: QueryNode): void` L51-70
+- `function printDirectory(directory: QueryDirectory): void` L77-90
+- `function printMatches(matches: QueryMatch[], brief = false): void` L92-123
+- `function printSuggestions(suggestions: readonly string[]): void` L130-133
 
 ## packages/cli/src/commands/query.ts
 
 - `interface QueryMatch` L46-79
 - `interface ReferenceOut` L82-86
 - `interface ReferenceIn` L89-93
-- `interface QueryNode` L106-120
-- `interface QueryFile` L123-134
-- `interface QueryResult` L136-142
-- `async function run(ctx: CommandContext): Promise<number>` L144-181
-- `function queryStructure(structure: Structure, root: string, needle: string): QueryResult` L184-213
+- `interface QueryNode` L100-114
+- `interface QueryFile` L117-128
+- `interface QueryDirectoryFile` L135-142
+- `interface QueryDirectory` L150-154
+- `interface QueryResult` L156-177
+- `async function run(ctx: CommandContext): Promise<number>` L179-219
+- `function queryStructure(structure: Structure, root: string, needle: string): QueryResult` L262-305
 
 ## packages/cli/src/commands/refresh.ts
 
@@ -73,6 +90,13 @@
 
 - `async function run(_ctx: CommandContext): Promise<number>` L11-13
 
+## packages/cli/src/commands/status.ts
+
+- `type QueryStatus = "found" | "absent" | "excluded" | "stale"` L40-40
+- `interface StatusVerdict` L42-48
+- `function statusOf( root: string, manifest: Manifest, relative: string, found: boolean, needle: string, ): StatusVerdict` L62-120
+- `function excludingPattern(config: GreplostConfig, relative: string): string | undefined` L131-136
+
 ## packages/cli/src/commands/structure.ts
 
 - `function loadStructure(root: string): Structure` L24-30
@@ -80,10 +104,17 @@
 - `function looksLikePath(candidate: string): boolean` L50-58
 - `function resolveNode(structure: Structure, candidate: string): Declaration | undefined` L67-70
 - `function resolveFile(manifest: Manifest, candidate: string): string | undefined` L80-88
-- `function cardOf(manifest: Manifest, file: string): string` L104-109
-- `function nodeCardOf(manifest: Manifest, id: string): string` L115-122
-- `function importPairs(structure: Structure): Array<readonly [string, string]>` L131-133
-- `function importsOfFile(structure: Structure, file: string): string[]` L145-151
+- `function resolveDirectory(manifest: Manifest, candidate: string): string | undefined` L99-104
+- `function cardOf(manifest: Manifest, file: string): string` L134-139
+- `function nodeCardOf(manifest: Manifest, id: string): string` L145-152
+- `function importPairs(structure: Structure): Array<readonly [string, string]>` L161-163
+- `function importsOfFile(structure: Structure, file: string): string[]` L175-181
+
+## packages/cli/src/commands/suggest.ts
+
+- `const SUGGESTION_LIMIT = 5` L28-28
+- `function nearestIds(structure: Structure, needle: string, limit = SUGGESTION_LIMIT): string[]` L48-85
+- `function boundedDistance(a: string, b: string, cutoff: number): number` L111-139
 
 ## packages/cli/src/commands/update.ts
 
@@ -140,3 +171,11 @@
 - `function packageRoot(): string` L70-78
 - `async function readStdin(): Promise<string>` L81-88
 - re-exports `fields`, `summarise`, `table` from `@greplost/render`
+
+## packages/cli/src/usage.ts
+
+- `type CommandName = | "init" | "update" | "verify" | "query" | "impact" | "flows" | "refresh" | "bench" | "screenshots" | "hook" | "version" | "help"` L16-28
+- `const HOOK_EVENTS = ["session-start", "pre-tool-use", "post-tool-use", "stop"] as const` L31-31
+- `type HookEvent = (typeof HOOK_EVENTS)[number]` L33-33
+- `const USAGE = `usage: greplost <command> [options] ${COMMAND_USAGE.map(([, synopsis, summary]) => usageLine(synopsis, summary)).join("\n")} ${USAGE_FOOTER}`` L115-119
+- `function usageFor(name: string): string` L154-160

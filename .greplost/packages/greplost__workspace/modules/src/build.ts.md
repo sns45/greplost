@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/workspace/src/index.ts`](index.ts.md)
 
-**Blast radius:** 9 files (`greplost impact packages/workspace/src/build.ts`)
+**Blast radius:** 11 files (`greplost impact packages/workspace/src/build.ts`)
 
 **Key symbols:**
 - `interface WorkspaceBuild`  L29-38

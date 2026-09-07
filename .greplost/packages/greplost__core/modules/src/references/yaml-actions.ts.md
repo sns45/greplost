@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/references/index.ts`](index.ts.md), [`packages/core/src/references/yaml.ts`](yaml.ts.md)
 
-**Blast radius:** 40 files (`greplost impact packages/core/src/references/yaml-actions.ts`)
+**Blast radius:** 44 files (`greplost impact packages/core/src/references/yaml-actions.ts`)
 
 **Key symbols:**
 - `const ACTION_NAMESPACE = "action/"`  L40-40

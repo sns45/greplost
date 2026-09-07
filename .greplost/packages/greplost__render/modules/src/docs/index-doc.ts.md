@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/render/src/render.ts`](../render.ts.md)
 
-**Blast radius:** 38 files (`greplost impact packages/render/src/docs/index-doc.ts`)
+**Blast radius:** 41 files (`greplost impact packages/render/src/docs/index-doc.ts`)
 
 **Key symbols:**
 - `const INDEX_ARTIFACT = "INDEX.md"`  L28-28

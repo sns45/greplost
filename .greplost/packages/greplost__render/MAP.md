@@ -30,21 +30,21 @@ Path: `packages/render` · 15 files · 2368 LOC · depends on: @greplost/core ·
 
 | File | LOC | Exports | Fan-in | Fan-out | Blast |
 |---|---|---|---|---|---|
-| [`src/ascii.ts`](modules/src/ascii.ts.md) | 82 | 2 | 3 | 1 | 39 |
-| [`src/docs/api.ts`](modules/src/docs/api.ts.md) | 176 | 8 | 2 | 2 | 38 |
-| [`src/docs/card.ts`](modules/src/docs/card.ts.md) | 269 | 1 | 1 | 4 | 38 |
-| [`src/docs/hotspots.ts`](modules/src/docs/hotspots.ts.md) | 90 | 5 | 2 | 4 | 38 |
-| [`src/docs/index-doc.ts`](modules/src/docs/index-doc.ts.md) | 202 | 1 | 1 | 6 | 38 |
-| [`src/docs/node-card.ts`](modules/src/docs/node-card.ts.md) | 150 | 2 | 2 | 3 | 38 |
-| [`src/docs/package-map.ts`](modules/src/docs/package-map.ts.md) | 172 | 2 | 1 | 6 | 38 |
-| [`src/docs/repo-map.ts`](modules/src/docs/repo-map.ts.md) | 111 | 3 | 2 | 6 | 38 |
-| [`src/index.ts`](modules/src/index.ts.md) | 33 | 35 | 8 | 8 | 30 |
-| [`src/mermaid.ts`](modules/src/mermaid.ts.md) | 133 | 5 | 4 | 1 | 40 |
-| [`src/render.ts`](modules/src/render.ts.md) | 545 | 13 | 8 | 10 | 38 |
-| [`src/slug.ts`](modules/src/slug.ts.md) | 80 | 5 | 8 | 1 | 39 |
-| [`src/split.ts`](modules/src/split.ts.md) | 248 | 3 | 3 | 2 | 39 |
-| [`src/text.ts`](modules/src/text.ts.md) | 63 | 3 | 1 | 0 | 31 |
-| [`src/tokens.ts`](modules/src/tokens.ts.md) | 14 | 2 | 2 | 0 | 39 |
+| [`src/ascii.ts`](modules/src/ascii.ts.md) | 82 | 2 | 3 | 1 | 42 |
+| [`src/docs/api.ts`](modules/src/docs/api.ts.md) | 176 | 8 | 2 | 2 | 41 |
+| [`src/docs/card.ts`](modules/src/docs/card.ts.md) | 269 | 1 | 1 | 4 | 41 |
+| [`src/docs/hotspots.ts`](modules/src/docs/hotspots.ts.md) | 90 | 5 | 2 | 4 | 41 |
+| [`src/docs/index-doc.ts`](modules/src/docs/index-doc.ts.md) | 202 | 1 | 1 | 6 | 41 |
+| [`src/docs/node-card.ts`](modules/src/docs/node-card.ts.md) | 150 | 2 | 2 | 3 | 41 |
+| [`src/docs/package-map.ts`](modules/src/docs/package-map.ts.md) | 172 | 2 | 1 | 6 | 41 |
+| [`src/docs/repo-map.ts`](modules/src/docs/repo-map.ts.md) | 111 | 3 | 2 | 6 | 41 |
+| [`src/index.ts`](modules/src/index.ts.md) | 33 | 35 | 8 | 8 | 33 |
+| [`src/mermaid.ts`](modules/src/mermaid.ts.md) | 133 | 5 | 4 | 1 | 43 |
+| [`src/render.ts`](modules/src/render.ts.md) | 545 | 13 | 8 | 10 | 41 |
+| [`src/slug.ts`](modules/src/slug.ts.md) | 80 | 5 | 8 | 1 | 42 |
+| [`src/split.ts`](modules/src/split.ts.md) | 248 | 3 | 3 | 2 | 42 |
+| [`src/text.ts`](modules/src/text.ts.md) | 63 | 3 | 1 | 0 | 34 |
+| [`src/tokens.ts`](modules/src/tokens.ts.md) | 14 | 2 | 2 | 0 | 42 |
 
 ## Components
 

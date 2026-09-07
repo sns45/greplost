@@ -104,7 +104,11 @@ describe("query node", () => {
     const run = await cli("query", "main.tf#resource.nope.nope", "--root", tf);
     expect(run.code).toBe(1);
     expect(run.stdout).toBe("");
-    expect(run.stderr).toBe('greplost: no match for "main.tf#resource.nope.nope"');
+    // The error, then the ids the map does hold (leaf 2.15): a wrong kind or a
+    // wrong name is one word from an id that answers.
+    const lines = run.stderr.split("\n");
+    expect(lines[0]).toBe('greplost: no match for "main.tf#resource.nope.nope"');
+    expect(lines[1]).toContain("did you mean: main.tf#resource.aws_vpc.main");
   });
 
   test("a path argument still wins over everything else", async () => {
@@ -137,7 +141,7 @@ describe("query node json", () => {
     expect(node["kind"]).toBe("resource");
     expect(node["name"]).toBe("aws_vpc.main");
     expect(node["package"]).toBe("root");
-    expect(node["card"]).toBe("packages/root/modules/main.tf/resource.aws_vpc.main.md");
+    expect(node["card"]).toBe(".greplost/packages/root/modules/main.tf/resource.aws_vpc.main.md");
     expect(node["meta"]).toEqual({ provider: "aws", type: "aws_vpc" });
     expect(node["span"]).toEqual([21, 24]);
     expect(node["blast"]).toBe(3);
@@ -159,7 +163,7 @@ describe("query node json", () => {
     expect(matches).toHaveLength(1);
     const match = matches[0] as Record<string, unknown>;
     expect(match["id"]).toBe(VPC);
-    expect(match["card"]).toBe("packages/root/modules/main.tf/resource.aws_vpc.main.md");
+    expect(match["card"]).toBe(".greplost/packages/root/modules/main.tf/resource.aws_vpc.main.md");
     expect(match["meta"]).toEqual({ provider: "aws", type: "aws_vpc" });
     expect((match["references"] as unknown[]).length).toBe(3);
     expect((match["referencedBy"] as unknown[]).length).toBe(3);
@@ -204,14 +208,18 @@ describe("impact node", () => {
   test("exits 1 for a node id the map does not hold", async () => {
     const run = await cli("impact", "main.tf#resource.nope.nope", "--root", tf);
     expect(run.code).toBe(1);
-    expect(run.stderr).toContain("is not in the map");
+    // An id is not a path, so the miss reads as a miss, with the ids the map
+    // does hold beside it (leaf 2.15), and never as "run `greplost update`".
+    expect(run.stderr).toContain('no match for "main.tf#resource.nope.nope"');
+    expect(run.stderr).toContain("did you mean: main.tf#resource.aws_vpc.main");
+    expect(run.stderr).not.toContain("greplost update");
   });
 });
 
 describe("impact node json", () => {
   test("a node target answers with nodes and never with files", async () => {
     const result = onlyJson(await cli("impact", VPC, "--json", "--root", tf));
-    expect(Object.keys(result).sort()).toEqual(["nodes", "path", "radius"]);
+    expect(Object.keys(result).sort()).toEqual(["nodes", "path", "radius", "returned", "truncated"]);
     expect(result["path"]).toBe(VPC);
     expect(result["radius"]).toBe(3);
     expect(result["nodes"]).toEqual([
@@ -273,14 +281,14 @@ describe("looksLikePath rejects hashes", () => {
 describe("file target unchanged", () => {
   test("impact on a file still returns files, not nodes", async () => {
     const result = onlyJson(await cli("impact", "packages/core/src/retry.ts", "--json", "--root", ts));
-    expect(Object.keys(result).sort()).toEqual(["files", "path", "radius"]);
+    expect(Object.keys(result).sort()).toEqual(["files", "path", "radius", "returned", "truncated"]);
     expect(result).toHaveProperty("files");
     expect(result).not.toHaveProperty("nodes");
   });
 
   test("a file target in a repo that does have nodes answers the same way", async () => {
     const result = onlyJson(await cli("impact", "modules/logs/main.tf", "--json", "--root", tf));
-    expect(Object.keys(result).sort()).toEqual(["files", "path", "radius"]);
+    expect(Object.keys(result).sort()).toEqual(["files", "path", "radius", "returned", "truncated"]);
     expect(result["files"]).toEqual([{ path: "main.tf", depth: 1 }]);
   });
 
