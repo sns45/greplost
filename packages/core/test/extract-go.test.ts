@@ -124,8 +124,8 @@ func (s Store) hidden2() {}
 
   test("blank and non-ASCII names", () => {
     const record = extract("package a\n\nvar _ = 1\nfunc Ünicode() {}\nfunc ünicode() {}\n");
+    // `_` binds nothing, so build 2.1 stopped declaring it at all.
     expect(shape(record)).toEqual([
-      ["_", "var", false],
       ["Ünicode", "function", true],
       ["ünicode", "function", false],
     ]);
@@ -223,6 +223,49 @@ const Attempts = 3
   test("declarations inside function bodies are not top-level declarations", () => {
     const record = extract("package a\n\nfunc New() {\n\ttype local struct{}\n\tvar x = 1\n\t_ = x\n}\n");
     expect(shape(record)).toEqual([["New", "function", true]]);
+  });
+
+  test("a blank identifier declares nothing at all", () => {
+    // Two `var _` interface assertions in one file used to make two declarations
+    // with the same id, `<file>#_`. `_` binds no name, so neither is a declaration.
+    const record = extract(
+      "package a\n\nvar _ Hooks = (*C)(nil)\nvar _ error = (*D)(nil)\n\nconst _ = 1\n\nfunc _() {}\n\ntype C struct{}\n",
+    );
+    expect(shape(record)).toEqual([["C", "struct", true]]);
+    expect(record.exports).toEqual([{ name: "C", kind: "named" }]);
+  });
+
+  test("a struct records its embedded types and its named fields, both sorted", () => {
+    const record = extract(
+      'package a\n\nimport "x/core"\n\ntype C struct {\n\t*core.Base\n\tInner\n\tBox[T]\n\tname string\n\tHandle func() error\n}\n',
+    );
+    expect(decl(record, "C").meta).toEqual({ embeds: "Box,Inner,core.Base", fields: "Handle,name" });
+    // A named field is what makes a promoted method of the same name
+    // unreachable, so it is recorded whether or not the struct embeds anything.
+    expect(decl(extract("package a\n\ntype P struct{ name string }\n"), "P").meta).toEqual({ fields: "name" });
+    expect(decl(extract("package a\n\ntype E struct{}\n"), "E").meta).toBeUndefined();
+  });
+
+  test("a function records the named type of its first result", () => {
+    const record = extract(
+      "package a\n\ntype Store struct{}\n\nfunc New() (*Store, error) { return nil, nil }\n\n" +
+        "func Count() int { return 0 }\n\nfunc Anon() func() { return nil }\n",
+    );
+    expect(decl(record, "New").meta).toEqual({ result: "Store" });
+    // A predeclared type names no declaration a call could land on, and a
+    // function type is not a named type at all.
+    expect(decl(record, "Count").meta).toBeUndefined();
+    expect(decl(record, "Anon").meta).toBeUndefined();
+  });
+
+  test("a declaration records the local receivers its own calls use", () => {
+    const record = extract(
+      "package a\n\ntype delivery struct{}\n\nfunc (c *Consumer) Park() {\n\td := &delivery{}\n" +
+        "\tunused := &delivery{}\n\t_ = unused\n\td.dispose()\n}\n",
+    );
+    // Only a local a recorded call is actually written against is worth an
+    // attribute: `unused` decides nothing about the shape of the map.
+    expect(decl(record, "Consumer.Park").meta).toEqual({ locals: "d:delivery" });
   });
 });
 
@@ -643,6 +686,9 @@ describe("resolve-go calls", () => {
   });
 
   test("a local named like an import alias hides that alias too", () => {
+    // `store` is bound to the result of `newThing`, which this repo does not
+    // declare: the site is recorded against the local, and the local is what
+    // keeps the import rule from reading it as the `store` package.
     expect(
       resolveCalls(
         {
@@ -652,7 +698,7 @@ describe("resolve-go calls", () => {
         },
         "app/main.go",
       ),
-    ).toEqual(["newThing -> (dropped)"]);
+    ).toEqual(["newThing -> (dropped)", "store.New -> (dropped)"]);
   });
 
   test("an explicit alias wins over another import's default local name", () => {
@@ -674,6 +720,365 @@ describe("resolve-go calls", () => {
         "app/main.go",
       ),
     ).toEqual(["bar.Only -> x/baz/a.go#Only (high)"]);
+  });
+
+  // -------------------------------------------------------------------------
+  // build 2.1: embedded-field promotion (leaf 2.13)
+  // -------------------------------------------------------------------------
+
+  test("a receiver call promotes through an embedded field of the same package", () => {
+    expect(
+      resolveCalls(
+        {
+          "sqs/a.go":
+            "package sqs\n\ntype Inner struct{}\n\nfunc (i *Inner) Promoted() {}\n\n" +
+            "type Consumer struct {\n\t*Inner\n}\n\n" +
+            "func (c *Consumer) handle() { c.Promoted() }\n",
+        },
+        "sqs/a.go",
+      ),
+    ).toEqual(["c.Promoted -> sqs/a.go#Inner.Promoted (high)"]);
+  });
+
+  test("a receiver call promotes through an embedded field of an imported package", () => {
+    expect(
+      resolveCalls(
+        {
+          "core/base.go": "package core\n\ntype BaseConsumer struct{}\n\nfunc (b *BaseConsumer) ApplyStrategy() {}\n",
+          "sqs/a.go":
+            'package sqs\n\nimport "example.com/m/core"\n\n' +
+            "type Consumer struct {\n\t*core.BaseConsumer\n}\n\n" +
+            "func (c *Consumer) handle() { c.ApplyStrategy() }\n",
+        },
+        "sqs/a.go",
+      ),
+    ).toEqual(["c.ApplyStrategy -> core/base.go#BaseConsumer.ApplyStrategy (high)"]);
+  });
+
+  test("a method declared on the type itself wins over a promoted one", () => {
+    expect(
+      resolveCalls(
+        {
+          "sqs/a.go":
+            "package sqs\n\ntype Inner struct{}\n\nfunc (i *Inner) M() {}\n\n" +
+            "type Consumer struct {\n\tInner\n}\n\nfunc (c *Consumer) M() {}\n\n" +
+            "func (c *Consumer) handle() { c.M() }\n",
+        },
+        "sqs/a.go",
+      ),
+    ).toEqual(["c.M -> sqs/a.go#Consumer.M (high)"]);
+  });
+
+  test("two embedded types supplying the member drop the call rather than guess", () => {
+    expect(
+      resolveCalls(
+        {
+          "sqs/a.go":
+            "package sqs\n\ntype A struct{}\n\nfunc (a *A) M() {}\n\ntype B struct{}\n\nfunc (b *B) M() {}\n\n" +
+            "type Consumer struct {\n\tA\n\tB\n}\n\nfunc (c *Consumer) handle() { c.M() }\n",
+        },
+        "sqs/a.go",
+      ),
+    ).toEqual(["c.M -> (dropped)"]);
+  });
+
+  test("promotion walks embedded embeds to depth 3 and stops there", () => {
+    const chain =
+      "package sqs\n\ntype L4 struct{}\n\nfunc (l *L4) Deeper() {}\n\n" +
+      "type L3 struct{ L4 }\n\nfunc (l *L3) Deep() {}\n\n" +
+      "type L2 struct{ L3 }\n\ntype L1 struct{ L2 }\n\ntype Top struct{ L1 }\n\n";
+    // L3 sits at depth 3 from Top (L1, L2, L3) and resolves.
+    expect(resolveCalls({ "sqs/a.go": `${chain}func (t *Top) run() { t.Deep() }\n` }, "sqs/a.go")).toEqual([
+      "t.Deep -> sqs/a.go#L3.Deep (high)",
+    ]);
+    // L4 sits at depth 4 and is not searched.
+    expect(resolveCalls({ "sqs/a.go": `${chain}func (t *Top) run() { t.Deeper() }\n` }, "sqs/a.go")).toEqual([
+      "t.Deeper -> (dropped)",
+    ]);
+  });
+
+  test("an embedded type from outside the repo promotes nothing", () => {
+    expect(
+      resolveCalls(
+        {
+          "sqs/a.go":
+            'package sqs\n\nimport "sync"\n\ntype Consumer struct {\n\t*sync.Mutex\n}\n\n' +
+            "func (c *Consumer) handle() { c.Lock() }\n",
+        },
+        "sqs/a.go",
+      ),
+    ).toEqual(["c.Lock -> (dropped)"]);
+  });
+
+  test("a named field shadows a promoted method of the same name", () => {
+    // Go looks for a field or a method at the shallowest depth, and `Handle` is
+    // a field of `Server` itself. A field is never a call target, so the only
+    // right answer is no edge.
+    expect(
+      resolveCalls(
+        {
+          "app/a.go":
+            "package app\n\ntype Base struct{}\n\nfunc (b *Base) Handle() error { return nil }\n\n" +
+            "type Server struct {\n\tHandle func() error\n\t*Base\n}\n\n" +
+            "func (s *Server) Serve() error { return s.Handle() }\n",
+        },
+        "app/a.go",
+      ),
+    ).toEqual(["s.Handle -> (dropped)"]);
+  });
+
+  test("a field one level down shadows a method one level below it", () => {
+    expect(
+      resolveCalls(
+        {
+          "app/a.go":
+            "package app\n\ntype Base struct{}\n\nfunc (b *Base) Handle() error { return nil }\n\n" +
+            "type Mid struct {\n\tHandle func() error\n\t*Base\n}\n\n" +
+            "type Server struct {\n\t*Mid\n}\n\n" +
+            "func (s *Server) Serve() error { return s.Handle() }\n",
+        },
+        "app/a.go",
+      ),
+    ).toEqual(["s.Handle -> (dropped)"]);
+  });
+
+  test("a field and a method at the same depth are ambiguous", () => {
+    expect(
+      resolveCalls(
+        {
+          "app/a.go":
+            "package app\n\ntype A struct{}\n\nfunc (a *A) M() error { return nil }\n\n" +
+            "type B struct {\n\tM func() error\n}\n\n" +
+            "type C struct {\n\tA\n\tB\n}\n\n" +
+            "func (c *C) run() error { return c.M() }\n",
+        },
+        "app/a.go",
+      ),
+    ).toEqual(["c.M -> (dropped)"]);
+  });
+
+  test("a named field of another name leaves promotion alone (control)", () => {
+    expect(
+      resolveCalls(
+        {
+          "app/a.go":
+            "package app\n\ntype Base struct{}\n\nfunc (b *Base) Handle() error { return nil }\n\n" +
+            "type Server struct {\n\tname string\n\t*Base\n}\n\n" +
+            "func (s *Server) Serve() error { return s.Handle() }\n",
+        },
+        "app/a.go",
+      ),
+    ).toEqual(["s.Handle -> app/a.go#Base.Handle (high)"]);
+  });
+
+  test("two build-tag variants of one struct never merge their embedded types", () => {
+    const sources = {
+      "codec/json.go":
+        "package codec\n\ntype Codec struct {\n\t*JSON\n}\n\ntype JSON struct{}\n\nfunc (j *JSON) Marshal() {}\n",
+      "codec/sonic.go":
+        "package codec\n\ntype Codec struct {\n\t*Sonic\n}\n\ntype Sonic struct{}\n\n" +
+        "func (s *Sonic) Marshal() {}\n\nfunc (c *Codec) Use() { c.Marshal() }\n",
+      "codec/other.go": "package codec\n\nfunc (c *Codec) Also() { c.Marshal() }\n",
+    };
+    // The caller's own file settles which `Codec` it was compiled with.
+    expect(resolveCalls(sources, "codec/sonic.go")).toEqual(["c.Marshal -> codec/sonic.go#Sonic.Marshal (high)"]);
+    // From a third file it is a guess between two structs, so nothing is emitted.
+    expect(resolveCalls(sources, "codec/other.go")).toEqual(["c.Marshal -> (dropped)"]);
+  });
+
+  test("a promoted name that no embedded type declares is dropped", () => {
+    expect(
+      resolveCalls(
+        {
+          "sqs/a.go":
+            "package sqs\n\ntype Inner struct{}\n\ntype Consumer struct {\n\tInner\n}\n\n" +
+            "func (c *Consumer) handle() { c.Missing() }\n",
+        },
+        "sqs/a.go",
+      ),
+    ).toEqual(["c.Missing -> (dropped)"]);
+  });
+
+  // -------------------------------------------------------------------------
+  // build 2.1: local and closure receivers (leaf 2.13)
+  // -------------------------------------------------------------------------
+
+  /** A package whose `delivery` type carries the method every local test calls. */
+  const DELIVERY = "type delivery struct{}\n\nfunc (d *delivery) dispose() {}\n\ntype Consumer struct{}\n\n";
+
+  test("a local bound to a composite literal is a receiver", () => {
+    for (const literal of ["&delivery{}", "delivery{}"]) {
+      expect(
+        resolveCalls(
+          {
+            "sqs/a.go": `package sqs\n\n${DELIVERY}func (c *Consumer) Park() {\n\td := ${literal}\n\td.dispose()\n}\n`,
+          },
+          "sqs/a.go",
+        ),
+      ).toEqual(["d.dispose -> sqs/a.go#delivery.dispose (high)"]);
+    }
+  });
+
+  test("a local declared with var, by value or by pointer, is a receiver", () => {
+    for (const declared of ["var d delivery", "var d *delivery"]) {
+      expect(
+        resolveCalls(
+          { "sqs/a.go": `package sqs\n\n${DELIVERY}func (c *Consumer) Park() {\n\t${declared}\n\td.dispose()\n}\n` },
+          "sqs/a.go",
+        ),
+      ).toEqual(["d.dispose -> sqs/a.go#delivery.dispose (high)"]);
+    }
+  });
+
+  test("a parameter typed by a named type is a receiver", () => {
+    expect(
+      resolveCalls(
+        { "sqs/a.go": `package sqs\n\n${DELIVERY}func (c *Consumer) Park(d *delivery) {\n\td.dispose()\n}\n` },
+        "sqs/a.go",
+      ),
+    ).toEqual(["d.dispose -> sqs/a.go#delivery.dispose (high)"]);
+  });
+
+  test("a local bound to a same-package constructor's first result is a receiver", () => {
+    expect(
+      resolveCalls(
+        {
+          "sqs/a.go":
+            `package sqs\n\n${DELIVERY}func newDelivery() (*delivery, error) { return nil, nil }\n\n` +
+            "func (c *Consumer) Park() {\n\td, err := newDelivery()\n\t_ = err\n\td.dispose()\n}\n",
+        },
+        "sqs/a.go",
+      ),
+    ).toEqual(["newDelivery -> sqs/a.go#newDelivery (high)", "d.dispose -> sqs/a.go#delivery.dispose (high)"]);
+  });
+
+  test("a local bound to a receiver method's first result is a receiver", () => {
+    expect(
+      resolveCalls(
+        {
+          "sqs/a.go":
+            `package sqs\n\n${DELIVERY}func (c *Consumer) own() (*delivery, error) { return nil, nil }\n\n` +
+            "func (c *Consumer) Park() {\n\td, err := c.own()\n\t_ = err\n\td.dispose()\n}\n",
+        },
+        "sqs/a.go",
+      ),
+    ).toEqual(["c.own -> sqs/a.go#Consumer.own (high)", "d.dispose -> sqs/a.go#delivery.dispose (high)"]);
+  });
+
+  test("a local receiver used inside a func literal belongs to the enclosing function", () => {
+    expect(
+      resolveCalls(
+        {
+          "sqs/a.go":
+            `package sqs\n\n${DELIVERY}func (c *Consumer) Wrap() func() {\n\td := &delivery{}\n` +
+            "\treturn func() { d.dispose() }\n}\n",
+        },
+        "sqs/a.go",
+      ),
+    ).toEqual(["d.dispose -> sqs/a.go#delivery.dispose (high)"]);
+  });
+
+  test("a local receiver promotes through its own embedded fields", () => {
+    expect(
+      resolveCalls(
+        {
+          "core/base.go": "package core\n\ntype BaseConsumer struct{}\n\nfunc (b *BaseConsumer) ApplyStrategy() {}\n",
+          "sqs/a.go":
+            'package sqs\n\nimport "example.com/m/core"\n\ntype Consumer struct {\n\t*core.BaseConsumer\n}\n\n' +
+            "func Run() {\n\tc := &Consumer{}\n\tc.ApplyStrategy()\n}\n",
+        },
+        "sqs/a.go",
+      ),
+    ).toEqual(["c.ApplyStrategy -> core/base.go#BaseConsumer.ApplyStrategy (high)"]);
+  });
+
+  test("a name bound to two different types anywhere in one function is withheld", () => {
+    expect(
+      resolveCalls(
+        {
+          "sqs/a.go":
+            `package sqs\n\n${DELIVERY}type other struct{}\n\nfunc (o *other) dispose() {}\n\n` +
+            "func (c *Consumer) Park(ok bool) {\n\td := &delivery{}\n\td.dispose()\n" +
+            "\tif ok {\n\t\td := &other{}\n\t\td.dispose()\n\t}\n}\n",
+        },
+        "sqs/a.go",
+      ),
+    ).toEqual([]);
+  });
+
+  test("a local whose initialiser decides nothing is still withheld", () => {
+    expect(
+      resolveCalls(
+        {
+          "sqs/a.go": `package sqs\n\n${DELIVERY}func (c *Consumer) Park(xs []*delivery) {\n\td := xs[0]\n\td.dispose()\n}\n`,
+        },
+        "sqs/a.go",
+      ),
+    ).toEqual([]);
+  });
+
+  test("a local bound to a function of another package is withheld", () => {
+    // `store.New` is resolvable, but nothing in this file says what it returns:
+    // the local stays untyped and the call on it is never recorded.
+    expect(
+      resolveCalls(
+        {
+          "store/a.go":
+            "package store\n\ntype Store struct{}\n\nfunc (s *Store) Put() {}\n\nfunc New() *Store { return nil }\n",
+          "app/main.go": 'package main\n\nimport "example.com/m/store"\n\nfunc main() {\n\ts := store.New()\n\ts.Put()\n}\n',
+        },
+        "app/main.go",
+      ),
+    ).toEqual(["store.New -> store/a.go#New (high)"]);
+  });
+
+  test("a local inside a package-level func literal is withheld", () => {
+    // There is no declaration to carry `meta.locals` for a binding made outside
+    // one, so the local cannot be typed at resolution time. Recording the call
+    // anyway would let the import rule read `store` as the imported package.
+    expect(
+      resolveCalls(
+        {
+          "app/main.go":
+            'package main\n\nimport "example.com/m/store"\n\ntype Shallow struct{}\n\n' +
+            "func (s *Shallow) New() error { return nil }\n\n" +
+            "var pkgLevel = func() error {\n\tstore := &Shallow{}\n\treturn store.New()\n}\n",
+          "store/a.go": "package store\n\nfunc New() {}\n",
+        },
+        "app/main.go",
+      ),
+    ).toEqual([]);
+  });
+
+  test("the six probe shapes of the evaluation fixture", () => {
+    // gofix, the independent evaluator's probe repo: one control and five shapes
+    // build 2.1 fixes. Every one of them lands on exactly one declaration.
+    const sources = {
+      "core/base.go":
+        "package core\n\ntype ConsumerHooks interface{ Park() error }\n\ntype BaseConsumer struct{}\n\n" +
+        "func (c *BaseConsumer) ApplyStrategy() error { return nil }\n",
+      "sqs/consumer.go":
+        'package sqs\n\nimport "example.com/m/core"\n\ntype Inner struct{}\n\n' +
+        "func (i *Inner) SamePkgPromoted() error { return nil }\n\ntype delivery struct{}\n\n" +
+        "func (d *delivery) dispose(action string) error { return nil }\n\n" +
+        "type Consumer struct {\n\t*core.BaseConsumer\n\t*Inner\n}\n\n" +
+        "func (c *Consumer) control() error { return c.direct() }\n\n" +
+        "func (c *Consumer) direct() error { return nil }\n\n" +
+        "func (c *Consumer) handleOne() error { return c.ApplyStrategy() }\n\n" +
+        "func (c *Consumer) handleTwo() error { return c.SamePkgPromoted() }\n\n" +
+        'func (c *Consumer) Park() error {\n\td := &delivery{}\n\treturn d.dispose("park")\n}\n\n' +
+        "func (c *Consumer) Wrap() func() error {\n\td := &delivery{}\n" +
+        '\treturn func() error { return d.dispose("delete") }\n}\n\n' +
+        "var _ core.ConsumerHooks = (*Consumer)(nil)\nvar _ error = (*wrapErr)(nil)\n\n" +
+        'type wrapErr struct{}\n\nfunc (w *wrapErr) Error() string { return "" }\n',
+    };
+    expect(resolveCalls(sources, "sqs/consumer.go")).toEqual([
+      "c.direct -> sqs/consumer.go#Consumer.direct (high)",
+      "c.ApplyStrategy -> core/base.go#BaseConsumer.ApplyStrategy (high)",
+      "c.SamePkgPromoted -> sqs/consumer.go#Inner.SamePkgPromoted (high)",
+      "d.dispose -> sqs/consumer.go#delivery.dispose (high)",
+      "d.dispose -> sqs/consumer.go#delivery.dispose (high)",
+    ]);
   });
 
   test("a repo with no Go file costs the linker nothing", () => {

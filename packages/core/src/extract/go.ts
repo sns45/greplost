@@ -30,7 +30,8 @@ import type {
   ImportRecord,
   Lang,
 } from "../schema.ts";
-import { symbolId } from "../schema.ts";
+import { compareStrings, symbolId } from "../schema.ts";
+import { calleeText, firstResultType, structShape, typedLocals } from "./go-types.ts";
 import { clip, field, lineOf, spanOf } from "./ts-signature.ts";
 
 /** Node types whose children carry the specs of a parenthesised declaration group. */
@@ -170,8 +171,30 @@ interface GoState {
    * A local variable that shadows a declared name can never hijack it.
    */
   readonly callerByNode: Map<number, string>;
+  /** caller symbol path -> the typed locals its own calls are written against. */
+  readonly localsByCaller: Map<string, Map<string, string>>;
 }
 
+/** A `meta` record with its keys in sorted order, as the schema fixes them. */
+function sortedMeta(meta: Record<string, string>): Record<string, string> {
+  const sorted: Record<string, string> = {};
+  for (const key of Object.keys(meta).sort(compareStrings)) sorted[key] = meta[key] as string;
+  return sorted;
+}
+
+/** `meta.result` for a function or method that returns a named type. */
+function resultMeta(node: Node): Record<string, string> | undefined {
+  const result = firstResultType(node);
+  return result === null ? undefined : { result };
+}
+
+/**
+ * Record one declaration, and say whether it became one.
+ *
+ * `_` is the one name that does not: `var _ Hooks = (*C)(nil)` is a compile-time
+ * assertion binding nothing, and two of them in a file used to make two
+ * declarations sharing the id `<file>#_` (evaluation finding, build 2.1).
+ */
 function addDeclaration(
   state: GoState,
   name: string,
@@ -179,8 +202,11 @@ function addDeclaration(
   signature: string,
   node: Node,
   parent?: string,
-): void {
-  const exported = isExportedName(parent === undefined ? name : name.slice(parent.length + 1));
+  meta?: Record<string, string>,
+): boolean {
+  const declared = parent === undefined ? name : name.slice(parent.length + 1);
+  if (declared === "_") return false;
+  const exported = isExportedName(declared);
   state.decls.push({
     id: symbolId(state.path, name),
     file: state.path,
@@ -190,9 +216,11 @@ function addDeclaration(
     exported,
     span: spanOf(node),
     ...(parent === undefined ? {} : { parent }),
+    ...(meta === undefined ? {} : { meta: sortedMeta(meta) }),
   });
   // A package-level exported declaration is the whole of Go's export surface.
   if (exported && parent === undefined) state.exports.push({ name, kind: "named" });
+  return true;
 }
 
 function collectImports(state: GoState, node: Node): void {
@@ -228,14 +256,23 @@ function collectTypes(state: GoState, node: Node): void {
     const typeNode = field(spec, "type");
     const end = typeBodyStart(typeNode) ?? spec.endIndex;
     const signature = clip(`type ${state.source.slice(spec.startIndex, Math.max(end, spec.startIndex))}`);
-    addDeclaration(state, nameNode.text, typeKind(typeNode), signature, spec);
+    // A struct body carries two facts no signature keeps: the embedded types,
+    // which are the type's promoted method sets, and the field names, which
+    // shadow any promoted method they collide with.
+    const shape = structShape(typeNode);
+    const meta: Record<string, string> = {};
+    if (shape.embeds.length > 0) meta["embeds"] = shape.embeds.join(",");
+    if (shape.fields.length > 0) meta["fields"] = shape.fields.join(",");
+    const attributes = Object.keys(meta).length === 0 ? undefined : meta;
+    addDeclaration(state, nameNode.text, typeKind(typeNode), signature, spec, undefined, attributes);
   }
 }
 
 function collectFunction(state: GoState, node: Node): void {
   const nameNode = field(node, "name");
   if (nameNode === null) return;
-  addDeclaration(state, nameNode.text, "function", signatureBeforeBody(state.source, node), node);
+  const signature = signatureBeforeBody(state.source, node);
+  if (!addDeclaration(state, nameNode.text, "function", signature, node, undefined, resultMeta(node))) return;
   state.callerByNode.set(node.id, nameNode.text);
 }
 
@@ -247,26 +284,9 @@ function collectMethod(state: GoState, node: Node): void {
   const type = baseTypeName(parameter === null ? null : field(parameter, "type"));
   if (type === null) return;
   const name = `${type}.${nameNode.text}`;
-  addDeclaration(state, name, "method", signatureBeforeBody(state.source, node), node, type);
+  const signature = signatureBeforeBody(state.source, node);
+  if (!addDeclaration(state, name, "method", signature, node, type, resultMeta(node))) return;
   state.callerByNode.set(node.id, name);
-}
-
-/**
- * Callee text, normalised the way `CallSite.callee` fixes it:
- * `f()` -> `f`, `pkg.F()` / `recv.m()` -> `pkg.F` / `recv.m`. Anything else -
- * a deeper chain, a call on a call, a generic instantiation, a call on a
- * parenthesised or literal value - is not recorded. Composite literals
- * (`Store{...}`) are not call expressions in Go and never reach here.
- */
-function calleeText(node: Node): string | null {
-  const fn = field(node, "function");
-  if (fn === null) return null;
-  if (fn.type === "identifier") return fn.text;
-  if (fn.type !== "selector_expression") return null;
-  const operand = field(fn, "operand");
-  const member = field(fn, "field");
-  if (operand === null || member === null || operand.type !== "identifier") return null;
-  return `${operand.text}.${member.text}`;
 }
 
 /**
@@ -324,21 +344,75 @@ function receiverBinder(node: Node): Node | null {
 /** The local bindings in force at a call site. */
 interface Scope {
   bound: ReadonlySet<string>;
+  /** Bindings whose type the syntax fixes, `name -> type` (see `go-types.ts`). */
+  typed: ReadonlyMap<string, string>;
+}
+
+/** The bindings of one function-like node, with the types that are decidable. */
+function scopeOf(node: Node): Scope {
+  const receiver = receiverBinder(node);
+  const bound = boundNames(node, receiver);
+  const named = receiver === null ? undefined : receiver.childrenForFieldName("name")[0];
+  return { bound, typed: typedLocals(node, bound, named === undefined ? null : named.text) };
 }
 
 /**
- * A callee whose leading identifier is a local binding is not recorded at all.
+ * A callee whose leading identifier is a local binding is not recorded, unless
+ * that local is one whose type the syntax fixed.
  *
  * Go resolves a bare `handler()` to the local `handler := func(){}` and never to
- * a package-scope `func handler()`, and `w.Write()` on a local `w` is not a call
- * on the method receiver. Recording those and hoping the resolver drops them is
- * how a wrong `high` edge gets out, and a CHA oracle over-approximates enough to
- * score it as a true positive - so the extractor withholds them.
+ * a package-scope `func handler()`, and `w.Write()` on an arbitrary local `w` is
+ * not a call on the method receiver. Recording those and hoping the resolver
+ * drops them is how a wrong `high` edge gets out, and a CHA oracle
+ * over-approximates enough to score it as a true positive, so they are
+ * withheld. But `d := &delivery{}` followed by `d.dispose()` is not a guess at
+ * all: the literal names the type, so the call is recorded and `meta.locals`
+ * carries the type the resolver needs (build 2.1, leaf 2.13).
+ *
+ * `caller` is what makes that possible, so a typed local counts only inside a
+ * named declaration. Code at package level (`var f = func() { ... }`) has no
+ * declaration to carry `meta.locals`, and a call recorded there would reach the
+ * resolver with nothing saying the object is a local at all.
  */
-function shadowed(callee: string, scope: Scope | null): boolean {
+function withheld(callee: string, caller: string, scope: Scope | null): boolean {
   if (scope === null) return false;
   const dot = callee.indexOf(".");
-  return scope.bound.has(dot === -1 ? callee : callee.slice(0, dot));
+  if (dot === -1) return scope.bound.has(callee);
+  const object = callee.slice(0, dot);
+  if (!scope.bound.has(object)) return false;
+  return caller === "" || !scope.typed.has(object);
+}
+
+/** Remember the typed local a recorded call was written against. */
+function noteLocal(state: GoState, caller: string, callee: string, scope: Scope | null): void {
+  const dot = callee.indexOf(".");
+  if (scope === null || caller === "" || dot === -1) return;
+  const object = callee.slice(0, dot);
+  const type = scope.typed.get(object);
+  if (type === undefined) return;
+  let locals = state.localsByCaller.get(caller);
+  if (locals === undefined) {
+    locals = new Map<string, string>();
+    state.localsByCaller.set(caller, locals);
+  }
+  locals.set(object, type);
+}
+
+/**
+ * `meta.locals` on every declaration whose own calls were written against a
+ * typed local, as `<name>:<type>` pairs sorted by name. Only a local a recorded
+ * call actually uses earns an attribute: the rest decide nothing about the map.
+ */
+function stampLocals(state: GoState): void {
+  for (const decl of state.decls) {
+    const locals = state.localsByCaller.get(decl.name);
+    if (locals === undefined || locals.size === 0) continue;
+    const value = [...locals.entries()]
+      .sort(([a], [b]) => compareStrings(a, b))
+      .map(([name, type]) => `${name}:${type}`)
+      .join(",");
+    decl.meta = sortedMeta({ ...decl.meta, locals: value });
+  }
 }
 
 function collectCalls(state: GoState, root: Node): void {
@@ -346,14 +420,12 @@ function collectCalls(state: GoState, root: Node): void {
     const next = CALLER_NODES.has(node.type) ? (state.callerByNode.get(node.id) ?? caller) : caller;
     // The outermost function-like node owns the bindings of everything nested in
     // it, so a literal inside a declaration reuses the declaration's set.
-    const inner =
-      scope === null && SCOPE_NODES.has(node.type)
-        ? { bound: boundNames(node, receiverBinder(node)) }
-        : scope;
+    const inner = scope === null && SCOPE_NODES.has(node.type) ? scopeOf(node) : scope;
     if (node.type === "call_expression") {
       const callee = calleeText(node);
-      if (callee !== null && !shadowed(callee, inner)) {
+      if (callee !== null && !withheld(callee, next, inner)) {
         state.calls.push({ caller: next, callee, line: lineOf(node) });
+        noteLocal(state, next, callee, inner);
       }
     }
     for (const child of node.namedChildren) walk(child, next, inner);
@@ -379,6 +451,7 @@ export function extractGo(
     exports: [],
     calls: [],
     callerByNode: new Map<number, string>(),
+    localsByCaller: new Map<string, Map<string, string>>(),
   };
 
   for (const node of tree.rootNode.namedChildren) {
@@ -407,6 +480,7 @@ export function extractGo(
   }
 
   collectCalls(state, tree.rootNode);
+  stampLocals(state);
 
   return { decls: state.decls, imports: state.imports, exports: state.exports, calls: state.calls };
 }

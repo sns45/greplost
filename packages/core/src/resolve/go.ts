@@ -16,10 +16,27 @@
  *       - `f()`        -> a package-scope `func f` in the same directory;
  *       - `pkg.F()`    -> a `func F` in the directory `pkg` was imported from;
  *       - `recv.m()`   -> `<Type>.m` in the same directory, when `recv` is the
- *                         receiver variable of the enclosing method.
+ *                         receiver variable of the enclosing method **or a local
+ *                         binding whose type the extractor could decide**, and
+ *                         where `<Type>` may promote `m` from a field it embeds.
  *     Everything else is dropped. Only `function` and `method` declarations are
  *     ever targets: `Store(x)` is a conversion, not a call, and `Store` is a
  *     `struct` declaration, so it can never be one.
+ *
+ * Build 2.1 widened rule 3 twice, both times without widening the contract that
+ * a `high` edge names the one declaration that can be the callee:
+ *   - **promotion**: a Go method set includes the methods of every embedded
+ *     field, so `c.ApplyStrategy()` on a `Consumer` that embeds
+ *     `*core.BaseConsumer` calls `core.BaseConsumer.ApplyStrategy`. The embedded
+ *     types are searched breadth first to depth 3, shallowest wins (Go's own
+ *     rule), and a depth where two embedded types supply the member is ambiguous
+ *     in Go too, so the edge is dropped rather than guessed. A *field* of that
+ *     name ends the walk at whatever depth it sits: Go picks the field, and a
+ *     field is never a call target.
+ *   - **local receivers**: `d := &delivery{}` fixes the type of `d`, so
+ *     `d.dispose()` is as certain as a call on the receiver. The extractor
+ *     decides which locals qualify (`extract/go-types.ts`) and writes the type
+ *     into `meta.locals`; nothing here infers a type.
  *
  * A name declared in more than one file of a directory (mutually exclusive
  * build tags, `//go:build ...`) is ambiguous: it resolves only for a caller in
@@ -149,6 +166,23 @@ export function createGoResolver(ctx: GoRepoContext): (fromDir: string, specifie
 /** Declaring files for one name, in path order. More than one means build tags. */
 type Declarers = Map<string, string[]>;
 
+/** A named type, with the directory of the package that declares it. */
+export interface GoTypeRef {
+  dir: string;
+  name: string;
+}
+
+/** One struct declaration's shape, as the file that declares it wrote it. */
+export interface GoStruct {
+  /** The types it embeds, resolved to the packages that declare them. */
+  embeds: GoTypeRef[];
+  /** Its own field names. A promoted method never outranks one of these. */
+  fields: ReadonlySet<string>;
+}
+
+/** How deep a promoted method is searched for through embedded fields. */
+const MAX_EMBED_DEPTH = 3;
+
 export interface GoCallIndex {
   /** directory id -> package-scope `func` name -> declaring files. */
   functions: Map<string, Declarers>;
@@ -158,6 +192,17 @@ export interface GoCallIndex {
   aliases: Map<string, Map<string, string>>;
   /** file -> method symbol path -> receiver variable name (absent when unnamed). */
   receivers: Map<string, Map<string, string>>;
+  /** directory id -> struct name -> declaring files, as `functions` and `methods` are. */
+  types: Map<string, Declarers>;
+  /** file -> struct name -> that file's shape for it. Two build-tag variants never merge. */
+  structs: Map<string, Map<string, GoStruct>>;
+  /**
+   * file -> caller symbol path -> local name -> the type it was bound to, or
+   * null when that type names no package in this repo. The name is present
+   * either way: a local shadows every package-scope name, so the entry is what
+   * stops rule 2 from reading a local called `store` as the `store` import.
+   */
+  locals: Map<string, Map<string, Map<string, GoTypeRef | null>>>;
 }
 
 const EMPTY_INDEX: GoCallIndex = {
@@ -165,6 +210,9 @@ const EMPTY_INDEX: GoCallIndex = {
   methods: new Map(),
   aliases: new Map(),
   receivers: new Map(),
+  types: new Map(),
+  structs: new Map(),
+  locals: new Map(),
 };
 
 /**
@@ -216,8 +264,15 @@ export function buildGoCallIndex(files: readonly FileRecord[], imports: readonly
     methods: new Map(),
     aliases: new Map(),
     receivers: new Map(),
+    types: new Map(),
+    structs: new Map(),
+    locals: new Map(),
   };
   const paths = new Set(goFiles.map((file) => file.path));
+  /** dir -> declared name -> the result types written down, one per declarer. */
+  const results = new Map<string, Map<string, Array<{ file: string; type: string }>>>();
+  /** Every struct's raw shape, kept until the import aliases are known. */
+  const shapes: Array<{ dir: string; file: string; name: string; embeds: string; fields: string }> = [];
 
   for (const file of goFiles) {
     const dir = goDirectoryOf(file.path);
@@ -230,6 +285,18 @@ export function buildGoCallIndex(files: readonly FileRecord[], imports: readonly
         const receiver = receiverVariable(decl.signature);
         if (receiver !== null) receivers.set(decl.name, receiver);
       }
+      if (decl.kind === "struct") {
+        addDeclarer(index.types, dir, decl.name, file.path);
+        shapes.push({
+          dir,
+          file: file.path,
+          name: decl.name,
+          embeds: decl.meta?.["embeds"] ?? "",
+          fields: decl.meta?.["fields"] ?? "",
+        });
+      }
+      const result = decl.meta?.["result"];
+      if (result !== undefined) addResult(results, dir, decl.name, file.path, result);
     }
     if (receivers.size > 0) index.receivers.set(file.path, receivers);
   }
@@ -270,7 +337,117 @@ export function buildGoCallIndex(files: readonly FileRecord[], imports: readonly
     if (aliases.size > 0) index.aliases.set(file.path, aliases);
   }
 
+  // Struct shapes and typed locals both name types the way the *declaring* file
+  // wrote them, so they resolve only once the import aliases are known.
+  for (const struct of shapes) {
+    const embeds: GoTypeRef[] = [];
+    for (const raw of struct.embeds === "" ? [] : struct.embeds.split(",")) {
+      const ref = typeRef(index, raw, struct.file, struct.dir);
+      if (ref !== null) embeds.push(ref);
+    }
+    const fields = new Set(struct.fields === "" ? [] : struct.fields.split(","));
+    if (embeds.length === 0 && fields.size === 0) continue;
+    let byName = index.structs.get(struct.file);
+    if (byName === undefined) {
+      byName = new Map<string, GoStruct>();
+      index.structs.set(struct.file, byName);
+    }
+    byName.set(struct.name, { embeds, fields });
+  }
+
+  for (const file of goFiles) {
+    const dir = goDirectoryOf(file.path);
+    const byCaller = new Map<string, Map<string, GoTypeRef | null>>();
+    for (const decl of file.decls) {
+      const raw = decl.meta?.["locals"];
+      if (raw === undefined) continue;
+      const locals = new Map<string, GoTypeRef | null>();
+      for (const entry of raw.split(",")) {
+        const colon = entry.indexOf(":");
+        if (colon === -1) continue;
+        const value = entry.slice(colon + 1);
+        locals.set(
+          entry.slice(0, colon),
+          value.startsWith("@")
+            ? resultRef(index, results, value.slice(1), decl.name, file.path, dir)
+            : typeRef(index, value, file.path, dir),
+        );
+      }
+      if (locals.size > 0) byCaller.set(decl.name, locals);
+    }
+    if (byCaller.size > 0) index.locals.set(file.path, byCaller);
+  }
+
   return index;
+}
+
+/** Record one declaration's result type; a second declarer of a name is ambiguous. */
+function addResult(
+  results: Map<string, Map<string, Array<{ file: string; type: string }>>>,
+  dir: string,
+  name: string,
+  file: string,
+  type: string,
+): void {
+  let byName = results.get(dir);
+  if (byName === undefined) {
+    byName = new Map<string, Array<{ file: string; type: string }>>();
+    results.set(dir, byName);
+  }
+  byName.set(name, [...(byName.get(name) ?? []), { file, type }]);
+}
+
+/**
+ * A type as one file wrote it, resolved to the package that declares it.
+ *
+ * A bare `Store` is this file's own package; `core.Base` is whatever `core` was
+ * imported from, resolved exactly as a package-qualified call is (rule 1). A
+ * qualifier that names no repo package (the standard library, another module)
+ * gives null, and nothing is promoted through it.
+ */
+function typeRef(index: GoCallIndex, raw: string, file: string, dir: string): GoTypeRef | null {
+  const dot = raw.indexOf(".");
+  if (dot === -1) return raw === "" ? null : { dir, name: raw };
+  const name = raw.slice(dot + 1);
+  if (name === "" || name.includes(".")) return null;
+  const target = index.aliases.get(file)?.get(raw.slice(0, dot));
+  return target === undefined ? null : { dir: target, name };
+}
+
+/**
+ * The type of `x` in `x, err := <callee>()`: the first result of the declaration
+ * `callee` names, read off the `meta.result` the extractor wrote there.
+ *
+ * Only two callees are followed, and only one hop: a package-scope function of
+ * the caller's own package, and a method on the enclosing method's receiver.
+ * Nothing else is decidable without reading another package's source, and a
+ * chain of locals would need the map this function is helping to build.
+ */
+function resultRef(
+  index: GoCallIndex,
+  results: Map<string, Map<string, Array<{ file: string; type: string }>>>,
+  callee: string,
+  caller: string,
+  file: string,
+  dir: string,
+): GoTypeRef | null {
+  const dot = callee.indexOf(".");
+  let declared: string;
+  if (dot === -1) {
+    if (declaringFile(index.functions, dir, callee, file) === null) return null;
+    declared = callee;
+  } else {
+    const dotInCaller = caller.indexOf(".");
+    if (dotInCaller === -1) return null;
+    if (index.receivers.get(file)?.get(caller) !== callee.slice(0, dot)) return null;
+    declared = `${caller.slice(0, dotInCaller)}.${callee.slice(dot + 1)}`;
+    if (declaringFile(index.methods, dir, declared, file) === null) return null;
+  }
+  const found = results.get(dir)?.get(declared);
+  // Two declarers (build tags) make two possible result types: not a fact.
+  if (found === undefined || found.length !== 1) return null;
+  const only = found[0] as { file: string; type: string };
+  return typeRef(index, only.type, only.file, dir);
 }
 
 /**
@@ -314,6 +491,14 @@ export function resolveGoCall(
   const member = callee.slice(dot + 1);
   if (object === "" || member === "" || member.includes(".")) return null;
 
+  // A local binding shadows every package-scope name in Go, so a name the
+  // extractor recorded as a local of this caller never reaches rule 2, not even
+  // when its own type turned out to name nothing in this repo.
+  const locals = index.locals.get(file.path)?.get(site.caller);
+  if (locals !== undefined && locals.has(object)) {
+    return methodEdge(index, locals.get(object) ?? null, member, file.path, dir);
+  }
+
   // 2. A qualified call through an import: the package's directory decides.
   const importedDir = index.aliases.get(file.path)?.get(object);
   if (importedDir !== undefined) {
@@ -325,7 +510,91 @@ export function resolveGoCall(
   const dotInCaller = site.caller.indexOf(".");
   if (dotInCaller === -1) return null;
   if (index.receivers.get(file.path)?.get(site.caller) !== object) return null;
-  const method = `${site.caller.slice(0, dotInCaller)}.${member}`;
-  const target = declaringFile(index.methods, dir, method, file.path);
-  return target === null ? null : { to: symbolId(target, method), confidence: "high" };
+  return methodEdge(index, { dir, name: site.caller.slice(0, dotInCaller) }, member, file.path, dir);
+}
+
+/**
+ * The edge from a call on a value of `type`: the method the type declares
+ * itself, else the one it promotes from an embedded field.
+ */
+function methodEdge(
+  index: GoCallIndex,
+  type: GoTypeRef | null,
+  member: string,
+  fromFile: string,
+  fromDir: string,
+): { to: string; confidence: Confidence } | null {
+  if (type === null) return null;
+  const target = methodOf(index, type, member, fromFile, fromDir) ?? promoted(index, type, member, fromFile, fromDir);
+  return target === null ? null : { to: target, confidence: "high" };
+}
+
+/** `<type>.<member>` declared on the type itself, as a node id, or null. */
+function methodOf(
+  index: GoCallIndex,
+  type: GoTypeRef,
+  member: string,
+  fromFile: string,
+  fromDir: string,
+): string | null {
+  const method = `${type.name}.${member}`;
+  const target = declaringFile(index.methods, type.dir, method, type.dir === fromDir ? fromFile : null);
+  return target === null ? null : symbolId(target, method);
+}
+
+/**
+ * The shape of one struct, as the file that declares it wrote it, or null.
+ *
+ * A struct name declared in two files of a directory is two structs (mutually
+ * exclusive build tags). The caller's own file settles which one it was compiled
+ * with; from anywhere else the two must not be merged, and nothing is promoted.
+ */
+function structOf(index: GoCallIndex, type: GoTypeRef, fromFile: string, fromDir: string): GoStruct | null {
+  const file = declaringFile(index.types, type.dir, type.name, type.dir === fromDir ? fromFile : null);
+  return file === null ? null : (index.structs.get(file)?.get(type.name) ?? null);
+}
+
+/**
+ * `<type>.<member>` promoted from an embedded field, as a node id, or null.
+ *
+ * Go's rule: the field *or* method at the shallowest depth wins, and if two of
+ * them share that depth the selector is illegal. So each depth is settled before
+ * the next one is looked at, and three things end the walk with no edge: a field
+ * of that name at this depth (Go picks the field, which nothing can call), two
+ * embedded types supplying the member at one depth, and depth 3.
+ */
+function promoted(
+  index: GoCallIndex,
+  start: GoTypeRef,
+  member: string,
+  fromFile: string,
+  fromDir: string,
+): string | null {
+  const key = (type: GoTypeRef): string => `${type.dir}\u0000${type.name}`;
+  const seen = new Set<string>([key(start)]);
+  let level: GoTypeRef[] = [start];
+  for (let depth = 0; depth <= MAX_EMBED_DEPTH && level.length > 0; depth += 1) {
+    const shapes = level.map((type) => structOf(index, type, fromFile, fromDir));
+    if (shapes.some((shape) => shape !== null && shape.fields.has(member))) return null;
+    if (depth > 0) {
+      const found = new Set<string>();
+      for (const type of level) {
+        const target = methodOf(index, type, member, fromFile, fromDir);
+        if (target !== null) found.add(target);
+      }
+      if (found.size === 1) return [...found][0] ?? null;
+      if (found.size > 1) return null;
+    }
+    if (depth === MAX_EMBED_DEPTH) break;
+    const next: GoTypeRef[] = [];
+    for (const shape of shapes) {
+      for (const embedded of shape?.embeds ?? []) {
+        if (seen.has(key(embedded))) continue;
+        seen.add(key(embedded));
+        next.push(embedded);
+      }
+    }
+    level = next;
+  }
+  return null;
 }
