@@ -71,8 +71,8 @@ export interface WorkspaceQueryResult {
  * single-repo command. Results are ordered by (repo, id): repos in directory
  * order, and within a repo by symbol id, which is the order the ruling fixes.
  *
- * A needle that names an indexed file — `repo-a::src/index.ts`, or the path on
- * disk — answers with that file's declarations and its file block instead, the
+ * A needle that names an indexed file (`repo-a::src/index.ts`, or the path on
+ * disk) answers with that file's declarations and its file block instead, the
  * same way the single-repo command does.
  */
 export async function queryAcross(root: string, needle: string): Promise<WorkspaceQueryResult> {
@@ -151,7 +151,7 @@ function importEdgesByTarget(repo: RepoView, declarations: readonly Declaration[
  * The same rule the single-repo command uses: the exported name is the root of
  * the symbol path, a namespace import (`*`) names everything, a side-effect
  * import names nothing. Cross-repo importers are added by `describeFile`'s
- * pair walk, not here — a cross edge records the file it entered the sibling
+ * pair walk, not here: a cross edge records the file it entered the sibling
  * by, and that is the file-level fact, not a per-symbol one.
  */
 function symbolImporters(repo: RepoView, edges: readonly ImportEdge[], decl: Declaration): string[] {

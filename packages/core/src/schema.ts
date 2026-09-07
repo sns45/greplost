@@ -148,6 +148,8 @@ export interface Declaration {
    * protected method of an exported class is reachable and stays `exported: true`), and
    * this says how the class itself lets the member be reached. A member with no modifier
    * is `public`, a `#name` is `private`. Absent for anything that is not a class member.
+   * An accessor pair is one declaration, so a `get`/`set` pair written with different
+   * accessibility reports the first accessor's visibility.
    */
   visibility?: "public" | "protected" | "private";
   /**
@@ -204,8 +206,12 @@ export interface CallSite {
    *  - `foo` for a plain identifier call,
    *  - `obj.method` for a one-level member call on an identifier (`a.b.c()` is dropped),
    *  - `this.method` for calls on `this`,
+   *  - `super.method` for calls on `super` (build 2.1),
    *  - `new Foo` for constructor calls (also `new ns.Foo`).
-   * Anything else (computed members, calls on call results, `super`, deeper chains) is not recorded.
+   * Anything else (computed members, calls on call results, a bare `super()`, deeper chains)
+   * is not recorded. A `this.` or `super.` callee is recorded only where that keyword is
+   * bound by the class the `caller` names: an object literal method, a nested class and a
+   * non-arrow function each bind their own, and are dropped rather than misattributed.
    */
   callee: string;
   line: number;
@@ -225,6 +231,16 @@ export interface FileRecord {
   calls: CallSite[];
   /** Schema 2: references before resolution; every build-1 extractor leaves it undefined. */
   refs?: ReferenceRecord[];
+  /**
+   * Build 2.1: every member name a class body writes, keyed by the class's symbol path,
+   * each list sorted and unique. It holds the names `decls` cannot: data fields, parameter
+   * properties, and fields whose initialiser is not a function. The linker needs them to
+   * know that a subclass shadows an inherited method with something it cannot resolve, and
+   * must then drop the call rather than credit the base. Absent when the file declares no
+   * class, and absent from every extractor but TypeScript's, so no other language's record
+   * changes shape.
+   */
+  classMembers?: Record<string, string[]>;
 }
 
 export type Confidence = "high" | "med";

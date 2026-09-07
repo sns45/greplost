@@ -32,7 +32,7 @@ import type {
   ImportRecord,
   Lang,
 } from "../schema.ts";
-import { symbolId } from "../schema.ts";
+import { compareStrings, symbolId } from "../schema.ts";
 import { reparse } from "../parser.ts";
 import {
   collectCommonJsExport,
@@ -90,6 +90,17 @@ interface Ctx {
   /** Symbol path of the enclosing tracked class, "" outside one. */
   className: string;
   /**
+   * Symbol path of the class whose `this` and `super` are bound here, "" when neither is
+   * bound to a class this file tracks (build 2.1).
+   *
+   * A class body binds them; an object literal method, a nested class and any non-arrow
+   * function rebind them to something else; an arrow function inherits whatever surrounds
+   * it. `caller` alone cannot tell those apart, because a nested shape keeps the enclosing
+   * declaration as its caller, so `this.m()` inside `{ m() { … } }` would otherwise be
+   * attributed to the enclosing method's class.
+   */
+  thisClass: string;
+  /**
    * Every name bound anywhere inside the enclosing function, or null at file scope.
    * Flattened over the whole function (like the Go extractor) so a call is dropped
    * whenever a binding of that name is in scope somewhere around it.
@@ -97,7 +108,28 @@ interface Ctx {
   locals: ReadonlySet<string> | null;
 }
 
-const EMPTY_CTX: Ctx = { caller: "", className: "", locals: null };
+const EMPTY_CTX: Ctx = { caller: "", className: "", thisClass: "", locals: null };
+
+/** Nodes that bind their own `this`, so a class's `this` does not reach inside them. */
+const THIS_REBINDING: ReadonlySet<string> = new Set([
+  "function_declaration",
+  "generator_function_declaration",
+  "function_expression",
+  "generator_function",
+]);
+
+/**
+ * The class a symbol path names the members of: everything before the last dot, so a class
+ * declared in a namespace (`N.Inner.m`) resolves to `N.Inner` and a top-level method
+ * (`Kid.go`) to `Kid`. A path with no dot is the class itself, which is what a call in a
+ * field initialiser or a static block carries. `graph/link.ts` derives the same class from
+ * `CallSite.caller` the same way; the two must agree, or a `this.` call this pass records
+ * would be looked up against a different class.
+ */
+function enclosingClassOf(symbolPath: string): string {
+  const dot = symbolPath.lastIndexOf(".");
+  return dot === -1 ? symbolPath : symbolPath.slice(0, dot);
+}
 
 /** Nodes that open a function scope for the purpose of local-name shadowing. */
 const FUNCTION_SCOPES: ReadonlySet<string> = new Set([
@@ -216,12 +248,36 @@ function heritage(classNode: Node): Pick<Declaration, "extends"> {
   return { extends: `${object.text}.${property.text}` };
 }
 
+/**
+ * Names a constructor's parameter properties declare (build 2.1 fix round 1):
+ * `constructor(private cfg: Config, readonly tag: string, plain: number)` writes `cfg` and
+ * `tag` as members and `plain` as nothing. An accessibility modifier or `readonly` is what
+ * makes a parameter a member; a destructured parameter names no member.
+ */
+function parameterProperties(member: Node): string[] {
+  const parameters = field(member, "parameters");
+  if (parameters === null) return [];
+  const names: string[] = [];
+  for (const parameter of parameters.namedChildren) {
+    if (parameter.type !== "required_parameter" && parameter.type !== "optional_parameter") continue;
+    const modifier = parameter.children.some(
+      (child) => child.type === "accessibility_modifier" || child.type === "readonly",
+    );
+    if (!modifier) continue;
+    const pattern = field(parameter, "pattern");
+    if (pattern === null) continue;
+    if (pattern.type !== "identifier" && pattern.type !== "private_property_identifier") continue;
+    names.push(pattern.text);
+  }
+  return names;
+}
+
 export function extractTs(
   path: string,
   lang: Lang,
   source: string,
   tree: Tree,
-): Pick<FileRecord, "decls" | "imports" | "exports" | "calls"> {
+): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "classMembers"> {
   // `lang` only selects the grammar (done by the caller); the TS and TSX grammars
   // accept every JS dialect, so extraction itself is dialect-independent.
   void lang;
@@ -230,6 +286,8 @@ export function extractTs(
   const imports: ImportRecord[] = [];
   const exports: ExportRecord[] = [];
   const calls: CallSite[] = [];
+  /** Class symbol path -> every member name that class body writes (build 2.1). */
+  const memberNames = new Map<string, Set<string>>();
   /** Scope node id -> symbol path of the declaration it defines. */
   const trackedById = new Map<number, string>();
   /** Text and row offset of the region the current nodes were parsed from. */
@@ -291,6 +349,20 @@ export function extractTs(
   /** Remember that calls inside `node` belong to `symbolPath`. */
   function register(node: Node, symbolPath: string): void {
     trackedById.set(node.id, symbolPath);
+  }
+
+  /**
+   * The written-name set of one class, created on first use. Two class bodies under one
+   * symbol path (which only a redeclaration writes) share it: a name either body writes
+   * shadows the base, and the conservative answer is the union.
+   */
+  function writtenMembers(classPath: string): Set<string> {
+    let names = memberNames.get(classPath);
+    if (names === undefined) {
+      names = new Set<string>();
+      memberNames.set(classPath, names);
+    }
+    return names;
   }
 
   /** `""` -> undefined, `"N."` -> `"N"`, `"A.B."` -> `"A.B"`. */
@@ -458,14 +530,24 @@ export function extractTs(
    * from outside the module through the class, whatever the class lets a caller do
    * with it. What the class lets a caller do is `visibility`, a separate field
    * (build 2.1): the two questions are not the same and are answered separately.
+   *
+   * Every member name the body writes is also recorded, declaration or not (build 2.1 fix
+   * round 1). A data field, a parameter property or a field holding a name rather than a
+   * function is not addressable as `Class.member`, but it does shadow the base class's
+   * member of that name, and the linker has to know that to drop the call instead of
+   * crediting the base.
    */
   function collectMembers(classNode: Node, classPath: string, exported: boolean): void {
     const body = field(classNode, "body");
     if (body === null) return;
+    const written = writtenMembers(classPath);
     for (const member of body.namedChildren) {
+      // `constructor(private cfg: Config)` declares a member the body never names again.
+      if (member.type === "method_definition") for (const property of parameterProperties(member)) written.add(property);
       const name = field(member, "name");
       if (name === null) continue;
       if (name.type !== "property_identifier" && name.type !== "private_property_identifier") continue;
+      written.add(name.text);
       const symbolPath = `${classPath}.${name.text}`;
       const seen = { visibility: memberVisibility(member, name) };
       switch (member.type) {
@@ -623,7 +705,7 @@ export function extractTs(
 
   /**
    * Re-read a region the parser shredded. The text is verbatim source, so parsing it
-   * on its own — free of the state the earlier failure left behind — usually yields
+   * on its own, free of the state the earlier failure left behind, usually yields
    * the declarations that were lost. Regions that still fail are retried after each
    * child of their leading ERROR, which walks past the construct the grammar cannot
    * read (a call signature with defaulted type parameters, in hono's case).
@@ -701,7 +783,11 @@ export function extractTs(
       if (current === undefined) break;
       const node = current.node;
       if (node.type === "call_expression" || node.type === "new_expression") {
-        recordCall(ctx, node, current.ctx.caller, current.ctx.locals);
+        // `this` and `super` are only this caller's when the nearest binding is the class
+        // the caller path names (build 2.1).
+        const bound =
+          current.ctx.thisClass !== "" && current.ctx.thisClass === enclosingClassOf(current.ctx.caller);
+        recordCall(ctx, node, current.ctx.caller, current.ctx.locals, bound);
       }
       const inner = descend(node, current.ctx);
       const children = node.namedChildren;
@@ -714,7 +800,7 @@ export function extractTs(
 
   /**
    * The context children see. Only a node registered in pass A pushes a caller, so a
-   * nested helper keeps its enclosing declaration instead of inventing a symbol —
+   * nested helper keeps its enclosing declaration instead of inventing a symbol:
    * `function f() { const helper = () => g(); }` attributes `g` to `f`, whether or
    * not a top-level `helper` also exists.
    */
@@ -725,11 +811,18 @@ export function extractTs(
       case "class_declaration":
       case "abstract_class_declaration":
       case "class":
-        next = { ...current, className: symbolPath ?? "" };
+        // A class this pass did not track (one written inside a function body) binds a
+        // `this` of its own that names nothing the map can resolve.
+        next = { ...current, className: symbolPath ?? "", thisClass: symbolPath ?? "" };
+        break;
+      case "method_definition":
+        // A method of a class body keeps the class's `this`; a method of an object literal
+        // binds the literal's own.
+        if (node.parent?.type !== "class_body") next = { ...next, thisClass: "" };
+        if (symbolPath !== undefined) next = { ...next, caller: symbolPath, className: "" };
         break;
       case "function_declaration":
       case "generator_function_declaration":
-      case "method_definition":
       case "variable_declarator":
         if (symbolPath !== undefined) next = { ...current, caller: symbolPath, className: "" };
         break;
@@ -744,6 +837,11 @@ export function extractTs(
         break;
       default:
         break;
+    }
+    // A non-arrow function binds a `this` of its own wherever it is written; an arrow
+    // function keeps the one around it, which is why arrows are absent from the set.
+    if (THIS_REBINDING.has(node.type)) {
+      next = next.thisClass === "" ? next : { ...next, thisClass: "" };
     }
     // The outermost function decides the local names; nested functions add nothing,
     // because the set is already flattened over everything inside it.
@@ -788,7 +886,19 @@ export function extractTs(
     imports: dedupe(sortByLine(imports), importKey),
     exports: dedupe(exports, exportKey),
     calls: dedupe(sortByLine(calls), callKey),
+    // Absent rather than empty when the file declares no class, so a record only gains
+    // the key when it has something to say.
+    ...(memberNames.size === 0 ? {} : { classMembers: sortedMemberNames(memberNames) }),
   };
+}
+
+/** Class symbol path -> sorted unique member names, in sorted class order. */
+function sortedMemberNames(memberNames: ReadonlyMap<string, Set<string>>): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const classPath of [...memberNames.keys()].sort(compareStrings)) {
+    out[classPath] = [...(memberNames.get(classPath) ?? [])].sort(compareStrings);
+  }
+  return out;
 }
 
 function importKey(record: ImportRecord): string {

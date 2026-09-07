@@ -1560,9 +1560,9 @@
       "fanIn": 2,
       "fanOut": 16,
       "lang": "ts",
-      "loc": 153,
+      "loc": 156,
       "pkg": "@greplost/core",
-      "sha256": "2a0770e64378181082732442d3f9df76e9d2cf6cbe62ad2f5ab75c71808f96d1",
+      "sha256": "3a957ec4f576e93e74aaf0c382f6d6edd303f0e78f786b8ede20b8aa0e23faa5",
       "staleSummary": false
     },
     "packages/core/src/extract/java.ts": {
@@ -1627,9 +1627,9 @@
       "fanIn": 1,
       "fanOut": 2,
       "lang": "ts",
-      "loc": 84,
+      "loc": 102,
       "pkg": "@greplost/core",
-      "sha256": "9cea1c84effaa2f05c1cfbbbecbddd43f0f96c745cc1842b45449b5d5a53f16e",
+      "sha256": "4cc39f36021c6fde994e550685fc62cee6bed6dde8528d5f1aaacba531aded3f",
       "staleSummary": false
     },
     "packages/core/src/extract/ts-imports.ts": {
@@ -1688,9 +1688,9 @@
       "fanIn": 3,
       "fanOut": 5,
       "lang": "ts",
-      "loc": 940,
+      "loc": 1050,
       "pkg": "@greplost/core",
-      "sha256": "4b5dd424a81065b08a553fa31d9a4352123d41493c7be4dcdd3bcc60469a8edd",
+      "sha256": "0c0a0e36fdff76ab71d6710aa550be8f2c18694830555acd829a4eebfc3352e8",
       "staleSummary": false
     },
     "packages/core/src/extract/yaml-actions.ts": {
@@ -1870,9 +1870,9 @@
       "fanIn": 1,
       "fanOut": 7,
       "lang": "ts",
-      "loc": 736,
+      "loc": 771,
       "pkg": "@greplost/core",
-      "sha256": "8dea1c84a0c6aab8301b08622d42ca266dc6e8bf778195fcd86e4d46ce458aba",
+      "sha256": "2f322d45884d4ac36babb98a0005f03fe3e1fae3ef3200b97d61f5be1670a4b9",
       "staleSummary": false
     },
     "packages/core/src/graph/metrics.ts": {
@@ -2554,9 +2554,9 @@
       "fanIn": 127,
       "fanOut": 0,
       "lang": "ts",
-      "loc": 529,
+      "loc": 545,
       "pkg": "@greplost/core",
-      "sha256": "e9b9fa2efc88ad988f6cf6d3c653a0d3a4031ae0b64693aef34d6f5726a35f6b",
+      "sha256": "7d185996e13ea731451a611763ef930198d49279cefa55b08883f02e67e39c18",
       "staleSummary": false
     },
     "packages/core/src/serialize/index.ts": {
@@ -3549,7 +3549,7 @@
       "lang": "ts",
       "loc": 215,
       "pkg": "@greplost/workspace",
-      "sha256": "a6a6bc9232d5393c2497f02e563196777a7bf6f976df281ee54fb00c2307f5bf",
+      "sha256": "32bee84e1dba4f79fb6932615d1137c985541a80f6f075578b3f4469e4679340",
       "staleSummary": false
     },
     "packages/workspace/src/render.ts": {
@@ -3613,7 +3613,7 @@
     "@greplost/core": {
       "deps": [],
       "files": 65,
-      "loc": 18750,
+      "loc": 18932,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",

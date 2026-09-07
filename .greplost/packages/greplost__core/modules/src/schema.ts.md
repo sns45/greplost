@@ -23,47 +23,47 @@
 - `const LANG_BY_BASENAME: Readonly<Record<string, Lang>> = { Dockerfile: "dockerfile", Containerfile: "dockerfile", }`  L83-86
 - `const DOCKERFILE_PREFIX = "Dockerfile."`  L89-89
 - `type DeclKind = | "function" | "class" | "interface" | "type" | "enum" | "const" | "let" | "var" | "method" | "struct" | "namespace" /* schema 2 (ruling 2026-09-04): more languages, IaC and fr…`  L91-121
-- `interface Declaration`  L124-166
-- `type ImportKind = "static" | "dynamic" | "type" | "side-effect"`  L168-168
-- `interface ImportedSymbol`  L170-175
-- `interface ImportRecord`  L178-186
-- `interface ExportRecord`  L188-196
-- `interface CallSite`  L199-212
-- `interface FileRecord`  L215-228
-- `type Confidence = "high" | "med"`  L230-230
-- `interface Edge`  L233-239
-- `interface ImportEdge extends Edge`  L241-246
-- `type RefKind = | "hcl-ref" | "selector" | "config-ref" | "needs" | "uses" | "from-image" | "copy-from" | "helm-values" | "config" | "resource-input" | "route-handler"`  L249-260
-- `interface ReferenceRecord`  L267-272
-- `interface ReferenceEdge extends Edge`  L282-285
-- `interface CallEdge extends Edge`  L287-297
-- `interface PackageInfo`  L299-306
-- `interface PackageEntry`  L308-316
-- `interface FileEntry`  L318-334
-- `interface Manifest`  L336-340
-- `interface DiagramConfig`  L342-345
-- `interface GreplostConfig`  L347-356
-- `const DEFAULT_CONFIG: GreplostConfig = { include: ["**"], exclude: [ "**/node_modules/**", "**/dist/**", "**/build/**", "**/.git/**", "**/.greplost/**", "**/*.d.ts", "**/*.test.*", "**/*.spec.…`  L358-381
-- `interface PackageEdge`  L383-388
-- `interface Metrics`  L390-395
-- `interface Snapshot`  L398-413
-- `interface SummaryEntry`  L416-423
-- `type SummaryCache = Record<string, SummaryEntry>`  L425-425
-- `function compareStrings(a: string, b: string): number`  L428-430
-- `function compareEdges(a: Edge, b: Edge): number`  L432-439
-- `function compareDeclarations(a: Declaration, b: Declaration): number`  L441-443
-- `function symbolId(file: string, symbolPath: string): string`  L445-447
-- `function packageId(name: string): string`  L449-451
-- `function externalId(pkg: string): string`  L453-455
-- `function unresolvedId(specifier: string): string`  L457-459
-- `const NODE_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>([ "resource", "data", "variable", "output", "provider", "module", "local", "job", "step", "stage", "image", "component", "route", "h…`  L462-465
-- `function isNodeKind(kind: DeclKind): boolean`  L467-469
-- `function isNodeDeclaration(decl: Pick<Declaration, "id" | "kind">): boolean`  L477-479
-- `function nodeId(file: string, kind: DeclKind, name: string): string`  L482-485
-- `function splitNodeId(id: string): { file: string; kind: DeclKind; name: string } | null`  L488-499
-- `function isFileId(id: string): boolean`  L501-503
-- `function packageSlug(name: string): string`  L509-511
-- `function stableStringify(value: unknown, indent = 0): string`  L514-516
-- `function sortKeys(value: unknown): unknown`  L518-529
+- `interface Declaration`  L124-168
+- `type ImportKind = "static" | "dynamic" | "type" | "side-effect"`  L170-170
+- `interface ImportedSymbol`  L172-177
+- `interface ImportRecord`  L180-188
+- `interface ExportRecord`  L190-198
+- `interface CallSite`  L201-218
+- `interface FileRecord`  L221-244
+- `type Confidence = "high" | "med"`  L246-246
+- `interface Edge`  L249-255
+- `interface ImportEdge extends Edge`  L257-262
+- `type RefKind = | "hcl-ref" | "selector" | "config-ref" | "needs" | "uses" | "from-image" | "copy-from" | "helm-values" | "config" | "resource-input" | "route-handler"`  L265-276
+- `interface ReferenceRecord`  L283-288
+- `interface ReferenceEdge extends Edge`  L298-301
+- `interface CallEdge extends Edge`  L303-313
+- `interface PackageInfo`  L315-322
+- `interface PackageEntry`  L324-332
+- `interface FileEntry`  L334-350
+- `interface Manifest`  L352-356
+- `interface DiagramConfig`  L358-361
+- `interface GreplostConfig`  L363-372
+- `const DEFAULT_CONFIG: GreplostConfig = { include: ["**"], exclude: [ "**/node_modules/**", "**/dist/**", "**/build/**", "**/.git/**", "**/.greplost/**", "**/*.d.ts", "**/*.test.*", "**/*.spec.…`  L374-397
+- `interface PackageEdge`  L399-404
+- `interface Metrics`  L406-411
+- `interface Snapshot`  L414-429
+- `interface SummaryEntry`  L432-439
+- `type SummaryCache = Record<string, SummaryEntry>`  L441-441
+- `function compareStrings(a: string, b: string): number`  L444-446
+- `function compareEdges(a: Edge, b: Edge): number`  L448-455
+- `function compareDeclarations(a: Declaration, b: Declaration): number`  L457-459
+- `function symbolId(file: string, symbolPath: string): string`  L461-463
+- `function packageId(name: string): string`  L465-467
+- `function externalId(pkg: string): string`  L469-471
+- `function unresolvedId(specifier: string): string`  L473-475
+- `const NODE_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>([ "resource", "data", "variable", "output", "provider", "module", "local", "job", "step", "stage", "image", "component", "route", "h…`  L478-481
+- `function isNodeKind(kind: DeclKind): boolean`  L483-485
+- `function isNodeDeclaration(decl: Pick<Declaration, "id" | "kind">): boolean`  L493-495
+- `function nodeId(file: string, kind: DeclKind, name: string): string`  L498-501
+- `function splitNodeId(id: string): { file: string; kind: DeclKind; name: string } | null`  L504-515
+- `function isFileId(id: string): boolean`  L517-519
+- `function packageSlug(name: string): string`  L525-527
+- `function stableStringify(value: unknown, indent = 0): string`  L530-532
+- `function sortKeys(value: unknown): unknown`  L534-545
 
 **Calls:** `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high), `isNodeKind` → [`packages/core/src/schema.ts#isNodeKind`](schema.ts.md) (high), `sortKeys` → [`packages/core/src/schema.ts#sortKeys`](schema.ts.md) (high), `splitNodeId` → [`packages/core/src/schema.ts#splitNodeId`](schema.ts.md) (high)

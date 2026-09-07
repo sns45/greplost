@@ -56,7 +56,7 @@ export { extractYamlHelm } from "./yaml-helm.ts";
 export { extractYamlK8s } from "./yaml-k8s.ts";
 
 /** What a language extractor returns: everything but the file's own identity. */
-type ExtractedParts = Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">;
+type ExtractedParts = Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs" | "classMembers">;
 
 /** The language extractor for one `Lang`. Total over `Lang` by construction (no `default`). */
 function extractByLang(input: ExtractInput, tree: Tree): ExtractedParts {
@@ -131,6 +131,9 @@ export function extractFile(input: ExtractInput, parser: ParserHandle): FileReco
       exports: parts.exports,
       calls: parts.calls,
       ...(refs === undefined ? {} : { refs }),
+      // Only TypeScript's extractor writes it, and only for a file that declares a class
+      // (build 2.1), so every other record keeps the shape it had.
+      ...(parts.classMembers === undefined ? {} : { classMembers: parts.classMembers }),
     };
   } finally {
     // The record copies every string it needs, so the WASM tree can go now instead of waiting

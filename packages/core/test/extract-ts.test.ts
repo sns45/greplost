@@ -550,6 +550,103 @@ describe("heritage", () => {
   });
 });
 
+describe("member names", () => {
+  test("a class body's written names include data fields, accessors and parameter properties", () => {
+    const r = extract(
+      [
+        "export class C extends B {",
+        "  static ready = 1;",
+        "  data = 2;",
+        "  handle = external;",
+        "  private other!: () => void;",
+        "  #hidden = 3;",
+        "  constructor(private cfg: Config, readonly tag: string, plain: number) { super(); }",
+        "  get size(): number { return 0; }",
+        "  set size(v: number) {}",
+        "  run(): void {}",
+        "  [key: string]: unknown;",
+        "}",
+      ].join("\n"),
+    );
+    // Sorted and unique: the accessor pair is one name, an index signature is no name,
+    // and `plain` is a plain parameter rather than a parameter property.
+    expect(r.classMembers).toEqual({
+      C: ["#hidden", "cfg", "constructor", "data", "handle", "other", "ready", "run", "size", "tag"],
+    });
+  });
+
+  test("a nested and an anonymous class each get their own set, and a file with no class gets none", () => {
+    const r = extract(
+      [
+        "export default class extends B {",
+        "  m() {}",
+        "}",
+        "namespace N {",
+        "  export class Inner { data = 1; }",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.classMembers).toEqual({ default: ["m"], "N.Inner": ["data"] });
+    expect(extract("export function f() {}\n").classMembers).toBeUndefined();
+  });
+
+  test("an accessor pair with mismatched accessibility reports the first accessor's visibility", () => {
+    const r = extract("export class C {\n  get size() { return 1; }\n  protected set size(v: number) {}\n}\n");
+    expect(decl(r, "C.size").visibility).toBe("public");
+  });
+});
+
+describe("this binding", () => {
+  test("a this call is recorded when the nearest binding is the class the caller names, arrows included", () => {
+    const r = extract(
+      [
+        "export class Host extends Base {",
+        "  build() {",
+        "    this.helper();",
+        "    const arrow = () => this.helper();",
+        "    return arrow;",
+        "  }",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.calls.filter((c) => c.callee === "this.helper")).toEqual([
+      { caller: "Host.build", callee: "this.helper", line: 3 },
+      { caller: "Host.build", callee: "this.helper", line: 4 },
+    ]);
+  });
+
+  test("an object literal method, a nested class and a plain function each bind their own this", () => {
+    const literal = extract(
+      ["export class Host extends Base {", "  build() {", "    return { m() { this.helper(); } };", "  }", "}"].join("\n"),
+    );
+    const nested = extract(
+      ["export class Host extends Base {", "  build() {", "    class Inner { m() { this.helper(); } }", "    return Inner;", "  }", "}"].join("\n"),
+    );
+    const plain = extract(
+      ["export class Host extends Base {", "  build() {", "    function inner() { this.helper(); }", "    return inner;", "  }", "}"].join("\n"),
+    );
+    for (const r of [literal, nested, plain]) {
+      expect(r.calls.filter((c) => c.callee === "this.helper")).toEqual([]);
+    }
+  });
+
+  test("super.m is a callee, under the same binding rule as this", () => {
+    const r = extract(
+      [
+        "export class Kid extends Base {",
+        "  m() {",
+        "    super.other();",
+        "    return { n() { super.other(); } };",
+        "  }",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.calls.filter((c) => c.callee.startsWith("super."))).toEqual([
+      { caller: "Kid.m", callee: "super.other", line: 3 },
+    ]);
+  });
+});
+
 describe("imports", () => {
   test("static, default, namespace and side-effect imports", () => {
     const r = extract(
@@ -820,8 +917,9 @@ describe("call sites", () => {
         "ok();",
       ].join("\n"),
     );
-    // `d()()` drops the outer call on a call result but keeps the inner `d()`.
-    expect(r.calls.map((c) => c.callee)).toEqual(["d", "ok"]);
+    // `d()()` drops the outer call on a call result but keeps the inner `d()`; `super.x()`
+    // inside the class that writes it is a callee since build 2.1.
+    expect(r.calls.map((c) => c.callee)).toEqual(["d", "super.x", "ok"]);
   });
 
   test("caller attribution follows the nearest tracked declaration", () => {
@@ -1027,8 +1125,11 @@ describe("call sites", () => {
   });
 
   test("non-null assertions are erased from callees, casts are not", () => {
-    const r = extract("a!.b();\nfoo!();\nthis!.z();\n(x as any).y();\n");
+    // `this` at module scope binds no class, so the assertion test for it sits in one
+    // (build 2.1): outside a class body the callee is dropped rather than attributed.
+    const r = extract("a!.b();\nfoo!();\n(x as any).y();\nclass C {\n  m() {\n    this!.z();\n  }\n}\n");
     expect(r.calls.map((c) => c.callee)).toEqual(["a.b", "foo", "this.z"]);
+    expect(extract("this!.z();\n").calls).toEqual([]);
   });
 
   test("function-valued fields, data fields and static blocks", () => {

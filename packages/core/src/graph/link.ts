@@ -500,6 +500,22 @@ interface CallScope {
   index: ExportIndex;
   declKinds: Map<string, DeclKind>;
   baseOf: BaseIndex;
+  /**
+   * Class symbol id -> every member name that class body writes, over every file (build
+   * 2.1 fix round 1). A name in here that `declKinds` does not carry is a member the map
+   * cannot resolve, never an inherited one.
+   */
+  writes: Map<string, ReadonlySet<string>>;
+}
+
+/**
+ * The class a caller symbol path names the members of: everything before the last dot.
+ * `extract/ts.ts` derives the same class when it decides whether a `this.` callee is this
+ * caller's to record, and the two have to agree.
+ */
+function enclosingClassOf(symbolPath: string): string {
+  const dot = symbolPath.lastIndexOf(".");
+  return dot === -1 ? symbolPath : symbolPath.slice(0, dot);
 }
 
 /**
@@ -544,6 +560,12 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
   // built for every file before the first call is resolved (build 2.1).
   const bindingsByFile = new Map<string, Map<string, Binding>>();
   for (const file of files) bindingsByFile.set(file.path, importBindings(file, specifiersByFile.get(file.path)));
+  const writes = new Map<string, ReadonlySet<string>>();
+  for (const file of files) {
+    for (const [classPath, names] of Object.entries(file.classMembers ?? {})) {
+      writes.set(symbolId(file.path, classPath), new Set(names));
+    }
+  }
   const baseOf: BaseIndex = new Map();
   for (const file of files) {
     const topLevel = topLevelByFile.get(file.path) ?? new Map<string, DeclKind>();
@@ -552,7 +574,7 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
       if (decl.kind !== "class" || decl.extends === undefined || isNodeDeclaration(decl)) continue;
       const id = symbolId(file.path, decl.name);
       if (baseOf.has(id)) continue;
-      const base = resolveBase(decl.extends, { file: file.path, topLevel, bindings, index, declKinds, baseOf });
+      const base = resolveBase(decl.extends, { file: file.path, topLevel, bindings, index, declKinds, baseOf, writes });
       if (base !== null && base !== id) baseOf.set(id, base);
     }
   }
@@ -562,7 +584,7 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
   for (const file of files) {
     const topLevel = topLevelByFile.get(file.path) ?? new Map<string, DeclKind>();
     const bindings = bindingsByFile.get(file.path) ?? new Map<string, Binding>();
-    const scope: CallScope = { file: file.path, topLevel, bindings, index, declKinds, baseOf };
+    const scope: CallScope = { file: file.path, topLevel, bindings, index, declKinds, baseOf, writes };
 
     for (const site of file.calls) {
       const callee = site.callee.startsWith("new ") ? site.callee.slice(4) : site.callee;
@@ -626,14 +648,17 @@ function resolveMember(
   // Deeper chains are never recorded by the extractor; ignore them if seen.
   if (object === "" || member === "" || member.includes(".")) return null;
 
-  if (object === "this") {
-    const dot = caller.indexOf(".");
-    const className = dot === -1 ? caller : caller.slice(0, dot);
+  if (object === "this" || object === "super") {
+    const className = enclosingClassOf(caller);
     if (className === "") return null;
+    const classId = symbolId(scope.file, className);
+    // `super.m()` names the base's member even when the class overrides it, so it never
+    // looks at the class's own declarations and starts the walk one level up (build 2.1).
+    if (object === "super") return inheritedMember(classId, member, scope, true);
     const id = symbolId(scope.file, `${className}.${member}`);
     if (scope.declKinds.has(id)) return { to: id, confidence: "high" };
     // The enclosing class does not declare it: it may be inherited (build 2.1).
-    return inheritedMember(symbolId(scope.file, className), member, scope);
+    return inheritedMember(classId, member, scope, false);
   }
 
   // A class declared in this file.
@@ -698,8 +723,9 @@ function pinnedClass(module: string, name: string, scope: CallScope): string | n
 }
 
 /**
- * `this.<member>` where the enclosing class does not declare `member`: walk its bases and
- * take the first that does (build 2.1).
+ * `this.<member>` where the enclosing class does not declare `member`, or `super.<member>`
+ * whatever it declares: walk the bases and take the first class that declares it
+ * (build 2.1).
  *
  * A TypeScript class extends exactly one class, so the chain is a line and the nearest
  * class declaring the member is the only candidate: an override in a subclass wins by
@@ -707,6 +733,12 @@ function pinnedClass(module: string, name: string, scope: CallScope): string | n
  * pinned to one declaration is not in `baseOf` at all, so the walk stops there rather than
  * inventing an edge, and dispatch through an interface or a virtual override in a class
  * further down stays unresolved, as it must.
+ *
+ * A class that *writes* the name without declaring anything the map carries (a data field,
+ * a parameter property, a field holding an imported function) shadows the base's member
+ * with something unresolvable, so the walk stops there too and the call is dropped
+ * (fix round 1). `skipOwn` is the `super` case: the class's own body neither answers the
+ * call nor shadows it, because `super` deliberately looks past it.
  *
  * The edge is high even when the base arrived through a barrel. A re-export hop downgrades
  * a *name* lookup, where the chain is what pinned the target; here the chain only names the
@@ -720,7 +752,9 @@ function inheritedMember(
   classId: string,
   member: string,
   scope: CallScope,
+  skipOwn: boolean,
 ): { to: string; confidence: Confidence } | null {
+  if (!skipOwn && scope.writes.get(classId)?.has(member) === true) return null;
   let current = classId;
   const seen = new Set<string>([classId]);
   for (let depth = 0; depth < MAX_BASE_DEPTH; depth += 1) {
@@ -730,6 +764,7 @@ function inheritedMember(
     seen.add(base);
     const id = `${base}.${member}`;
     if (scope.declKinds.has(id)) return { to: id, confidence: "high" };
+    if (scope.writes.get(base)?.has(member) === true) return null;
     current = base;
   }
   return null;

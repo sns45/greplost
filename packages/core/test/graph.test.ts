@@ -87,9 +87,11 @@ function call(caller: string, callee: string, line = 1): CallSite {
 
 function file(
   p: string,
-  parts: Partial<Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "loc" | "lang" | "sha256">> = {},
+  parts: Partial<
+    Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "loc" | "lang" | "sha256" | "classMembers">
+  > = {},
 ): FileRecord {
-  return {
+  const base: FileRecord = {
     path: p,
     lang: parts.lang ?? ("ts" as Lang),
     sha256: parts.sha256 ?? "0".repeat(64),
@@ -99,6 +101,7 @@ function file(
     exports: parts.exports ?? [],
     calls: parts.calls ?? [],
   };
+  return parts.classMembers === undefined ? base : { ...base, classMembers: parts.classMembers };
 }
 
 /**
@@ -964,6 +967,81 @@ describe("linkCalls", () => {
       calls: [call("A.run", "this.absent")],
     });
     expect(linkOne([loop]).map(edgeKey)).toEqual([]);
+  });
+
+  test("a member the subclass body writes but the map does not carry drops the call", () => {
+    // `handle = external` holds an imported function and `other` is a bare field: neither is
+    // a declaration, and both shadow a base method. Crediting the base would be a wrong edge.
+    const base = file("src/base.ts", {
+      decls: [decl("src/base.ts", "external", "function"), ...classDecls("src/base.ts", "Base", ["handle", "other"])],
+      exports: [exp("external"), exp("Base")],
+      classMembers: { Base: ["handle", "other"] },
+    });
+    const kid = file("src/kid.ts", {
+      imports: [imp("./base", ["Base", "external"])],
+      decls: [
+        decl("src/kid.ts", "Kid", "class", { extends: "Base" }),
+        decl("src/kid.ts", "Kid.go", "method", { parent: "Kid" }),
+      ],
+      classMembers: { Kid: ["go", "handle", "other"] },
+      calls: [call("Kid.go", "this.handle"), call("Kid.go", "this.other")],
+    });
+    expect(linkOne([base, kid]).map(edgeKey)).toEqual([]);
+
+    // A name the subclass body does not write at all is still inherited.
+    const clean = file("src/clean.ts", {
+      imports: [imp("./base", ["Base"])],
+      decls: [
+        decl("src/clean.ts", "Clean", "class", { extends: "Base" }),
+        decl("src/clean.ts", "Clean.go", "method", { parent: "Clean" }),
+      ],
+      classMembers: { Clean: ["go"] },
+      calls: [call("Clean.go", "this.handle")],
+    });
+    expect(linkOne([base, clean]).map(edgeKey)).toEqual([
+      "src/clean.ts#Clean.go -> src/base.ts#Base.handle (high)",
+    ]);
+  });
+
+  test("a shadowing member stops the walk at the level that writes it", () => {
+    const a = file("src/a.ts", {
+      decls: [
+        ...classDecls("src/a.ts", "Base", ["step"]),
+        decl("src/a.ts", "Mid", "class", { extends: "Base" }),
+        ...classDecls("src/a.ts", "Kid", ["run"], { extends: "Mid" }),
+      ],
+      // `Mid` writes `step` as a data field, so `Kid`'s call reaches Mid's, not Base's.
+      classMembers: { Base: ["step"], Mid: ["step"], Kid: ["run"] },
+      calls: [call("Kid.run", "this.step")],
+    });
+    expect(linkOne([a]).map(edgeKey)).toEqual([]);
+  });
+
+  test("super.m starts one level above the enclosing class and never lands on its own", () => {
+    const base = file("src/base.ts", {
+      decls: classDecls("src/base.ts", "Base", ["overridden"]),
+      exports: [exp("Base")],
+      classMembers: { Base: ["overridden"] },
+    });
+    const kid = file("src/kid.ts", {
+      imports: [imp("./base", ["Base"])],
+      decls: classDecls("src/kid.ts", "Kid", ["overridden", "run"], { extends: "Base" }),
+      classMembers: { Kid: ["overridden", "run"] },
+      calls: [call("Kid.run", "super.overridden"), call("Kid.overridden", "super.overridden")],
+    });
+    expect(linkOne([base, kid]).map(edgeKey)).toEqual([
+      "src/kid.ts#Kid.overridden -> src/base.ts#Base.overridden (high)",
+      "src/kid.ts#Kid.run -> src/base.ts#Base.overridden (high)",
+    ]);
+
+    // No pinned base, no edge: `super` never falls back to the class's own declaration.
+    const loose = file("src/loose.ts", {
+      imports: [imp("express", ["Base"])],
+      decls: classDecls("src/loose.ts", "Loose", ["overridden", "run"], { extends: "Base" }),
+      classMembers: { Loose: ["overridden", "run"] },
+      calls: [call("Loose.run", "super.overridden")],
+    });
+    expect(linkOne([loose]).map(edgeKey)).toEqual([]);
   });
 
   test("interface and virtual dispatch stay unresolved: only the enclosing class chain is walked", () => {

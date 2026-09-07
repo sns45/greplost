@@ -8,10 +8,15 @@ import type { Node } from "web-tree-sitter";
 import type { TsContext } from "./ts.ts";
 import { field } from "./ts-signature.ts";
 
-/** A callee that can be named, plus the identifier it hangs off (null for `this`). */
+/**
+ * A callee that can be named, plus the identifier it hangs off (null for `this` and
+ * `super`, which name no binding a scope can shadow).
+ */
 export interface Callee {
   text: string;
   root: string | null;
+  /** True for a `this.` or `super.` callee, whose meaning depends on where it is written. */
+  keyword?: true;
 }
 
 /**
@@ -34,6 +39,13 @@ export function recordCall(
   node: Node,
   caller: string,
   locals: ReadonlySet<string> | null,
+  /**
+   * Whether `this` and `super` here are bound by the class `caller` names (build 2.1).
+   * False inside an object literal method, a nested class or a non-arrow function, where
+   * they mean something else entirely and the call must be dropped rather than credited
+   * to the enclosing method's class.
+   */
+  keywordsBound: boolean,
 ): void {
   let callee: Callee | null;
   if (node.type === "new_expression") {
@@ -58,13 +70,16 @@ export function recordCall(
   // no exported symbol: emitting it would invent an edge to a same-named top-level
   // declaration. Dropping is the conservative half of "never guess".
   if (callee.root !== null && locals !== null && locals.has(callee.root)) return;
+  if (callee.keyword === true && !keywordsBound) return;
   ctx.calls.push({ caller, callee: callee.text, line: ctx.line(node) });
 }
 
 /**
- * `foo` -> `foo`, `obj.m` -> `obj.m`, `this.m` -> `this.m`, with `new ` prefixed for
- * constructors. Deeper chains, computed members, calls on call results and calls on
- * parenthesised, cast or awaited expressions have no stable name and return null.
+ * `foo` -> `foo`, `obj.m` -> `obj.m`, `this.m` -> `this.m`, `super.m` -> `super.m`, with
+ * `new ` prefixed for constructors. Deeper chains, computed members, calls on call results
+ * and calls on parenthesised, cast or awaited expressions have no stable name and return
+ * null. A bare `super()` names the base constructor rather than a member and is not a
+ * member expression, so it returns null too.
  */
 export function calleeOf(target: Node, prefix: string): Callee | null {
   const fn = unwrapAssertion(target);
@@ -79,6 +94,9 @@ export function calleeOf(target: Node, prefix: string): Callee | null {
   if (object.type === "identifier") {
     return { text: `${prefix}${object.text}.${property.text}`, root: object.text };
   }
-  if (object.type === "this") return { text: `${prefix}this.${property.text}`, root: null };
+  if (object.type === "this") return { text: `${prefix}this.${property.text}`, root: null, keyword: true };
+  // `super.m()` names the base class's member, whatever the class itself declares
+  // (build 2.1): the linker starts its walk one level up.
+  if (object.type === "super") return { text: `${prefix}super.${property.text}`, root: null, keyword: true };
   return null;
 }
