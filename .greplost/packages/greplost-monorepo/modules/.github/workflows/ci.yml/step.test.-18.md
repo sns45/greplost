@@ -6,6 +6,8 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
+**Name:** Cache the benchmark corpus (pinned in bench/corpus.json)
+
 **Attributes:** `flavour: actions`, `name: Cache the benchmark corpus (pinned in bench/corpus.json)`, `uses: actions/cache@v4`, `usesRef: v4`
 
 **References:** `ext:action/actions/cache` (uses)

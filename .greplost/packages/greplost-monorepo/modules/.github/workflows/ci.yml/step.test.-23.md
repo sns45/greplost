@@ -6,6 +6,8 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
+**Name:** freshness gate (100-commit replay, pydantic)
+
 **Attributes:** `flavour: actions`, `name: freshness gate (100-commit replay, pydantic)`, `run: bun run bench:replay --repo pydantic --commits 100 --gate`
 
 **References:** None.

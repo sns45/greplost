@@ -6,6 +6,8 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
+**Name:** Build the publishable bundle
+
 **Attributes:** `flavour: actions`, `name: Build the publishable bundle`, `run: bun run build`
 
 **References:** None.
