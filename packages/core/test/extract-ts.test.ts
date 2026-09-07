@@ -478,6 +478,221 @@ describe("declarations", () => {
   });
 });
 
+describe("visibility", () => {
+  test("a class member carries the accessibility it is written with, public by default", () => {
+    const r = extract(
+      [
+        "export class C {",
+        "  m() {}",
+        "  public o() {}",
+        "  protected p() {}",
+        "  private q() {}",
+        "  #hidden() {}",
+        "  protected get g() { return 1; }",
+        "  protected handle = () => {};",
+        "  protected abstract t(): void;",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.decls.map((d) => [d.name, d.visibility])).toEqual([
+      ["C", undefined],
+      ["C.m", "public"],
+      ["C.o", "public"],
+      ["C.p", "protected"],
+      ["C.q", "private"],
+      ["C.#hidden", "private"],
+      ["C.g", "protected"],
+      ["C.handle", "protected"],
+      ["C.t", "protected"],
+    ]);
+  });
+
+  test("visibility is separate from exported: a protected member of an exported class stays exported", () => {
+    const r = extract("export class C {\n  protected p() {}\n}\n");
+    expect(decl(r, "C.p").exported).toBe(true);
+    expect(decl(r, "C.p").visibility).toBe("protected");
+    const local = extract("class D {\n  protected p() {}\n}\n");
+    expect(decl(local, "D.p").exported).toBe(false);
+    expect(decl(local, "D.p").visibility).toBe("protected");
+  });
+
+  test("nothing outside a class body carries visibility", () => {
+    const r = extract(
+      ["export function f() {}", "export const c = 1;", "export interface I { a: string }", "namespace N { export function g() {} }"].join("\n"),
+    );
+    expect(r.decls.every((d) => d.visibility === undefined)).toBe(true);
+  });
+});
+
+describe("heritage", () => {
+  test("a class records the base class its extends clause names", () => {
+    const r = extract("export class A extends Base<T> implements I {}\nclass B extends ns.Base {}\nclass C {}\n");
+    expect(decl(r, "A").extends).toBe("Base");
+    expect(decl(r, "B").extends).toBe("ns.Base");
+    expect(decl(r, "C").extends).toBeUndefined();
+  });
+
+  test("a computed base is not a name, so nothing is recorded", () => {
+    const r = extract("class C extends mix(Base) {}\nclass D extends (Base as unknown as typeof Base) {}\n");
+    expect(decl(r, "C").extends).toBeUndefined();
+    expect(decl(r, "D").extends).toBeUndefined();
+  });
+
+  test("an anonymous default-exported class records its base too", () => {
+    const r = extract("import { Base } from './base';\nexport default class extends Base {\n  m() {}\n}\n");
+    expect(decl(r, "default").extends).toBe("Base");
+    expect(decl(r, "default.m").visibility).toBe("public");
+  });
+
+  test("only a class carries extends: an interface heritage clause does not", () => {
+    const r = extract("export interface I extends J {}\n");
+    expect(decl(r, "I").extends).toBeUndefined();
+  });
+});
+
+describe("member names", () => {
+  test("a class body's written names include data fields, accessors and parameter properties", () => {
+    const r = extract(
+      [
+        "export class C extends B {",
+        "  static ready = 1;",
+        "  data = 2;",
+        "  handle = external;",
+        "  private other!: () => void;",
+        "  #hidden = 3;",
+        "  constructor(private cfg: Config, readonly tag: string, plain: number) { super(); }",
+        "  get size(): number { return 0; }",
+        "  set size(v: number) {}",
+        "  run(): void {}",
+        "  [key: string]: unknown;",
+        "}",
+      ].join("\n"),
+    );
+    // Sorted and unique: the accessor pair is one name, an index signature is no name,
+    // and `plain` is a plain parameter rather than a parameter property. `ready` is the
+    // only static one, and a parameter property is always on the instance.
+    expect(r.classMembers).toEqual({
+      C: {
+        instance: ["#hidden", "cfg", "constructor", "data", "handle", "other", "run", "size", "tag"],
+        static: ["ready"],
+      },
+    });
+  });
+
+  test("static names are recorded apart from instance names", () => {
+    const r = extract(
+      [
+        "export class C {",
+        "  static ready = 1;",
+        "  static make(): void {}",
+        "  static { setup(); }",
+        "  static get shared(): number { return 1; }",
+        "  data = 2;",
+        "  run(): void {}",
+        "  get size(): number { return 0; }",
+        "}",
+      ].join("\n"),
+    );
+    // A static block writes no name at all.
+    expect(r.classMembers).toEqual({
+      C: { instance: ["data", "run", "size"], static: ["make", "ready", "shared"] },
+    });
+  });
+
+  test("a nested and an anonymous class each get their own set, and a file with no class gets none", () => {
+    const r = extract(
+      [
+        "export default class extends B {",
+        "  m() {}",
+        "}",
+        "namespace N {",
+        "  export class Inner { data = 1; }",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.classMembers).toEqual({
+      default: { instance: ["m"], static: [] },
+      "N.Inner": { instance: ["data"], static: [] },
+    });
+    expect(extract("export function f() {}\n").classMembers).toBeUndefined();
+  });
+
+  test("an accessor pair with mismatched accessibility reports the first accessor's visibility", () => {
+    const r = extract("export class C {\n  get size() { return 1; }\n  protected set size(v: number) {}\n}\n");
+    expect(decl(r, "C.size").visibility).toBe("public");
+  });
+});
+
+describe("this binding", () => {
+  test("a this call is recorded when the nearest binding is the class the caller names, arrows included", () => {
+    const r = extract(
+      [
+        "export class Host extends Base {",
+        "  build() {",
+        "    this.helper();",
+        "    const arrow = () => this.helper();",
+        "    return arrow;",
+        "  }",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.calls.filter((c) => c.callee === "this.helper")).toEqual([
+      { caller: "Host.build", callee: "this.helper", line: 3 },
+      { caller: "Host.build", callee: "this.helper", line: 4 },
+    ]);
+  });
+
+  test("an object literal method, a nested class and a plain function each bind their own this", () => {
+    const literal = extract(
+      ["export class Host extends Base {", "  build() {", "    return { m() { this.helper(); } };", "  }", "}"].join("\n"),
+    );
+    const nested = extract(
+      ["export class Host extends Base {", "  build() {", "    class Inner { m() { this.helper(); } }", "    return Inner;", "  }", "}"].join("\n"),
+    );
+    const plain = extract(
+      ["export class Host extends Base {", "  build() {", "    function inner() { this.helper(); }", "    return inner;", "  }", "}"].join("\n"),
+    );
+    for (const r of [literal, nested, plain]) {
+      expect(r.calls.filter((c) => c.callee === "this.helper")).toEqual([]);
+    }
+  });
+
+  test("this and super inside a static member bind the class, not an instance, so both drop", () => {
+    const r = extract(
+      [
+        "export class S extends Base {",
+        "  static go() { this.helper(); }",
+        "  static up() { super.helper(); }",
+        "  static ready = () => this.helper();",
+        "  static { this.helper(); }",
+        "  run() { this.helper(); }",
+        "  get size(): number { return this.helper(); }",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.calls.filter((c) => c.callee.endsWith(".helper"))).toEqual([
+      { caller: "S.run", callee: "this.helper", line: 6 },
+      { caller: "S.size", callee: "this.helper", line: 7 },
+    ]);
+  });
+
+  test("super.m is a callee, under the same binding rule as this", () => {
+    const r = extract(
+      [
+        "export class Kid extends Base {",
+        "  m() {",
+        "    super.other();",
+        "    return { n() { super.other(); } };",
+        "  }",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.calls.filter((c) => c.callee.startsWith("super."))).toEqual([
+      { caller: "Kid.m", callee: "super.other", line: 3 },
+    ]);
+  });
+});
+
 describe("imports", () => {
   test("static, default, namespace and side-effect imports", () => {
     const r = extract(
@@ -748,8 +963,9 @@ describe("call sites", () => {
         "ok();",
       ].join("\n"),
     );
-    // `d()()` drops the outer call on a call result but keeps the inner `d()`.
-    expect(r.calls.map((c) => c.callee)).toEqual(["d", "ok"]);
+    // `d()()` drops the outer call on a call result but keeps the inner `d()`; `super.x()`
+    // inside the class that writes it is a callee since build 2.1.
+    expect(r.calls.map((c) => c.callee)).toEqual(["d", "super.x", "ok"]);
   });
 
   test("caller attribution follows the nearest tracked declaration", () => {
@@ -955,8 +1171,11 @@ describe("call sites", () => {
   });
 
   test("non-null assertions are erased from callees, casts are not", () => {
-    const r = extract("a!.b();\nfoo!();\nthis!.z();\n(x as any).y();\n");
+    // `this` at module scope binds no class, so the assertion test for it sits in one
+    // (build 2.1): outside a class body the callee is dropped rather than attributed.
+    const r = extract("a!.b();\nfoo!();\n(x as any).y();\nclass C {\n  m() {\n    this!.z();\n  }\n}\n");
     expect(r.calls.map((c) => c.callee)).toEqual(["a.b", "foo", "this.z"]);
+    expect(extract("this!.z();\n").calls).toEqual([]);
   });
 
   test("function-valued fields, data fields and static blocks", () => {

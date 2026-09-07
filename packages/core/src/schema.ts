@@ -143,6 +143,23 @@ export interface Declaration {
   /** Symbol path of the enclosing declaration (class name for methods). Absent for top-level. */
   parent?: string;
   /**
+   * Build 2.1: accessibility of a class member as the language writes it, which is a
+   * different question from `exported`. `exported` stays module-level reachability (a
+   * protected method of an exported class is reachable and stays `exported: true`), and
+   * this says how the class itself lets the member be reached. A member with no modifier
+   * is `public`, a `#name` is `private`. Absent for anything that is not a class member.
+   * An accessor pair is one declaration, so a `get`/`set` pair written with different
+   * accessibility reports the first accessor's visibility.
+   */
+  visibility?: "public" | "protected" | "private";
+  /**
+   * Build 2.1: the base class named by a class's `extends` clause, exactly as written and
+   * without type arguments (`Base`, `ns.Base`). Absent when the class extends nothing and
+   * when the clause is an expression rather than a name (`extends mix(Base)`), which names
+   * no declaration the linker could pin. Only a class carries it.
+   */
+  extends?: string;
+  /**
    * Language, IaC or framework attributes with no other home, sorted keys, string values only
    * (schema 2): e.g. `{ type: "aws_s3_bucket" }` on a Terraform resource, `{ method: "GET", path: "/users" }`
    * on a route, `{ provider: "aws" }` on a Pulumi resource, `{ base: "node:20" }` on an image.
@@ -189,11 +206,28 @@ export interface CallSite {
    *  - `foo` for a plain identifier call,
    *  - `obj.method` for a one-level member call on an identifier (`a.b.c()` is dropped),
    *  - `this.method` for calls on `this`,
+   *  - `super.method` for calls on `super` (build 2.1),
    *  - `new Foo` for constructor calls (also `new ns.Foo`).
-   * Anything else (computed members, calls on call results, `super`, deeper chains) is not recorded.
+   * Anything else (computed members, calls on call results, a bare `super()`, deeper chains)
+   * is not recorded. A `this.` or `super.` callee is recorded only where that keyword is
+   * bound by the class the `caller` names: an object literal method, a nested class and a
+   * non-arrow function each bind their own, and are dropped rather than misattributed.
    */
   callee: string;
   line: number;
+}
+
+/**
+ * The member names one class body writes, each list sorted and unique (build 2.1).
+ *
+ * The two sides are separate because they are separate namespaces: `static handle` and an
+ * inherited instance `handle()` do not collide, `this.handle()` in an instance member can
+ * never mean the static one, and neither shadows the other. A parameter property is always
+ * on the instance; a static block writes no name at all.
+ */
+export interface ClassMemberNames {
+  instance: string[];
+  static: string[];
 }
 
 /** Everything the extractor knows about one file, with no cross-file knowledge. */
@@ -210,6 +244,15 @@ export interface FileRecord {
   calls: CallSite[];
   /** Schema 2: references before resolution; every build-1 extractor leaves it undefined. */
   refs?: ReferenceRecord[];
+  /**
+   * Build 2.1: every member name a class body writes, keyed by the class's symbol path.
+   * It holds the names `decls` cannot: data fields, parameter properties, and fields whose
+   * initialiser is not a function. The linker needs them to know that a subclass shadows an
+   * inherited method with something it cannot resolve, and must then drop the call rather
+   * than credit the base. Absent when the file declares no class, and absent from every
+   * extractor but TypeScript's, so no other language's record changes shape.
+   */
+  classMembers?: Record<string, ClassMemberNames>;
 }
 
 export type Confidence = "high" | "med";
@@ -273,6 +316,12 @@ export interface CallEdge extends Edge {
   kind: "call";
   /** `from` is `<file>#<symbol>` or `<file>` for top-level code; `to` is `<file>#<symbol>`. */
   confidence: Confidence;
+  /**
+   * Build 2.1: 1-based line of the call site this edge was resolved from, and the first
+   * such line when one caller calls one target more than once (an edge is one pair, not
+   * one site). Absent only on a map written before edges carried it.
+   */
+  line?: number;
 }
 
 export interface PackageInfo {
