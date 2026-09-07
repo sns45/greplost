@@ -8,44 +8,45 @@
 
 **Exports:** `TsContext (interface)`, `extractTs( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "classMembers">`
 
-**Imports:** `web-tree-sitter` (Node, Tree), [`../schema.ts`](../schema.ts.md) (CallSite, DeclKind, Declaration, ExportRecord, FileRecord, ImportRecord, Lang, compareStrings, symbolId), [`../parser.ts`](../parser.ts.md) (reparse), [`./ts-imports.ts`](ts-imports.ts.md) (collectCommonJsExport, collectExportStatement, collectImportStatement, recordModuleCall), [`./ts-calls.ts`](ts-calls.ts.md) (recordCall), [`./ts-signature.ts`](ts-signature.ts.md) (field, functionValue, initialiserSignature, nameOf, signatureText, variableSignature)
+**Imports:** `web-tree-sitter` (Node, Tree), [`../schema.ts`](../schema.ts.md) (CallSite, ClassMemberNames, DeclKind, Declaration, ExportRecord, FileRecord, ImportRecord, Lang, compareStrings, symbolId), [`../parser.ts`](../parser.ts.md) (reparse), [`./ts-imports.ts`](ts-imports.ts.md) (collectCommonJsExport, collectExportStatement, collectImportStatement, recordModuleCall), [`./ts-calls.ts`](ts-calls.ts.md) (recordCall), [`./ts-signature.ts`](ts-signature.ts.md) (field, functionValue, initialiserSignature, nameOf, signatureText, variableSignature)
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md), [`packages/core/src/extract/ts-calls.ts`](ts-calls.ts.md), [`packages/core/src/extract/ts-imports.ts`](ts-imports.ts.md)
 
 **Blast radius:** 33 files (`greplost impact packages/core/src/extract/ts.ts`)
 
 **Key symbols:**
-- `interface TsContext`  L59-77
-- `interface Entry`  L80-84
-- `interface Ctx`  L87-109
-- `const EMPTY_CTX: Ctx = { caller: "", className: "", thisClass: "", locals: null }`  L111-111
-- `const THIS_REBINDING: ReadonlySet<string> = new Set([ "function_declaration", "generator_function_declaration", "function_expression", "generator_function", ])`  L114-119
-- `function enclosingClassOf(symbolPath: string): string`  L129-132
-- `const FUNCTION_SCOPES: ReadonlySet<string> = new Set([ "function_declaration", "generator_function_declaration", "function_expression", "generator_function", "arrow_function", "method_definition", "c…`  L135-143
-- `const STATEMENT_TYPES: ReadonlySet<string> = new Set([ "export_statement", "import_statement", "type_alias_declaration", "interface_declaration", "function_declaration", "generator_function_declarati…`  L146-161
-- `const SOUND_EXTRA: ReadonlySet<string> = new Set(["comment", "hash_bang_line", "function_signature", "internal_module"])`  L164-164
-- `const RECOVERY_MAX_DEPTH = 6`  L171-171
-- `const RECOVERY_MIN_CHARS = 8`  L172-172
-- `const RECOVERY_MAX_RESUMES = 32`  L173-173
-- `const RECOVERY_MAX_PARSES = 512`  L174-174
-- `const RECOVERY_MAX_RETAINED_RATIO = 4`  L182-182
-- `const DECLARATION_KEYWORDS = [ "export", "import", "type ", "interface ", "class ", "function", "const ", "let ", "var ", "enum ", "namespace ", "declare ", ]`  L185-198
-- `function mayDeclare(text: string): boolean`  L200-203
-- `function isSound(node: Node): boolean`  L205-208
-- `function memberVisibility(member: Node, name: Node): "public" | "protected" | "private"`  L216-225
-- `function heritage(classNode: Node): Pick<Declaration, "extends">`  L235-249
-- `function parameterProperties(member: Node): string[]`  L257-273
-- `function extractTs( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "classMembers">`  L275-893
-- `function sortedMemberNames(memberNames: ReadonlyMap<string, Set<string>>): Record<string, string[]>`  L896-902
-- `function importKey(record: ImportRecord): string`  L904-907
-- `function exportKey(record: ExportRecord): string`  L909-911
-- `function callKey(record: CallSite): string`  L913-915
-- `const SELF_BINDING: ReadonlySet<string> = new Set(["function_expression", "generator_function", "class"])`  L921-921
-- `function boundNames(root: Node): ReadonlySet<string>`  L924-972
-- `function addName(node: Node, names: Set<string>): void`  L975-982
-- `function addPattern(node: Node | null, names: Set<string>): void`  L985-1007
-- `function sortByLine<T extends { line: number }>(records: T[]): T[]`  L1009-1011
-- `function dedupe<T>(records: T[], key: (record: T) => string): T[]`  L1013-1023
-- `function collapseOverloads(entries: Entry[]): Declaration[]`  L1030-1050
+- `interface TsContext`  L60-78
+- `interface Entry`  L81-85
+- `interface Ctx`  L88-110
+- `const EMPTY_CTX: Ctx = { caller: "", className: "", thisClass: "", locals: null }`  L112-112
+- `const THIS_REBINDING: ReadonlySet<string> = new Set([ "function_declaration", "generator_function_declaration", "function_expression", "generator_function", ])`  L115-120
+- `function enclosingClassOf(symbolPath: string): string`  L130-133
+- `const FUNCTION_SCOPES: ReadonlySet<string> = new Set([ "function_declaration", "generator_function_declaration", "function_expression", "generator_function", "arrow_function", "method_definition", "c…`  L136-144
+- `const STATEMENT_TYPES: ReadonlySet<string> = new Set([ "export_statement", "import_statement", "type_alias_declaration", "interface_declaration", "function_declaration", "generator_function_declarati…`  L147-162
+- `const SOUND_EXTRA: ReadonlySet<string> = new Set(["comment", "hash_bang_line", "function_signature", "internal_module"])`  L165-165
+- `const RECOVERY_MAX_DEPTH = 6`  L172-172
+- `const RECOVERY_MIN_CHARS = 8`  L173-173
+- `const RECOVERY_MAX_RESUMES = 32`  L174-174
+- `const RECOVERY_MAX_PARSES = 512`  L175-175
+- `const RECOVERY_MAX_RETAINED_RATIO = 4`  L183-183
+- `const DECLARATION_KEYWORDS = [ "export", "import", "type ", "interface ", "class ", "function", "const ", "let ", "var ", "enum ", "namespace ", "declare ", ]`  L186-199
+- `function mayDeclare(text: string): boolean`  L201-204
+- `function isSound(node: Node): boolean`  L206-209
+- `function memberVisibility(member: Node, name: Node): "public" | "protected" | "private"`  L217-226
+- `function heritage(classNode: Node): Pick<Declaration, "extends">`  L236-250
+- `function isStatic(member: Node): boolean`  L256-258
+- `function parameterProperties(member: Node): string[]`  L266-282
+- `function extractTs( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "classMembers">`  L284-910
+- `function sortedMemberNames( memberNames: ReadonlyMap<string, { instance: Set<string>; static: Set<string> }>, ): Record<string, ClassMemberNames>`  L913-925
+- `function importKey(record: ImportRecord): string`  L927-930
+- `function exportKey(record: ExportRecord): string`  L932-934
+- `function callKey(record: CallSite): string`  L936-938
+- `const SELF_BINDING: ReadonlySet<string> = new Set(["function_expression", "generator_function", "class"])`  L944-944
+- `function boundNames(root: Node): ReadonlySet<string>`  L947-995
+- `function addName(node: Node, names: Set<string>): void`  L998-1005
+- `function addPattern(node: Node | null, names: Set<string>): void`  L1008-1030
+- `function sortByLine<T extends { line: number }>(records: T[]): T[]`  L1032-1034
+- `function dedupe<T>(records: T[], key: (record: T) => string): T[]`  L1036-1046
+- `function collapseOverloads(entries: Entry[]): Declaration[]`  L1053-1073
 
-**Calls:** `recordCall` → [`packages/core/src/extract/ts-calls.ts#recordCall`](ts-calls.ts.md) (high), `collectCommonJsExport` → [`packages/core/src/extract/ts-imports.ts#collectCommonJsExport`](ts-imports.ts.md) (high), `collectExportStatement` → [`packages/core/src/extract/ts-imports.ts#collectExportStatement`](ts-imports.ts.md) (high), `collectImportStatement` → [`packages/core/src/extract/ts-imports.ts#collectImportStatement`](ts-imports.ts.md) (high), `recordModuleCall` → [`packages/core/src/extract/ts-imports.ts#recordModuleCall`](ts-imports.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](ts-signature.ts.md) (high), `functionValue` → [`packages/core/src/extract/ts-signature.ts#functionValue`](ts-signature.ts.md) (high), `initialiserSignature` → [`packages/core/src/extract/ts-signature.ts#initialiserSignature`](ts-signature.ts.md) (high), `nameOf` → [`packages/core/src/extract/ts-signature.ts#nameOf`](ts-signature.ts.md) (high), `signatureText` → [`packages/core/src/extract/ts-signature.ts#signatureText`](ts-signature.ts.md) (high), `variableSignature` → [`packages/core/src/extract/ts-signature.ts#variableSignature`](ts-signature.ts.md) (high), `addName` → [`packages/core/src/extract/ts.ts#addName`](ts.ts.md) (high), `addPattern` → [`packages/core/src/extract/ts.ts#addPattern`](ts.ts.md) (high), `boundNames` → [`packages/core/src/extract/ts.ts#boundNames`](ts.ts.md) (high), `collapseOverloads` → [`packages/core/src/extract/ts.ts#collapseOverloads`](ts.ts.md) (high), `dedupe` → [`packages/core/src/extract/ts.ts#dedupe`](ts.ts.md) (high), `enclosingClassOf` → [`packages/core/src/extract/ts.ts#enclosingClassOf`](ts.ts.md) (high), `heritage` → [`packages/core/src/extract/ts.ts#heritage`](ts.ts.md) (high), `isSound` → [`packages/core/src/extract/ts.ts#isSound`](ts.ts.md) (high), `mayDeclare` → [`packages/core/src/extract/ts.ts#mayDeclare`](ts.ts.md) (high), `memberVisibility` → [`packages/core/src/extract/ts.ts#memberVisibility`](ts.ts.md) (high), `parameterProperties` → [`packages/core/src/extract/ts.ts#parameterProperties`](ts.ts.md) (high), `sortByLine` → [`packages/core/src/extract/ts.ts#sortByLine`](ts.ts.md) (high), `sortedMemberNames` → [`packages/core/src/extract/ts.ts#sortedMemberNames`](ts.ts.md) (high), `reparse` → [`packages/core/src/parser.ts#reparse`](../parser.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)
+**Calls:** `recordCall` → [`packages/core/src/extract/ts-calls.ts#recordCall`](ts-calls.ts.md) (high), `collectCommonJsExport` → [`packages/core/src/extract/ts-imports.ts#collectCommonJsExport`](ts-imports.ts.md) (high), `collectExportStatement` → [`packages/core/src/extract/ts-imports.ts#collectExportStatement`](ts-imports.ts.md) (high), `collectImportStatement` → [`packages/core/src/extract/ts-imports.ts#collectImportStatement`](ts-imports.ts.md) (high), `recordModuleCall` → [`packages/core/src/extract/ts-imports.ts#recordModuleCall`](ts-imports.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](ts-signature.ts.md) (high), `functionValue` → [`packages/core/src/extract/ts-signature.ts#functionValue`](ts-signature.ts.md) (high), `initialiserSignature` → [`packages/core/src/extract/ts-signature.ts#initialiserSignature`](ts-signature.ts.md) (high), `nameOf` → [`packages/core/src/extract/ts-signature.ts#nameOf`](ts-signature.ts.md) (high), `signatureText` → [`packages/core/src/extract/ts-signature.ts#signatureText`](ts-signature.ts.md) (high), `variableSignature` → [`packages/core/src/extract/ts-signature.ts#variableSignature`](ts-signature.ts.md) (high), `addName` → [`packages/core/src/extract/ts.ts#addName`](ts.ts.md) (high), `addPattern` → [`packages/core/src/extract/ts.ts#addPattern`](ts.ts.md) (high), `boundNames` → [`packages/core/src/extract/ts.ts#boundNames`](ts.ts.md) (high), `collapseOverloads` → [`packages/core/src/extract/ts.ts#collapseOverloads`](ts.ts.md) (high), `dedupe` → [`packages/core/src/extract/ts.ts#dedupe`](ts.ts.md) (high), `enclosingClassOf` → [`packages/core/src/extract/ts.ts#enclosingClassOf`](ts.ts.md) (high), `heritage` → [`packages/core/src/extract/ts.ts#heritage`](ts.ts.md) (high), `isSound` → [`packages/core/src/extract/ts.ts#isSound`](ts.ts.md) (high), `isStatic` → [`packages/core/src/extract/ts.ts#isStatic`](ts.ts.md) (high), `mayDeclare` → [`packages/core/src/extract/ts.ts#mayDeclare`](ts.ts.md) (high), `memberVisibility` → [`packages/core/src/extract/ts.ts#memberVisibility`](ts.ts.md) (high), `parameterProperties` → [`packages/core/src/extract/ts.ts#parameterProperties`](ts.ts.md) (high), `sortByLine` → [`packages/core/src/extract/ts.ts#sortByLine`](ts.ts.md) (high), `sortedMemberNames` → [`packages/core/src/extract/ts.ts#sortedMemberNames`](ts.ts.md) (high), `reparse` → [`packages/core/src/parser.ts#reparse`](../parser.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)

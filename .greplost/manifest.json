@@ -1688,9 +1688,9 @@
       "fanIn": 3,
       "fanOut": 5,
       "lang": "ts",
-      "loc": 1050,
+      "loc": 1073,
       "pkg": "@greplost/core",
-      "sha256": "0c0a0e36fdff76ab71d6710aa550be8f2c18694830555acd829a4eebfc3352e8",
+      "sha256": "921f04034774538564190ff673b73f5ba2e6a782f2b913029a85a60e0495820b",
       "staleSummary": false
     },
     "packages/core/src/extract/yaml-actions.ts": {
@@ -1870,9 +1870,9 @@
       "fanIn": 1,
       "fanOut": 7,
       "lang": "ts",
-      "loc": 771,
+      "loc": 803,
       "pkg": "@greplost/core",
-      "sha256": "2f322d45884d4ac36babb98a0005f03fe3e1fae3ef3200b97d61f5be1670a4b9",
+      "sha256": "9f4351f16e96d6b16264674a89ca2f9120d353caef0bdeab3a11ceff10704bf0",
       "staleSummary": false
     },
     "packages/core/src/graph/metrics.ts": {
@@ -1950,6 +1950,7 @@
         "CallEdge",
         "CallSite",
         "Caller",
+        "ClassMemberNames",
         "ComputedMetrics",
         "Confidence",
         "DEFAULT_CONFIG",
@@ -2505,6 +2506,7 @@
         "ARTIFACT_PATHS",
         "CallEdge",
         "CallSite",
+        "ClassMemberNames",
         "Confidence",
         "DEFAULT_CONFIG",
         "DOCKERFILE_PREFIX",
@@ -2554,9 +2556,9 @@
       "fanIn": 127,
       "fanOut": 0,
       "lang": "ts",
-      "loc": 545,
+      "loc": 557,
       "pkg": "@greplost/core",
-      "sha256": "7d185996e13ea731451a611763ef930198d49279cefa55b08883f02e67e39c18",
+      "sha256": "ca67b3bbb3396134041db3fc36f2cbd2b39e9dc37e792664af391e51c7eda6b7",
       "staleSummary": false
     },
     "packages/core/src/serialize/index.ts": {
@@ -3613,7 +3615,7 @@
     "@greplost/core": {
       "deps": [],
       "files": 65,
-      "loc": 18932,
+      "loc": 18999,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
