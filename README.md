@@ -83,7 +83,7 @@ Status: pre-release 0.1.0. Design: [docs/greplost-tech-spec.md](docs/greplost-te
 | Dockerfiles | `Dockerfile`, `Containerfile` or `Dockerfile.<suffix>` | a node per build stage and per final image, `ARG`/`ENV` constants, and `from-image`, `copy-from` and `config` edges |
 | React, TanStack Start, Next.js, Pulumi (TS and Go) | the framework in `package.json` or `go.mod` | components, routes, loaders, app routes and Pulumi resources as nodes on top of the language map |
 
-Things inside a file are nodes with ids of the form `<file>#<kind>.<name>`, and `greplost query` and `greplost impact` take one wherever they take a path. Call edges are only recorded when the callee resolves to one declaration (`high`) or through a re-export chain (`med`); nothing is guessed.
+Things inside a file are nodes with ids of the form `<file>#<kind>.<name>`, and `greplost query` and `greplost impact` take one wherever they take a path. Call edges are only recorded when the callee resolves to one declaration (`high`) or through a re-export chain (`med`); nothing is guessed. A `query` answer reports each caller as a site, `{ from, line, confidence }`, and a class member's own `visibility` beside the file-level `exported`.
 
 `greplost init` writes `config.json` once and never rewrites it. Its `languages` start as the TypeScript family (`ts`, `tsx`, `js`, `jsx`) and gain every language whose marker above is in the indexed file set, so a repository with both a `go.mod` and a Terraform module gets both; the framework signal passes turn on the same way, from the dependency that names them. Edit the file to change it; a build that indexes nothing says so on stderr rather than writing an empty map in silence.
 
@@ -126,7 +126,7 @@ The git hooks installed by `init` keep the map current: pre-commit runs an incre
 |---|---|---|
 | `found` | the map answers, and the bytes on disk are the bytes it read | nothing |
 | `absent` | nothing matches, and there is no such path on disk | check the spelling; the miss prints the five nearest ids the map holds |
-| `excluded` | the path is on disk, and the config keeps it out | the message names the `exclude` pattern (or the missing language) to edit in `.greplost/config.json` |
+| `excluded` | the path is on disk, and the config keeps it out | `excludedBy` names the `exclude` pattern, or `languages` when the language list is what keeps it out; both are lines of `.greplost/config.json` |
 | `stale` | the path is on disk, and the map does not describe it or no longer describes these bytes | `greplost update` |
 
 Only `stale` suggests an update, because it is the only one an update fixes. Tests are excluded by default (`**/*.test.*`, `**/*_test.go`, `**/test_*.py` and the rest, printed by `greplost --help`): a query for one answers `excluded` and names the line to change, rather than pretending the file does not exist. `--brief` prints counts instead of long importer lists, and `card` paths are repo-relative (`.greplost/packages/…`), so an agent can open one unedited.

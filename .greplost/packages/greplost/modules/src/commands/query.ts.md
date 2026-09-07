@@ -8,25 +8,25 @@
 
 **Exports:** `QueryDirectory (interface)`, `QueryDirectoryFile (interface)`, `QueryFile (interface)`, `QueryMatch (interface)`, `QueryNode (interface)`, `QueryResult (interface)`, `ReferenceIn (interface)`, `ReferenceOut (interface)`, `queryStructure(structure: Structure, root: string, needle: string): QueryResult`, `run(ctx: CommandContext): Promise<number>`
 
-**Imports:** [`@greplost/core`](../../../../greplost__core/modules/src/index.ts.md) (Structure, findSymbols), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Confidence, DeclKind, Declaration, RefKind, compareDeclarations), [`../args.ts`](../args.ts.md) (CommandContext), [`../output.ts`](../output.ts.md) (printError, printJson, printLine), [`./query-describe.ts`](query-describe.ts.md) (describe, describeDirectory, describeFile, describeNode, importEdgesByTarget, indexReferences), [`./query-print.ts`](query-print.ts.md) (printDirectory, printFile, printMatches, printNode, printSuggestions), [`./status.ts`](status.ts.md) (QueryStatus, StatusVerdict, filesStatus, statusOf), [`./structure.ts`](structure.ts.md) (loadStructure, resolveDirectory, resolveFile, resolveNode, toRepoRelative), [`./suggest.ts`](suggest.ts.md) (nearestIds), [`./workspace.ts`](workspace.ts.md) (dispatchWorkspace)
+**Imports:** [`@greplost/core`](../../../../greplost__core/modules/src/index.ts.md) (Caller, Structure, findSymbols), [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (Confidence, DeclKind, Declaration, RefKind, compareDeclarations), [`../args.ts`](../args.ts.md) (CommandContext), [`../output.ts`](../output.ts.md) (printError, printJson, printLine), [`./query-describe.ts`](query-describe.ts.md) (describe, describeDirectory, describeFile, describeNode, importEdgesByTarget, indexReferences), [`./query-print.ts`](query-print.ts.md) (printDirectory, printFile, printMatches, printNode, printSuggestions), [`./status.ts`](status.ts.md) (QueryStatus, StatusVerdict, filesStatus, statusOf), [`./structure.ts`](structure.ts.md) (loadStructure, resolveDirectory, resolveFile, resolveNode, toRepoRelative), [`./suggest.ts`](suggest.ts.md) (nearestIds), [`./workspace.ts`](workspace.ts.md) (dispatchWorkspace)
 
 **Imported by:** [`packages/cli/src/commands/query-describe.ts`](query-describe.ts.md), [`packages/cli/src/commands/query-print.ts`](query-print.ts.md), [`packages/cli/src/index.ts`](../index.ts.md), [`packages/cli/src/main.ts`](../main.ts.md)
 
 **Blast radius:** 4 files (`greplost impact packages/cli/src/commands/query.ts`)
 
 **Key symbols:**
-- `interface QueryMatch`  L46-79
-- `interface ReferenceOut`  L82-86
-- `interface ReferenceIn`  L89-93
-- `interface QueryNode`  L100-114
-- `interface QueryFile`  L117-128
-- `interface QueryDirectoryFile`  L135-142
-- `interface QueryDirectory`  L150-154
-- `interface QueryResult`  L156-177
-- `async function run(ctx: CommandContext): Promise<number>`  L179-219
-- `function hasAnswer(result: QueryResult): boolean`  L222-229
-- `function applyStatus( result: QueryResult, structure: Structure, root: string, needle: string, answered: boolean, ): void`  L239-251
-- `function verdictFor( result: QueryResult, structure: Structure, root: string, needle: string, answered: boolean, ): StatusVerdict`  L262-277
-- `function queryStructure(structure: Structure, root: string, needle: string): QueryResult`  L280-323
+- `interface QueryMatch`  L46-92
+- `interface ReferenceOut`  L95-99
+- `interface ReferenceIn`  L102-106
+- `interface QueryNode`  L113-127
+- `interface QueryFile`  L130-141
+- `interface QueryDirectoryFile`  L148-155
+- `interface QueryDirectory`  L163-167
+- `interface QueryResult`  L169-194
+- `async function run(ctx: CommandContext): Promise<number>`  L196-236
+- `function hasAnswer(result: QueryResult): boolean`  L239-246
+- `function applyStatus( result: QueryResult, structure: Structure, root: string, needle: string, answered: boolean, ): void`  L256-268
+- `function verdictFor( result: QueryResult, structure: Structure, root: string, needle: string, answered: boolean, ): StatusVerdict`  L279-294
+- `function queryStructure(structure: Structure, root: string, needle: string): QueryResult`  L297-340
 
 **Calls:** `describe` → [`packages/cli/src/commands/query-describe.ts#describe`](query-describe.ts.md) (high), `describeDirectory` → [`packages/cli/src/commands/query-describe.ts#describeDirectory`](query-describe.ts.md) (high), `describeFile` → [`packages/cli/src/commands/query-describe.ts#describeFile`](query-describe.ts.md) (high), `describeNode` → [`packages/cli/src/commands/query-describe.ts#describeNode`](query-describe.ts.md) (high), `importEdgesByTarget` → [`packages/cli/src/commands/query-describe.ts#importEdgesByTarget`](query-describe.ts.md) (high), `indexReferences` → [`packages/cli/src/commands/query-describe.ts#indexReferences`](query-describe.ts.md) (high), `printDirectory` → [`packages/cli/src/commands/query-print.ts#printDirectory`](query-print.ts.md) (high), `printFile` → [`packages/cli/src/commands/query-print.ts#printFile`](query-print.ts.md) (high), `printMatches` → [`packages/cli/src/commands/query-print.ts#printMatches`](query-print.ts.md) (high), `printNode` → [`packages/cli/src/commands/query-print.ts#printNode`](query-print.ts.md) (high), `printSuggestions` → [`packages/cli/src/commands/query-print.ts#printSuggestions`](query-print.ts.md) (high), `applyStatus` → [`packages/cli/src/commands/query.ts#applyStatus`](query.ts.md) (high), `hasAnswer` → [`packages/cli/src/commands/query.ts#hasAnswer`](query.ts.md) (high), `queryStructure` → [`packages/cli/src/commands/query.ts#queryStructure`](query.ts.md) (high), `verdictFor` → [`packages/cli/src/commands/query.ts#verdictFor`](query.ts.md) (high), `filesStatus` → [`packages/cli/src/commands/status.ts#filesStatus`](status.ts.md) (high), `statusOf` → [`packages/cli/src/commands/status.ts#statusOf`](status.ts.md) (high), `loadStructure` → [`packages/cli/src/commands/structure.ts#loadStructure`](structure.ts.md) (high), `resolveDirectory` → [`packages/cli/src/commands/structure.ts#resolveDirectory`](structure.ts.md) (high), `resolveFile` → [`packages/cli/src/commands/structure.ts#resolveFile`](structure.ts.md) (high), `resolveNode` → [`packages/cli/src/commands/structure.ts#resolveNode`](structure.ts.md) (high), `toRepoRelative` → [`packages/cli/src/commands/structure.ts#toRepoRelative`](structure.ts.md) (high), `nearestIds` → [`packages/cli/src/commands/suggest.ts#nearestIds`](suggest.ts.md) (high), `dispatchWorkspace` → [`packages/cli/src/commands/workspace.ts#dispatchWorkspace`](workspace.ts.md) (high), `printError` → [`packages/cli/src/output.ts#printError`](../output.ts.md) (high), `printJson` → [`packages/cli/src/output.ts#printJson`](../output.ts.md) (high), `printLine` → [`packages/cli/src/output.ts#printLine`](../output.ts.md) (high), `findSymbols` → [`packages/core/src/graph/query.ts#findSymbols`](../../../../greplost__core/modules/src/graph/query.ts.md) (med)

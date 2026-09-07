@@ -8,7 +8,7 @@
  * person reads it, and this file owns what is in it.
  */
 
-import { callerIds, importersOf } from "@greplost/core";
+import { callersOf, importersOf } from "@greplost/core";
 import type { Structure } from "@greplost/core";
 import { filesUnder, impactOf, impactPairs, importTargetsOf } from "@greplost/core/graph";
 import type { Declaration, ImportEdge, Manifest, ReferenceEdge } from "@greplost/core/schema";
@@ -121,10 +121,16 @@ export function describe(
     // A node's card is its own; everything else is documented by its file's.
     card: node ? nodeCardOf(manifest, decl.id) : cardOf(manifest, decl.file),
     importers: symbolImporters(byTarget, decl),
-    callers: callerIds(structure.calls, decl.id),
+    // The sites, not the names (leaf 2.14): `{ from, line?, confidence }`, which
+    // is what turns "something calls this" into a place to open.
+    callers: callersOf(structure.calls, decl.id),
     references: outboundReferences(edges, decl.id),
     referencedBy: inboundReferences(edges, decl.id),
   };
+  // Absent rather than guessed: a language with no accessibility keyword, and a
+  // map written before leaf 2.14, both carry no visibility at all, and `public`
+  // would be an invention in either case.
+  if (decl.visibility !== undefined) match.visibility = decl.visibility;
   if (decl.meta !== undefined) match.meta = decl.meta;
   return match;
 }

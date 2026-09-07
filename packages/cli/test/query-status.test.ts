@@ -323,6 +323,54 @@ describe("query directories", () => {
     expect(result["excludedBy"]).toBeUndefined();
   });
 
+  /**
+   * Fix round 2. An update cannot index a language the config does not list, so
+   * a directory of documentation is `excluded` and says which languages the map
+   * does index, never `stale`.
+   */
+  test("a directory of files in no indexed language is excluded, by language", async () => {
+    const dir = path.join(ts, "packages/core/docs");
+    mkdirSync(dir, { recursive: true });
+    for (const name of ["overview.md", "adr-1.md", "adr-2.md"]) {
+      writeFileSync(path.join(dir, name), "# heading\n");
+    }
+
+    const run = await cli("query", "packages/core/docs", "--json", "--root", ts);
+    expect(run.code).toBe(1);
+    const result = onlyJson(run);
+    expect(result["status"]).toBe("excluded");
+    expect(result["excludedBy"]).toBe("languages");
+    const message = String(result["message"]);
+    expect(message).toContain("holds 3 files");
+    expect(message).toContain("none in an indexed language");
+    expect(message).toContain("ts, tsx, js, jsx");
+    expect(message).toContain(".greplost/config.json");
+    expect(message).not.toContain("greplost update");
+  });
+
+  test("a directory mixing documentation with one unmapped source file is stale", async () => {
+    const dir = path.join(ts, "packages/core/mixed");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, "notes.md"), "# notes\n");
+    writeFileSync(path.join(dir, "helper.ts"), "export const helper = 1;\n");
+
+    const result = onlyJson(await cli("query", "packages/core/mixed", "--json", "--root", ts));
+    expect(result["status"]).toBe("stale");
+    expect(result["excludedBy"]).toBeUndefined();
+    expect(String(result["message"])).toContain("greplost update");
+  });
+
+  test("a directory mixing documentation with an excluded test names the pattern", async () => {
+    const dir = path.join(ts, "packages/core/mixed-tests");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, "notes.md"), "# notes\n");
+    writeFileSync(path.join(dir, "helper.test.ts"), "export const helper = 1;\n");
+
+    const result = onlyJson(await cli("query", "packages/core/mixed-tests", "--json", "--root", ts));
+    expect(result["status"]).toBe("excluded");
+    expect(result["excludedBy"]).toBe("**/*.test.*");
+  });
+
   test("an empty directory on disk is absent, not stale", async () => {
     mkdirSync(path.join(ts, "packages/core/src/hollow"), { recursive: true });
     const result = onlyJson(await cli("query", "packages/core/src/hollow", "--json", "--root", ts));
@@ -335,6 +383,58 @@ describe("query directories", () => {
     const slash = onlyJson(await cli("query", "./", "--json", "--root", ts));
     expect((dot["directory"] as { path: string }).path).toBe(".");
     expect(slash["directory"]).toEqual(dot["directory"] as unknown as Record<string, unknown>);
+  });
+});
+
+/**
+ * Fix round 2: leaf 2.14's shapes reach the CLI. A caller is a site, not a
+ * name, and a class member's visibility is its own field rather than something
+ * a reader infers from `exported`.
+ */
+describe("callers and visibility", () => {
+  test("a caller is an object with its line and confidence", async () => {
+    const result = onlyJson(await cli("query", "retry", "--json", "--root", ts));
+    const matches = result["matches"] as Array<Record<string, unknown>>;
+    const retry = matches.find((m) => m["id"] === "packages/core/src/retry.ts#retry") as Record<
+      string,
+      unknown
+    >;
+    const callers = retry["callers"] as Array<Record<string, unknown>>;
+    expect(callers.length).toBeGreaterThan(0);
+    expect(Object.keys(callers[0] as Record<string, unknown>).sort()).toEqual([
+      "confidence",
+      "from",
+      "line",
+    ]);
+    expect(callers.map((c) => c["from"])).toEqual([
+      "packages/adapters/src/sqs.ts#SqsAdapter.publish",
+      "packages/core/src/registry.ts#Registry.publishAll",
+    ]);
+    for (const caller of callers) {
+      expect(typeof caller["line"]).toBe("number");
+      // `high` when the callee resolved to one declaration, `med` through a
+      // re-export chain; the tiny-ts fixture has one of each.
+      expect(["high", "med"]).toContain(caller["confidence"] as string);
+    }
+  });
+
+  test("the text mode prints each caller as from:line (confidence)", async () => {
+    const run = await cli("query", "retry", "--root", ts);
+    expect(run.code).toBe(0);
+    expect(run.stdout).toMatch(/packages\/core\/src\/registry\.ts#Registry\.publishAll:\d+ \(high\)/);
+
+    const brief = await cli("query", "retry", "--brief", "--root", ts);
+    expect(brief.stdout).toMatch(/callers +\d+ callers?/);
+  });
+
+  test("visibility sits beside exported on every match that has one", async () => {
+    const run = await cli("query", "Registry.register", "--json", "--root", ts);
+    const matches = onlyJson(run)["matches"] as Array<Record<string, unknown>>;
+    expect(matches.length).toBeGreaterThan(0);
+    for (const match of matches) {
+      expect(match["visibility"]).toBe("public");
+      expect(match["exported"]).toBe(true);
+    }
   });
 });
 

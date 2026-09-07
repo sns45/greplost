@@ -113,7 +113,7 @@ Path: `packages/core` · 65 files · 19019 LOC · depends on: none · depended o
 | [`src/graph/query.ts`](modules/src/graph/query.ts.md) | 160 | 9 | 2 | 3 | 51 |
 | [`src/graph/tarjan.ts`](modules/src/graph/tarjan.ts.md) | 152 | 4 | 4 | 1 | 54 |
 | [`src/hash.ts`](modules/src/hash.ts.md) | 28 | 2 | 3 | 0 | 35 |
-| [`src/index.ts`](modules/src/index.ts.md) | 31 | 167 | 13 | 15 | 32 |
+| [`src/index.ts`](modules/src/index.ts.md) | 31 | 167 | 14 | 15 | 32 |
 | [`src/lang.ts`](modules/src/lang.ts.md) | 33 | 1 | 3 | 1 | 36 |
 | [`src/parser.ts`](modules/src/parser.ts.md) | 189 | 5 | 6 | 1 | 52 |
 | [`src/references/dockerfile.ts`](modules/src/references/dockerfile.ts.md) | 186 | 1 | 2 | 2 | 44 |

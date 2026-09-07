@@ -12,13 +12,14 @@
  * which is the part a reader was going to act on anyway.
  */
 
+import type { Caller } from "@greplost/core";
 import { compareStrings } from "@greplost/core/schema";
 
 import { fields, printError, printLine, summarise, table } from "../output.ts";
 import type { QueryDirectory, QueryFile, QueryMatch, QueryNode } from "./query.ts";
 
 /** `12 files`, the brief-mode stand-in for a list nobody was going to read. */
-function count(items: readonly string[], noun: string): string {
+function count(items: readonly unknown[], noun: string): string {
   return `${items.length} ${noun}${items.length === 1 ? "" : "s"}`;
 }
 
@@ -115,11 +116,22 @@ export function printMatches(matches: QueryMatch[], brief = false): void {
   for (const line of fields([
     ["signature", only.signature],
     ["card", only.card],
+    ["visibility", only.visibility ?? ""],
     ["importers", listOrCount(only.importers, brief, "file")],
-    ["callers", listOrCount(only.callers, brief, "caller")],
+    ["callers", brief ? count(only.callers, "caller") : summarise(only.callers.map(callSite))],
   ])) {
     printLine(line);
   }
+}
+
+/**
+ * One caller as a person reads it: `<id>:<line> (<confidence>)`, and without the
+ * `:<line>` on a map written before call edges carried one (leaf 2.14). The id
+ * comes first because that is what the next `greplost query` takes.
+ */
+function callSite(caller: Caller): string {
+  const at = caller.line === undefined ? "" : `:${caller.line}`;
+  return `${caller.from}${at} (${caller.confidence})`;
 }
 
 /**

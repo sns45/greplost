@@ -172,6 +172,18 @@ describe("query", () => {
     );
     expect(match["references"]).toEqual([]);
     expect(match["referencedBy"]).toEqual([]);
+    // `visibility` (leaf 2.14) is a class *member*'s accessibility, so a
+    // top-level class carries none and the key list above stays as it was; a
+    // member match carries it beside `exported`.
+    expect(match["visibility"]).toBeUndefined();
+    const member = onlyJson(await cli("query", "Registry.register", "--json", "--root", ts)) as {
+      matches: Array<Record<string, unknown>>;
+    };
+    expect(Object.keys(member.matches[0] as Record<string, unknown>).sort()).toEqual(
+      ["callers", "card", "exported", "file", "id", "importers", "kind", "name", "package",
+       "referencedBy", "references", "signature", "span", "visibility"],
+    );
+    expect((member.matches[0] as Record<string, unknown>)["visibility"]).toBe("public");
     expect(match["file"]).toBe("packages/core/src/registry.ts");
     expect(match["id"]).toBe("packages/core/src/registry.ts#Registry");
     expect(match["kind"]).toBe("class");
@@ -182,14 +194,21 @@ describe("query", () => {
     expect(match["importers"]).toEqual(["packages/core/src/index.ts"]);
   });
 
-  test("lists callers by symbol id", async () => {
+  test("lists callers as call sites, sorted by caller id", async () => {
     const run = await cli("query", "retry", "--json", "--root", ts);
-    const result = onlyJson(run) as { matches: Array<{ id: string; callers: string[] }> };
+    const result = onlyJson(run) as {
+      matches: Array<{ id: string; callers: Array<{ from: string; line?: number; confidence: string }> }>;
+    };
     const retry = result.matches.find((m) => m.id === "packages/core/src/retry.ts#retry");
-    expect(retry?.callers).toEqual([
+    // Leaf 2.14: a caller is where the call is, not just who made it.
+    expect(retry?.callers.map((caller) => caller.from)).toEqual([
       "packages/adapters/src/sqs.ts#SqsAdapter.publish",
       "packages/core/src/registry.ts#Registry.publishAll",
     ]);
+    for (const caller of retry?.callers ?? []) {
+      expect(Object.keys(caller).sort()).toEqual(["confidence", "from", "line"]);
+      expect(caller.line).toBeGreaterThan(0);
+    }
   });
 
   test("finds a member symbol by its suffix", async () => {

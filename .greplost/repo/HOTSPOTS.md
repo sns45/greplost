@@ -10,7 +10,7 @@
 | [`bench/src/truth/ts.ts`](../packages/greplost__bench/modules/src/truth/ts.ts.md) | 18 | 3 | 18 |
 | [`packages/cli/src/args.ts`](../packages/greplost/modules/src/args.ts.md) | 14 | 2 | 16 |
 | [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 14 | 0 | 68 |
-| [`packages/core/src/index.ts`](../packages/greplost__core/modules/src/index.ts.md) | 13 | 15 | 32 |
+| [`packages/core/src/index.ts`](../packages/greplost__core/modules/src/index.ts.md) | 14 | 15 | 32 |
 | [`packages/cli/src/output.ts`](../packages/greplost/modules/src/output.ts.md) | 12 | 2 | 15 |
 | [`packages/core/src/graph/index.ts`](../packages/greplost__core/modules/src/graph/index.ts.md) | 10 | 6 | 50 |
 | [`packages/core/src/references/link.ts`](../packages/greplost__core/modules/src/references/link.ts.md) | 9 | 7 | 44 |

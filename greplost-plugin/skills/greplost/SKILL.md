@@ -46,10 +46,17 @@ parse it rather than the human-readable columns.
   matches: Array<{
     id: string; file: string; name: string; kind: string; signature: string;
     span: [number, number]; exported: boolean; package: string;
+    visibility?: "public" | "protected" | "private";  // a class member's own
+                            // accessibility, absent where the language has none;
+                            // `exported` is about the file's surface, not this
     card: string;          // repo-relative path to the module card, e.g.
                             // .greplost/packages/tiny__core/modules/src/registry.ts.md
     importers: string[];   // files importing the declaring file and naming this symbol
-    callers: string[];     // symbol ids that call this declaration
+    callers: Array<{       // call sites, sorted by `from`, unique
+      from: string;        // the calling symbol id, or the file for top-level code
+      line?: number;       // 1-based line of the call, absent on an older map
+      confidence: "high" | "med";
+    }>;
   }>;
   file?: {                 // present only when the argument named an indexed file
     path: string; package: string; card: string;
@@ -61,7 +68,9 @@ parse it rather than the human-readable columns.
     files: Array<{ path: string; loc: number; exports: number;
                    fanIn: number; fanOut: number }>;
   };
-  excludedBy?: string;     // the exclude pattern, when status is "excluded"
+  excludedBy?: string;     // when status is "excluded": the exclude pattern that
+                            // matched, or "languages" when the config's language
+                            // list is what keeps the path out
   message?: string;        // one line explaining any status that is not "found"
   suggestions?: string[];  // up to 5 nearest ids, present only when nothing matched
 }

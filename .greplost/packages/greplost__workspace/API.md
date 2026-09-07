@@ -75,11 +75,12 @@
 
 ## packages/workspace/src/query.ts
 
-- `interface WorkspaceQueryMatch` L28-45
-- `interface WorkspaceQueryFile` L48-61
-- `type WorkspaceQueryStatus = "found" | "absent" | "stale"` L73-73
-- `interface WorkspaceQueryResult` L75-82
-- `async function queryAcross(root: string, needle: string): Promise<WorkspaceQueryResult>` L96-132
+- `interface WorkspaceQueryMatch` L29-51
+- `interface WorkspaceCaller` L54-58
+- `interface WorkspaceQueryFile` L61-74
+- `type WorkspaceQueryStatus = "found" | "absent" | "stale"` L86-86
+- `interface WorkspaceQueryResult` L88-95
+- `async function queryAcross(root: string, needle: string): Promise<WorkspaceQueryResult>` L109-145
 
 ## packages/workspace/src/render.ts
 

@@ -49,30 +49,30 @@
 - `function describeDirectory(manifest: Manifest, directory: string): QueryDirectory` L34-46
 - `function indexReferences(references: readonly ReferenceEdge[]): ReferenceIndex` L58-72
 - `function importEdgesByTarget(structure: Structure, declarations: Declaration[]): Map<string, ImportEdge[]>` L85-101
-- `function describe( structure: Structure, manifest: Manifest, decl: Declaration, byTarget: Map<string, ImportEdge[]>, edges: ReferenceIndex, ): QueryMatch` L103-130
-- `function describeNode( structure: Structure, manifest: Manifest, decl: Declaration, edges: ReferenceIndex, ): QueryNode` L153-173
-- `function describeFile(structure: Structure, manifest: Manifest, file: string): QueryFile` L207-221
+- `function describe( structure: Structure, manifest: Manifest, decl: Declaration, byTarget: Map<string, ImportEdge[]>, edges: ReferenceIndex, ): QueryMatch` L103-136
+- `function describeNode( structure: Structure, manifest: Manifest, decl: Declaration, edges: ReferenceIndex, ): QueryNode` L159-179
+- `function describeFile(structure: Structure, manifest: Manifest, file: string): QueryFile` L213-227
 
 ## packages/cli/src/commands/query-print.ts
 
-- `function printFile(file: QueryFile, brief = false): void` L29-44
-- `function printNode(node: QueryNode): void` L51-70
-- `function printDirectory(directory: QueryDirectory): void` L77-90
-- `function printMatches(matches: QueryMatch[], brief = false): void` L92-123
-- `function printSuggestions(suggestions: readonly string[]): void` L130-133
+- `function printFile(file: QueryFile, brief = false): void` L30-45
+- `function printNode(node: QueryNode): void` L52-71
+- `function printDirectory(directory: QueryDirectory): void` L78-91
+- `function printMatches(matches: QueryMatch[], brief = false): void` L93-125
+- `function printSuggestions(suggestions: readonly string[]): void` L142-145
 
 ## packages/cli/src/commands/query.ts
 
-- `interface QueryMatch` L46-79
-- `interface ReferenceOut` L82-86
-- `interface ReferenceIn` L89-93
-- `interface QueryNode` L100-114
-- `interface QueryFile` L117-128
-- `interface QueryDirectoryFile` L135-142
-- `interface QueryDirectory` L150-154
-- `interface QueryResult` L156-177
-- `async function run(ctx: CommandContext): Promise<number>` L179-219
-- `function queryStructure(structure: Structure, root: string, needle: string): QueryResult` L280-323
+- `interface QueryMatch` L46-92
+- `interface ReferenceOut` L95-99
+- `interface ReferenceIn` L102-106
+- `interface QueryNode` L113-127
+- `interface QueryFile` L130-141
+- `interface QueryDirectoryFile` L148-155
+- `interface QueryDirectory` L163-167
+- `interface QueryResult` L169-194
+- `async function run(ctx: CommandContext): Promise<number>` L196-236
+- `function queryStructure(structure: Structure, root: string, needle: string): QueryResult` L297-340
 
 ## packages/cli/src/commands/refresh.ts
 
@@ -94,10 +94,10 @@
 ## packages/cli/src/commands/status.ts
 
 - `type QueryStatus = "found" | "absent" | "excluded" | "stale"` L47-47
-- `interface StatusVerdict` L49-55
-- `function statusOf( root: string, manifest: Manifest, relative: string, found: boolean, needle: string, ): StatusVerdict` L74-121
-- `function filesStatus(root: string, manifest: Manifest, files: readonly string[]): StatusVerdict` L132-145
-- `function excludingPattern(config: GreplostConfig, relative: string): string | undefined` L274-279
+- `interface StatusVerdict` L49-59
+- `function statusOf( root: string, manifest: Manifest, relative: string, found: boolean, needle: string, ): StatusVerdict` L81-128
+- `function filesStatus(root: string, manifest: Manifest, files: readonly string[]): StatusVerdict` L139-152
+- `function excludingPattern(config: GreplostConfig, relative: string): string | undefined` L295-300
 
 ## packages/cli/src/commands/structure.ts
 

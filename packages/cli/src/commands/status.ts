@@ -48,7 +48,11 @@ export type QueryStatus = "found" | "absent" | "excluded" | "stale";
 
 export interface StatusVerdict {
   status: QueryStatus;
-  /** The `exclude` pattern that drops the path, when a pattern is what drops it. */
+  /**
+   * What keeps the path out of the map: the `exclude` pattern that matched, or
+   * the literal `languages` when it is the config's language list rather than a
+   * pattern. Two values, one field, and both name a line of `config.json`.
+   */
   excludedBy?: string;
   /** One line explaining a status that is not `found`; printed verbatim in text mode. */
   message?: string;
@@ -58,6 +62,9 @@ export interface StatusVerdict {
 const CONFIG_PATH = `${ARTIFACT_DIR}/config.json`;
 
 const FOUND: StatusVerdict = { status: "found" };
+
+/** `excludedBy` when the config's language list, not a pattern, is what keeps a path out. */
+const LANGUAGES = "languages";
 
 /** Directories a walk never descends: not this repository's source, and vast. */
 const NEVER_WALKED: ReadonlySet<string> = new Set([ARTIFACT_DIR, ".git", "node_modules"]);
@@ -200,8 +207,21 @@ function directoryVerdict(root: string, config: GreplostConfig, relative: string
     };
   }
 
-  if (pattern === undefined) return excludedByLanguage(config, relative);
   const many = `${files.length} file${files.length === 1 ? "" : "s"}`;
+  // Nothing under it is in a language the map indexes, so no number of updates
+  // would ever put it in the map: the actionable line is `languages`, not
+  // `exclude`, and never the file-shaped sentence about one path's extension
+  // (fix round 2). A directory holding both is answered by the pattern, which
+  // is the line a reader is more likely to have meant to change.
+  if (pattern === undefined) {
+    return {
+      status: "excluded",
+      excludedBy: LANGUAGES,
+      message:
+        `${relative} holds ${many}, none in an indexed language ` +
+        `(${config.languages.join(", ")}); set in "languages" in ${CONFIG_PATH}`,
+    };
+  }
   return {
     status: "excluded",
     excludedBy: pattern,
@@ -226,6 +246,7 @@ function excludedByLanguage(config: GreplostConfig, relative: string): StatusVer
   const add = lang === undefined ? "" : `; add "${lang}" to "languages" in ${CONFIG_PATH} to index it`;
   return {
     status: "excluded",
+    excludedBy: LANGUAGES,
     message:
       `${relative} is on disk but outside the languages this map indexes ` +
       `(${config.languages.join(", ")}, set in "languages" in ${CONFIG_PATH})${add}`,

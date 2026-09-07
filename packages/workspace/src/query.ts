@@ -15,7 +15,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { callerIds, findSymbols, sha256Hex } from "@greplost/core";
+import { callersOf, findSymbols, sha256Hex } from "@greplost/core";
+import type { Caller } from "@greplost/core";
 import type { Declaration, ImportEdge, Manifest, PackageInfo } from "@greplost/core/schema";
 import { compareStrings } from "@greplost/core/schema";
 import { cardPath } from "@greplost/render";
@@ -35,13 +36,25 @@ export interface WorkspaceQueryMatch {
   signature: string;
   span: [number, number];
   exported: boolean;
+  /** A class member's declared accessibility, when the language has one (leaf 2.14). */
+  visibility?: "public" | "protected" | "private";
   package: string;
   /** `<repoDir>::<.greplost-relative card path>`, or `""` when the file has no card. */
   card: string;
   /** Workspace ids of files importing the declaring file and naming this symbol. */
   importers: string[];
-  /** Workspace symbol ids that call this declaration. */
-  callers: string[];
+  /**
+   * Call sites reaching this declaration, `from` workspace-qualified (leaf 2.14):
+   * the single-repo shape with the repo prefix every other id here carries.
+   */
+  callers: WorkspaceCaller[];
+}
+
+/** One call site, with its `from` carrying the `<repoDir>::` prefix. */
+export interface WorkspaceCaller {
+  from: string;
+  line?: number;
+  confidence: Caller["confidence"];
 }
 
 /** The file block, present when the needle named an indexed file. */
@@ -193,7 +206,12 @@ function describe(repo: RepoView, decl: Declaration, byTarget: Map<string, Impor
     package: entry?.pkg ?? "",
     card: cardOf(repo, decl.file),
     importers: symbolImporters(repo, byTarget.get(decl.file) ?? [], decl),
-    callers: callerIds(repo.calls, decl.id).map((id) => workspaceId(repo.dir, id)),
+    callers: callersOf(repo.calls, decl.id).map((caller) => ({
+      from: workspaceId(repo.dir, caller.from),
+      ...(caller.line === undefined ? {} : { line: caller.line }),
+      confidence: caller.confidence,
+    })),
+    ...(decl.visibility === undefined ? {} : { visibility: decl.visibility }),
   };
 }
 

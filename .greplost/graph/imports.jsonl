@@ -384,11 +384,12 @@
 {"confidence":"high","from":"packages/cli/src/commands/query-describe.ts","importKind":"static","kind":"import","specifier":"./structure.ts","symbols":["cardOf","importsOfFile","nodeCardOf"],"to":"packages/cli/src/commands/structure.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/query-describe.ts","importKind":"static","kind":"import","specifier":"@greplost/core/graph","symbols":["filesUnder","impactOf","impactPairs","importTargetsOf"],"to":"packages/core/src/graph/index.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/query-describe.ts","importKind":"type","kind":"import","specifier":"@greplost/core","symbols":["Structure"],"to":"packages/core/src/index.ts"}
-{"confidence":"high","from":"packages/cli/src/commands/query-describe.ts","importKind":"static","kind":"import","specifier":"@greplost/core","symbols":["callerIds","importersOf"],"to":"packages/core/src/index.ts"}
+{"confidence":"high","from":"packages/cli/src/commands/query-describe.ts","importKind":"static","kind":"import","specifier":"@greplost/core","symbols":["callersOf","importersOf"],"to":"packages/core/src/index.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/query-describe.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["Declaration","ImportEdge","Manifest","ReferenceEdge"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/query-describe.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareEdges","compareStrings","isNodeDeclaration"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/query-print.ts","importKind":"type","kind":"import","specifier":"./query.ts","symbols":["QueryDirectory","QueryFile","QueryMatch","QueryNode"],"to":"packages/cli/src/commands/query.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/query-print.ts","importKind":"static","kind":"import","specifier":"../output.ts","symbols":["fields","printError","printLine","summarise","table"],"to":"packages/cli/src/output.ts"}
+{"confidence":"high","from":"packages/cli/src/commands/query-print.ts","importKind":"type","kind":"import","specifier":"@greplost/core","symbols":["Caller"],"to":"packages/core/src/index.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/query-print.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts","importKind":"type","kind":"import","specifier":"../args.ts","symbols":["CommandContext"],"to":"packages/cli/src/args.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts","importKind":"static","kind":"import","specifier":"./query-describe.ts","symbols":["describe","describeDirectory","describeFile","describeNode","importEdgesByTarget","indexReferences"],"to":"packages/cli/src/commands/query-describe.ts"}
@@ -399,7 +400,7 @@
 {"confidence":"high","from":"packages/cli/src/commands/query.ts","importKind":"static","kind":"import","specifier":"./suggest.ts","symbols":["nearestIds"],"to":"packages/cli/src/commands/suggest.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts","importKind":"static","kind":"import","specifier":"./workspace.ts","symbols":["dispatchWorkspace"],"to":"packages/cli/src/commands/workspace.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts","importKind":"static","kind":"import","specifier":"../output.ts","symbols":["printError","printJson","printLine"],"to":"packages/cli/src/output.ts"}
-{"confidence":"high","from":"packages/cli/src/commands/query.ts","importKind":"type","kind":"import","specifier":"@greplost/core","symbols":["Structure"],"to":"packages/core/src/index.ts"}
+{"confidence":"high","from":"packages/cli/src/commands/query.ts","importKind":"type","kind":"import","specifier":"@greplost/core","symbols":["Caller","Structure"],"to":"packages/core/src/index.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts","importKind":"static","kind":"import","specifier":"@greplost/core","symbols":["findSymbols"],"to":"packages/core/src/index.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["Confidence","DeclKind","Declaration","RefKind"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/cli/src/commands/query.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareDeclarations"],"to":"packages/core/src/schema.ts"}
@@ -1058,7 +1059,8 @@
 {"confidence":"high","from":"packages/workspace/src/index.ts","importKind":"static","kind":"reexport","specifier":"./render.ts","symbols":["renderCross","renderWorkspace"],"to":"packages/workspace/src/render.ts"}
 {"confidence":"high","from":"packages/workspace/src/query.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["readFileSync"],"to":"ext:node:fs"}
 {"confidence":"high","from":"packages/workspace/src/query.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["join"],"to":"ext:node:path"}
-{"confidence":"high","from":"packages/workspace/src/query.ts","importKind":"static","kind":"import","specifier":"@greplost/core","symbols":["callerIds","findSymbols","sha256Hex"],"to":"packages/core/src/index.ts"}
+{"confidence":"high","from":"packages/workspace/src/query.ts","importKind":"type","kind":"import","specifier":"@greplost/core","symbols":["Caller"],"to":"packages/core/src/index.ts"}
+{"confidence":"high","from":"packages/workspace/src/query.ts","importKind":"static","kind":"import","specifier":"@greplost/core","symbols":["callersOf","findSymbols","sha256Hex"],"to":"packages/core/src/index.ts"}
 {"confidence":"high","from":"packages/workspace/src/query.ts","importKind":"type","kind":"import","specifier":"@greplost/core/schema","symbols":["Declaration","ImportEdge","Manifest","PackageInfo"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/workspace/src/query.ts","importKind":"static","kind":"import","specifier":"@greplost/core/schema","symbols":["compareStrings"],"to":"packages/core/src/schema.ts"}
 {"confidence":"high","from":"packages/workspace/src/query.ts","importKind":"static","kind":"import","specifier":"@greplost/render","symbols":["cardPath"],"to":"packages/render/src/index.ts"}

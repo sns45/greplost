@@ -114,10 +114,6 @@ and row 6's radius 129 with 16 listed).
   EXPECT: /^\.greplost\/packages[\s\S]*card opens/
   EVIDENCE: .greplost/packages/tiny__core/modules/src/registry.ts.md | card opens
 
-- [x] G22: no file this leaf wrote crosses 500 lines, and no file it touched carries a NUL or an em dash
-  CHECK: bash -c 'own="packages/cli/src/args.ts packages/cli/src/usage.ts packages/cli/src/commands/query.ts packages/cli/src/commands/query-describe.ts packages/cli/src/commands/query-print.ts packages/cli/src/commands/status.ts packages/cli/src/commands/suggest.ts packages/cli/src/commands/impact.ts packages/cli/src/commands/structure.ts packages/core/src/graph/directories.ts packages/render/src/docs/index-doc.ts packages/render/src/version.ts"; touched="$own packages/render/src/render.ts packages/render/src/docs/card.ts packages/render/src/docs/node-card.ts packages/sync/src/build.ts packages/workspace/src/query.ts packages/workspace/src/index.ts"; for f in $own; do n=$(wc -l < "$f"); if [ "$n" -ge 500 ]; then echo "LONG $f $n"; fi; done; for f in $touched; do perl -ne "print qq(NUL \$ARGV\n) if /\\0/" "$f"; grep -l "—" "$f" 2>/dev/null | sed "s/^/DASH /"; done; echo "files clean"'
-  EXPECT: files clean
-  EVIDENCE: DASH packages/workspace/src/query.ts | files clean
 
 - [x] G23: fix round 1 C1: a directory on disk is classified from the files under it, never by the file rules
   CHECK: bun test packages/cli/test/query-status.test.ts -t "query directories" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -153,3 +149,27 @@ and row 6's radius 129 with 16 listed).
   CHECK: T="$(mktemp -d)" && cp -R fixtures/tiny-ts/. "$T" && bun packages/cli/src/main.ts init --no-hooks --root "$T" >/dev/null && ln -s "$T/packages/core/src/retry.ts" "$T/packages/core/src/link.ts" && bun packages/cli/src/main.ts query ./ --json --root "$T" | grep -c '"path": "\."' && bun packages/cli/src/main.ts query packages/core/src/link.ts --json --root "$T" | grep -E '"(status|message)"' && rm -rf "$T"
   EXPECT: /1\n\s*"message": "packages\/core\/src\/link.ts is a symlink[\s\S]*"status": "absent"/
   EVIDENCE: "message": "packages/core/src/link.ts is a symlink, and greplost does not follow symlinks; query the file it points at", | "status": "absent",
+- [x] G22: no file this leaf wrote crosses 500 lines, and no file it touched carries a NUL, an em dash or an en dash
+  CHECK: bash -c 'own="packages/cli/src/args.ts packages/cli/src/usage.ts packages/cli/src/commands/query.ts packages/cli/src/commands/query-describe.ts packages/cli/src/commands/query-print.ts packages/cli/src/commands/status.ts packages/cli/src/commands/suggest.ts packages/cli/src/commands/impact.ts packages/cli/src/commands/structure.ts packages/core/src/graph/directories.ts packages/render/src/docs/index-doc.ts packages/render/src/version.ts"; touched="$own packages/render/src/render.ts packages/render/src/docs/card.ts packages/render/src/docs/node-card.ts packages/sync/src/build.ts packages/workspace/src/query.ts packages/workspace/src/index.ts"; offences=$(for f in $own; do n=$(wc -l < "$f"); if [ "$n" -ge 500 ]; then echo "LONG $f $n"; fi; done; for f in $touched; do perl -ne "print qq(NUL \$ARGV\n) if /\\0/" "$f"; grep -l "—" "$f" 2>/dev/null | sed "s/^/DASH /"; grep -l "–" "$f" 2>/dev/null | sed "s/^/ENDASH /"; done); [ -n "$offences" ] && echo "$offences"; echo "dashes: $(printf %s "$offences" | grep -c .)"'
+  EXPECT: /^dashes: 0$/m
+  EVIDENCE: dashes: 0
+
+- [x] G30: fix round 2: a directory of files in no indexed language is excluded by `languages`, a mixed one is stale
+  CHECK: bun test packages/cli/test/query-status.test.ts -t "query directories" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
+  EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
+  EVIDENCE: 71 expect() calls | Ran 12 tests across 1 file. [416.00ms]
+
+- [x] G31: fix round 2: callers carry their site and visibility sits beside exported; describe('callers and visibility')
+  CHECK: bun test packages/cli/test/query-status.test.ts -t "callers and visibility" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
+  EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
+  EVIDENCE: 15 expect() calls | Ran 3 tests across 1 file. [423.00ms]
+
+- [x] G32: fix round 2 on anyq: a caller's line is the line the call is on, at high confidence
+  CHECK: A=/private/tmp/claude-501/-Users-shantanu-dev-greplost/36f19a14-277a-4aa9-91cc-30733a56ea7b/scratchpad/anyq && bun packages/cli/src/main.ts query BaseConsumer.applyStrategy --json --root "$A" | grep -B 1 -A 2 '"from": "packages/sqs/src/consumer.ts' && grep -n "this.applyStrategy(" "$A/packages/sqs/src/consumer.ts"
+  EXPECT: /"confidence": "high"[\s\S]*"line": 259[\s\S]*"line": 325[\s\S]*\n259:[\s\S]*\n325:/
+  EVIDENCE: 259:              const result = await this.applyStrategy(message, err, () => | 325:              const result = await this.applyStrategy(message, err, () =>
+
+- [x] G33: fix round 2 on anyq: a protected member reports `visibility: protected` on every match
+  CHECK: A=/private/tmp/claude-501/-Users-shantanu-dev-greplost/36f19a14-277a-4aa9-91cc-30733a56ea7b/scratchpad/anyq && bun packages/cli/src/main.ts query supportsNativeDelay --json --root "$A" | grep -c '"visibility": "protected"' && bun packages/cli/src/main.ts query supportsNativeDelay --json --root "$A" | grep -c '"visibility"'
+  EXPECT: /^(\d+)\n\1$/m
+  EVIDENCE: 6 | 6

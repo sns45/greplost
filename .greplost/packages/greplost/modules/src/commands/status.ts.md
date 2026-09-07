@@ -16,21 +16,22 @@
 
 **Key symbols:**
 - `type QueryStatus = "found" | "absent" | "excluded" | "stale"`  L47-47
-- `interface StatusVerdict`  L49-55
-- `const CONFIG_PATH = `${ARTIFACT_DIR}/config.json``  L58-58
-- `const FOUND: StatusVerdict = { status: "found" }`  L60-60
-- `const NEVER_WALKED: ReadonlySet<string> = new Set([ARTIFACT_DIR, ".git", "node_modules"])`  L63-63
-- `function statusOf( root: string, manifest: Manifest, relative: string, found: boolean, needle: string, ): StatusVerdict`  L74-121
-- `function filesStatus(root: string, manifest: Manifest, files: readonly string[]): StatusVerdict`  L132-145
-- `function fileDrift(root: string, manifest: Manifest, relative: string): StatusVerdict`  L148-155
-- `function fileVerdict(config: GreplostConfig, relative: string): StatusVerdict`  L158-169
-- `function directoryVerdict(root: string, config: GreplostConfig, relative: string): StatusVerdict`  L181-212
-- `function excludedByPattern(relative: string, pattern: string): StatusVerdict`  L214-222
-- `function excludedByLanguage(config: GreplostConfig, relative: string): StatusVerdict`  L224-233
-- `function filesOnDisk(absolute: string, relative: string): string[]`  L242-263
-- `function excludingPattern(config: GreplostConfig, relative: string): string | undefined`  L274-279
-- `function entryOf(root: string, relative: string): { kind: "file" | "directory" | "symlink" } | undefined`  L282-293
-- `function isInsideRoot(relative: string): boolean`  L296-298
-- `function hashDiffers(root: string, manifest: Manifest, relative: string): boolean`  L305-313
+- `interface StatusVerdict`  L49-59
+- `const CONFIG_PATH = `${ARTIFACT_DIR}/config.json``  L62-62
+- `const FOUND: StatusVerdict = { status: "found" }`  L64-64
+- `const LANGUAGES = "languages"`  L67-67
+- `const NEVER_WALKED: ReadonlySet<string> = new Set([ARTIFACT_DIR, ".git", "node_modules"])`  L70-70
+- `function statusOf( root: string, manifest: Manifest, relative: string, found: boolean, needle: string, ): StatusVerdict`  L81-128
+- `function filesStatus(root: string, manifest: Manifest, files: readonly string[]): StatusVerdict`  L139-152
+- `function fileDrift(root: string, manifest: Manifest, relative: string): StatusVerdict`  L155-162
+- `function fileVerdict(config: GreplostConfig, relative: string): StatusVerdict`  L165-176
+- `function directoryVerdict(root: string, config: GreplostConfig, relative: string): StatusVerdict`  L188-232
+- `function excludedByPattern(relative: string, pattern: string): StatusVerdict`  L234-242
+- `function excludedByLanguage(config: GreplostConfig, relative: string): StatusVerdict`  L244-254
+- `function filesOnDisk(absolute: string, relative: string): string[]`  L263-284
+- `function excludingPattern(config: GreplostConfig, relative: string): string | undefined`  L295-300
+- `function entryOf(root: string, relative: string): { kind: "file" | "directory" | "symlink" } | undefined`  L303-314
+- `function isInsideRoot(relative: string): boolean`  L317-319
+- `function hashDiffers(root: string, manifest: Manifest, relative: string): boolean`  L326-334
 
 **Calls:** `directoryVerdict` → [`packages/cli/src/commands/status.ts#directoryVerdict`](status.ts.md) (high), `entryOf` → [`packages/cli/src/commands/status.ts#entryOf`](status.ts.md) (high), `excludedByLanguage` → [`packages/cli/src/commands/status.ts#excludedByLanguage`](status.ts.md) (high), `excludedByPattern` → [`packages/cli/src/commands/status.ts#excludedByPattern`](status.ts.md) (high), `excludingPattern` → [`packages/cli/src/commands/status.ts#excludingPattern`](status.ts.md) (high), `fileDrift` → [`packages/cli/src/commands/status.ts#fileDrift`](status.ts.md) (high), `fileVerdict` → [`packages/cli/src/commands/status.ts#fileVerdict`](status.ts.md) (high), `filesOnDisk` → [`packages/cli/src/commands/status.ts#filesOnDisk`](status.ts.md) (high), `hashDiffers` → [`packages/cli/src/commands/status.ts#hashDiffers`](status.ts.md) (high), `isInsideRoot` → [`packages/cli/src/commands/status.ts#isInsideRoot`](status.ts.md) (high), `looksLikePath` → [`packages/cli/src/commands/structure.ts#looksLikePath`](structure.ts.md) (high), `loadConfig` → [`packages/core/src/config.ts#loadConfig`](../../../../greplost__core/modules/src/config.ts.md) (med), `sha256Hex` → [`packages/core/src/hash.ts#sha256Hex`](../../../../greplost__core/modules/src/hash.ts.md) (med), `langOf` → [`packages/core/src/lang.ts#langOf`](../../../../greplost__core/modules/src/lang.ts.md) (med)

@@ -21,7 +21,7 @@
  */
 
 import { findSymbols } from "@greplost/core";
-import type { Structure } from "@greplost/core";
+import type { Caller, Structure } from "@greplost/core";
 import type { Confidence, DeclKind, Declaration, RefKind } from "@greplost/core/schema";
 import { compareDeclarations } from "@greplost/core/schema";
 
@@ -51,6 +51,14 @@ export interface QueryMatch {
   signature: string;
   span: [number, number];
   exported: boolean;
+  /**
+   * Build 2.1 (leaf 2.14): a class member's declared accessibility, when the
+   * language has one. Separate from `exported`, which is about the file's
+   * surface: a `protected` method of an exported class is reachable through the
+   * export and still not part of anyone's API, and the evaluation read the two
+   * as one and concluded greplost was calling protected members public.
+   */
+  visibility?: "public" | "protected" | "private";
   package: string;
   /** `.greplost`-relative module card path. */
   card: string;
@@ -61,8 +69,13 @@ export interface QueryMatch {
    * in it, because a Go import names the package and cannot name a symbol.
    */
   importers: string[];
-  /** Symbol ids that call this declaration. */
-  callers: string[];
+  /**
+   * Call sites reaching this declaration (leaf 2.14): the calling symbol id,
+   * the line the call sits on when the map recorded one, and the confidence the
+   * resolver had. An id alone told a reader that something called this and left
+   * them to grep for where.
+   */
+  callers: Caller[];
   /**
    * Schema 2. Language, IaC or framework attributes of a non-file node; omitted
    * when the declaration carries none, exactly as spec 4.5 declares it.
@@ -168,7 +181,11 @@ export interface QueryResult {
   node?: QueryNode;
   /** Present when the argument named a directory the map holds files under. */
   directory?: QueryDirectory;
-  /** The `exclude` pattern that drops the path, when `status` is `excluded`. */
+  /**
+   * What keeps the path out of the map, when `status` is `excluded`: the
+   * `exclude` pattern that matched, or the literal `languages` when it is the
+   * config's language list rather than a pattern. Both name a config line.
+   */
   excludedBy?: string;
   /** One line explaining a `status` that is not `found`; the text mode's error. */
   message?: string;
