@@ -6,8 +6,6 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Name:** Corpus setup (tier S: every pinned repo, one per language and flavour; tier M)
-
 **Attributes:** `flavour: actions`, `name: Corpus setup (tier S: every pinned repo, one per language and flavour; tier M)`, `run: bun bench/src/cli.ts corpus setup --tier S && bun bench/src/cli.ts corpus setup `
 
 **References:** [`bench/src/cli.ts`](../../../../../greplost__bench/modules/src/cli.ts.md) (config)

@@ -6,8 +6,6 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Name:** Install dependencies
-
 **Attributes:** `flavour: actions`, `name: Install dependencies`, `run: bun install --frozen-lockfile`
 
 **References:** None.

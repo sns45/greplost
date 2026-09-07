@@ -6,8 +6,6 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Name:** performance gate (gin)
-
 **Attributes:** `flavour: actions`, `name: performance gate (gin)`, `run: bun run bench:perf --repo gin --gate`
 
 **References:** None.

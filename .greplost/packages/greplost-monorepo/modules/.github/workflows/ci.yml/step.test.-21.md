@@ -6,8 +6,6 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Name:** map quality gate
-
 **Attributes:** `flavour: actions`, `name: map quality gate`, `run: bun run bench:mapquality --gate`
 
 **References:** None.

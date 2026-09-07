@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `Callee (interface)`, `calleeOf(target: Node, prefix: string): Callee | null`, `recordCall( ctx: TsContext, node: Node, caller: string, locals: ReadonlySet<string> | null, ): void`
+**Exports:** `Callee (interface)`, `calleeOf(target: Node, prefix: string): Callee | null`, `recordCall( ctx: TsContext, node: Node, caller: string, locals: ReadonlySet<string> | null, /** * Whether `this` and `super` here are bound by the class `caller` names (build 2.1). * …`
 
 **Imports:** `web-tree-sitter` (Node), [`./ts.ts`](ts.ts.md) (TsContext), [`./ts-signature.ts`](ts-signature.ts.md) (field)
 
@@ -15,9 +15,9 @@
 **Blast radius:** 37 files (`greplost impact packages/core/src/extract/ts-calls.ts`)
 
 **Key symbols:**
-- `interface Callee`  L12-15
-- `function unwrapAssertion(node: Node): Node`  L22-30
-- `function recordCall( ctx: TsContext, node: Node, caller: string, locals: ReadonlySet<string> | null, ): void`  L32-62
-- `function calleeOf(target: Node, prefix: string): Callee | null`  L69-84
+- `interface Callee`  L15-20
+- `function unwrapAssertion(node: Node): Node`  L27-35
+- `function recordCall( ctx: TsContext, node: Node, caller: string, locals: ReadonlySet<string> | null, /** * Whether `this` and `super` here are bound by the class `caller` names (build 2.1). * …`  L37-75
+- `function calleeOf(target: Node, prefix: string): Callee | null`  L84-102
 
 **Calls:** `calleeOf` → [`packages/core/src/extract/ts-calls.ts#calleeOf`](ts-calls.ts.md) (high), `unwrapAssertion` → [`packages/core/src/extract/ts-calls.ts#unwrapAssertion`](ts-calls.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](ts-signature.ts.md) (high)

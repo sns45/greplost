@@ -37,7 +37,7 @@
 ## packages/core/src/extract/index.ts
 
 - `interface ExtractInput` L30-42
-- `function extractFile(input: ExtractInput, parser: ParserHandle): FileRecord` L89-140
+- `function extractFile(input: ExtractInput, parser: ParserHandle): FileRecord` L89-143
 - re-exports `extractDockerfile` from `./dockerfile.ts`
 - re-exports `extractGo` from `./go.ts`
 - re-exports `extractHcl` from `./hcl.ts`
@@ -70,9 +70,9 @@
 
 ## packages/core/src/extract/ts-calls.ts
 
-- `interface Callee` L12-15
-- `function recordCall( ctx: TsContext, node: Node, caller: string, locals: ReadonlySet<string> | null, ): void` L32-62
-- `function calleeOf(target: Node, prefix: string): Callee | null` L69-84
+- `interface Callee` L15-20
+- `function recordCall( ctx: TsContext, node: Node, caller: string, locals: ReadonlySet<string> | null, /** * Whether `this` and `super` here are bound by the class `caller` names (build 2.1). * …` L37-75
+- `function calleeOf(target: Node, prefix: string): Callee | null` L84-102
 
 ## packages/core/src/extract/ts-imports.ts
 
@@ -105,8 +105,8 @@
 
 ## packages/core/src/extract/ts.ts
 
-- `interface TsContext` L59-77
-- `function extractTs( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L178-712
+- `interface TsContext` L60-78
+- `function extractTs( path: string, lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "classMembers">` L284-910
 
 ## packages/core/src/extract/yaml-actions.ts
 
@@ -195,7 +195,7 @@
 - `function linkImports(files: FileRecord[], resolver: Resolver): ImportEdge[]` L84-126
 - `function buildExportIndex(files: FileRecord[], imports: ImportEdge[]): ExportIndex` L232-465
 - `function exportNames(index: ExportIndex, file: string): string[]` L468-471
-- `function linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[]` L486-570
+- `function linkCalls(files: FileRecord[], imports: ImportEdge[], index: ExportIndex): CallEdge[]` L530-633
 
 ## packages/core/src/graph/metrics.ts
 
@@ -207,11 +207,13 @@
 
 - `function findSymbols(symbols: Declaration[], needle: string): Declaration[]` L29-40
 - `function importersOf(imports: ImportEdge[], file: string): string[]` L53-63
-- `function callersOf(calls: CallEdge[], symbolId: string): string[]` L69-77
-- `function nodesOf(symbols: readonly Declaration[], file: string): Declaration[]` L88-90
-- `function referencesOf(refs: readonly ReferenceEdge[], id: string): ReferenceEdge[]` L93-95
-- `function referencedBy(refs: readonly ReferenceEdge[], id: string): ReferenceEdge[]` L98-100
-- `function impactPairs(structure: Structure): Array<readonly [string, string]>` L116-121
+- `interface Caller` L70-76
+- `function callersOf(calls: readonly CallEdge[], symbolId: string): Caller[]` L85-103
+- `function callerIds(calls: readonly CallEdge[], symbolId: string): string[]` L109-111
+- `function nodesOf(symbols: readonly Declaration[], file: string): Declaration[]` L122-124
+- `function referencesOf(refs: readonly ReferenceEdge[], id: string): ReferenceEdge[]` L127-129
+- `function referencedBy(refs: readonly ReferenceEdge[], id: string): ReferenceEdge[]` L132-134
+- `function impactPairs(structure: Structure): Array<readonly [string, string]>` L150-155
 
 ## packages/core/src/graph/tarjan.ts
 
@@ -413,47 +415,48 @@
 - `const LANG_BY_BASENAME: Readonly<Record<string, Lang>> = { Dockerfile: "dockerfile", Containerfile: "dockerfile", }` L83-86
 - `const DOCKERFILE_PREFIX = "Dockerfile."` L89-89
 - `type DeclKind = | "function" | "class" | "interface" | "type" | "enum" | "const" | "let" | "var" | "method" | "struct" | "namespace" /* schema 2 (ruling 2026-09-04): more languages, IaC and fr…` L91-121
-- `interface Declaration` L124-151
-- `type ImportKind = "static" | "dynamic" | "type" | "side-effect"` L153-153
-- `interface ImportedSymbol` L155-160
-- `interface ImportRecord` L163-171
-- `interface ExportRecord` L173-181
-- `interface CallSite` L184-197
-- `interface FileRecord` L200-213
-- `type Confidence = "high" | "med"` L215-215
-- `interface Edge` L218-224
-- `interface ImportEdge extends Edge` L226-231
-- `type RefKind = | "hcl-ref" | "selector" | "config-ref" | "needs" | "uses" | "from-image" | "copy-from" | "helm-values" | "config" | "resource-input" | "route-handler"` L234-245
-- `interface ReferenceRecord` L252-257
-- `interface ReferenceEdge extends Edge` L267-270
-- `interface CallEdge extends Edge` L272-276
-- `interface PackageInfo` L278-285
-- `interface PackageEntry` L287-295
-- `interface FileEntry` L297-313
-- `interface Manifest` L315-319
-- `interface DiagramConfig` L321-324
-- `interface GreplostConfig` L326-335
-- `const DEFAULT_CONFIG: GreplostConfig = { include: ["**"], exclude: [ "**/node_modules/**", "**/dist/**", "**/build/**", "**/.git/**", "**/.greplost/**", "**/*.d.ts", "**/*.test.*", "**/*.spec.…` L337-360
-- `interface PackageEdge` L362-367
-- `interface Metrics` L369-374
-- `interface Snapshot` L377-392
-- `interface SummaryEntry` L395-402
-- `type SummaryCache = Record<string, SummaryEntry>` L404-404
-- `function compareStrings(a: string, b: string): number` L407-409
-- `function compareEdges(a: Edge, b: Edge): number` L411-418
-- `function compareDeclarations(a: Declaration, b: Declaration): number` L420-422
-- `function symbolId(file: string, symbolPath: string): string` L424-426
-- `function packageId(name: string): string` L428-430
-- `function externalId(pkg: string): string` L432-434
-- `function unresolvedId(specifier: string): string` L436-438
-- `const NODE_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>([ "resource", "data", "variable", "output", "provider", "module", "local", "job", "step", "stage", "image", "component", "route", "h…` L441-444
-- `function isNodeKind(kind: DeclKind): boolean` L446-448
-- `function isNodeDeclaration(decl: Pick<Declaration, "id" | "kind">): boolean` L456-458
-- `function nodeId(file: string, kind: DeclKind, name: string): string` L461-464
-- `function splitNodeId(id: string): { file: string; kind: DeclKind; name: string } | null` L467-478
-- `function isFileId(id: string): boolean` L480-482
-- `function packageSlug(name: string): string` L488-490
-- `function stableStringify(value: unknown, indent = 0): string` L493-495
+- `interface Declaration` L124-168
+- `type ImportKind = "static" | "dynamic" | "type" | "side-effect"` L170-170
+- `interface ImportedSymbol` L172-177
+- `interface ImportRecord` L180-188
+- `interface ExportRecord` L190-198
+- `interface CallSite` L201-218
+- `interface ClassMemberNames` L228-231
+- `interface FileRecord` L234-256
+- `type Confidence = "high" | "med"` L258-258
+- `interface Edge` L261-267
+- `interface ImportEdge extends Edge` L269-274
+- `type RefKind = | "hcl-ref" | "selector" | "config-ref" | "needs" | "uses" | "from-image" | "copy-from" | "helm-values" | "config" | "resource-input" | "route-handler"` L277-288
+- `interface ReferenceRecord` L295-300
+- `interface ReferenceEdge extends Edge` L310-313
+- `interface CallEdge extends Edge` L315-325
+- `interface PackageInfo` L327-334
+- `interface PackageEntry` L336-344
+- `interface FileEntry` L346-362
+- `interface Manifest` L364-368
+- `interface DiagramConfig` L370-373
+- `interface GreplostConfig` L375-384
+- `const DEFAULT_CONFIG: GreplostConfig = { include: ["**"], exclude: [ "**/node_modules/**", "**/dist/**", "**/build/**", "**/.git/**", "**/.greplost/**", "**/*.d.ts", "**/*.test.*", "**/*.spec.…` L386-409
+- `interface PackageEdge` L411-416
+- `interface Metrics` L418-423
+- `interface Snapshot` L426-441
+- `interface SummaryEntry` L444-451
+- `type SummaryCache = Record<string, SummaryEntry>` L453-453
+- `function compareStrings(a: string, b: string): number` L456-458
+- `function compareEdges(a: Edge, b: Edge): number` L460-467
+- `function compareDeclarations(a: Declaration, b: Declaration): number` L469-471
+- `function symbolId(file: string, symbolPath: string): string` L473-475
+- `function packageId(name: string): string` L477-479
+- `function externalId(pkg: string): string` L481-483
+- `function unresolvedId(specifier: string): string` L485-487
+- `const NODE_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>([ "resource", "data", "variable", "output", "provider", "module", "local", "job", "step", "stage", "image", "component", "route", "h…` L490-493
+- `function isNodeKind(kind: DeclKind): boolean` L495-497
+- `function isNodeDeclaration(decl: Pick<Declaration, "id" | "kind">): boolean` L505-507
+- `function nodeId(file: string, kind: DeclKind, name: string): string` L510-513
+- `function splitNodeId(id: string): { file: string; kind: DeclKind; name: string } | null` L516-527
+- `function isFileId(id: string): boolean` L529-531
+- `function packageSlug(name: string): string` L537-539
+- `function stableStringify(value: unknown, indent = 0): string` L542-544
 
 ## packages/core/src/serialize/index.ts
 

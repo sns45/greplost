@@ -16,9 +16,9 @@
 
 **Key symbols:**
 - `interface ExtractInput`  L30-42
-- `type ExtractedParts = Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs">`  L59-59
+- `type ExtractedParts = Pick<FileRecord, "decls" | "imports" | "exports" | "calls" | "refs" | "classMembers">`  L59-59
 - `function extractByLang(input: ExtractInput, tree: Tree): ExtractedParts`  L62-87
-- `function extractFile(input: ExtractInput, parser: ParserHandle): FileRecord`  L89-140
-- `function mergeRefs( fromLanguage: readonly ReferenceRecord[] | undefined, fromSignals: readonly ReferenceRecord[], ): ReferenceRecord[] | undefined`  L146-153
+- `function extractFile(input: ExtractInput, parser: ParserHandle): FileRecord`  L89-143
+- `function mergeRefs( fromLanguage: readonly ReferenceRecord[] | undefined, fromSignals: readonly ReferenceRecord[], ): ReferenceRecord[] | undefined`  L149-156
 
 **Calls:** `extractDockerfile` → [`packages/core/src/extract/dockerfile.ts#extractDockerfile`](dockerfile.ts.md) (high), `extractGo` → [`packages/core/src/extract/go.ts#extractGo`](go.ts.md) (high), `extractHcl` → [`packages/core/src/extract/hcl.ts#extractHcl`](hcl.ts.md) (high), `extractByLang` → [`packages/core/src/extract/index.ts#extractByLang`](index.ts.md) (high), `mergeRefs` → [`packages/core/src/extract/index.ts#mergeRefs`](index.ts.md) (high), `extractJava` → [`packages/core/src/extract/java.ts#extractJava`](java.ts.md) (high), `extractKotlin` → [`packages/core/src/extract/kotlin.ts#extractKotlin`](kotlin.ts.md) (high), `extractPython` → [`packages/core/src/extract/python.ts#extractPython`](python.ts.md) (high), `extractRust` → [`packages/core/src/extract/rust.ts#extractRust`](rust.ts.md) (high), `extractTs` → [`packages/core/src/extract/ts.ts#extractTs`](ts.ts.md) (high), `extractYaml` → [`packages/core/src/extract/yaml.ts#extractYaml`](yaml.ts.md) (high), `countLoc` → [`packages/core/src/hash.ts#countLoc`](../hash.ts.md) (high), `runSignals` → [`packages/core/src/signals/index.ts#runSignals`](../signals/index.ts.md) (high)

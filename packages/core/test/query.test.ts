@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { CallEdge, Declaration, ImportEdge } from "../src/schema.ts";
 import { symbolId } from "../src/schema.ts";
 import { readStructure } from "../src/serialize/index.ts";
-import { callersOf, findSymbols, importersOf } from "../src/graph/query.ts";
+import { callerIds, callersOf, findSymbols, importersOf } from "../src/graph/query.ts";
 
 // The query layer works over a committed `.greplost/`-shaped directory, never
 // over source: the golden tiny-ts artifacts are exactly that shape, so these
@@ -161,19 +161,29 @@ describe("query", () => {
 
   // -- callersOf -----------------------------------------------------------
 
-  test("callersOf lists the callers of a symbol, sorted and unique", () => {
+  test("callersOf lists the callers of a symbol with their site and confidence, sorted and unique", () => {
+    // The lines are the call sites `grep -n` finds in the fixture: sqs.ts:19 and
+    // registry.ts:17 for retry, events.ts:8 and registry.ts:7 for `new Bus()`.
     expect(callersOf(calls, `${RETRY}#retry`)).toEqual([
-      `${SQS}#SqsAdapter.publish`,
-      `${REGISTRY}#Registry.publishAll`,
+      { from: `${SQS}#SqsAdapter.publish`, line: 19, confidence: "med" },
+      { from: `${REGISTRY}#Registry.publishAll`, line: 17, confidence: "high" },
     ]);
     expect(callersOf(calls, `${BUS}#Bus`)).toEqual([
-      "packages/core/src/events.ts#createBus",
-      `${REGISTRY}#Registry`,
+      { from: "packages/core/src/events.ts#createBus", line: 8, confidence: "high" },
+      { from: `${REGISTRY}#Registry`, line: 7, confidence: "high" },
     ]);
   });
 
+  test("callerIds keeps the bare id shape for callers that only need the ids", () => {
+    expect(callerIds(calls, `${RETRY}#retry`)).toEqual([
+      `${SQS}#SqsAdapter.publish`,
+      `${REGISTRY}#Registry.publishAll`,
+    ]);
+    expect(callerIds(calls, `${RETRY}#DEFAULT_ATTEMPTS`)).toEqual([]);
+  });
+
   test("callersOf reports a file id for a call from top-level code", () => {
-    expect(callersOf(calls, `${MAIN}#main`)).toEqual([MAIN]);
+    expect(callersOf(calls, `${MAIN}#main`)).toEqual([{ from: MAIN, line: 14, confidence: "high" }]);
   });
 
   test("callersOf is empty for a symbol nobody calls", () => {
@@ -182,12 +192,20 @@ describe("query", () => {
     expect(callersOf([], `${RETRY}#retry`)).toEqual([]);
   });
 
-  test("callersOf dedupes repeated call sites", () => {
+  test("callersOf dedupes repeated call sites, keeping the first line and the best confidence", () => {
     const repeated: CallEdge[] = [
-      { from: "b.ts#one", to: "a.ts#t", kind: "call", confidence: "high" },
-      { from: "a.ts#two", to: "a.ts#t", kind: "call", confidence: "med" },
-      { from: "b.ts#one", to: "a.ts#t", kind: "call", confidence: "med" },
+      { from: "b.ts#one", to: "a.ts#t", kind: "call", confidence: "high", line: 9 },
+      { from: "a.ts#two", to: "a.ts#t", kind: "call", confidence: "med", line: 3 },
+      { from: "b.ts#one", to: "a.ts#t", kind: "call", confidence: "med", line: 4 },
     ];
-    expect(callersOf(repeated, "a.ts#t")).toEqual(["a.ts#two", "b.ts#one"]);
+    expect(callersOf(repeated, "a.ts#t")).toEqual([
+      { from: "a.ts#two", line: 3, confidence: "med" },
+      { from: "b.ts#one", line: 4, confidence: "high" },
+    ]);
+  });
+
+  test("a caller from a map written before edges carried a line has no line", () => {
+    const old: CallEdge[] = [{ from: "b.ts#one", to: "a.ts#t", kind: "call", confidence: "high" }];
+    expect(callersOf(old, "a.ts#t")).toEqual([{ from: "b.ts#one", confidence: "high" }]);
   });
 });

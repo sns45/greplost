@@ -6,8 +6,6 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Name:** README tables match bench/RESULTS.md
-
 **Attributes:** `flavour: actions`, `name: README tables match bench/RESULTS.md`, `run: bun run readme:check`
 
 **References:** None.

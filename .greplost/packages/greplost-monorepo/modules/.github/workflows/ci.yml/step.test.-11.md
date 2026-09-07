@@ -6,8 +6,6 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Name:** go modules for the Go truth generators
-
 **Attributes:** `flavour: actions`, `name: go modules for the Go truth generators`, `run: set -euo pipefail for tool in gocallgraph tfinspect pulumigotruth; do (cd "bench`
 
 **References:** None.

@@ -8,7 +8,7 @@
  * person reads it, and this file owns what is in it.
  */
 
-import { callersOf, importersOf } from "@greplost/core";
+import { callerIds, importersOf } from "@greplost/core";
 import type { Structure } from "@greplost/core";
 import { filesUnder, impactOf, impactPairs, importTargetsOf } from "@greplost/core/graph";
 import type { Declaration, ImportEdge, Manifest, ReferenceEdge } from "@greplost/core/schema";
@@ -121,7 +121,7 @@ export function describe(
     // A node's card is its own; everything else is documented by its file's.
     card: node ? nodeCardOf(manifest, decl.id) : cardOf(manifest, decl.file),
     importers: symbolImporters(byTarget, decl),
-    callers: callersOf(structure.calls, decl.id),
+    callers: callerIds(structure.calls, decl.id),
     references: outboundReferences(edges, decl.id),
     referencedBy: inboundReferences(edges, decl.id),
   };
