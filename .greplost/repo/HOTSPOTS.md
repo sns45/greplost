@@ -8,8 +8,8 @@
 |---|---|---|---|
 | [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 127 | 0 | 154 |
 | [`bench/src/truth/ts.ts`](../packages/greplost__bench/modules/src/truth/ts.ts.md) | 18 | 3 | 18 |
+| [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 15 | 0 | 65 |
 | [`packages/cli/src/args.ts`](../packages/greplost/modules/src/args.ts.md) | 14 | 1 | 14 |
-| [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 14 | 0 | 64 |
 | [`packages/cli/src/output.ts`](../packages/greplost/modules/src/output.ts.md) | 11 | 2 | 13 |
 | [`packages/core/src/graph/index.ts`](../packages/greplost__core/modules/src/graph/index.ts.md) | 10 | 6 | 46 |
 | [`packages/core/src/index.ts`](../packages/greplost__core/modules/src/index.ts.md) | 10 | 15 | 28 |
@@ -42,7 +42,7 @@
 | [`packages/core/src/resolve/resolver.ts`](../packages/greplost__core/modules/src/resolve/resolver.ts.md) | 9 | 10 | 68 |
 | [`packages/core/src/resolve/rust.ts`](../packages/greplost__core/modules/src/resolve/rust.ts.md) | 3 | 2 | 68 |
 | [`packages/core/src/resolve/yaml.ts`](../packages/greplost__core/modules/src/resolve/yaml.ts.md) | 2 | 2 | 68 |
-| [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 14 | 0 | 64 |
+| [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 15 | 0 | 65 |
 | [`packages/core/src/serialize/json.ts`](../packages/greplost__core/modules/src/serialize/json.ts.md) | 3 | 1 | 51 |
 | [`packages/core/src/graph/tarjan.ts`](../packages/greplost__core/modules/src/graph/tarjan.ts.md) | 4 | 1 | 50 |
 | [`packages/core/src/graph/directories.ts`](../packages/greplost__core/modules/src/graph/directories.ts.md) | 3 | 1 | 49 |

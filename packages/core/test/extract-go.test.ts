@@ -124,8 +124,8 @@ func (s Store) hidden2() {}
 
   test("blank and non-ASCII names", () => {
     const record = extract("package a\n\nvar _ = 1\nfunc Ünicode() {}\nfunc ünicode() {}\n");
+    // `_` binds nothing, so build 2.1 stopped declaring it at all.
     expect(shape(record)).toEqual([
-      ["_", "var", false],
       ["Ünicode", "function", true],
       ["ünicode", "function", false],
     ]);
@@ -684,6 +684,9 @@ describe("resolve-go calls", () => {
   });
 
   test("a local named like an import alias hides that alias too", () => {
+    // `store` is bound to the result of `newThing`, which this repo does not
+    // declare: the site is recorded against the local, and the local is what
+    // keeps the import rule from reading it as the `store` package.
     expect(
       resolveCalls(
         {
@@ -693,7 +696,7 @@ describe("resolve-go calls", () => {
         },
         "app/main.go",
       ),
-    ).toEqual(["newThing -> (dropped)"]);
+    ).toEqual(["newThing -> (dropped)", "store.New -> (dropped)"]);
   });
 
   test("an explicit alias wins over another import's default local name", () => {
