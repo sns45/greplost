@@ -6,6 +6,8 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
+**Name:** Cache the cargo registry for the Rust truth generator
+
 **Attributes:** `flavour: actions`, `name: Cache the cargo registry for the Rust truth generator`, `uses: actions/cache@v4`, `usesRef: v4`
 
 **References:** `ext:action/actions/cache` (uses)

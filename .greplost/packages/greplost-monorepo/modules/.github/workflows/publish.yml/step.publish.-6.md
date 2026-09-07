@@ -6,6 +6,8 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
+**Name:** Verify npm authentication
+
 **Attributes:** `flavour: actions`, `name: Verify npm authentication`, `run: if ! npm whoami >/dev/null 2>&1; then echo "::error::npm authentication failed: `
 
 **References:** None.

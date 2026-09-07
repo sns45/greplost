@@ -6,6 +6,8 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
+**Name:** Cache the Go module downloads for the Go truth generators
+
 **Attributes:** `flavour: actions`, `name: Cache the Go module downloads for the Go truth generators`, `uses: actions/cache@v4`, `usesRef: v4`
 
 **References:** `ext:action/actions/cache` (uses)
