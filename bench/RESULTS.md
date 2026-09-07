@@ -6,7 +6,7 @@ Suites with no result file in `bench/results/`, rendered as `not run`: agent.
 
 ## Machine
 
-The profile of the run that recorded it: the `headtohead` payload. Its `greplostVersion` and `greplostSha` are that run's. The structural numbers below were measured on greplost 0.0.2 (`3792e73`); see Versions.
+The profile of the run that recorded it: the `headtohead` payload. Its `greplostVersion` and `greplostSha` are that run's. The structural numbers below were measured on greplost 0.1.0 (`ebab1e1`); see Versions.
 
 | Field | Value |
 |---|---|
@@ -53,8 +53,8 @@ The profile of the run that recorded it: the `headtohead` payload. Its `greplost
 | bun | 1.2.21 |
 | node | 24.3.0 |
 | go | go version go1.25.3 darwin/arm64 |
-| greplostVersion (structural) | 0.0.2 |
-| greplostSha (structural) | 3792e73 |
+| greplostVersion (structural) | 0.1.0 |
+| greplostSha (structural) | ebab1e1 |
 | graphify (pinned) | v0.9.53 @ 33362d9 |
 | ua (pinned) | v2.9.0 @ f08763d |
 | crg (pinned) | v2.3.8 @ 2c6dae3 |
@@ -300,7 +300,7 @@ greplost measured against its own section 3 targets, one row per metric id. The 
 
 Every language, IaC flavour and framework signal pass greplost indexes, scored against its own compiler truth. One row per language, filled from the structural payload's `perLang` block; `Files` is the files greplost scored, which is not the file count the corpus pin's glob names (a pinned `Dockerfile*` glob counts templates the indexer does not read). `S1`, `S2`, `S3`, `S5` and `S6` are precision and `S4` is the cycle Jaccard, with recall, the tp/fp/fn counts and the per-repo split in Eval 1 below. A language scored on more than one corpus repo shows the **worst** of its repos, never an average: an average hides the weaker half, and the worst repo is what the gate decided on. `n/a` is a metric this language's oracle does not measure, either because it declared it unsupported or because it produced no number for it: never a pass, never a fail. `n/a for <repo>` means only that repo's oracle sat the metric out and the value beside it is the rest. No competitor was run on any of these languages.
 
-Measured 2026-09-05 at 3792e73.
+Measured 2026-09-07 at ebab1e1.
 
 | Lang | Corpus | Files | S1 imports P | S2 exports P | S3 calls P | S4 cycles J | S5 reference edges P | S6 signal nodes P | Truth source | Scored |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -337,7 +337,7 @@ A target whose every gated metric is `n/a` would pass `--gate` on an extractor t
 
 Structural accuracy vs compiler truth (S1 to S4)
 
-Measured 2026-09-05 at 3792e73.
+Measured 2026-09-07 at ebab1e1.
 
 ### anyq (148 files)
 
@@ -345,7 +345,7 @@ Measured 2026-09-05 at 3792e73.
 |---|---|---|---|---|
 | S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 339, fp 0, fn 0 |
 | S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 762, fp 0, fn 0 |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.303, tp 224, fp 0, fn 516; all confidences: precision 1, recall 0.468 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.382, tp 283, fp 0, fn 457; all confidences: precision 1, recall 0.547 |
 | S4 | import cycle Jaccard | = 1.00 | 1 |  |
 
 ### bitnami-charts (130 files)
@@ -390,7 +390,7 @@ Measured 2026-09-05 at 3792e73.
 |---|---|---|---|---|
 | S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 20, fp 0, fn 0 |
 | S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 191, fp 0, fn 0 |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.615, tp 394, fp 0, fn 247; all confidences: precision 1, recall 0.615 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.677, tp 434, fp 0, fn 207; all confidences: precision 1, recall 0.677 |
 | S4 | import cycle Jaccard | = 1.00 | 1 |  |
 
 ### gson (95 files)
@@ -426,7 +426,7 @@ Measured 2026-09-05 at 3792e73.
 |---|---|---|---|---|
 | S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 0, fp 0, fn 0 |
 | S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 14, fp 0, fn 0 |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.958, tp 23, fp 0, fn 1; all confidences: precision 1, recall 0.958 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 1, tp 24, fp 0, fn 0; all confidences: precision 1, recall 1 |
 | S4 | import cycle Jaccard | = 1.00 | 1 |  |
 
 ### pulumi-ts (120 files)
@@ -586,7 +586,7 @@ xychart-beta
     title "S1 to S4: greplost against compiler truth"
     x-axis ["S1 imports P", "S1 imports R", "S2 exports P", "S2 exports R", "S3 calls P", "S4 cycles J", "S3 calls R"]
     y-axis "score vs compiler truth" 0 --> 1
-    bar [1, 1, 1, 1, 1, 1, 0.303]
+    bar [1, 1, 1, 1, 1, 1, 0.382]
     %% series, in order: greplost
     %% Precision, recall and cycle agreement on anyq (148 files); higher is better.
     %% greplost only: these are the single-tool gates of tech spec section 3, not a comparison. S3 is the confidence=high arm, which is the gate; the all-confidence arm is in the table. A dashed stub is a score the payload did not carry.

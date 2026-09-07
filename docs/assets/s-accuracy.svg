@@ -36,7 +36,7 @@
 <path d="M 894.43 516 L 894.43 130 Q 894.43 126 898.43 126 L 960.43 126 Q 964.43 126 964.43 130 L 964.43 516 Z" fill="#0fa976"/>
 <text x="929.43" y="504" fill="#FFFFFF" font-size="12" font-weight="600" text-anchor="middle">1</text>
 <text x="929.43" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">S4 cycles J</text>
-<path d="M 1048.14 516 L 1048.14 401.95 Q 1048.14 397.95 1052.14 397.95 L 1114.14 397.95 Q 1118.14 397.95 1118.14 401.95 L 1118.14 516 Z" fill="#0fa976"/>
-<text x="1083.14" y="504" fill="#FFFFFF" font-size="12" font-weight="600" text-anchor="middle">0.303</text>
+<path d="M 1048.14 516 L 1048.14 370.85 Q 1048.14 366.85 1052.14 366.85 L 1114.14 366.85 Q 1118.14 366.85 1118.14 370.85 L 1118.14 516 Z" fill="#0fa976"/>
+<text x="1083.14" y="504" fill="#FFFFFF" font-size="12" font-weight="600" text-anchor="middle">0.382</text>
 <text x="1083.14" y="538" fill="#C3C2B7" font-size="12" text-anchor="middle">S3 calls R</text>
 </svg>
