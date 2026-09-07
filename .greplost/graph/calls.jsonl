@@ -2410,6 +2410,7 @@
 {"confidence":"high","from":"packages/core/src/graph/link.ts#isNodeDeclaration","kind":"call","to":"packages/core/src/schema.ts#isNodeDeclaration"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#importBindings"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#isNodeDeclaration"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#resolveBase"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#resolveMember"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#resolveName"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkCalls","kind":"call","to":"packages/core/src/graph/link.ts#resolvedSpecifiers"}
@@ -2430,6 +2431,10 @@
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkImports","kind":"call","to":"packages/core/src/schema.ts#compareStrings"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkImports","kind":"call","to":"packages/core/src/schema.ts#externalId"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#linkImports","kind":"call","to":"packages/core/src/schema.ts#unresolvedId"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts#pinnedClass","kind":"call","to":"packages/core/src/schema.ts#symbolId"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts#resolveBase","kind":"call","to":"packages/core/src/graph/link.ts#pinnedClass"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts#resolveBase","kind":"call","to":"packages/core/src/schema.ts#symbolId"}
+{"confidence":"high","from":"packages/core/src/graph/link.ts#resolveMember","kind":"call","to":"packages/core/src/graph/link.ts#inheritedMember"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#resolveMember","kind":"call","to":"packages/core/src/graph/link.ts#targetOf"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#resolveMember","kind":"call","to":"packages/core/src/schema.ts#symbolId"}
 {"confidence":"high","from":"packages/core/src/graph/link.ts#resolveName","kind":"call","to":"packages/core/src/graph/link.ts#targetOf"}

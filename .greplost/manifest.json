@@ -1870,9 +1870,9 @@
       "fanIn": 1,
       "fanOut": 7,
       "lang": "ts",
-      "loc": 627,
+      "loc": 733,
       "pkg": "@greplost/core",
-      "sha256": "2e22a431ec165a95f56ba89869af7e0361baa23161b2a1546a4854f9626f472c",
+      "sha256": "ab8eb7176fe82ac57f562e868e4f63e47ab8aa6426f7b4421845e8a169637958",
       "staleSummary": false
     },
     "packages/core/src/graph/metrics.ts": {
@@ -3609,7 +3609,7 @@
     "@greplost/core": {
       "deps": [],
       "files": 65,
-      "loc": 18601,
+      "loc": 18707,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",

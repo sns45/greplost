@@ -478,6 +478,31 @@ function targetOf(index: ExportIndex, module: string, name: string): { to: strin
 }
 
 /**
+ * Class symbol id -> the symbol id of the class its `extends` clause names, over every
+ * file (build 2.1). A base that could not be pinned to exactly one class declaration is
+ * absent, which is what stops the walk rather than a guess.
+ */
+type BaseIndex = Map<string, string>;
+
+/**
+ * How far up the extends chain `this.<member>` is followed (build 2.1).
+ *
+ * Five bases is deeper than any corpus hierarchy and keeps a pathological chain from
+ * costing a linear walk per call site.
+ */
+const MAX_BASE_DEPTH = 5;
+
+/** Everything the TypeScript call rules need about the file a call site sits in. */
+interface CallScope {
+  file: string;
+  topLevel: Map<string, DeclKind>;
+  bindings: Map<string, Binding>;
+  index: ExportIndex;
+  declKinds: Map<string, DeclKind>;
+  baseOf: BaseIndex;
+}
+
+/**
  * Call edges. A callee is resolved to a same-file declaration or a directly
  * imported symbol (high), or through a chain of re-exports of any depth (med).
  * Everything else is dropped, and a target that is not a callable declaration
@@ -514,11 +539,30 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
     return kind !== undefined && kind !== "interface" && kind !== "type";
   };
 
+  // Bindings are needed twice, once to resolve every class's base and once per call
+  // site, and a base may live in a file this loop has not reached yet, so both are
+  // built for every file before the first call is resolved (build 2.1).
+  const bindingsByFile = new Map<string, Map<string, Binding>>();
+  for (const file of files) bindingsByFile.set(file.path, importBindings(file, specifiersByFile.get(file.path)));
+  const baseOf: BaseIndex = new Map();
+  for (const file of files) {
+    const topLevel = topLevelByFile.get(file.path) ?? new Map<string, DeclKind>();
+    const bindings = bindingsByFile.get(file.path) ?? new Map<string, Binding>();
+    for (const decl of file.decls) {
+      if (decl.kind !== "class" || decl.extends === undefined || isNodeDeclaration(decl)) continue;
+      const id = symbolId(file.path, decl.name);
+      if (baseOf.has(id)) continue;
+      const base = resolveBase(decl.extends, { file: file.path, topLevel, bindings, index, declKinds, baseOf });
+      if (base !== null && base !== id) baseOf.set(id, base);
+    }
+  }
+
   // from -> to -> edge, so no separator can collide with a path or symbol name.
   const edges = new Map<string, Map<string, CallEdge>>();
   for (const file of files) {
     const topLevel = topLevelByFile.get(file.path) ?? new Map<string, DeclKind>();
-    const bindings = importBindings(file, specifiersByFile.get(file.path));
+    const bindings = bindingsByFile.get(file.path) ?? new Map<string, Binding>();
+    const scope: CallScope = { file: file.path, topLevel, bindings, index, declKinds, baseOf };
 
     for (const site of file.calls) {
       const callee = site.callee.startsWith("new ") ? site.callee.slice(4) : site.callee;
@@ -536,17 +580,8 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
               : file.lang === "kotlin"
                 ? resolveKotlinCall(file, site, kotlinCalls)
                 : dot === -1
-                  ? resolveName(callee, file.path, topLevel, bindings, index)
-                  : resolveMember(
-                      callee.slice(0, dot),
-                      callee.slice(dot + 1),
-                      site.caller,
-                      file.path,
-                      topLevel,
-                      bindings,
-                      index,
-                      declKinds,
-                    );
+                  ? resolveName(callee, scope)
+                  : resolveMember(callee.slice(0, dot), callee.slice(dot + 1), site.caller, scope);
       if (resolved === null || !isCallable(resolved.to)) continue;
 
       const from = site.caller === "" ? file.path : symbolId(file.path, site.caller);
@@ -569,31 +604,21 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
   return out.sort(compareEdges);
 }
 
-function resolveName(
-  name: string,
-  file: string,
-  topLevel: Map<string, DeclKind>,
-  bindings: Map<string, Binding>,
-  index: ExportIndex,
-): { to: string; confidence: Confidence } | null {
+function resolveName(name: string, scope: CallScope): { to: string; confidence: Confidence } | null {
   if (name === "") return null;
-  const kind = topLevel.get(name);
-  if (kind !== undefined) return { to: symbolId(file, name), confidence: "high" };
-  const binding = bindings.get(name);
+  const kind = scope.topLevel.get(name);
+  if (kind !== undefined) return { to: symbolId(scope.file, name), confidence: "high" };
+  const binding = scope.bindings.get(name);
   // A namespace binding is an object, never a bare callable name.
   if (binding === undefined || binding.name === "*") return null;
-  return targetOf(index, binding.module, binding.name);
+  return targetOf(scope.index, binding.module, binding.name);
 }
 
 function resolveMember(
   object: string,
   member: string,
   caller: string,
-  file: string,
-  topLevel: Map<string, DeclKind>,
-  bindings: Map<string, Binding>,
-  index: ExportIndex,
-  declKinds: Map<string, DeclKind>,
+  scope: CallScope,
 ): { to: string; confidence: Confidence } | null {
   // Deeper chains are never recorded by the extractor; ignore them if seen.
   if (object === "" || member === "" || member.includes(".")) return null;
@@ -602,26 +627,107 @@ function resolveMember(
     const dot = caller.indexOf(".");
     const className = dot === -1 ? caller : caller.slice(0, dot);
     if (className === "") return null;
-    const id = symbolId(file, `${className}.${member}`);
-    return declKinds.has(id) ? { to: id, confidence: "high" } : null;
+    const id = symbolId(scope.file, `${className}.${member}`);
+    if (scope.declKinds.has(id)) return { to: id, confidence: "high" };
+    // The enclosing class does not declare it: it may be inherited (build 2.1).
+    return inheritedMember(symbolId(scope.file, className), member, scope);
   }
 
   // A class declared in this file.
-  if (topLevel.has(object)) {
-    const id = symbolId(file, `${object}.${member}`);
-    return declKinds.has(id) ? { to: id, confidence: "high" } : null;
+  if (scope.topLevel.has(object)) {
+    const id = symbolId(scope.file, `${object}.${member}`);
+    return scope.declKinds.has(id) ? { to: id, confidence: "high" } : null;
   }
 
-  const binding = bindings.get(object);
+  const binding = scope.bindings.get(object);
   if (binding === undefined) return null;
 
   // A namespace import: resolve the member as an export of that module.
-  if (binding.name === "*") return targetOf(index, binding.module, member);
+  if (binding.name === "*") return targetOf(scope.index, binding.module, member);
 
   // An imported class used statically, through however many re-export hops.
-  const target = index.get(binding.module)?.get(binding.name);
+  const target = scope.index.get(binding.module)?.get(binding.name);
   if (target === undefined || target.unpinned === true) return null;
   const id = symbolId(target.file, `${target.symbol}.${member}`);
-  if (!declKinds.has(id)) return null;
+  if (!scope.declKinds.has(id)) return null;
   return { to: id, confidence: target.hops === 0 ? "high" : "med" };
+}
+
+/**
+ * The class a `class X extends <written>` clause names (build 2.1).
+ *
+ * The base must land on exactly one class declaration in the repo: a class in this file,
+ * an imported name the export index pins (through a barrel chain of any depth), or a
+ * member of a namespace import. A base that is external, unresolved, unpinnable, or not a
+ * class is not one declaration, so nothing is recorded and no member is ever attributed to
+ * it.
+ */
+function resolveBase(written: string, scope: CallScope): string | null {
+  const dot = written.indexOf(".");
+  const object = dot === -1 ? written : written.slice(0, dot);
+  const name = dot === -1 ? written : written.slice(dot + 1);
+  if (object === "" || name === "" || name.includes(".")) return null;
+
+  if (dot === -1) {
+    // A class declared in this file wins over an import of the same name, exactly as it
+    // does for a plain call; a same-file name that is not a class ends the walk.
+    if (scope.topLevel.has(name)) {
+      const id = symbolId(scope.file, name);
+      return scope.declKinds.get(id) === "class" ? id : null;
+    }
+    const binding = scope.bindings.get(name);
+    if (binding === undefined || binding.name === "*") return null;
+    return pinnedClass(binding.module, binding.name, scope);
+  }
+
+  // `class X extends ns.Base`: the namespace import names the module the base lives in.
+  const binding = scope.bindings.get(object);
+  if (binding === undefined || binding.name !== "*") return null;
+  return pinnedClass(binding.module, name, scope);
+}
+
+/** One exported name resolved to the class declaration behind it, or null. */
+function pinnedClass(module: string, name: string, scope: CallScope): string | null {
+  const target = scope.index.get(module)?.get(name);
+  if (target === undefined || target.unpinned === true) return null;
+  const id = symbolId(target.file, target.symbol);
+  return scope.declKinds.get(id) === "class" ? id : null;
+}
+
+/**
+ * `this.<member>` where the enclosing class does not declare `member`: walk its bases and
+ * take the first that does (build 2.1).
+ *
+ * A TypeScript class extends exactly one class, so the chain is a line and the nearest
+ * class declaring the member is the only candidate: an override in a subclass wins by
+ * construction and is not an ambiguity. Nothing else is guessed. A base that could not be
+ * pinned to one declaration is not in `baseOf` at all, so the walk stops there rather than
+ * inventing an edge, and dispatch through an interface or a virtual override in a class
+ * further down stays unresolved, as it must.
+ *
+ * The edge is high even when the base arrived through a barrel. A re-export hop downgrades
+ * a *name* lookup, where the chain is what pinned the target; here the chain only names the
+ * base class, which the export index either pins to exactly one declaration or refuses, and
+ * the member is then found among that class's own declarations. Measured on the pinned
+ * corpus: 49 new high edges on anyq and 1 on hono, no false positive on either, S3 precision
+ * 1.000 (PLAN build 2.1 ruling: inheritance through `extends` resolves at high when exactly
+ * one candidate supplies the member, else drop).
+ */
+function inheritedMember(
+  classId: string,
+  member: string,
+  scope: CallScope,
+): { to: string; confidence: Confidence } | null {
+  let current = classId;
+  const seen = new Set<string>([classId]);
+  for (let depth = 0; depth < MAX_BASE_DEPTH; depth += 1) {
+    const base = scope.baseOf.get(current);
+    // A cycle is not legal TypeScript, but a half-written file can hold one.
+    if (base === undefined || seen.has(base)) return null;
+    seen.add(base);
+    const id = `${base}.${member}`;
+    if (scope.declKinds.has(id)) return { to: id, confidence: "high" };
+    current = base;
+  }
+  return null;
 }
