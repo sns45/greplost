@@ -78,7 +78,7 @@ export const PARSE_CACHE_PATH = "cache/parse.json";
  * have not moved now yields `resource.*` nodes and `resource-input` references it did not yield
  * before. Same reason, one language further on.
  */
-export const PARSE_CACHE_VERSION = "3";
+export const PARSE_CACHE_VERSION = "4";
 
 /** Sentinel key. No real key can collide with it: `lang:sha256` has no `#`. */
 export const PARSE_CACHE_VERSION_KEY = "#version";

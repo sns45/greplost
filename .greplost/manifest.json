@@ -3470,7 +3470,7 @@
       "lang": "ts",
       "loc": 281,
       "pkg": "@greplost/sync",
-      "sha256": "1337a927c83eb67d38a254439c13e526fb4236e0355506506e3340f6e5961bec",
+      "sha256": "661af6ee284b0ac971a2a1d0dcb0abba795e0d1c5c12eedb031f14f7896f6290",
       "staleSummary": false
     },
     "packages/sync/src/state.ts": {

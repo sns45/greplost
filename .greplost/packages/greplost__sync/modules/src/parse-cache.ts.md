@@ -16,7 +16,7 @@
 
 **Key symbols:**
 - `const PARSE_CACHE_PATH = "cache/parse.json"`  L63-63
-- `const PARSE_CACHE_VERSION = "3"`  L81-81
+- `const PARSE_CACHE_VERSION = "4"`  L81-81
 - `const PARSE_CACHE_VERSION_KEY = "#version"`  L84-84
 - `const PARSE_CACHE_STAMP = `${SCHEMA_VERSION}/${PARSE_CACHE_VERSION}``  L87-87
 - `function parseCacheStamp(signals?: readonly string[]): string`  L104-107
