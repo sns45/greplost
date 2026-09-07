@@ -14,7 +14,7 @@
  * dead-ending.
  */
 
-import { callersOf, findSymbols, importersOf } from "@greplost/core";
+import { callerIds, findSymbols, importersOf } from "@greplost/core";
 import type { Structure } from "@greplost/core";
 import { impactOf, impactPairs, importTargetsOf } from "@greplost/core/graph";
 import type {
@@ -288,7 +288,7 @@ function describe(
     // A node's card is its own; everything else is documented by its file's.
     card: node ? nodeCardOf(manifest, decl.id) : cardOf(manifest, decl.file),
     importers: symbolImporters(byTarget, decl),
-    callers: callersOf(structure.calls, decl.id),
+    callers: callerIds(structure.calls, decl.id),
     references: outboundReferences(edges, decl.id),
     referencedBy: inboundReferences(edges, decl.id),
   };
