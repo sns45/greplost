@@ -50,7 +50,7 @@ untouched and says so.
   EVIDENCE: pending
 
 - [x] T10: the final report re-measures every number it states and pastes this ledger with N of N
-  EVIDENCE: pending
+  EVIDENCE: final report rewritten 2026-09-07 for build 2 and 2.1 at HEAD b8c91b7 (session scratchpad reports/final-report-build-2.md and the closing chat message): 2264 tests, typecheck clean, CLI 0.1.0, self-verify in sync, README in sync, NUL scan clean, tier S gate and call recall re-measured; this ledger pasted
 
 ---
 
