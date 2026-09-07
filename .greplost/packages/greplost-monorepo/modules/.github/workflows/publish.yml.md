@@ -21,11 +21,11 @@
 - [`job.publish`](publish.yml/job.publish.md)  L16-79
 - [`step.publish.~0`](publish.yml/step.publish.-0.md)  L19-19
 - [`step.publish.~1`](publish.yml/step.publish.-1.md)  L21-23
-- [`step.publish.~2`](publish.yml/step.publish.-2.md) (Install dependencies)  L25-26
-- [`step.publish.~3`](publish.yml/step.publish.-3.md) (Build the publishable bundle)  L28-29
-- [`step.publish.~4`](publish.yml/step.publish.-4.md) (Install Doppler CLI)  L31-32
-- [`step.publish.~5`](publish.yml/step.publish.-5.md) (Configure registry auth (NPM_TOKEN sourced from Doppler release-tooling/prd))  L34-45
-- [`step.publish.~6`](publish.yml/step.publish.-6.md) (Verify npm authentication)  L47-53
-- [`step.publish.~7`](publish.yml/step.publish.-7.md) (Tag matches package version)  L55-62
-- [`step.publish.~8`](publish.yml/step.publish.-8.md) (Publish greplost (skips when this version is already on the registry))  L64-72
-- [`step.publish.~9`](publish.yml/step.publish.-9.md) (Smoke the published package)  L74-79
+- [`step.publish.~2`](publish.yml/step.publish.-2.md)  L25-26
+- [`step.publish.~3`](publish.yml/step.publish.-3.md)  L28-29
+- [`step.publish.~4`](publish.yml/step.publish.-4.md)  L31-32
+- [`step.publish.~5`](publish.yml/step.publish.-5.md)  L34-45
+- [`step.publish.~6`](publish.yml/step.publish.-6.md)  L47-53
+- [`step.publish.~7`](publish.yml/step.publish.-7.md)  L55-62
+- [`step.publish.~8`](publish.yml/step.publish.-8.md)  L64-72
+- [`step.publish.~9`](publish.yml/step.publish.-9.md)  L74-79

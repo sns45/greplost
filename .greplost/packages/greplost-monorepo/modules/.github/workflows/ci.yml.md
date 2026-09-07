@@ -22,25 +22,25 @@
 - [`step.test.~1`](ci.yml/step.test.-1.md)  L29-30
 - [`step.test.~2`](ci.yml/step.test.-2.md)  L31-32
 - [`step.test.~3`](ci.yml/step.test.-3.md)  L33-34
-- [`step.test.~4`](ci.yml/step.test.-4.md) (kotlin compiler for the Kotlin fixture oracle)  L35-39
+- [`step.test.~4`](ci.yml/step.test.-4.md)  L35-39
 - [`step.test.~5`](ci.yml/step.test.-5.md)  L40-50
 - [`step.test.~6`](ci.yml/step.test.-6.md)  L51-51
-- [`step.test.~7`](ci.yml/step.test.-7.md) (Cache the cargo registry for the Rust truth generator)  L52-58
-- [`step.test.~8`](ci.yml/step.test.-8.md) (Cache the Go module downloads for the Go truth generators)  L59-65
-- [`step.test.~9`](ci.yml/step.test.-9.md) (Cache the built truth generators)  L66-70
+- [`step.test.~7`](ci.yml/step.test.-7.md)  L52-58
+- [`step.test.~8`](ci.yml/step.test.-8.md)  L59-65
+- [`step.test.~9`](ci.yml/step.test.-9.md)  L66-70
 - [`step.test.~10`](ci.yml/step.test.-10.md)  L71-71
-- [`step.test.~11`](ci.yml/step.test.-11.md) (go modules for the Go truth generators)  L72-77
+- [`step.test.~11`](ci.yml/step.test.-11.md)  L72-77
 - [`step.test.~12`](ci.yml/step.test.-12.md)  L78-78
 - [`step.test.~13`](ci.yml/step.test.-13.md)  L79-79
-- [`step.test.~14`](ci.yml/step.test.-14.md) (build the publishable bundle)  L80-84
-- [`step.test.~15`](ci.yml/step.test.-15.md) (the built binary runs under node)  L85-92
-- [`step.test.~16`](ci.yml/step.test.-16.md) (verify the committed map of this repo)  L93-94
-- [`step.test.~17`](ci.yml/step.test.-17.md) (README tables match bench/RESULTS.md)  L95-96
-- [`step.test.~18`](ci.yml/step.test.-18.md) (Cache the benchmark corpus (pinned in bench/corpus.json))  L97-101
-- [`step.test.~19`](ci.yml/step.test.-19.md) (Corpus setup (tier S: every pinned repo, one per language and flavour; tier M))  L102-106
-- [`step.test.~20`](ci.yml/step.test.-20.md) (structural accuracy gate (tier S))  L107-108
-- [`step.test.~21`](ci.yml/step.test.-21.md) (map quality gate)  L109-121
-- [`step.test.~22`](ci.yml/step.test.-22.md) (freshness gate (100-commit replay, hono))  L122-123
-- [`step.test.~23`](ci.yml/step.test.-23.md) (freshness gate (100-commit replay, pydantic))  L124-127
-- [`step.test.~24`](ci.yml/step.test.-24.md) (performance gate (anyq))  L128-129
-- [`step.test.~25`](ci.yml/step.test.-25.md) (performance gate (gin))  L130-131
+- [`step.test.~14`](ci.yml/step.test.-14.md)  L80-84
+- [`step.test.~15`](ci.yml/step.test.-15.md)  L85-92
+- [`step.test.~16`](ci.yml/step.test.-16.md)  L93-94
+- [`step.test.~17`](ci.yml/step.test.-17.md)  L95-96
+- [`step.test.~18`](ci.yml/step.test.-18.md)  L97-101
+- [`step.test.~19`](ci.yml/step.test.-19.md)  L102-106
+- [`step.test.~20`](ci.yml/step.test.-20.md)  L107-108
+- [`step.test.~21`](ci.yml/step.test.-21.md)  L109-121
+- [`step.test.~22`](ci.yml/step.test.-22.md)  L122-123
+- [`step.test.~23`](ci.yml/step.test.-23.md)  L124-127
+- [`step.test.~24`](ci.yml/step.test.-24.md)  L128-129
+- [`step.test.~25`](ci.yml/step.test.-25.md)  L130-131

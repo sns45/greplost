@@ -6,8 +6,6 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Name:** Tag matches package version
-
 **Attributes:** `flavour: actions`, `name: Tag matches package version`, `run: TAG="${GITHUB_REF_NAME#v}" PKG=$(node -p "require('./packages/cli/package.json')`
 
 **References:** None.

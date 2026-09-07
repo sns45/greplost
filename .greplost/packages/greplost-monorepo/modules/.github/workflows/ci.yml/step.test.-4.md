@@ -6,8 +6,6 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Name:** kotlin compiler for the Kotlin fixture oracle
-
 **Attributes:** `flavour: actions`, `name: kotlin compiler for the Kotlin fixture oracle`, `run: curl -sSL -o /tmp/kotlinc.zip https://github.com/JetBrains/kotlin/releases/downl`
 
 **References:** None.

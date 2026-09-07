@@ -6,8 +6,6 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Name:** the built binary runs under node
-
 **Attributes:** `flavour: actions`, `name: the built binary runs under node`, `run: set -euo pipefail node packages/cli/bin/greplost.js --version smoke="$(mktemp -d`
 
 **References:** [`packages/cli/bin/greplost.js`](../../../../../greplost/modules/bin/greplost.js.md) (config)

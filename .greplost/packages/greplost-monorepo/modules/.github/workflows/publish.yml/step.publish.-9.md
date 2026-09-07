@@ -6,8 +6,6 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Name:** Smoke the published package
-
 **Attributes:** `flavour: actions`, `name: Smoke the published package`, `run: cd "$(mktemp -d)" for i in 1 2 3 4 5 6; do npx -y greplost@"${GITHUB_REF_NAME#v}`
 
 **References:** None.

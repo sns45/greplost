@@ -6,8 +6,6 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
-**Name:** structural accuracy gate (tier S)
-
 **Attributes:** `flavour: actions`, `name: structural accuracy gate (tier S)`, `run: bun run bench:structural --tier S --gate`
 
 **References:** None.
