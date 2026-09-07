@@ -6,6 +6,8 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
+**Name:** Cache the built truth generators
+
 **Attributes:** `flavour: actions`, `name: Cache the built truth generators`, `uses: actions/cache@v4`, `usesRef: v4`
 
 **References:** `ext:action/actions/cache` (uses)

@@ -6,6 +6,8 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
+**Name:** Install Doppler CLI
+
 **Attributes:** `flavour: actions`, `name: Install Doppler CLI`, `uses: dopplerhq/cli-action@v3`, `usesRef: v3`
 
 **References:** `ext:action/dopplerhq/cli-action` (uses)

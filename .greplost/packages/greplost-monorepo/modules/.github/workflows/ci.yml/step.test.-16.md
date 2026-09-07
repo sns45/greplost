@@ -6,6 +6,8 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
+**Name:** verify the committed map of this repo
+
 **Attributes:** `flavour: actions`, `name: verify the committed map of this repo`, `run: bun packages/cli/src/main.ts verify --diff`
 
 **References:** [`packages/cli/src/main.ts`](../../../../../greplost/modules/src/main.ts.md) (config)
