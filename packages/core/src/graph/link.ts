@@ -501,9 +501,12 @@ interface CallScope {
   declKinds: Map<string, DeclKind>;
   baseOf: BaseIndex;
   /**
-   * Class symbol id -> every member name that class body writes, over every file (build
-   * 2.1 fix round 1). A name in here that `declKinds` does not carry is a member the map
-   * cannot resolve, never an inherited one.
+   * Class symbol id -> the *instance* member names that class body writes, over every file
+   * (build 2.1 fix rounds 1 and 2). A name in here that `declKinds` does not carry is a
+   * member the map cannot resolve, never an inherited one. A class with an entry that does
+   * not list the name has no instance member of that name, whatever its static side holds:
+   * the two are separate namespaces, so a static member neither answers `this.<member>` nor
+   * shadows the base's. A class with no entry at all says nothing either way.
    */
   writes: Map<string, ReadonlySet<string>>;
 }
@@ -563,7 +566,7 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
   const writes = new Map<string, ReadonlySet<string>>();
   for (const file of files) {
     for (const [classPath, names] of Object.entries(file.classMembers ?? {})) {
-      writes.set(symbolId(file.path, classPath), new Set(names));
+      writes.set(symbolId(file.path, classPath), new Set(names.instance));
     }
   }
   const baseOf: BaseIndex = new Map();
@@ -655,9 +658,10 @@ function resolveMember(
     // `super.m()` names the base's member even when the class overrides it, so it never
     // looks at the class's own declarations and starts the walk one level up (build 2.1).
     if (object === "super") return inheritedMember(classId, member, scope, true);
-    const id = symbolId(scope.file, `${className}.${member}`);
-    if (scope.declKinds.has(id)) return { to: id, confidence: "high" };
-    // The enclosing class does not declare it: it may be inherited (build 2.1).
+    const own = instanceMember(classId, member, scope);
+    if (own !== null) return { to: own, confidence: "high" };
+    // The enclosing class declares no instance member of that name: it may be inherited
+    // (build 2.1). A static member of the same name is not it and does not stop the walk.
     return inheritedMember(classId, member, scope, false);
   }
 
@@ -754,7 +758,7 @@ function inheritedMember(
   scope: CallScope,
   skipOwn: boolean,
 ): { to: string; confidence: Confidence } | null {
-  if (!skipOwn && scope.writes.get(classId)?.has(member) === true) return null;
+  if (!skipOwn && shadows(classId, member, scope)) return null;
   let current = classId;
   const seen = new Set<string>([classId]);
   for (let depth = 0; depth < MAX_BASE_DEPTH; depth += 1) {
@@ -762,10 +766,38 @@ function inheritedMember(
     // A cycle is not legal TypeScript, but a half-written file can hold one.
     if (base === undefined || seen.has(base)) return null;
     seen.add(base);
-    const id = `${base}.${member}`;
-    if (scope.declKinds.has(id)) return { to: id, confidence: "high" };
-    if (scope.writes.get(base)?.has(member) === true) return null;
+    const found = instanceMember(base, member, scope);
+    if (found !== null) return { to: found, confidence: "high" };
+    if (shadows(base, member, scope)) return null;
     current = base;
   }
   return null;
+}
+
+/**
+ * The declaration `<classId>.<member>` when that class declares it *on the instance*, else
+ * null (build 2.1 fix round 2).
+ *
+ * A class the extractor described lists its instance names, and a name missing from that
+ * list is a static member or nothing at all: `this.m()` can never mean the static one, so
+ * the declaration is not the answer and the walk carries on to the base. A class the record
+ * says nothing about (a hand-built record, a language that writes no member names) is taken
+ * at its declarations, which is what the linker did before the sets existed.
+ */
+function instanceMember(classId: string, member: string, scope: CallScope): string | null {
+  const id = `${classId}.${member}`;
+  if (!scope.declKinds.has(id)) return null;
+  const written = scope.writes.get(classId);
+  return written === undefined || written.has(member) ? id : null;
+}
+
+/**
+ * True when the class writes the name on its instance side without declaring anything the
+ * map carries: a data field, a parameter property, a field holding an imported function.
+ * That shadows the base's member with something unresolvable, so the call is dropped rather
+ * than credited to the base (fix round 1). A static member of the same name shadows nothing,
+ * since the two sides are separate namespaces (fix round 2).
+ */
+function shadows(classId: string, member: string, scope: CallScope): boolean {
+  return scope.writes.get(classId)?.has(member) === true && !scope.declKinds.has(`${classId}.${member}`);
 }

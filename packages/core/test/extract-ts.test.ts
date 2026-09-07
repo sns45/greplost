@@ -569,9 +569,33 @@ describe("member names", () => {
       ].join("\n"),
     );
     // Sorted and unique: the accessor pair is one name, an index signature is no name,
-    // and `plain` is a plain parameter rather than a parameter property.
+    // and `plain` is a plain parameter rather than a parameter property. `ready` is the
+    // only static one, and a parameter property is always on the instance.
     expect(r.classMembers).toEqual({
-      C: ["#hidden", "cfg", "constructor", "data", "handle", "other", "ready", "run", "size", "tag"],
+      C: {
+        instance: ["#hidden", "cfg", "constructor", "data", "handle", "other", "run", "size", "tag"],
+        static: ["ready"],
+      },
+    });
+  });
+
+  test("static names are recorded apart from instance names", () => {
+    const r = extract(
+      [
+        "export class C {",
+        "  static ready = 1;",
+        "  static make(): void {}",
+        "  static { setup(); }",
+        "  static get shared(): number { return 1; }",
+        "  data = 2;",
+        "  run(): void {}",
+        "  get size(): number { return 0; }",
+        "}",
+      ].join("\n"),
+    );
+    // A static block writes no name at all.
+    expect(r.classMembers).toEqual({
+      C: { instance: ["data", "run", "size"], static: ["make", "ready", "shared"] },
     });
   });
 
@@ -586,7 +610,10 @@ describe("member names", () => {
         "}",
       ].join("\n"),
     );
-    expect(r.classMembers).toEqual({ default: ["m"], "N.Inner": ["data"] });
+    expect(r.classMembers).toEqual({
+      default: { instance: ["m"], static: [] },
+      "N.Inner": { instance: ["data"], static: [] },
+    });
     expect(extract("export function f() {}\n").classMembers).toBeUndefined();
   });
 
@@ -628,6 +655,25 @@ describe("this binding", () => {
     for (const r of [literal, nested, plain]) {
       expect(r.calls.filter((c) => c.callee === "this.helper")).toEqual([]);
     }
+  });
+
+  test("this and super inside a static member bind the class, not an instance, so both drop", () => {
+    const r = extract(
+      [
+        "export class S extends Base {",
+        "  static go() { this.helper(); }",
+        "  static up() { super.helper(); }",
+        "  static ready = () => this.helper();",
+        "  static { this.helper(); }",
+        "  run() { this.helper(); }",
+        "  get size(): number { return this.helper(); }",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.calls.filter((c) => c.callee.endsWith(".helper"))).toEqual([
+      { caller: "S.run", callee: "this.helper", line: 6 },
+      { caller: "S.size", callee: "this.helper", line: 7 },
+    ]);
   });
 
   test("super.m is a callee, under the same binding rule as this", () => {

@@ -217,6 +217,19 @@ export interface CallSite {
   line: number;
 }
 
+/**
+ * The member names one class body writes, each list sorted and unique (build 2.1).
+ *
+ * The two sides are separate because they are separate namespaces: `static handle` and an
+ * inherited instance `handle()` do not collide, `this.handle()` in an instance member can
+ * never mean the static one, and neither shadows the other. A parameter property is always
+ * on the instance; a static block writes no name at all.
+ */
+export interface ClassMemberNames {
+  instance: string[];
+  static: string[];
+}
+
 /** Everything the extractor knows about one file, with no cross-file knowledge. */
 export interface FileRecord {
   path: string;
@@ -232,15 +245,14 @@ export interface FileRecord {
   /** Schema 2: references before resolution; every build-1 extractor leaves it undefined. */
   refs?: ReferenceRecord[];
   /**
-   * Build 2.1: every member name a class body writes, keyed by the class's symbol path,
-   * each list sorted and unique. It holds the names `decls` cannot: data fields, parameter
-   * properties, and fields whose initialiser is not a function. The linker needs them to
-   * know that a subclass shadows an inherited method with something it cannot resolve, and
-   * must then drop the call rather than credit the base. Absent when the file declares no
-   * class, and absent from every extractor but TypeScript's, so no other language's record
-   * changes shape.
+   * Build 2.1: every member name a class body writes, keyed by the class's symbol path.
+   * It holds the names `decls` cannot: data fields, parameter properties, and fields whose
+   * initialiser is not a function. The linker needs them to know that a subclass shadows an
+   * inherited method with something it cannot resolve, and must then drop the call rather
+   * than credit the base. Absent when the file declares no class, and absent from every
+   * extractor but TypeScript's, so no other language's record changes shape.
    */
-  classMembers?: Record<string, string[]>;
+  classMembers?: Record<string, ClassMemberNames>;
 }
 
 export type Confidence = "high" | "med";

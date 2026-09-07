@@ -43,6 +43,11 @@ function decl(
   return opts.extends === undefined ? withParent : { ...withParent, extends: opts.extends };
 }
 
+/** The written-member record of one class: instance names, and static ones when given. */
+function members(instance: string[], statics: string[] = []): { instance: string[]; static: string[] } {
+  return { instance, static: statics };
+}
+
 /** A class declaration plus one method declaration per member name. */
 function classDecls(
   file: string,
@@ -975,7 +980,7 @@ describe("linkCalls", () => {
     const base = file("src/base.ts", {
       decls: [decl("src/base.ts", "external", "function"), ...classDecls("src/base.ts", "Base", ["handle", "other"])],
       exports: [exp("external"), exp("Base")],
-      classMembers: { Base: ["handle", "other"] },
+      classMembers: { Base: members(["handle", "other"]) },
     });
     const kid = file("src/kid.ts", {
       imports: [imp("./base", ["Base", "external"])],
@@ -983,7 +988,7 @@ describe("linkCalls", () => {
         decl("src/kid.ts", "Kid", "class", { extends: "Base" }),
         decl("src/kid.ts", "Kid.go", "method", { parent: "Kid" }),
       ],
-      classMembers: { Kid: ["go", "handle", "other"] },
+      classMembers: { Kid: members(["go", "handle", "other"]) },
       calls: [call("Kid.go", "this.handle"), call("Kid.go", "this.other")],
     });
     expect(linkOne([base, kid]).map(edgeKey)).toEqual([]);
@@ -995,7 +1000,7 @@ describe("linkCalls", () => {
         decl("src/clean.ts", "Clean", "class", { extends: "Base" }),
         decl("src/clean.ts", "Clean.go", "method", { parent: "Clean" }),
       ],
-      classMembers: { Clean: ["go"] },
+      classMembers: { Clean: members(["go"]) },
       calls: [call("Clean.go", "this.handle")],
     });
     expect(linkOne([base, clean]).map(edgeKey)).toEqual([
@@ -1011,22 +1016,46 @@ describe("linkCalls", () => {
         ...classDecls("src/a.ts", "Kid", ["run"], { extends: "Mid" }),
       ],
       // `Mid` writes `step` as a data field, so `Kid`'s call reaches Mid's, not Base's.
-      classMembers: { Base: ["step"], Mid: ["step"], Kid: ["run"] },
+      classMembers: { Base: members(["step"]), Mid: members(["step"]), Kid: members(["run"]) },
       calls: [call("Kid.run", "this.step")],
     });
     expect(linkOne([a]).map(edgeKey)).toEqual([]);
+  });
+
+  test("a static member neither answers this.<member> nor shadows the base's", () => {
+    const base = file("src/base.ts", {
+      decls: classDecls("src/base.ts", "Base", ["handle", "step"]),
+      exports: [exp("Base")],
+      classMembers: { Base: members(["handle", "step"]) },
+    });
+    const kid = file("src/kid.ts", {
+      imports: [imp("./base", ["Base"])],
+      decls: [
+        decl("src/kid.ts", "Kid", "class", { extends: "Base" }),
+        // A static method is a declaration; a static field holding an imported function is
+        // not. Neither is on the instance side, so `this.` reaches past both.
+        decl("src/kid.ts", "Kid.step", "method", { parent: "Kid" }),
+        decl("src/kid.ts", "Kid.go", "method", { parent: "Kid" }),
+      ],
+      classMembers: { Kid: members(["go"], ["handle", "step"]) },
+      calls: [call("Kid.go", "this.handle"), call("Kid.go", "this.step")],
+    });
+    expect(linkOne([base, kid]).map(edgeKey)).toEqual([
+      "src/kid.ts#Kid.go -> src/base.ts#Base.handle (high)",
+      "src/kid.ts#Kid.go -> src/base.ts#Base.step (high)",
+    ]);
   });
 
   test("super.m starts one level above the enclosing class and never lands on its own", () => {
     const base = file("src/base.ts", {
       decls: classDecls("src/base.ts", "Base", ["overridden"]),
       exports: [exp("Base")],
-      classMembers: { Base: ["overridden"] },
+      classMembers: { Base: members(["overridden"]) },
     });
     const kid = file("src/kid.ts", {
       imports: [imp("./base", ["Base"])],
       decls: classDecls("src/kid.ts", "Kid", ["overridden", "run"], { extends: "Base" }),
-      classMembers: { Kid: ["overridden", "run"] },
+      classMembers: { Kid: members(["overridden", "run"]) },
       calls: [call("Kid.run", "super.overridden"), call("Kid.overridden", "super.overridden")],
     });
     expect(linkOne([base, kid]).map(edgeKey)).toEqual([
@@ -1038,7 +1067,7 @@ describe("linkCalls", () => {
     const loose = file("src/loose.ts", {
       imports: [imp("express", ["Base"])],
       decls: classDecls("src/loose.ts", "Loose", ["overridden", "run"], { extends: "Base" }),
-      classMembers: { Loose: ["overridden", "run"] },
+      classMembers: { Loose: members(["overridden", "run"]) },
       calls: [call("Loose.run", "super.overridden")],
     });
     expect(linkOne([loose]).map(edgeKey)).toEqual([]);

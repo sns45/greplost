@@ -25,6 +25,7 @@
 import type { Node, Tree } from "web-tree-sitter";
 import type {
   CallSite,
+  ClassMemberNames,
   DeclKind,
   Declaration,
   ExportRecord,
@@ -249,6 +250,14 @@ function heritage(classNode: Node): Pick<Declaration, "extends"> {
 }
 
 /**
+ * True for a member written with `static` (build 2.1 fix round 2). The keyword is its own
+ * node, so a member *named* `static` is not one of these.
+ */
+function isStatic(member: Node): boolean {
+  return member.children.some((child) => child.type === "static");
+}
+
+/**
  * Names a constructor's parameter properties declare (build 2.1 fix round 1):
  * `constructor(private cfg: Config, readonly tag: string, plain: number)` writes `cfg` and
  * `tag` as members and `plain` as nothing. An accessibility modifier or `readonly` is what
@@ -286,8 +295,8 @@ export function extractTs(
   const imports: ImportRecord[] = [];
   const exports: ExportRecord[] = [];
   const calls: CallSite[] = [];
-  /** Class symbol path -> every member name that class body writes (build 2.1). */
-  const memberNames = new Map<string, Set<string>>();
+  /** Class symbol path -> the member names that class body writes, by side (build 2.1). */
+  const memberNames = new Map<string, { instance: Set<string>; static: Set<string> }>();
   /** Scope node id -> symbol path of the declaration it defines. */
   const trackedById = new Map<number, string>();
   /** Text and row offset of the region the current nodes were parsed from. */
@@ -352,14 +361,14 @@ export function extractTs(
   }
 
   /**
-   * The written-name set of one class, created on first use. Two class bodies under one
-   * symbol path (which only a redeclaration writes) share it: a name either body writes
+   * The written-name sets of one class, created on first use. Two class bodies under one
+   * symbol path (which only a redeclaration writes) share them: a name either body writes
    * shadows the base, and the conservative answer is the union.
    */
-  function writtenMembers(classPath: string): Set<string> {
+  function writtenMembers(classPath: string): { instance: Set<string>; static: Set<string> } {
     let names = memberNames.get(classPath);
     if (names === undefined) {
-      names = new Set<string>();
+      names = { instance: new Set<string>(), static: new Set<string>() };
       memberNames.set(classPath, names);
     }
     return names;
@@ -542,12 +551,15 @@ export function extractTs(
     if (body === null) return;
     const written = writtenMembers(classPath);
     for (const member of body.namedChildren) {
-      // `constructor(private cfg: Config)` declares a member the body never names again.
-      if (member.type === "method_definition") for (const property of parameterProperties(member)) written.add(property);
+      // `constructor(private cfg: Config)` declares a member the body never names again,
+      // always on the instance side.
+      if (member.type === "method_definition") {
+        for (const property of parameterProperties(member)) written.instance.add(property);
+      }
       const name = field(member, "name");
       if (name === null) continue;
       if (name.type !== "property_identifier" && name.type !== "private_property_identifier") continue;
-      written.add(name.text);
+      (isStatic(member) ? written.static : written.instance).add(name.text);
       const symbolPath = `${classPath}.${name.text}`;
       const seen = { visibility: memberVisibility(member, name) };
       switch (member.type) {
@@ -817,8 +829,9 @@ export function extractTs(
         break;
       case "method_definition":
         // A method of a class body keeps the class's `this`; a method of an object literal
-        // binds the literal's own.
-        if (node.parent?.type !== "class_body") next = { ...next, thisClass: "" };
+        // binds the literal's own, and a `static` method binds the class object rather than
+        // an instance, which resolves against nothing this map carries (fix round 2).
+        if (node.parent?.type !== "class_body" || isStatic(node)) next = { ...next, thisClass: "" };
         if (symbolPath !== undefined) next = { ...next, caller: symbolPath, className: "" };
         break;
       case "function_declaration":
@@ -828,12 +841,16 @@ export function extractTs(
         break;
       case "public_field_definition":
         // A field holding a function is its own symbol; a data field's initialiser
-        // runs as part of constructing the class.
+        // runs as part of constructing the class. A static field's initialiser runs on the
+        // class object, where `this` is not an instance (fix round 2).
         if (symbolPath !== undefined) next = { ...current, caller: symbolPath, className: "" };
         else if (current.className !== "") next = { ...current, caller: current.className };
+        if (isStatic(node)) next = { ...next, thisClass: "" };
         break;
       case "class_static_block":
+        // `this` in a static block is the class object, never an instance.
         if (current.className !== "") next = { ...current, caller: current.className };
+        next = { ...next, thisClass: "" };
         break;
       default:
         break;
@@ -892,11 +909,17 @@ export function extractTs(
   };
 }
 
-/** Class symbol path -> sorted unique member names, in sorted class order. */
-function sortedMemberNames(memberNames: ReadonlyMap<string, Set<string>>): Record<string, string[]> {
-  const out: Record<string, string[]> = {};
+/** Class symbol path -> sorted unique member names per side, in sorted class order. */
+function sortedMemberNames(
+  memberNames: ReadonlyMap<string, { instance: Set<string>; static: Set<string> }>,
+): Record<string, ClassMemberNames> {
+  const out: Record<string, ClassMemberNames> = {};
   for (const classPath of [...memberNames.keys()].sort(compareStrings)) {
-    out[classPath] = [...(memberNames.get(classPath) ?? [])].sort(compareStrings);
+    const written = memberNames.get(classPath);
+    out[classPath] = {
+      instance: [...(written?.instance ?? [])].sort(compareStrings),
+      static: [...(written?.static ?? [])].sort(compareStrings),
+    };
   }
   return out;
 }
