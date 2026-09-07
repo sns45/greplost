@@ -42,6 +42,7 @@ import {
   runTask,
   scoreAnswer,
   summarize,
+  blockedGreplostDir,
 } from "../src/agent.ts";
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..");
@@ -724,6 +725,13 @@ describe("fake claude", () => {
       expect(call.shimVersion).toMatch(/^greplost \d+\.\d+\.\d+/);
     }
   }, 60_000);
+
+  test("the base arm's blocking shim makes greplost a not-found command", () => {
+    const dir = blockedGreplostDir();
+    const probe = spawnSync(path.join(dir, "greplost"), ["--version"], { encoding: "utf8" });
+    expect(probe.status).toBe(127);
+    expect(probe.stdout).toBe("");
+  });
 
   test("base gets no plugin dir and no greplost shim", async () => {
     resetHarness();

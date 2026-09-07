@@ -55,11 +55,12 @@
 - `interface Stats` L388-395
 - `function summarize(values: number[]): Stats` L397-406
 - `function resolveClaude(): string` L539-551
-- `function createGreplostShim(dir: string): string` L693-700
-- `interface RunRecord` L988-1016
-- `interface RunTaskOptions` L1019-1032
-- `function runTask(task: Task, condition: string, options: RunTaskOptions): RunRecord` L1043-1059
-- `async function run(args: string[]): Promise<number>` L1462-1479
+- `function blockedGreplostDir(): string` L581-589
+- `function createGreplostShim(dir: string): string` L715-722
+- `interface RunRecord` L1010-1038
+- `interface RunTaskOptions` L1041-1054
+- `function runTask(task: Task, condition: string, options: RunTaskOptions): RunRecord` L1065-1081
+- `async function run(args: string[]): Promise<number>` L1484-1501
 
 ## bench/src/charts.ts
 

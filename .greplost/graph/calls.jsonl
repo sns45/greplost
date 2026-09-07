@@ -103,6 +103,7 @@
 {"confidence":"high","from":"bench/src/agent.ts#scoreAnswer","kind":"call","to":"bench/src/agent.ts#stringList"}
 {"confidence":"high","from":"bench/src/agent.ts#scoreAnswer","kind":"call","to":"bench/src/score.ts#scoreSet"}
 {"confidence":"high","from":"bench/src/agent.ts#sessionBudget","kind":"call","to":"bench/src/agent.ts#summarize"}
+{"confidence":"high","from":"bench/src/agent.ts#spawnOptions","kind":"call","to":"bench/src/agent.ts#blockedGreplostDir"}
 {"confidence":"high","from":"bench/src/agent.ts#specMetrics","kind":"call","to":"bench/src/agent.ts#deltaMetric"}
 {"confidence":"high","from":"bench/src/agent.ts#specMetrics","kind":"call","to":"bench/src/agent.ts#ratioMetric"}
 {"confidence":"high","from":"bench/src/agent.ts#stringList","kind":"call","to":"bench/src/agent.ts#normalizeAnswerPath"}

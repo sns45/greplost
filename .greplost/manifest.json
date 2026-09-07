@@ -125,6 +125,7 @@
         "RunTaskOptions",
         "Stats",
         "TaskScore",
+        "blockedGreplostDir",
         "createGreplostShim",
         "extractAnswer",
         "lcsRatio",
@@ -138,9 +139,9 @@
       "fanIn": 0,
       "fanOut": 5,
       "lang": "ts",
-      "loc": 1752,
+      "loc": 1774,
       "pkg": "@greplost/bench",
-      "sha256": "f52052115f2c1adfc0e9de165670850bb4fdc1e25e1f907d936e50faf9324423",
+      "sha256": "d8e8274c3baeb84cabdce6e71042daafe4e40a2f267049186604fa10276f3d71",
       "staleSummary": false
     },
     "bench/src/charts.ts": {
@@ -3601,7 +3602,7 @@
         "@greplost/sync"
       ],
       "files": 53,
-      "loc": 29841,
+      "loc": 29863,
       "path": "bench",
       "rdeps": []
     },

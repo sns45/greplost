@@ -571,9 +571,31 @@ interface SpawnConfig {
  * `extraPath` goes in front of PATH for the child only, which is how the plugin
  * hooks find a `greplost` inside a throwaway working copy.
  */
+
+let blockedDir: string | undefined;
+
+/**
+ * A directory whose `greplost` refuses to run (exit 127, the shell's "command not found"), put
+ * first on the base arm's PATH so a host-installed greplost never leaks into the control arm.
+ */
+export function blockedGreplostDir(): string {
+  if (blockedDir !== undefined) return blockedDir;
+  const dir = mkdtempSync(path.join(tmpdir(), "greplost-blocked-"));
+  const shim = path.join(dir, "greplost");
+  writeFileSync(shim, '#!/bin/sh\necho "greplost: not available in this arm" >&2\nexit 127\n');
+  chmodSync(shim, 0o755);
+  blockedDir = dir;
+  return dir;
+}
+
 function spawnOptions(cwd: string, timeout: number, extraPath?: string): SpawnConfig {
   const env: NodeJS.ProcessEnv = { ...process.env };
-  if (extraPath !== undefined) env["PATH"] = `${extraPath}${path.delimiter}${env["PATH"] ?? ""}`;
+  // A greplost installed on the host (a global link beside `bun` itself, a package manager bin)
+  // must never reach a child: the base arm runs with a blocking shim first on PATH, so `greplost`
+  // is "not found" there whatever the machine carries, and the greplost arm runs the shim that
+  // points at this checkout, which `extraPath` puts first.
+  const first = extraPath ?? blockedGreplostDir();
+  env["PATH"] = `${first}${path.delimiter}${env["PATH"] ?? ""}`;
   return {
     cwd,
     encoding: "utf8",
