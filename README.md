@@ -52,7 +52,7 @@ Status: pre-release 0.1.0. Design: [docs/greplost-tech-spec.md](docs/greplost-te
 
 ```
 .greplost/
-  INDEX.md                 start here: packages, hotspots, how to navigate
+  INDEX.md                 start here: provenance, packages, hotspots, how to navigate
   repo/MAP.md              package graph (Mermaid + ASCII), cycles, blast radius
   repo/HOTSPOTS.md         highest fan-in and blast-radius files
   packages/<slug>/MAP.md   module graph of one package, split by directory when large
@@ -63,6 +63,8 @@ Status: pre-release 0.1.0. Design: [docs/greplost-tech-spec.md](docs/greplost-te
   manifest.json            per-file sha256, fan-in, fan-out, blast radius
   config.json              include/exclude, languages, diagram limits
 ```
+
+`INDEX.md` opens with a provenance line: which greplost version wrote the map, how many files in an indexed language the `exclude` patterns keep out of it, and that `git log .greplost/INDEX.md` dates it. There is deliberately no commit sha in any artifact: the pre-commit hook writes the map of the tree it is about to commit, so a sha recorded at build time would be the previous commit's and would make `greplost verify` red on every commit. Where the package table has a `Nodes` column, the line under it says what that column counts.
 
 ### Languages, IaC and framework signals
 
@@ -108,12 +110,28 @@ greplost init              # builds .greplost/, installs git hooks, writes confi
 git add .greplost && git commit -m "greplost: add the map"
 
 greplost query Registry    # definition, importers, callers, package, card
+greplost query src/core    # every mapped file under a directory, with its figures
 greplost impact src/core/retry.ts --depth 2
 greplost verify --diff     # exit 1 with a unified diff when the map is stale
 greplost update            # incremental: only files changed since the last index
 ```
 
 The git hooks installed by `init` keep the map current: pre-commit runs an incremental update and stages `.greplost/`, so every commit carries the map of its own tree and `verify` passes in CI by construction; post-commit, post-checkout and post-merge refresh it in the background after the fact. Every command accepts `--root <dir>` and `--json`; the JSON shapes are stable and documented in the plugin skill.
+
+### query takes four kinds of argument, and always says why
+
+`greplost query` resolves its argument as an indexed file, then an exact node id, then a directory the map holds files under (which answers with those files, their LOC, exports, fan-in and fan-out), then a symbol search. Every answer, text and `--json`, carries a `status`:
+
+| status | what it means | what to do |
+|---|---|---|
+| `found` | the map answers, and the bytes on disk are the bytes it read | nothing |
+| `absent` | nothing matches, and there is no such path on disk | check the spelling; the miss prints the five nearest ids the map holds |
+| `excluded` | the path is on disk, and the config keeps it out | the message names the `exclude` pattern (or the missing language) to edit in `.greplost/config.json` |
+| `stale` | the path is on disk, and the map does not describe it or no longer describes these bytes | `greplost update` |
+
+Only `stale` suggests an update, because it is the only one an update fixes. Tests are excluded by default (`**/*.test.*`, `**/*_test.go`, `**/test_*.py` and the rest, printed by `greplost --help`): a query for one answers `excluded` and names the line to change, rather than pretending the file does not exist. `--brief` prints counts instead of long importer lists, and `card` paths are repo-relative (`.greplost/packages/…`), so an agent can open one unedited.
+
+`greplost impact` counts differently on purpose: `radius` is the full reverse closure and is never bounded, while `--depth` bounds the listing only. `--json` reports `returned` and `truncated` beside `radius`, so 16 listed files beside a radius of 129 is a fact rather than a puzzle.
 
 ## Keep it honest in CI
 

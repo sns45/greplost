@@ -26,6 +26,7 @@ as usual, and mention that running `/greplost:init` would build one.
 
 ```
 greplost query <symbol|path> --json    # definition, importers, callers, package, card
+greplost query <directory> --json      # every mapped file under it, with its figures
 greplost impact <path> --json          # blast radius: what breaks if this file changes
 greplost flows <pkg> --json            # request/data flow doc for a package, if refreshed
 ```
@@ -41,11 +42,12 @@ parse it rather than the human-readable columns.
 ```ts
 {
   query: string;
+  status: "found" | "absent" | "excluded" | "stale";
   matches: Array<{
     id: string; file: string; name: string; kind: string; signature: string;
     span: [number, number]; exported: boolean; package: string;
-    card: string;          // .greplost-relative path to the module card, e.g.
-                            // packages/tiny__core/modules/src/registry.ts.md
+    card: string;          // repo-relative path to the module card, e.g.
+                            // .greplost/packages/tiny__core/modules/src/registry.ts.md
     importers: string[];   // files importing the declaring file and naming this symbol
     callers: string[];     // symbol ids that call this declaration
   }>;
@@ -54,15 +56,36 @@ parse it rather than the human-readable columns.
     exports: string[]; imports: string[]; importers: string[];
     fanIn: number; fanOut: number; blast: number; loc: number;
   };
+  directory?: {            // present only when the argument named a directory
+    path: string;
+    files: Array<{ path: string; loc: number; exports: number;
+                   fanIn: number; fanOut: number }>;
+  };
+  excludedBy?: string;     // the exclude pattern, when status is "excluded"
+  message?: string;        // one line explaining any status that is not "found"
+  suggestions?: string[];  // up to 5 nearest ids, present only when nothing matched
 }
 ```
 
 A bare symbol name (`Registry`, `Registry.register`) searches declarations and
 fills `matches`; a path (contains `/`, or an unambiguous filename suffix that
-resolves to exactly one indexed file) also fills `file`. Exit code is 1 when
-nothing matched and there is no `file` block, 0 otherwise; the JSON is printed
-either way, so check `matches.length` / `file` rather than relying on the
-process exit code inside a larger tool call.
+resolves to exactly one indexed file) also fills `file`; a directory the map
+holds files under fills `directory`. Exit code is 1 when nothing matched, 0
+otherwise; the JSON is printed either way, so check `status` rather than relying
+on the process exit code inside a larger tool call.
+
+**Read `status` before you conclude anything from an empty answer.** It is
+`found` when the map answered and the file on disk still hashes to what the map
+read; `absent` when nothing matches and no such path exists (a typo: read
+`suggestions`); `excluded` when the path is on disk and the config keeps it out
+(`excludedBy` names the pattern, and `message` names the config line to edit,
+which is how the default test exclusions show up); `stale` when the path is on
+disk and the map does not describe it, or no longer describes these bytes. Only
+`stale` is fixed by `greplost update`; running one for the other three wastes a
+turn. A `stale` answer that still carries `matches` or `file` is a real answer
+built from bytes that have since changed.
+
+`--brief` is a text-mode flag only; it never changes the JSON.
 
 ### Node ids: the things inside a file
 
@@ -92,15 +115,20 @@ decided by whether the argument is a file or a node id. Read `radius` from
 whichever one came back; check for the `files` key to tell them apart.
 
 A **file** target returns
-`{ "path": string, "radius": number, "files": [{ "path": string, "depth": number }] }`.
+`{ "path": string, "radius": number, "returned": number, "truncated": boolean,
+"files": [{ "path": string, "depth": number }] }`.
 `radius` is the file's full reverse-import closure over import and re-export
 edges, read from the manifest, so it is the same number the module card prints;
 `files` lists every dependent with its hop count and can be narrowed with
-`--depth <n>`, which truncates the listing and never the radius.
+`--depth <n>`, which truncates the listing and never the radius. `returned` is
+the length of that listing and `truncated` says whether `--depth` kept anything
+out of it, so `"radius": 129` beside 16 listed files needs no interpretation:
+129 files are reachable, 16 of them within the depth asked for.
 
 A **node id** target returns
-`{ "path": string, "radius": number, "nodes": [{ "id": string, "depth": number }] }`
-, the same two fields with `nodes` in place of `files`. That radius counts
+`{ "path": string, "radius": number, "returned": number, "truncated": boolean,
+"nodes": [{ "id": string, "depth": number }] }`
+, the same fields with `nodes` in place of `files`. That radius counts
 **nodes** and is computed over import, re-export **and reference** edges
 together, because a node has no manifest entry to read one from. The two radii
 are not comparable: a Terraform variable forty resources read has a large node
@@ -129,7 +157,8 @@ symbol id appears: `impact --json`'s `path` and `files[*].path`, and `query
 --json`'s `file.path`, `file.card`, `matches[*].id`, `matches[*].file`,
 `matches[*].card`, `importers[*]` and `callers[*]`. So a `card` reads
 `repo-a::packages/tiny__core/modules/src/registry.ts.md`: the part after `::`
-is relative to *that repo's* `.greplost/`.
+is relative to *that repo's* `.greplost/`, and unlike the single-repo shape it
+does not carry the `.greplost/` prefix, because the repo directory does.
 
 As an argument, `query` and `impact` accept the id (`repo-a::src/index.ts`), the
 workspace-relative path (`repo-a/src/index.ts`) and an absolute path; only an
