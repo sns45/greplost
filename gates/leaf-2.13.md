@@ -22,7 +22,7 @@ is 1215 lines (a test file, 810 before this leaf).
 - [x] G1: the Go extraction, resolution and call-linking test file passes
   CHECK: FORCE_COLOR=0 bun test packages/core/test/extract-go.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 124 expect() calls | Ran 88 tests across 1 file. [133.00ms]
+  EVIDENCE: 124 expect() calls | Ran 88 tests across 1 file. [147.00ms]
 
 - [x] G2: promotion through embedded fields resolves in the same package and through an import, walks embedded embeds to depth 3, and drops rather than guesses when two embedded types supply the member; -t embedded
   CHECK: FORCE_COLOR=0 bun test packages/core/test/extract-go.test.ts -t embedded 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -32,32 +32,32 @@ is 1215 lines (a test file, 810 before this leaf).
 - [x] G3: a local, a var, a parameter, a constructor result and a receiver method's result are all receivers, a rebound name is not, and a call in a func literal belongs to the enclosing declaration; -t receiver
   CHECK: FORCE_COLOR=0 bun test packages/core/test/extract-go.test.ts -t receiver 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 25 expect() calls | Ran 20 tests across 1 file. [91.00ms]
+  EVIDENCE: 25 expect() calls | Ran 20 tests across 1 file. [95.00ms]
 
 - [x] G4: `_` declares nothing, so two interface assertions in one file no longer collide on `<file>#_`; -t blank
   CHECK: FORCE_COLOR=0 bun test packages/core/test/extract-go.test.ts -t blank 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 4 expect() calls | Ran 3 tests across 1 file. [54.00ms]
+  EVIDENCE: 4 expect() calls | Ran 3 tests across 1 file. [55.00ms]
 
 - [x] G5: the six call shapes of the evaluator's probe repo resolve as one control plus four fixes, with nothing guessed; -t "six probe shapes"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/extract-go.test.ts -t "six probe shapes" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 1 expect() calls | Ran 1 test across 1 file. [60.00ms]
+  EVIDENCE: 1 expect() calls | Ran 1 test across 1 file. [59.00ms]
 
 - [x] G6: the pinned fixture still builds to the same declarations, call sites and call edges; -t tiny-go
   CHECK: FORCE_COLOR=0 bun test packages/core/test/extract-go.test.ts -t tiny-go 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 18 expect() calls | Ran 10 tests across 1 file. [113.00ms]
+  EVIDENCE: 18 expect() calls | Ran 10 tests across 1 file. [116.00ms]
 
 - [x] G7: the core suite is green
   CHECK: FORCE_COLOR=0 bun test packages/core 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 2326 expect() calls | Ran 964 tests across 24 files. [4.60s]
+  EVIDENCE: 2370 expect() calls | Ran 992 tests across 24 files. [4.69s]
 
 - [x] G8: every package and the bench suite are green
   CHECK: FORCE_COLOR=0 bun test packages bench 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 17419 expect() calls | Ran 2174 tests across 66 files. [122.17s]
+  EVIDENCE: 17463 expect() calls | Ran 2202 tests across 66 files. [133.18s]
 
 - [x] G9: every workspace typechecks
   CHECK: FORCE_COLOR=0 bun run typecheck 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -112,7 +112,7 @@ is 1215 lines (a test file, 810 before this leaf).
 - [x] G21: a named field shadows the promoted method it collides with, at its own depth and one level down, and a field of another name leaves promotion alone; -t shadow
   CHECK: FORCE_COLOR=0 bun test packages/core/test/extract-go.test.ts -t shadow 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 8 expect() calls | Ran 8 tests across 1 file. [63.00ms]
+  EVIDENCE: 8 expect() calls | Ran 8 tests across 1 file. [66.00ms]
 
 - [x] G22: a typed local is honoured only inside a named declaration, so a package-level func literal never reaches the import rule; -t "func literal"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/extract-go.test.ts -t "func literal" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -122,7 +122,7 @@ is 1215 lines (a test file, 810 before this leaf).
 - [x] G23: two build-tag variants of one struct never merge their embedded types; -t "build-tag variants"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/extract-go.test.ts -t "build-tag variants" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 2 expect() calls | Ran 1 test across 1 file. [58.00ms]
+  EVIDENCE: 2 expect() calls | Ran 1 test across 1 file. [57.00ms]
 
 - [x] G24: two builds of the same repo produce byte-identical artifacts
   CHECK: S=/private/tmp/claude-501/-Users-shantanu-dev-greplost/36f19a14-277a-4aa9-91cc-30733a56ea7b/scratchpad; rm -rf $S/det-a $S/det-b && cp -R /Users/shantanu/.claude/jobs/36f19a14/tmp/anyq $S/det-a && cp -R /Users/shantanu/.claude/jobs/36f19a14/tmp/anyq $S/det-b && FORCE_COLOR=0 bun packages/cli/src/main.ts init --no-hooks --root $S/det-a >/dev/null && FORCE_COLOR=0 bun packages/cli/src/main.ts init --no-hooks --root $S/det-b >/dev/null && diff -r --exclude=.state.json --exclude=cache $S/det-a/.greplost $S/det-b/.greplost && echo "byte identical"
