@@ -379,7 +379,7 @@ function addResult(
  *
  * A bare `Store` is this file's own package; `core.Base` is whatever `core` was
  * imported from, resolved exactly as a package-qualified call is (rule 1). A
- * qualifier that names no repo package - the standard library, another module -
+ * qualifier that names no repo package (the standard library, another module)
  * gives null, and nothing is promoted through it.
  */
 function typeRef(index: GoCallIndex, raw: string, file: string, dir: string): GoTypeRef | null {
@@ -469,7 +469,7 @@ export function resolveGoCall(
   if (object === "" || member === "" || member.includes(".")) return null;
 
   // A local binding shadows every package-scope name in Go, so a name the
-  // extractor recorded as a local of this caller never reaches rule 2 - not even
+  // extractor recorded as a local of this caller never reaches rule 2, not even
   // when its own type turned out to name nothing in this repo.
   const locals = index.locals.get(file.path)?.get(site.caller);
   if (locals !== undefined && locals.has(object)) {
@@ -525,7 +525,7 @@ function methodOf(
  * Go's rule: the member at the shallowest depth wins, and if two of them share
  * that depth the selector is illegal. So the embedded types are walked breadth
  * first, one depth at a time, and a depth that supplies the member twice is
- * dropped rather than guessed - the same answer the compiler gives.
+ * dropped rather than guessed, which is the answer the compiler gives too.
  */
 function promoted(
   index: GoCallIndex,

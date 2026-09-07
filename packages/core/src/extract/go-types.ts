@@ -15,8 +15,8 @@
  * They ride in `Declaration.meta`, the schema's home for language attributes
  * with no other place (the Kotlin extractor already puts a package there).
  *
- * Nothing here infers. A binding whose type needs type inference - a map index,
- * a type assertion, a conversion, a value from another package's function - is
+ * Nothing here infers. A binding whose type needs type inference (a map index, a
+ * type assertion, a conversion, a value from another package's function) is
  * recorded as *undecidable*, and a name bound twice with two different types is
  * undecidable too: the extractor flattens Go's block scoping deliberately (see
  * `boundNames`), so agreement across every binding in one function is what makes
@@ -88,8 +88,8 @@ export function namedType(node: Node | null): string | null {
  * The types a struct embeds, sorted and deduplicated.
  *
  * An embedded field is a `field_declaration` written without a name; a named
- * field promotes nothing and is skipped. An embedded type the tree cannot name -
- * an anonymous struct, a type parameter constraint - is skipped too.
+ * field promotes nothing and is skipped. An embedded type the tree cannot name
+ * (an anonymous struct, a type parameter constraint) is skipped too.
  */
 export function structEmbeds(typeNode: Node | null): string[] {
   if (typeNode === null || typeNode.type !== "struct_type") return [];

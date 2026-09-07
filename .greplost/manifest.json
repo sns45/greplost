@@ -1522,7 +1522,7 @@
       "lang": "ts",
       "loc": 258,
       "pkg": "@greplost/core",
-      "sha256": "b7407351c51510aae944c92a1bc8b706fadb4ebf2258c73c00c7eacda9d19a61",
+      "sha256": "f8ab18a5b62598b923e3250b9b5ff1117334f23594ce5e107554418a67a86f53",
       "staleSummary": false
     },
     "packages/core/src/extract/go.ts": {
@@ -2326,7 +2326,7 @@
       "lang": "ts",
       "loc": 557,
       "pkg": "@greplost/core",
-      "sha256": "1902ade25ca97d1744dac116f889f4f3d5d5afce084cabf39642275ae4e386a5",
+      "sha256": "be56300aa3cf147e042f1e0e9c15b29004795661d3e94139f07fe61a7999df1a",
       "staleSummary": false
     },
     "packages/core/src/resolve/hcl.ts": {
