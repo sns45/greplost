@@ -48,6 +48,14 @@ export function buildNodeCard(ctx: DocContext, id: string): string {
     `**Package:** \`${pkg.name}\` ([map](${link(`${packageDir(pkg.name)}/MAP.md`)}))`,
   ];
 
+  // A workflow step has no identity of its own in the format, so its id carries
+  // a position (`build.~3`) and its display name lives in `meta.name`. The
+  // evaluation read a card titled `step.build.~3` and could not tell which step
+  // of the job it was looking at without opening the workflow (leaf 2.15), so
+  // the name is printed beside the index, where the id is.
+  const displayName = decl.kind === "step" ? decl.meta?.["name"] : undefined;
+  if (displayName !== undefined) blocks.push(`**Name:** ${displayName}`);
+
   const attributes = attributesField(decl);
   if (attributes !== undefined) blocks.push(`**Attributes:** ${attributes}`);
 

@@ -17,11 +17,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-import { buildSnapshot, serializeSnapshot } from "@greplost/core";
+import { buildSnapshot, discoverFiles, serializeSnapshot } from "@greplost/core";
 import type { ParseCache, ParserHandle } from "@greplost/core";
 import type { GreplostConfig, Snapshot, SummaryCache, SummaryEntry } from "@greplost/core/schema";
 import { ARTIFACT_DIR, ARTIFACT_PATHS, compareStrings } from "@greplost/core/schema";
 import { renderArtifacts } from "@greplost/render";
+import type { MapProvenance } from "@greplost/render";
 
 import { isStructurePath } from "./artifacts.ts";
 
@@ -126,7 +127,10 @@ export async function buildArtifacts(root: string, opts: BuildArtifactsOptions =
   };
   const warnings: string[] = [];
   add("serializeSnapshot", serializeSnapshot(snapshot));
-  add("renderArtifacts", renderArtifacts({ snapshot, summaries, warnings }));
+  add(
+    "renderArtifacts",
+    renderArtifacts({ snapshot, summaries, warnings, provenance: await provenanceOf(absoluteRoot, snapshot) }),
+  );
 
   // Sorted, so the map's iteration order does not depend on which producer ran
   // first; `verify` reports "the first divergent path" and means this order.
@@ -137,6 +141,36 @@ export async function buildArtifacts(root: string, opts: BuildArtifactsOptions =
 
   return { snapshot, files, skipped, warnings };
 }
+
+/**
+ * The one fact `INDEX.md`'s provenance line needs and the render layer cannot
+ * see, because it has no filesystem (leaf 2.15).
+ *
+ * A second discovery pass with the exclude patterns dropped, minus the files
+ * the map actually holds: exactly "how many files in a language this map
+ * indexes did the config exclude", which is what tells a reader whether the
+ * absence of every `_test.go` is a setting or a bug. It reuses `discoverFiles`,
+ * so the language rule and the include rule can never diverge from the ones the
+ * build itself applied.
+ *
+ * A function of the source tree and nothing else, so `update` and `verify` on
+ * the same content produce the same line, byte for byte, wherever they run.
+ */
+async function provenanceOf(root: string, snapshot: Snapshot): Promise<MapProvenance> {
+  const everything = await discoverFiles(root, { ...snapshot.config, exclude: COUNTING_EXCLUDES });
+  const indexed = Object.keys(snapshot.manifest.files).length;
+  return { excluded: Math.max(0, everything.length - indexed) };
+}
+
+/**
+ * The only two patterns the counting pass keeps.
+ *
+ * Neither is a decision anybody revisits: an installed dependency tree and
+ * git's own object store are not this repository's source, and outside a git
+ * work tree (where discovery walks the disk instead of asking git) dropping
+ * them would make the count a walk of `node_modules`.
+ */
+const COUNTING_EXCLUDES = ["**/node_modules/**", "**/.git/**"];
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

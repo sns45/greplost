@@ -316,6 +316,14 @@ describe("cli", () => {
   test("a single repo inside the workspace still answers for itself", async () => {
     const run = await cli("impact", "src/index.ts", "--root", path.join(ws, "repo-a"), "--json");
     expect(run.code).toBe(0);
-    expect(JSON.parse(run.stdout)).toEqual({ path: "src/index.ts", radius: 0, files: [] });
+    // `returned` and `truncated` are leaf 2.15's single-repo `impact` fields;
+    // the workspace answer has its own shape and is unaffected.
+    expect(JSON.parse(run.stdout)).toEqual({
+      path: "src/index.ts",
+      radius: 0,
+      returned: 0,
+      truncated: false,
+      files: [],
+    });
   });
 });

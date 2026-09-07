@@ -27,7 +27,8 @@ export {
   renderPackageMap,
   renderRepoMap,
 } from "./render.ts";
-export type { DocContext, RenderInput } from "./render.ts";
+export type { DocContext, MapProvenance, RenderInput } from "./render.ts";
+export { GREPLOST_VERSION } from "./version.ts";
 
 /** Schema 2: the non-file node card, and the cap its reference lists obey. */
 export { REFERENCE_CAP, buildNodeCard } from "./docs/node-card.ts";

@@ -16,10 +16,10 @@
 
 **Key symbols:**
 - `const REFERENCE_CAP = 50`  L24-24
-- `function buildNodeCard(ctx: DocContext, id: string): string`  L26-67
-- `function attributesField(decl: Declaration): string | undefined`  L75-81
-- `function edgesField( ctx: DocContext, edges: readonly ReferenceEdge[], endpoint: (edge: ReferenceEdge) => string, file: string, link: (target: string) => string, ): string`  L97-122
-- `function cardFor(ctx: DocContext, target: string): string | undefined`  L130-139
-- `function shortLabel(target: string, file: string): string`  L146-150
+- `function buildNodeCard(ctx: DocContext, id: string): string`  L26-75
+- `function attributesField(decl: Declaration): string | undefined`  L83-89
+- `function edgesField( ctx: DocContext, edges: readonly ReferenceEdge[], endpoint: (edge: ReferenceEdge) => string, file: string, link: (target: string) => string, ): string`  L105-130
+- `function cardFor(ctx: DocContext, target: string): string | undefined`  L138-147
+- `function shortLabel(target: string, file: string): string`  L154-158
 
 **Calls:** `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high), `isNodeDeclaration` → [`packages/core/src/schema.ts#isNodeDeclaration`](../../../../greplost__core/modules/src/schema.ts.md) (high), `splitNodeId` → [`packages/core/src/schema.ts#splitNodeId`](../../../../greplost__core/modules/src/schema.ts.md) (high), `attributesField` → [`packages/render/src/docs/node-card.ts#attributesField`](node-card.ts.md) (high), `cardFor` → [`packages/render/src/docs/node-card.ts#cardFor`](node-card.ts.md) (high), `edgesField` → [`packages/render/src/docs/node-card.ts#edgesField`](node-card.ts.md) (high), `shortLabel` → [`packages/render/src/docs/node-card.ts#shortLabel`](node-card.ts.md) (high), `packageDir` → [`packages/render/src/slug.ts#packageDir`](../slug.ts.md) (high), `relLink` → [`packages/render/src/slug.ts#relLink`](../slug.ts.md) (high)

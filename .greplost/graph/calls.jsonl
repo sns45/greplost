@@ -2951,6 +2951,7 @@
 {"confidence":"high","from":"packages/render/src/docs/index-doc.ts#hotspotList","kind":"call","to":"packages/render/src/docs/hotspots.ts#topByFanIn"}
 {"confidence":"high","from":"packages/render/src/docs/index-doc.ts#render","kind":"call","to":"packages/render/src/docs/index-doc.ts#hotspotList"}
 {"confidence":"high","from":"packages/render/src/docs/index-doc.ts#render","kind":"call","to":"packages/render/src/docs/index-doc.ts#navigation"}
+{"confidence":"high","from":"packages/render/src/docs/index-doc.ts#render","kind":"call","to":"packages/render/src/docs/index-doc.ts#provenanceLine"}
 {"confidence":"high","from":"packages/render/src/docs/index-doc.ts#render","kind":"call","to":"packages/render/src/docs/index-doc.ts#tableBlocks"}
 {"confidence":"high","from":"packages/render/src/docs/index-doc.ts#render","kind":"call","to":"packages/render/src/docs/index-doc.ts#treeBlock"}
 {"confidence":"high","from":"packages/render/src/docs/index-doc.ts#tableBlocks","kind":"call","to":"packages/render/src/docs/index-doc.ts#nodeCount"}
@@ -3158,8 +3159,10 @@
 {"confidence":"med","from":"packages/sync/src/build.ts#buildArtifacts","kind":"call","to":"packages/core/src/serialize/write.ts#serializeSnapshot"}
 {"confidence":"med","from":"packages/sync/src/build.ts#buildArtifacts","kind":"call","to":"packages/render/src/render.ts#renderArtifacts"}
 {"confidence":"high","from":"packages/sync/src/build.ts#buildArtifacts","kind":"call","to":"packages/sync/src/artifacts.ts#isStructurePath"}
+{"confidence":"high","from":"packages/sync/src/build.ts#buildArtifacts","kind":"call","to":"packages/sync/src/build.ts#provenanceOf"}
 {"confidence":"high","from":"packages/sync/src/build.ts#buildArtifacts","kind":"call","to":"packages/sync/src/build.ts#readSummaries"}
 {"confidence":"high","from":"packages/sync/src/build.ts#isSummaryEntry","kind":"call","to":"packages/sync/src/build.ts#isPlainObject"}
+{"confidence":"med","from":"packages/sync/src/build.ts#provenanceOf","kind":"call","to":"packages/core/src/discover.ts#discoverFiles"}
 {"confidence":"high","from":"packages/sync/src/build.ts#readSummaries","kind":"call","to":"packages/sync/src/build.ts#isPlainObject"}
 {"confidence":"high","from":"packages/sync/src/build.ts#readSummaries","kind":"call","to":"packages/sync/src/build.ts#isSummaryEntry"}
 {"confidence":"high","from":"packages/sync/src/build.ts#readSummaries","kind":"call","to":"packages/sync/src/build.ts#reasonOf"}

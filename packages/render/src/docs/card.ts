@@ -215,7 +215,12 @@ function nodesField(
     }
     const card = ctx.nodeCardPathOf(node.id);
     const body = card === undefined ? `\`${label}\`` : `[\`${label}\`](${link(card)})`;
-    return `- ${body}  L${node.span[0]}-${node.span[1]}`;
+    // A step's id segment is a position in a list (`build.~3`), so the bullet
+    // carries the step's own name where it has one (leaf 2.15): a reader
+    // scanning a workflow card is looking for "Run tests", not for index 3.
+    const named = node.kind === "step" ? node.meta?.["name"] : undefined;
+    const suffix = named === undefined ? "" : ` (${named})`;
+    return `- ${body}${suffix}  L${node.span[0]}-${node.span[1]}`;
   });
   if (nodes.length > shown.length) lines.push(`- … ${nodes.length - shown.length} more`);
   return `\n${lines.join("\n")}`;

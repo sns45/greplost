@@ -17,7 +17,7 @@
 | [`packages/core/src/resolve/resolver.ts`](../packages/greplost__core/modules/src/resolve/resolver.ts.md) | 9 | 10 | 72 |
 | [`packages/sync/src/index.ts`](../packages/greplost__sync/modules/src/index.ts.md) | 9 | 11 | 19 |
 | [`packages/core/src/signals/index.ts`](../packages/greplost__core/modules/src/signals/index.ts.md) | 8 | 6 | 40 |
-| [`packages/render/src/index.ts`](../packages/greplost__render/modules/src/index.ts.md) | 8 | 8 | 33 |
+| [`packages/render/src/index.ts`](../packages/greplost__render/modules/src/index.ts.md) | 8 | 9 | 33 |
 | [`packages/render/src/render.ts`](../packages/greplost__render/modules/src/render.ts.md) | 8 | 10 | 41 |
 | [`packages/render/src/slug.ts`](../packages/greplost__render/modules/src/slug.ts.md) | 8 | 1 | 42 |
 | [`bench/src/results-io.ts`](../packages/greplost__bench/modules/src/results-io.ts.md) | 7 | 1 | 7 |
