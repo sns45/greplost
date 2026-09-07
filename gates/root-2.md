@@ -44,10 +44,10 @@ untouched and says so.
   EXPECT: map is in sync
   EVIDENCE: greplost: map is in sync
 
-- [ ] T9: CI is green on the build-2 branch, including the tier S structural gate step (ruling 2026-09-05: the gate runs inside the existing test job rather than a separate structural-langs job)
+- [x] T9: CI is green on the build-2 branch, including the tier S structural gate step (ruling 2026-09-05: the gate runs inside the existing test job rather than a separate structural-langs job)
   CHECK: gh run list --branch "$(git rev-parse --abbrev-ref HEAD)" --limit 1 --json conclusion --jq '.[0].conclusion'
   EXPECT: success
-  EVIDENCE: pending
+  EVIDENCE: success
 
 - [ ] T10: the final report re-measures every number it states and pastes this ledger with N of N
 
