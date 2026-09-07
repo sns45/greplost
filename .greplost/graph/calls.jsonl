@@ -1241,6 +1241,11 @@
 {"confidence":"high","from":"bench/truth/gocallgraph/main.go#repoIndex.indexFuncs","kind":"call","line":274,"to":"bench/truth/gocallgraph/main.go#receiverTypeName"}
 {"confidence":"high","from":"bench/truth/gocallgraph/main.go#repoIndex.packageDir","kind":"call","line":247,"to":"bench/truth/gocallgraph/main.go#repoIndex.rel"}
 {"confidence":"high","from":"bench/truth/gocallgraph/main.go#run","kind":"call","line":177,"to":"bench/truth/gocallgraph/main.go#exportedNames"}
+{"confidence":"high","from":"bench/truth/gocallgraph/main.go#run","kind":"call","line":198,"to":"bench/truth/gocallgraph/main.go#repoIndex.calleeID"}
+{"confidence":"high","from":"bench/truth/gocallgraph/main.go#run","kind":"call","line":194,"to":"bench/truth/gocallgraph/main.go#repoIndex.callerID"}
+{"confidence":"high","from":"bench/truth/gocallgraph/main.go#run","kind":"call","line":165,"to":"bench/truth/gocallgraph/main.go#repoIndex.indexFuncs"}
+{"confidence":"high","from":"bench/truth/gocallgraph/main.go#run","kind":"call","line":171,"to":"bench/truth/gocallgraph/main.go#repoIndex.packageDir"}
+{"confidence":"high","from":"bench/truth/gocallgraph/main.go#run","kind":"call","line":149,"to":"bench/truth/gocallgraph/main.go#repoIndex.rel"}
 {"confidence":"high","from":"bench/truth/gocallgraph/main.go#run","kind":"call","line":180,"to":"bench/truth/gocallgraph/main.go#sortedEdges"}
 {"confidence":"high","from":"bench/truth/gocallgraph/main.go#run","kind":"call","line":154,"to":"bench/truth/gocallgraph/main.go#sortedKeys"}
 {"confidence":"high","from":"bench/truth/javatruth/Truth.java#Truth.appendEdges","kind":"call","line":612,"to":"bench/truth/javatruth/Truth.java#Truth.appendString"}
@@ -1318,6 +1323,7 @@
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#run","kind":"call","line":175,"to":"bench/truth/pulumigotruth/main.go#resourceInterface"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#run","kind":"call","line":179,"to":"bench/truth/pulumigotruth/main.go#scanModule"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#run","kind":"call","line":182,"to":"bench/truth/pulumigotruth/main.go#sortedKeys"}
+{"confidence":"high","from":"bench/truth/pulumigotruth/main.go#scanFile","kind":"call","line":322,"to":"bench/truth/pulumigotruth/main.go#allocator.take"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#scanFile","kind":"call","line":314,"to":"bench/truth/pulumigotruth/main.go#bindings"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#scanFile","kind":"call","line":321,"to":"bench/truth/pulumigotruth/main.go#declaredNodeNames"}
 {"confidence":"high","from":"bench/truth/pulumigotruth/main.go#scanFile","kind":"call","line":362,"to":"bench/truth/pulumigotruth/main.go#inputsOf"}
