@@ -175,6 +175,47 @@ function isSound(node: Node): boolean {
   return type.endsWith("_statement") || type.endsWith("_declaration") || SOUND_EXTRA.has(type);
 }
 
+/**
+ * The accessibility a class member is written with (build 2.1). TypeScript's default is
+ * `public`, and a `#name` is private to the class at runtime, so both are reported as
+ * written rather than left blank: a reader asking "can I call this from outside?" gets an
+ * answer on every member.
+ */
+function memberVisibility(member: Node, name: Node): "public" | "protected" | "private" {
+  if (name.type === "private_property_identifier") return "private";
+  for (const child of member.children) {
+    if (child.type !== "accessibility_modifier") continue;
+    const written = child.text.trim();
+    if (written === "private" || written === "protected") return written;
+    return "public";
+  }
+  return "public";
+}
+
+/**
+ * The base class a class declaration names, for `Declaration.extends` (build 2.1).
+ *
+ * Only a name is recorded: `extends Base<T>` is `Base` (type arguments name no declaration)
+ * and `extends ns.Base` keeps the namespace qualifier the linker resolves through. An
+ * expression base (`extends mix(Base)`, a cast, a call) names nothing that can be pinned to
+ * one declaration, so nothing is recorded and the linker walks no further.
+ */
+function heritage(classNode: Node): Pick<Declaration, "extends"> {
+  const clause = classNode.children
+    .find((child) => child.type === "class_heritage")
+    ?.children.find((child) => child.type === "extends_clause");
+  if (clause === undefined) return {};
+  const value = field(clause, "value");
+  if (value === null) return {};
+  if (value.type === "identifier") return { extends: value.text };
+  if (value.type !== "member_expression") return {};
+  const object = field(value, "object");
+  const property = field(value, "property");
+  if (object === null || property === null) return {};
+  if (object.type !== "identifier" || property.type !== "property_identifier") return {};
+  return { extends: `${object.text}.${property.text}` };
+}
+
 export function extractTs(
   path: string,
   lang: Lang,
@@ -228,6 +269,7 @@ export function extractTs(
     exported: boolean,
     parent?: string,
     overload = false,
+    extra: Pick<Declaration, "visibility" | "extends"> = {},
   ): void {
     entries.push({
       decl: {
@@ -239,6 +281,8 @@ export function extractTs(
         exported,
         span,
         ...(parent === undefined ? {} : { parent }),
+        ...(extra.visibility === undefined ? {} : { visibility: extra.visibility }),
+        ...(extra.extends === undefined ? {} : { extends: extra.extends }),
       },
       overload,
     });
@@ -311,7 +355,16 @@ export function extractTs(
         const name = nameOf(node);
         if (name === null) return [];
         const symbolPath = prefix + name;
-        addEntry(symbolPath, "class", signatureText(ctx.source, node, outer), ctx.span(outer), exported, parent);
+        addEntry(
+          symbolPath,
+          "class",
+          signatureText(ctx.source, node, outer),
+          ctx.span(outer),
+          exported,
+          parent,
+          false,
+          heritage(node),
+        );
         register(node, symbolPath);
         collectMembers(node, symbolPath, exported);
         return [name];
@@ -379,7 +432,16 @@ export function extractTs(
     const written = nameOf(value);
     const name = written ?? "default";
     const isClass = value.type === "class";
-    addEntry(name, isClass ? "class" : "function", signatureText(ctx.source, value, outer), ctx.span(outer), true);
+    addEntry(
+      name,
+      isClass ? "class" : "function",
+      signatureText(ctx.source, value, outer),
+      ctx.span(outer),
+      true,
+      undefined,
+      false,
+      isClass ? heritage(value) : {},
+    );
     register(value, name);
     if (isClass) collectMembers(value, name, true);
     return written;
@@ -391,6 +453,11 @@ export function extractTs(
    * Class members that are addressable as `Class.member`: methods, accessors,
    * overload and abstract signatures, and fields holding a function. Plain data
    * fields are not declarations; computed and literal names have no symbol path.
+   *
+   * `exported` is the class's own flag: a member of an exported class is reachable
+   * from outside the module through the class, whatever the class lets a caller do
+   * with it. What the class lets a caller do is `visibility`, a separate field
+   * (build 2.1): the two questions are not the same and are answered separately.
    */
   function collectMembers(classNode: Node, classPath: string, exported: boolean): void {
     const body = field(classNode, "body");
@@ -400,9 +467,19 @@ export function extractTs(
       if (name === null) continue;
       if (name.type !== "property_identifier" && name.type !== "private_property_identifier") continue;
       const symbolPath = `${classPath}.${name.text}`;
+      const seen = { visibility: memberVisibility(member, name) };
       switch (member.type) {
         case "method_definition":
-          addEntry(symbolPath, "method", signatureText(ctx.source, member, member), ctx.span(member), exported, classPath);
+          addEntry(
+            symbolPath,
+            "method",
+            signatureText(ctx.source, member, member),
+            ctx.span(member),
+            exported,
+            classPath,
+            false,
+            seen,
+          );
           register(member, symbolPath);
           break;
         case "method_signature":
@@ -415,6 +492,7 @@ export function extractTs(
             exported,
             classPath,
             true,
+            seen,
           );
           break;
         case "public_field_definition": {
@@ -426,6 +504,8 @@ export function extractTs(
             ctx.span(member),
             exported,
             classPath,
+            false,
+            seen,
           );
           register(member, symbolPath);
           break;

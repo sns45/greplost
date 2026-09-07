@@ -143,6 +143,21 @@ export interface Declaration {
   /** Symbol path of the enclosing declaration (class name for methods). Absent for top-level. */
   parent?: string;
   /**
+   * Build 2.1: accessibility of a class member as the language writes it, which is a
+   * different question from `exported`. `exported` stays module-level reachability (a
+   * protected method of an exported class is reachable and stays `exported: true`), and
+   * this says how the class itself lets the member be reached. A member with no modifier
+   * is `public`, a `#name` is `private`. Absent for anything that is not a class member.
+   */
+  visibility?: "public" | "protected" | "private";
+  /**
+   * Build 2.1: the base class named by a class's `extends` clause, exactly as written and
+   * without type arguments (`Base`, `ns.Base`). Absent when the class extends nothing and
+   * when the clause is an expression rather than a name (`extends mix(Base)`), which names
+   * no declaration the linker could pin. Only a class carries it.
+   */
+  extends?: string;
+  /**
    * Language, IaC or framework attributes with no other home, sorted keys, string values only
    * (schema 2): e.g. `{ type: "aws_s3_bucket" }` on a Terraform resource, `{ method: "GET", path: "/users" }`
    * on a route, `{ provider: "aws" }` on a Pulumi resource, `{ base: "node:20" }` on an image.

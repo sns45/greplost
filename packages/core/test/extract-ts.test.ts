@@ -478,6 +478,78 @@ describe("declarations", () => {
   });
 });
 
+describe("visibility", () => {
+  test("a class member carries the accessibility it is written with, public by default", () => {
+    const r = extract(
+      [
+        "export class C {",
+        "  m() {}",
+        "  public o() {}",
+        "  protected p() {}",
+        "  private q() {}",
+        "  #hidden() {}",
+        "  protected get g() { return 1; }",
+        "  protected handle = () => {};",
+        "  protected abstract t(): void;",
+        "}",
+      ].join("\n"),
+    );
+    expect(r.decls.map((d) => [d.name, d.visibility])).toEqual([
+      ["C", undefined],
+      ["C.m", "public"],
+      ["C.o", "public"],
+      ["C.p", "protected"],
+      ["C.q", "private"],
+      ["C.#hidden", "private"],
+      ["C.g", "protected"],
+      ["C.handle", "protected"],
+      ["C.t", "protected"],
+    ]);
+  });
+
+  test("visibility is separate from exported: a protected member of an exported class stays exported", () => {
+    const r = extract("export class C {\n  protected p() {}\n}\n");
+    expect(decl(r, "C.p").exported).toBe(true);
+    expect(decl(r, "C.p").visibility).toBe("protected");
+    const local = extract("class D {\n  protected p() {}\n}\n");
+    expect(decl(local, "D.p").exported).toBe(false);
+    expect(decl(local, "D.p").visibility).toBe("protected");
+  });
+
+  test("nothing outside a class body carries visibility", () => {
+    const r = extract(
+      ["export function f() {}", "export const c = 1;", "export interface I { a: string }", "namespace N { export function g() {} }"].join("\n"),
+    );
+    expect(r.decls.every((d) => d.visibility === undefined)).toBe(true);
+  });
+});
+
+describe("heritage", () => {
+  test("a class records the base class its extends clause names", () => {
+    const r = extract("export class A extends Base<T> implements I {}\nclass B extends ns.Base {}\nclass C {}\n");
+    expect(decl(r, "A").extends).toBe("Base");
+    expect(decl(r, "B").extends).toBe("ns.Base");
+    expect(decl(r, "C").extends).toBeUndefined();
+  });
+
+  test("a computed base is not a name, so nothing is recorded", () => {
+    const r = extract("class C extends mix(Base) {}\nclass D extends (Base as unknown as typeof Base) {}\n");
+    expect(decl(r, "C").extends).toBeUndefined();
+    expect(decl(r, "D").extends).toBeUndefined();
+  });
+
+  test("an anonymous default-exported class records its base too", () => {
+    const r = extract("import { Base } from './base';\nexport default class extends Base {\n  m() {}\n}\n");
+    expect(decl(r, "default").extends).toBe("Base");
+    expect(decl(r, "default.m").visibility).toBe("public");
+  });
+
+  test("only a class carries extends: an interface heritage clause does not", () => {
+    const r = extract("export interface I extends J {}\n");
+    expect(decl(r, "I").extends).toBeUndefined();
+  });
+});
+
 describe("imports", () => {
   test("static, default, namespace and side-effect imports", () => {
     const r = extract(

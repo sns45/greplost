@@ -2227,11 +2227,14 @@
 {"confidence":"high","from":"packages/core/src/extract/ts.ts#extractTs","kind":"call","to":"packages/core/src/extract/ts.ts#boundNames"}
 {"confidence":"high","from":"packages/core/src/extract/ts.ts#extractTs","kind":"call","to":"packages/core/src/extract/ts.ts#collapseOverloads"}
 {"confidence":"high","from":"packages/core/src/extract/ts.ts#extractTs","kind":"call","to":"packages/core/src/extract/ts.ts#dedupe"}
+{"confidence":"high","from":"packages/core/src/extract/ts.ts#extractTs","kind":"call","to":"packages/core/src/extract/ts.ts#heritage"}
 {"confidence":"high","from":"packages/core/src/extract/ts.ts#extractTs","kind":"call","to":"packages/core/src/extract/ts.ts#isSound"}
 {"confidence":"high","from":"packages/core/src/extract/ts.ts#extractTs","kind":"call","to":"packages/core/src/extract/ts.ts#mayDeclare"}
+{"confidence":"high","from":"packages/core/src/extract/ts.ts#extractTs","kind":"call","to":"packages/core/src/extract/ts.ts#memberVisibility"}
 {"confidence":"high","from":"packages/core/src/extract/ts.ts#extractTs","kind":"call","to":"packages/core/src/extract/ts.ts#sortByLine"}
 {"confidence":"high","from":"packages/core/src/extract/ts.ts#extractTs","kind":"call","to":"packages/core/src/parser.ts#reparse"}
 {"confidence":"high","from":"packages/core/src/extract/ts.ts#extractTs","kind":"call","to":"packages/core/src/schema.ts#symbolId"}
+{"confidence":"high","from":"packages/core/src/extract/ts.ts#heritage","kind":"call","to":"packages/core/src/extract/ts-signature.ts#field"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#addNode","kind":"call","to":"packages/core/src/extract/ts-signature.ts#clip"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#addNode","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#trimmedSpan"}
 {"confidence":"high","from":"packages/core/src/extract/yaml-actions.ts#addNode","kind":"call","to":"packages/core/src/extract/yaml-actions.ts#uniqueId"}

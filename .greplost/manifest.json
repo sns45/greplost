@@ -1688,9 +1688,9 @@
       "fanIn": 3,
       "fanOut": 5,
       "lang": "ts",
-      "loc": 860,
+      "loc": 940,
       "pkg": "@greplost/core",
-      "sha256": "3a08556449d8bddb0833dcc6e950dbc8e8cd6b021b51837be551305b3767c818",
+      "sha256": "4b5dd424a81065b08a553fa31d9a4352123d41493c7be4dcdd3bcc60469a8edd",
       "staleSummary": false
     },
     "packages/core/src/extract/yaml-actions.ts": {
@@ -2550,9 +2550,9 @@
       "fanIn": 127,
       "fanOut": 0,
       "lang": "ts",
-      "loc": 508,
+      "loc": 523,
       "pkg": "@greplost/core",
-      "sha256": "af473b800a41ce150de376dc242c303fefb0163850a4a3cfd160185a23fdbb3f",
+      "sha256": "dfca96cb324eb0c9b37b5275f8ea752b1a3f1a1b7d2cc7c6fe9f92cd5b106bd6",
       "staleSummary": false
     },
     "packages/core/src/serialize/index.ts": {
@@ -3609,7 +3609,7 @@
     "@greplost/core": {
       "deps": [],
       "files": 65,
-      "loc": 18506,
+      "loc": 18601,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
