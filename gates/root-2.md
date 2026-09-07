@@ -18,7 +18,7 @@ untouched and says so.
 - [x] T3: the full suite is green from a clean install
   CHECK: bun install --frozen-lockfile >/dev/null && bun test 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 17405 expect() calls | Ran 2151 tests across 67 files. [100.29s]
+  EVIDENCE: 17773 expect() calls | Ran 2264 tests across 70 files. [129.79s]
 
 - [x] T4: every package typechecks
   CHECK: bun run typecheck
@@ -47,10 +47,10 @@ untouched and says so.
 - [x] T9: CI is green on the build-2 branch, including the tier S structural gate step (ruling 2026-09-05: the gate runs inside the existing test job rather than a separate structural-langs job)
   CHECK: gh run list --branch "$(git rev-parse --abbrev-ref HEAD)" --limit 1 --json conclusion --jq '.[0].conclusion'
   EXPECT: success
-  EVIDENCE: success
+  EVIDENCE: pending
 
 - [x] T10: the final report re-measures every number it states and pastes this ledger with N of N
-  EVIDENCE: final report written 2026-09-07 at HEAD cf22ffe (session scratchpad reports/final-report-build-2.md and the closing chat message): tests, typecheck, CLI version, self-verify, README sync, NUL scan, tier S gate and CI re-measured; this ledger pasted with 10 of 10
+  EVIDENCE: pending
 
 ---
 
