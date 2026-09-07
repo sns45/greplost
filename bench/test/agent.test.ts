@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 /**
  * Leaf 1.5.6: Eval 4, the agent navigation benchmark (tech spec 10.6, A1 to A4).
  *
