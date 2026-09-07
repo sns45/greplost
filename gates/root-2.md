@@ -49,7 +49,8 @@ untouched and says so.
   EXPECT: success
   EVIDENCE: success
 
-- [ ] T10: the final report re-measures every number it states and pastes this ledger with N of N
+- [x] T10: the final report re-measures every number it states and pastes this ledger with N of N
+  EVIDENCE: final report written 2026-09-07 at HEAD 1006480 (scratchpad reports/final-report-build-2.md and the closing chat message): tests, typecheck, CLI version, self-verify, README sync, NUL scan, tier S gate and CI re-measured; this ledger pasted with 10 of 10
 
 ---
 
