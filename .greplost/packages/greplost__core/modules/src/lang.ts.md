@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/discover.ts`](discover.ts.md), [`packages/core/src/index.ts`](index.ts.md), [`packages/core/src/unparsable.ts`](unparsable.ts.md)
 
-**Blast radius:** 32 files (`greplost impact packages/core/src/lang.ts`)
+**Blast radius:** 36 files (`greplost impact packages/core/src/lang.ts`)
 
 **Key symbols:**
 - `function langOf(path: string): Lang | undefined`  L21-33

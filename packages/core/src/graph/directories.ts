@@ -48,6 +48,25 @@ export function filesByDirectory(files: readonly string[]): Map<string, string[]
 }
 
 /**
+ * Indexed files under a directory id, at any depth, sorted.
+ *
+ * `filesByDirectory` answers "which files does this package hold", one segment
+ * deep, because that is what an import target means. Someone running `greplost
+ * query packages/core/src` is asking a different question: everything the map
+ * holds *below* that path, subdirectories included. `"."` and `""` name the
+ * whole repo, which is what a directory id of `"."` means everywhere else here.
+ *
+ * The prefix carries its separator, so `go/core` never matches
+ * `go/coredns/base.go`, and a file is never under itself.
+ */
+export function filesUnder(files: readonly string[], directory: string): string[] {
+  const dir = directory.replace(/\/+$/, "");
+  if (dir === "" || dir === ".") return [...files].sort(compareStrings);
+  const prefix = `${dir}/`;
+  return files.filter((file) => file.startsWith(prefix)).sort(compareStrings);
+}
+
+/**
  * The resolved import targets behind `edges`, **unexpanded**: one pair per
  * import statement whose target is inside the repo, with a Go package directory
  * left as the single id it is.

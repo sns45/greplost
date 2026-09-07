@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/serialize/index.ts`](index.ts.md)
 
-**Blast radius:** 30 files (`greplost impact packages/core/src/serialize/write.ts`)
+**Blast radius:** 34 files (`greplost impact packages/core/src/serialize/write.ts`)
 
 **Key symbols:**
 - `function serializeSnapshot(snapshot: Snapshot): Map<string, string>`  L21-32

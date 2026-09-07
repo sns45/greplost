@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md)
 
-**Blast radius:** 31 files (`greplost impact packages/core/src/extract/rust.ts`)
+**Blast radius:** 35 files (`greplost impact packages/core/src/extract/rust.ts`)
 
 **Key symbols:**
 - `const ITEM_KIND: Readonly<Record<string, DeclKind>> = { const_item: "const", enum_item: "enum", function_item: "function", function_signature_item: "function", impl_item: "impl", macro_definition: "f…`  L55-68

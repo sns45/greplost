@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/resolve/index.ts`](index.ts.md), [`packages/core/src/resolve/resolver.ts`](resolver.ts.md)
 
-**Blast radius:** 68 files (`greplost impact packages/core/src/resolve/dockerfile.ts`)
+**Blast radius:** 72 files (`greplost impact packages/core/src/resolve/dockerfile.ts`)
 
 **Key symbols:**
 - `const DOCKERFILE_ROOT_DIR_ID = "."`  L25-25

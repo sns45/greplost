@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/sync/src/dirty.ts`](dirty.ts.md), [`packages/sync/src/incremental.ts`](incremental.ts.md), [`packages/sync/src/index.ts`](index.ts.md), [`packages/sync/src/init.ts`](init.ts.md), [`packages/sync/src/parse-cache.ts`](parse-cache.ts.md), [`packages/sync/src/state.ts`](state.ts.md)
 
-**Blast radius:** 23 files (`greplost impact packages/sync/src/write.ts`)
+**Blast radius:** 25 files (`greplost impact packages/sync/src/write.ts`)
 
 **Key symbols:**
 - `interface WriteResult`  L66-73

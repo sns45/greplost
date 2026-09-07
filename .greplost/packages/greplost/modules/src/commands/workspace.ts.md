@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/cli/src/commands/impact.ts`](impact.ts.md), [`packages/cli/src/commands/init.ts`](init.ts.md), [`packages/cli/src/commands/query.ts`](query.ts.md), [`packages/cli/src/commands/update.ts`](update.ts.md), [`packages/cli/src/commands/verify.ts`](verify.ts.md), [`packages/cli/src/index.ts`](../index.ts.md)
 
-**Blast radius:** 7 files (`greplost impact packages/cli/src/commands/workspace.ts`)
+**Blast radius:** 9 files (`greplost impact packages/cli/src/commands/workspace.ts`)
 
 **Key symbols:**
 - `type WorkspaceHookName = "update" | "verify" | "impact" | "query"`  L24-24

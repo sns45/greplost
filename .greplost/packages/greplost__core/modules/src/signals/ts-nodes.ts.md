@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/signals/next.ts`](next.ts.md), [`packages/core/src/signals/pulumi-go.ts`](pulumi-go.ts.md), [`packages/core/src/signals/pulumi-ts.ts`](pulumi-ts.ts.md), [`packages/core/src/signals/react.ts`](react.ts.md), [`packages/core/src/signals/tanstack.ts`](tanstack.ts.md)
 
-**Blast radius:** 37 files (`greplost impact packages/core/src/signals/ts-nodes.ts`)
+**Blast radius:** 41 files (`greplost impact packages/core/src/signals/ts-nodes.ts`)
 
 **Key symbols:**
 - `interface TopLevelBinding`  L23-34

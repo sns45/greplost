@@ -62,7 +62,10 @@ beforeAll(async () => {
     root: TINY_TERRAFORM,
     config: { ...DEFAULT_CONFIG, languages: ["hcl"] },
   });
-  tf = { snapshot, summaries: {} };
+  // The provenance `buildArtifacts` measures for this fixture (leaf 2.15):
+  // nothing in it is excluded, so the golden is the bytes `greplost init`
+  // writes, which `packages/cli/test/nodes.test.ts` asserts against this tree.
+  tf = { snapshot, summaries: {}, provenance: { excluded: 0 } };
   tfArtifacts = renderArtifacts(tf);
 });
 
@@ -568,7 +571,7 @@ describe("no nodes no change", () => {
   test("a repo with no nodes renders byte-identically to the build-1 golden", async () => {
     const summaries = goldenSummaries();
     const snapshot = await buildSnapshot({ root: TINY_TS, summaries });
-    const artifacts = renderArtifacts({ snapshot, summaries });
+    const artifacts = renderArtifacts({ snapshot, summaries, provenance: { excluded: 0 } });
     const expected = listGolden(TS_GOLDEN);
     expect(expected.length).toBeGreaterThan(0);
     expect([...artifacts.keys()].sort(compareStrings)).toEqual(expected);

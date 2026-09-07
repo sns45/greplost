@@ -19,24 +19,14 @@ import path from "node:path";
 
 import { ARTIFACT_DIR } from "@greplost/core/schema";
 
-export type CommandName =
-  | "init"
-  | "update"
-  | "verify"
-  | "query"
-  | "impact"
-  | "flows"
-  | "refresh"
-  | "bench"
-  | "screenshots"
-  | "hook"
-  | "version"
-  | "help";
+import { HOOK_EVENTS, USAGE } from "./usage.ts";
+import type { CommandName } from "./usage.ts";
 
-/** The four hook events the plugin transport understands (tech spec 7.1). */
-export const HOOK_EVENTS = ["session-start", "pre-tool-use", "post-tool-use", "stop"] as const;
-
-export type HookEvent = (typeof HOOK_EVENTS)[number];
+// The command vocabulary and every line of help text live in `usage.ts`; they
+// are re-exported here because that is where the CLI has always imported them
+// from, and a module split is not a reason to touch six call sites.
+export { HOOK_EVENTS, USAGE, usageFor } from "./usage.ts";
+export type { CommandName, HookEvent } from "./usage.ts";
 
 /** Per-command options. Every field is absent unless the command line set it. */
 export interface CommandOptions {
@@ -56,6 +46,8 @@ export interface CommandOptions {
   diff?: boolean;
   /** `impact --depth n`; a non-negative integer. */
   depth?: number;
+  /** `query --brief`: counts instead of lists in the text output (leaf 2.15). */
+  brief?: boolean;
   /** `refresh --model m`. */
   model?: string;
   /** `refresh --dry-run`. */
@@ -90,64 +82,6 @@ export interface CommandContext {
   json: boolean;
   operands: string[];
   options: CommandOptions;
-}
-
-/**
- * One synopsis and one summary per command, so `greplost help <cmd>` and the
- * full usage block can never disagree about what a command takes.
- */
-const COMMAND_USAGE: ReadonlyArray<readonly [CommandName, string, string]> = [
-  ["init", "greplost init [--no-hooks] [--workspace]", "build the map, install git hooks, write config"],
-  [
-    "update",
-    "greplost update [--incremental|--full] [--files <p>...] [--semantic] [--quiet]",
-    "bring the map up to date",
-  ],
-  ["verify", "greplost verify [--diff]", "exit 1 on drift"],
-  ["query", "greplost query <symbol|path|node-id>", "definition, references, importers, callers, card"],
-  ["impact", "greplost impact <path|node-id> [--depth <n>]", "blast radius, by depth"],
-  ["flows", "greplost flows <pkg>", "print the package's FLOWS.md"],
-  ["refresh", "greplost refresh [pkg] [--model <m>] [--dry-run]", "semantic layer"],
-  ["bench", "greplost bench <suite> [args...]", "benchmark suites (inside the greplost repo)"],
-  ["screenshots", "greplost screenshots", "regenerate docs/assets"],
-  ["hook", `greplost hook <${HOOK_EVENTS.join("|")}>`, "Claude Code plugin transport (payload on stdin)"],
-  ["version", "greplost --version", "print the version"],
-  ["help", "greplost --help | greplost help <command>", "print this"],
-];
-
-const USAGE_FOOTER = `Every command accepts --root <dir> and --json.
-A node id names a non-file node inside a file: <file>#<kind>.<name>, as in
-main.tf#resource.aws_vpc.main or ci.yml#job.build. A file's blast radius counts
-files over imports; a node's counts nodes over imports and reference edges.
-In a workspace (a directory holding greplost.workspace.json), update, verify,
-query and impact act on every listed repo when run from that root; init there
-needs --workspace; update --files is ignored and --semantic is refused.
-Exit codes: 0 success, 1 drift or not found, 2 usage error.`;
-
-/** Column width: the longest synopsis that is not itself an outlier. */
-const USAGE_WIDTH = Math.max(...COMMAND_USAGE.filter(([, s]) => s.length <= 46).map(([, s]) => s.length));
-
-/**
- * `  <synopsis>  <summary>`, aligned. A synopsis too long for the column keeps
- * the column honest by dropping its summary to the next line rather than
- * pushing every other row to the right.
- */
-function usageLine(synopsis: string, summary: string): string {
-  if (synopsis.length > USAGE_WIDTH) return `  ${synopsis}\n  ${" ".repeat(USAGE_WIDTH)}  ${summary}`;
-  return `  ${synopsis.padEnd(USAGE_WIDTH)}  ${summary}`.replace(/\s+$/, "");
-}
-
-export const USAGE = `usage: greplost <command> [options]
-
-${COMMAND_USAGE.map(([, synopsis, summary]) => usageLine(synopsis, summary)).join("\n")}
-
-${USAGE_FOOTER}`;
-
-/** Usage for one command, for `greplost help <cmd>` and `greplost <cmd> --help`. */
-export function usageFor(name: string): string {
-  const entry = COMMAND_USAGE.find(([command]) => command === name);
-  if (entry === undefined) return USAGE;
-  return `usage: ${entry[1]}\n\n  ${entry[2]}\n\n${USAGE_FOOTER}`;
 }
 
 const COMMANDS: ReadonlySet<string> = new Set<CommandName>([
@@ -445,6 +379,11 @@ function applyCommandFlag(
 
   if (name === "verify" && flag === "--diff") {
     options.diff = true;
+    return noValue();
+  }
+
+  if (name === "query" && flag === "--brief") {
+    options.brief = true;
     return noValue();
   }
 

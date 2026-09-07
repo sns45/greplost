@@ -21,18 +21,18 @@
 |---|---|---|---|---|---|---|---|---|
 | greplost-monorepo | . | 4 | 347 | 39 | 3 | 0 | 0 | [MAP](packages/greplost-monorepo/MAP.md) |
 | @greplost/bench | bench | 53 | 29863 | 0 | 49 | 0 | 2 | [MAP](packages/greplost__bench/MAP.md) |
-| greplost | packages/cli | 18 | 2227 | 0 | 4 | 0 | 5 | [MAP](packages/greplost/MAP.md) |
-| @greplost/core | packages/core | 65 | 18999 | 0 | 10 | 6 | 0 | [MAP](packages/greplost__core/MAP.md) |
-| @greplost/render | packages/render | 15 | 2368 | 0 | 1 | 4 | 1 | [MAP](packages/greplost__render/MAP.md) |
+| greplost | packages/cli | 23 | 3133 | 0 | 5 | 0 | 5 | [MAP](packages/greplost/MAP.md) |
+| @greplost/core | packages/core | 65 | 19019 | 0 | 10 | 6 | 0 | [MAP](packages/greplost__core/MAP.md) |
+| @greplost/render | packages/render | 16 | 2482 | 0 | 1 | 4 | 1 | [MAP](packages/greplost__render/MAP.md) |
 | @greplost/semantic | packages/semantic | 5 | 1509 | 0 | 4 | 1 | 3 | [MAP](packages/greplost__semantic/MAP.md) |
-| @greplost/sync | packages/sync | 12 | 3420 | 0 | 4 | 4 | 2 | [MAP](packages/greplost__sync/MAP.md) |
-| @greplost/workspace | packages/workspace | 8 | 1903 | 0 | 2 | 1 | 3 | [MAP](packages/greplost__workspace/MAP.md) |
+| @greplost/sync | packages/sync | 12 | 3487 | 0 | 4 | 4 | 2 | [MAP](packages/greplost__sync/MAP.md) |
+| @greplost/workspace | packages/workspace | 8 | 2005 | 0 | 2 | 1 | 3 | [MAP](packages/greplost__workspace/MAP.md) |
 
 ## Hotspots
 
-- Most imported: `packages/core/src/schema.ts` (fan-in 127), `bench/src/truth/ts.ts` (fan-in 18), `packages/cli/src/args.ts` (fan-in 14), `packages/core/src/extract/ts-signature.ts` (fan-in 14), `packages/cli/src/output.ts` (fan-in 11)
-- Largest blast radius: `packages/core/src/schema.ts` (154 files), `packages/core/src/resolve/go.ts` (69 files), `packages/core/src/resolve/tsconfig.ts` (69 files), `packages/core/src/resolve/dockerfile.ts` (68 files), `packages/core/src/resolve/hcl.ts` (68 files)
-- Import cycles: 6, see [repo/HOTSPOTS.md](repo/HOTSPOTS.md)
+- Most imported: `packages/core/src/schema.ts` (fan-in 132), `bench/src/truth/ts.ts` (fan-in 18), `packages/cli/src/args.ts` (fan-in 14), `packages/core/src/extract/ts-signature.ts` (fan-in 14), `packages/core/src/index.ts` (fan-in 14)
+- Largest blast radius: `packages/core/src/schema.ts` (159 files), `packages/core/src/resolve/go.ts` (73 files), `packages/core/src/resolve/tsconfig.ts` (73 files), `packages/core/src/resolve/dockerfile.ts` (72 files), `packages/core/src/resolve/hcl.ts` (72 files)
+- Import cycles: 7, see [repo/HOTSPOTS.md](repo/HOTSPOTS.md)
 
 ## Navigation
 

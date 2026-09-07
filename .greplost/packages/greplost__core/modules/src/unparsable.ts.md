@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/index.ts`](index.ts.md)
 
-**Blast radius:** 29 files (`greplost impact packages/core/src/unparsable.ts`)
+**Blast radius:** 33 files (`greplost impact packages/core/src/unparsable.ts`)
 
 **Key symbols:**
 - `interface UnparsableFile`  L31-42

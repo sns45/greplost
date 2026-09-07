@@ -10,10 +10,10 @@
 
 ## packages/sync/src/build.ts
 
-- `interface BuildArtifactsOptions` L28-35
-- `interface BuildResult` L37-55
-- `function readSummaries(root: string): SummaryCache` L65-90
-- `async function buildArtifacts(root: string, opts: BuildArtifactsOptions = {}): Promise<BuildResult>` L101-139
+- `interface BuildArtifactsOptions` L29-36
+- `interface BuildResult` L38-56
+- `function readSummaries(root: string): SummaryCache` L66-91
+- `async function buildArtifacts(root: string, opts: BuildArtifactsOptions = {}): Promise<BuildResult>` L102-143
 
 ## packages/sync/src/dirty.ts
 

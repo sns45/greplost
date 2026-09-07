@@ -6,41 +6,32 @@
 
 **Package:** `greplost` ([map](../../MAP.md))
 
-**Exports:** `CommandContext (interface)`, `CommandName (type)`, `CommandOptions (interface)`, `HOOK_EVENTS (const)`, `HookEvent (type)`, `ParseResult (type)`, `ParsedCommand (interface)`, `USAGE (const)`, `findRoot(cwd: string): string`, `parseArgs(argv: string[]): ParseResult`, `resolveRoot(cwd: string, explicit: string | undefined): string`, `usageFor(name: string): string`
+**Exports:** `CommandContext (interface)`, `CommandName`, `CommandOptions (interface)`, `HOOK_EVENTS`, `HookEvent`, `ParseResult (type)`, `ParsedCommand (interface)`, `USAGE`, `findRoot(cwd: string): string`, `parseArgs(argv: string[]): ParseResult`, `resolveRoot(cwd: string, explicit: string | undefined): string`, `usageFor`
 
-**Imports:** `node:fs` (statSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR)
+**Imports:** `node:fs` (statSync), `node:path` (default), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR), [`./usage.ts`](usage.ts.md) (CommandName, HOOK_EVENTS, HookEvent, USAGE, usageFor)
 
 **Imported by:** [`packages/cli/src/commands/bench.ts`](commands/bench.ts.md), [`packages/cli/src/commands/flows.ts`](commands/flows.ts.md), [`packages/cli/src/commands/hook.ts`](commands/hook.ts.md), [`packages/cli/src/commands/impact.ts`](commands/impact.ts.md), [`packages/cli/src/commands/init.ts`](commands/init.ts.md), [`packages/cli/src/commands/query.ts`](commands/query.ts.md), [`packages/cli/src/commands/refresh.ts`](commands/refresh.ts.md), [`packages/cli/src/commands/screenshots.ts`](commands/screenshots.ts.md), [`packages/cli/src/commands/update.ts`](commands/update.ts.md), [`packages/cli/src/commands/verify.ts`](commands/verify.ts.md), [`packages/cli/src/commands/version.ts`](commands/version.ts.md), [`packages/cli/src/commands/workspace.ts`](commands/workspace.ts.md), [`packages/cli/src/index.ts`](index.ts.md), [`packages/cli/src/main.ts`](main.ts.md)
 
-**Blast radius:** 14 files (`greplost impact packages/cli/src/args.ts`)
+**Blast radius:** 16 files (`greplost impact packages/cli/src/args.ts`)
 
 **Key symbols:**
-- `type CommandName = | "init" | "update" | "verify" | "query" | "impact" | "flows" | "refresh" | "bench" | "screenshots" | "hook" | "version" | "help"`  L22-34
-- `const HOOK_EVENTS = ["session-start", "pre-tool-use", "post-tool-use", "stop"] as const`  L37-37
-- `type HookEvent = (typeof HOOK_EVENTS)[number]`  L39-39
-- `interface CommandOptions`  L42-65
-- `interface ParsedCommand`  L67-75
-- `type ParseResult = { ok: true; command: ParsedCommand } | { ok: false; message: string }`  L77-77
-- `interface CommandContext`  L83-93
-- `const COMMAND_USAGE: ReadonlyArray<readonly [CommandName, string, string]> = [ ["init", "greplost init [--no-hooks] [--workspace]", "build the map, install git hooks, write config"], [ "update", "gre…`  L99-116
-- `const USAGE_FOOTER = `Every command accepts --root <dir> and --json. A node id names a non-file node inside a file: <file>#<kind>.<name>, as in main.tf#resource.aws_vpc.main or ci.yml#job.build. A fi…`  L118-125
-- `const USAGE_WIDTH = Math.max(...COMMAND_USAGE.filter(([, s]) => s.length <= 46).map(([, s]) => s.length))`  L128-128
-- `function usageLine(synopsis: string, summary: string): string`  L135-138
-- `const USAGE = `usage: greplost <command> [options] ${COMMAND_USAGE.map(([, synopsis, summary]) => usageLine(synopsis, summary)).join("\n")} ${USAGE_FOOTER}``  L140-144
-- `function usageFor(name: string): string`  L147-151
-- `const COMMANDS: ReadonlySet<string> = new Set<CommandName>([ "init", "update", "verify", "query", "impact", "flows", "refresh", "bench", "screenshots", "hook", "version", "help", ])`  L153-166
-- `const ARITY: Readonly<Record<CommandName, readonly [number, number]>> = { init: [0, 0], update: [0, 0], verify: [0, 0], query: [1, 1], impact: [1, 1], flows: [1, 1], refresh: [0, 1], bench: [1, 1], s…`  L169-182
-- `interface Cursor`  L185-188
-- `function usageError(message: string): ParseResult`  L190-192
-- `function parseArgs(argv: string[]): ParseResult`  L194-217
-- `function parseRest(name: CommandName, argv: string[]): ParseResult`  L219-311
-- `function rootOf(root: string | undefined): { root?: string }`  L313-315
-- `interface BenchTail`  L317-322
-- `function splitBenchTail(tail: readonly string[]): BenchTail`  L334-364
-- `function takeValue(cursor: Cursor, inline: string | undefined): string | undefined`  L374-380
-- `function applyCommandFlag( name: CommandName, flag: string, inline: string | undefined, cursor: Cursor, options: CommandOptions, ): true | string`  L386-473
-- `function findRoot(cwd: string): string`  L482-490
-- `function resolveRoot(cwd: string, explicit: string | undefined): string`  L498-503
-- `function isDirectory(candidate: string): boolean`  L505-511
+- `interface CommandOptions`  L32-57
+- `interface ParsedCommand`  L59-67
+- `type ParseResult = { ok: true; command: ParsedCommand } | { ok: false; message: string }`  L69-69
+- `interface CommandContext`  L75-85
+- `const COMMANDS: ReadonlySet<string> = new Set<CommandName>([ "init", "update", "verify", "query", "impact", "flows", "refresh", "bench", "screenshots", "hook", "version", "help", ])`  L87-100
+- `const ARITY: Readonly<Record<CommandName, readonly [number, number]>> = { init: [0, 0], update: [0, 0], verify: [0, 0], query: [1, 1], impact: [1, 1], flows: [1, 1], refresh: [0, 1], bench: [1, 1], s…`  L103-116
+- `interface Cursor`  L119-122
+- `function usageError(message: string): ParseResult`  L124-126
+- `function parseArgs(argv: string[]): ParseResult`  L128-151
+- `function parseRest(name: CommandName, argv: string[]): ParseResult`  L153-245
+- `function rootOf(root: string | undefined): { root?: string }`  L247-249
+- `interface BenchTail`  L251-256
+- `function splitBenchTail(tail: readonly string[]): BenchTail`  L268-298
+- `function takeValue(cursor: Cursor, inline: string | undefined): string | undefined`  L308-314
+- `function applyCommandFlag( name: CommandName, flag: string, inline: string | undefined, cursor: Cursor, options: CommandOptions, ): true | string`  L320-412
+- `function findRoot(cwd: string): string`  L421-429
+- `function resolveRoot(cwd: string, explicit: string | undefined): string`  L437-442
+- `function isDirectory(candidate: string): boolean`  L444-450
 
-**Calls:** `applyCommandFlag` → [`packages/cli/src/args.ts#applyCommandFlag`](args.ts.md) (high), `findRoot` → [`packages/cli/src/args.ts#findRoot`](args.ts.md) (high), `isDirectory` → [`packages/cli/src/args.ts#isDirectory`](args.ts.md) (high), `parseRest` → [`packages/cli/src/args.ts#parseRest`](args.ts.md) (high), `rootOf` → [`packages/cli/src/args.ts#rootOf`](args.ts.md) (high), `splitBenchTail` → [`packages/cli/src/args.ts#splitBenchTail`](args.ts.md) (high), `takeValue` → [`packages/cli/src/args.ts#takeValue`](args.ts.md) (high), `usageError` → [`packages/cli/src/args.ts#usageError`](args.ts.md) (high), `usageLine` → [`packages/cli/src/args.ts#usageLine`](args.ts.md) (high)
+**Calls:** `applyCommandFlag` → [`packages/cli/src/args.ts#applyCommandFlag`](args.ts.md) (high), `findRoot` → [`packages/cli/src/args.ts#findRoot`](args.ts.md) (high), `isDirectory` → [`packages/cli/src/args.ts#isDirectory`](args.ts.md) (high), `parseRest` → [`packages/cli/src/args.ts#parseRest`](args.ts.md) (high), `rootOf` → [`packages/cli/src/args.ts#rootOf`](args.ts.md) (high), `splitBenchTail` → [`packages/cli/src/args.ts#splitBenchTail`](args.ts.md) (high), `takeValue` → [`packages/cli/src/args.ts#takeValue`](args.ts.md) (high), `usageError` → [`packages/cli/src/args.ts#usageError`](args.ts.md) (high)

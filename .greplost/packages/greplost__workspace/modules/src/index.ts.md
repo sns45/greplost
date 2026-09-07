@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/cli/src/commands/workspace.ts`](../../../greplost/modules/src/commands/workspace.ts.md)
 
-**Blast radius:** 8 files (`greplost impact packages/workspace/src/index.ts`)
+**Blast radius:** 10 files (`greplost impact packages/workspace/src/index.ts`)
 
 **Key symbols:**
 - `type WorkspaceHookName = "update" | "verify" | "impact" | "query"`  L65-65
@@ -20,15 +20,15 @@
 - `type WorkspaceHook = (ctx: WorkspaceCommandContext) => Promise<number | undefined>`  L96-96
 - `type SetWorkspaceHook = (name: WorkspaceHookName, hook: WorkspaceHook) => void`  L98-98
 - `interface WorkspaceUpdateResult`  L101-108
-- `interface WorkspaceImpactResult`  L111-116
-- `function registerWorkspaceHooks(set: SetWorkspaceHook): void`  L119-124
-- `async function initWorkspace( root: string, opts: { hooks?: boolean; json?: boolean } = {}, ): Promise<number>`  L136-160
-- `function workspaceRootFor(ctx: WorkspaceCommandContext): string | null`  L169-173
-- `const updateHook: WorkspaceHook = async (ctx) =>`  L175-211
-- `const verifyHook: WorkspaceHook = async (ctx) =>`  L213-244
-- `const impactHook: WorkspaceHook = async (ctx) =>`  L246-284
-- `const queryHook: WorkspaceHook = async (ctx) =>`  L286-338
-- `function printJson(value: unknown): void`  L345-347
-- `function count(value: number, noun: string): string`  L349-351
+- `interface WorkspaceImpactResult`  L111-120
+- `function registerWorkspaceHooks(set: SetWorkspaceHook): void`  L123-128
+- `async function initWorkspace( root: string, opts: { hooks?: boolean; json?: boolean } = {}, ): Promise<number>`  L140-164
+- `function workspaceRootFor(ctx: WorkspaceCommandContext): string | null`  L173-177
+- `const updateHook: WorkspaceHook = async (ctx) =>`  L179-215
+- `const verifyHook: WorkspaceHook = async (ctx) =>`  L217-248
+- `const impactHook: WorkspaceHook = async (ctx) =>`  L250-294
+- `const queryHook: WorkspaceHook = async (ctx) =>`  L296-354
+- `function printJson(value: unknown): void`  L361-363
+- `function count(value: number, noun: string): string`  L365-367
 
 **Calls:** `stableStringify` → [`packages/core/src/schema.ts#stableStringify`](../../../greplost__core/modules/src/schema.ts.md) (high), `fields` → [`packages/render/src/text.ts#fields`](../../../greplost__render/modules/src/text.ts.md) (med), `summarise` → [`packages/render/src/text.ts#summarise`](../../../greplost__render/modules/src/text.ts.md) (med), `table` → [`packages/render/src/text.ts#table`](../../../greplost__render/modules/src/text.ts.md) (med), `buildWorkspace` → [`packages/workspace/src/build.ts#buildWorkspace`](build.ts.md) (high), `verifyWorkspace` → [`packages/workspace/src/build.ts#verifyWorkspace`](build.ts.md) (high), `findWorkspaceRoot` → [`packages/workspace/src/config.ts#findWorkspaceRoot`](config.ts.md) (high), `impactAcross` → [`packages/workspace/src/impact.ts#impactAcross`](impact.ts.md) (high), `readWorkspaceRepos` → [`packages/workspace/src/impact.ts#readWorkspaceRepos`](impact.ts.md) (high), `resolveWorkspaceTarget` → [`packages/workspace/src/impact.ts#resolveWorkspaceTarget`](impact.ts.md) (high), `count` → [`packages/workspace/src/index.ts#count`](index.ts.md) (high), `printJson` → [`packages/workspace/src/index.ts#printJson`](index.ts.md) (high), `workspaceRootFor` → [`packages/workspace/src/index.ts#workspaceRootFor`](index.ts.md) (high), `queryAcross` → [`packages/workspace/src/query.ts#queryAcross`](query.ts.md) (high)

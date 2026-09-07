@@ -75,7 +75,10 @@ let artifacts: Map<string, string>;
 beforeAll(async () => {
   const summaries = goldenSummaries();
   const snapshot = await buildSnapshot({ root: FIXTURE_ROOT, summaries });
-  input = { snapshot, summaries };
+  // The provenance `buildArtifacts` measures for this fixture (leaf 2.15):
+  // nothing in `fixtures/tiny-ts` is excluded, so this golden stays the bytes
+  // `greplost init` writes, which `packages/sync/test/build.test.ts` checks.
+  input = { snapshot, summaries, provenance: { excluded: 0 } };
   artifacts = renderArtifacts(input);
 });
 
@@ -980,7 +983,7 @@ describe("deterministic", () => {
   test("a snapshot rebuilt from the same fixture renders identically", async () => {
     const summaries = goldenSummaries();
     const snapshot = await buildSnapshot({ root: FIXTURE_ROOT, summaries });
-    const again = renderArtifacts({ snapshot, summaries });
+    const again = renderArtifacts({ snapshot, summaries, provenance: { excluded: 0 } });
     expect([...again.entries()]).toEqual([...artifacts.entries()]);
   });
 
@@ -993,7 +996,7 @@ describe("deterministic", () => {
       calls: [...input.snapshot.calls].reverse(),
       symbols: [...input.snapshot.symbols].reverse(),
     };
-    const again = renderArtifacts({ snapshot: shuffled, summaries: input.summaries });
+    const again = renderArtifacts({ snapshot: shuffled, summaries: input.summaries, provenance: { excluded: 0 } });
     expect([...again.entries()].sort()).toEqual([...artifacts.entries()].sort());
   });
 

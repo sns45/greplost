@@ -24,7 +24,10 @@ import { impactOf, impactPairs } from "@greplost/core/graph";
 
 import type { CommandContext } from "../args.ts";
 import { printJson, printLine, table } from "../output.ts";
+import { statusOf } from "./status.ts";
+import type { QueryStatus } from "./status.ts";
 import { importPairs, loadStructure, resolveFile, resolveNode, toRepoRelative } from "./structure.ts";
+import { nearestIds } from "./suggest.ts";
 import { dispatchWorkspace } from "./workspace.ts";
 
 /**
@@ -35,6 +38,10 @@ export interface ImpactFiles {
   path: string;
   /** Blast radius from the manifest: the full reverse closure, never truncated. */
   radius: number;
+  /** How many entries the listing below actually holds (leaf 2.15). */
+  returned: number;
+  /** True when `--depth` kept entries out of the listing; `radius` still counts them. */
+  truncated: boolean;
   files: Array<{ path: string; depth: number }>;
 }
 
@@ -47,7 +54,22 @@ export interface ImpactFiles {
 export interface ImpactNodes {
   path: string;
   radius: number;
+  returned: number;
+  truncated: boolean;
   nodes: Array<{ id: string; depth: number }>;
+}
+
+/**
+ * What `--json` prints when the target is not in the map (fix round 1): the
+ * miss half of `query`'s envelope, so one parser reads both. There is no
+ * `radius` and no listing, because there is no answer; `status` says why, in
+ * the same four words `query` uses.
+ */
+export interface ImpactMiss {
+  path: string;
+  status: QueryStatus;
+  message: string;
+  suggestions: string[];
 }
 
 export type ImpactResult = ImpactFiles | ImpactNodes;
@@ -66,7 +88,26 @@ export async function run(ctx: CommandContext): Promise<number> {
   const entry = target === undefined ? undefined : structure.manifest.files[target];
   const node = target === undefined ? resolveNode(structure, operand) : undefined;
   if ((target === undefined || entry === undefined) && node === undefined) {
-    throw new Error(`${given} is not in the map; run \`greplost update\` or check the path`);
+    // The same four statuses `query` reports, for the same reason: "run
+    // `greplost update`" is the right advice for exactly one of them, and was
+    // being given for all four (leaf 2.15).
+    const verdict = statusOf(ctx.root, structure.manifest, operand.includes("#") ? "" : given, false, operand);
+    const nearest = nearestIds(structure, operand);
+    // `--json` answers in JSON even when it cannot answer (fix round 1): a
+    // caller that asked for a document should not have to parse English off
+    // stderr to learn whether the map is stale or the path was a typo.
+    if (ctx.json) {
+      const miss: ImpactMiss = {
+        path: given,
+        status: verdict.status,
+        message: verdict.message ?? `${given} is not in the map`,
+        suggestions: nearest,
+      };
+      printJson(miss);
+      return 1;
+    }
+    const hint = nearest.length === 0 ? "" : `; did you mean: ${nearest.join(", ")}`;
+    throw new Error(`${verdict.message ?? `${given} is not in the map`}${hint}`);
   }
 
   const depth = ctx.options.depth;
@@ -75,21 +116,32 @@ export async function run(ctx: CommandContext): Promise<number> {
   // computed here, over the mixed graph, and never truncated by `--depth`.
   const reached = isNode ? impactOf(impactPairs(structure), node.id) : impactOf(importPairs(structure), target as string);
   const shown = depth === undefined ? reached : reached.filter((hit) => hit.depth <= depth);
+  // `radius` counts the whole closure and `returned` counts the listing; the
+  // evaluation read 16 listed entries beside a radius of 129 and could not tell
+  // whether the radius was a second, larger listing it had not been shown.
+  const radius = isNode ? reached.length : (entry?.blast ?? 0);
+  const counts = { returned: shown.length, truncated: shown.length < reached.length };
   const result: ImpactResult = isNode
     ? {
         path: node.id,
-        radius: reached.length,
+        radius,
+        ...counts,
         nodes: shown.map((hit) => ({ id: hit.path, depth: hit.depth })),
       }
-    : { path: target as string, radius: entry?.blast ?? 0, files: shown };
+    : { path: target as string, radius, ...counts, files: shown };
 
   if (ctx.json) {
     printJson(result);
     return 0;
   }
 
-  const capped = depth !== undefined && shown.length < reached.length ? `, showing depth <= ${depth}` : "";
+  const capped = counts.truncated ? `, showing depth <= ${depth}` : "";
   printLine(`${result.path}  blast radius ${result.radius}${capped}`);
+  if (counts.truncated) {
+    printLine(
+      `${counts.returned} of ${reached.length} listed; --depth bounds the listing, never the radius`,
+    );
+  }
   if (shown.length === 0) {
     printLine();
     printLine(isNode ? "nothing references it" : "nothing imports it");

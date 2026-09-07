@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/signals/index.ts`](index.ts.md)
 
-**Blast radius:** 36 files (`greplost impact packages/core/src/signals/pulumi-go.ts`)
+**Blast radius:** 40 files (`greplost impact packages/core/src/signals/pulumi-go.ts`)
 
 **Key symbols:**
 - `const LANGS: ReadonlySet<Lang> = new Set<Lang>(["go"])`  L75-75

@@ -153,9 +153,15 @@ describe("query", () => {
   test("finds a symbol and matches the documented --json shape", async () => {
     const run = await cli("query", "Registry", "--json", "--root", ts);
     expect(run.code).toBe(0);
-    const result = onlyJson(run) as { query: string; matches: Array<Record<string, unknown>> };
+    const result = onlyJson(run) as {
+      query: string;
+      status: string;
+      matches: Array<Record<string, unknown>>;
+    };
 
     expect(result.query).toBe("Registry");
+    // Leaf 2.15: every answer says why it is the answer it is.
+    expect(result.status).toBe("found");
     expect(result.matches).toHaveLength(1);
     const match = result.matches[0] as Record<string, unknown>;
     // `references`/`referencedBy` are schema-2 additions (leaf 2.11, spec 4.5):
@@ -166,24 +172,43 @@ describe("query", () => {
     );
     expect(match["references"]).toEqual([]);
     expect(match["referencedBy"]).toEqual([]);
+    // `visibility` (leaf 2.14) is a class *member*'s accessibility, so a
+    // top-level class carries none and the key list above stays as it was; a
+    // member match carries it beside `exported`.
+    expect(match["visibility"]).toBeUndefined();
+    const member = onlyJson(await cli("query", "Registry.register", "--json", "--root", ts)) as {
+      matches: Array<Record<string, unknown>>;
+    };
+    expect(Object.keys(member.matches[0] as Record<string, unknown>).sort()).toEqual(
+      ["callers", "card", "exported", "file", "id", "importers", "kind", "name", "package",
+       "referencedBy", "references", "signature", "span", "visibility"],
+    );
+    expect((member.matches[0] as Record<string, unknown>)["visibility"]).toBe("public");
     expect(match["file"]).toBe("packages/core/src/registry.ts");
     expect(match["id"]).toBe("packages/core/src/registry.ts#Registry");
     expect(match["kind"]).toBe("class");
     expect(match["exported"]).toBe(true);
     expect(match["package"]).toBe("@tiny/core");
-    expect(match["card"]).toBe("packages/tiny__core/modules/src/registry.ts.md");
+    expect(match["card"]).toBe(".greplost/packages/tiny__core/modules/src/registry.ts.md");
     expect(match["span"]).toEqual([5, 26]);
     expect(match["importers"]).toEqual(["packages/core/src/index.ts"]);
   });
 
-  test("lists callers by symbol id", async () => {
+  test("lists callers as call sites, sorted by caller id", async () => {
     const run = await cli("query", "retry", "--json", "--root", ts);
-    const result = onlyJson(run) as { matches: Array<{ id: string; callers: string[] }> };
+    const result = onlyJson(run) as {
+      matches: Array<{ id: string; callers: Array<{ from: string; line?: number; confidence: string }> }>;
+    };
     const retry = result.matches.find((m) => m.id === "packages/core/src/retry.ts#retry");
-    expect(retry?.callers).toEqual([
+    // Leaf 2.14: a caller is where the call is, not just who made it.
+    expect(retry?.callers.map((caller) => caller.from)).toEqual([
       "packages/adapters/src/sqs.ts#SqsAdapter.publish",
       "packages/core/src/registry.ts#Registry.publishAll",
     ]);
+    for (const caller of retry?.callers ?? []) {
+      expect(Object.keys(caller).sort()).toEqual(["confidence", "from", "line"]);
+      expect(caller.line).toBeGreaterThan(0);
+    }
   });
 
   test("finds a member symbol by its suffix", async () => {
@@ -205,7 +230,7 @@ describe("query", () => {
     );
     expect(file["path"]).toBe("packages/core/src/retry.ts");
     expect(file["package"]).toBe("@tiny/core");
-    expect(file["card"]).toBe("packages/tiny__core/modules/src/retry.ts.md");
+    expect(file["card"]).toBe(".greplost/packages/tiny__core/modules/src/retry.ts.md");
     expect(file["importers"]).toContain("packages/core/src/registry.ts");
     expect(file["exports"]).toEqual(["DEFAULT_ATTEMPTS", "RetryOptions", "retry"]);
 
@@ -256,9 +281,15 @@ describe("query", () => {
   test("an unindexed path is reported as missing from the map, not as no match", async () => {
     const run = await cli("query", "packages/core/src/nope.ts", "--root", ts);
     expect(run.code).toBe(1);
-    expect(run.stderr).toBe(
-      "greplost: packages/core/src/nope.ts is not in the map; run `greplost update` or check the path",
+    // Leaf 2.15: a path that is neither in the map nor on disk is a typo, so the
+    // message no longer offers `greplost update`, which could not fix it, and
+    // offers the nearest real paths instead.
+    const lines = run.stderr.split("\n");
+    expect(lines[0]).toBe(
+      "greplost: packages/core/src/nope.ts is not in the map and not on disk; check the path",
     );
+    expect(lines[1]).toContain("did you mean:");
+    expect(run.stderr).not.toContain("greplost update");
   });
 
   test("human output is aligned columns plus the card path", async () => {
@@ -311,7 +342,7 @@ describe("impact", () => {
     expect(run.code).toBe(0);
     const result = onlyJson(run) as { path: string; radius: number; files: Array<{ path: string; depth: number }> };
 
-    expect(Object.keys(result).sort()).toEqual(["files", "path", "radius"]);
+    expect(Object.keys(result).sort()).toEqual(["files", "path", "radius", "returned", "truncated"]);
     expect(result.path).toBe("packages/core/src/retry.ts");
     expect(result.radius).toBe(manifestOf(ts).files["packages/core/src/retry.ts"]?.blast as number);
     expect(result.files).toHaveLength(result.radius);

@@ -8,19 +8,22 @@
 
 **Exports:** `BuildArtifactsOptions (interface)`, `BuildResult (interface)`, `buildArtifacts(root: string, opts: BuildArtifactsOptions = {}): Promise<BuildResult>`, `readSummaries(root: string): SummaryCache`
 
-**Imports:** `node:fs` (existsSync, readFileSync), `node:path` (default), [`@greplost/core`](../../../greplost__core/modules/src/index.ts.md) (ParseCache, ParserHandle, buildSnapshot, serializeSnapshot), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, GreplostConfig, Snapshot, SummaryCache, SummaryEntry, compareStrings), [`@greplost/render`](../../../greplost__render/modules/src/index.ts.md) (renderArtifacts), [`./artifacts.ts`](artifacts.ts.md) (isStructurePath)
+**Imports:** `node:fs` (existsSync, readFileSync), `node:path` (default), [`@greplost/core`](../../../greplost__core/modules/src/index.ts.md) (ParseCache, ParserHandle, buildSnapshot, discoverFiles, serializeSnapshot), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (ARTIFACT_DIR, ARTIFACT_PATHS, GreplostConfig, Snapshot, SummaryCache, SummaryEntry, compareStrings), [`@greplost/render`](../../../greplost__render/modules/src/index.ts.md) (MapProvenance, renderArtifacts), [`./artifacts.ts`](artifacts.ts.md) (isStructurePath)
 
 **Imported by:** [`packages/sync/src/incremental.ts`](incremental.ts.md), [`packages/sync/src/index.ts`](index.ts.md), [`packages/sync/src/verify.ts`](verify.ts.md)
 
-**Blast radius:** 21 files (`greplost impact packages/sync/src/build.ts`)
+**Blast radius:** 23 files (`greplost impact packages/sync/src/build.ts`)
 
 **Key symbols:**
-- `interface BuildArtifactsOptions`  L28-35
-- `interface BuildResult`  L37-55
-- `function readSummaries(root: string): SummaryCache`  L65-90
-- `async function buildArtifacts(root: string, opts: BuildArtifactsOptions = {}): Promise<BuildResult>`  L101-139
-- `function isPlainObject(value: unknown): value is Record<string, unknown>`  L141-143
-- `function isSummaryEntry(value: unknown): value is SummaryEntry`  L145-153
-- `function reasonOf(cause: unknown): string`  L155-157
+- `interface BuildArtifactsOptions`  L29-36
+- `interface BuildResult`  L38-56
+- `function readSummaries(root: string): SummaryCache`  L66-91
+- `async function buildArtifacts(root: string, opts: BuildArtifactsOptions = {}): Promise<BuildResult>`  L102-143
+- `async function provenanceOf(root: string, snapshot: Snapshot): Promise<MapProvenance>`  L159-163
+- `function countingExcludes(config: GreplostConfig): string[]`  L181-190
+- `const TEST_PATTERNS: ReadonlySet<string> = new Set([ "**/*.test.*", "**/*.spec.*", "**/__tests__/**", "**/testdata/**", "**/*_test.go", "**/test_*.py", "**/*_test.py", "**/conftest.py", ])`  L197-206
+- `function isPlainObject(value: unknown): value is Record<string, unknown>`  L208-210
+- `function isSummaryEntry(value: unknown): value is SummaryEntry`  L212-220
+- `function reasonOf(cause: unknown): string`  L222-224
 
-**Calls:** `buildSnapshot` → [`packages/core/src/build.ts#buildSnapshot`](../../../greplost__core/modules/src/build.ts.md) (med), `serializeSnapshot` → [`packages/core/src/serialize/write.ts#serializeSnapshot`](../../../greplost__core/modules/src/serialize/write.ts.md) (med), `renderArtifacts` → [`packages/render/src/render.ts#renderArtifacts`](../../../greplost__render/modules/src/render.ts.md) (med), `isStructurePath` → [`packages/sync/src/artifacts.ts#isStructurePath`](artifacts.ts.md) (high), `isPlainObject` → [`packages/sync/src/build.ts#isPlainObject`](build.ts.md) (high), `isSummaryEntry` → [`packages/sync/src/build.ts#isSummaryEntry`](build.ts.md) (high), `readSummaries` → [`packages/sync/src/build.ts#readSummaries`](build.ts.md) (high), `reasonOf` → [`packages/sync/src/build.ts#reasonOf`](build.ts.md) (high)
+**Calls:** `buildSnapshot` → [`packages/core/src/build.ts#buildSnapshot`](../../../greplost__core/modules/src/build.ts.md) (med), `discoverFiles` → [`packages/core/src/discover.ts#discoverFiles`](../../../greplost__core/modules/src/discover.ts.md) (med), `serializeSnapshot` → [`packages/core/src/serialize/write.ts#serializeSnapshot`](../../../greplost__core/modules/src/serialize/write.ts.md) (med), `renderArtifacts` → [`packages/render/src/render.ts#renderArtifacts`](../../../greplost__render/modules/src/render.ts.md) (med), `isStructurePath` → [`packages/sync/src/artifacts.ts#isStructurePath`](artifacts.ts.md) (high), `countingExcludes` → [`packages/sync/src/build.ts#countingExcludes`](build.ts.md) (high), `isPlainObject` → [`packages/sync/src/build.ts#isPlainObject`](build.ts.md) (high), `isSummaryEntry` → [`packages/sync/src/build.ts#isSummaryEntry`](build.ts.md) (high), `provenanceOf` → [`packages/sync/src/build.ts#provenanceOf`](build.ts.md) (high), `readSummaries` → [`packages/sync/src/build.ts#readSummaries`](build.ts.md) (high), `reasonOf` → [`packages/sync/src/build.ts#reasonOf`](build.ts.md) (high)

@@ -112,6 +112,10 @@ export interface WorkspaceImpactResult {
   path: string;
   /** The full reverse closure, never truncated by `--depth`. */
   radius: number;
+  /** How many entries the listing below holds (leaf 2.15, the single-repo shape). */
+  returned: number;
+  /** True when `--depth` kept entries out of the listing; `radius` still counts them. */
+  truncated: boolean;
   files: Array<{ path: string; depth: number }>;
 }
 
@@ -258,9 +262,12 @@ const impactHook: WorkspaceHook = async (ctx) => {
   const reached = impactAcross(root, target);
   const depth = ctx.options.depth;
   const shown = depth === undefined ? reached : reached.filter((file) => file.depth <= depth);
+  const truncated = shown.length < reached.length;
   const result: WorkspaceImpactResult = {
     path: target,
     radius: reached.length,
+    returned: shown.length,
+    truncated,
     files: shown.map((file) => ({ path: file.id, depth: file.depth })),
   };
 
@@ -269,8 +276,11 @@ const impactHook: WorkspaceHook = async (ctx) => {
     return 0;
   }
 
-  const capped = depth !== undefined && shown.length < reached.length ? `, showing depth <= ${depth}` : "";
+  const capped = truncated ? `, showing depth <= ${depth}` : "";
   console.log(`${result.path}  blast radius ${result.radius}${capped}`);
+  if (truncated) {
+    console.log(`${result.returned} of ${reached.length} listed; --depth bounds the listing, never the radius`);
+  }
   if (result.files.length === 0) {
     console.log("");
     console.log("nothing imports it");
@@ -298,7 +308,7 @@ const queryHook: WorkspaceHook = async (ctx) => {
     return empty ? 1 : 0;
   }
   if (empty) {
-    console.error(`greplost: no match for "${needle}" in this workspace`);
+    console.error(`greplost: ${result.message ?? `no match for "${needle}" in this workspace`}`);
     return 1;
   }
 
@@ -333,6 +343,12 @@ const queryHook: WorkspaceHook = async (ctx) => {
     )) {
       console.log(line);
     }
+  }
+  // A stale answer is still an answer, and it says so under itself rather than
+  // on stderr, exactly as the single-repo command does (leaf 2.15).
+  if (result.status !== "found" && result.message !== undefined) {
+    console.log("");
+    console.log(result.message);
   }
   return 0;
 };

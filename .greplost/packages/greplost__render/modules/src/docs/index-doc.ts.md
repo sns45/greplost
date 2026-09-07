@@ -8,29 +8,31 @@
 
 **Exports:** `buildIndex(ctx: DocContext): string`
 
-**Imports:** [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (PackageInfo, compareStrings), [`../render.ts`](../render.ts.md) (DocContext), [`../slug.ts`](../slug.ts.md) (packageDir, relLink), [`../tokens.ts`](../tokens.ts.md) (INDEX_TOKEN_BUDGET, estimateTokens), [`./repo-map.ts`](repo-map.ts.md) (packageTree), [`./hotspots.ts`](hotspots.ts.md) (topByBlast, topByFanIn)
+**Imports:** [`@greplost/core/schema`](../../../../greplost__core/modules/src/schema.ts.md) (PackageInfo, compareStrings), [`../render.ts`](../render.ts.md) (DocContext), [`../slug.ts`](../slug.ts.md) (packageDir, relLink), [`../tokens.ts`](../tokens.ts.md) (INDEX_TOKEN_BUDGET, estimateTokens), [`../version.ts`](../version.ts.md) (GREPLOST_VERSION), [`./repo-map.ts`](repo-map.ts.md) (packageTree), [`./hotspots.ts`](hotspots.ts.md) (topByBlast, topByFanIn)
 
 **Imported by:** [`packages/render/src/render.ts`](../render.ts.md)
 
-**Blast radius:** 38 files (`greplost impact packages/render/src/docs/index-doc.ts`)
+**Blast radius:** 41 files (`greplost impact packages/render/src/docs/index-doc.ts`)
 
 **Key symbols:**
-- `const INDEX_ARTIFACT = "INDEX.md"`  L28-28
-- `const HOTSPOT_LIMIT = 5`  L31-31
-- `const TABLE_FLOOR = 10`  L34-34
-- `const AGENT_LINE = "> Read this file first. `greplost query <symbol|path> --json` and " + "`greplost impact <path> --json` answer structural questions in one call; " + "module cards under `packages/<…`  L41-44
-- `interface IndexOptions`  L46-53
-- `const UNLIMITED = Number.POSITIVE_INFINITY`  L55-55
-- `const NO_TREE = 0`  L58-58
-- `const TREE_STEPS: readonly number[] = [UNLIMITED, 2, 1, NO_TREE]`  L61-61
-- `function buildIndex(ctx: DocContext): string`  L63-88
-- `function largestThatFits(low: number, high: number, ok: (value: number) => boolean): number | undefined`  L91-106
-- `function render(ctx: DocContext, options: IndexOptions): string`  L108-119
-- `function treeBlock(ctx: DocContext, options: IndexOptions): string | undefined`  L122-126
-- `function tableBlocks(ctx: DocContext, options: IndexOptions): string[]`  L128-159
-- `function nodeCount(ctx: DocContext, pkgName: string): number`  L162-166
-- `function topPackagesByLoc(ctx: DocContext, topK: number): PackageInfo[]`  L169-177
-- `function hotspotList(ctx: DocContext, options: IndexOptions): string`  L179-193
-- `function navigation(): string`  L195-202
+- `const INDEX_ARTIFACT = "INDEX.md"`  L29-29
+- `const HOTSPOT_LIMIT = 5`  L32-32
+- `const TABLE_FLOOR = 10`  L35-35
+- `const AGENT_LINE = "> Read this file first. `greplost query <symbol|path> --json` and " + "`greplost impact <path> --json` answer structural questions in one call; " + "module cards under `packages/<…`  L42-45
+- `interface IndexOptions`  L47-54
+- `const UNLIMITED = Number.POSITIVE_INFINITY`  L56-56
+- `const NO_TREE = 0`  L59-59
+- `const TREE_STEPS: readonly number[] = [UNLIMITED, 2, 1, NO_TREE]`  L62-62
+- `function buildIndex(ctx: DocContext): string`  L64-89
+- `function largestThatFits(low: number, high: number, ok: (value: number) => boolean): number | undefined`  L92-107
+- `function provenanceLine(ctx: DocContext): string | undefined`  L125-134
+- `function render(ctx: DocContext, options: IndexOptions): string`  L136-149
+- `function treeBlock(ctx: DocContext, options: IndexOptions): string | undefined`  L152-156
+- `function tableBlocks(ctx: DocContext, options: IndexOptions): string[]`  L158-194
+- `const NODES_LEGEND = "Nodes counts the non-file nodes a package's files declare (a Terraform resource, a " + "Kubernetes object, a workflow job or step, a build stage, a route), each with its own " +…`  L197-200
+- `function nodeCount(ctx: DocContext, pkgName: string): number`  L203-207
+- `function topPackagesByLoc(ctx: DocContext, topK: number): PackageInfo[]`  L210-218
+- `function hotspotList(ctx: DocContext, options: IndexOptions): string`  L220-234
+- `function navigation(): string`  L236-243
 
-**Calls:** `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high), `topByBlast` → [`packages/render/src/docs/hotspots.ts#topByBlast`](hotspots.ts.md) (high), `topByFanIn` → [`packages/render/src/docs/hotspots.ts#topByFanIn`](hotspots.ts.md) (high), `hotspotList` → [`packages/render/src/docs/index-doc.ts#hotspotList`](index-doc.ts.md) (high), `largestThatFits` → [`packages/render/src/docs/index-doc.ts#largestThatFits`](index-doc.ts.md) (high), `navigation` → [`packages/render/src/docs/index-doc.ts#navigation`](index-doc.ts.md) (high), `nodeCount` → [`packages/render/src/docs/index-doc.ts#nodeCount`](index-doc.ts.md) (high), `render` → [`packages/render/src/docs/index-doc.ts#render`](index-doc.ts.md) (high), `tableBlocks` → [`packages/render/src/docs/index-doc.ts#tableBlocks`](index-doc.ts.md) (high), `topPackagesByLoc` → [`packages/render/src/docs/index-doc.ts#topPackagesByLoc`](index-doc.ts.md) (high), `treeBlock` → [`packages/render/src/docs/index-doc.ts#treeBlock`](index-doc.ts.md) (high), `packageTree` → [`packages/render/src/docs/repo-map.ts#packageTree`](repo-map.ts.md) (high), `packageDir` → [`packages/render/src/slug.ts#packageDir`](../slug.ts.md) (high), `relLink` → [`packages/render/src/slug.ts#relLink`](../slug.ts.md) (high), `estimateTokens` → [`packages/render/src/tokens.ts#estimateTokens`](../tokens.ts.md) (high)
+**Calls:** `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../../greplost__core/modules/src/schema.ts.md) (high), `topByBlast` → [`packages/render/src/docs/hotspots.ts#topByBlast`](hotspots.ts.md) (high), `topByFanIn` → [`packages/render/src/docs/hotspots.ts#topByFanIn`](hotspots.ts.md) (high), `hotspotList` → [`packages/render/src/docs/index-doc.ts#hotspotList`](index-doc.ts.md) (high), `largestThatFits` → [`packages/render/src/docs/index-doc.ts#largestThatFits`](index-doc.ts.md) (high), `navigation` → [`packages/render/src/docs/index-doc.ts#navigation`](index-doc.ts.md) (high), `nodeCount` → [`packages/render/src/docs/index-doc.ts#nodeCount`](index-doc.ts.md) (high), `provenanceLine` → [`packages/render/src/docs/index-doc.ts#provenanceLine`](index-doc.ts.md) (high), `render` → [`packages/render/src/docs/index-doc.ts#render`](index-doc.ts.md) (high), `tableBlocks` → [`packages/render/src/docs/index-doc.ts#tableBlocks`](index-doc.ts.md) (high), `topPackagesByLoc` → [`packages/render/src/docs/index-doc.ts#topPackagesByLoc`](index-doc.ts.md) (high), `treeBlock` → [`packages/render/src/docs/index-doc.ts#treeBlock`](index-doc.ts.md) (high), `packageTree` → [`packages/render/src/docs/repo-map.ts#packageTree`](repo-map.ts.md) (high), `packageDir` → [`packages/render/src/slug.ts#packageDir`](../slug.ts.md) (high), `relLink` → [`packages/render/src/slug.ts#relLink`](../slug.ts.md) (high), `estimateTokens` → [`packages/render/src/tokens.ts#estimateTokens`](../tokens.ts.md) (high)

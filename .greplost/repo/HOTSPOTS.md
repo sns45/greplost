@@ -6,57 +6,58 @@
 
 | File | Fan-in | Fan-out | Blast |
 |---|---|---|---|
-| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 127 | 0 | 154 |
+| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 132 | 0 | 159 |
 | [`bench/src/truth/ts.ts`](../packages/greplost__bench/modules/src/truth/ts.ts.md) | 18 | 3 | 18 |
-| [`packages/cli/src/args.ts`](../packages/greplost/modules/src/args.ts.md) | 14 | 1 | 14 |
-| [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 14 | 0 | 64 |
-| [`packages/cli/src/output.ts`](../packages/greplost/modules/src/output.ts.md) | 11 | 2 | 13 |
-| [`packages/core/src/graph/index.ts`](../packages/greplost__core/modules/src/graph/index.ts.md) | 10 | 6 | 46 |
-| [`packages/core/src/index.ts`](../packages/greplost__core/modules/src/index.ts.md) | 10 | 15 | 28 |
-| [`packages/core/src/references/link.ts`](../packages/greplost__core/modules/src/references/link.ts.md) | 9 | 7 | 40 |
-| [`packages/core/src/resolve/resolver.ts`](../packages/greplost__core/modules/src/resolve/resolver.ts.md) | 9 | 10 | 68 |
-| [`packages/sync/src/index.ts`](../packages/greplost__sync/modules/src/index.ts.md) | 9 | 11 | 17 |
-| [`packages/core/src/signals/index.ts`](../packages/greplost__core/modules/src/signals/index.ts.md) | 8 | 6 | 36 |
-| [`packages/render/src/index.ts`](../packages/greplost__render/modules/src/index.ts.md) | 8 | 8 | 30 |
-| [`packages/render/src/render.ts`](../packages/greplost__render/modules/src/render.ts.md) | 8 | 10 | 38 |
-| [`packages/render/src/slug.ts`](../packages/greplost__render/modules/src/slug.ts.md) | 8 | 1 | 39 |
+| [`packages/cli/src/args.ts`](../packages/greplost/modules/src/args.ts.md) | 14 | 2 | 16 |
+| [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 14 | 0 | 68 |
+| [`packages/core/src/index.ts`](../packages/greplost__core/modules/src/index.ts.md) | 14 | 15 | 32 |
+| [`packages/cli/src/output.ts`](../packages/greplost/modules/src/output.ts.md) | 12 | 2 | 15 |
+| [`packages/core/src/graph/index.ts`](../packages/greplost__core/modules/src/graph/index.ts.md) | 10 | 6 | 50 |
+| [`packages/core/src/references/link.ts`](../packages/greplost__core/modules/src/references/link.ts.md) | 9 | 7 | 44 |
+| [`packages/core/src/resolve/resolver.ts`](../packages/greplost__core/modules/src/resolve/resolver.ts.md) | 9 | 10 | 72 |
+| [`packages/sync/src/index.ts`](../packages/greplost__sync/modules/src/index.ts.md) | 9 | 11 | 19 |
+| [`packages/core/src/signals/index.ts`](../packages/greplost__core/modules/src/signals/index.ts.md) | 8 | 6 | 40 |
+| [`packages/render/src/index.ts`](../packages/greplost__render/modules/src/index.ts.md) | 8 | 9 | 33 |
+| [`packages/render/src/render.ts`](../packages/greplost__render/modules/src/render.ts.md) | 8 | 10 | 41 |
+| [`packages/render/src/slug.ts`](../packages/greplost__render/modules/src/slug.ts.md) | 8 | 1 | 42 |
 | [`bench/src/results-io.ts`](../packages/greplost__bench/modules/src/results-io.ts.md) | 7 | 1 | 7 |
 | [`bench/src/results-md.ts`](../packages/greplost__bench/modules/src/results-md.ts.md) | 6 | 1 | 6 |
-| [`packages/cli/src/commands/workspace.ts`](../packages/greplost/modules/src/commands/workspace.ts.md) | 6 | 2 | 7 |
-| [`packages/core/src/parser.ts`](../packages/greplost__core/modules/src/parser.ts.md) | 6 | 1 | 48 |
-| [`packages/sync/src/write.ts`](../packages/greplost__sync/modules/src/write.ts.md) | 6 | 2 | 23 |
+| [`packages/cli/src/commands/workspace.ts`](../packages/greplost/modules/src/commands/workspace.ts.md) | 6 | 2 | 9 |
+| [`packages/core/src/parser.ts`](../packages/greplost__core/modules/src/parser.ts.md) | 6 | 1 | 52 |
+| [`packages/sync/src/write.ts`](../packages/greplost__sync/modules/src/write.ts.md) | 6 | 2 | 25 |
 | [`bench/src/adapters/types.ts`](../packages/greplost__bench/modules/src/adapters/types.ts.md) | 5 | 1 | 5 |
 
 ## Largest blast radius
 
 | File | Fan-in | Fan-out | Blast |
 |---|---|---|---|
-| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 127 | 0 | 154 |
-| [`packages/core/src/resolve/go.ts`](../packages/greplost__core/modules/src/resolve/go.ts.md) | 2 | 1 | 69 |
-| [`packages/core/src/resolve/tsconfig.ts`](../packages/greplost__core/modules/src/resolve/tsconfig.ts.md) | 2 | 0 | 69 |
-| [`packages/core/src/resolve/dockerfile.ts`](../packages/greplost__core/modules/src/resolve/dockerfile.ts.md) | 2 | 2 | 68 |
-| [`packages/core/src/resolve/hcl.ts`](../packages/greplost__core/modules/src/resolve/hcl.ts.md) | 3 | 2 | 68 |
-| [`packages/core/src/resolve/java.ts`](../packages/greplost__core/modules/src/resolve/java.ts.md) | 3 | 2 | 68 |
-| [`packages/core/src/resolve/kotlin.ts`](../packages/greplost__core/modules/src/resolve/kotlin.ts.md) | 3 | 2 | 68 |
-| [`packages/core/src/resolve/python.ts`](../packages/greplost__core/modules/src/resolve/python.ts.md) | 3 | 2 | 68 |
-| [`packages/core/src/resolve/resolver.ts`](../packages/greplost__core/modules/src/resolve/resolver.ts.md) | 9 | 10 | 68 |
-| [`packages/core/src/resolve/rust.ts`](../packages/greplost__core/modules/src/resolve/rust.ts.md) | 3 | 2 | 68 |
-| [`packages/core/src/resolve/yaml.ts`](../packages/greplost__core/modules/src/resolve/yaml.ts.md) | 2 | 2 | 68 |
-| [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 14 | 0 | 64 |
-| [`packages/core/src/serialize/json.ts`](../packages/greplost__core/modules/src/serialize/json.ts.md) | 3 | 1 | 51 |
-| [`packages/core/src/graph/tarjan.ts`](../packages/greplost__core/modules/src/graph/tarjan.ts.md) | 4 | 1 | 50 |
-| [`packages/core/src/graph/directories.ts`](../packages/greplost__core/modules/src/graph/directories.ts.md) | 3 | 1 | 49 |
-| [`packages/core/src/resolve/packages.ts`](../packages/greplost__core/modules/src/resolve/packages.ts.md) | 1 | 1 | 49 |
-| [`packages/core/src/serialize/read.ts`](../packages/greplost__core/modules/src/serialize/read.ts.md) | 2 | 2 | 49 |
-| [`packages/core/src/graph/blast.ts`](../packages/greplost__core/modules/src/graph/blast.ts.md) | 2 | 2 | 48 |
-| [`packages/core/src/parser.ts`](../packages/greplost__core/modules/src/parser.ts.md) | 6 | 1 | 48 |
-| [`packages/core/src/resolve/index.ts`](../packages/greplost__core/modules/src/resolve/index.ts.md) | 3 | 10 | 48 |
+| [`packages/core/src/schema.ts`](../packages/greplost__core/modules/src/schema.ts.md) | 132 | 0 | 159 |
+| [`packages/core/src/resolve/go.ts`](../packages/greplost__core/modules/src/resolve/go.ts.md) | 2 | 1 | 73 |
+| [`packages/core/src/resolve/tsconfig.ts`](../packages/greplost__core/modules/src/resolve/tsconfig.ts.md) | 2 | 0 | 73 |
+| [`packages/core/src/resolve/dockerfile.ts`](../packages/greplost__core/modules/src/resolve/dockerfile.ts.md) | 2 | 2 | 72 |
+| [`packages/core/src/resolve/hcl.ts`](../packages/greplost__core/modules/src/resolve/hcl.ts.md) | 3 | 2 | 72 |
+| [`packages/core/src/resolve/java.ts`](../packages/greplost__core/modules/src/resolve/java.ts.md) | 3 | 2 | 72 |
+| [`packages/core/src/resolve/kotlin.ts`](../packages/greplost__core/modules/src/resolve/kotlin.ts.md) | 3 | 2 | 72 |
+| [`packages/core/src/resolve/python.ts`](../packages/greplost__core/modules/src/resolve/python.ts.md) | 3 | 2 | 72 |
+| [`packages/core/src/resolve/resolver.ts`](../packages/greplost__core/modules/src/resolve/resolver.ts.md) | 9 | 10 | 72 |
+| [`packages/core/src/resolve/rust.ts`](../packages/greplost__core/modules/src/resolve/rust.ts.md) | 3 | 2 | 72 |
+| [`packages/core/src/resolve/yaml.ts`](../packages/greplost__core/modules/src/resolve/yaml.ts.md) | 2 | 2 | 72 |
+| [`packages/core/src/extract/ts-signature.ts`](../packages/greplost__core/modules/src/extract/ts-signature.ts.md) | 14 | 0 | 68 |
+| [`packages/core/src/serialize/json.ts`](../packages/greplost__core/modules/src/serialize/json.ts.md) | 3 | 1 | 55 |
+| [`packages/core/src/graph/tarjan.ts`](../packages/greplost__core/modules/src/graph/tarjan.ts.md) | 4 | 1 | 54 |
+| [`packages/core/src/graph/directories.ts`](../packages/greplost__core/modules/src/graph/directories.ts.md) | 3 | 1 | 53 |
+| [`packages/core/src/resolve/packages.ts`](../packages/greplost__core/modules/src/resolve/packages.ts.md) | 1 | 1 | 53 |
+| [`packages/core/src/serialize/read.ts`](../packages/greplost__core/modules/src/serialize/read.ts.md) | 2 | 2 | 53 |
+| [`packages/core/src/graph/blast.ts`](../packages/greplost__core/modules/src/graph/blast.ts.md) | 2 | 2 | 52 |
+| [`packages/core/src/parser.ts`](../packages/greplost__core/modules/src/parser.ts.md) | 6 | 1 | 52 |
+| [`packages/core/src/resolve/index.ts`](../packages/greplost__core/modules/src/resolve/index.ts.md) | 3 | 10 | 52 |
 
 ## Import cycles
 
-6 cycles
+7 cycles
 
 - bench/src/report-payload.ts → bench/src/results-md.ts → bench/src/report-payload.ts
+- packages/cli/src/commands/query-describe.ts → packages/cli/src/commands/query-print.ts → packages/cli/src/commands/query.ts → packages/cli/src/commands/query-describe.ts
 - packages/core/src/extract/ts-calls.ts → packages/core/src/extract/ts-imports.ts → packages/core/src/extract/ts.ts → packages/core/src/extract/ts-calls.ts
 - packages/core/src/references/dockerfile.ts → packages/core/src/references/go.ts → packages/core/src/references/hcl.ts → packages/core/src/references/link.ts → packages/core/src/references/ts.ts → packages/core/src/references/yaml-actions.ts → packages/core/src/references/yaml-k8s.ts → packages/core/src/references/yaml.ts → packages/core/src/references/dockerfile.ts
 - packages/core/src/resolve/dockerfile.ts → packages/core/src/resolve/hcl.ts → packages/core/src/resolve/java.ts → packages/core/src/resolve/kotlin.ts → packages/core/src/resolve/python.ts → packages/core/src/resolve/resolver.ts → packages/core/src/resolve/rust.ts → packages/core/src/resolve/yaml.ts → packages/core/src/resolve/dockerfile.ts

@@ -10,9 +10,9 @@
 
 **Imports:** `node:fs` (existsSync), `node:path` (default), `node:url` (fileURLToPath), [`@greplost/core/schema`](../../../greplost__core/modules/src/schema.ts.md) (stableStringify), `../package.json` (unresolved), [`@greplost/render`](../../../greplost__render/modules/src/index.ts.md) (fields, summarise, table)
 
-**Imported by:** [`packages/cli/src/commands/bench.ts`](commands/bench.ts.md), [`packages/cli/src/commands/flows.ts`](commands/flows.ts.md), [`packages/cli/src/commands/hook.ts`](commands/hook.ts.md), [`packages/cli/src/commands/impact.ts`](commands/impact.ts.md), [`packages/cli/src/commands/init.ts`](commands/init.ts.md), [`packages/cli/src/commands/query.ts`](commands/query.ts.md), [`packages/cli/src/commands/refresh.ts`](commands/refresh.ts.md), [`packages/cli/src/commands/update.ts`](commands/update.ts.md), [`packages/cli/src/commands/verify.ts`](commands/verify.ts.md), [`packages/cli/src/commands/version.ts`](commands/version.ts.md), [`packages/cli/src/main.ts`](main.ts.md)
+**Imported by:** [`packages/cli/src/commands/bench.ts`](commands/bench.ts.md), [`packages/cli/src/commands/flows.ts`](commands/flows.ts.md), [`packages/cli/src/commands/hook.ts`](commands/hook.ts.md), [`packages/cli/src/commands/impact.ts`](commands/impact.ts.md), [`packages/cli/src/commands/init.ts`](commands/init.ts.md), [`packages/cli/src/commands/query-print.ts`](commands/query-print.ts.md), [`packages/cli/src/commands/query.ts`](commands/query.ts.md), [`packages/cli/src/commands/refresh.ts`](commands/refresh.ts.md), [`packages/cli/src/commands/update.ts`](commands/update.ts.md), [`packages/cli/src/commands/verify.ts`](commands/verify.ts.md), [`packages/cli/src/commands/version.ts`](commands/version.ts.md), [`packages/cli/src/main.ts`](main.ts.md)
 
-**Blast radius:** 13 files (`greplost impact packages/cli/src/output.ts`)
+**Blast radius:** 15 files (`greplost impact packages/cli/src/output.ts`)
 
 **Key symbols:**
 - `const VERSION: string = manifest.version`  L29-29

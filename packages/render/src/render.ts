@@ -43,9 +43,52 @@ import { buildPackageMap } from "./docs/package-map.ts";
 import { buildApi } from "./docs/api.ts";
 import { buildCard } from "./docs/card.ts";
 
+/**
+ * What the checkout knows about a map that the snapshot does not (leaf 2.15).
+ *
+ * The render layer is pure, so this is measured by the caller that *has* a
+ * filesystem (`@greplost/sync`'s `buildArtifacts`) and handed in. It is a
+ * function of the source tree alone, never of the clock, the machine or the
+ * environment, and that is not a detail: `greplost verify` is a byte
+ * comparison, so anything in an artifact that two builds of the same content
+ * could disagree about is drift waiting to happen.
+ *
+ * Two facts are deliberately absent for exactly that reason.
+ *
+ *  - **The commit sha.** The pre-commit hook writes the map of the tree it is
+ *    about to commit, so a sha read at build time is always the *previous*
+ *    commit's; a `verify` on the new commit would read the new one and report
+ *    drift on every commit ever made. `git log .greplost` answers "which
+ *    revision is this map from" exactly, and `greplost query`'s `stale` status
+ *    answers "does it still describe this file" per file.
+ *  - **Whether the root is a git checkout.** The same source, built inside a
+ *    checkout and from an exported copy of it, would then produce two different
+ *    maps, and a `verify` across that boundary would fail on a line that says
+ *    nothing about the code.
+ */
+export interface MapProvenance {
+  /**
+   * Files in a language the map indexes that the config's *test* patterns keep
+   * out of it: the number that tells a reader whether a map with no tests in it
+   * is a setting or a bug.
+   *
+   * Test patterns only, and not every exclude, because the figure is measured
+   * from the tree and reaches a verified artifact: build output that a checkout
+   * gitignores is invisible to discovery inside a checkout and visible outside
+   * one, so counting it would make the same source render two ways (fix round 1).
+   */
+  excluded: number;
+}
+
 export interface RenderInput {
   snapshot: Snapshot;
   summaries: SummaryCache;
+  /**
+   * Provenance for `INDEX.md`. Optional: a caller that renders a snapshot it
+   * built in memory (a test, a benchmark) has no checkout to measure, and the
+   * line is left out rather than guessed at.
+   */
+  provenance?: MapProvenance;
   /**
    * Out-parameter: `renderArtifacts` appends, in emission order, one line per node card it
    * had to skip because another artifact already claims that path on a case-insensitive
@@ -70,6 +113,8 @@ export interface DocContext {
   manifest: Manifest;
   /** Copied here so the docs modules never import a value from this file. */
   generatedLine: string;
+  /** What the checkout knows and the snapshot does not; absent when nobody measured it. */
+  provenance?: MapProvenance;
   /** Name of the package rooted at ".", or the repo's own directory-less fallback. */
   rootName: string;
   /** Every package, sorted by path. */
@@ -320,6 +365,7 @@ export function createContext(input: RenderInput): DocContext {
     config: snapshot.config,
     manifest,
     generatedLine: GENERATED_LINE,
+    ...(input.provenance === undefined ? {} : { provenance: input.provenance }),
     rootName,
     packages,
     indexedPackages,

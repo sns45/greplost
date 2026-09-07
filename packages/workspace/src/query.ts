@@ -12,7 +12,11 @@
  * reads both, which is the whole point of a stable shape.
  */
 
-import { callerIds, findSymbols } from "@greplost/core";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { callersOf, findSymbols, sha256Hex } from "@greplost/core";
+import type { Caller } from "@greplost/core";
 import type { Declaration, ImportEdge, Manifest, PackageInfo } from "@greplost/core/schema";
 import { compareStrings } from "@greplost/core/schema";
 import { cardPath } from "@greplost/render";
@@ -32,13 +36,25 @@ export interface WorkspaceQueryMatch {
   signature: string;
   span: [number, number];
   exported: boolean;
+  /** A class member's declared accessibility, when the language has one (leaf 2.14). */
+  visibility?: "public" | "protected" | "private";
   package: string;
   /** `<repoDir>::<.greplost-relative card path>`, or `""` when the file has no card. */
   card: string;
   /** Workspace ids of files importing the declaring file and naming this symbol. */
   importers: string[];
-  /** Workspace symbol ids that call this declaration. */
-  callers: string[];
+  /**
+   * Call sites reaching this declaration, `from` workspace-qualified (leaf 2.14):
+   * the single-repo shape with the repo prefix every other id here carries.
+   */
+  callers: WorkspaceCaller[];
+}
+
+/** One call site, with its `from` carrying the `<repoDir>::` prefix. */
+export interface WorkspaceCaller {
+  from: string;
+  line?: number;
+  confidence: Caller["confidence"];
 }
 
 /** The file block, present when the needle named an indexed file. */
@@ -57,10 +73,25 @@ export interface WorkspaceQueryFile {
   loc: number;
 }
 
+/**
+ * The same four words the single-repo `query` answers with (leaf 2.15), so one
+ * parser reads both forms.
+ *
+ * A workspace argument names an id or an indexed file rather than an arbitrary
+ * path on disk, so `excluded` cannot arise here: there is no unmapped path to
+ * classify against a config. The other three all can, and `stale` is the one
+ * that matters most across repos, where the map a sibling committed is the only
+ * thing this answer is built from.
+ */
+export type WorkspaceQueryStatus = "found" | "absent" | "stale";
+
 export interface WorkspaceQueryResult {
   query: string;
+  status: WorkspaceQueryStatus;
   matches: WorkspaceQueryMatch[];
   file?: WorkspaceQueryFile;
+  /** One line explaining a `status` that is not `found`. */
+  message?: string;
 }
 
 /**
@@ -92,12 +123,62 @@ export async function queryAcross(root: string, needle: string): Promise<Workspa
     }
   }
 
-  const result: WorkspaceQueryResult = { query: needle, matches };
+  const result: WorkspaceQueryResult = { query: needle, status: "absent", matches };
   if (asFile !== undefined) {
     const file = describeFile(repos, pairs, asFile);
     if (file !== undefined) result.file = file;
   }
+
+  const answered = result.file !== undefined || matches.length > 0;
+  if (!answered) {
+    result.message = `no match for "${needle}" in this workspace`;
+    return result;
+  }
+  const drifted = driftedFile(repos, result);
+  if (drifted === undefined) {
+    result.status = "found";
+    return result;
+  }
+  result.status = "stale";
+  result.message = `${drifted} has changed since that repo's map was built; run \`greplost update\` for a current answer`;
   return result;
+}
+
+/**
+ * The first workspace id whose bytes on disk are not the bytes its repo's
+ * manifest recorded, or whose file is gone (leaf 2.15 fix round 1, I2).
+ *
+ * The same content test the single-repo command applies, run per repo against
+ * that repo's own manifest, because in a workspace each repo's map is committed
+ * (and goes stale) separately. One hash per distinct file, sorted, first drift
+ * wins, so the answer is deterministic.
+ */
+function driftedFile(repos: readonly RepoView[], result: WorkspaceQueryResult): string | undefined {
+  const ids = new Set<string>(result.matches.map((match) => match.file));
+  if (result.file !== undefined) ids.add(result.file.path);
+
+  const byRepo = new Map<string, RepoView>();
+  for (const repo of repos) byRepo.set(repo.dir, repo);
+
+  for (const id of [...ids].sort(compareStrings)) {
+    const split = splitWorkspaceId(id);
+    const repo = split === null ? undefined : byRepo.get(split.repo);
+    if (split === null || repo === undefined) continue;
+    const entry = repo.manifest?.files[split.local];
+    if (entry === undefined) continue;
+    const onDisk = readBytes(join(repo.absolute, split.local));
+    if (onDisk === undefined || sha256Hex(onDisk) !== entry.sha256) return id;
+  }
+  return undefined;
+}
+
+/** The bytes of a file, or undefined when it is not readable (deleted, or a directory). */
+function readBytes(absolute: string): Uint8Array | undefined {
+  try {
+    return readFileSync(absolute);
+  } catch {
+    return undefined;
+  }
 }
 
 /** This repo's contribution to the match list, sorted by symbol id. */
@@ -125,7 +206,12 @@ function describe(repo: RepoView, decl: Declaration, byTarget: Map<string, Impor
     package: entry?.pkg ?? "",
     card: cardOf(repo, decl.file),
     importers: symbolImporters(repo, byTarget.get(decl.file) ?? [], decl),
-    callers: callerIds(repo.calls, decl.id).map((id) => workspaceId(repo.dir, id)),
+    callers: callersOf(repo.calls, decl.id).map((caller) => ({
+      from: workspaceId(repo.dir, caller.from),
+      ...(caller.line === undefined ? {} : { line: caller.line }),
+      confidence: caller.confidence,
+    })),
+    ...(decl.visibility === undefined ? {} : { visibility: decl.visibility }),
   };
 }
 

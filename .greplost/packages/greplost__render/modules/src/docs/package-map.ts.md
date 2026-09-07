@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/render/src/render.ts`](../render.ts.md)
 
-**Blast radius:** 38 files (`greplost impact packages/render/src/docs/package-map.ts`)
+**Blast radius:** 41 files (`greplost impact packages/render/src/docs/package-map.ts`)
 
 **Key symbols:**
 - `function buildPackageMap(ctx: DocContext, pkg: PackageInfo): string`  L20-44

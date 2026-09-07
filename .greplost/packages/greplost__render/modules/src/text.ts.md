@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/render/src/index.ts`](index.ts.md)
 
-**Blast radius:** 31 files (`greplost impact packages/render/src/text.ts`)
+**Blast radius:** 34 files (`greplost impact packages/render/src/text.ts`)
 
 **Key symbols:**
 - `function table(headers: readonly string[] | undefined, rows: readonly (readonly string[])[]): string[]`  L26-43

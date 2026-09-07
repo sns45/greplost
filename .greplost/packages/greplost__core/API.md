@@ -170,8 +170,9 @@
 - `function directoryOf(path: string): string` L23-26
 - `function importTargetsOf(file: string): [string, string]` L33-35
 - `function filesByDirectory(files: readonly string[]): Map<string, string[]>` L38-48
-- `function resolvedImportTargets( edges: readonly ImportEdge[], files: readonly string[], ): Array<readonly [string, string]>` L63-83
-- `function expandDirectoryTargets( edges: readonly ImportEdge[], files: readonly string[], ): Array<readonly [string, string]>` L100-122
+- `function filesUnder(files: readonly string[], directory: string): string[]` L62-67
+- `function resolvedImportTargets( edges: readonly ImportEdge[], files: readonly string[], ): Array<readonly [string, string]>` L82-102
+- `function expandDirectoryTargets( edges: readonly ImportEdge[], files: readonly string[], ): Array<readonly [string, string]>` L119-141
 
 ## packages/core/src/graph/index.ts
 
@@ -180,7 +181,7 @@
 - re-exports `stronglyConnected` from `./tarjan.ts`
 - re-exports `GraphEdges` from `./tarjan.ts`
 - re-exports `blastRadius`, `impactOf` from `./blast.ts`
-- re-exports `directoryOf`, `expandDirectoryTargets`, `filesByDirectory`, `importTargetsOf`, `resolvedImportTargets` from `./directories.ts`
+- re-exports `directoryOf`, `expandDirectoryTargets`, `filesByDirectory`, `filesUnder`, `importTargetsOf`, `resolvedImportTargets` from `./directories.ts`
 - re-exports `impactPairs`, `nodesOf`, `referencedBy`, `referencesOf` from `./query.ts`
 - re-exports `computeMetrics` from `./metrics.ts`
 - re-exports `ComputedMetrics`, `FileMetrics` from `./metrics.ts`

@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/references/dockerfile.ts`](dockerfile.ts.md), [`packages/core/src/references/go.ts`](go.ts.md), [`packages/core/src/references/hcl.ts`](hcl.ts.md), [`packages/core/src/references/index.ts`](index.ts.md), [`packages/core/src/references/ts.ts`](ts.ts.md), [`packages/core/src/references/yaml-actions.ts`](yaml-actions.ts.md), [`packages/core/src/references/yaml-k8s.ts`](yaml-k8s.ts.md), [`packages/core/src/references/yaml.ts`](yaml.ts.md), [`packages/core/src/serialize/write.ts`](../serialize/write.ts.md)
 
-**Blast radius:** 40 files (`greplost impact packages/core/src/references/link.ts`)
+**Blast radius:** 44 files (`greplost impact packages/core/src/references/link.ts`)
 
 **Key symbols:**
 - `interface ReferenceContext`  L39-50

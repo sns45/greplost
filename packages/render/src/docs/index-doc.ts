@@ -22,6 +22,7 @@ import { compareStrings } from "@greplost/core/schema";
 import type { DocContext } from "../render.ts";
 import { packageDir, relLink } from "../slug.ts";
 import { INDEX_TOKEN_BUDGET, estimateTokens } from "../tokens.ts";
+import { GREPLOST_VERSION } from "../version.ts";
 import { packageTree } from "./repo-map.ts";
 import { topByBlast, topByFanIn } from "./hotspots.ts";
 
@@ -105,8 +106,37 @@ function largestThatFits(low: number, high: number, ok: (value: number) => boole
   return best;
 }
 
+/**
+ * The provenance line, under the title (leaf 2.15): which greplost wrote this
+ * map, and how many files of an indexed language the config's exclude patterns
+ * kept out of it.
+ *
+ * That count is the one the evaluation needed most. A map that quietly leaves
+ * out every `_test.go` reads, to a reader who does not know that, as a map of a
+ * repository with no tests, and the evaluation spent a turn discovering
+ * otherwise. `git log .greplost/INDEX.md` says when the map was last written,
+ * which is the other half of provenance and the half a committed file can
+ * answer without putting a revision inside the bytes it would then invalidate
+ * (see `MapProvenance`).
+ *
+ * Undefined when the caller measured no provenance, so a snapshot rendered in
+ * memory is unchanged.
+ */
+function provenanceLine(ctx: DocContext): string | undefined {
+  const provenance = ctx.provenance;
+  if (provenance === undefined) return undefined;
+  const excluded = `${provenance.excluded} test file${provenance.excluded === 1 ? "" : "s"}`;
+  return (
+    `> Provenance: written by greplost ${GREPLOST_VERSION}; ${excluded} excluded ` +
+    "by the config's exclude patterns (see `.greplost/config.json`); " +
+    "`git log .greplost/INDEX.md` dates the map."
+  );
+}
+
 function render(ctx: DocContext, options: IndexOptions): string {
-  const blocks: string[] = [`# ${ctx.rootName} map`, `${ctx.generatedLine}\n${AGENT_LINE}`];
+  const provenance = provenanceLine(ctx);
+  const header = [ctx.generatedLine, AGENT_LINE, ...(provenance === undefined ? [] : [provenance])];
+  const blocks: string[] = [`# ${ctx.rootName} map`, header.join("\n")];
 
   blocks.push(`## Packages (${ctx.packages.length})`);
   const tree = treeBlock(ctx, options);
@@ -152,11 +182,22 @@ function tableBlocks(ctx: DocContext, options: IndexOptions): string[] {
     );
   }
   const blocks = [lines.join("\n")];
+  // What the column counts, once, under the table it labels (leaf 2.15). The
+  // evaluation read `Nodes 0` beside a package full of TypeScript symbols and
+  // concluded the map had missed them; the column counts the things *inside* a
+  // file that have their own card, and a symbol is not one of them.
+  if (withNodes) blocks.push(NODES_LEGEND);
   if (shown.length < total) {
     blocks.push(`… and ${total - shown.length} more packages, see repo/MAP.md`);
   }
   return blocks;
 }
+
+/** One line, printed only where the Nodes column is (a repo with non-file nodes). */
+const NODES_LEGEND =
+  "Nodes counts the non-file nodes a package's files declare (a Terraform resource, a " +
+  "Kubernetes object, a workflow job or step, a build stage, a route), each with its own " +
+  "card; functions, classes and other symbols are counted by `API.md`, not here.";
 
 /** Non-file nodes declared across one package's files. */
 function nodeCount(ctx: DocContext, pkgName: string): number {

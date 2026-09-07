@@ -103,6 +103,8 @@ describe("cli", () => {
     expect(JSON.parse(run.stdout)).toEqual({
       path: "repo-a::src/index.ts",
       radius: 2,
+      returned: 2,
+      truncated: false,
       files: [
         { path: "repo-b::src/main.ts", depth: 1 },
         { path: "repo-b::src/app.ts", depth: 2 },
@@ -232,6 +234,8 @@ describe("cli", () => {
     const expected = {
       path: "repo-a::src/index.ts",
       radius: 2,
+      returned: 2,
+      truncated: false,
       files: [
         { path: "repo-b::src/main.ts", depth: 1 },
         { path: "repo-b::src/app.ts", depth: 2 },
@@ -316,6 +320,61 @@ describe("cli", () => {
   test("a single repo inside the workspace still answers for itself", async () => {
     const run = await cli("impact", "src/index.ts", "--root", path.join(ws, "repo-a"), "--json");
     expect(run.code).toBe(0);
-    expect(JSON.parse(run.stdout)).toEqual({ path: "src/index.ts", radius: 0, files: [] });
+    expect(JSON.parse(run.stdout)).toEqual({
+      path: "src/index.ts",
+      radius: 0,
+      returned: 0,
+      truncated: false,
+      files: [],
+    });
+  });
+
+  /**
+   * Leaf 2.15 fix round 1, I2. The README and the plugin skill promise `status`
+   * on every `query` answer and `returned`/`truncated` on every `impact`
+   * answer; a workspace answer is a `query` answer, so it carries them too, and
+   * one parser reads both forms.
+   */
+  test("a workspace query carries a status", async () => {
+    const run = await cli("query", "greet", "--root", ws, "--json");
+    expect(run.code).toBe(0);
+    const result = JSON.parse(run.stdout) as { status: string; matches: unknown[] };
+    expect(result.status).toBe("found");
+    expect(result.matches.length).toBeGreaterThan(0);
+
+    const miss = await cli("query", "NoSuchSymbolAnywhere", "--root", ws, "--json");
+    expect(miss.code).toBe(1);
+    expect((JSON.parse(miss.stdout) as { status: string }).status).toBe("absent");
+  });
+
+  test("a workspace query says when the file its answer came from has changed", async () => {
+    const file = path.join(ws, "repo-a", "src", "greet.ts");
+    const before = readFileSync(file, "utf8");
+    try {
+      writeFileSync(file, `${before}\nexport const addedAfterTheMap = 1;\n`);
+      const run = await cli("query", "greet", "--root", ws, "--json");
+      const result = JSON.parse(run.stdout) as { status: string };
+      expect(result.status).toBe("stale");
+    } finally {
+      writeFileSync(file, before);
+    }
+  });
+
+  test("a workspace impact carries returned and truncated", async () => {
+    const run = await cli("impact", "repo-a::src/greet.ts", "--root", ws, "--json");
+    expect(run.code).toBe(0);
+    const result = JSON.parse(run.stdout) as {
+      radius: number;
+      returned: number;
+      truncated: boolean;
+      files: unknown[];
+    };
+    expect(result.returned).toBe(result.files.length);
+    expect(result.truncated).toBe(false);
+
+    const capped = await cli("impact", "repo-a::src/greet.ts", "--depth", "1", "--root", ws, "--json");
+    const bounded = JSON.parse(capped.stdout) as { radius: number; returned: number; truncated: boolean };
+    expect(bounded.radius).toBe(result.radius);
+    expect(bounded.truncated).toBe(bounded.returned < bounded.radius);
   });
 });

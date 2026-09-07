@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md), [`packages/core/src/extract/yaml.ts`](yaml.ts.md)
 
-**Blast radius:** 44 files (`greplost impact packages/core/src/extract/yaml-actions.ts`)
+**Blast radius:** 48 files (`greplost impact packages/core/src/extract/yaml-actions.ts`)
 
 **Key symbols:**
 - `const COMPOSITE_JOB_ID = "runs"`  L60-60

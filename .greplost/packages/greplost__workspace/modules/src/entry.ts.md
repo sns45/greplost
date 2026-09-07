@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/workspace/src/cross.ts`](cross.ts.md)
 
-**Blast radius:** 14 files (`greplost impact packages/workspace/src/entry.ts`)
+**Blast radius:** 16 files (`greplost impact packages/workspace/src/entry.ts`)
 
 **Key symbols:**
 - `interface NpmPackage`  L23-30
