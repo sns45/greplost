@@ -57,9 +57,9 @@
 - `type WorkspaceHook = (ctx: WorkspaceCommandContext) => Promise<number | undefined>` L96-96
 - `type SetWorkspaceHook = (name: WorkspaceHookName, hook: WorkspaceHook) => void` L98-98
 - `interface WorkspaceUpdateResult` L101-108
-- `interface WorkspaceImpactResult` L111-116
-- `function registerWorkspaceHooks(set: SetWorkspaceHook): void` L119-124
-- `async function initWorkspace( root: string, opts: { hooks?: boolean; json?: boolean } = {}, ): Promise<number>` L136-160
+- `interface WorkspaceImpactResult` L111-120
+- `function registerWorkspaceHooks(set: SetWorkspaceHook): void` L123-128
+- `async function initWorkspace( root: string, opts: { hooks?: boolean; json?: boolean } = {}, ): Promise<number>` L140-164
 - re-exports `ID_SEPARATOR`, `WORKSPACE_ARTIFACTS`, `WORKSPACE_FILE`, `findWorkspaceRoot`, `loadWorkspace`, `repoDirId`, `splitWorkspaceId`, `workspaceId` from `./config.ts`
 - re-exports `WorkspaceConfig` from `./config.ts`
 - re-exports `crossEdges`, `readRepo` from `./cross.ts`
@@ -75,10 +75,11 @@
 
 ## packages/workspace/src/query.ts
 
-- `interface WorkspaceQueryMatch` L25-42
-- `interface WorkspaceQueryFile` L45-58
-- `interface WorkspaceQueryResult` L60-64
-- `async function queryAcross(root: string, needle: string): Promise<WorkspaceQueryResult>` L78-101
+- `interface WorkspaceQueryMatch` L28-45
+- `interface WorkspaceQueryFile` L48-61
+- `type WorkspaceQueryStatus = "found" | "absent" | "stale"` L73-73
+- `interface WorkspaceQueryResult` L75-82
+- `async function queryAcross(root: string, needle: string): Promise<WorkspaceQueryResult>` L96-132
 
 ## packages/workspace/src/render.ts
 

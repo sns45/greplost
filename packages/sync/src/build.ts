@@ -157,20 +157,53 @@ export async function buildArtifacts(root: string, opts: BuildArtifactsOptions =
  * the same content produce the same line, byte for byte, wherever they run.
  */
 async function provenanceOf(root: string, snapshot: Snapshot): Promise<MapProvenance> {
-  const everything = await discoverFiles(root, { ...snapshot.config, exclude: COUNTING_EXCLUDES });
+  const everything = await discoverFiles(root, { ...snapshot.config, exclude: countingExcludes(snapshot.config) });
   const indexed = Object.keys(snapshot.manifest.files).length;
   return { excluded: Math.max(0, everything.length - indexed) };
 }
 
 /**
- * The only two patterns the counting pass keeps.
+ * The excludes the counting pass keeps: every one the config lists except the
+ * test-shaped ones, whose absence is the thing being counted (fix round 1, I3).
  *
- * Neither is a decision anybody revisits: an installed dependency tree and
- * git's own object store are not this repository's source, and outside a git
- * work tree (where discovery walks the disk instead of asking git) dropping
- * them would make the count a walk of `node_modules`.
+ * Dropping *all* of them made the figure depend on the environment rather than
+ * on the source. Inside a git checkout, discovery asks git, which never lists
+ * gitignored build output; outside one it walks the disk, which does. `dist/`,
+ * `build/` and `*.d.ts` therefore have to stay excluded on both sides, or the
+ * same tree renders two different `INDEX.md` files and `verify` calls the
+ * difference drift.
+ *
+ * What is left is precisely "how many files did the test patterns keep out",
+ * which is the sentence `INDEX.md` prints. A pattern the repository added
+ * itself is not a test pattern and stays applied, so its files are never
+ * counted as tests.
  */
-const COUNTING_EXCLUDES = ["**/node_modules/**", "**/.git/**"];
+function countingExcludes(config: GreplostConfig): string[] {
+  const kept = config.exclude.filter((pattern) => !TEST_PATTERNS.has(pattern));
+  // Never walked, whatever the config says: an installed dependency tree and
+  // git's own object store are not this repository's source, and outside a
+  // checkout the counting pass would otherwise walk `node_modules`.
+  for (const pattern of ["**/node_modules/**", "**/.git/**"]) {
+    if (!kept.includes(pattern)) kept.push(pattern);
+  }
+  return kept;
+}
+
+/**
+ * The default patterns that exist to keep tests out of the map (tech spec
+ * Appendix B's `DEFAULT_CONFIG`). Matched by their exact text, so a repository
+ * that rewrote one owns the result and its files stay excluded from the count.
+ */
+const TEST_PATTERNS: ReadonlySet<string> = new Set([
+  "**/*.test.*",
+  "**/*.spec.*",
+  "**/__tests__/**",
+  "**/testdata/**",
+  "**/*_test.go",
+  "**/test_*.py",
+  "**/*_test.py",
+  "**/conftest.py",
+]);
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

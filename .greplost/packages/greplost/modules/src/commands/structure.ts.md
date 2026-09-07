@@ -20,12 +20,12 @@
 - `function looksLikePath(candidate: string): boolean`  L50-58
 - `function resolveNode(structure: Structure, candidate: string): Declaration | undefined`  L67-70
 - `function resolveFile(manifest: Manifest, candidate: string): string | undefined`  L80-88
-- `function resolveDirectory(manifest: Manifest, candidate: string): string | undefined`  L99-104
-- `function packageInfoOf(manifest: Manifest, name: string): PackageInfo | undefined`  L113-117
-- `function repoRelativeCard(artifactRelative: string): string`  L129-131
-- `function cardOf(manifest: Manifest, file: string): string`  L134-139
-- `function nodeCardOf(manifest: Manifest, id: string): string`  L145-152
-- `function importPairs(structure: Structure): Array<readonly [string, string]>`  L161-163
-- `function importsOfFile(structure: Structure, file: string): string[]`  L175-181
+- `function resolveDirectory(manifest: Manifest, candidate: string): string | undefined`  L99-106
+- `function packageInfoOf(manifest: Manifest, name: string): PackageInfo | undefined`  L115-119
+- `function repoRelativeCard(artifactRelative: string): string`  L131-133
+- `function cardOf(manifest: Manifest, file: string): string`  L136-141
+- `function nodeCardOf(manifest: Manifest, id: string): string`  L147-154
+- `function importPairs(structure: Structure): Array<readonly [string, string]>`  L163-165
+- `function importsOfFile(structure: Structure, file: string): string[]`  L177-183
 
 **Calls:** `looksLikePath` → [`packages/cli/src/commands/structure.ts#looksLikePath`](structure.ts.md) (high), `packageInfoOf` → [`packages/cli/src/commands/structure.ts#packageInfoOf`](structure.ts.md) (high), `repoRelativeCard` → [`packages/cli/src/commands/structure.ts#repoRelativeCard`](structure.ts.md) (high), `expandDirectoryTargets` → [`packages/core/src/graph/directories.ts#expandDirectoryTargets`](../../../../greplost__core/modules/src/graph/directories.ts.md) (med), `filesUnder` → [`packages/core/src/graph/directories.ts#filesUnder`](../../../../greplost__core/modules/src/graph/directories.ts.md) (med), `resolvedImportTargets` → [`packages/core/src/graph/directories.ts#resolvedImportTargets`](../../../../greplost__core/modules/src/graph/directories.ts.md) (med), `langOf` → [`packages/core/src/lang.ts#langOf`](../../../../greplost__core/modules/src/lang.ts.md) (med), `isNodeDeclaration` → [`packages/core/src/schema.ts#isNodeDeclaration`](../../../../greplost__core/modules/src/schema.ts.md) (high), `splitNodeId` → [`packages/core/src/schema.ts#splitNodeId`](../../../../greplost__core/modules/src/schema.ts.md) (high), `readStructure` → [`packages/core/src/serialize/read.ts#readStructure`](../../../../greplost__core/modules/src/serialize/read.ts.md) (med), `cardPath` → [`packages/render/src/slug.ts#cardPath`](../../../../greplost__render/modules/src/slug.ts.md) (med), `nodeCardPath` → [`packages/render/src/slug.ts#nodeCardPath`](../../../../greplost__render/modules/src/slug.ts.md) (med)

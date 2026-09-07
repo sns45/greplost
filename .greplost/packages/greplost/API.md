@@ -33,10 +33,11 @@
 
 ## packages/cli/src/commands/impact.ts
 
-- `interface ImpactFiles` L36-45
-- `interface ImpactNodes` L53-59
-- `type ImpactResult = ImpactFiles | ImpactNodes` L61-61
-- `async function run(ctx: CommandContext): Promise<number>` L63-130
+- `interface ImpactFiles` L37-46
+- `interface ImpactNodes` L54-60
+- `interface ImpactMiss` L68-73
+- `type ImpactResult = ImpactFiles | ImpactNodes` L75-75
+- `async function run(ctx: CommandContext): Promise<number>` L77-157
 
 ## packages/cli/src/commands/init.ts
 
@@ -71,7 +72,7 @@
 - `interface QueryDirectory` L150-154
 - `interface QueryResult` L156-177
 - `async function run(ctx: CommandContext): Promise<number>` L179-219
-- `function queryStructure(structure: Structure, root: string, needle: string): QueryResult` L262-305
+- `function queryStructure(structure: Structure, root: string, needle: string): QueryResult` L280-323
 
 ## packages/cli/src/commands/refresh.ts
 
@@ -92,10 +93,11 @@
 
 ## packages/cli/src/commands/status.ts
 
-- `type QueryStatus = "found" | "absent" | "excluded" | "stale"` L40-40
-- `interface StatusVerdict` L42-48
-- `function statusOf( root: string, manifest: Manifest, relative: string, found: boolean, needle: string, ): StatusVerdict` L62-120
-- `function excludingPattern(config: GreplostConfig, relative: string): string | undefined` L131-136
+- `type QueryStatus = "found" | "absent" | "excluded" | "stale"` L47-47
+- `interface StatusVerdict` L49-55
+- `function statusOf( root: string, manifest: Manifest, relative: string, found: boolean, needle: string, ): StatusVerdict` L74-121
+- `function filesStatus(root: string, manifest: Manifest, files: readonly string[]): StatusVerdict` L132-145
+- `function excludingPattern(config: GreplostConfig, relative: string): string | undefined` L274-279
 
 ## packages/cli/src/commands/structure.ts
 
@@ -104,11 +106,11 @@
 - `function looksLikePath(candidate: string): boolean` L50-58
 - `function resolveNode(structure: Structure, candidate: string): Declaration | undefined` L67-70
 - `function resolveFile(manifest: Manifest, candidate: string): string | undefined` L80-88
-- `function resolveDirectory(manifest: Manifest, candidate: string): string | undefined` L99-104
-- `function cardOf(manifest: Manifest, file: string): string` L134-139
-- `function nodeCardOf(manifest: Manifest, id: string): string` L145-152
-- `function importPairs(structure: Structure): Array<readonly [string, string]>` L161-163
-- `function importsOfFile(structure: Structure, file: string): string[]` L175-181
+- `function resolveDirectory(manifest: Manifest, candidate: string): string | undefined` L99-106
+- `function cardOf(manifest: Manifest, file: string): string` L136-141
+- `function nodeCardOf(manifest: Manifest, id: string): string` L147-154
+- `function importPairs(structure: Structure): Array<readonly [string, string]>` L163-165
+- `function importsOfFile(structure: Structure, file: string): string[]` L177-183
 
 ## packages/cli/src/commands/suggest.ts
 

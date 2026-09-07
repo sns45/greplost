@@ -25,6 +25,7 @@ import { impactOf, impactPairs } from "@greplost/core/graph";
 import type { CommandContext } from "../args.ts";
 import { printJson, printLine, table } from "../output.ts";
 import { statusOf } from "./status.ts";
+import type { QueryStatus } from "./status.ts";
 import { importPairs, loadStructure, resolveFile, resolveNode, toRepoRelative } from "./structure.ts";
 import { nearestIds } from "./suggest.ts";
 import { dispatchWorkspace } from "./workspace.ts";
@@ -58,6 +59,19 @@ export interface ImpactNodes {
   nodes: Array<{ id: string; depth: number }>;
 }
 
+/**
+ * What `--json` prints when the target is not in the map (fix round 1): the
+ * miss half of `query`'s envelope, so one parser reads both. There is no
+ * `radius` and no listing, because there is no answer; `status` says why, in
+ * the same four words `query` uses.
+ */
+export interface ImpactMiss {
+  path: string;
+  status: QueryStatus;
+  message: string;
+  suggestions: string[];
+}
+
 export type ImpactResult = ImpactFiles | ImpactNodes;
 
 export async function run(ctx: CommandContext): Promise<number> {
@@ -77,8 +91,21 @@ export async function run(ctx: CommandContext): Promise<number> {
     // The same four statuses `query` reports, for the same reason: "run
     // `greplost update`" is the right advice for exactly one of them, and was
     // being given for all four (leaf 2.15).
-    const verdict = statusOf(ctx.root, structure.manifest, given, false, operand);
+    const verdict = statusOf(ctx.root, structure.manifest, operand.includes("#") ? "" : given, false, operand);
     const nearest = nearestIds(structure, operand);
+    // `--json` answers in JSON even when it cannot answer (fix round 1): a
+    // caller that asked for a document should not have to parse English off
+    // stderr to learn whether the map is stale or the path was a typo.
+    if (ctx.json) {
+      const miss: ImpactMiss = {
+        path: given,
+        status: verdict.status,
+        message: verdict.message ?? `${given} is not in the map`,
+        suggestions: nearest,
+      };
+      printJson(miss);
+      return 1;
+    }
     const hint = nearest.length === 0 ? "" : `; did you mean: ${nearest.join(", ")}`;
     throw new Error(`${verdict.message ?? `${given} is not in the map`}${hint}`);
   }

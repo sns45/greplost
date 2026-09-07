@@ -125,10 +125,10 @@ function largestThatFits(low: number, high: number, ok: (value: number) => boole
 function provenanceLine(ctx: DocContext): string | undefined {
   const provenance = ctx.provenance;
   if (provenance === undefined) return undefined;
-  const excluded = `${provenance.excluded} file${provenance.excluded === 1 ? "" : "s"}`;
+  const excluded = `${provenance.excluded} test file${provenance.excluded === 1 ? "" : "s"}`;
   return (
-    `> Provenance: written by greplost ${GREPLOST_VERSION}; ${excluded} in an indexed language ` +
-    "excluded by the config's exclude patterns (see `.greplost/config.json`); " +
+    `> Provenance: written by greplost ${GREPLOST_VERSION}; ${excluded} excluded ` +
+    "by the config's exclude patterns (see `.greplost/config.json`); " +
     "`git log .greplost/INDEX.md` dates the map."
   );
 }

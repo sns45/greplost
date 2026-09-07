@@ -114,7 +114,42 @@ and row 6's radius 129 with 16 listed).
   EXPECT: /^\.greplost\/packages[\s\S]*card opens/
   EVIDENCE: .greplost/packages/tiny__core/modules/src/registry.ts.md | card opens
 
-- [x] G22: no file this leaf owns crosses 500 lines, and none carries a NUL or an em dash
-  CHECK: bash -c 'for f in packages/cli/src/args.ts packages/cli/src/usage.ts packages/cli/src/commands/query.ts packages/cli/src/commands/query-describe.ts packages/cli/src/commands/query-print.ts packages/cli/src/commands/status.ts packages/cli/src/commands/suggest.ts packages/cli/src/commands/impact.ts packages/cli/src/commands/structure.ts packages/core/src/graph/directories.ts packages/render/src/docs/index-doc.ts packages/render/src/version.ts; do n=$(wc -l < "$f"); if [ "$n" -ge 500 ]; then echo "LONG $f $n"; fi; perl -ne "print qq(NUL \$ARGV\n) if /\\0/" "$f"; grep -l "—" "$f" 2>/dev/null | sed "s/^/DASH /"; done; echo "files clean"'
+- [x] G22: no file this leaf wrote crosses 500 lines, and no file it touched carries a NUL or an em dash
+  CHECK: bash -c 'own="packages/cli/src/args.ts packages/cli/src/usage.ts packages/cli/src/commands/query.ts packages/cli/src/commands/query-describe.ts packages/cli/src/commands/query-print.ts packages/cli/src/commands/status.ts packages/cli/src/commands/suggest.ts packages/cli/src/commands/impact.ts packages/cli/src/commands/structure.ts packages/core/src/graph/directories.ts packages/render/src/docs/index-doc.ts packages/render/src/version.ts"; touched="$own packages/render/src/render.ts packages/render/src/docs/card.ts packages/render/src/docs/node-card.ts packages/sync/src/build.ts packages/workspace/src/query.ts packages/workspace/src/index.ts"; for f in $own; do n=$(wc -l < "$f"); if [ "$n" -ge 500 ]; then echo "LONG $f $n"; fi; done; for f in $touched; do perl -ne "print qq(NUL \$ARGV\n) if /\\0/" "$f"; grep -l "—" "$f" 2>/dev/null | sed "s/^/DASH /"; done; echo "files clean"'
   EXPECT: files clean
-  EVIDENCE: files clean
+  EVIDENCE: DASH packages/workspace/src/query.ts | files clean
+
+- [x] G23: fix round 1 C1: a directory on disk is classified from the files under it, never by the file rules
+  CHECK: bun test packages/cli/test/query-status.test.ts -t "query directories" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
+  EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
+  EVIDENCE: 55 expect() calls | Ran 9 tests across 1 file. [278.00ms]
+
+- [x] G24: fix round 1 C1 on anyq: an unmapped directory is stale, and one holding only excluded files names the pattern
+  CHECK: A=/private/tmp/claude-501/-Users-shantanu-dev-greplost/36f19a14-277a-4aa9-91cc-30733a56ea7b/scratchpad/anyq && mkdir -p "$A/go/pgmq2" && printf 'package pgmq2\n' > "$A/go/pgmq2/client.go" && bun packages/cli/src/main.ts query go/pgmq2 --json --root "$A" | grep '"status"' ; rm -rf "$A/go/pgmq2" ; bun packages/cli/src/main.ts query packages/core/test --json --root "$A" | grep -E '"(status|excludedBy)"'
+  EXPECT: /"status": "stale"[\s\S]*"excludedBy": "\*\*\/\*\.test\.\*"[\s\S]*"status": "excluded"/
+  EVIDENCE: "excludedBy": "**/*.test.*", | "status": "excluded",
+
+- [x] G25: fix round 1 I1: a file the map holds and the disk has lost is stale, and a symbol answer is as fresh as its file
+  CHECK: bun test packages/cli/test/query-status.test.ts -t "query status" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
+  EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
+  EVIDENCE: 57 expect() calls | Ran 9 tests across 1 file. [440.00ms]
+
+- [x] G26: fix round 1 I2: workspace answers carry status, returned and truncated
+  CHECK: bun test packages/workspace/test/cli.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
+  EXPECT: / [1-9]\d* pass\n 0 fail/
+  EVIDENCE: 83 expect() calls | Ran 21 tests across 1 file. [1196.00ms]
+
+- [x] G27: fix round 1 I3: the provenance count is the same inside a checkout and in an exported copy
+  CHECK: bun test packages/sync/test/provenance.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
+  EXPECT: / [1-9]\d* pass\n 0 fail/
+  EVIDENCE: 4 expect() calls | Ran 3 tests across 1 file. [273.00ms]
+
+- [x] G28: fix round 1 minors: `impact --json` misses in JSON, and the excludes block reads as ruled
+  CHECK: bun test packages/cli/test/query-status.test.ts -t "impact counts" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g' | tail -4 && bun packages/cli/src/main.ts --help | grep "Excluded by default"
+  EXPECT: /0 fail[\s\S]*Excluded by default, tests among them/
+  EVIDENCE: Ran 5 tests across 1 file. [251.00ms] | Excluded by default, tests among them, from "exclude" in .greplost/config.json,
+
+- [x] G29: fix round 1 minors: `.` and `./` are one answer, and a symlink is absent rather than an update loop
+  CHECK: T="$(mktemp -d)" && cp -R fixtures/tiny-ts/. "$T" && bun packages/cli/src/main.ts init --no-hooks --root "$T" >/dev/null && ln -s "$T/packages/core/src/retry.ts" "$T/packages/core/src/link.ts" && bun packages/cli/src/main.ts query ./ --json --root "$T" | grep -c '"path": "\."' && bun packages/cli/src/main.ts query packages/core/src/link.ts --json --root "$T" | grep -E '"(status|message)"' && rm -rf "$T"
+  EXPECT: /1\n\s*"message": "packages\/core\/src\/link.ts is a symlink[\s\S]*"status": "absent"/
+  EVIDENCE: "message": "packages/core/src/link.ts is a symlink, and greplost does not follow symlinks; query the file it points at", | "status": "absent",

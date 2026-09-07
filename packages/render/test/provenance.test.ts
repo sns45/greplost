@@ -46,7 +46,7 @@ describe("INDEX provenance", () => {
     const line = index.split("\n").find((l) => l.startsWith("> Provenance:")) as string;
     expect(line).toBeDefined();
     expect(line).toContain(`greplost ${GREPLOST_VERSION}`);
-    expect(line).toContain("12 files in an indexed language excluded");
+    expect(line).toContain("12 test files excluded");
     expect(line).toContain(".greplost/config.json");
     expect(line).toContain("git log .greplost/INDEX.md");
     // Under the title, with the other two banner lines, before the packages.
@@ -57,7 +57,7 @@ describe("INDEX provenance", () => {
 
   test("a map with nothing excluded says so rather than staying silent", () => {
     const index = renderIndex({ snapshot: ts, summaries: {}, provenance: { excluded: 0 } });
-    expect(index).toContain("0 files in an indexed language excluded");
+    expect(index).toContain("0 test files excluded");
   });
 
   /**

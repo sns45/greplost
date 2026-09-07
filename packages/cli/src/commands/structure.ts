@@ -97,8 +97,10 @@ export function resolveFile(manifest: Manifest, candidate: string): string | und
  * root, which is what a directory id of `"."` means everywhere else.
  */
 export function resolveDirectory(manifest: Manifest, candidate: string): string | undefined {
-  if (candidate === "" || candidate.includes("#")) return undefined;
+  if (candidate.includes("#")) return undefined;
   if (manifest.files[candidate] !== undefined) return undefined;
+  // `toRepoRelative` strips `./` and trailing slashes, so `.`, `./` and `././`
+  // all arrive here as `.` or as the empty string; all of them name the root.
   const directory = candidate === "" ? "." : candidate;
   return filesUnder(Object.keys(manifest.files), directory).length > 0 ? directory : undefined;
 }

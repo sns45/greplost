@@ -64,7 +64,7 @@ Status: pre-release 0.1.0. Design: [docs/greplost-tech-spec.md](docs/greplost-te
   config.json              include/exclude, languages, diagram limits
 ```
 
-`INDEX.md` opens with a provenance line: which greplost version wrote the map, how many files in an indexed language the `exclude` patterns keep out of it, and that `git log .greplost/INDEX.md` dates it. There is deliberately no commit sha in any artifact: the pre-commit hook writes the map of the tree it is about to commit, so a sha recorded at build time would be the previous commit's and would make `greplost verify` red on every commit. Where the package table has a `Nodes` column, the line under it says what that column counts.
+`INDEX.md` opens with a provenance line: which greplost version wrote the map, how many test files the `exclude` patterns keep out of it, and that `git log .greplost/INDEX.md` dates it. There is deliberately no commit sha in any artifact: the pre-commit hook writes the map of the tree it is about to commit, so a sha recorded at build time would be the previous commit's and would make `greplost verify` red on every commit. Where the package table has a `Nodes` column, the line under it says what that column counts.
 
 ### Languages, IaC and framework signals
 

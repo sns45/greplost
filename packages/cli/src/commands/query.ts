@@ -36,8 +36,8 @@ import {
   indexReferences,
 } from "./query-describe.ts";
 import { printDirectory, printFile, printMatches, printNode, printSuggestions } from "./query-print.ts";
-import { statusOf } from "./status.ts";
-import type { QueryStatus } from "./status.ts";
+import { filesStatus, statusOf } from "./status.ts";
+import type { QueryStatus, StatusVerdict } from "./status.ts";
 import { loadStructure, resolveDirectory, resolveFile, resolveNode, toRepoRelative } from "./structure.ts";
 import { nearestIds } from "./suggest.ts";
 import { dispatchWorkspace } from "./workspace.ts";
@@ -243,19 +243,37 @@ function applyStatus(
   needle: string,
   answered: boolean,
 ): void {
-  const relative = toRepoRelative(root, needle);
-  const target = result.file ?? result.directory;
-  const verdict = statusOf(
-    root,
-    structure.manifest,
-    target === undefined ? (needle.includes("#") ? "" : relative) : (target as { path: string }).path,
-    answered,
-    needle,
-  );
+  const verdict = verdictFor(result, structure, root, needle, answered);
   result.status = verdict.status;
   if (verdict.excludedBy !== undefined) result.excludedBy = verdict.excludedBy;
   if (verdict.message !== undefined) result.message = verdict.message;
   if (!answered) result.suggestions = nearestIds(structure, needle);
+}
+
+/**
+ * Which classifier judges this answer.
+ *
+ * A path answer is judged as the path it named; an answer built from
+ * declarations (a symbol search, or a node id, neither of which is a path) is
+ * judged by the files those declarations were read from, because that is what
+ * "is this still true" means for a symbol (fix round 1). A miss is judged by
+ * the argument, which is where `absent`, `excluded` and `stale` are decided.
+ */
+function verdictFor(
+  result: QueryResult,
+  structure: Structure,
+  root: string,
+  needle: string,
+  answered: boolean,
+): StatusVerdict {
+  const target = result.file ?? result.directory;
+  if (target !== undefined) return statusOf(root, structure.manifest, target.path, true, needle);
+  if (answered) return filesStatus(root, structure.manifest, result.matches.map((match) => match.file));
+  // A node id is not a path, and neither is a symbol name; handing either to
+  // the path classifier would ask the filesystem about a string that was never
+  // meant to be one.
+  const relative = needle.includes("#") ? "" : toRepoRelative(root, needle);
+  return statusOf(root, structure.manifest, relative, false, needle);
 }
 
 /** The whole answer, as `--json` serialises it. Pure: no output, no filesystem. */

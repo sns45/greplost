@@ -93,7 +93,7 @@ function excludeBlock(): string {
   }
   lines.push(current);
   return [
-    `Excluded by default (tests included), from "exclude" in ${ARTIFACT_DIR}/config.json,`,
+    `Excluded by default, tests among them, from "exclude" in ${ARTIFACT_DIR}/config.json,`,
     "which init writes once and never rewrites:",
     ...lines,
   ].join("\n");

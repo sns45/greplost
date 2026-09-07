@@ -68,8 +68,14 @@ import { buildCard } from "./docs/card.ts";
  */
 export interface MapProvenance {
   /**
-   * Files in a language the map indexes that `config.exclude` drops: the tests
-   * and vendored trees a reader is otherwise left to guess at.
+   * Files in a language the map indexes that the config's *test* patterns keep
+   * out of it: the number that tells a reader whether a map with no tests in it
+   * is a setting or a bug.
+   *
+   * Test patterns only, and not every exclude, because the figure is measured
+   * from the tree and reaches a verified artifact: build output that a checkout
+   * gitignores is invisible to discovery inside a checkout and visible outside
+   * one, so counting it would make the same source render two ways (fix round 1).
    */
   excluded: number;
 }

@@ -17,7 +17,14 @@
  *  - `excluded` the path is on disk and `config.exclude` (or `config.languages`)
  *               drops it, named, so the reader knows which line to edit;
  *  - `stale`    the path is on disk and the map does not describe it, either
- *               because it is not in the map or because its bytes have changed.
+ *               because it is not in the map, because it has been deleted from
+ *               disk since, or because its bytes have changed.
+ *
+ * **A path is classified as what it is.** A file is judged by its own name and
+ * bytes, a directory by the files under it, and neither by the other's rules
+ * (fix round 1, C1): a directory used to be handed to the file classifier,
+ * which answered "outside the languages this map indexes" while listing the
+ * language its files were written in.
  *
  * Staleness is decided by content, not by `mtime`. The manifest already carries
  * the sha256 of every file it holds, so comparing hashes answers exactly the
@@ -26,12 +33,12 @@
  * by a touch that changed no bytes.
  */
 
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 import { loadConfig, langOf, sha256Hex } from "@greplost/core";
 import type { GreplostConfig, Manifest } from "@greplost/core/schema";
-import { ARTIFACT_DIR } from "@greplost/core/schema";
+import { ARTIFACT_DIR, compareStrings } from "@greplost/core/schema";
 import picomatch from "picomatch";
 
 import { looksLikePath } from "./structure.ts";
@@ -50,14 +57,19 @@ export interface StatusVerdict {
 /** Where the config a status refers to lives, spelled the way a reader would open it. */
 const CONFIG_PATH = `${ARTIFACT_DIR}/config.json`;
 
+const FOUND: StatusVerdict = { status: "found" };
+
+/** Directories a walk never descends: not this repository's source, and vast. */
+const NEVER_WALKED: ReadonlySet<string> = new Set([ARTIFACT_DIR, ".git", "node_modules"]);
+
 /**
  * The verdict for `relative` (a repo-relative path, `""` when the argument was
  * not a path at all), given whether the map answered.
  *
  * `found` needs both halves: something in the map matched *and* the file on
- * disk still hashes to what the manifest recorded. A file that answers and has
- * since changed is `stale` and still answers, because half an answer plus a
- * warning beats no answer at all.
+ * disk is still there and still hashes to what the manifest recorded. A file
+ * that answers and has since changed, or has since been deleted, is `stale` and
+ * still answers, because half an answer plus a warning beats no answer at all.
  */
 export function statusOf(
   root: string,
@@ -66,18 +78,21 @@ export function statusOf(
   found: boolean,
   needle: string,
 ): StatusVerdict {
-  const onDisk = relative !== "" && isInsideRoot(relative) && existsSync(path.join(root, relative));
+  const inside = relative !== "" && isInsideRoot(relative);
+  const entry = inside ? entryOf(root, relative) : undefined;
 
   if (found) {
-    const drifted = onDisk && isFile(root, relative) && hashDiffers(root, manifest, relative);
-    if (!drifted) return { status: "found" };
-    return {
-      status: "stale",
-      message: `${relative} has changed since the map was built; run \`greplost update\` for a current answer`,
-    };
+    if (manifest.files[relative] === undefined) return FOUND;
+    if (entry === undefined) {
+      return {
+        status: "stale",
+        message: `${relative} is in the map but no longer on disk; run \`greplost update\``,
+      };
+    }
+    return entry.kind === "file" ? fileDrift(root, manifest, relative) : FOUND;
   }
 
-  if (!onDisk) {
+  if (entry === undefined) {
     // A name that could not be a path was a search, and "check the path" is not
     // advice a search can act on; a path that is neither in the map nor on disk
     // is a typo, and saying so is the whole of what is left to say.
@@ -90,33 +105,161 @@ export function statusOf(
     };
   }
 
-  const config = loadConfig(root);
-  const pattern = excludingPattern(config, relative);
-  if (pattern !== undefined) {
+  // Discovery walks the tree without following symlinks, so a link is never
+  // indexed however often the map is rebuilt: "run an update" would be a loop.
+  if (entry.kind === "symlink") {
     return {
-      status: "excluded",
-      excludedBy: pattern,
-      message:
-        `${relative} is on disk but excluded from the map by "${pattern}"; ` +
-        `edit "exclude" in ${CONFIG_PATH} to index it`,
+      status: "absent",
+      message: `${relative} is a symlink, and greplost does not follow symlinks; query the file it points at`,
     };
   }
 
-  const lang = langOf(relative);
-  if (lang === undefined || !config.languages.includes(lang)) {
-    const add = lang === undefined ? "" : `; add "${lang}" to "languages" in ${CONFIG_PATH} to index it`;
-    return {
-      status: "excluded",
-      message:
-        `${relative} is on disk but outside the languages this map indexes ` +
-        `(${config.languages.join(", ")}, set in "languages" in ${CONFIG_PATH})${add}`,
-    };
+  const config = loadConfig(root);
+  return entry.kind === "directory"
+    ? directoryVerdict(root, config, relative)
+    : fileVerdict(config, relative);
+}
+
+/**
+ * The verdict for an answer that came from declarations rather than from a
+ * path: the map answered, and the answer is only as current as the files it
+ * was read from (fix round 1).
+ *
+ * One hash per distinct declaring file, in sorted order, and the first drift
+ * decides, so two runs of the same query give the same verdict. A query that
+ * matched forty declarations in one file pays for one hash.
+ */
+export function filesStatus(root: string, manifest: Manifest, files: readonly string[]): StatusVerdict {
+  for (const file of [...new Set(files)].sort(compareStrings)) {
+    if (manifest.files[file] === undefined) continue;
+    if (!existsSync(path.join(root, file))) {
+      return {
+        status: "stale",
+        message: `${file} is in the map but no longer on disk; run \`greplost update\``,
+      };
+    }
+    const drift = fileDrift(root, manifest, file);
+    if (drift.status !== "found") return drift;
   }
+  return FOUND;
+}
+
+/** `stale` when the bytes on disk are not the bytes the manifest recorded. */
+function fileDrift(root: string, manifest: Manifest, relative: string): StatusVerdict {
+  return hashDiffers(root, manifest, relative)
+    ? {
+        status: "stale",
+        message: `${relative} has changed since the map was built; run \`greplost update\` for a current answer`,
+      }
+    : FOUND;
+}
+
+/** The verdict for a file on disk that the map does not hold. */
+function fileVerdict(config: GreplostConfig, relative: string): StatusVerdict {
+  const pattern = excludingPattern(config, relative);
+  if (pattern !== undefined) return excludedByPattern(relative, pattern);
+
+  const lang = langOf(relative);
+  if (lang === undefined || !config.languages.includes(lang)) return excludedByLanguage(config, relative);
 
   return {
     status: "stale",
     message: `${relative} is on disk but not in the map; run \`greplost update\``,
   };
+}
+
+/**
+ * The verdict for a directory on disk that the map holds no file under
+ * (fix round 1, C1).
+ *
+ * A directory has no language and no bytes of its own, so it is judged by what
+ * is under it: nothing at all is a typo that happens to have been created;
+ * everything the config keeps out is `excluded`, naming the first pattern that
+ * did it; anything the map could have held and does not is `stale`, which is
+ * the one case an update fixes.
+ */
+function directoryVerdict(root: string, config: GreplostConfig, relative: string): StatusVerdict {
+  const files = filesOnDisk(path.join(root, relative), relative);
+  if (files.length === 0) {
+    return { status: "absent", message: `${relative} is a directory holding no files; nothing to map` };
+  }
+
+  let pattern: string | undefined;
+  for (const file of files) {
+    const excludedBy = excludingPattern(config, file);
+    if (excludedBy !== undefined) {
+      pattern ??= excludedBy;
+      continue;
+    }
+    const lang = langOf(file);
+    if (lang === undefined || !config.languages.includes(lang)) continue;
+    // One file the map could hold and does not is enough: an update fixes it.
+    return {
+      status: "stale",
+      message: `${relative} is on disk but the map holds no file under it; run \`greplost update\``,
+    };
+  }
+
+  if (pattern === undefined) return excludedByLanguage(config, relative);
+  const many = `${files.length} file${files.length === 1 ? "" : "s"}`;
+  return {
+    status: "excluded",
+    excludedBy: pattern,
+    message:
+      `${relative} holds ${many} on disk and the config keeps every one of them out, ` +
+      `the first by "${pattern}"; edit "exclude" in ${CONFIG_PATH} to index them`,
+  };
+}
+
+function excludedByPattern(relative: string, pattern: string): StatusVerdict {
+  return {
+    status: "excluded",
+    excludedBy: pattern,
+    message:
+      `${relative} is on disk but excluded from the map by "${pattern}"; ` +
+      `edit "exclude" in ${CONFIG_PATH} to index it`,
+  };
+}
+
+function excludedByLanguage(config: GreplostConfig, relative: string): StatusVerdict {
+  const lang = langOf(relative);
+  const add = lang === undefined ? "" : `; add "${lang}" to "languages" in ${CONFIG_PATH} to index it`;
+  return {
+    status: "excluded",
+    message:
+      `${relative} is on disk but outside the languages this map indexes ` +
+      `(${config.languages.join(", ")}, set in "languages" in ${CONFIG_PATH})${add}`,
+  };
+}
+
+/**
+ * Repo-relative paths of the files under a directory, at any depth, sorted.
+ *
+ * Symlinks are never followed and never counted, exactly as discovery treats
+ * them, and `.git`, `node_modules` and the map itself are never descended: a
+ * question about `src/` is not a question about an installed dependency tree.
+ */
+function filesOnDisk(absolute: string, relative: string): string[] {
+  const out: string[] = [];
+  const walk = (dir: string, prefix: string): void => {
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (entry.isSymbolicLink()) continue;
+      const rel = `${prefix}/${entry.name}`;
+      if (entry.isDirectory()) {
+        if (!NEVER_WALKED.has(entry.name)) walk(path.join(dir, entry.name), rel);
+        continue;
+      }
+      if (entry.isFile()) out.push(rel);
+    }
+  };
+  walk(absolute, relative);
+  return out.sort(compareStrings);
 }
 
 /**
@@ -135,17 +278,23 @@ export function excludingPattern(config: GreplostConfig, relative: string): stri
   return undefined;
 }
 
+/** What a repo-relative path is on disk, or undefined when it is not there at all. */
+function entryOf(root: string, relative: string): { kind: "file" | "directory" | "symlink" } | undefined {
+  try {
+    // `lstat`, not `stat`: a symlink is its own answer here, and following one
+    // would report the target's kind for a path the map can never hold.
+    const stats = lstatSync(path.join(root, relative));
+    if (stats.isSymbolicLink()) return { kind: "symlink" };
+    if (stats.isDirectory()) return { kind: "directory" };
+    return { kind: "file" };
+  } catch {
+    return undefined;
+  }
+}
+
 /** True when a repo-relative path stays inside the repo, so nothing above it is ever stat'd. */
 function isInsideRoot(relative: string): boolean {
   return !path.isAbsolute(relative) && !relative.split("/").includes("..");
-}
-
-function isFile(root: string, relative: string): boolean {
-  try {
-    return statSync(path.join(root, relative)).isFile();
-  } catch {
-    return false;
-  }
 }
 
 /**

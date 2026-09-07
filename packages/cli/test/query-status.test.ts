@@ -8,7 +8,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -149,6 +149,51 @@ describe("query status", () => {
     expect(String(result["message"])).toContain("greplost update");
   });
 
+  /** Fix round 1, I1: the map holds it, the disk does not. */
+  test("a file deleted from disk but still in the map is stale, not found", async () => {
+    const fresh = copyFixture(TINY_TS, "deleted");
+    expect((await cli("init", "--no-hooks", "--root", fresh)).code).toBe(0);
+    rmSync(path.join(fresh, "packages/core/src/retry.ts"));
+
+    const run = await cli("query", "packages/core/src/retry.ts", "--json", "--root", fresh);
+    const result = onlyJson(run);
+    expect(result["status"]).toBe("stale");
+    expect(String(result["message"])).toContain("no longer on disk");
+    expect(String(result["message"])).toContain("greplost update");
+    // The map still answers: the point is that the answer is labelled.
+    expect(result["file"]).toBeDefined();
+  });
+
+  /** Fix round 1: a symbol answer is as stale as the file it was read from. */
+  test("a symbol whose declaring file has changed is stale", async () => {
+    const fresh = copyFixture(TINY_TS, "symbol-stale");
+    expect((await cli("init", "--no-hooks", "--root", fresh)).code).toBe(0);
+
+    const before = onlyJson(await cli("query", "Registry", "--json", "--root", fresh));
+    expect(before["status"]).toBe("found");
+
+    writeFileSync(path.join(fresh, "packages/core/src/registry.ts"), "export class Registry {}\n");
+    const after = onlyJson(await cli("query", "Registry", "--json", "--root", fresh));
+    expect(after["status"]).toBe("stale");
+    expect(String(after["message"])).toContain("packages/core/src/registry.ts");
+    expect(String(after["message"])).toContain("greplost update");
+    expect((after["matches"] as unknown[]).length).toBe(1);
+  });
+
+  /** Fix round 1: discovery never follows symlinks, so an update cannot help. */
+  test("a symlink is absent and says symlinks are not indexed", async () => {
+    symlinkSync(
+      path.join(ts, "packages/core/src/retry.ts"),
+      path.join(ts, "packages/core/src/retry-link.ts"),
+    );
+    const run = await cli("query", "packages/core/src/retry-link.ts", "--json", "--root", ts);
+    expect(run.code).toBe(1);
+    const result = onlyJson(run);
+    expect(result["status"]).toBe("absent");
+    expect(String(result["message"])).toContain("symlink");
+    expect(String(result["message"])).not.toContain("greplost update");
+  });
+
   test("a path outside every language the map indexes is reported without an update hint", async () => {
     const run = await cli("query", "package.json", "--json", "--root", ts);
     expect(run.code).toBe(1);
@@ -233,12 +278,63 @@ describe("query directories", () => {
     for (const line of lines) expect(line).not.toMatch(/\s$/);
   });
 
-  test("a directory the map does not hold falls through to the miss ladder", async () => {
+  test("a directory that is nowhere at all is absent", async () => {
     const run = await cli("query", "packages/core/nope", "--json", "--root", ts);
     expect(run.code).toBe(1);
     const result = onlyJson(run);
     expect(result["directory"]).toBeUndefined();
     expect(result["status"]).toBe("absent");
+  });
+
+  /**
+   * Fix round 1, C1. A directory on disk that the map holds nothing under used
+   * to be handed to the *file* classifier, which answered "outside the
+   * languages this map indexes" while listing that very language, and set
+   * `excluded` with no pattern to name. A directory is classified from the
+   * files under it or not at all.
+   */
+  test("a directory on disk whose files are all excluded says so, and names the pattern", async () => {
+    const dir = path.join(ts, "packages/core/test");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, "registry.test.ts"), "export const t = 1;\n");
+    writeFileSync(path.join(dir, "retry.test.ts"), "export const t = 2;\n");
+
+    const run = await cli("query", "packages/core/test", "--json", "--root", ts);
+    expect(run.code).toBe(1);
+    const result = onlyJson(run);
+    expect(result["directory"]).toBeUndefined();
+    expect(result["status"]).toBe("excluded");
+    expect(result["excludedBy"]).toBe("**/*.test.*");
+    expect(String(result["message"])).toContain(".greplost/config.json");
+    expect(String(result["message"])).not.toContain("greplost update");
+    expect(String(result["message"])).not.toContain("languages");
+  });
+
+  test("a directory on disk that the map has not indexed yet is stale", async () => {
+    const dir = path.join(ts, "packages/core/src/pgmq2");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, "client.ts"), "export const client = 1;\n");
+
+    const run = await cli("query", "packages/core/src/pgmq2", "--json", "--root", ts);
+    expect(run.code).toBe(1);
+    const result = onlyJson(run);
+    expect(result["status"]).toBe("stale");
+    expect(String(result["message"])).toContain("greplost update");
+    expect(result["excludedBy"]).toBeUndefined();
+  });
+
+  test("an empty directory on disk is absent, not stale", async () => {
+    mkdirSync(path.join(ts, "packages/core/src/hollow"), { recursive: true });
+    const result = onlyJson(await cli("query", "packages/core/src/hollow", "--json", "--root", ts));
+    expect(result["status"]).toBe("absent");
+    expect(String(result["message"])).not.toContain("greplost update");
+  });
+
+  test("`.` and `./` both name the repo root", async () => {
+    const dot = onlyJson(await cli("query", ".", "--json", "--root", ts));
+    const slash = onlyJson(await cli("query", "./", "--json", "--root", ts));
+    expect((dot["directory"] as { path: string }).path).toBe(".");
+    expect(slash["directory"]).toEqual(dot["directory"] as unknown as Record<string, unknown>);
   });
 });
 
@@ -304,6 +400,26 @@ describe("impact counts", () => {
     );
     expect(Object.keys(result).sort()).toEqual(["nodes", "path", "radius", "returned", "truncated"]);
     expect(result["truncated"]).toBe(false);
+  });
+
+  /**
+   * Fix round 1: `--json` answers in JSON even when it cannot answer. Prose on
+   * stderr forces a caller that asked for JSON to parse English to find out
+   * whether the map was stale or the path was a typo.
+   */
+  test("a miss under --json is a JSON envelope with a status, not prose", async () => {
+    const run = await cli("impact", "packages/core/src/never.ts", "--json", "--root", ts);
+    expect(run.code).toBe(1);
+    const result = onlyJson(run);
+    expect(Object.keys(result).sort()).toEqual(["message", "path", "status", "suggestions"]);
+    expect(result["status"]).toBe("absent");
+    expect(result["path"]).toBe("packages/core/src/never.ts");
+    expect(String(result["message"])).not.toContain("greplost update");
+
+    writeFileSync(path.join(ts, "packages/core/src/impact-new.ts"), "export const n = 1;\n");
+    const stale = onlyJson(await cli("impact", "packages/core/src/impact-new.ts", "--json", "--root", ts));
+    expect(stale["status"]).toBe("stale");
+    expect(String(stale["message"])).toContain("greplost update");
   });
 
   test("a miss uses the same status language as query", async () => {

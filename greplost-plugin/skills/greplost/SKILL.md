@@ -105,8 +105,11 @@ For an exact node id, `query --json` adds a `node` block next to `matches`:
 referencedBy }`, where `references` and `referencedBy` are the reference edges
 (`hcl-ref`, `selector`, `config-ref`, `needs`, `uses`, `from-image`, `copy-from`,
 `helm-values`, `config`, `resource-input`, `route-handler`) that link nodes to
-each other and to files. No artifact path ever contains a `#`: the card lives at
-`packages/<slug>/modules/<file>/<kind>.<name>.md`.
+each other and to files. No artifact path ever contains a `#`, so a node's card
+does not live at its id: read the path out of the answer's `card` field, which
+is repo-relative and already slugged
+(`.greplost/packages/<slug>/modules/<file>/<kind>.<name>.md`, with a duplicate
+name's `~<n>` suffix written `-<n>`).
 
 ### `impact` shape
 
@@ -163,6 +166,12 @@ does not carry the `.greplost/` prefix, because the repo directory does.
 As an argument, `query` and `impact` accept the id (`repo-a::src/index.ts`), the
 workspace-relative path (`repo-a/src/index.ts`) and an absolute path; only an
 indexed file resolves, and nothing is guessed.
+
+A workspace answer carries the same new fields: `status` on `query`, `returned`
+and `truncated` on `impact`. The one narrowing is that a workspace `query` never
+reports `excluded`, because its argument names an id or an indexed file rather
+than an arbitrary path on disk; `found`, `absent` and `stale` all occur, and
+`stale` is per repo, since each repo's map is committed separately.
 
 ## 3. When to fall back to grep instead
 
