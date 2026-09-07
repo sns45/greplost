@@ -235,13 +235,15 @@ const Attempts = 3
     expect(record.exports).toEqual([{ name: "C", kind: "named" }]);
   });
 
-  test("a struct records its embedded field types, sorted, named fields excluded", () => {
+  test("a struct records its embedded types and its named fields, both sorted", () => {
     const record = extract(
-      'package a\n\nimport "x/core"\n\ntype C struct {\n\t*core.Base\n\tInner\n\tBox[T]\n\tname string\n}\n',
+      'package a\n\nimport "x/core"\n\ntype C struct {\n\t*core.Base\n\tInner\n\tBox[T]\n\tname string\n\tHandle func() error\n}\n',
     );
-    expect(decl(record, "C").meta).toEqual({ embeds: "Box,Inner,core.Base" });
-    // A struct with no embedded field carries no attribute at all.
-    expect(decl(extract("package a\n\ntype P struct{ name string }\n"), "P").meta).toBeUndefined();
+    expect(decl(record, "C").meta).toEqual({ embeds: "Box,Inner,core.Base", fields: "Handle,name" });
+    // A named field is what makes a promoted method of the same name
+    // unreachable, so it is recorded whether or not the struct embeds anything.
+    expect(decl(extract("package a\n\ntype P struct{ name string }\n"), "P").meta).toEqual({ fields: "name" });
+    expect(decl(extract("package a\n\ntype E struct{}\n"), "E").meta).toBeUndefined();
   });
 
   test("a function records the named type of its first result", () => {
@@ -808,6 +810,82 @@ describe("resolve-go calls", () => {
     ).toEqual(["c.Lock -> (dropped)"]);
   });
 
+  test("a named field shadows a promoted method of the same name", () => {
+    // Go looks for a field or a method at the shallowest depth, and `Handle` is
+    // a field of `Server` itself. A field is never a call target, so the only
+    // right answer is no edge.
+    expect(
+      resolveCalls(
+        {
+          "app/a.go":
+            "package app\n\ntype Base struct{}\n\nfunc (b *Base) Handle() error { return nil }\n\n" +
+            "type Server struct {\n\tHandle func() error\n\t*Base\n}\n\n" +
+            "func (s *Server) Serve() error { return s.Handle() }\n",
+        },
+        "app/a.go",
+      ),
+    ).toEqual(["s.Handle -> (dropped)"]);
+  });
+
+  test("a field one level down shadows a method one level below it", () => {
+    expect(
+      resolveCalls(
+        {
+          "app/a.go":
+            "package app\n\ntype Base struct{}\n\nfunc (b *Base) Handle() error { return nil }\n\n" +
+            "type Mid struct {\n\tHandle func() error\n\t*Base\n}\n\n" +
+            "type Server struct {\n\t*Mid\n}\n\n" +
+            "func (s *Server) Serve() error { return s.Handle() }\n",
+        },
+        "app/a.go",
+      ),
+    ).toEqual(["s.Handle -> (dropped)"]);
+  });
+
+  test("a field and a method at the same depth are ambiguous", () => {
+    expect(
+      resolveCalls(
+        {
+          "app/a.go":
+            "package app\n\ntype A struct{}\n\nfunc (a *A) M() error { return nil }\n\n" +
+            "type B struct {\n\tM func() error\n}\n\n" +
+            "type C struct {\n\tA\n\tB\n}\n\n" +
+            "func (c *C) run() error { return c.M() }\n",
+        },
+        "app/a.go",
+      ),
+    ).toEqual(["c.M -> (dropped)"]);
+  });
+
+  test("a named field of another name leaves promotion alone (control)", () => {
+    expect(
+      resolveCalls(
+        {
+          "app/a.go":
+            "package app\n\ntype Base struct{}\n\nfunc (b *Base) Handle() error { return nil }\n\n" +
+            "type Server struct {\n\tname string\n\t*Base\n}\n\n" +
+            "func (s *Server) Serve() error { return s.Handle() }\n",
+        },
+        "app/a.go",
+      ),
+    ).toEqual(["s.Handle -> app/a.go#Base.Handle (high)"]);
+  });
+
+  test("two build-tag variants of one struct never merge their embedded types", () => {
+    const sources = {
+      "codec/json.go":
+        "package codec\n\ntype Codec struct {\n\t*JSON\n}\n\ntype JSON struct{}\n\nfunc (j *JSON) Marshal() {}\n",
+      "codec/sonic.go":
+        "package codec\n\ntype Codec struct {\n\t*Sonic\n}\n\ntype Sonic struct{}\n\n" +
+        "func (s *Sonic) Marshal() {}\n\nfunc (c *Codec) Use() { c.Marshal() }\n",
+      "codec/other.go": "package codec\n\nfunc (c *Codec) Also() { c.Marshal() }\n",
+    };
+    // The caller's own file settles which `Codec` it was compiled with.
+    expect(resolveCalls(sources, "codec/sonic.go")).toEqual(["c.Marshal -> codec/sonic.go#Sonic.Marshal (high)"]);
+    // From a third file it is a guess between two structs, so nothing is emitted.
+    expect(resolveCalls(sources, "codec/other.go")).toEqual(["c.Marshal -> (dropped)"]);
+  });
+
   test("a promoted name that no embedded type declares is dropped", () => {
     expect(
       resolveCalls(
@@ -952,6 +1030,24 @@ describe("resolve-go calls", () => {
         "app/main.go",
       ),
     ).toEqual(["store.New -> store/a.go#New (high)"]);
+  });
+
+  test("a local inside a package-level func literal is withheld", () => {
+    // There is no declaration to carry `meta.locals` for a binding made outside
+    // one, so the local cannot be typed at resolution time. Recording the call
+    // anyway would let the import rule read `store` as the imported package.
+    expect(
+      resolveCalls(
+        {
+          "app/main.go":
+            'package main\n\nimport "example.com/m/store"\n\ntype Shallow struct{}\n\n' +
+            "func (s *Shallow) New() error { return nil }\n\n" +
+            "var pkgLevel = func() error {\n\tstore := &Shallow{}\n\treturn store.New()\n}\n",
+          "store/a.go": "package store\n\nfunc New() {}\n",
+        },
+        "app/main.go",
+      ),
+    ).toEqual([]);
   });
 
   test("the six probe shapes of the evaluation fixture", () => {

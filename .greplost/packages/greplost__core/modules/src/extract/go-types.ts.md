@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `calleeText(node: Node): string | null`, `firstResultType(node: Node): string | null`, `namedType(node: Node | null): string | null`, `structEmbeds(typeNode: Node | null): string[]`, `typedLocals(fn: Node, bound: ReadonlySet<string>, receiver: string | null): Map<string, string>`
+**Exports:** `GoStructShape (interface)`, `calleeText(node: Node): string | null`, `firstResultType(node: Node): string | null`, `namedType(node: Node | null): string | null`, `structShape(typeNode: Node | null): GoStructShape`, `typedLocals(fn: Node, bound: ReadonlySet<string>, receiver: string | null): Map<string, string>`
 
 **Imports:** `web-tree-sitter` (Node), [`./ts-signature.ts`](ts-signature.ts.md) (field)
 
@@ -15,15 +15,16 @@
 **Blast radius:** 32 files (`greplost impact packages/core/src/extract/go-types.ts`)
 
 **Key symbols:**
-- `const PREDECLARED: ReadonlySet<string> = new Set([ "any", "bool", "byte", "comparable", "complex64", "complex128", "error", "float32", "float64", "int", "int8", "int16", "int32", "int64", "rune", "st…`  L34-57
-- `const UNDECIDED = null`  L60-60
-- `function namedType(node: Node | null): string | null`  L68-85
-- `function structEmbeds(typeNode: Node | null): string[]`  L94-107
-- `function firstResultType(node: Node): string | null`  L115-123
-- `function calleeText(node: Node): string | null`  L132-141
-- `function compositeLiteral(expression: Node): Node | null`  L144-149
-- `function initialiserType(expression: Node, bound: ReadonlySet<string>, receiver: string | null): string | null`  L163-175
-- `function listNames(node: Node | null): Node[]`  L178-182
-- `function typedLocals(fn: Node, bound: ReadonlySet<string>, receiver: string | null): Map<string, string>`  L194-258
+- `const PREDECLARED: ReadonlySet<string> = new Set([ "any", "bool", "byte", "comparable", "complex64", "complex128", "error", "float32", "float64", "int", "int8", "int16", "int32", "int64", "rune", "st…`  L36-59
+- `const UNDECIDED = null`  L62-62
+- `function namedType(node: Node | null): string | null`  L70-87
+- `interface GoStructShape`  L90-95
+- `function structShape(typeNode: Node | null): GoStructShape`  L105-125
+- `function firstResultType(node: Node): string | null`  L133-141
+- `function calleeText(node: Node): string | null`  L150-159
+- `function compositeLiteral(expression: Node): Node | null`  L162-167
+- `function initialiserType(expression: Node, bound: ReadonlySet<string>, receiver: string | null): string | null`  L181-193
+- `function listNames(node: Node | null): Node[]`  L196-200
+- `function typedLocals(fn: Node, bound: ReadonlySet<string>, receiver: string | null): Map<string, string>`  L212-276
 
 **Calls:** `calleeText` → [`packages/core/src/extract/go-types.ts#calleeText`](go-types.ts.md) (high), `compositeLiteral` → [`packages/core/src/extract/go-types.ts#compositeLiteral`](go-types.ts.md) (high), `initialiserType` → [`packages/core/src/extract/go-types.ts#initialiserType`](go-types.ts.md) (high), `listNames` → [`packages/core/src/extract/go-types.ts#listNames`](go-types.ts.md) (high), `namedType` → [`packages/core/src/extract/go-types.ts#namedType`](go-types.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](ts-signature.ts.md) (high)

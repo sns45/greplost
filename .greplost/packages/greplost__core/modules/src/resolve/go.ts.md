@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/core` ([map](../../../MAP.md))
 
-**Exports:** `GoCallIndex (interface)`, `GoRepoContext (interface)`, `GoTarget (type)`, `GoTypeRef (interface)`, `buildGoCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): GoCallIndex`, `createGoResolver(ctx: GoRepoContext): (fromDir: string, specifier: string) => GoTarget`, `goDirectoryOf(filePath: string): string`, `goModulePath(text: string | null): string`, `resolveGoCall( file: FileRecord, site: CallSite, index: GoCallIndex, ): { to: string; confidence: Confidence } | null`
+**Exports:** `GoCallIndex (interface)`, `GoRepoContext (interface)`, `GoStruct (interface)`, `GoTarget (type)`, `GoTypeRef (interface)`, `buildGoCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): GoCallIndex`, `createGoResolver(ctx: GoRepoContext): (fromDir: string, specifier: string) => GoTarget`, `goDirectoryOf(filePath: string): string`, `goModulePath(text: string | null): string`, `resolveGoCall( file: FileRecord, site: CallSite, index: GoCallIndex, ): { to: string; confidence: Confidence } | null`
 
 **Imports:** [`../schema.ts`](../schema.ts.md) (CallSite, Confidence, FileRecord, ImportEdge, compareStrings, symbolId)
 
@@ -15,32 +15,34 @@
 **Blast radius:** 69 files (`greplost impact packages/core/src/resolve/go.ts`)
 
 **Key symbols:**
-- `type GoTarget = { type: "file"; path: string } | { type: "external"; pkg: string }`  L48-48
-- `interface GoRepoContext`  L51-56
-- `const ROOT_DIR_ID = "."`  L59-59
-- `function goDirectoryOf(filePath: string): string`  L62-65
-- `function stripGoComment(line: string): string`  L67-70
-- `function unquote(raw: string): string`  L72-76
-- `function goModulePath(text: string | null): string`  L79-86
-- `function parentDir(dir: string): string`  L88-91
-- `function joinRelative(dir: string, rest: string): string`  L93-96
-- `function createGoResolver(ctx: GoRepoContext): (fromDir: string, specifier: string) => GoTarget`  L107-158
-- `type Declarers = Map<string, string[]>`  L165-165
-- `interface GoTypeRef`  L168-171
-- `const MAX_EMBED_DEPTH = 3`  L174-174
-- `interface GoCallIndex`  L176-194
-- `const EMPTY_INDEX: GoCallIndex = { functions: new Map(), methods: new Map(), aliases: new Map(), receivers: new Map(), embeds: new Map(), locals: new Map(), }`  L196-203
-- `function receiverVariable(signature: string): string | null`  L214-217
-- `function isDefaultLocal(specifier: string, local: string): boolean`  L224-227
-- `function addDeclarer(map: Map<string, Declarers>, dir: string, name: string, file: string): void`  L229-238
-- `function buildGoCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): GoCallIndex`  L245-359
-- `function addResult( results: Map<string, Map<string, Array<{ file: string; type: string }>>>, dir: string, name: string, file: string, type: string, ): void`  L362-375
-- `function typeRef(index: GoCallIndex, raw: string, file: string, dir: string): GoTypeRef | null`  L385-392
-- `function resultRef( index: GoCallIndex, results: Map<string, Map<string, Array<{ file: string; type: string }>>>, callee: string, caller: string, file: string, dir: string, ): GoTypeRef | null`  L403-428
-- `function declaringFile(map: Map<string, Declarers>, dir: string, name: string, preferFile: string | null): string | null`  L438-444
-- `function resolveGoCall( file: FileRecord, site: CallSite, index: GoCallIndex, ): { to: string; confidence: Confidence } | null`  L451-491
-- `function methodEdge( index: GoCallIndex, type: GoTypeRef | null, member: string, fromFile: string, fromDir: string, ): { to: string; confidence: Confidence } | null`  L497-507
-- `function methodOf( index: GoCallIndex, type: GoTypeRef, member: string, fromFile: string, fromDir: string, ): string | null`  L510-520
-- `function promoted( index: GoCallIndex, start: GoTypeRef, member: string, fromFile: string, fromDir: string, ): string | null`  L530-557
+- `type GoTarget = { type: "file"; path: string } | { type: "external"; pkg: string }`  L50-50
+- `interface GoRepoContext`  L53-58
+- `const ROOT_DIR_ID = "."`  L61-61
+- `function goDirectoryOf(filePath: string): string`  L64-67
+- `function stripGoComment(line: string): string`  L69-72
+- `function unquote(raw: string): string`  L74-78
+- `function goModulePath(text: string | null): string`  L81-88
+- `function parentDir(dir: string): string`  L90-93
+- `function joinRelative(dir: string, rest: string): string`  L95-98
+- `function createGoResolver(ctx: GoRepoContext): (fromDir: string, specifier: string) => GoTarget`  L109-160
+- `type Declarers = Map<string, string[]>`  L167-167
+- `interface GoTypeRef`  L170-173
+- `interface GoStruct`  L176-181
+- `const MAX_EMBED_DEPTH = 3`  L184-184
+- `interface GoCallIndex`  L186-206
+- `const EMPTY_INDEX: GoCallIndex = { functions: new Map(), methods: new Map(), aliases: new Map(), receivers: new Map(), types: new Map(), structs: new Map(), locals: new Map(), }`  L208-216
+- `function receiverVariable(signature: string): string | null`  L227-230
+- `function isDefaultLocal(specifier: string, local: string): boolean`  L237-240
+- `function addDeclarer(map: Map<string, Declarers>, dir: string, name: string, file: string): void`  L242-251
+- `function buildGoCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): GoCallIndex`  L258-382
+- `function addResult( results: Map<string, Map<string, Array<{ file: string; type: string }>>>, dir: string, name: string, file: string, type: string, ): void`  L385-398
+- `function typeRef(index: GoCallIndex, raw: string, file: string, dir: string): GoTypeRef | null`  L408-415
+- `function resultRef( index: GoCallIndex, results: Map<string, Map<string, Array<{ file: string; type: string }>>>, callee: string, caller: string, file: string, dir: string, ): GoTypeRef | null`  L426-451
+- `function declaringFile(map: Map<string, Declarers>, dir: string, name: string, preferFile: string | null): string | null`  L461-467
+- `function resolveGoCall( file: FileRecord, site: CallSite, index: GoCallIndex, ): { to: string; confidence: Confidence } | null`  L474-514
+- `function methodEdge( index: GoCallIndex, type: GoTypeRef | null, member: string, fromFile: string, fromDir: string, ): { to: string; confidence: Confidence } | null`  L520-530
+- `function methodOf( index: GoCallIndex, type: GoTypeRef, member: string, fromFile: string, fromDir: string, ): string | null`  L533-543
+- `function structOf(index: GoCallIndex, type: GoTypeRef, fromFile: string, fromDir: string): GoStruct | null`  L552-555
+- `function promoted( index: GoCallIndex, start: GoTypeRef, member: string, fromFile: string, fromDir: string, ): string | null`  L566-600
 
-**Calls:** `addDeclarer` → [`packages/core/src/resolve/go.ts#addDeclarer`](go.ts.md) (high), `addResult` → [`packages/core/src/resolve/go.ts#addResult`](go.ts.md) (high), `declaringFile` → [`packages/core/src/resolve/go.ts#declaringFile`](go.ts.md) (high), `goDirectoryOf` → [`packages/core/src/resolve/go.ts#goDirectoryOf`](go.ts.md) (high), `goModulePath` → [`packages/core/src/resolve/go.ts#goModulePath`](go.ts.md) (high), `isDefaultLocal` → [`packages/core/src/resolve/go.ts#isDefaultLocal`](go.ts.md) (high), `joinRelative` → [`packages/core/src/resolve/go.ts#joinRelative`](go.ts.md) (high), `methodEdge` → [`packages/core/src/resolve/go.ts#methodEdge`](go.ts.md) (high), `methodOf` → [`packages/core/src/resolve/go.ts#methodOf`](go.ts.md) (high), `parentDir` → [`packages/core/src/resolve/go.ts#parentDir`](go.ts.md) (high), `promoted` → [`packages/core/src/resolve/go.ts#promoted`](go.ts.md) (high), `receiverVariable` → [`packages/core/src/resolve/go.ts#receiverVariable`](go.ts.md) (high), `resultRef` → [`packages/core/src/resolve/go.ts#resultRef`](go.ts.md) (high), `stripGoComment` → [`packages/core/src/resolve/go.ts#stripGoComment`](go.ts.md) (high), `typeRef` → [`packages/core/src/resolve/go.ts#typeRef`](go.ts.md) (high), `unquote` → [`packages/core/src/resolve/go.ts#unquote`](go.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)
+**Calls:** `addDeclarer` → [`packages/core/src/resolve/go.ts#addDeclarer`](go.ts.md) (high), `addResult` → [`packages/core/src/resolve/go.ts#addResult`](go.ts.md) (high), `declaringFile` → [`packages/core/src/resolve/go.ts#declaringFile`](go.ts.md) (high), `goDirectoryOf` → [`packages/core/src/resolve/go.ts#goDirectoryOf`](go.ts.md) (high), `goModulePath` → [`packages/core/src/resolve/go.ts#goModulePath`](go.ts.md) (high), `isDefaultLocal` → [`packages/core/src/resolve/go.ts#isDefaultLocal`](go.ts.md) (high), `joinRelative` → [`packages/core/src/resolve/go.ts#joinRelative`](go.ts.md) (high), `methodEdge` → [`packages/core/src/resolve/go.ts#methodEdge`](go.ts.md) (high), `methodOf` → [`packages/core/src/resolve/go.ts#methodOf`](go.ts.md) (high), `parentDir` → [`packages/core/src/resolve/go.ts#parentDir`](go.ts.md) (high), `promoted` → [`packages/core/src/resolve/go.ts#promoted`](go.ts.md) (high), `receiverVariable` → [`packages/core/src/resolve/go.ts#receiverVariable`](go.ts.md) (high), `resultRef` → [`packages/core/src/resolve/go.ts#resultRef`](go.ts.md) (high), `stripGoComment` → [`packages/core/src/resolve/go.ts#stripGoComment`](go.ts.md) (high), `structOf` → [`packages/core/src/resolve/go.ts#structOf`](go.ts.md) (high), `typeRef` → [`packages/core/src/resolve/go.ts#typeRef`](go.ts.md) (high), `unquote` → [`packages/core/src/resolve/go.ts#unquote`](go.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)

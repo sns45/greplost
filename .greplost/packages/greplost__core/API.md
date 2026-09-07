@@ -26,16 +26,17 @@
 
 ## packages/core/src/extract/go-types.ts
 
-- `function namedType(node: Node | null): string | null` L68-85
-- `function structEmbeds(typeNode: Node | null): string[]` L94-107
-- `function firstResultType(node: Node): string | null` L115-123
-- `function calleeText(node: Node): string | null` L132-141
-- `function typedLocals(fn: Node, bound: ReadonlySet<string>, receiver: string | null): Map<string, string>` L194-258
+- `function namedType(node: Node | null): string | null` L70-87
+- `interface GoStructShape` L90-95
+- `function structShape(typeNode: Node | null): GoStructShape` L105-125
+- `function firstResultType(node: Node): string | null` L133-141
+- `function calleeText(node: Node): string | null` L150-159
+- `function typedLocals(fn: Node, bound: ReadonlySet<string>, receiver: string | null): Map<string, string>` L212-276
 
 ## packages/core/src/extract/go.ts
 
 - `function isExportedName(name: string): boolean` L81-85
-- `function extractGo( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L430-476
+- `function extractGo( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">` L440-486
 
 ## packages/core/src/extract/hcl.ts
 
@@ -318,15 +319,16 @@
 
 ## packages/core/src/resolve/go.ts
 
-- `type GoTarget = { type: "file"; path: string } | { type: "external"; pkg: string }` L48-48
-- `interface GoRepoContext` L51-56
-- `function goDirectoryOf(filePath: string): string` L62-65
-- `function goModulePath(text: string | null): string` L79-86
-- `function createGoResolver(ctx: GoRepoContext): (fromDir: string, specifier: string) => GoTarget` L107-158
-- `interface GoTypeRef` L168-171
-- `interface GoCallIndex` L176-194
-- `function buildGoCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): GoCallIndex` L245-359
-- `function resolveGoCall( file: FileRecord, site: CallSite, index: GoCallIndex, ): { to: string; confidence: Confidence } | null` L451-491
+- `type GoTarget = { type: "file"; path: string } | { type: "external"; pkg: string }` L50-50
+- `interface GoRepoContext` L53-58
+- `function goDirectoryOf(filePath: string): string` L64-67
+- `function goModulePath(text: string | null): string` L81-88
+- `function createGoResolver(ctx: GoRepoContext): (fromDir: string, specifier: string) => GoTarget` L109-160
+- `interface GoTypeRef` L170-173
+- `interface GoStruct` L176-181
+- `interface GoCallIndex` L186-206
+- `function buildGoCallIndex(files: readonly FileRecord[], imports: readonly ImportEdge[]): GoCallIndex` L258-382
+- `function resolveGoCall( file: FileRecord, site: CallSite, index: GoCallIndex, ): { to: string; confidence: Confidence } | null` L474-514
 
 ## packages/core/src/resolve/hcl.ts
 

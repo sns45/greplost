@@ -5,8 +5,10 @@
  * edges. Neither can see the other's file, so three facts have to be written
  * down while the tree is in hand, or they are gone by resolution time:
  *
- *  - the **embedded fields** of a struct, so `recv.m()` can find the method a
- *    type promotes rather than only the ones it declares itself;
+ *  - the **shape of a struct**: the types it embeds, so `recv.m()` can find the
+ *    method a type promotes rather than only the ones it declares itself, and
+ *    the names of its own fields, because a field of that name shadows every
+ *    promoted method below it and is never a call target;
  *  - the **named type a function or method returns**, so `x, err := f()` types
  *    `x` without the resolver reading another package's source;
  *  - the **local bindings whose type the syntax fixes**: `x := &T{}`, `x := T{}`,
@@ -84,26 +86,42 @@ export function namedType(node: Node | null): string | null {
   return null;
 }
 
+/** What a struct declaration says about itself, both halves sorted. */
+export interface GoStructShape {
+  /** The types it embeds: every `field_declaration` written without a name. */
+  embeds: string[];
+  /** Its own field names, which no promoted method of the same name survives. */
+  fields: string[];
+}
+
 /**
- * The types a struct embeds, sorted and deduplicated.
+ * The embedded types and the field names of a struct, sorted and deduplicated.
  *
- * An embedded field is a `field_declaration` written without a name; a named
- * field promotes nothing and is skipped. An embedded type the tree cannot name
- * (an anonymous struct, a type parameter constraint) is skipped too.
+ * An embedded field is a `field_declaration` written without a name, and every
+ * other one contributes its names. An embedded type the tree cannot name (an
+ * anonymous struct, a type parameter constraint) is skipped, and so is a field
+ * named `_`, which no selector can reach.
  */
-export function structEmbeds(typeNode: Node | null): string[] {
-  if (typeNode === null || typeNode.type !== "struct_type") return [];
-  const names = new Set<string>();
+export function structShape(typeNode: Node | null): GoStructShape {
+  const embeds = new Set<string>();
+  const fields = new Set<string>();
+  if (typeNode === null || typeNode.type !== "struct_type") return { embeds: [], fields: [] };
   for (const child of typeNode.namedChildren) {
     if (child.type !== "field_declaration_list") continue;
     for (const declaration of child.namedChildren) {
       if (declaration.type !== "field_declaration") continue;
-      if (declaration.childrenForFieldName("name").length > 0) continue;
-      const name = namedType(field(declaration, "type"));
-      if (name !== null) names.add(name);
+      const named = declaration.childrenForFieldName("name");
+      if (named.length === 0) {
+        const name = namedType(field(declaration, "type"));
+        if (name !== null) embeds.add(name);
+        continue;
+      }
+      for (const name of named) {
+        if (name.text !== "_") fields.add(name.text);
+      }
     }
   }
-  return [...names].sort();
+  return { embeds: [...embeds].sort(), fields: [...fields].sort() };
 }
 
 /**

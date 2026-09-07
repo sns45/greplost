@@ -30,7 +30,9 @@
  *     `*core.BaseConsumer` calls `core.BaseConsumer.ApplyStrategy`. The embedded
  *     types are searched breadth first to depth 3, shallowest wins (Go's own
  *     rule), and a depth where two embedded types supply the member is ambiguous
- *     in Go too, so the edge is dropped rather than guessed.
+ *     in Go too, so the edge is dropped rather than guessed. A *field* of that
+ *     name ends the walk at whatever depth it sits: Go picks the field, and a
+ *     field is never a call target.
  *   - **local receivers**: `d := &delivery{}` fixes the type of `d`, so
  *     `d.dispose()` is as certain as a call on the receiver. The extractor
  *     decides which locals qualify (`extract/go-types.ts`) and writes the type
@@ -170,6 +172,14 @@ export interface GoTypeRef {
   name: string;
 }
 
+/** One struct declaration's shape, as the file that declares it wrote it. */
+export interface GoStruct {
+  /** The types it embeds, resolved to the packages that declare them. */
+  embeds: GoTypeRef[];
+  /** Its own field names. A promoted method never outranks one of these. */
+  fields: ReadonlySet<string>;
+}
+
 /** How deep a promoted method is searched for through embedded fields. */
 const MAX_EMBED_DEPTH = 3;
 
@@ -182,8 +192,10 @@ export interface GoCallIndex {
   aliases: Map<string, Map<string, string>>;
   /** file -> method symbol path -> receiver variable name (absent when unnamed). */
   receivers: Map<string, Map<string, string>>;
-  /** directory id -> struct name -> the types it embeds, resolved. */
-  embeds: Map<string, Map<string, GoTypeRef[]>>;
+  /** directory id -> struct name -> declaring files, as `functions` and `methods` are. */
+  types: Map<string, Declarers>;
+  /** file -> struct name -> that file's shape for it. Two build-tag variants never merge. */
+  structs: Map<string, Map<string, GoStruct>>;
   /**
    * file -> caller symbol path -> local name -> the type it was bound to, or
    * null when that type names no package in this repo. The name is present
@@ -198,7 +210,8 @@ const EMPTY_INDEX: GoCallIndex = {
   methods: new Map(),
   aliases: new Map(),
   receivers: new Map(),
-  embeds: new Map(),
+  types: new Map(),
+  structs: new Map(),
   locals: new Map(),
 };
 
@@ -251,14 +264,15 @@ export function buildGoCallIndex(files: readonly FileRecord[], imports: readonly
     methods: new Map(),
     aliases: new Map(),
     receivers: new Map(),
-    embeds: new Map(),
+    types: new Map(),
+    structs: new Map(),
     locals: new Map(),
   };
   const paths = new Set(goFiles.map((file) => file.path));
   /** dir -> declared name -> the result types written down, one per declarer. */
   const results = new Map<string, Map<string, Array<{ file: string; type: string }>>>();
-  /** The `meta.embeds` of every struct, kept until the import aliases are known. */
-  const embeds: Array<{ dir: string; file: string; name: string; raw: string }> = [];
+  /** Every struct's raw shape, kept until the import aliases are known. */
+  const shapes: Array<{ dir: string; file: string; name: string; embeds: string; fields: string }> = [];
 
   for (const file of goFiles) {
     const dir = goDirectoryOf(file.path);
@@ -271,8 +285,16 @@ export function buildGoCallIndex(files: readonly FileRecord[], imports: readonly
         const receiver = receiverVariable(decl.signature);
         if (receiver !== null) receivers.set(decl.name, receiver);
       }
-      const raw = decl.meta?.["embeds"];
-      if (raw !== undefined) embeds.push({ dir, file: file.path, name: decl.name, raw });
+      if (decl.kind === "struct") {
+        addDeclarer(index.types, dir, decl.name, file.path);
+        shapes.push({
+          dir,
+          file: file.path,
+          name: decl.name,
+          embeds: decl.meta?.["embeds"] ?? "",
+          fields: decl.meta?.["fields"] ?? "",
+        });
+      }
       const result = decl.meta?.["result"];
       if (result !== undefined) addResult(results, dir, decl.name, file.path, result);
     }
@@ -315,21 +337,22 @@ export function buildGoCallIndex(files: readonly FileRecord[], imports: readonly
     if (aliases.size > 0) index.aliases.set(file.path, aliases);
   }
 
-  // Embedded fields and typed locals both name types the way the *declaring*
-  // file wrote them, so they resolve only once the import aliases are known.
-  for (const struct of embeds) {
-    const refs: GoTypeRef[] = [];
-    for (const raw of struct.raw.split(",")) {
+  // Struct shapes and typed locals both name types the way the *declaring* file
+  // wrote them, so they resolve only once the import aliases are known.
+  for (const struct of shapes) {
+    const embeds: GoTypeRef[] = [];
+    for (const raw of struct.embeds === "" ? [] : struct.embeds.split(",")) {
       const ref = typeRef(index, raw, struct.file, struct.dir);
-      if (ref !== null) refs.push(ref);
+      if (ref !== null) embeds.push(ref);
     }
-    if (refs.length === 0) continue;
-    let byName = index.embeds.get(struct.dir);
+    const fields = new Set(struct.fields === "" ? [] : struct.fields.split(","));
+    if (embeds.length === 0 && fields.size === 0) continue;
+    let byName = index.structs.get(struct.file);
     if (byName === undefined) {
-      byName = new Map<string, GoTypeRef[]>();
-      index.embeds.set(struct.dir, byName);
+      byName = new Map<string, GoStruct>();
+      index.structs.set(struct.file, byName);
     }
-    byName.set(struct.name, [...(byName.get(struct.name) ?? []), ...refs]);
+    byName.set(struct.name, { embeds, fields });
   }
 
   for (const file of goFiles) {
@@ -520,12 +543,25 @@ function methodOf(
 }
 
 /**
+ * The shape of one struct, as the file that declares it wrote it, or null.
+ *
+ * A struct name declared in two files of a directory is two structs (mutually
+ * exclusive build tags). The caller's own file settles which one it was compiled
+ * with; from anywhere else the two must not be merged, and nothing is promoted.
+ */
+function structOf(index: GoCallIndex, type: GoTypeRef, fromFile: string, fromDir: string): GoStruct | null {
+  const file = declaringFile(index.types, type.dir, type.name, type.dir === fromDir ? fromFile : null);
+  return file === null ? null : (index.structs.get(file)?.get(type.name) ?? null);
+}
+
+/**
  * `<type>.<member>` promoted from an embedded field, as a node id, or null.
  *
- * Go's rule: the member at the shallowest depth wins, and if two of them share
- * that depth the selector is illegal. So the embedded types are walked breadth
- * first, one depth at a time, and a depth that supplies the member twice is
- * dropped rather than guessed, which is the answer the compiler gives too.
+ * Go's rule: the field *or* method at the shallowest depth wins, and if two of
+ * them share that depth the selector is illegal. So each depth is settled before
+ * the next one is looked at, and three things end the walk with no edge: a field
+ * of that name at this depth (Go picks the field, which nothing can call), two
+ * embedded types supplying the member at one depth, and depth 3.
  */
 function promoted(
   index: GoCallIndex,
@@ -536,22 +572,29 @@ function promoted(
 ): string | null {
   const key = (type: GoTypeRef): string => `${type.dir}\u0000${type.name}`;
   const seen = new Set<string>([key(start)]);
-  let frontier: GoTypeRef[] = [start];
-  for (let depth = 0; depth < MAX_EMBED_DEPTH && frontier.length > 0; depth += 1) {
+  let level: GoTypeRef[] = [start];
+  for (let depth = 0; depth <= MAX_EMBED_DEPTH && level.length > 0; depth += 1) {
+    const shapes = level.map((type) => structOf(index, type, fromFile, fromDir));
+    if (shapes.some((shape) => shape !== null && shape.fields.has(member))) return null;
+    if (depth > 0) {
+      const found = new Set<string>();
+      for (const type of level) {
+        const target = methodOf(index, type, member, fromFile, fromDir);
+        if (target !== null) found.add(target);
+      }
+      if (found.size === 1) return [...found][0] ?? null;
+      if (found.size > 1) return null;
+    }
+    if (depth === MAX_EMBED_DEPTH) break;
     const next: GoTypeRef[] = [];
-    const found = new Set<string>();
-    for (const type of frontier) {
-      for (const embedded of index.embeds.get(type.dir)?.get(type.name) ?? []) {
+    for (const shape of shapes) {
+      for (const embedded of shape?.embeds ?? []) {
         if (seen.has(key(embedded))) continue;
         seen.add(key(embedded));
         next.push(embedded);
-        const target = methodOf(index, embedded, member, fromFile, fromDir);
-        if (target !== null) found.add(target);
       }
     }
-    if (found.size === 1) return [...found][0] ?? null;
-    if (found.size > 1) return null;
-    frontier = next;
+    level = next;
   }
   return null;
 }

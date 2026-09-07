@@ -1511,18 +1511,19 @@
     "packages/core/src/extract/go-types.ts": {
       "blast": 32,
       "exports": [
+        "GoStructShape",
         "calleeText",
         "firstResultType",
         "namedType",
-        "structEmbeds",
+        "structShape",
         "typedLocals"
       ],
       "fanIn": 1,
       "fanOut": 1,
       "lang": "ts",
-      "loc": 258,
+      "loc": 276,
       "pkg": "@greplost/core",
-      "sha256": "f8ab18a5b62598b923e3250b9b5ff1117334f23594ce5e107554418a67a86f53",
+      "sha256": "ee97cdf976281f806cd7fb219182beb82b9f2e94ec0e2b5bfcff7f63229a6c34",
       "staleSummary": false
     },
     "packages/core/src/extract/go.ts": {
@@ -1534,9 +1535,9 @@
       "fanIn": 1,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 476,
+      "loc": 486,
       "pkg": "@greplost/core",
-      "sha256": "f3a41eebdf9e5ffd694284d045c8e8b9de9ae2e6a11fbd54f38a3dd5af515e96",
+      "sha256": "4ad6dc4dbe78eae1f32d4cf4c47a9ff6f98b70be38e33a7ab6b32dcdbff87b48",
       "staleSummary": false
     },
     "packages/core/src/extract/hcl.ts": {
@@ -2313,6 +2314,7 @@
       "exports": [
         "GoCallIndex",
         "GoRepoContext",
+        "GoStruct",
         "GoTarget",
         "GoTypeRef",
         "buildGoCallIndex",
@@ -2324,9 +2326,9 @@
       "fanIn": 2,
       "fanOut": 1,
       "lang": "ts",
-      "loc": 557,
+      "loc": 600,
       "pkg": "@greplost/core",
-      "sha256": "be56300aa3cf147e042f1e0e9c15b29004795661d3e94139f07fe61a7999df1a",
+      "sha256": "acebdf008becf3781500b4d9a34385cb346a98b11ccf64a92606a1c36aeb7b94",
       "staleSummary": false
     },
     "packages/core/src/resolve/hcl.ts": {
@@ -3627,7 +3629,7 @@
     "@greplost/core": {
       "deps": [],
       "files": 66,
-      "loc": 19054,
+      "loc": 19125,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",

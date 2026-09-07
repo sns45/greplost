@@ -31,7 +31,7 @@ import type {
   Lang,
 } from "../schema.ts";
 import { compareStrings, symbolId } from "../schema.ts";
-import { calleeText, firstResultType, structEmbeds, typedLocals } from "./go-types.ts";
+import { calleeText, firstResultType, structShape, typedLocals } from "./go-types.ts";
 import { clip, field, lineOf, spanOf } from "./ts-signature.ts";
 
 /** Node types whose children carry the specs of a parenthesised declaration group. */
@@ -256,11 +256,15 @@ function collectTypes(state: GoState, node: Node): void {
     const typeNode = field(spec, "type");
     const end = typeBodyStart(typeNode) ?? spec.endIndex;
     const signature = clip(`type ${state.source.slice(spec.startIndex, Math.max(end, spec.startIndex))}`);
-    // The embedded fields are the type's promoted method sets, and the signature
-    // stops before the body, so `resolve/go.ts` would never see them otherwise.
-    const embeds = structEmbeds(typeNode);
-    const meta = embeds.length === 0 ? undefined : { embeds: embeds.join(",") };
-    addDeclaration(state, nameNode.text, typeKind(typeNode), signature, spec, undefined, meta);
+    // A struct body carries two facts no signature keeps: the embedded types,
+    // which are the type's promoted method sets, and the field names, which
+    // shadow any promoted method they collide with.
+    const shape = structShape(typeNode);
+    const meta: Record<string, string> = {};
+    if (shape.embeds.length > 0) meta["embeds"] = shape.embeds.join(",");
+    if (shape.fields.length > 0) meta["fields"] = shape.fields.join(",");
+    const attributes = Object.keys(meta).length === 0 ? undefined : meta;
+    addDeclaration(state, nameNode.text, typeKind(typeNode), signature, spec, undefined, attributes);
   }
 }
 
@@ -360,17 +364,23 @@ function scopeOf(node: Node): Scope {
  * a package-scope `func handler()`, and `w.Write()` on an arbitrary local `w` is
  * not a call on the method receiver. Recording those and hoping the resolver
  * drops them is how a wrong `high` edge gets out, and a CHA oracle
- * over-approximates enough to score it as a true positive - so they are
+ * over-approximates enough to score it as a true positive, so they are
  * withheld. But `d := &delivery{}` followed by `d.dispose()` is not a guess at
  * all: the literal names the type, so the call is recorded and `meta.locals`
  * carries the type the resolver needs (build 2.1, leaf 2.13).
+ *
+ * `caller` is what makes that possible, so a typed local counts only inside a
+ * named declaration. Code at package level (`var f = func() { ... }`) has no
+ * declaration to carry `meta.locals`, and a call recorded there would reach the
+ * resolver with nothing saying the object is a local at all.
  */
-function withheld(callee: string, scope: Scope | null): boolean {
+function withheld(callee: string, caller: string, scope: Scope | null): boolean {
   if (scope === null) return false;
   const dot = callee.indexOf(".");
   if (dot === -1) return scope.bound.has(callee);
   const object = callee.slice(0, dot);
-  return scope.bound.has(object) && !scope.typed.has(object);
+  if (!scope.bound.has(object)) return false;
+  return caller === "" || !scope.typed.has(object);
 }
 
 /** Remember the typed local a recorded call was written against. */
@@ -413,7 +423,7 @@ function collectCalls(state: GoState, root: Node): void {
     const inner = scope === null && SCOPE_NODES.has(node.type) ? scopeOf(node) : scope;
     if (node.type === "call_expression") {
       const callee = calleeText(node);
-      if (callee !== null && !withheld(callee, inner)) {
+      if (callee !== null && !withheld(callee, next, inner)) {
         state.calls.push({ caller: next, callee, line: lineOf(node) });
         noteLocal(state, next, callee, inner);
       }
