@@ -592,9 +592,12 @@ export function linkCalls(files: FileRecord[], imports: ImportEdge[], index: Exp
       }
       const existing = targets.get(resolved.to);
       if (existing === undefined) {
-        targets.set(resolved.to, { from, to: resolved.to, kind: "call", confidence: resolved.confidence });
-      } else if (existing.confidence === "med" && resolved.confidence === "high") {
-        existing.confidence = "high";
+        targets.set(resolved.to, { from, to: resolved.to, kind: "call", confidence: resolved.confidence, line: site.line });
+      } else {
+        if (existing.confidence === "med" && resolved.confidence === "high") existing.confidence = "high";
+        // One edge is one (from, to) pair, so it names the first site behind it (build
+        // 2.1): the smallest line, never the arrival order of the sites.
+        if (existing.line === undefined || site.line < existing.line) existing.line = site.line;
       }
     }
   }

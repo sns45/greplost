@@ -1255,7 +1255,7 @@
       "lang": "ts",
       "loc": 464,
       "pkg": "greplost",
-      "sha256": "5218d9bd34035a98c7f38716db5ec6f5ee74b4369471816f43e12752d10fb053",
+      "sha256": "50562867aa28d20649e749ec0bfb5fe8788c8eb6cf7ff119ead769412fc08fd6",
       "staleSummary": false
     },
     "packages/cli/src/commands/refresh.ts": {
@@ -1870,9 +1870,9 @@
       "fanIn": 1,
       "fanOut": 7,
       "lang": "ts",
-      "loc": 733,
+      "loc": 736,
       "pkg": "@greplost/core",
-      "sha256": "ab8eb7176fe82ac57f562e868e4f63e47ab8aa6426f7b4421845e8a169637958",
+      "sha256": "8dea1c84a0c6aab8301b08622d42ca266dc6e8bf778195fcd86e4d46ce458aba",
       "staleSummary": false
     },
     "packages/core/src/graph/metrics.ts": {
@@ -1893,6 +1893,8 @@
     "packages/core/src/graph/query.ts": {
       "blast": 47,
       "exports": [
+        "Caller",
+        "callerIds",
         "callersOf",
         "findSymbols",
         "impactPairs",
@@ -1904,9 +1906,9 @@
       "fanIn": 2,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 126,
+      "loc": 160,
       "pkg": "@greplost/core",
-      "sha256": "f4a5dc10c57826514a8c4ef0688ed4a1c5473f60e4693f96ee094db3389e27dc",
+      "sha256": "0ab2c81939f827c59fac5505f6789709a9afe76b90c1f94679ad31300dff335f",
       "staleSummary": false
     },
     "packages/core/src/graph/tarjan.ts": {
@@ -1947,6 +1949,7 @@
         "BuildOptions",
         "CallEdge",
         "CallSite",
+        "Caller",
         "ComputedMetrics",
         "Confidence",
         "DEFAULT_CONFIG",
@@ -2005,6 +2008,7 @@
         "brokenRoot",
         "buildExportIndex",
         "buildSnapshot",
+        "callerIds",
         "callersOf",
         "classifyYamlDocument",
         "classifyYamlFile",
@@ -2550,9 +2554,9 @@
       "fanIn": 127,
       "fanOut": 0,
       "lang": "ts",
-      "loc": 523,
+      "loc": 529,
       "pkg": "@greplost/core",
-      "sha256": "dfca96cb324eb0c9b37b5275f8ea752b1a3f1a1b7d2cc7c6fe9f92cd5b106bd6",
+      "sha256": "e9b9fa2efc88ad988f6cf6d3c653a0d3a4031ae0b64693aef34d6f5726a35f6b",
       "staleSummary": false
     },
     "packages/core/src/serialize/index.ts": {
@@ -3545,7 +3549,7 @@
       "lang": "ts",
       "loc": 215,
       "pkg": "@greplost/workspace",
-      "sha256": "a36f2b5b9555ddccd69a7ba7514dd7955f1b82b6f2f6b0827a56015eb5976c94",
+      "sha256": "a6a6bc9232d5393c2497f02e563196777a7bf6f976df281ee54fb00c2307f5bf",
       "staleSummary": false
     },
     "packages/workspace/src/render.ts": {
@@ -3609,7 +3613,7 @@
     "@greplost/core": {
       "deps": [],
       "files": 65,
-      "loc": 18707,
+      "loc": 18750,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",

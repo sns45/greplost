@@ -12,7 +12,7 @@
  * reads both, which is the whole point of a stable shape.
  */
 
-import { callersOf, findSymbols } from "@greplost/core";
+import { callerIds, findSymbols } from "@greplost/core";
 import type { Declaration, ImportEdge, Manifest, PackageInfo } from "@greplost/core/schema";
 import { compareStrings } from "@greplost/core/schema";
 import { cardPath } from "@greplost/render";
@@ -125,7 +125,7 @@ function describe(repo: RepoView, decl: Declaration, byTarget: Map<string, Impor
     package: entry?.pkg ?? "",
     card: cardOf(repo, decl.file),
     importers: symbolImporters(repo, byTarget.get(decl.file) ?? [], decl),
-    callers: callersOf(repo.calls, decl.id).map((id) => workspaceId(repo.dir, id)),
+    callers: callerIds(repo.calls, decl.id).map((id) => workspaceId(repo.dir, id)),
   };
 }
 

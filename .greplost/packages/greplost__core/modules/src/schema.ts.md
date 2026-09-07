@@ -36,34 +36,34 @@
 - `type RefKind = | "hcl-ref" | "selector" | "config-ref" | "needs" | "uses" | "from-image" | "copy-from" | "helm-values" | "config" | "resource-input" | "route-handler"`  L249-260
 - `interface ReferenceRecord`  L267-272
 - `interface ReferenceEdge extends Edge`  L282-285
-- `interface CallEdge extends Edge`  L287-291
-- `interface PackageInfo`  L293-300
-- `interface PackageEntry`  L302-310
-- `interface FileEntry`  L312-328
-- `interface Manifest`  L330-334
-- `interface DiagramConfig`  L336-339
-- `interface GreplostConfig`  L341-350
-- `const DEFAULT_CONFIG: GreplostConfig = { include: ["**"], exclude: [ "**/node_modules/**", "**/dist/**", "**/build/**", "**/.git/**", "**/.greplost/**", "**/*.d.ts", "**/*.test.*", "**/*.spec.…`  L352-375
-- `interface PackageEdge`  L377-382
-- `interface Metrics`  L384-389
-- `interface Snapshot`  L392-407
-- `interface SummaryEntry`  L410-417
-- `type SummaryCache = Record<string, SummaryEntry>`  L419-419
-- `function compareStrings(a: string, b: string): number`  L422-424
-- `function compareEdges(a: Edge, b: Edge): number`  L426-433
-- `function compareDeclarations(a: Declaration, b: Declaration): number`  L435-437
-- `function symbolId(file: string, symbolPath: string): string`  L439-441
-- `function packageId(name: string): string`  L443-445
-- `function externalId(pkg: string): string`  L447-449
-- `function unresolvedId(specifier: string): string`  L451-453
-- `const NODE_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>([ "resource", "data", "variable", "output", "provider", "module", "local", "job", "step", "stage", "image", "component", "route", "h…`  L456-459
-- `function isNodeKind(kind: DeclKind): boolean`  L461-463
-- `function isNodeDeclaration(decl: Pick<Declaration, "id" | "kind">): boolean`  L471-473
-- `function nodeId(file: string, kind: DeclKind, name: string): string`  L476-479
-- `function splitNodeId(id: string): { file: string; kind: DeclKind; name: string } | null`  L482-493
-- `function isFileId(id: string): boolean`  L495-497
-- `function packageSlug(name: string): string`  L503-505
-- `function stableStringify(value: unknown, indent = 0): string`  L508-510
-- `function sortKeys(value: unknown): unknown`  L512-523
+- `interface CallEdge extends Edge`  L287-297
+- `interface PackageInfo`  L299-306
+- `interface PackageEntry`  L308-316
+- `interface FileEntry`  L318-334
+- `interface Manifest`  L336-340
+- `interface DiagramConfig`  L342-345
+- `interface GreplostConfig`  L347-356
+- `const DEFAULT_CONFIG: GreplostConfig = { include: ["**"], exclude: [ "**/node_modules/**", "**/dist/**", "**/build/**", "**/.git/**", "**/.greplost/**", "**/*.d.ts", "**/*.test.*", "**/*.spec.…`  L358-381
+- `interface PackageEdge`  L383-388
+- `interface Metrics`  L390-395
+- `interface Snapshot`  L398-413
+- `interface SummaryEntry`  L416-423
+- `type SummaryCache = Record<string, SummaryEntry>`  L425-425
+- `function compareStrings(a: string, b: string): number`  L428-430
+- `function compareEdges(a: Edge, b: Edge): number`  L432-439
+- `function compareDeclarations(a: Declaration, b: Declaration): number`  L441-443
+- `function symbolId(file: string, symbolPath: string): string`  L445-447
+- `function packageId(name: string): string`  L449-451
+- `function externalId(pkg: string): string`  L453-455
+- `function unresolvedId(specifier: string): string`  L457-459
+- `const NODE_KINDS: ReadonlySet<DeclKind> = new Set<DeclKind>([ "resource", "data", "variable", "output", "provider", "module", "local", "job", "step", "stage", "image", "component", "route", "h…`  L462-465
+- `function isNodeKind(kind: DeclKind): boolean`  L467-469
+- `function isNodeDeclaration(decl: Pick<Declaration, "id" | "kind">): boolean`  L477-479
+- `function nodeId(file: string, kind: DeclKind, name: string): string`  L482-485
+- `function splitNodeId(id: string): { file: string; kind: DeclKind; name: string } | null`  L488-499
+- `function isFileId(id: string): boolean`  L501-503
+- `function packageSlug(name: string): string`  L509-511
+- `function stableStringify(value: unknown, indent = 0): string`  L514-516
+- `function sortKeys(value: unknown): unknown`  L518-529
 
 **Calls:** `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](schema.ts.md) (high), `isNodeKind` → [`packages/core/src/schema.ts#isNodeKind`](schema.ts.md) (high), `sortKeys` → [`packages/core/src/schema.ts#sortKeys`](schema.ts.md) (high), `splitNodeId` → [`packages/core/src/schema.ts#splitNodeId`](schema.ts.md) (high)

@@ -288,6 +288,12 @@ export interface CallEdge extends Edge {
   kind: "call";
   /** `from` is `<file>#<symbol>` or `<file>` for top-level code; `to` is `<file>#<symbol>`. */
   confidence: Confidence;
+  /**
+   * Build 2.1: 1-based line of the call site this edge was resolved from, and the first
+   * such line when one caller calls one target more than once (an edge is one pair, not
+   * one site). Absent only on a map written before edges carried it.
+   */
+  line?: number;
 }
 
 export interface PackageInfo {

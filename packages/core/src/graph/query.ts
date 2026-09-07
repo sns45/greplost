@@ -7,7 +7,7 @@
  * of committing the structure layer.
  */
 
-import type { CallEdge, Declaration, ImportEdge, ReferenceEdge } from "../schema.ts";
+import type { CallEdge, Confidence, Declaration, ImportEdge, ReferenceEdge } from "../schema.ts";
 import { compareDeclarations, compareEdges, compareStrings, isNodeDeclaration } from "../schema.ts";
 import type { Structure } from "../serialize/read.ts";
 import { expandDirectoryTargets, importTargetsOf } from "./directories.ts";
@@ -63,17 +63,51 @@ export function importersOf(imports: ImportEdge[], file: string): string[] {
 }
 
 /**
- * Callers of `symbolId`, sorted and unique. A caller is `<file>#<symbol>`, or
- * the bare `<file>` when the call sits in top-level code.
+ * One caller of a symbol (build 2.1): where the call comes from, where in that file it
+ * sits, and how sure the edge is. A reader who has to open the caller anyway saves the
+ * search, and `confidence` says whether the edge was pinned outright or through a barrel.
  */
-export function callersOf(calls: CallEdge[], symbolId: string): string[] {
-  const callers = new Set<string>();
+export interface Caller {
+  /** `<file>#<symbol>`, or the bare `<file>` when the call sits in top-level code. */
+  from: string;
+  /** 1-based line of the call site. Absent only on a map written before edges carried it. */
+  line?: number;
+  confidence: Confidence;
+}
+
+/**
+ * Callers of `symbolId`, sorted by caller id and unique.
+ *
+ * A caller that reaches the symbol from more than one edge (which a well-formed map never
+ * writes, since an edge is one (from, to) pair) is folded into one entry that keeps the
+ * first line and the best confidence, so the answer never depends on edge order.
+ */
+export function callersOf(calls: readonly CallEdge[], symbolId: string): Caller[] {
+  const callers = new Map<string, Caller>();
   for (const edge of calls) {
     if (edge.kind !== "call") continue;
     if (edge.to !== symbolId) continue;
-    callers.add(edge.from);
+    const seen = callers.get(edge.from);
+    if (seen === undefined) {
+      callers.set(edge.from, {
+        from: edge.from,
+        ...(edge.line === undefined ? {} : { line: edge.line }),
+        confidence: edge.confidence,
+      });
+      continue;
+    }
+    if (edge.confidence === "high") seen.confidence = "high";
+    if (edge.line !== undefined && (seen.line === undefined || edge.line < seen.line)) seen.line = edge.line;
   }
-  return [...callers].sort(compareStrings);
+  return [...callers.values()].sort((a, b) => compareStrings(a.from, b.from));
+}
+
+/**
+ * The same callers as bare ids, for a caller that wants only the set (build 2.1). Sorted
+ * and unique, which is what `callersOf` returned before it carried the site.
+ */
+export function callerIds(calls: readonly CallEdge[], symbolId: string): string[] {
+  return callersOf(calls, symbolId).map((caller) => caller.from);
 }
 
 /**
