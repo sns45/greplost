@@ -12,7 +12,7 @@
 
 **Imported by:** [`packages/core/src/extract/go.ts`](go.ts.md)
 
-**Blast radius:** 32 files (`greplost impact packages/core/src/extract/go-types.ts`)
+**Blast radius:** 36 files (`greplost impact packages/core/src/extract/go-types.ts`)
 
 **Key symbols:**
 - `const PREDECLARED: ReadonlySet<string> = new Set([ "any", "bool", "byte", "comparable", "complex64", "complex128", "error", "float32", "float64", "int", "int8", "int16", "int32", "int64", "rune", "st…`  L36-59

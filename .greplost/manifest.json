@@ -1597,6 +1597,24 @@
       "sha256": "fa718b3c667421df7319dc5fd32668d6767bbdfd04212e8202f3c7470c1b9c68",
       "staleSummary": false
     },
+    "packages/core/src/extract/go-types.ts": {
+      "blast": 36,
+      "exports": [
+        "GoStructShape",
+        "calleeText",
+        "firstResultType",
+        "namedType",
+        "structShape",
+        "typedLocals"
+      ],
+      "fanIn": 1,
+      "fanOut": 1,
+      "lang": "ts",
+      "loc": 276,
+      "pkg": "@greplost/core",
+      "sha256": "ee97cdf976281f806cd7fb219182beb82b9f2e94ec0e2b5bfcff7f63229a6c34",
+      "staleSummary": false
+    },
     "packages/core/src/extract/go.ts": {
       "blast": 35,
       "exports": [
@@ -1604,11 +1622,11 @@
         "isExportedName"
       ],
       "fanIn": 1,
-      "fanOut": 2,
+      "fanOut": 3,
       "lang": "ts",
-      "loc": 412,
+      "loc": 486,
       "pkg": "@greplost/core",
-      "sha256": "cf860eb460539a4b72adb6b6e7c43f0e67bf4f048e029c195a5bd2de657fbc6f",
+      "sha256": "4ad6dc4dbe78eae1f32d4cf4c47a9ff6f98b70be38e33a7ab6b32dcdbff87b48",
       "staleSummary": false
     },
     "packages/core/src/extract/hcl.ts": {
@@ -1738,7 +1756,7 @@
       "staleSummary": false
     },
     "packages/core/src/extract/ts-signature.ts": {
-      "blast": 68,
+      "blast": 69,
       "exports": [
         "BODY_VALUES",
         "FUNCTION_VALUES",
@@ -1760,7 +1778,7 @@
         "unwrapValue",
         "variableSignature"
       ],
-      "fanIn": 14,
+      "fanIn": 15,
       "fanOut": 0,
       "lang": "ts",
       "loc": 187,
@@ -2393,7 +2411,9 @@
       "exports": [
         "GoCallIndex",
         "GoRepoContext",
+        "GoStruct",
         "GoTarget",
+        "GoTypeRef",
         "buildGoCallIndex",
         "createGoResolver",
         "goDirectoryOf",
@@ -2403,9 +2423,9 @@
       "fanIn": 2,
       "fanOut": 1,
       "lang": "ts",
-      "loc": 331,
+      "loc": 600,
       "pkg": "@greplost/core",
-      "sha256": "0e204a7e9795f51547bd1801d1a72d0e8adc400bd31d83da8c8650994335ab16",
+      "sha256": "acebdf008becf3781500b4d9a34385cb346a98b11ccf64a92606a1c36aeb7b94",
       "staleSummary": false
     },
     "packages/core/src/resolve/hcl.ts": {
@@ -3724,8 +3744,8 @@
     },
     "@greplost/core": {
       "deps": [],
-      "files": 65,
-      "loc": 19019,
+      "files": 66,
+      "loc": 19638,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
