@@ -6,6 +6,8 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
+**Name:** Publish greplost (skips when this version is already on the registry)
+
 **Attributes:** `flavour: actions`, `name: Publish greplost (skips when this version is already on the registry)`, `run: VERSION=$(node -p "require('./package.json').version") if npm view "greplost@${V`
 
 **References:** None.

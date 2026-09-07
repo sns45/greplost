@@ -6,6 +6,8 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
+**Name:** Configure registry auth (NPM_TOKEN sourced from Doppler release-tooling/prd)
+
 **Attributes:** `flavour: actions`, `name: Configure registry auth (NPM_TOKEN sourced from Doppler release-tooling/prd)`, `run: cat > /tmp/configure-registry-auth.sh <<'SCRIPT' if [ -z "$NPM_TOKEN" ]; then ec`
 
 **References:** None.

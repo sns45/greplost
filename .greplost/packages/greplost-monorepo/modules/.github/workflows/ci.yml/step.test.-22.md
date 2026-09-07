@@ -6,6 +6,8 @@
 
 **Package:** `greplost-monorepo` ([map](../../../../MAP.md))
 
+**Name:** freshness gate (100-commit replay, hono)
+
 **Attributes:** `flavour: actions`, `name: freshness gate (100-commit replay, hono)`, `run: bun run bench:replay --repo hono --commits 100 --gate`
 
 **References:** None.
