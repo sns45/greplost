@@ -126,6 +126,12 @@ jobs:
       # The two repos build 1 measured, and the two the absolute P1/P2 budgets in
       # RESULTS.md were set against.
       - name: performance gate (anyq)
+        # Wall-clock budgets on a shared runner are advisory on pushes and tags (issue 14); the
+        # nightly schedule still enforces them.
+        continue-on-error: ${{ github.event_name != 'schedule' }}
         run: bun run bench:perf --repo anyq --gate
       - name: performance gate (gin)
+        # Wall-clock budgets on a shared runner are advisory on pushes and tags (issue 14); the
+        # nightly schedule still enforces them.
+        continue-on-error: ${{ github.event_name != 'schedule' }}
         run: bun run bench:perf --repo gin --gate

@@ -8,9 +8,9 @@
       "fanIn": 0,
       "fanOut": 0,
       "lang": "yaml",
-      "loc": 131,
+      "loc": 137,
       "pkg": "greplost-monorepo",
-      "sha256": "0681f6436a85b120b61b944fa78e6b97eebba50ac3bb7acce778fc5155fea002",
+      "sha256": "56063b6c5d75bd01d2787a6e3b196a6599c8ab85767fd397801a710012764c53",
       "staleSummary": false
     },
     ".github/workflows/publish.yml": {
@@ -3827,7 +3827,7 @@
     "greplost-monorepo": {
       "deps": [],
       "files": 4,
-      "loc": 347,
+      "loc": 353,
       "path": ".",
       "rdeps": []
     }

@@ -17,7 +17,7 @@
 **Key symbols:** None.
 
 **Nodes:**
-- [`job.test`](ci.yml/job.test.md)  L25-131
+- [`job.test`](ci.yml/job.test.md)  L25-137
 - [`step.test.~0`](ci.yml/step.test.-0.md)  L27-28
 - [`step.test.~1`](ci.yml/step.test.-1.md)  L29-30
 - [`step.test.~2`](ci.yml/step.test.-2.md)  L31-32
@@ -42,5 +42,5 @@
 - [`step.test.~21`](ci.yml/step.test.-21.md) (map quality gate)  L109-121
 - [`step.test.~22`](ci.yml/step.test.-22.md) (freshness gate (100-commit replay, hono))  L122-123
 - [`step.test.~23`](ci.yml/step.test.-23.md) (freshness gate (100-commit replay, pydantic))  L124-127
-- [`step.test.~24`](ci.yml/step.test.-24.md) (performance gate (anyq))  L128-129
-- [`step.test.~25`](ci.yml/step.test.-25.md) (performance gate (gin))  L130-131
+- [`step.test.~24`](ci.yml/step.test.-24.md) (performance gate (anyq))  L128-132
+- [`step.test.~25`](ci.yml/step.test.-25.md) (performance gate (gin))  L133-137
