@@ -9,7 +9,7 @@
 ## .github/workflows/publish.yml
 
 - `uses: ./.github/workflows/ci.yml` L13-13
-- `job publish` L16-79
+- `job publish` L16-89
 
 ## scripts/sync-readme.ts
 

@@ -18,7 +18,7 @@
 
 **Nodes:**
 - [`task.ci`](publish.yml/task.ci.md)  L13-13
-- [`job.publish`](publish.yml/job.publish.md)  L16-79
+- [`job.publish`](publish.yml/job.publish.md)  L16-89
 - [`step.publish.~0`](publish.yml/step.publish.-0.md)  L19-19
 - [`step.publish.~1`](publish.yml/step.publish.-1.md)  L21-23
 - [`step.publish.~2`](publish.yml/step.publish.-2.md) (Install dependencies)  L25-26
@@ -28,4 +28,4 @@
 - [`step.publish.~6`](publish.yml/step.publish.-6.md) (Verify npm authentication)  L47-53
 - [`step.publish.~7`](publish.yml/step.publish.-7.md) (Tag matches package version)  L55-62
 - [`step.publish.~8`](publish.yml/step.publish.-8.md) (Publish greplost (skips when this version is already on the registry))  L64-72
-- [`step.publish.~9`](publish.yml/step.publish.-9.md) (Smoke the published package)  L74-79
+- [`step.publish.~9`](publish.yml/step.publish.-9.md) (Smoke the published package)  L74-89

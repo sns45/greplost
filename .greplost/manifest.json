@@ -22,9 +22,9 @@
       "fanIn": 0,
       "fanOut": 0,
       "lang": "yaml",
-      "loc": 79,
+      "loc": 89,
       "pkg": "greplost-monorepo",
-      "sha256": "547c438eecbea58d8638bfd028d05d5580e0a2b00de56024d2af58f668a1bdd7",
+      "sha256": "cceb6ad81fe69aa4b381dd5a1f0e3c64c763c25c21e5870b18e0dbdbf02b00fb",
       "staleSummary": false
     },
     "bench/src/adapters/crg.ts": {
@@ -3827,7 +3827,7 @@
     "greplost-monorepo": {
       "deps": [],
       "files": 4,
-      "loc": 353,
+      "loc": 363,
       "path": ".",
       "rdeps": []
     }

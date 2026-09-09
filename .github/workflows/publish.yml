@@ -74,6 +74,16 @@ jobs:
       - name: Smoke the published package
         run: |
           cd "$(mktemp -d)"
-          for i in 1 2 3 4 5 6; do npx -y greplost@"${GITHUB_REF_NAME#v}" --version && exit 0; sleep 20; done
-          echo "::error::published package did not resolve from the registry"
+          version="${GITHUB_REF_NAME#v}"
+          # The registry serves metadata before every CDN edge has the tarball, so wait for the
+          # version to appear, then install it. Ten tries over five minutes (issue 15).
+          for i in $(seq 1 10); do
+            if npm view "greplost@$version" version >/dev/null 2>&1; then break; fi
+            sleep 30
+          done
+          for i in $(seq 1 10); do
+            if npx -y "greplost@$version" --version; then exit 0; fi
+            sleep 30
+          done
+          echo "::error::published package did not resolve from the registry within five minutes"
           exit 1

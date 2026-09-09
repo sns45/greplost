@@ -50,7 +50,7 @@ graph LR
 
 | Package | Path | Files | LOC | Depends on | Map |
 |---|---|---|---|---|---|
-| greplost-monorepo | . | 4 | 353 | none | [MAP](../packages/greplost-monorepo/MAP.md) |
+| greplost-monorepo | . | 4 | 363 | none | [MAP](../packages/greplost-monorepo/MAP.md) |
 | @greplost/bench | bench | 53 | 29863 | @greplost/core, @greplost/sync | [MAP](../packages/greplost__bench/MAP.md) |
 | greplost | packages/cli | 23 | 3133 | @greplost/core, @greplost/render, @greplost/semantic, @greplost/sync, @greplost/workspace | [MAP](../packages/greplost/MAP.md) |
 | @greplost/core | packages/core | 66 | 19638 | none | [MAP](../packages/greplost__core/MAP.md) |

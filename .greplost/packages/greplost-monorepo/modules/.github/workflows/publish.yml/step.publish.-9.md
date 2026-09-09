@@ -8,7 +8,7 @@
 
 **Name:** Smoke the published package
 
-**Attributes:** `flavour: actions`, `name: Smoke the published package`, `run: cd "$(mktemp -d)" for i in 1 2 3 4 5 6; do npx -y greplost@"${GITHUB_REF_NAME#v}`
+**Attributes:** `flavour: actions`, `name: Smoke the published package`, `run: cd "$(mktemp -d)" version="${GITHUB_REF_NAME#v}" # The registry serves metadata `
 
 **References:** None.
 
@@ -16,4 +16,4 @@
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/publish.yml#step.publish.~9`)
 
-**Source:** L74-79
+**Source:** L74-89
