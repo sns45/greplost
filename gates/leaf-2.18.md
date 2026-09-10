@@ -37,7 +37,7 @@ Three things go beyond the letter of ruling 14, which wrote the cap at 4.
 The scaling rule is stated in the single-tool notes, which is the table `readme:sync` copies into
 README.md, so the rule travels with the P1 and P2 rows a reader actually sees.
 
-Files: `bench/src/perf.ts`, `bench/test/perf.test.ts`, `bench/src/report-evals.ts` and
+Files: `bench/src/perf.ts`, `bench/test/perf.test.ts` and `bench/test/perf-report.test.ts`, `bench/src/report-evals.ts` and
 `bench/src/report-sections.ts` (the perf section and the perf note only), `bench/src/report.ts`
 (the perf payloads it hands that section), `.github/workflows/ci.yml` (the two perf steps),
 `bench/RESULTS.md` and `README.md` (regenerated), `bench/results/INDEX.json` and the two perf
@@ -49,8 +49,8 @@ Recorded exceptions to the 500-line rule: `bench/src/perf.ts` is over 500 lines 
 leaf, and the module documents the whole suite: the scenarios, which statistic gates what, the
 regression rule and now the runner factor, none of which reads better split across files).
 
-- [ ] G1: the perf suite's own tests pass
-  CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
+- [ ] G1: both perf test files pass
+  CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts bench/test/perf-report.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n^ 0 fail$/m
   EVIDENCE: pending
 
@@ -70,7 +70,7 @@ regression rule and now the runner factor, none of which reads better split acro
   EVIDENCE: pending
 
 - [ ] G5: the printed report carries the raw budget, the factor, the reference, the scaled budget and the measurement; -t "the report prints"
-  CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts -t "the report prints" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
+  CHECK: FORCE_COLOR=0 bun test bench/test/perf-report.test.ts -t "the report prints" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
   EVIDENCE: pending
 
@@ -85,7 +85,7 @@ regression rule and now the runner factor, none of which reads better split acro
   EVIDENCE: pending
 
 - [ ] G8: the generator states the scaling rule beside the P1 and P2 rows README carries, and not twice; -t "RESULTS.md states"
-  CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts -t "RESULTS.md states" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
+  CHECK: FORCE_COLOR=0 bun test bench/test/perf-report.test.ts -t "RESULTS.md states" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
   EVIDENCE: pending
 
@@ -95,7 +95,7 @@ regression rule and now the runner factor, none of which reads better split acro
   EVIDENCE: pending
 
 - [ ] G8c: the Bench 3 section merges every pinned perf payload, newest first; -t "merges the payloads"
-  CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts -t "merges the payloads" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
+  CHECK: FORCE_COLOR=0 bun test bench/test/perf-report.test.ts -t "merges the payloads" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
   EVIDENCE: pending
 
@@ -159,12 +159,12 @@ regression rule and now the runner factor, none of which reads better split acro
   EXPECT: /^anyq compared True baseline perf-\d{4}-\d{2}-\d{2}-[0-9a-f]{7}\.json onDisk True$\n^gin compared True baseline perf-\d{4}-\d{2}-\d{2}-[0-9a-f]{7}\.json onDisk True$/m
   EVIDENCE: pending
 
-- [ ] G18: the test file this leaf wrote is under 500 lines, `perf.ts` excepted above
-  CHECK: wc -l < bench/test/perf.test.ts | awk '{print ($1 < 500) ? "under 500" : "OVER 500"}'
-  EXPECT: /^under 500$/m
+- [ ] G18: both test files this leaf wrote are under 500 lines, `perf.ts` excepted above
+  CHECK: wc -l bench/test/perf.test.ts bench/test/perf-report.test.ts | awk '/test.ts$/ {if ($1 >= 500) bad = 1} END {print (bad ? "OVER 500" : "both under 500")}'
+  EXPECT: /^both under 500$/m
   EVIDENCE: pending
 
 - [ ] G19: no NUL byte reached any file this leaf touched, and no long dash reached the prose it wrote
-  CHECK: perl -ne 'exit 1 if /\0/' bench/src/perf.ts bench/test/perf.test.ts bench/src/report-evals.ts bench/src/report.ts .github/workflows/ci.yml bench/RESULTS.md README.md bench/results/INDEX.json gates/leaf-2.18.md && perl -CSD -ne 'exit 1 if /[\x{2013}\x{2014}]/' bench/src/perf.ts bench/test/perf.test.ts bench/src/report-evals.ts bench/src/report.ts gates/leaf-2.18.md && echo "no NUL in 9 files, no long dash in the 5 this leaf wrote"
-  EXPECT: /^no NUL in 9 files, no long dash in the 5 this leaf wrote$/m
+  CHECK: perl -ne 'exit 1 if /\0/' bench/src/perf.ts bench/test/perf.test.ts bench/test/perf-report.test.ts bench/src/report-evals.ts bench/src/report-sections.ts bench/src/report.ts .github/workflows/ci.yml bench/RESULTS.md README.md bench/results/INDEX.json gates/leaf-2.18.md && perl -CSD -ne 'exit 1 if /[\x{2013}\x{2014}]/' bench/src/perf.ts bench/test/perf.test.ts bench/test/perf-report.test.ts bench/src/report-evals.ts bench/src/report-sections.ts bench/src/report.ts gates/leaf-2.18.md && echo "no NUL in 11 files, no long dash in the 7 this leaf wrote"
+  EXPECT: /^no NUL in 11 files, no long dash in the 7 this leaf wrote$/m
   EVIDENCE: pending
