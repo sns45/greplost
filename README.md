@@ -305,9 +305,9 @@ greplost measured against its own section 3 targets, one row per metric id. The 
 | unparsable | files whose tree-sitter parse is broken at the root level | 0 | 6 | Eval 1, `structural` |
 | F1 | `verify` catch rate on stale maps | 100% | 100% | Eval 2, `replay` |
 | F2 | `verify` false positives after `update` | 0% (byte-identical) | 0% | Eval 2, `replay` |
-| P1 | full build, 1k / 10k files | <= 1s / <= 10s (measured on anyq, tier S, 230 files) | 484 ms (p50) | Bench 3, `perf` |
-| P2 | incremental update p95, 1k / 10k files | <= 500ms / <= 1s (measured on anyq, tier S, 230 files) | 299 ms | Bench 3, `perf` |
-| P3 | peak RSS at 10k files | <= 500MB (reported) (measured on anyq, tier S, 230 files) | 332.3 MB | Bench 3, `perf` |
+| P1 | full build, 1k / 10k files | <= 1s / <= 10s (measured on anyq, tier S, 230 files) | 482 ms (p50) | Bench 3, `perf` |
+| P2 | incremental update p95, 1k / 10k files | <= 500ms / <= 1s (measured on anyq, tier S, 230 files) | 354 ms | Bench 3, `perf` |
+| P3 | peak RSS at 10k files | <= 500MB (reported) (measured on anyq, tier S, 230 files) | 330.6 MB | Bench 3, `perf` |
 | M1 | INDEX.md token budget | <= 3000 tokens at 10k files (measured on greplost, 120 files) | 777 tokens | Map quality, `mapquality` |
 | M2 | diagrams exceeding the node cap after auto-split | 0 | 0 | Map quality, `mapquality` |
 | A1 | agent tokens per task vs baseline (median) | <= 50% | not run | Eval 4, `agent` |
@@ -318,6 +318,8 @@ greplost measured against its own section 3 targets, one row per metric id. The 
 > F2 rests on 1 full-vs-incremental comparison over a walk of 100 commits. It compares the structure artifacts that `listStructurePaths` enumerates, `INDEX.md`, `manifest.json`, `graph/*.jsonl`, `repo/*.md`, `packages/*/{MAP,API}.md` and `packages/*/modules/**`, and not the whole `.greplost/` directory: `config.json`, `cache/` and the runtime files (`.dirty`, `.lock`, `.state.json`) are excluded, because they are not the map and are not committed (ruling 2026-09-02).
 
 > `unparsable` counts files whose tree-sitter parse root is an ERROR node or has one as a direct child: the top level of the file is not a program the grammar recognises (`findUnparsableFiles` in `@greplost/core`, Appendix C ruling 2026-09-03). The extractor recovers around ERROR nodes, so these files are still scored, which is the problem: whatever the grammar could not read costs S1 and S2 recall with no line saying so unless it is counted here. tree-sitter-typescript 0.23.2 is the newest grammar that exists, and hono's generic call signatures hit open upstream issue https://github.com/tree-sitter/tree-sitter-typescript/issues/335. The count is read from the structural payload when it reports one, and otherwise derived from it, a file every one of whose truth items was missed is a file nothing was extracted from, and it is `n/a` with `not measured` when the payload carries neither. Nothing about it is asserted here.
+
+> P1 and P2 are wall clock, so every perf run measures the machine first, as the median of a fixed number of `fixtures/tiny-ts` builds against a reference recorded in `bench/src/perf.ts`, multiplies the budgets in this table by `max(1, measured / reference)`, prints the raw budget, the factor, the reference and the scaled budget beside each other, and fails the gate on the runner alone once that factor passes 8, where the machine is too slow to say anything about greplost.
 
 > Rows reading `not run` have no result file behind them, not a value of zero; the section below each metric names the command that would produce one.
 <!-- singletool:end -->

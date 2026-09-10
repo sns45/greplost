@@ -280,9 +280,9 @@ greplost measured against its own section 3 targets, one row per metric id. The 
 | unparsable | files whose tree-sitter parse is broken at the root level | 0 | 6 | Eval 1, `structural` |
 | F1 | `verify` catch rate on stale maps | 100% | 100% | Eval 2, `replay` |
 | F2 | `verify` false positives after `update` | 0% (byte-identical) | 0% | Eval 2, `replay` |
-| P1 | full build, 1k / 10k files | <= 1s / <= 10s (measured on anyq, tier S, 230 files) | 484 ms (p50) | Bench 3, `perf` |
-| P2 | incremental update p95, 1k / 10k files | <= 500ms / <= 1s (measured on anyq, tier S, 230 files) | 299 ms | Bench 3, `perf` |
-| P3 | peak RSS at 10k files | <= 500MB (reported) (measured on anyq, tier S, 230 files) | 332.3 MB | Bench 3, `perf` |
+| P1 | full build, 1k / 10k files | <= 1s / <= 10s (measured on anyq, tier S, 230 files) | 482 ms (p50) | Bench 3, `perf` |
+| P2 | incremental update p95, 1k / 10k files | <= 500ms / <= 1s (measured on anyq, tier S, 230 files) | 354 ms | Bench 3, `perf` |
+| P3 | peak RSS at 10k files | <= 500MB (reported) (measured on anyq, tier S, 230 files) | 330.6 MB | Bench 3, `perf` |
 | M1 | INDEX.md token budget | <= 3000 tokens at 10k files (measured on greplost, 120 files) | 777 tokens | Map quality, `mapquality` |
 | M2 | diagrams exceeding the node cap after auto-split | 0 | 0 | Map quality, `mapquality` |
 | A1 | agent tokens per task vs baseline (median) | <= 50% | not run | Eval 4, `agent` |
@@ -293,6 +293,8 @@ greplost measured against its own section 3 targets, one row per metric id. The 
 > F2 rests on 1 full-vs-incremental comparison over a walk of 100 commits. It compares the structure artifacts that `listStructurePaths` enumerates, `INDEX.md`, `manifest.json`, `graph/*.jsonl`, `repo/*.md`, `packages/*/{MAP,API}.md` and `packages/*/modules/**`, and not the whole `.greplost/` directory: `config.json`, `cache/` and the runtime files (`.dirty`, `.lock`, `.state.json`) are excluded, because they are not the map and are not committed (ruling 2026-09-02).
 
 > `unparsable` counts files whose tree-sitter parse root is an ERROR node or has one as a direct child: the top level of the file is not a program the grammar recognises (`findUnparsableFiles` in `@greplost/core`, Appendix C ruling 2026-09-03). The extractor recovers around ERROR nodes, so these files are still scored, which is the problem: whatever the grammar could not read costs S1 and S2 recall with no line saying so unless it is counted here. tree-sitter-typescript 0.23.2 is the newest grammar that exists, and hono's generic call signatures hit open upstream issue https://github.com/tree-sitter/tree-sitter-typescript/issues/335. The count is read from the structural payload when it reports one, and otherwise derived from it, a file every one of whose truth items was missed is a file nothing was extracted from, and it is `n/a` with `not measured` when the payload carries neither. Nothing about it is asserted here.
+
+> P1 and P2 are wall clock, so every perf run measures the machine first, as the median of a fixed number of `fixtures/tiny-ts` builds against a reference recorded in `bench/src/perf.ts`, multiplies the budgets in this table by `max(1, measured / reference)`, prints the raw budget, the factor, the reference and the scaled budget beside each other, and fails the gate on the runner alone once that factor passes 8, where the machine is too slow to say anything about greplost.
 
 > Rows reading `not run` have no result file behind them, not a value of zero; the section below each metric names the command that would produce one.
 
@@ -611,32 +613,30 @@ Measured 2026-09-02 at 334b337.
 
 Performance (P1 to P3)
 
-Measured 2026-09-10 at 310089d.
+Measured 2026-09-10 at 505d348.
 
 | ID | Metric | Target | Measured | Detail |
 |---|---|---|---|---|
-| P1 | full build, 1k / 10k files | <= 1s / <= 10s | 484 ms (p50) | scenario `anyq full`, 230 files |
-| P2 | incremental update p95, 1k / 10k files | <= 500ms / <= 1s | 299 ms | scenario `anyq incremental-1`, p50 254 ms |
-| P3 | peak RSS at 10k files | <= 500MB (reported) | 332.3 MB | highest `maxRSS` across the scenarios below |
+| P1 | full build, 1k / 10k files | <= 1s / <= 10s | 482 ms (p50) | scenario `anyq full`, 230 files |
+| P2 | incremental update p95, 1k / 10k files | <= 500ms / <= 1s | 354 ms | scenario `anyq incremental-1`, p50 244 ms |
+| P3 | peak RSS at 10k files | <= 500MB (reported) | 330.6 MB | highest `maxRSS` across the scenarios below |
 
 ### every scenario
 
 | ID | Metric | Target | Measured | Detail |
 |---|---|---|---|---|
-| P- | anyq full | - | 484 ms (p50) | p95 540 ms, RSS 332.3 MB |
-| P- | anyq incremental-1 | - | 254 ms (p50) | p95 299 ms, RSS 201.3 MB |
-| P- | anyq incremental-10 | - | 274 ms (p50) | p95 306 ms, RSS 265.8 MB |
-| P- | anyq package-rename | - | 233 ms (p50) | p95 244 ms, RSS 135.6 MB |
-| P- | anyq parse-cache-save | - | 4.318 ms (p50) | p95 4.774 ms, RSS 95.3 MB |
-| P- | gin full | - | 218 ms (p50) | p95 240 ms, RSS 254.1 MB |
-| P- | gin incremental-1 | - | 164 ms (p50) | p95 166 ms, RSS 167.5 MB |
-| P- | gin incremental-10 | - | 174 ms (p50) | p95 180 ms, RSS 216.8 MB |
-| P- | gin package-rename | - | 151 ms (p50) | p95 157 ms, RSS 100.4 MB |
-| P- | gin parse-cache-save | - | 2.324 ms (p50) | p95 2.567 ms, RSS 86.2 MB |
+| P- | anyq full | - | 482 ms (p50) | p95 658 ms, RSS 330.6 MB |
+| P- | anyq incremental-1 | - | 244 ms (p50) | p95 354 ms, RSS 205.3 MB |
+| P- | anyq incremental-10 | - | 265 ms (p50) | p95 396 ms, RSS 267 MB |
+| P- | anyq package-rename | - | 246 ms (p50) | p95 439 ms, RSS 137.3 MB |
+| P- | anyq parse-cache-save | - | 4.717 ms (p50) | p95 10.4 ms, RSS 95.4 MB |
+| P- | gin full | - | 231 ms (p50) | p95 317 ms, RSS 262.3 MB |
+| P- | gin incremental-1 | - | 168 ms (p50) | p95 249 ms, RSS 171 MB |
+| P- | gin incremental-10 | - | 178 ms (p50) | p95 269 ms, RSS 216.4 MB |
+| P- | gin package-rename | - | 162 ms (p50) | p95 332 ms, RSS 102.2 MB |
+| P- | gin parse-cache-save | - | 2.373 ms (p50) | p95 21.7 ms, RSS 85 MB |
 
-> P1 and P2 are wall clock, so every perf run measures the machine first, as the median of a fixed number of `fixtures/tiny-ts` builds against a reference recorded in `bench/src/perf.ts`, multiplies the budgets in this table by `max(1, measured / reference)`, prints the raw budget, the factor, the reference and the scaled budget beside each other, and fails the gate on the runner alone once that factor passes 4, where the machine is too slow to say anything about greplost.
-
-> The rows above merge 2 perf payloads, newest first: `perf-2026-09-10-310089d.json` (gin), `perf-2026-09-10-c3a74fc.json` (anyq). One perf run measures one repo, and a repo measured in more than one payload keeps its newest numbers.
+> The rows above merge 2 perf payloads, newest first: `perf-2026-09-10-505d348.json` (gin), `perf-2026-09-10-756639e.json` (anyq). One perf run measures one repo, and a repo measured in more than one payload keeps its newest numbers.
 
 **Latency per scenario (box spans p50 to p95)**
 
@@ -646,8 +646,8 @@ xychart-beta
     title "P2 latency per scenario"
     x-axis ["anyq full", "anyq incremental-1", "anyq incremental-10", "anyq package-rename", "anyq parse-cache-save", "gin full", "gin incremental-1", "gin incremental-10", "gin package-rename", "gin parse-cache-save"]
     y-axis "ms" 0 --> 750
-    bar [484, 254, 274, 233, 4.318, 218, 164, 174, 151, 2.324]
-    bar [540, 299, 306, 244, 4.774, 240, 166, 180, 157, 2.567]
+    bar [482, 244, 265, 246, 4.717, 231, 168, 178, 162, 2.373]
+    bar [658, 354, 396, 439, 10.4, 317, 249, 269, 332, 21.7]
     %% series, in order: p50, p95
 ```
 
@@ -661,7 +661,7 @@ xychart-beta
     title "Build time vs files"
     x-axis "files" ["58", "58", "58", "58", "58", "230", "230", "230", "230", "230"]
     y-axis "ms" 0 --> 500
-    line [218, 164, 174, 151, 2.324, 484, 254, 274, 233, 4.318]
+    line [231, 168, 178, 162, 2.373, 482, 244, 265, 246, 4.717]
     %% series, in order: p50
 ```
 
