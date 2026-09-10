@@ -1,22 +1,22 @@
 {
   "corpora": {
-    "anyq": "structural-2026-09-07-ebab1e1.json",
-    "bitnami-charts": "structural-2026-09-07-ebab1e1.json",
-    "coroutines": "structural-2026-09-07-ebab1e1.json",
-    "docker-node": "structural-2026-09-07-ebab1e1.json",
-    "docker-python": "structural-2026-09-07-ebab1e1.json",
-    "gin": "structural-2026-09-07-ebab1e1.json",
-    "gson": "structural-2026-09-07-ebab1e1.json",
-    "k8s-examples": "structural-2026-09-07-ebab1e1.json",
-    "next-app": "structural-2026-09-07-ebab1e1.json",
-    "pulumi-go": "structural-2026-09-07-ebab1e1.json",
-    "pulumi-ts": "structural-2026-09-07-ebab1e1.json",
-    "pydantic": "structural-2026-09-07-ebab1e1.json",
-    "ripgrep": "structural-2026-09-07-ebab1e1.json",
-    "starter-workflows": "structural-2026-09-07-ebab1e1.json",
-    "tanstack-start": "structural-2026-09-07-ebab1e1.json",
-    "tf-aws-eks": "structural-2026-09-07-ebab1e1.json",
-    "tf-aws-vpc": "structural-2026-09-07-ebab1e1.json"
+    "anyq": "structural-2026-09-10-ef0ae8a.json",
+    "bitnami-charts": "structural-2026-09-10-ef0ae8a.json",
+    "coroutines": "structural-2026-09-10-ef0ae8a.json",
+    "docker-node": "structural-2026-09-10-ef0ae8a.json",
+    "docker-python": "structural-2026-09-10-ef0ae8a.json",
+    "gin": "structural-2026-09-10-ef0ae8a.json",
+    "gson": "structural-2026-09-10-ef0ae8a.json",
+    "k8s-examples": "structural-2026-09-10-ef0ae8a.json",
+    "next-app": "structural-2026-09-10-ef0ae8a.json",
+    "pulumi-go": "structural-2026-09-10-ef0ae8a.json",
+    "pulumi-ts": "structural-2026-09-10-ef0ae8a.json",
+    "pydantic": "structural-2026-09-10-ef0ae8a.json",
+    "ripgrep": "structural-2026-09-10-ef0ae8a.json",
+    "starter-workflows": "structural-2026-09-10-ef0ae8a.json",
+    "tanstack-start": "structural-2026-09-10-ef0ae8a.json",
+    "tf-aws-eks": "structural-2026-09-10-ef0ae8a.json",
+    "tf-aws-vpc": "structural-2026-09-10-ef0ae8a.json"
   },
   "note": "The payload set bench/RESULTS.md was generated from. `bun run bench:report` reads these files by default, so a payload written later by a gate run cannot silently replace them; `bun run bench:report --latest` re-pins this file to the newest payload of each suite on disk. `corpora` names the structural payload each corpus repo's numbers came from.",
   "payloads": {
@@ -29,6 +29,9 @@
       "mapquality-2026-09-02-dc3d859.json"
     ],
     "perf": [
+      "perf-2026-09-02-334b337.json",
+      "perf-2026-09-10-c3a74fc.json",
+      "perf-2026-09-10-310089d.json",
       "perf-2026-09-10-756639e.json",
       "perf-2026-09-10-505d348.json"
     ],
@@ -36,7 +39,7 @@
       "replay-2026-09-02-334b337.json"
     ],
     "structural": [
-      "structural-2026-09-07-ebab1e1.json"
+      "structural-2026-09-10-ef0ae8a.json"
     ]
   }
 }

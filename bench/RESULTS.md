@@ -6,7 +6,7 @@ Suites with no result file in `bench/results/`, rendered as `not run`: agent.
 
 ## Machine
 
-The profile of the run that recorded it: the `headtohead` payload. Its `greplostVersion` and `greplostSha` are that run's. The structural numbers below were measured on greplost 0.1.0 (`ebab1e1`); see Versions.
+The profile of the run that recorded it: the `headtohead` payload. Its `greplostVersion` and `greplostSha` are that run's. The structural numbers below were measured on greplost 0.1.1 (`ef0ae8a`); see Versions.
 
 | Field | Value |
 |---|---|
@@ -53,8 +53,8 @@ The profile of the run that recorded it: the `headtohead` payload. Its `greplost
 | bun | 1.2.21 |
 | node | 24.3.0 |
 | go | go version go1.25.3 darwin/arm64 |
-| greplostVersion (structural) | 0.1.0 |
-| greplostSha (structural) | ebab1e1 |
+| greplostVersion (structural) | 0.1.1 |
+| greplostSha (structural) | ef0ae8a |
 | graphify (pinned) | v0.9.53 @ 33362d9 |
 | ua (pinned) | v2.9.0 @ f08763d |
 | crg (pinned) | v2.3.8 @ 2c6dae3 |
@@ -302,7 +302,7 @@ greplost measured against its own section 3 targets, one row per metric id. The 
 
 Every language, IaC flavour and framework signal pass greplost indexes, scored against its own compiler truth. One row per language, filled from the structural payload's `perLang` block; `Files` is the files greplost scored, which is not the file count the corpus pin's glob names (a pinned `Dockerfile*` glob counts templates the indexer does not read). `S1`, `S2`, `S3`, `S5` and `S6` are precision and `S4` is the cycle Jaccard, with recall, the tp/fp/fn counts and the per-repo split in Eval 1 below. A language scored on more than one corpus repo shows the **worst** of its repos, never an average: an average hides the weaker half, and the worst repo is what the gate decided on. `n/a` is a metric this language's oracle does not measure, either because it declared it unsupported or because it produced no number for it: never a pass, never a fail. `n/a for <repo>` means only that repo's oracle sat the metric out and the value beside it is the rest. No competitor was run on any of these languages.
 
-Measured 2026-09-07 at ebab1e1.
+Measured 2026-09-10 at ef0ae8a.
 
 | Lang | Corpus | Files | S1 imports P | S2 exports P | S3 calls P | S4 cycles J | S5 reference edges P | S6 signal nodes P | Truth source | Scored |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -339,7 +339,7 @@ A target whose every gated metric is `n/a` would pass `--gate` on an extractor t
 
 Structural accuracy vs compiler truth (S1 to S4)
 
-Measured 2026-09-07 at ebab1e1.
+Measured 2026-09-10 at ef0ae8a.
 
 ### anyq (148 files)
 
@@ -392,7 +392,7 @@ Measured 2026-09-07 at ebab1e1.
 |---|---|---|---|---|
 | S1 | import edge precision / recall | >= 0.99 / >= 0.97 | 1 / 1 | tp 20, fp 0, fn 0 |
 | S2 | export precision / recall | >= 0.99 / >= 0.99 | 1 / 1 | tp 191, fp 0, fn 0 |
-| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.677, tp 434, fp 0, fn 207; all confidences: precision 1, recall 0.677 |
+| S3 | call edge precision (confidence=high) | >= 0.95 | 1 | recall 0.704, tp 451, fp 0, fn 190; all confidences: precision 1, recall 0.704 |
 | S4 | import cycle Jaccard | = 1.00 | 1 |  |
 
 ### gson (95 files)
@@ -636,7 +636,7 @@ Measured 2026-09-10 at 505d348.
 | P- | gin package-rename | - | 162 ms (p50) | p95 332 ms, RSS 102.2 MB |
 | P- | gin parse-cache-save | - | 2.373 ms (p50) | p95 21.7 ms, RSS 85 MB |
 
-> The rows above merge 2 perf payloads, newest first: `perf-2026-09-10-505d348.json` (gin), `perf-2026-09-10-756639e.json` (anyq). One perf run measures one repo, and a repo measured in more than one payload keeps its newest numbers.
+> The rows above merge 5 perf payloads, newest first: `perf-2026-09-10-505d348.json` (gin), `perf-2026-09-10-756639e.json` (anyq), `perf-2026-09-10-310089d.json` (gin), `perf-2026-09-10-c3a74fc.json` (anyq), `perf-2026-09-02-334b337.json` (anyq, gin). One perf run measures one repo, and a repo measured in more than one payload keeps its newest numbers.
 
 **Latency per scenario (box spans p50 to p95)**
 
