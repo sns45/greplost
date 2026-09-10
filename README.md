@@ -66,6 +66,8 @@ Status: pre-release 0.1.0. Design: [docs/greplost-tech-spec.md](docs/greplost-te
 
 `INDEX.md` opens with a provenance line: which greplost version wrote the map, how many test files the `exclude` patterns keep out of it, and that `git log .greplost/INDEX.md` dates it. There is deliberately no commit sha in any artifact: the pre-commit hook writes the map of the tree it is about to commit, so a sha recorded at build time would be the previous commit's and would make `greplost verify` red on every commit. Where the package table has a `Nodes` column, the line under it says what that column counts.
 
+Packages come from the manifests. A `package.json` counts when it sits inside a workspace glob: `packages.roots` in `config.json` (`packages/*` and `apps/*` by default), plus whatever the root `package.json` `workspaces`, `pnpm-workspace.yaml` and `go.work` list. A `go.mod` needs no glob, because Go treats a module directory as a unit with or without a `go.work`: every `go.mod` in the indexed tree is a package rooted at its own directory, and no file under one lands in the root package. In the indexed tree is the one condition, and it means the module directory holds an indexed file, has one somewhere below it, or is named by one of those same workspace globs; a module the `exclude` patterns empty out is not a package. The name is the module path's last segment, dropping a major version suffix of `/v2` or higher; nested modules nest, and the deepest package owning a path wins.
+
 ### Languages, IaC and framework signals
 
 | What | Marker `init` looks for | What you get |
@@ -101,6 +103,8 @@ Requires Bun 1.2 or Node 20. Grammars ship inside the package; nothing is downlo
 ### Upgrading from 0.0.x
 
 Run `greplost update --full` once and commit the result. 0.1.0 moves the manifest schema from 1 to 2, so `.greplost/manifest.json` carries `"version": "2"` and, until the map is rebuilt, `greplost verify` reports that version line as drift. One full update and one commit is the whole migration. `config.json` is never rewritten, so a repository that wants a language build 2 added has to add it there itself.
+
+The same one full update covers two Go changes. Every `go.mod` outside `packages/*` and `apps/*` becomes its own package, so a Go repository that used to render as one root package regroups; and a module path carrying a major version suffix loses it from the package name, so a repository at `github.com/you/thing/v2` renames its package from `v2` to `thing`. Both show up as drift exactly once, on the update that rebuilds the map.
 
 ## Quick start
 

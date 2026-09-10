@@ -15,32 +15,35 @@
 **Blast radius:** 53 files (`greplost impact packages/core/src/resolve/packages.ts`)
 
 **Key symbols:**
-- `const IGNORED_DIRS: ReadonlySet<string> = new Set([ ".cache", ".git", ".greplost", ".hg", ".next", ".svn", ".turbo", "build", "coverage", "dist", "node_modules", "out", "vendor", ])`  L19-33
-- `interface Manifest`  L35-38
-- `function detectPackages(root: string, files: string[], config: GreplostConfig): PackageInfo[]`  L46-58
-- `function packageOf(filePath: string, packages: PackageInfo[]): PackageInfo`  L61-79
-- `function rootPackageName(read: (rel: string) => string | null): string`  L97-106
-- `function workspacePatterns(config: GreplostConfig, read: (rel: string) => string | null): string[]`  L112-137
-- `function pnpmWorkspacePackages(text: string | null): string[]`  L140-167
-- `function goWorkUseEntries(text: string | null): string[]`  L170-198
-- `function candidateDirectories(root: string, files: string[], patterns: string[]): string[]`  L201-219
-- `function expandPattern(root: string, pattern: string): string[]`  L222-249
-- `function descendants(root: string, dir: string): string[]`  L251-265
-- `function subdirectories(root: string, dir: string): string[]`  L267-282
-- `function isDirectory(root: string, rel: string): boolean`  L284-290
-- `function readManifest(dir: string, read: (rel: string) => string | null): Manifest | null`  L296-309
-- `function goModuleName(text: string | null): string`  L311-322
-- `function renameDuplicates(packages: PackageInfo[]): void`  L325-331
-- `function readTextFile(root: string, rel: string): string | null`  L337-343
-- `function parseJson(text: string | null): Record<string, unknown> | null`  L345-355
-- `function normalizePattern(raw: string): string`  L357-361
-- `function normalizeRelative(p: string): string`  L363-365
-- `function parentDir(p: string): string`  L367-370
-- `function basename(p: string): string`  L372-375
-- `function joinRelative(dir: string, name: string): string`  L377-379
-- `function isGlobSegment(segment: string): boolean`  L381-383
-- `function unquote(raw: string): string`  L385-391
-- `function stripYamlComment(line: string): string`  L393-396
-- `function stripGoComment(line: string): string`  L398-401
+- `const IGNORED_DIRS: ReadonlySet<string> = new Set([ ".cache", ".git", ".greplost", ".hg", ".next", ".svn", ".turbo", "build", "coverage", "dist", "node_modules", "out", "vendor", ])`  L28-42
+- `interface Manifest`  L44-47
+- `function detectPackages(root: string, files: string[], config: GreplostConfig): PackageInfo[]`  L55-77
+- `function packageOf(filePath: string, packages: PackageInfo[]): PackageInfo`  L80-98
+- `function rootPackageName(read: (rel: string) => string | null): string`  L122-132
+- `function workspacePatterns(config: GreplostConfig, read: (rel: string) => string | null): string[]`  L138-163
+- `function pnpmWorkspacePackages(text: string | null): string[]`  L166-193
+- `function goWorkUseEntries(text: string | null): string[]`  L196-224
+- `function candidateDirectories(root: string, files: string[], patterns: string[]): string[]`  L233-247
+- `function expandPattern(root: string, pattern: string): string[]`  L250-277
+- `function descendants(root: string, dir: string): string[]`  L279-293
+- `function subdirectories(root: string, dir: string): string[]`  L295-310
+- `function isDirectory(root: string, rel: string): boolean`  L312-318
+- `function readManifest( dir: string, read: (rel: string) => string | null, look: { glob: boolean; goMod: boolean }, ): Manifest | null`  L333-351
+- `const GO_MAJOR_SUFFIX = /^v(?:[2-9]|[1-9]\d+)$/`  L361-361
+- `function goModuleSegments(text: string | null): string[]`  L370-383
+- `function goPackageName(text: string, dir: string): string`  L393-397
+- `function renameDuplicates(packages: PackageInfo[]): void`  L400-406
+- `function readTextFile(root: string, rel: string): string | null`  L412-418
+- `function parseJson(text: string | null): Record<string, unknown> | null`  L420-430
+- `function normalizePattern(raw: string): string`  L432-436
+- `function normalizeRelative(p: string): string`  L438-440
+- `function parentDir(p: string): string`  L442-445
+- `function isGoFile(p: string): boolean`  L447-449
+- `function basename(p: string): string`  L451-454
+- `function joinRelative(dir: string, name: string): string`  L456-458
+- `function isGlobSegment(segment: string): boolean`  L460-462
+- `function unquote(raw: string): string`  L464-470
+- `function stripYamlComment(line: string): string`  L472-475
+- `function stripGoComment(line: string): string`  L477-480
 
-**Calls:** `basename` → [`packages/core/src/resolve/packages.ts#basename`](packages.ts.md) (high), `candidateDirectories` → [`packages/core/src/resolve/packages.ts#candidateDirectories`](packages.ts.md) (high), `descendants` → [`packages/core/src/resolve/packages.ts#descendants`](packages.ts.md) (high), `expandPattern` → [`packages/core/src/resolve/packages.ts#expandPattern`](packages.ts.md) (high), `goModuleName` → [`packages/core/src/resolve/packages.ts#goModuleName`](packages.ts.md) (high), `goWorkUseEntries` → [`packages/core/src/resolve/packages.ts#goWorkUseEntries`](packages.ts.md) (high), `isDirectory` → [`packages/core/src/resolve/packages.ts#isDirectory`](packages.ts.md) (high), `isGlobSegment` → [`packages/core/src/resolve/packages.ts#isGlobSegment`](packages.ts.md) (high), `joinRelative` → [`packages/core/src/resolve/packages.ts#joinRelative`](packages.ts.md) (high), `normalizePattern` → [`packages/core/src/resolve/packages.ts#normalizePattern`](packages.ts.md) (high), `normalizeRelative` → [`packages/core/src/resolve/packages.ts#normalizeRelative`](packages.ts.md) (high), `parentDir` → [`packages/core/src/resolve/packages.ts#parentDir`](packages.ts.md) (high), `parseJson` → [`packages/core/src/resolve/packages.ts#parseJson`](packages.ts.md) (high), `pnpmWorkspacePackages` → [`packages/core/src/resolve/packages.ts#pnpmWorkspacePackages`](packages.ts.md) (high), `readManifest` → [`packages/core/src/resolve/packages.ts#readManifest`](packages.ts.md) (high), `readTextFile` → [`packages/core/src/resolve/packages.ts#readTextFile`](packages.ts.md) (high), `renameDuplicates` → [`packages/core/src/resolve/packages.ts#renameDuplicates`](packages.ts.md) (high), `rootPackageName` → [`packages/core/src/resolve/packages.ts#rootPackageName`](packages.ts.md) (high), `stripGoComment` → [`packages/core/src/resolve/packages.ts#stripGoComment`](packages.ts.md) (high), `stripYamlComment` → [`packages/core/src/resolve/packages.ts#stripYamlComment`](packages.ts.md) (high), `subdirectories` → [`packages/core/src/resolve/packages.ts#subdirectories`](packages.ts.md) (high), `unquote` → [`packages/core/src/resolve/packages.ts#unquote`](packages.ts.md) (high), `workspacePatterns` → [`packages/core/src/resolve/packages.ts#workspacePatterns`](packages.ts.md) (high)
+**Calls:** `basename` → [`packages/core/src/resolve/packages.ts#basename`](packages.ts.md) (high), `candidateDirectories` → [`packages/core/src/resolve/packages.ts#candidateDirectories`](packages.ts.md) (high), `descendants` → [`packages/core/src/resolve/packages.ts#descendants`](packages.ts.md) (high), `expandPattern` → [`packages/core/src/resolve/packages.ts#expandPattern`](packages.ts.md) (high), `goModuleSegments` → [`packages/core/src/resolve/packages.ts#goModuleSegments`](packages.ts.md) (high), `goPackageName` → [`packages/core/src/resolve/packages.ts#goPackageName`](packages.ts.md) (high), `goWorkUseEntries` → [`packages/core/src/resolve/packages.ts#goWorkUseEntries`](packages.ts.md) (high), `isDirectory` → [`packages/core/src/resolve/packages.ts#isDirectory`](packages.ts.md) (high), `isGlobSegment` → [`packages/core/src/resolve/packages.ts#isGlobSegment`](packages.ts.md) (high), `joinRelative` → [`packages/core/src/resolve/packages.ts#joinRelative`](packages.ts.md) (high), `normalizePattern` → [`packages/core/src/resolve/packages.ts#normalizePattern`](packages.ts.md) (high), `normalizeRelative` → [`packages/core/src/resolve/packages.ts#normalizeRelative`](packages.ts.md) (high), `parentDir` → [`packages/core/src/resolve/packages.ts#parentDir`](packages.ts.md) (high), `parseJson` → [`packages/core/src/resolve/packages.ts#parseJson`](packages.ts.md) (high), `pnpmWorkspacePackages` → [`packages/core/src/resolve/packages.ts#pnpmWorkspacePackages`](packages.ts.md) (high), `readManifest` → [`packages/core/src/resolve/packages.ts#readManifest`](packages.ts.md) (high), `readTextFile` → [`packages/core/src/resolve/packages.ts#readTextFile`](packages.ts.md) (high), `renameDuplicates` → [`packages/core/src/resolve/packages.ts#renameDuplicates`](packages.ts.md) (high), `rootPackageName` → [`packages/core/src/resolve/packages.ts#rootPackageName`](packages.ts.md) (high), `stripGoComment` → [`packages/core/src/resolve/packages.ts#stripGoComment`](packages.ts.md) (high), `stripYamlComment` → [`packages/core/src/resolve/packages.ts#stripYamlComment`](packages.ts.md) (high), `subdirectories` → [`packages/core/src/resolve/packages.ts#subdirectories`](packages.ts.md) (high), `unquote` → [`packages/core/src/resolve/packages.ts#unquote`](packages.ts.md) (high), `workspacePatterns` → [`packages/core/src/resolve/packages.ts#workspacePatterns`](packages.ts.md) (high)

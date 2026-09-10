@@ -7,6 +7,15 @@
  * looks at directories that hold an indexed file or that a glob expansion
  * reached, and every collection it produces is sorted with `compareStrings`, so
  * two runs over the same tree return the same list.
+ *
+ * A package.json is a package only inside a workspace glob (`packages.roots`,
+ * the root package.json's `workspaces`, pnpm-workspace.yaml, go.work), because
+ * npm alone says nothing about which nested manifests belong to the repo. A
+ * go.mod needs no glob: the Go toolchain treats every module directory as a
+ * unit whether or not a go.work lists it, so build 2.2 ruling 12 makes every
+ * go.mod in the indexed tree a package rooted at its own directory. Otherwise a
+ * Go monorepo whose modules sit outside `packages/*` and `apps/*` folds its
+ * whole source tree into the root package, which is what issue 12 reported.
  */
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -48,8 +57,18 @@ export function detectPackages(root: string, files: string[], config: GreplostCo
   const packages: PackageInfo[] = [{ name: rootPackageName(read), path: ".", source: "root" }];
 
   const patterns = workspacePatterns(config, read);
+  const insideGlob = patterns.length === 0 ? () => false : picomatch(patterns, { dot: true });
+  // A go.mod can sit anywhere, including in a repo whose Go files are all
+  // `_test.go` or whose `languages` leaves go out. What such a repo has no use
+  // for is the *sweep*: grouping buys nothing when no Go file is indexed, and a
+  // TypeScript or Terraform build would pay a failed open per directory for it.
+  // So the sweep is skipped, and a directory a workspace glob names is read
+  // anyway, which is exactly the set the code before this leaf already read.
+  const sweepForGoMod = files.some(isGoFile);
+
   for (const dir of candidateDirectories(root, files, patterns)) {
-    const manifest = readManifest(dir, read);
+    const glob = insideGlob(dir);
+    const manifest = readManifest(dir, read, { glob, goMod: sweepForGoMod || glob });
     if (manifest) packages.push({ name: manifest.name, path: dir, source: manifest.source });
   }
 
@@ -93,13 +112,20 @@ export function packageOf(filePath: string, packages: PackageInfo[]): PackageInf
  * directory would make two clones of one repository produce two different maps
  * and `greplost verify` fail across machines, exactly what the determinism
  * contract of tech spec 5.3 forbids.
+ *
+ * That is also why a root module path of one segment keeps the segment instead
+ * of falling back to the directory the way a nested go.mod does: at `.` the
+ * directory is the checkout, and the checkout has no name the repository owns.
+ * The root package stays `source: "root"`, found because it is the root rather
+ * than because a manifest named it, whichever manifest supplied the name.
  */
 function rootPackageName(read: (rel: string) => string | null): string {
   const pkg = parseJson(read("package.json"));
   const name = pkg && typeof pkg["name"] === "string" ? pkg["name"].trim() : "";
   if (name) return name;
 
-  const goModule = goModuleName(read("go.mod"));
+  const segments = goModuleSegments(read("go.mod"));
+  const goModule = segments[segments.length - 1] ?? "";
   if (goModule) return goModule;
 
   return "root";
@@ -197,10 +223,14 @@ function goWorkUseEntries(text: string | null): string[] {
   return out;
 }
 
-/** Repo-relative directories that could be packages, sorted, glob-filtered. */
+/**
+ * Repo-relative directories that could be packages, sorted, never ".".
+ *
+ * Every directory holding an indexed file, every ancestor of one, and every
+ * directory a workspace glob expanded to. The glob filter is applied by the
+ * caller, not here, because a go.mod is a package wherever it sits.
+ */
 function candidateDirectories(root: string, files: string[], patterns: string[]): string[] {
-  if (patterns.length === 0) return [];
-
   const candidates = new Set<string>();
   for (const file of files) {
     let dir = parentDir(normalizeRelative(file));
@@ -213,9 +243,7 @@ function candidateDirectories(root: string, files: string[], patterns: string[])
   for (const pattern of patterns) {
     for (const dir of expandPattern(root, pattern)) candidates.add(dir);
   }
-
-  const isMatch = picomatch(patterns, { dot: true });
-  return [...candidates].filter((dir) => isMatch(dir)).sort(compareStrings);
+  return [...candidates].sort(compareStrings);
 }
 
 /** Directories on disk matching one workspace glob, without walking ignored trees. */
@@ -293,32 +321,79 @@ function isDirectory(root: string, rel: string): boolean {
 // manifests
 // ---------------------------------------------------------------------------
 
-function readManifest(dir: string, read: (rel: string) => string | null): Manifest | null {
-  const pkgJson = parseJson(read(`${dir}/package.json`));
-  if (pkgJson) {
-    const name = typeof pkgJson["name"] === "string" ? pkgJson["name"].trim() : "";
-    return { name: name || basename(dir), source: "package.json" };
+/**
+ * The manifest making `dir` a package, or null.
+ *
+ * `look.glob` says the directory sits inside a workspace glob, which is what a
+ * package.json needs; `look.goMod` says the go.mod probe is worth a syscall
+ * here. A directory holding both manifests inside a glob is one package, not
+ * two, and package.json wins the name so a workspace member keeps the name its
+ * dependents import it by.
+ */
+function readManifest(
+  dir: string,
+  read: (rel: string) => string | null,
+  look: { glob: boolean; goMod: boolean },
+): Manifest | null {
+  if (look.glob) {
+    const pkgJsonText = read(`${dir}/package.json`);
+    if (pkgJsonText !== null) {
+      const pkgJson = parseJson(pkgJsonText);
+      const name = pkgJson && typeof pkgJson["name"] === "string" ? pkgJson["name"].trim() : "";
+      // A package.json present but unparseable is still a package, named after its directory.
+      return { name: name || basename(dir), source: "package.json" };
+    }
   }
-  if (read(`${dir}/package.json`) !== null) {
-    // Present but unparseable: still a package, named after its directory.
-    return { name: basename(dir), source: "package.json" };
-  }
+  if (!look.goMod) return null;
   const goMod = read(`${dir}/go.mod`);
-  if (goMod !== null) return { name: goModuleName(goMod) || basename(dir), source: "go.mod" };
-  return null;
+  if (goMod === null) return null;
+  return { name: goPackageName(goMod, dir), source: "go.mod" };
 }
 
-function goModuleName(text: string | null): string {
-  if (text === null) return "";
+/**
+ * A Go major version suffix: `v2` through `v9`, then `v10` and up.
+ *
+ * Go writes the suffix only from major version 2 on, so `module x/v1` and
+ * `module x/v0` are ordinary path segments and name their package `v1` and
+ * `v0`. Multi-digit versions are real (`/v10`), which is why this is not
+ * simply `v[2-9]`.
+ */
+const GO_MAJOR_SUFFIX = /^v(?:[2-9]|[1-9]\d+)$/;
+
+/**
+ * A Go module path's segments, with a major version suffix (`/v2`, `/v12`)
+ * dropped. Empty when the file declares no module.
+ *
+ * The suffix is part of the import path, never part of the name: `bar/v2` and
+ * `bar` are the same library, and a package called "v2" says nothing at all.
+ */
+function goModuleSegments(text: string | null): string[] {
+  if (text === null) return [];
   for (const raw of text.split(/\r?\n/)) {
     const line = stripGoComment(raw).trim();
     const match = /^module\s+(.+)$/.exec(line);
     if (!match) continue;
     const modulePath = unquote((match[1] ?? "").trim());
     const segments = modulePath.split("/").filter((s) => s.length > 0);
-    return segments[segments.length - 1] ?? "";
+    const last = segments.length - 1;
+    if (last > 0 && GO_MAJOR_SUFFIX.test(segments[last] ?? "")) segments.pop();
+    return segments;
   }
-  return "";
+  return [];
+}
+
+/**
+ * The package name for a go.mod at `dir`: the module path's last segment.
+ *
+ * A module path of one segment falls back to the directory basename, because
+ * that single segment is a bare host (`module example.com`) or an unqualified
+ * name, and the directory reads better in a map either way. Two segments or
+ * more always have a last one, so there is no third case.
+ */
+function goPackageName(text: string, dir: string): string {
+  const segments = goModuleSegments(text);
+  if (segments.length < 2) return basename(dir);
+  return segments[segments.length - 1] as string;
 }
 
 /** Keep the first package of a duplicated name; later ones become `<name> (<path>)`. */
@@ -367,6 +442,10 @@ function normalizeRelative(p: string): string {
 function parentDir(p: string): string {
   const index = p.lastIndexOf("/");
   return index === -1 ? "" : p.slice(0, index);
+}
+
+function isGoFile(p: string): boolean {
+  return p.endsWith(".go");
 }
 
 function basename(p: string): string {
