@@ -399,17 +399,22 @@
         "PEAK_RSS_TARGET_BYTES",
         "PerfOptions",
         "PerfRun",
+        "PriorResult",
         "RUNNER_ITERATIONS",
         "RUNNER_REFERENCE_MS",
+        "RepoBaseline",
         "RepoPerf",
         "RunnerSpeed",
         "SCENARIOS",
         "ScenarioName",
         "ScenarioResult",
         "Stats",
+        "baselineLines",
+        "baselinesFor",
         "gateMisses",
         "missedTargets",
         "perf",
+        "priorResults",
         "regressedScenarios",
         "reportLines",
         "run",
@@ -422,9 +427,9 @@
       "fanIn": 0,
       "fanOut": 8,
       "lang": "ts",
-      "loc": 1126,
+      "loc": 1248,
       "pkg": "@greplost/bench",
-      "sha256": "445ce165c208a8b7330206a9dabb4339fdbeaa0224f230b04465a6fc4d12dc8f",
+      "sha256": "f03ab0569e672378c404e698e8377cfb47e06feb69b690e663d8d9c129cb558e",
       "staleSummary": false
     },
     "bench/src/replay.ts": {
@@ -488,9 +493,9 @@
       "fanIn": 1,
       "fanOut": 4,
       "lang": "ts",
-      "loc": 641,
+      "loc": 630,
       "pkg": "@greplost/bench",
-      "sha256": "e597f2201fe0fe1408f8f06eab9c788b1b0472766e154f4e2505d1cc1b140ff0",
+      "sha256": "af1355fa67bc112f93b9b07ac558f50c576474da0ecf79fa5bcdb578539a427b",
       "staleSummary": false
     },
     "bench/src/report-payload.ts": {
@@ -544,9 +549,9 @@
       "fanIn": 1,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 439,
+      "loc": 448,
       "pkg": "@greplost/bench",
-      "sha256": "dc7ddcf43cfab1997263e7e73f1fba29407bf3381f34ba7987982c3d5f0d455d",
+      "sha256": "460b6d5d1bf6b2f60d00efac626b6a4af7f51e0f71e89dd5cfa21c59779f7801",
       "staleSummary": false
     },
     "bench/src/report.ts": {
@@ -3748,7 +3753,7 @@
         "@greplost/sync"
       ],
       "files": 53,
-      "loc": 30169,
+      "loc": 30289,
       "path": "bench",
       "rdeps": []
     },

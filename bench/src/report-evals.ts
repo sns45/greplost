@@ -312,17 +312,6 @@ export function bench3Section(payloads: readonly Payload[], assetsRel: string): 
   section.ran = true;
   section.provenance = provenanceOf(payload);
 
-  // The one sentence that says what P1 and P2 are actually gated against, since
-  // the target column shows the written budget and not the budget the machine
-  // this run happened on was held to (ruling 14, 2026-09-10).
-  section.notes.push(
-    "P1 and P2 are wall clock, so every perf run measures the machine first, as the median of a fixed " +
-      "number of `fixtures/tiny-ts` builds against a reference recorded in `bench/src/perf.ts`, multiplies " +
-      "the budgets in this table by `max(1, measured / reference)`, prints the raw budget, the factor, the " +
-      "reference and the scaled budget beside each other, and fails the gate on the runner alone once that " +
-      "factor passes 4, where the machine is too slow to say anything about greplost.",
-  );
-
   const seen = new Set<string>();
   const scenarios = ordered
     .flatMap((entry) => scenariosOf(entry))

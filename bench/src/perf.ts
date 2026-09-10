@@ -65,7 +65,7 @@ import { MARKER, type ChildOp, type ChildReport } from "./perf-child.ts";
 // have to build a corpus repo the same way or their numbers are not about the
 // same map.
 import { configFor, writeConfig } from "./replay.ts";
-import { latestResult, writeResult } from "./results-io.ts";
+import { orderedResults, resultsDir, writeResult } from "./results-io.ts";
 
 const SUITE = "perf";
 
@@ -161,14 +161,21 @@ export const RUNNER_ITERATIONS = 3;
 /**
  * The factor above which the run fails on the runner rather than on greplost.
  *
- * Four times slower than the reference is a machine that cannot say anything: a
+ * Eight times slower than the reference is a machine that cannot say anything: a
  * budget scaled that far no longer bounds anything a user would feel, and a
  * measurement taken beside three other jobs on a shared core is noise, not a
  * number. Such a run reports `GATE FAIL (runner)` and drops the target and
  * regression comparisons, because reporting them would dress noise up as a
  * verdict about the code.
+ *
+ * Eight rather than four (ruling of 2026-09-10, on review of this leaf): the
+ * reference is measured on an idle machine's performance cores, the same
+ * machine's efficiency cores read 5.12, and `ubuntu-latest` is a four vCPU
+ * virtual machine, so four would fail honest runners for being ordinary rather
+ * than for being unmeasurable. The first factor CI prints decides whether this
+ * number moves again; every run prints it, so the reading will be there.
  */
-export const MAX_RUNNER_FACTOR = 4;
+export const MAX_RUNNER_FACTOR = 8;
 
 /** P3 is reported, not gated; this is the line RESULTS.md draws. */
 export const PEAK_RSS_TARGET_BYTES = 500 * 1024 * 1024;
@@ -388,6 +395,124 @@ export function regressedScenarios(
     }
   }
   return regressed.sort(compareStrings);
+}
+
+/** A committed result a run is allowed to compare itself against. */
+export interface PriorResult {
+  /** Path of the payload file, as `results-io` reported it. */
+  file: string;
+  payload: Record<string, unknown>;
+}
+
+/** One repo's comparison against the newest prior result that measured *that repo*. */
+export interface RepoBaseline {
+  repo: string;
+  /** Whether a prior result measuring this repo was found at all. */
+  compared: boolean;
+  /** The payload's file name, or null when nothing measured this repo. */
+  file: string | null;
+  date: string | null;
+  greplostSha: string | null;
+  /** `<repo>/<scenario>` for each scenario whose machine-equivalent p50 regressed. */
+  regressed: string[];
+}
+
+/**
+ * One baseline per repo, or null when the runner is past the cap.
+ *
+ * **Per repo, because one perf run measures one repo.** `bench:perf --repo anyq`
+ * and `--repo gin` write two payloads, so the single newest result is the other
+ * repo's more often than not; comparing against it found nothing to compare and
+ * reported an empty regression list, which reads exactly like a clean verdict.
+ * Each repo now takes the newest prior payload that actually measured it, and a
+ * repo nothing has measured says so (`compared: false`) instead of passing.
+ *
+ * **Null past the cap.** A machine more than `MAX_RUNNER_FACTOR` slower than the
+ * reference cannot support a p50 comparison any more than it can support P1 and
+ * P2, so the comparison is not made, not printed and not written: `GATE FAIL
+ * (runner)` is the only thing such a run says.
+ */
+export function baselinesFor(
+  repos: readonly RepoPerf[],
+  priors: readonly PriorResult[],
+  machine: { cpu: string },
+  speed: RunnerSpeed,
+  tolerance: number = REGRESSION_TOLERANCE,
+): RepoBaseline[] | null {
+  if (speed.factor > MAX_RUNNER_FACTOR) return null;
+  return repos.map((repo) => {
+    for (const prior of priors) {
+      const priorRepos = readPriorRepos(prior.payload, machine.cpu);
+      const scenarios = priorRepos?.get(repo.name);
+      if (scenarios === undefined || scenarios.size === 0) continue;
+      return {
+        repo: repo.name,
+        compared: true,
+        file: path.basename(prior.file),
+        date: typeof prior.payload["date"] === "string" ? prior.payload["date"] : null,
+        greplostSha: typeof prior.payload["greplostSha"] === "string" ? prior.payload["greplostSha"] : null,
+        regressed: regressedScenarios([repo], prior.payload, machine, tolerance, speed.factor),
+      };
+    }
+    return { repo: repo.name, compared: false, file: null, date: null, greplostSha: null, regressed: [] };
+  });
+}
+
+/** What a run prints about its baselines: one line per repo that has something to say. */
+export function baselineLines(baselines: readonly RepoBaseline[] | null): string[] {
+  if (baselines === null) return [];
+  const out: string[] = [];
+  for (const baseline of baselines) {
+    if (!baseline.compared) {
+      // Said out loud, because "nothing regressed" and "nothing was compared"
+      // are different results and only one of them is good news.
+      out.push(`${SUITE}: no prior measurement for ${baseline.repo}`);
+      continue;
+    }
+    if (baseline.regressed.length === 0) continue;
+    out.push(
+      `${SUITE}: p50 regressed by more than ${Math.round(REGRESSION_TOLERANCE * 100)}% vs ${baseline.file}: ` +
+        baseline.regressed.join(", "),
+    );
+  }
+  return out;
+}
+
+/**
+ * The results a comparison may use, newest first.
+ *
+ * `bench/results/INDEX.json` pins the payload set this repository publishes, and
+ * that set is the baseline: re-pinning is the deliberate act of re-baselining,
+ * so a run left behind by an experiment cannot quietly become the number every
+ * later run is judged against, and a payload from before a scope change stops
+ * being a baseline the moment it stops being published. With nothing pinned for
+ * this suite the fallback is every result on disk, which is what the single
+ * newest result used to be picked from.
+ */
+export function priorResults(dir?: string): PriorResult[] {
+  let all: PriorResult[];
+  try {
+    all = orderedResults(SUITE, dir).map((entry) => ({ file: entry.file, payload: entry.payload }));
+  } catch {
+    return [];
+  }
+  const pinned = pinnedNames(dir);
+  const chosen = pinned.size === 0 ? all : all.filter((entry) => pinned.has(path.basename(entry.file)));
+  return chosen.reverse();
+}
+
+/** The payload file names `INDEX.json` pins for this suite, or an empty set. */
+function pinnedNames(dir?: string): Set<string> {
+  try {
+    const parsed = JSON.parse(readFileSync(path.join(resultsDir(dir), "INDEX.json"), "utf8")) as unknown;
+    if (!isRecord(parsed)) return new Set();
+    const payloads = parsed["payloads"];
+    const listed = isRecord(payloads) ? payloads[SUITE] : undefined;
+    if (!Array.isArray(listed)) return new Set();
+    return new Set(listed.filter((name): name is string => typeof name === "string"));
+  } catch {
+    return new Set();
+  }
 }
 
 /** The runner factor a prior payload was measured at, or 1 when it records none. */
@@ -1029,12 +1154,12 @@ export async function run(args: string[]): Promise<number> {
     return 0;
   }
 
-  // Read the baseline before writing this run's result, or the comparison would
+  // Read the baselines before writing this run's result, or the comparison could
   // find the file it is about to write. The fixture has no baseline by design:
   // twelve files put the measurement inside process-startup noise, where a 15 %
   // rule reports the machine's mood rather than greplost's (gate G6 says the
   // fixture is gated on the absolute targets only).
-  const prior = options.fixture ? undefined : latestResult(SUITE);
+  const priors = options.fixture ? [] : priorResults();
 
   let measured: PerfRun;
   try {
@@ -1054,20 +1179,14 @@ export async function run(args: string[]): Promise<number> {
 
   printTable(measured.repos, measured.runner);
 
-  const regressed = regressedScenarios(
-    measured.repos,
-    prior?.payload,
-    measured.machine,
-    REGRESSION_TOLERANCE,
-    measured.runner.factor,
-  );
-  if (regressed.length > 0) {
-    console.log(
-      `${SUITE}: p50 regressed by more than ${Math.round(REGRESSION_TOLERANCE * 100)}% vs ${
-        prior?.file ?? "the previous result"
-      }: ${regressed.join(", ")}`,
-    );
-  }
+  // The runner check first. Past the cap `baselinesFor` returns null and nothing
+  // about the baseline is computed, printed or written: a p50 comparison on a
+  // machine that slow is noise, and printing it beside `GATE FAIL (runner)`
+  // would offer a verdict the run cannot support.
+  const baselines = options.fixture ? null : baselinesFor(measured.repos, priors, measured.machine, measured.runner);
+  const regressed = (baselines ?? []).flatMap((baseline) => baseline.regressed).sort(compareStrings);
+  for (const line of baselineLines(baselines)) console.log(line);
+
   const missed = gateMisses(measured.repos, measured.runner, regressed);
   if (missed[0] === "runner") {
     console.log(
@@ -1093,16 +1212,19 @@ export async function run(args: string[]): Promise<number> {
     maxRunnerFactor: MAX_RUNNER_FACTOR,
     peakRssTargetBytes: PEAK_RSS_TARGET_BYTES,
     repos: measured.repos,
-    // Which run this was compared against, by name *and* by the date and sha
-    // inside it: a same-day rerun at the same commit writes to the same path, so
-    // the filename alone does not say which measurement the comparison used.
+    // What each repo was compared against, by file name *and* by the date and
+    // sha inside it: a same-day rerun at the same commit writes to the same
+    // path, so the filename alone does not say which measurement was used.
+    // `null` is a run that made no comparison at all, which is the fixture (no
+    // baseline by design) and any run past the runner cap. `compared` is false
+    // whenever some repo in the run had nothing to compare against, so an empty
+    // `regressed` can never be read as a clean verdict on its own.
     baseline:
-      prior === undefined
+      baselines === null
         ? null
         : {
-            file: path.basename(prior.file),
-            date: prior.payload["date"] ?? null,
-            greplostSha: prior.payload["greplostSha"] ?? null,
+            compared: baselines.length > 0 && baselines.every((baseline) => baseline.compared),
+            repos: baselines,
             regressed,
           },
     gate: options.gate ? { passed: missed.length === 0, missed } : null,
