@@ -2669,9 +2669,9 @@
       "fanIn": 132,
       "fanOut": 0,
       "lang": "ts",
-      "loc": 557,
+      "loc": 559,
       "pkg": "@greplost/core",
-      "sha256": "ca67b3bbb3396134041db3fc36f2cbd2b39e9dc37e792664af391e51c7eda6b7",
+      "sha256": "f87a4d9911ed08db1ba87edcdae149e6c9dc6b97b114dca38ad0e53cb0b4ab5e",
       "staleSummary": false
     },
     "packages/core/src/serialize/index.ts": {
@@ -3471,7 +3471,7 @@
       "lang": "ts",
       "loc": 281,
       "pkg": "@greplost/sync",
-      "sha256": "661af6ee284b0ac971a2a1d0dcb0abba795e0d1c5c12eedb031f14f7896f6290",
+      "sha256": "5098eb427361438e4f3fca832ae59d49cedffae6154a0ffce9b64220a4ff094e",
       "staleSummary": false
     },
     "packages/sync/src/state.ts": {
@@ -3746,7 +3746,7 @@
     "@greplost/core": {
       "deps": [],
       "files": 66,
-      "loc": 19780,
+      "loc": 19782,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",

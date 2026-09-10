@@ -205,6 +205,8 @@ export interface CallSite {
    * Callee text, normalised:
    *  - `foo` for a plain identifier call,
    *  - `obj.method` for a one-level member call on an identifier (`a.b.c()` is dropped),
+   * Go is the one exception: a Go call site also records one field hop, `obj.field.method`,
+   * because a Go struct writes down the type of every field it declares (build 2.2, leaf 2.17).
    *  - `this.method` for calls on `this`,
    *  - `super.method` for calls on `super` (build 2.1),
    *  - `new Foo` for constructor calls (also `new ns.Foo`).
