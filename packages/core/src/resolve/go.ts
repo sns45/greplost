@@ -43,7 +43,7 @@
  * Build 2.2 widened it once more, the same way (ruling 13 of 2026-09-10):
  *   - **one field hop**: `b.c.ApplyStrategy()`, where `b` is a type this file
  *     already decides and `c` is a field that type declares, is a call on
- *     whatever the *declaring struct* wrote for `c` - `meta.fieldTypes`. The
+ *     whatever the *declaring struct* wrote for `c`, its `meta.fieldTypes`. The
  *     field's type then answers exactly as any other receiver would, promotion,
  *     shadowing and ambiguity included. Four things end it with no edge: a
  *     second hop (`b.c.d.m()`, which the extractor never records), a field the
@@ -575,7 +575,7 @@ export function resolveGoCall(
  * The field has to be one the struct declares itself. A field reached through
  * an embedded type would be a promotion of its own, resolvable only once the
  * shadowing rules had been run over field names as well as method names, and
- * a wrong answer there is a wrong `high` edge - so this stops at one struct.
+ * a wrong answer there is a wrong `high` edge, so this stops at one struct.
  */
 function valueType(
   index: GoCallIndex,

@@ -2426,7 +2426,7 @@
       "lang": "ts",
       "loc": 681,
       "pkg": "@greplost/core",
-      "sha256": "9912a85d0c04b323a378d589788b74f4d18bf95ba85570a1f006223d5a66e204",
+      "sha256": "6a972ca91e4f433f3ca917b051e92869f250554ad4cb54565ee306c6c023df52",
       "staleSummary": false
     },
     "packages/core/src/resolve/hcl.ts": {
