@@ -50,7 +50,7 @@ untouched and says so.
   EVIDENCE: pending
 
 - [x] T10: the final report re-measures every number it states and pastes this ledger with N of N
-  EVIDENCE: pending
+  EVIDENCE: final report carries a build 2.2 addendum re-measured at HEAD 9381249 (session scratchpad reports/final-report-build-2.md): CLI 0.1.1, self-verify in sync, suite green, tier S gate, commits since build 1; this ledger pasted
 
 ---
 
