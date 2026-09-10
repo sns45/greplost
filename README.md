@@ -66,6 +66,8 @@ Status: pre-release 0.1.0. Design: [docs/greplost-tech-spec.md](docs/greplost-te
 
 `INDEX.md` opens with a provenance line: which greplost version wrote the map, how many test files the `exclude` patterns keep out of it, and that `git log .greplost/INDEX.md` dates it. There is deliberately no commit sha in any artifact: the pre-commit hook writes the map of the tree it is about to commit, so a sha recorded at build time would be the previous commit's and would make `greplost verify` red on every commit. Where the package table has a `Nodes` column, the line under it says what that column counts.
 
+Packages come from the manifests. A `package.json` counts when it sits inside a workspace glob: `packages.roots` in `config.json` (`packages/*` and `apps/*` by default), plus whatever the root `package.json` `workspaces`, `pnpm-workspace.yaml` and `go.work` list. A `go.mod` counts wherever it is, because Go treats a module directory as a unit with or without a `go.work`, so every `go.mod` in the indexed tree is a package rooted at its own directory and no file under one lands in the root package. Its name is the module path's last segment, dropping a major version suffix like `/v2`; nested modules nest, and the deepest package owning a path wins.
+
 ### Languages, IaC and framework signals
 
 | What | Marker `init` looks for | What you get |
