@@ -352,7 +352,7 @@ func (s *Store) Put() {}
 });
 
 describe("extract-go call sites", () => {
-  test("identifiers, one-level selectors and receiver calls", () => {
+  test("identifiers, one field hop and receiver calls", () => {
     const record = extract(`package a
 
 import "fmt"
@@ -370,12 +370,15 @@ func (s *Store) Put() {
 	defer s.set()
 }
 `);
-    // `s.data.get()` is a deeper chain and `f()` calls the local `f`, which
-    // shadows package scope: neither is a call site the resolver could ever use.
+    // `s.data.get()` is one field hop, which `Store` decides by writing down
+    // the type of `data` (build 2.2, leaf 2.17). `f()` calls the local `f`,
+    // which shadows package scope, and is not a call site the resolver could
+    // ever use.
     expect(record.calls).toEqual([
       { caller: "Store.Put", callee: "s.set", line: 8 },
       { caller: "Store.Put", callee: "New", line: 9 },
       { caller: "Store.Put", callee: "fmt.Println", line: 10 },
+      { caller: "Store.Put", callee: "s.data.get", line: 11 },
       { caller: "Store.Put", callee: "New", line: 12 },
       { caller: "Store.Put", callee: "s.set", line: 14 },
       { caller: "Store.Put", callee: "s.set", line: 15 },

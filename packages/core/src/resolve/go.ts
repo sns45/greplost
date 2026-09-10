@@ -18,7 +18,9 @@
  *       - `recv.m()`   -> `<Type>.m` in the same directory, when `recv` is the
  *                         receiver variable of the enclosing method **or a local
  *                         binding whose type the extractor could decide**, and
- *                         where `<Type>` may promote `m` from a field it embeds.
+ *                         where `<Type>` may promote `m` from a field it embeds;
+ *       - `recv.f.m()` -> the same, on the type the struct wrote down for its
+ *                         field `f` (build 2.2, leaf 2.17).
  *     Everything else is dropped. Only `function` and `method` declarations are
  *     ever targets: `Store(x)` is a conversion, not a call, and `Store` is a
  *     `struct` declaration, so it can never be one.
@@ -37,6 +39,17 @@
  *     `d.dispose()` is as certain as a call on the receiver. The extractor
  *     decides which locals qualify (`extract/go-types.ts`) and writes the type
  *     into `meta.locals`; nothing here infers a type.
+ *
+ * Build 2.2 widened it once more, the same way (ruling 13 of 2026-09-10):
+ *   - **one field hop**: `b.c.ApplyStrategy()`, where `b` is a type this file
+ *     already decides and `c` is a field that type declares, is a call on
+ *     whatever the *declaring struct* wrote for `c` - `meta.fieldTypes`. The
+ *     field's type then answers exactly as any other receiver would, promotion,
+ *     shadowing and ambiguity included. Four things end it with no edge: a
+ *     second hop (`b.c.d.m()`, which the extractor never records), a field the
+ *     struct does not declare itself, a field whose written type names no
+ *     indexed package, and an interface-typed field, whose method is chosen by
+ *     the value assigned to it and by nothing this file can read.
  *
  * A name declared in more than one file of a directory (mutually exclusive
  * build tags, `//go:build ...`) is ambiguous: it resolves only for a caller in
@@ -178,6 +191,13 @@ export interface GoStruct {
   embeds: GoTypeRef[];
   /** Its own field names. A promoted method never outranks one of these. */
   fields: ReadonlySet<string>;
+  /**
+   * The field names whose written type names a declaration in this repo, that
+   * type resolved to the package declaring it. A field of a slice, map,
+   * function or predeclared type has no entry, and neither has one whose type
+   * came from a package this index never saw.
+   */
+  fieldTypes: ReadonlyMap<string, GoTypeRef>;
 }
 
 /** How deep a promoted method is searched for through embedded fields. */
@@ -194,6 +214,12 @@ export interface GoCallIndex {
   receivers: Map<string, Map<string, string>>;
   /** directory id -> struct name -> declaring files, as `functions` and `methods` are. */
   types: Map<string, Declarers>;
+  /**
+   * directory id -> interface name -> declaring files. An interface names a
+   * method set, never one declaration, so a field of that type resolves nothing
+   * (build 2.2, leaf 2.17).
+   */
+  interfaces: Map<string, Declarers>;
   /** file -> struct name -> that file's shape for it. Two build-tag variants never merge. */
   structs: Map<string, Map<string, GoStruct>>;
   /**
@@ -211,6 +237,7 @@ const EMPTY_INDEX: GoCallIndex = {
   aliases: new Map(),
   receivers: new Map(),
   types: new Map(),
+  interfaces: new Map(),
   structs: new Map(),
   locals: new Map(),
 };
@@ -265,6 +292,7 @@ export function buildGoCallIndex(files: readonly FileRecord[], imports: readonly
     aliases: new Map(),
     receivers: new Map(),
     types: new Map(),
+    interfaces: new Map(),
     structs: new Map(),
     locals: new Map(),
   };
@@ -272,7 +300,14 @@ export function buildGoCallIndex(files: readonly FileRecord[], imports: readonly
   /** dir -> declared name -> the result types written down, one per declarer. */
   const results = new Map<string, Map<string, Array<{ file: string; type: string }>>>();
   /** Every struct's raw shape, kept until the import aliases are known. */
-  const shapes: Array<{ dir: string; file: string; name: string; embeds: string; fields: string }> = [];
+  const shapes: Array<{
+    dir: string;
+    file: string;
+    name: string;
+    embeds: string;
+    fields: string;
+    fieldTypes: string;
+  }> = [];
 
   for (const file of goFiles) {
     const dir = goDirectoryOf(file.path);
@@ -293,7 +328,10 @@ export function buildGoCallIndex(files: readonly FileRecord[], imports: readonly
           name: decl.name,
           embeds: decl.meta?.["embeds"] ?? "",
           fields: decl.meta?.["fields"] ?? "",
+          fieldTypes: decl.meta?.["fieldTypes"] ?? "",
         });
+      } else if (decl.kind === "interface") {
+        addDeclarer(index.interfaces, dir, decl.name, file.path);
       }
       const result = decl.meta?.["result"];
       if (result !== undefined) addResult(results, dir, decl.name, file.path, result);
@@ -346,13 +384,20 @@ export function buildGoCallIndex(files: readonly FileRecord[], imports: readonly
       if (ref !== null) embeds.push(ref);
     }
     const fields = new Set(struct.fields === "" ? [] : struct.fields.split(","));
+    const fieldTypes = new Map<string, GoTypeRef>();
+    for (const entry of struct.fieldTypes === "" ? [] : struct.fieldTypes.split(",")) {
+      const colon = entry.indexOf(":");
+      if (colon === -1) continue;
+      const ref = typeRef(index, entry.slice(colon + 1), struct.file, struct.dir);
+      if (ref !== null) fieldTypes.set(entry.slice(0, colon), ref);
+    }
     if (embeds.length === 0 && fields.size === 0) continue;
     let byName = index.structs.get(struct.file);
     if (byName === undefined) {
       byName = new Map<string, GoStruct>();
       index.structs.set(struct.file, byName);
     }
-    byName.set(struct.name, { embeds, fields });
+    byName.set(struct.name, { embeds, fields, fieldTypes });
   }
 
   for (const file of goFiles) {
@@ -488,20 +533,29 @@ export function resolveGoCall(
   }
 
   const object = callee.slice(0, dot);
-  const member = callee.slice(dot + 1);
-  if (object === "" || member === "" || member.includes(".")) return null;
+  const rest = callee.slice(dot + 1);
+  // `x.f.m` is one field hop; the extractor records no deeper chain, and a
+  // member still holding a dot is not one this file knows how to read.
+  const hop = rest.indexOf(".");
+  const fieldName = hop === -1 ? null : rest.slice(0, hop);
+  const member = hop === -1 ? rest : rest.slice(hop + 1);
+  if (object === "" || member === "" || member.includes(".") || fieldName === "") return null;
 
   // A local binding shadows every package-scope name in Go, so a name the
   // extractor recorded as a local of this caller never reaches rule 2, not even
   // when its own type turned out to name nothing in this repo.
   const locals = index.locals.get(file.path)?.get(site.caller);
   if (locals !== undefined && locals.has(object)) {
-    return methodEdge(index, locals.get(object) ?? null, member, file.path, dir);
+    const value = valueType(index, locals.get(object) ?? null, fieldName, file.path, dir);
+    return methodEdge(index, value, member, file.path, dir);
   }
 
   // 2. A qualified call through an import: the package's directory decides.
   const importedDir = index.aliases.get(file.path)?.get(object);
   if (importedDir !== undefined) {
+    // `pkg.Value.m()` selects a package-level value of another package, whose
+    // type is written in that package and not in this file.
+    if (fieldName !== null) return null;
     const target = declaringFile(index.functions, importedDir, member, null);
     return target === null ? null : { to: symbolId(target, member), confidence: "high" };
   }
@@ -510,7 +564,34 @@ export function resolveGoCall(
   const dotInCaller = site.caller.indexOf(".");
   if (dotInCaller === -1) return null;
   if (index.receivers.get(file.path)?.get(site.caller) !== object) return null;
-  return methodEdge(index, { dir, name: site.caller.slice(0, dotInCaller) }, member, file.path, dir);
+  const receiver: GoTypeRef = { dir, name: site.caller.slice(0, dotInCaller) };
+  return methodEdge(index, valueType(index, receiver, fieldName, file.path, dir), member, file.path, dir);
+}
+
+/**
+ * The type the method is called on: the object's own type for `x.m()`, and the
+ * type of the field `f` for `x.f.m()`.
+ *
+ * The field has to be one the struct declares itself. A field reached through
+ * an embedded type would be a promotion of its own, resolvable only once the
+ * shadowing rules had been run over field names as well as method names, and
+ * a wrong answer there is a wrong `high` edge - so this stops at one struct.
+ */
+function valueType(
+  index: GoCallIndex,
+  type: GoTypeRef | null,
+  fieldName: string | null,
+  fromFile: string,
+  fromDir: string,
+): GoTypeRef | null {
+  if (fieldName === null) return type;
+  if (type === null) return null;
+  const written = structOf(index, type, fromFile, fromDir)?.fieldTypes.get(fieldName);
+  if (written === undefined) return null;
+  // An interface-typed field holds whatever concrete value was assigned to it.
+  // Go picks the method at run time and no declaration here can be the callee.
+  if (index.interfaces.get(written.dir)?.has(written.name) === true) return null;
+  return written;
 }
 
 /**
