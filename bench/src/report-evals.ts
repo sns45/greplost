@@ -330,7 +330,7 @@ export function bench3Section(payloads: readonly Payload[], assetsRel: string): 
     .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   if (ordered.length > 1) {
     section.notes.push(
-      `The rows below merge ${ordered.length} perf payloads, newest first: ${ordered
+      `The rows above merge ${ordered.length} perf payloads, newest first: ${ordered
         .map((entry) => {
           const repos = [...new Set(scenariosOf(entry).map((s) => s.repo ?? "?"))].sort();
           return `\`${entry.file.split("/").pop() ?? entry.file}\` (${repos.join(", ")})`;

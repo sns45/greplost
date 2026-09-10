@@ -305,9 +305,9 @@ greplost measured against its own section 3 targets, one row per metric id. The 
 | unparsable | files whose tree-sitter parse is broken at the root level | 0 | 6 | Eval 1, `structural` |
 | F1 | `verify` catch rate on stale maps | 100% | 100% | Eval 2, `replay` |
 | F2 | `verify` false positives after `update` | 0% (byte-identical) | 0% | Eval 2, `replay` |
-| P1 | full build, 1k / 10k files | <= 1s / <= 10s (measured on anyq, tier S, 148 files) | 203 ms (p50) | Bench 3, `perf` |
-| P2 | incremental update p95, 1k / 10k files | <= 500ms / <= 1s (measured on anyq, tier S, 148 files) | 145 ms | Bench 3, `perf` |
-| P3 | peak RSS at 10k files | <= 500MB (reported) (measured on anyq, tier S, 148 files) | 229.9 MB | Bench 3, `perf` |
+| P1 | full build, 1k / 10k files | <= 1s / <= 10s (measured on anyq, tier S, 230 files) | 484 ms (p50) | Bench 3, `perf` |
+| P2 | incremental update p95, 1k / 10k files | <= 500ms / <= 1s (measured on anyq, tier S, 230 files) | 299 ms | Bench 3, `perf` |
+| P3 | peak RSS at 10k files | <= 500MB (reported) (measured on anyq, tier S, 230 files) | 332.3 MB | Bench 3, `perf` |
 | M1 | INDEX.md token budget | <= 3000 tokens at 10k files (measured on greplost, 120 files) | 777 tokens | Map quality, `mapquality` |
 | M2 | diagrams exceeding the node cap after auto-split | 0 | 0 | Map quality, `mapquality` |
 | A1 | agent tokens per task vs baseline (median) | <= 50% | not run | Eval 4, `agent` |

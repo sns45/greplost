@@ -490,7 +490,7 @@
       "lang": "ts",
       "loc": 641,
       "pkg": "@greplost/bench",
-      "sha256": "df04914da2f871acf5ecd6f0a73eab8ba776ffab61ea690ee70244507df6411b",
+      "sha256": "e597f2201fe0fe1408f8f06eab9c788b1b0472766e154f4e2505d1cc1b140ff0",
       "staleSummary": false
     },
     "bench/src/report-payload.ts": {

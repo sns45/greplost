@@ -280,9 +280,9 @@ greplost measured against its own section 3 targets, one row per metric id. The 
 | unparsable | files whose tree-sitter parse is broken at the root level | 0 | 6 | Eval 1, `structural` |
 | F1 | `verify` catch rate on stale maps | 100% | 100% | Eval 2, `replay` |
 | F2 | `verify` false positives after `update` | 0% (byte-identical) | 0% | Eval 2, `replay` |
-| P1 | full build, 1k / 10k files | <= 1s / <= 10s (measured on anyq, tier S, 148 files) | 203 ms (p50) | Bench 3, `perf` |
-| P2 | incremental update p95, 1k / 10k files | <= 500ms / <= 1s (measured on anyq, tier S, 148 files) | 145 ms | Bench 3, `perf` |
-| P3 | peak RSS at 10k files | <= 500MB (reported) (measured on anyq, tier S, 148 files) | 229.9 MB | Bench 3, `perf` |
+| P1 | full build, 1k / 10k files | <= 1s / <= 10s (measured on anyq, tier S, 230 files) | 484 ms (p50) | Bench 3, `perf` |
+| P2 | incremental update p95, 1k / 10k files | <= 500ms / <= 1s (measured on anyq, tier S, 230 files) | 299 ms | Bench 3, `perf` |
+| P3 | peak RSS at 10k files | <= 500MB (reported) (measured on anyq, tier S, 230 files) | 332.3 MB | Bench 3, `perf` |
 | M1 | INDEX.md token budget | <= 3000 tokens at 10k files (measured on greplost, 120 files) | 777 tokens | Map quality, `mapquality` |
 | M2 | diagrams exceeding the node cap after auto-split | 0 | 0 | Map quality, `mapquality` |
 | A1 | agent tokens per task vs baseline (median) | <= 50% | not run | Eval 4, `agent` |
@@ -611,28 +611,32 @@ Measured 2026-09-02 at 334b337.
 
 Performance (P1 to P3)
 
-Measured 2026-09-02 at 334b337.
+Measured 2026-09-10 at 310089d.
 
 | ID | Metric | Target | Measured | Detail |
 |---|---|---|---|---|
-| P1 | full build, 1k / 10k files | <= 1s / <= 10s | 203 ms (p50) | scenario `anyq full`, 148 files |
-| P2 | incremental update p95, 1k / 10k files | <= 500ms / <= 1s | 145 ms | scenario `anyq incremental-1`, p50 131 ms |
-| P3 | peak RSS at 10k files | <= 500MB (reported) | 229.9 MB | highest `maxRSS` across the scenarios below |
+| P1 | full build, 1k / 10k files | <= 1s / <= 10s | 484 ms (p50) | scenario `anyq full`, 230 files |
+| P2 | incremental update p95, 1k / 10k files | <= 500ms / <= 1s | 299 ms | scenario `anyq incremental-1`, p50 254 ms |
+| P3 | peak RSS at 10k files | <= 500MB (reported) | 332.3 MB | highest `maxRSS` across the scenarios below |
 
 ### every scenario
 
 | ID | Metric | Target | Measured | Detail |
 |---|---|---|---|---|
-| P- | anyq full | - | 203 ms (p50) | p95 216 ms, RSS 229.9 MB |
-| P- | anyq incremental-1 | - | 131 ms (p50) | p95 145 ms, RSS 140.6 MB |
-| P- | anyq incremental-10 | - | 144 ms (p50) | p95 153 ms, RSS 198.7 MB |
-| P- | anyq package-rename | - | 126 ms (p50) | p95 134 ms, RSS 111.9 MB |
-| P- | anyq parse-cache-save | - | 2.507 ms (p50) | p95 2.968 ms, RSS 73.4 MB |
-| P- | gin full | - | 135 ms (p50) | p95 149 ms, RSS 196.5 MB |
-| P- | gin incremental-1 | - | 92 ms (p50) | p95 100 ms, RSS 120.2 MB |
-| P- | gin incremental-10 | - | 101 ms (p50) | p95 118 ms, RSS 158.3 MB |
-| P- | gin package-rename | - | 81 ms (p50) | p95 90 ms, RSS 92.1 MB |
-| P- | gin parse-cache-save | - | 1.814 ms (p50) | p95 2.169 ms, RSS 71.3 MB |
+| P- | anyq full | - | 484 ms (p50) | p95 540 ms, RSS 332.3 MB |
+| P- | anyq incremental-1 | - | 254 ms (p50) | p95 299 ms, RSS 201.3 MB |
+| P- | anyq incremental-10 | - | 274 ms (p50) | p95 306 ms, RSS 265.8 MB |
+| P- | anyq package-rename | - | 233 ms (p50) | p95 244 ms, RSS 135.6 MB |
+| P- | anyq parse-cache-save | - | 4.318 ms (p50) | p95 4.774 ms, RSS 95.3 MB |
+| P- | gin full | - | 218 ms (p50) | p95 240 ms, RSS 254.1 MB |
+| P- | gin incremental-1 | - | 164 ms (p50) | p95 166 ms, RSS 167.5 MB |
+| P- | gin incremental-10 | - | 174 ms (p50) | p95 180 ms, RSS 216.8 MB |
+| P- | gin package-rename | - | 151 ms (p50) | p95 157 ms, RSS 100.4 MB |
+| P- | gin parse-cache-save | - | 2.324 ms (p50) | p95 2.567 ms, RSS 86.2 MB |
+
+> P1 and P2 are wall clock, so every perf run measures the machine first, as the median of a fixed number of `fixtures/tiny-ts` builds against a reference recorded in `bench/src/perf.ts`, multiplies the budgets in this table by `max(1, measured / reference)`, prints the raw budget, the factor, the reference and the scaled budget beside each other, and fails the gate on the runner alone once that factor passes 4, where the machine is too slow to say anything about greplost.
+
+> The rows above merge 2 perf payloads, newest first: `perf-2026-09-10-310089d.json` (gin), `perf-2026-09-10-c3a74fc.json` (anyq). One perf run measures one repo, and a repo measured in more than one payload keeps its newest numbers.
 
 **Latency per scenario (box spans p50 to p95)**
 
@@ -641,9 +645,9 @@ Measured 2026-09-02 at 334b337.
 xychart-beta
     title "P2 latency per scenario"
     x-axis ["anyq full", "anyq incremental-1", "anyq incremental-10", "anyq package-rename", "anyq parse-cache-save", "gin full", "gin incremental-1", "gin incremental-10", "gin package-rename", "gin parse-cache-save"]
-    y-axis "ms" 0 --> 250
-    bar [203, 131, 144, 126, 2.507, 135, 92, 101, 81, 1.814]
-    bar [216, 145, 153, 134, 2.968, 149, 100, 118, 90, 2.169]
+    y-axis "ms" 0 --> 750
+    bar [484, 254, 274, 233, 4.318, 218, 164, 174, 151, 2.324]
+    bar [540, 299, 306, 244, 4.774, 240, 166, 180, 157, 2.567]
     %% series, in order: p50, p95
 ```
 
@@ -655,9 +659,9 @@ xychart-beta
 %%{init: {"theme": "dark", "themeVariables": {"xyChart": {"backgroundColor": "#000000", "titleColor": "#ffffff", "xAxisLabelColor": "#c3c2b7", "yAxisLabelColor": "#c3c2b7", "xAxisTitleColor": "#ffffff", "yAxisTitleColor": "#ffffff", "plotColorPalette": "#0fa976,#e0561c,#2f86ef"}}}}%%
 xychart-beta
     title "Build time vs files"
-    x-axis "files" ["58", "58", "58", "58", "58", "148", "148", "148", "148", "148"]
-    y-axis "ms" 0 --> 250
-    line [135, 92, 101, 81, 1.814, 203, 131, 144, 126, 2.507]
+    x-axis "files" ["58", "58", "58", "58", "58", "230", "230", "230", "230", "230"]
+    y-axis "ms" 0 --> 500
+    line [218, 164, 174, 151, 2.324, 484, 254, 274, 233, 4.318]
     %% series, in order: p50
 ```
 
