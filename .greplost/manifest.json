@@ -8,9 +8,9 @@
       "fanIn": 0,
       "fanOut": 0,
       "lang": "yaml",
-      "loc": 140,
+      "loc": 137,
       "pkg": "greplost-monorepo",
-      "sha256": "bb6acb9373abf174d260369244ab95f951230fd98fcb01f9cbbceb7adfdebace",
+      "sha256": "56063b6c5d75bd01d2787a6e3b196a6599c8ab85767fd397801a710012764c53",
       "staleSummary": false
     },
     ".github/workflows/publish.yml": {
@@ -395,41 +395,27 @@
       "blast": 0,
       "exports": [
         "GATED_TIERS",
-        "MAX_RUNNER_FACTOR",
         "PEAK_RSS_TARGET_BYTES",
         "PerfOptions",
         "PerfRun",
-        "PriorResult",
-        "RUNNER_ITERATIONS",
-        "RUNNER_REFERENCE_MS",
-        "RepoBaseline",
         "RepoPerf",
-        "RunnerSpeed",
         "SCENARIOS",
         "ScenarioName",
         "ScenarioResult",
         "Stats",
-        "baselineLines",
-        "baselinesFor",
-        "gateMisses",
         "missedTargets",
         "perf",
-        "priorResults",
         "regressedScenarios",
-        "reportLines",
         "run",
-        "runnerFactor",
-        "runnerLine",
-        "scaleTargets",
         "summarize",
         "targetsFor"
       ],
       "fanIn": 0,
       "fanOut": 8,
       "lang": "ts",
-      "loc": 1248,
+      "loc": 866,
       "pkg": "@greplost/bench",
-      "sha256": "f03ab0569e672378c404e698e8377cfb47e06feb69b690e663d8d9c129cb558e",
+      "sha256": "e3fddd73b2911f8f676568c9e52e8f19c29591da4f0e3a6cbdbcb1e44b982010",
       "staleSummary": false
     },
     "bench/src/replay.ts": {
@@ -493,9 +479,9 @@
       "fanIn": 1,
       "fanOut": 4,
       "lang": "ts",
-      "loc": 630,
+      "loc": 601,
       "pkg": "@greplost/bench",
-      "sha256": "af1355fa67bc112f93b9b07ac558f50c576474da0ecf79fa5bcdb578539a427b",
+      "sha256": "c32b35193c42aa2efacf1f405d1bff0a763b9e31cb95cf30bef2363cd1b7bce5",
       "staleSummary": false
     },
     "bench/src/report-payload.ts": {
@@ -549,9 +535,9 @@
       "fanIn": 1,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 448,
+      "loc": 439,
       "pkg": "@greplost/bench",
-      "sha256": "460b6d5d1bf6b2f60d00efac626b6a4af7f51e0f71e89dd5cfa21c59779f7801",
+      "sha256": "dc7ddcf43cfab1997263e7e73f1fba29407bf3381f34ba7987982c3d5f0d455d",
       "staleSummary": false
     },
     "bench/src/report.ts": {
@@ -567,9 +553,9 @@
       "fanIn": 0,
       "fanOut": 7,
       "lang": "ts",
-      "loc": 424,
+      "loc": 418,
       "pkg": "@greplost/bench",
-      "sha256": "d24830a7296ae4cc51f11f292b01653a68d2b666719bdde664eb89ea5124df6f",
+      "sha256": "0d34f6577f957dd479236c40e58a4d77ad84bc42ddac8ae173e41652bea0a1df",
       "staleSummary": false
     },
     "bench/src/results-io.ts": {
@@ -1020,7 +1006,7 @@
       "fanOut": 0,
       "lang": "go",
       "loc": 444,
-      "pkg": "@greplost/bench",
+      "pkg": "gocallgraph",
       "sha256": "13c973701ea8fc2fedbb7d0f655a54bb0f2c3e9004e3ed20e9ab313a298c1532",
       "staleSummary": false
     },
@@ -1085,7 +1071,7 @@
       "fanOut": 0,
       "lang": "go",
       "loc": 588,
-      "pkg": "@greplost/bench",
+      "pkg": "pulumigotruth",
       "sha256": "42ebf165f59f4ede23e15d52be6c5ad4a90f17b9c418249d5b9097d2c40e24e5",
       "staleSummary": false
     },
@@ -1140,7 +1126,7 @@
       "fanOut": 0,
       "lang": "go",
       "loc": 882,
-      "pkg": "@greplost/bench",
+      "pkg": "tfinspect",
       "sha256": "2504ede6190d1f13c7cf70bd346edf5d76ea2ab1985761026c6e4aca50ad17c1",
       "staleSummary": false
     },
@@ -2541,9 +2527,9 @@
       "fanIn": 1,
       "fanOut": 1,
       "lang": "ts",
-      "loc": 401,
+      "loc": 480,
       "pkg": "@greplost/core",
-      "sha256": "57a6a3e0cfb47677d8806d68c00e94781354046def790ab2350f7072c3178ee6",
+      "sha256": "c0a04868107b6d8debd5a99a01ea155ef12c6a2683b3a25e0471aed6d7d2959b",
       "staleSummary": false
     },
     "packages/core/src/resolve/python.ts": {
@@ -3752,15 +3738,15 @@
         "@greplost/core",
         "@greplost/sync"
       ],
-      "files": 53,
-      "loc": 30289,
+      "files": 50,
+      "loc": 27949,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 66,
-      "loc": 19782,
+      "loc": 19861,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
@@ -3826,6 +3812,13 @@
         "greplost"
       ]
     },
+    "gocallgraph": {
+      "deps": [],
+      "files": 1,
+      "loc": 444,
+      "path": "bench/truth/gocallgraph",
+      "rdeps": []
+    },
     "greplost": {
       "deps": [
         "@greplost/core",
@@ -3842,8 +3835,22 @@
     "greplost-monorepo": {
       "deps": [],
       "files": 4,
-      "loc": 366,
+      "loc": 363,
       "path": ".",
+      "rdeps": []
+    },
+    "pulumigotruth": {
+      "deps": [],
+      "files": 1,
+      "loc": 588,
+      "path": "bench/truth/pulumigotruth",
+      "rdeps": []
+    },
+    "tfinspect": {
+      "deps": [],
+      "files": 1,
+      "loc": 882,
+      "path": "bench/truth/tfinspect",
       "rdeps": []
     }
   },

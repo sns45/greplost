@@ -1045,6 +1045,246 @@ describe("detectPackages", () => {
   });
 });
 
+describe("detectPackages: go modules", () => {
+  test("a go.mod outside every workspace glob is still a package", () => {
+    const root = tempRepo({
+      "package.json": JSON.stringify({ name: "monorepo" }),
+      "go/go.mod": "module github.com/acme/monorepo/go\n\ngo 1.25\n",
+      "go/core/core.go": "",
+      "go/cmd/app/main.go": "",
+    });
+    const files = ["go/cmd/app/main.go", "go/core/core.go"];
+    expect(detectPackages(root, files, configWith(["packages/*", "apps/*"]))).toEqual([
+      { name: "monorepo", path: ".", source: "root" },
+      { name: "go", path: "go", source: "go.mod" },
+    ]);
+  });
+
+  test("the module path's last segment names the package", () => {
+    const root = tempRepo({
+      "svc/alpha/go.mod": "module github.com/acme/alpha\n",
+      "svc/alpha/main.go": "",
+    });
+    expect(detectPackages(root, ["svc/alpha/main.go"], configWith([]))[1]).toEqual({
+      name: "alpha",
+      path: "svc/alpha",
+      source: "go.mod",
+    });
+  });
+
+  test("a major version suffix names the package from the segment before it", () => {
+    const root = tempRepo({
+      "libs/beta/go.mod": 'module "github.com/acme/beta/v2"\n',
+      "libs/beta/beta.go": "",
+      "libs/gamma/go.mod": "module github.com/acme/gamma/v12 // pinned\n",
+      "libs/gamma/gamma.go": "",
+    });
+    const files = ["libs/beta/beta.go", "libs/gamma/gamma.go"];
+    expect(detectPackages(root, files, configWith([])).map((p) => p.name)).toEqual([
+      "root",
+      "beta",
+      "gamma",
+    ]);
+  });
+
+  test("a module path of one segment falls back to the directory basename", () => {
+    const root = tempRepo({
+      "tools/scan/go.mod": "module example.com\n",
+      "tools/scan/scan.go": "",
+    });
+    expect(detectPackages(root, ["tools/scan/scan.go"], configWith([]))[1]).toEqual({
+      name: "scan",
+      path: "tools/scan",
+      source: "go.mod",
+    });
+  });
+
+  test("nested modules nest, and no file under a module falls to the root package", () => {
+    const root = tempRepo({
+      "go.mod": "module github.com/acme/outer\n",
+      "main.go": "",
+      "svc/inner/go.mod": "module github.com/acme/inner\n",
+      "svc/inner/main.go": "",
+      "svc/inner/deep/go.mod": "module github.com/acme/deepest\n",
+      "svc/inner/deep/deep.go": "",
+    });
+    const files = ["main.go", "svc/inner/deep/deep.go", "svc/inner/main.go"];
+    const packages = detectPackages(root, files, configWith([]));
+    expect(packages).toEqual([
+      { name: "outer", path: ".", source: "root" },
+      { name: "inner", path: "svc/inner", source: "go.mod" },
+      { name: "deepest", path: "svc/inner/deep", source: "go.mod" },
+    ]);
+    expect(packageOf("svc/inner/deep/deep.go", packages).name).toBe("deepest");
+    expect(packageOf("svc/inner/main.go", packages).name).toBe("inner");
+    expect(packageOf("main.go", packages).name).toBe("outer");
+  });
+
+  test("a directory matched by a glob and holding a go.mod is one package, not two", () => {
+    const root = tempRepo({
+      "package.json": JSON.stringify({ name: "root" }),
+      "packages/svc/go.mod": "module github.com/acme/svc\n",
+      "packages/svc/main.go": "",
+    });
+    expect(detectPackages(root, ["packages/svc/main.go"], configWith(["packages/*"]))).toEqual([
+      { name: "root", path: ".", source: "root" },
+      { name: "svc", path: "packages/svc", source: "go.mod" },
+    ]);
+  });
+
+  test("package.json still wins over go.mod inside a workspace glob", () => {
+    const root = tempRepo({
+      "package.json": JSON.stringify({ name: "root" }),
+      "packages/both/package.json": JSON.stringify({ name: "@w/both" }),
+      "packages/both/go.mod": "module github.com/acme/other\n",
+      "packages/both/index.ts": "",
+      "packages/both/main.go": "",
+    });
+    const files = ["packages/both/index.ts", "packages/both/main.go"];
+    expect(detectPackages(root, files, configWith(["packages/*"]))).toEqual([
+      { name: "root", path: ".", source: "root" },
+      { name: "@w/both", path: "packages/both", source: "package.json" },
+    ]);
+  });
+
+  test("packages.roots still gates package.json: a manifest outside every glob is not a package", () => {
+    const root = tempRepo({
+      "package.json": JSON.stringify({ name: "root" }),
+      "tools/gen/package.json": JSON.stringify({ name: "gen" }),
+      "tools/gen/index.ts": "",
+      "tools/scan/go.mod": "module github.com/acme/scan\n",
+      "tools/scan/scan.go": "",
+    });
+    const files = ["tools/gen/index.ts", "tools/scan/scan.go"];
+    expect(detectPackages(root, files, configWith(["packages/*"])).map((p) => p.path)).toEqual([
+      ".",
+      "tools/scan",
+    ]);
+  });
+
+  test("a repo whose only go.mod is at the root keeps exactly one package", () => {
+    const root = tempRepo({
+      "go.mod": "module example.com/tiny\n\ngo 1.25\n",
+      "cmd/app/main.go": "",
+      "internal/store/store.go": "",
+    });
+    const files = ["cmd/app/main.go", "internal/store/store.go"];
+    expect(detectPackages(root, files, configWith([]))).toEqual([
+      { name: "tiny", path: ".", source: "root" },
+    ]);
+  });
+
+  test("the root module path drops a major version suffix too", () => {
+    const root = tempRepo({ "go.mod": "module github.com/acme/tool/v3\n", "main.go": "" });
+    expect(detectPackages(root, ["main.go"], configWith([]))[0]).toEqual({
+      name: "tool",
+      path: ".",
+      source: "root",
+    });
+  });
+
+  test("a root module path of one segment keeps it, never the checkout directory", () => {
+    const one = tempRepo({ "go.mod": "module tinytool\n", "main.go": "" });
+    const two = tempRepo({ "go.mod": "module tinytool\n", "main.go": "" });
+    expect(path.basename(one)).not.toBe(path.basename(two));
+    expect(detectPackages(one, ["main.go"], configWith([]))[0]).toEqual({
+      name: "tinytool",
+      path: ".",
+      source: "root",
+    });
+    expect(detectPackages(two, ["main.go"], configWith([]))).toEqual(
+      detectPackages(one, ["main.go"], configWith([])),
+    );
+  });
+
+  test("go modules are sorted by path whatever the file order", () => {
+    const root = tempRepo({
+      "svc/zeta/go.mod": "module github.com/acme/zeta\n",
+      "svc/zeta/z.go": "",
+      "svc/alpha/go.mod": "module github.com/acme/alpha\n",
+      "svc/alpha/a.go": "",
+      "apps/web/go.mod": "module github.com/acme/web\n",
+      "apps/web/w.go": "",
+    });
+    const files = ["svc/zeta/z.go", "apps/web/w.go", "svc/alpha/a.go"];
+    const forward = detectPackages(root, files, configWith([])).map((p) => p.path);
+    expect(forward).toEqual([".", "apps/web", "svc/alpha", "svc/zeta"]);
+    expect(detectPackages(root, [...files].reverse(), configWith([])).map((p) => p.path)).toEqual(
+      forward,
+    );
+  });
+
+  test("a repo whose indexed files hold no go file is never probed for go.mod", () => {
+    const root = tempRepo({
+      "package.json": JSON.stringify({ name: "root" }),
+      "tools/scan/go.mod": "module github.com/acme/scan\n",
+      "tools/scan/index.ts": "",
+    });
+    expect(detectPackages(root, ["tools/scan/index.ts"], configWith([])).map((p) => p.path)).toEqual(
+      ["."],
+    );
+  });
+
+  test("inside a workspace glob a go.mod is a package even when no go file is indexed", () => {
+    // The module's own Go files are all `_test.go`, which the default exclude
+    // patterns keep out of the index, so the repo-wide probe is off. A glob
+    // still names this directory a package, and skipping it would lose a
+    // package the code before this leaf produced.
+    const root = tempRepo({
+      "package.json": JSON.stringify({ name: "root" }),
+      "packages/svc/go.mod": "module github.com/acme/svc\n",
+      "packages/svc/svc_test.go": "",
+      "packages/svc/README.md": "",
+      "apps/web/package.json": JSON.stringify({ name: "web" }),
+      "apps/web/index.ts": "",
+    });
+    const files = ["apps/web/index.ts", "packages/svc/README.md"];
+    expect(detectPackages(root, files, configWith(["packages/*", "apps/*"]))).toEqual([
+      { name: "root", path: ".", source: "root" },
+      { name: "web", path: "apps/web", source: "package.json" },
+      { name: "svc", path: "packages/svc", source: "go.mod" },
+    ]);
+  });
+
+  test("only v2 and above are major version suffixes, and v10 is one", () => {
+    const root = tempRepo({
+      "libs/a/go.mod": "module github.com/acme/v1\n",
+      "libs/a/a.go": "",
+      "libs/b/go.mod": "module github.com/acme/thing/v0\n",
+      "libs/b/b.go": "",
+      "libs/c/go.mod": "module github.com/acme/two/v2\n",
+      "libs/c/c.go": "",
+      "libs/d/go.mod": "module github.com/acme/nine/v9\n",
+      "libs/d/d.go": "",
+      "libs/e/go.mod": "module github.com/acme/ten/v10\n",
+      "libs/e/e.go": "",
+    });
+    const files = ["libs/a/a.go", "libs/b/b.go", "libs/c/c.go", "libs/d/d.go", "libs/e/e.go"];
+    expect(detectPackages(root, files, configWith([])).map((p) => p.name)).toEqual([
+      "root",
+      "v1",
+      "v0",
+      "two",
+      "nine",
+      "ten",
+    ]);
+  });
+
+  test("fixtures/tiny-go stays one package named from its module path", () => {
+    const fixture = path.resolve(import.meta.dir, "../../../fixtures/tiny-go");
+    const files = [
+      "cmd/app/main.go",
+      "internal/retry/backoff.go",
+      "internal/retry/retry.go",
+      "internal/store/memory.go",
+      "internal/store/store.go",
+    ];
+    expect(detectPackages(fixture, files, DEFAULT_CONFIG)).toEqual([
+      { name: "tiny", path: ".", source: "root" },
+    ]);
+  });
+});
+
 describe("packageOf", () => {
   const packages: PackageInfo[] = [
     { name: "root", path: ".", source: "root" },
