@@ -58,15 +58,17 @@ export function detectPackages(root: string, files: string[], config: GreplostCo
 
   const patterns = workspacePatterns(config, read);
   const insideGlob = patterns.length === 0 ? () => false : picomatch(patterns, { dot: true });
-  // A repo with no indexed Go file has no Go module worth finding, and skipping
-  // the probe keeps a TypeScript or Terraform build from opening a go.mod that
-  // cannot exist once per directory.
-  const probeGoMod = files.some(isGoFile);
+  // A go.mod can sit anywhere, including in a repo whose Go files are all
+  // `_test.go` or whose `languages` leaves go out. What such a repo has no use
+  // for is the *sweep*: grouping buys nothing when no Go file is indexed, and a
+  // TypeScript or Terraform build would pay a failed open per directory for it.
+  // So the sweep is skipped, and a directory a workspace glob names is read
+  // anyway, which is exactly the set the code before this leaf already read.
+  const sweepForGoMod = files.some(isGoFile);
 
   for (const dir of candidateDirectories(root, files, patterns)) {
     const glob = insideGlob(dir);
-    if (!glob && !probeGoMod) continue;
-    const manifest = readManifest(dir, read, { glob, goMod: probeGoMod });
+    const manifest = readManifest(dir, read, { glob, goMod: sweepForGoMod || glob });
     if (manifest) packages.push({ name: manifest.name, path: dir, source: manifest.source });
   }
 
@@ -323,10 +325,10 @@ function isDirectory(root: string, rel: string): boolean {
  * The manifest making `dir` a package, or null.
  *
  * `look.glob` says the directory sits inside a workspace glob, which is what a
- * package.json needs; `look.goMod` says the repo has indexed Go files, so a
- * go.mod probe is worth a syscall. A directory holding both manifests inside a
- * glob is one package, not two, and package.json wins the name so a workspace
- * member keeps the name its dependents import it by.
+ * package.json needs; `look.goMod` says the go.mod probe is worth a syscall
+ * here. A directory holding both manifests inside a glob is one package, not
+ * two, and package.json wins the name so a workspace member keeps the name its
+ * dependents import it by.
  */
 function readManifest(
   dir: string,
@@ -349,7 +351,17 @@ function readManifest(
 }
 
 /**
- * A Go module path's segments, with a major-version suffix (`/v2`, `/v12`)
+ * A Go major version suffix: `v2` through `v9`, then `v10` and up.
+ *
+ * Go writes the suffix only from major version 2 on, so `module x/v1` and
+ * `module x/v0` are ordinary path segments and name their package `v1` and
+ * `v0`. Multi-digit versions are real (`/v10`), which is why this is not
+ * simply `v[2-9]`.
+ */
+const GO_MAJOR_SUFFIX = /^v(?:[2-9]|[1-9]\d+)$/;
+
+/**
+ * A Go module path's segments, with a major version suffix (`/v2`, `/v12`)
  * dropped. Empty when the file declares no module.
  *
  * The suffix is part of the import path, never part of the name: `bar/v2` and
@@ -364,7 +376,7 @@ function goModuleSegments(text: string | null): string[] {
     const modulePath = unquote((match[1] ?? "").trim());
     const segments = modulePath.split("/").filter((s) => s.length > 0);
     const last = segments.length - 1;
-    if (last > 0 && /^v\d+$/.test(segments[last] ?? "")) segments.pop();
+    if (last > 0 && GO_MAJOR_SUFFIX.test(segments[last] ?? "")) segments.pop();
     return segments;
   }
   return [];
@@ -375,12 +387,13 @@ function goModuleSegments(text: string | null): string[] {
  *
  * A module path of one segment falls back to the directory basename, because
  * that single segment is a bare host (`module example.com`) or an unqualified
- * name, and the directory reads better in a map either way.
+ * name, and the directory reads better in a map either way. Two segments or
+ * more always have a last one, so there is no third case.
  */
 function goPackageName(text: string, dir: string): string {
   const segments = goModuleSegments(text);
   if (segments.length < 2) return basename(dir);
-  return segments[segments.length - 1] ?? basename(dir);
+  return segments[segments.length - 1] as string;
 }
 
 /** Keep the first package of a duplicated name; later ones become `<name> (<path>)`. */

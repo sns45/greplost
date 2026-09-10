@@ -1225,6 +1225,51 @@ describe("detectPackages: go modules", () => {
     );
   });
 
+  test("inside a workspace glob a go.mod is a package even when no go file is indexed", () => {
+    // The module's own Go files are all `_test.go`, which the default exclude
+    // patterns keep out of the index, so the repo-wide probe is off. A glob
+    // still names this directory a package, and skipping it would lose a
+    // package the code before this leaf produced.
+    const root = tempRepo({
+      "package.json": JSON.stringify({ name: "root" }),
+      "packages/svc/go.mod": "module github.com/acme/svc\n",
+      "packages/svc/svc_test.go": "",
+      "packages/svc/README.md": "",
+      "apps/web/package.json": JSON.stringify({ name: "web" }),
+      "apps/web/index.ts": "",
+    });
+    const files = ["apps/web/index.ts", "packages/svc/README.md"];
+    expect(detectPackages(root, files, configWith(["packages/*", "apps/*"]))).toEqual([
+      { name: "root", path: ".", source: "root" },
+      { name: "web", path: "apps/web", source: "package.json" },
+      { name: "svc", path: "packages/svc", source: "go.mod" },
+    ]);
+  });
+
+  test("only v2 and above are major version suffixes, and v10 is one", () => {
+    const root = tempRepo({
+      "libs/a/go.mod": "module github.com/acme/v1\n",
+      "libs/a/a.go": "",
+      "libs/b/go.mod": "module github.com/acme/thing/v0\n",
+      "libs/b/b.go": "",
+      "libs/c/go.mod": "module github.com/acme/two/v2\n",
+      "libs/c/c.go": "",
+      "libs/d/go.mod": "module github.com/acme/nine/v9\n",
+      "libs/d/d.go": "",
+      "libs/e/go.mod": "module github.com/acme/ten/v10\n",
+      "libs/e/e.go": "",
+    });
+    const files = ["libs/a/a.go", "libs/b/b.go", "libs/c/c.go", "libs/d/d.go", "libs/e/e.go"];
+    expect(detectPackages(root, files, configWith([])).map((p) => p.name)).toEqual([
+      "root",
+      "v1",
+      "v0",
+      "two",
+      "nine",
+      "ten",
+    ]);
+  });
+
   test("fixtures/tiny-go stays one package named from its module path", () => {
     const fixture = path.resolve(import.meta.dir, "../../../fixtures/tiny-go");
     const files = [
