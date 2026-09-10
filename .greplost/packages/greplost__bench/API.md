@@ -239,12 +239,12 @@
 - `function scaleTargets(targets: { p1Ms: number; p2Ms: number }, factor: number): { p1Ms: number; p2Ms: number }` L304-306
 - `const GATED_TIERS: ReadonlySet<string> = new Set(["S", "M"])` L309-309
 - `function missedTargets(repos: readonly RepoPerf[], factor: number = 1): string[]` L324-336
-- `function regressedScenarios( current: readonly RepoPerf[], prior: unknown, machine: { cpu: string }, tolerance: number = REGRESSION_TOLERANCE, ): string[]` L347-373
-- `function gateMisses( repos: readonly RepoPerf[], speed: RunnerSpeed, regressed: readonly string[], ): string[]` L384-393
-- `async function perf(options: PerfOptions = {}): Promise<PerfRun>` L744-785
-- `function runnerLine(speed: RunnerSpeed | null): string` L828-836
-- `function reportLines(repos: readonly RepoPerf[], speed: RunnerSpeed | null): string[]` L845-879
-- `async function run(args: string[]): Promise<number>` L967-1085
+- `function regressedScenarios( current: readonly RepoPerf[], prior: unknown, machine: { cpu: string }, tolerance: number = REGRESSION_TOLERANCE, factor: number = 1, ): string[]` L351-389
+- `function gateMisses( repos: readonly RepoPerf[], speed: RunnerSpeed, regressed: readonly string[], ): string[]` L409-418
+- `async function perf(options: PerfOptions = {}): Promise<PerfRun>` L769-810
+- `function runnerLine(speed: RunnerSpeed | null): string` L853-861
+- `function reportLines(repos: readonly RepoPerf[], speed: RunnerSpeed | null): string[]` L870-904
+- `async function run(args: string[]): Promise<number>` L992-1116
 
 ## bench/src/replay.ts
 

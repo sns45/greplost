@@ -339,6 +339,10 @@ export function missedTargets(repos: readonly RepoPerf[], factor: number = 1): s
  * Scenarios whose p50 is more than `tolerance` worse than the last committed
  * result, as `<repo>/<scenario>`.
  *
+ * Both p50s are first divided by the runner factor of the run they came from,
+ * so a machine that was three times slower than itself on the day is not read as
+ * a code regression (see the comment in the body).
+ *
  * Silent when there is nothing comparable: no prior result, a prior result from
  * a different CPU, or a prior run that never measured this scenario. A
  * benchmark that invents a baseline is worse than one that admits it has none,
@@ -349,9 +353,19 @@ export function regressedScenarios(
   prior: unknown,
   machine: { cpu: string },
   tolerance: number = REGRESSION_TOLERANCE,
+  factor: number = 1,
 ): string[] {
   const priorRepos = readPriorRepos(prior, machine.cpu);
   if (priorRepos === null) return [];
+  // Both sides are divided by the runner factor of the run they came from, so
+  // the comparison is between two machine-equivalent p50s. "The same CPU" was
+  // always meant to mean "like for like", and one CPU is not one speed: the same
+  // laptop measured beside three other builds is three times slower than itself,
+  // and comparing that against a quiet baseline reports the other builds as a
+  // greplost regression. A payload written before the factor existed has no
+  // factor to divide by and is taken at 1, which is what it was measured as.
+  const priorFactor = readPriorFactor(prior);
+  const normalize = (ms: number, by: number): number => (by > 0 ? ms / by : ms);
 
   const regressed: string[] = [];
   for (const repo of current) {
@@ -359,17 +373,28 @@ export function regressedScenarios(
     if (before === undefined) continue;
     for (const scenario of repo.scenarios) {
       if (scenario.iterations === 0) continue;
-      const baseline = before.get(scenario.scenario);
-      if (baseline === undefined || baseline <= 0) continue;
+      const raw = before.get(scenario.scenario);
+      if (raw === undefined || raw <= 0) continue;
+      const baseline = normalize(raw, priorFactor);
+      const measured = normalize(scenario.ms.p50, factor);
       // Ratio rather than `baseline * (1 + tolerance)`: 100 * 1.15 is
       // 114.99999999999999 in binary floating point, which would fail a run that
       // came in at exactly the tolerance. EPSILON keeps the boundary inclusive.
-      if ((scenario.ms.p50 - baseline) / baseline > tolerance + EPSILON) {
+      if ((measured - baseline) / baseline > tolerance + EPSILON) {
         regressed.push(`${repo.name}/${scenario.scenario}`);
       }
     }
   }
   return regressed.sort(compareStrings);
+}
+
+/** The runner factor a prior payload was measured at, or 1 when it records none. */
+function readPriorFactor(prior: unknown): number {
+  if (!isRecord(prior)) return 1;
+  const runner = prior["runner"];
+  if (!isRecord(runner)) return 1;
+  const factor = runner["factor"];
+  return typeof factor === "number" && Number.isFinite(factor) && factor > 0 ? factor : 1;
 }
 
 /**
@@ -1027,7 +1052,13 @@ export async function run(args: string[]): Promise<number> {
 
   printTable(measured.repos, measured.runner);
 
-  const regressed = regressedScenarios(measured.repos, prior?.payload, measured.machine);
+  const regressed = regressedScenarios(
+    measured.repos,
+    prior?.payload,
+    measured.machine,
+    REGRESSION_TOLERANCE,
+    measured.runner.factor,
+  );
   if (regressed.length > 0) {
     console.log(
       `${SUITE}: p50 regressed by more than ${Math.round(REGRESSION_TOLERANCE * 100)}% vs ${

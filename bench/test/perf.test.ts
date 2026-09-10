@@ -277,6 +277,34 @@ describe("runner speed factor", () => {
     expect(gateMisses([repoWith("anyq", "full", 1400)], fast, ["anyq/full"])).toEqual(["P1", "regression"]);
   });
 
+  test("the regression rule compares machine equivalent p50s, not wall clock", () => {
+    const machine = { cpu: "Apple M3 Pro" };
+    // A baseline measured on a machine three times slower than the reference: its
+    // 300 ms is 100 ms of the reference machine's time.
+    const slowPrior = {
+      machine: { cpu: "Apple M3 Pro" },
+      runner: { factor: 3 },
+      repos: [{ name: "anyq", files: 148, scenarios: [{ scenario: "full", ms: { p50: 300 } }] }],
+    };
+    const tolerance = 0.15;
+    // 110 ms on a quiet machine is 10 % worse than the baseline's 100, not 63 % better.
+    expect(regressedScenarios([repoWith("anyq", "full", 110)], slowPrior, machine, tolerance, 1)).toEqual([]);
+    expect(regressedScenarios([repoWith("anyq", "full", 130)], slowPrior, machine, tolerance, 1)).toEqual(["anyq/full"]);
+    // The same run measured on the same slow machine: 330 ms is 110 ms equivalent.
+    expect(regressedScenarios([repoWith("anyq", "full", 330)], slowPrior, machine, tolerance, 3)).toEqual([]);
+    expect(regressedScenarios([repoWith("anyq", "full", 390)], slowPrior, machine, tolerance, 3)).toEqual(["anyq/full"]);
+
+    // A payload written before the factor existed is taken at 1, which is what it
+    // was measured as.
+    const oldPrior = {
+      machine: { cpu: "Apple M3 Pro" },
+      repos: [{ name: "anyq", files: 148, scenarios: [{ scenario: "full", ms: { p50: 100 } }] }],
+    };
+    expect(regressedScenarios([repoWith("anyq", "full", 130)], oldPrior, machine, tolerance, 1)).toEqual(["anyq/full"]);
+    // Three times slower on the day, and the same code: not a regression.
+    expect(regressedScenarios([repoWith("anyq", "full", 330)], oldPrior, machine, tolerance, 3)).toEqual([]);
+  });
+
   test("the report prints the raw budget, the factor, the reference, the scaled budget and the measurement", () => {
     const lines = reportLines([repoWith("anyq", "full", 1400)], speedOf(200));
     const text = lines.join("\n");
