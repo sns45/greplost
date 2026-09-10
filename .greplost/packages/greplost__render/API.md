@@ -115,4 +115,4 @@
 
 ## packages/render/src/version.ts
 
-- `const GREPLOST_VERSION = "0.1.0"` L13-13
+- `const GREPLOST_VERSION = "0.1.1"` L13-13

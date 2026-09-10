@@ -3165,7 +3165,7 @@
       "lang": "ts",
       "loc": 13,
       "pkg": "@greplost/render",
-      "sha256": "7c699e72685f653402cbfffd7b04cd3b896b026cfeeb07219fff5fbd4ee69640",
+      "sha256": "be0db5fe34161612a32ddef7079fb8c92d031ab50823f6171b205e1164211b2d",
       "staleSummary": false
     },
     "packages/semantic/src/flows.ts": {

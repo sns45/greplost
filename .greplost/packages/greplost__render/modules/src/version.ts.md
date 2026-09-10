@@ -15,4 +15,4 @@
 **Blast radius:** 42 files (`greplost impact packages/render/src/version.ts`)
 
 **Key symbols:**
-- `const GREPLOST_VERSION = "0.1.0"`  L13-13
+- `const GREPLOST_VERSION = "0.1.1"`  L13-13

@@ -10,4 +10,4 @@
  * a release rewrites one line of one file per repository, and the first
  * `greplost update` after an upgrade brings the map back in step.
  */
-export const GREPLOST_VERSION = "0.1.0";
+export const GREPLOST_VERSION = "0.1.1";
