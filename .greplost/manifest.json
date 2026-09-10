@@ -1605,14 +1605,15 @@
         "firstResultType",
         "namedType",
         "structShape",
+        "typeParameterNames",
         "typedLocals"
       ],
       "fanIn": 1,
       "fanOut": 1,
       "lang": "ts",
-      "loc": 276,
+      "loc": 327,
       "pkg": "@greplost/core",
-      "sha256": "ee97cdf976281f806cd7fb219182beb82b9f2e94ec0e2b5bfcff7f63229a6c34",
+      "sha256": "106797538fd7b8a3b2f0ce78668f4936fa70cfe3f90f042af9903887ca0611e3",
       "staleSummary": false
     },
     "packages/core/src/extract/go.ts": {
@@ -1624,9 +1625,9 @@
       "fanIn": 1,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 486,
+      "loc": 496,
       "pkg": "@greplost/core",
-      "sha256": "4ad6dc4dbe78eae1f32d4cf4c47a9ff6f98b70be38e33a7ab6b32dcdbff87b48",
+      "sha256": "11711a813afad7101edba561b24acef29139d8f7071c4aa12a3ed1618ef93e16",
       "staleSummary": false
     },
     "packages/core/src/extract/hcl.ts": {
@@ -2423,9 +2424,9 @@
       "fanIn": 2,
       "fanOut": 1,
       "lang": "ts",
-      "loc": 600,
+      "loc": 681,
       "pkg": "@greplost/core",
-      "sha256": "acebdf008becf3781500b4d9a34385cb346a98b11ccf64a92606a1c36aeb7b94",
+      "sha256": "6a972ca91e4f433f3ca917b051e92869f250554ad4cb54565ee306c6c023df52",
       "staleSummary": false
     },
     "packages/core/src/resolve/hcl.ts": {
@@ -3745,7 +3746,7 @@
     "@greplost/core": {
       "deps": [],
       "files": 66,
-      "loc": 19638,
+      "loc": 19780,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",

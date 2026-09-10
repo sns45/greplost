@@ -6,9 +6,11 @@
  * down while the tree is in hand, or they are gone by resolution time:
  *
  *  - the **shape of a struct**: the types it embeds, so `recv.m()` can find the
- *    method a type promotes rather than only the ones it declares itself, and
- *    the names of its own fields, because a field of that name shadows every
- *    promoted method below it and is never a call target;
+ *    method a type promotes rather than only the ones it declares itself, the
+ *    names of its own fields, because a field of that name shadows every
+ *    promoted method below it and is never a call target, and the named type
+ *    each field was written with, so `recv.f.m()` can be resolved without the
+ *    resolver reading this file again (build 2.2, leaf 2.17);
  *  - the **named type a function or method returns**, so `x, err := f()` types
  *    `x` without the resolver reading another package's source;
  *  - the **local bindings whose type the syntax fixes**: `x := &T{}`, `x := T{}`,
@@ -86,26 +88,52 @@ export function namedType(node: Node | null): string | null {
   return null;
 }
 
-/** What a struct declaration says about itself, both halves sorted. */
+/** What a struct declaration says about itself, all three parts sorted. */
 export interface GoStructShape {
   /** The types it embeds: every `field_declaration` written without a name. */
   embeds: string[];
   /** Its own field names, which no promoted method of the same name survives. */
   fields: string[];
+  /** `<field>:<type>` for each field written with a type that names a declaration. */
+  fieldTypes: string[];
 }
 
 /**
- * The embedded types and the field names of a struct, sorted and deduplicated.
+ * The names a generic type declaration binds: in `type Box[T any] struct{ v T }`
+ * the field `v` names no declaration at all, because `T` is whatever the
+ * instantiation passed. Callers pass these to `structShape`, which drops them.
+ */
+export function typeParameterNames(spec: Node): Set<string> {
+  const names = new Set<string>();
+  const list = field(spec, "type_parameters");
+  if (list === null) return names;
+  for (const declaration of list.namedChildren) {
+    for (const name of declaration.childrenForFieldName("name")) names.add(name.text);
+  }
+  return names;
+}
+
+/**
+ * The embedded types, the field names and the field types of a struct, each
+ * sorted and deduplicated.
  *
  * An embedded field is a `field_declaration` written without a name, and every
  * other one contributes its names. An embedded type the tree cannot name (an
  * anonymous struct, a type parameter constraint) is skipped, and so is a field
  * named `_`, which no selector can reach.
+ *
+ * A field earns an entry in `fieldTypes` only when its written type names a
+ * declaration something could be called on: a slice, map, channel, function or
+ * anonymous struct type names none, a predeclared type names none in this repo,
+ * and a type parameter of this very declaration names a different type per
+ * instantiation. The pointer is stripped, because `*Consumer` and `Consumer`
+ * have the same method set at a call site the compiler accepted.
  */
-export function structShape(typeNode: Node | null): GoStructShape {
+export function structShape(typeNode: Node | null, parameters?: ReadonlySet<string>): GoStructShape {
   const embeds = new Set<string>();
   const fields = new Set<string>();
-  if (typeNode === null || typeNode.type !== "struct_type") return { embeds: [], fields: [] };
+  const fieldTypes = new Map<string, string>();
+  if (typeNode === null || typeNode.type !== "struct_type") return { embeds: [], fields: [], fieldTypes: [] };
   for (const child of typeNode.namedChildren) {
     if (child.type !== "field_declaration_list") continue;
     for (const declaration of child.namedChildren) {
@@ -116,12 +144,21 @@ export function structShape(typeNode: Node | null): GoStructShape {
         if (name !== null) embeds.add(name);
         continue;
       }
+      const written = namedType(field(declaration, "type"));
+      const decidable =
+        written !== null && !PREDECLARED.has(written) && parameters?.has(written) !== true ? written : null;
       for (const name of named) {
-        if (name.text !== "_") fields.add(name.text);
+        if (name.text === "_") continue;
+        fields.add(name.text);
+        if (decidable !== null) fieldTypes.set(name.text, decidable);
       }
     }
   }
-  return { embeds: [...embeds].sort(), fields: [...fields].sort() };
+  return {
+    embeds: [...embeds].sort(),
+    fields: [...fields].sort(),
+    fieldTypes: [...fieldTypes.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([n, t]) => `${n}:${t}`),
+  };
 }
 
 /**
@@ -142,10 +179,16 @@ export function firstResultType(node: Node): string | null {
 
 /**
  * Callee text, normalised the way `CallSite.callee` fixes it:
- * `f()` -> `f`, `pkg.F()` / `recv.m()` -> `pkg.F` / `recv.m`. Anything else -
- * a deeper chain, a call on a call, a generic instantiation, a call on a
+ * `f()` -> `f`, `pkg.F()` / `recv.m()` -> `pkg.F` / `recv.m`, and one field hop
+ * further, `recv.f.m()` -> `recv.f.m` (build 2.2, leaf 2.17). Anything else -
+ * a third hop, a call on a call, a generic instantiation, a call on a
  * parenthesised or literal value - is not recorded. Composite literals
  * (`Store{...}`) are not call expressions in Go and never reach here.
+ *
+ * One hop is where a written type still decides the value being called on: the
+ * struct that declares `f` says what `f` is, and the resolver reads that back
+ * off `meta.fieldTypes`. A second hop would need the *field's* struct as well,
+ * and a Go file names no such chain, so `x.f.g.m()` stops here.
  */
 export function calleeText(node: Node): string | null {
   const fn = field(node, "function");
@@ -154,8 +197,13 @@ export function calleeText(node: Node): string | null {
   if (fn.type !== "selector_expression") return null;
   const operand = field(fn, "operand");
   const member = field(fn, "field");
-  if (operand === null || member === null || operand.type !== "identifier") return null;
-  return `${operand.text}.${member.text}`;
+  if (operand === null || member === null) return null;
+  if (operand.type === "identifier") return `${operand.text}.${member.text}`;
+  if (operand.type !== "selector_expression") return null;
+  const base = field(operand, "operand");
+  const hop = field(operand, "field");
+  if (base === null || hop === null || base.type !== "identifier") return null;
+  return `${base.text}.${hop.text}.${member.text}`;
 }
 
 /** The composite literal behind an expression: `T{}` and `&T{}` both give it. */
@@ -187,6 +235,9 @@ function initialiserType(expression: Node, bound: ReadonlySet<string>, receiver:
   if (expression.type !== "call_expression") return UNDECIDED;
   const callee = calleeText(expression);
   if (callee === null) return UNDECIDED;
+  // `x := a.b.f()` calls through a field, and what that call returns is written
+  // down in another file: not a fact this one can state.
+  if (callee.indexOf(".") !== callee.lastIndexOf(".")) return UNDECIDED;
   const dot = callee.indexOf(".");
   if (dot === -1) return bound.has(callee) ? UNDECIDED : `@${callee}`;
   return receiver !== null && callee.slice(0, dot) === receiver ? `@${callee}` : UNDECIDED;

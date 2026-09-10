@@ -8,43 +8,43 @@
 
 **Exports:** `extractGo( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">`, `isExportedName(name: string): boolean`
 
-**Imports:** `web-tree-sitter` (Node, Tree), [`../schema.ts`](../schema.ts.md) (CallSite, DeclKind, Declaration, ExportRecord, FileRecord, ImportRecord, Lang, compareStrings, symbolId), [`./go-types.ts`](go-types.ts.md) (calleeText, firstResultType, structShape, typedLocals), [`./ts-signature.ts`](ts-signature.ts.md) (clip, field, lineOf, spanOf)
+**Imports:** `web-tree-sitter` (Node, Tree), [`../schema.ts`](../schema.ts.md) (CallSite, DeclKind, Declaration, ExportRecord, FileRecord, ImportRecord, Lang, compareStrings, symbolId), [`./go-types.ts`](go-types.ts.md) (calleeText, firstResultType, structShape, typeParameterNames, typedLocals), [`./ts-signature.ts`](ts-signature.ts.md) (clip, field, lineOf, spanOf)
 
 **Imported by:** [`packages/core/src/extract/index.ts`](index.ts.md)
 
 **Blast radius:** 35 files (`greplost impact packages/core/src/extract/go.ts`)
 
 **Key symbols:**
-- `const SPEC_PARENTS: ReadonlySet<string> = new Set([ "const_spec_list", "import_spec_list", "type_spec_list", "var_spec_list", ])`  L38-43
-- `const CALLER_NODES: ReadonlySet<string> = new Set(["function_declaration", "method_declaration"])`  L46-46
-- `const SCOPE_NODES: ReadonlySet<string> = new Set([ "func_literal", "function_declaration", "method_declaration", ])`  L49-53
-- `const NAME_FIELD_BINDERS: ReadonlySet<string> = new Set([ "const_spec", "parameter_declaration", "type_spec", "var_spec", "variadic_parameter_declaration", ])`  L59-65
-- `const LIST_BINDERS: ReadonlyArray<readonly [string, string]> = [ ["short_var_declaration", "left"], ["range_clause", "left"], ["type_switch_statement", "alias"], ]`  L71-75
-- `function isExportedName(name: string): boolean`  L81-85
-- `function importPath(node: Node | null): string`  L88-94
-- `function baseTypeName(node: Node | null): string | null`  L97-108
-- `function specsOf(node: Node, type: string, alsoType?: string): Node[]`  L111-121
-- `function typeBodyStart(typeNode: Node | null): number | null`  L124-131
-- `function typeKind(typeNode: Node | null): DeclKind`  L134-139
-- `function signatureBeforeBody(source: string, node: Node): string`  L142-146
-- `function specEnd(spec: Node): number`  L153-160
-- `interface GoState`  L162-176
-- `function sortedMeta(meta: Record<string, string>): Record<string, string>`  L179-183
-- `function resultMeta(node: Node): Record<string, string> | undefined`  L186-189
-- `function addDeclaration( state: GoState, name: string, kind: DeclKind, signature: string, node: Node, parent?: string, meta?: Record<string, string>, ): boolean`  L198-224
-- `function collectImports(state: GoState, node: Node): void`  L226-241
-- `function collectConstOrVar(state: GoState, node: Node, kind: "const" | "var"): void`  L243-250
-- `function collectTypes(state: GoState, node: Node): void`  L252-269
-- `function collectFunction(state: GoState, node: Node): void`  L271-277
-- `function collectMethod(state: GoState, node: Node): void`  L279-290
-- `function boundNames(fn: Node, exclude: Node | null): Set<string>`  L304-327
-- `function receiverBinder(node: Node): Node | null`  L338-342
-- `interface Scope`  L345-349
-- `function scopeOf(node: Node): Scope`  L352-357
-- `function withheld(callee: string, caller: string, scope: Scope | null): boolean`  L377-384
-- `function noteLocal(state: GoState, caller: string, callee: string, scope: Scope | null): void`  L387-399
-- `function stampLocals(state: GoState): void`  L406-416
-- `function collectCalls(state: GoState, root: Node): void`  L418-434
-- `function extractGo( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">`  L440-486
+- `const SPEC_PARENTS: ReadonlySet<string> = new Set([ "const_spec_list", "import_spec_list", "type_spec_list", "var_spec_list", ])`  L44-49
+- `const CALLER_NODES: ReadonlySet<string> = new Set(["function_declaration", "method_declaration"])`  L52-52
+- `const SCOPE_NODES: ReadonlySet<string> = new Set([ "func_literal", "function_declaration", "method_declaration", ])`  L55-59
+- `const NAME_FIELD_BINDERS: ReadonlySet<string> = new Set([ "const_spec", "parameter_declaration", "type_spec", "var_spec", "variadic_parameter_declaration", ])`  L65-71
+- `const LIST_BINDERS: ReadonlyArray<readonly [string, string]> = [ ["short_var_declaration", "left"], ["range_clause", "left"], ["type_switch_statement", "alias"], ]`  L77-81
+- `function isExportedName(name: string): boolean`  L87-91
+- `function importPath(node: Node | null): string`  L94-100
+- `function baseTypeName(node: Node | null): string | null`  L103-114
+- `function specsOf(node: Node, type: string, alsoType?: string): Node[]`  L117-127
+- `function typeBodyStart(typeNode: Node | null): number | null`  L130-137
+- `function typeKind(typeNode: Node | null): DeclKind`  L140-145
+- `function signatureBeforeBody(source: string, node: Node): string`  L148-152
+- `function specEnd(spec: Node): number`  L159-166
+- `interface GoState`  L168-182
+- `function sortedMeta(meta: Record<string, string>): Record<string, string>`  L185-189
+- `function resultMeta(node: Node): Record<string, string> | undefined`  L192-195
+- `function addDeclaration( state: GoState, name: string, kind: DeclKind, signature: string, node: Node, parent?: string, meta?: Record<string, string>, ): boolean`  L204-230
+- `function collectImports(state: GoState, node: Node): void`  L232-247
+- `function collectConstOrVar(state: GoState, node: Node, kind: "const" | "var"): void`  L249-256
+- `function collectTypes(state: GoState, node: Node): void`  L258-277
+- `function collectFunction(state: GoState, node: Node): void`  L279-285
+- `function collectMethod(state: GoState, node: Node): void`  L287-298
+- `function boundNames(fn: Node, exclude: Node | null): Set<string>`  L312-335
+- `function receiverBinder(node: Node): Node | null`  L346-350
+- `interface Scope`  L353-357
+- `function scopeOf(node: Node): Scope`  L360-365
+- `function withheld(callee: string, caller: string, scope: Scope | null): boolean`  L385-394
+- `function noteLocal(state: GoState, caller: string, callee: string, scope: Scope | null): void`  L397-409
+- `function stampLocals(state: GoState): void`  L416-426
+- `function collectCalls(state: GoState, root: Node): void`  L428-444
+- `function extractGo( path: string, _lang: Lang, source: string, tree: Tree, ): Pick<FileRecord, "decls" | "imports" | "exports" | "calls">`  L450-496
 
-**Calls:** `calleeText` → [`packages/core/src/extract/go-types.ts#calleeText`](go-types.ts.md) (high), `firstResultType` → [`packages/core/src/extract/go-types.ts#firstResultType`](go-types.ts.md) (high), `structShape` → [`packages/core/src/extract/go-types.ts#structShape`](go-types.ts.md) (high), `typedLocals` → [`packages/core/src/extract/go-types.ts#typedLocals`](go-types.ts.md) (high), `addDeclaration` → [`packages/core/src/extract/go.ts#addDeclaration`](go.ts.md) (high), `baseTypeName` → [`packages/core/src/extract/go.ts#baseTypeName`](go.ts.md) (high), `boundNames` → [`packages/core/src/extract/go.ts#boundNames`](go.ts.md) (high), `collectCalls` → [`packages/core/src/extract/go.ts#collectCalls`](go.ts.md) (high), `collectConstOrVar` → [`packages/core/src/extract/go.ts#collectConstOrVar`](go.ts.md) (high), `collectFunction` → [`packages/core/src/extract/go.ts#collectFunction`](go.ts.md) (high), `collectImports` → [`packages/core/src/extract/go.ts#collectImports`](go.ts.md) (high), `collectMethod` → [`packages/core/src/extract/go.ts#collectMethod`](go.ts.md) (high), `collectTypes` → [`packages/core/src/extract/go.ts#collectTypes`](go.ts.md) (high), `importPath` → [`packages/core/src/extract/go.ts#importPath`](go.ts.md) (high), `isExportedName` → [`packages/core/src/extract/go.ts#isExportedName`](go.ts.md) (high), `noteLocal` → [`packages/core/src/extract/go.ts#noteLocal`](go.ts.md) (high), `receiverBinder` → [`packages/core/src/extract/go.ts#receiverBinder`](go.ts.md) (high), `resultMeta` → [`packages/core/src/extract/go.ts#resultMeta`](go.ts.md) (high), `scopeOf` → [`packages/core/src/extract/go.ts#scopeOf`](go.ts.md) (high), `signatureBeforeBody` → [`packages/core/src/extract/go.ts#signatureBeforeBody`](go.ts.md) (high), `sortedMeta` → [`packages/core/src/extract/go.ts#sortedMeta`](go.ts.md) (high), `specEnd` → [`packages/core/src/extract/go.ts#specEnd`](go.ts.md) (high), `specsOf` → [`packages/core/src/extract/go.ts#specsOf`](go.ts.md) (high), `stampLocals` → [`packages/core/src/extract/go.ts#stampLocals`](go.ts.md) (high), `typeBodyStart` → [`packages/core/src/extract/go.ts#typeBodyStart`](go.ts.md) (high), `typeKind` → [`packages/core/src/extract/go.ts#typeKind`](go.ts.md) (high), `withheld` → [`packages/core/src/extract/go.ts#withheld`](go.ts.md) (high), `clip` → [`packages/core/src/extract/ts-signature.ts#clip`](ts-signature.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](ts-signature.ts.md) (high), `lineOf` → [`packages/core/src/extract/ts-signature.ts#lineOf`](ts-signature.ts.md) (high), `spanOf` → [`packages/core/src/extract/ts-signature.ts#spanOf`](ts-signature.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)
+**Calls:** `calleeText` → [`packages/core/src/extract/go-types.ts#calleeText`](go-types.ts.md) (high), `firstResultType` → [`packages/core/src/extract/go-types.ts#firstResultType`](go-types.ts.md) (high), `structShape` → [`packages/core/src/extract/go-types.ts#structShape`](go-types.ts.md) (high), `typeParameterNames` → [`packages/core/src/extract/go-types.ts#typeParameterNames`](go-types.ts.md) (high), `typedLocals` → [`packages/core/src/extract/go-types.ts#typedLocals`](go-types.ts.md) (high), `addDeclaration` → [`packages/core/src/extract/go.ts#addDeclaration`](go.ts.md) (high), `baseTypeName` → [`packages/core/src/extract/go.ts#baseTypeName`](go.ts.md) (high), `boundNames` → [`packages/core/src/extract/go.ts#boundNames`](go.ts.md) (high), `collectCalls` → [`packages/core/src/extract/go.ts#collectCalls`](go.ts.md) (high), `collectConstOrVar` → [`packages/core/src/extract/go.ts#collectConstOrVar`](go.ts.md) (high), `collectFunction` → [`packages/core/src/extract/go.ts#collectFunction`](go.ts.md) (high), `collectImports` → [`packages/core/src/extract/go.ts#collectImports`](go.ts.md) (high), `collectMethod` → [`packages/core/src/extract/go.ts#collectMethod`](go.ts.md) (high), `collectTypes` → [`packages/core/src/extract/go.ts#collectTypes`](go.ts.md) (high), `importPath` → [`packages/core/src/extract/go.ts#importPath`](go.ts.md) (high), `isExportedName` → [`packages/core/src/extract/go.ts#isExportedName`](go.ts.md) (high), `noteLocal` → [`packages/core/src/extract/go.ts#noteLocal`](go.ts.md) (high), `receiverBinder` → [`packages/core/src/extract/go.ts#receiverBinder`](go.ts.md) (high), `resultMeta` → [`packages/core/src/extract/go.ts#resultMeta`](go.ts.md) (high), `scopeOf` → [`packages/core/src/extract/go.ts#scopeOf`](go.ts.md) (high), `signatureBeforeBody` → [`packages/core/src/extract/go.ts#signatureBeforeBody`](go.ts.md) (high), `sortedMeta` → [`packages/core/src/extract/go.ts#sortedMeta`](go.ts.md) (high), `specEnd` → [`packages/core/src/extract/go.ts#specEnd`](go.ts.md) (high), `specsOf` → [`packages/core/src/extract/go.ts#specsOf`](go.ts.md) (high), `stampLocals` → [`packages/core/src/extract/go.ts#stampLocals`](go.ts.md) (high), `typeBodyStart` → [`packages/core/src/extract/go.ts#typeBodyStart`](go.ts.md) (high), `typeKind` → [`packages/core/src/extract/go.ts#typeKind`](go.ts.md) (high), `withheld` → [`packages/core/src/extract/go.ts#withheld`](go.ts.md) (high), `clip` → [`packages/core/src/extract/ts-signature.ts#clip`](ts-signature.ts.md) (high), `field` → [`packages/core/src/extract/ts-signature.ts#field`](ts-signature.ts.md) (high), `lineOf` → [`packages/core/src/extract/ts-signature.ts#lineOf`](ts-signature.ts.md) (high), `spanOf` → [`packages/core/src/extract/ts-signature.ts#spanOf`](ts-signature.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../schema.ts.md) (high), `symbolId` → [`packages/core/src/schema.ts#symbolId`](../schema.ts.md) (high)
