@@ -28,43 +28,43 @@
 - `const CHILD_TIMEOUT_MS = 600_000`  L113-113
 - `const REGRESSION_TOLERANCE = 0.15`  L116-116
 - `const EPSILON = 1e-9`  L119-119
-- `const RUNNER_REFERENCE_MS = 282`  L144-144
-- `const RUNNER_ITERATIONS = 3`  L152-152
-- `const MAX_RUNNER_FACTOR = 4`  L164-164
-- `const PEAK_RSS_TARGET_BYTES = 500 * 1024 * 1024`  L167-167
-- `interface Stats`  L173-180
-- `interface ScenarioResult`  L182-204
-- `interface RepoPerf`  L206-212
-- `interface PerfOptions`  L214-228
-- `interface RunnerSpeed`  L231-240
-- `interface PerfRun`  L242-246
-- `function summarize(samples: readonly number[]): Stats`  L253-265
-- `function targetsFor(files: number): { p1Ms: number; p2Ms: number }`  L275-277
-- `function round3(value: number): number`  L280-282
-- `function runnerFactor(measuredMs: number, referenceMs: number = RUNNER_REFERENCE_MS): number`  L293-296
-- `function scaleTargets(targets: { p1Ms: number; p2Ms: number }, factor: number): { p1Ms: number; p2Ms: number }`  L299-301
-- `const GATED_TIERS: ReadonlySet<string> = new Set(["S", "M"])`  L304-304
-- `function missedTargets(repos: readonly RepoPerf[], factor: number = 1): string[]`  L319-331
-- `function regressedScenarios( current: readonly RepoPerf[], prior: unknown, machine: { cpu: string }, tolerance: number = REGRESSION_TOLERANCE, ): string[]`  L342-368
-- `function gateMisses( repos: readonly RepoPerf[], speed: RunnerSpeed, regressed: readonly string[], ): string[]`  L379-388
-- `function readPriorRepos(prior: unknown, cpu: string): Map<string, Map<string, number>> | null`  L391-413
-- `function isRecord(value: unknown): value is Record<string, unknown>`  L415-417
-- `function measure(op: ChildOp, root: string): { report: ChildReport; processMs: number }`  L424-442
-- `interface Target`  L448-456
-- `function prepareWorkingCopy(target: Target, dest: string): void`  L467-487
-- `function readManifest(root: string): Manifest`  L489-492
-- `function seeded(seed: number): () => number`  L499-507
-- `function pickFiles(files: readonly string[], count: number): string[]`  L510-520
-- `function renameCandidate(manifest: Manifest, root: string): string | undefined`  L537-555
-- `interface ScenarioContext`  L561-566
-- `function runScenario(name: ScenarioName, ctx: ScenarioContext): ScenarioResult`  L575-683
-- `function skipped(name: ScenarioName, reason: string): ScenarioResult`  L685-695
-- `async function measureRunnerSpeed(iterations: number): Promise<RunnerSpeed>`  L715-737
-- `async function perf(options: PerfOptions = {}): Promise<PerfRun>`  L739-780
-- `function fixtureTarget(): Target`  L787-789
-- `function resolveTargets(options: PerfOptions): Target[]`  L791-801
-- `function printScenario(result: ScenarioResult): void`  L807-816
-- `function runnerLine(speed: RunnerSpeed | null): string`  L823-831
+- `const RUNNER_REFERENCE_MS = 253`  L149-149
+- `const RUNNER_ITERATIONS = 3`  L157-157
+- `const MAX_RUNNER_FACTOR = 4`  L169-169
+- `const PEAK_RSS_TARGET_BYTES = 500 * 1024 * 1024`  L172-172
+- `interface Stats`  L178-185
+- `interface ScenarioResult`  L187-209
+- `interface RepoPerf`  L211-217
+- `interface PerfOptions`  L219-233
+- `interface RunnerSpeed`  L236-245
+- `interface PerfRun`  L247-251
+- `function summarize(samples: readonly number[]): Stats`  L258-270
+- `function targetsFor(files: number): { p1Ms: number; p2Ms: number }`  L280-282
+- `function round3(value: number): number`  L285-287
+- `function runnerFactor(measuredMs: number, referenceMs: number = RUNNER_REFERENCE_MS): number`  L298-301
+- `function scaleTargets(targets: { p1Ms: number; p2Ms: number }, factor: number): { p1Ms: number; p2Ms: number }`  L304-306
+- `const GATED_TIERS: ReadonlySet<string> = new Set(["S", "M"])`  L309-309
+- `function missedTargets(repos: readonly RepoPerf[], factor: number = 1): string[]`  L324-336
+- `function regressedScenarios( current: readonly RepoPerf[], prior: unknown, machine: { cpu: string }, tolerance: number = REGRESSION_TOLERANCE, ): string[]`  L347-373
+- `function gateMisses( repos: readonly RepoPerf[], speed: RunnerSpeed, regressed: readonly string[], ): string[]`  L384-393
+- `function readPriorRepos(prior: unknown, cpu: string): Map<string, Map<string, number>> | null`  L396-418
+- `function isRecord(value: unknown): value is Record<string, unknown>`  L420-422
+- `function measure(op: ChildOp, root: string): { report: ChildReport; processMs: number }`  L429-447
+- `interface Target`  L453-461
+- `function prepareWorkingCopy(target: Target, dest: string): void`  L472-492
+- `function readManifest(root: string): Manifest`  L494-497
+- `function seeded(seed: number): () => number`  L504-512
+- `function pickFiles(files: readonly string[], count: number): string[]`  L515-525
+- `function renameCandidate(manifest: Manifest, root: string): string | undefined`  L542-560
+- `interface ScenarioContext`  L566-571
+- `function runScenario(name: ScenarioName, ctx: ScenarioContext): ScenarioResult`  L580-688
+- `function skipped(name: ScenarioName, reason: string): ScenarioResult`  L690-700
+- `async function measureRunnerSpeed(iterations: number): Promise<RunnerSpeed>`  L720-742
+- `async function perf(options: PerfOptions = {}): Promise<PerfRun>`  L744-785
+- `function fixtureTarget(): Target`  L792-794
+- `function resolveTargets(options: PerfOptions): Target[]`  L796-806
+- `function printScenario(result: ScenarioResult): void`  L812-821
+- `function runnerLine(speed: RunnerSpeed | null): string`  L828-836
 - … 8 more
 
 **Calls:** `repoDir` → [`bench/src/corpus.ts#repoDir`](corpus.ts.md) (high), `selectRepos` → [`bench/src/corpus.ts#selectRepos`](corpus.ts.md) (high), `cloneWorkingCopy` → [`bench/src/git.ts#cloneWorkingCopy`](git.ts.md) (high), `copySourceTree` → [`bench/src/git.ts#copySourceTree`](git.ts.md) (high), `gitOrThrow` → [`bench/src/git.ts#gitOrThrow`](git.ts.md) (high), `percentile` → [`bench/src/git.ts#percentile`](git.ts.md) (high), `machineProfile` → [`bench/src/machine.ts#machineProfile`](machine.ts.md) (high), `fixtureTarget` → [`bench/src/perf.ts#fixtureTarget`](perf.ts.md) (high), `fmt` → [`bench/src/perf.ts#fmt`](perf.ts.md) (high), `gateMisses` → [`bench/src/perf.ts#gateMisses`](perf.ts.md) (high), `isRecord` → [`bench/src/perf.ts#isRecord`](perf.ts.md) (high), `mb` → [`bench/src/perf.ts#mb`](perf.ts.md) (high), `measure` → [`bench/src/perf.ts#measure`](perf.ts.md) (high), `measureRunnerSpeed` → [`bench/src/perf.ts#measureRunnerSpeed`](perf.ts.md) (high), `missedTargets` → [`bench/src/perf.ts#missedTargets`](perf.ts.md) (high), `parseArgs` → [`bench/src/perf.ts#parseArgs`](perf.ts.md) (high), `perf` → [`bench/src/perf.ts#perf`](perf.ts.md) (high), `pickFiles` → [`bench/src/perf.ts#pickFiles`](perf.ts.md) (high), `prepareWorkingCopy` → [`bench/src/perf.ts#prepareWorkingCopy`](perf.ts.md) (high), `printScenario` → [`bench/src/perf.ts#printScenario`](perf.ts.md) (high), `printTable` → [`bench/src/perf.ts#printTable`](perf.ts.md) (high), `readManifest` → [`bench/src/perf.ts#readManifest`](perf.ts.md) (high), `readPriorRepos` → [`bench/src/perf.ts#readPriorRepos`](perf.ts.md) (high), `regressedScenarios` → [`bench/src/perf.ts#regressedScenarios`](perf.ts.md) (high), `renameCandidate` → [`bench/src/perf.ts#renameCandidate`](perf.ts.md) (high), `reportLines` → [`bench/src/perf.ts#reportLines`](perf.ts.md) (high), `resolveTargets` → [`bench/src/perf.ts#resolveTargets`](perf.ts.md) (high), `resultSuite` → [`bench/src/perf.ts#resultSuite`](perf.ts.md) (high), `round3` → [`bench/src/perf.ts#round3`](perf.ts.md) (high), `run` → [`bench/src/perf.ts#run`](perf.ts.md) (high), `runScenario` → [`bench/src/perf.ts#runScenario`](perf.ts.md) (high), `runnerFactor` → [`bench/src/perf.ts#runnerFactor`](perf.ts.md) (high), `runnerLine` → [`bench/src/perf.ts#runnerLine`](perf.ts.md) (high), `scaleTargets` → [`bench/src/perf.ts#scaleTargets`](perf.ts.md) (high), `seeded` → [`bench/src/perf.ts#seeded`](perf.ts.md) (high), `skipped` → [`bench/src/perf.ts#skipped`](perf.ts.md) (high), `summarize` → [`bench/src/perf.ts#summarize`](perf.ts.md) (high), `targetsFor` → [`bench/src/perf.ts#targetsFor`](perf.ts.md) (high), `warnOnRedirectedResults` → [`bench/src/perf.ts#warnOnRedirectedResults`](perf.ts.md) (high), `configFor` → [`bench/src/replay.ts#configFor`](replay.ts.md) (high), `writeConfig` → [`bench/src/replay.ts#writeConfig`](replay.ts.md) (high), `latestResult` → [`bench/src/results-io.ts#latestResult`](results-io.ts.md) (high), `writeResult` → [`bench/src/results-io.ts#writeResult`](results-io.ts.md) (high), `compareStrings` → [`packages/core/src/schema.ts#compareStrings`](../../../greplost__core/modules/src/schema.ts.md) (high), `listStructurePaths` → [`packages/sync/src/artifacts.ts#listStructurePaths`](../../../greplost__sync/modules/src/artifacts.ts.md) (med), `init` → [`packages/sync/src/init.ts#init`](../../../greplost__sync/modules/src/init.ts.md) (med)

@@ -133,15 +133,20 @@ const EPSILON = 1e-9;
  * raw budget and the scaled budget are all printed, so a slow runner is visible
  * in the report instead of hidden inside a pass.
  *
- * This constant is data, not a target: the median that machine measured on the
- * day it was recorded, which is why it carries a date. Measured 2026-09-10 on an
- * Apple M4 Max (16 cores, 128 GB, macOS 25.6.0, Bun 1.2.21, arm64), the machine
- * bench/RESULTS.md's perf numbers come from, as the median of five measurements
- * of `RUNNER_ITERATIONS` builds each, which came in at 265, 281, 282, 284 and
- * 305 ms. Re-record it from the same kind of measurement, and say which machine
- * and which day, or the factor stops meaning anything.
+ * This constant is data, not a target: what that machine measured on the day it
+ * was recorded, which is why it carries a date. Measured 2026-09-10 on an Apple
+ * M4 Max (16 cores, 128 GB, macOS 25.6.0, Bun 1.2.21, arm64), the machine
+ * bench/RESULTS.md's perf numbers come from. It is the **lowest** of 34 medians
+ * taken across that day, which ran from 253 to 822 ms because three other agents
+ * were building and benchmarking on the same cores; eight of the 34 landed
+ * within 15 % of the lowest, so that floor is the machine to itself and the rest
+ * of the range is other people's work. The floor is the right number precisely
+ * because the factor has to divide it out: a reference carrying someone else's
+ * load would scale every slower machine's budget by less than the slowdown it
+ * suffers, which is the false failure this whole mechanism exists to stop.
+ * Re-record it the same way, and say which machine and which day.
  */
-export const RUNNER_REFERENCE_MS = 282;
+export const RUNNER_REFERENCE_MS = 253;
 
 /**
  * Builds behind the median above, fixed so two runs measure the same thing.

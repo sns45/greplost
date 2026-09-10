@@ -223,28 +223,28 @@
 
 - `const SCENARIOS = [ "full", "incremental-1", "incremental-10", "package-rename", "parse-cache-save", ] as const` L92-98
 - `type ScenarioName = (typeof SCENARIOS)[number]` L100-100
-- `const RUNNER_REFERENCE_MS = 282` L144-144
-- `const RUNNER_ITERATIONS = 3` L152-152
-- `const MAX_RUNNER_FACTOR = 4` L164-164
-- `const PEAK_RSS_TARGET_BYTES = 500 * 1024 * 1024` L167-167
-- `interface Stats` L173-180
-- `interface ScenarioResult` L182-204
-- `interface RepoPerf` L206-212
-- `interface PerfOptions` L214-228
-- `interface RunnerSpeed` L231-240
-- `interface PerfRun` L242-246
-- `function summarize(samples: readonly number[]): Stats` L253-265
-- `function targetsFor(files: number): { p1Ms: number; p2Ms: number }` L275-277
-- `function runnerFactor(measuredMs: number, referenceMs: number = RUNNER_REFERENCE_MS): number` L293-296
-- `function scaleTargets(targets: { p1Ms: number; p2Ms: number }, factor: number): { p1Ms: number; p2Ms: number }` L299-301
-- `const GATED_TIERS: ReadonlySet<string> = new Set(["S", "M"])` L304-304
-- `function missedTargets(repos: readonly RepoPerf[], factor: number = 1): string[]` L319-331
-- `function regressedScenarios( current: readonly RepoPerf[], prior: unknown, machine: { cpu: string }, tolerance: number = REGRESSION_TOLERANCE, ): string[]` L342-368
-- `function gateMisses( repos: readonly RepoPerf[], speed: RunnerSpeed, regressed: readonly string[], ): string[]` L379-388
-- `async function perf(options: PerfOptions = {}): Promise<PerfRun>` L739-780
-- `function runnerLine(speed: RunnerSpeed | null): string` L823-831
-- `function reportLines(repos: readonly RepoPerf[], speed: RunnerSpeed | null): string[]` L840-874
-- `async function run(args: string[]): Promise<number>` L962-1080
+- `const RUNNER_REFERENCE_MS = 253` L149-149
+- `const RUNNER_ITERATIONS = 3` L157-157
+- `const MAX_RUNNER_FACTOR = 4` L169-169
+- `const PEAK_RSS_TARGET_BYTES = 500 * 1024 * 1024` L172-172
+- `interface Stats` L178-185
+- `interface ScenarioResult` L187-209
+- `interface RepoPerf` L211-217
+- `interface PerfOptions` L219-233
+- `interface RunnerSpeed` L236-245
+- `interface PerfRun` L247-251
+- `function summarize(samples: readonly number[]): Stats` L258-270
+- `function targetsFor(files: number): { p1Ms: number; p2Ms: number }` L280-282
+- `function runnerFactor(measuredMs: number, referenceMs: number = RUNNER_REFERENCE_MS): number` L298-301
+- `function scaleTargets(targets: { p1Ms: number; p2Ms: number }, factor: number): { p1Ms: number; p2Ms: number }` L304-306
+- `const GATED_TIERS: ReadonlySet<string> = new Set(["S", "M"])` L309-309
+- `function missedTargets(repos: readonly RepoPerf[], factor: number = 1): string[]` L324-336
+- `function regressedScenarios( current: readonly RepoPerf[], prior: unknown, machine: { cpu: string }, tolerance: number = REGRESSION_TOLERANCE, ): string[]` L347-373
+- `function gateMisses( repos: readonly RepoPerf[], speed: RunnerSpeed, regressed: readonly string[], ): string[]` L384-393
+- `async function perf(options: PerfOptions = {}): Promise<PerfRun>` L744-785
+- `function runnerLine(speed: RunnerSpeed | null): string` L828-836
+- `function reportLines(repos: readonly RepoPerf[], speed: RunnerSpeed | null): string[]` L845-879
+- `async function run(args: string[]): Promise<number>` L967-1085
 
 ## bench/src/replay.ts
 
