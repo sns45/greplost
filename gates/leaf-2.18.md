@@ -49,122 +49,122 @@ Recorded exceptions to the 500-line rule: `bench/src/perf.ts` is over 500 lines 
 leaf, and the module documents the whole suite: the scenarios, which statistic gates what, the
 regression rule and now the runner factor, none of which reads better split across files).
 
-- [ ] G1: both perf test files pass
+- [x] G1: both perf test files pass
   CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts bench/test/perf-report.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n^ 0 fail$/m
-  EVIDENCE: pending
+  EVIDENCE: 200 expect() calls | Ran 27 tests across 2 files. [9.94s]
 
-- [ ] G2: the factor is 1 when the runner is at or faster than the reference, and the ratio when it is slower; -t "the factor is"
+- [x] G2: the factor is 1 when the runner is at or faster than the reference, and the ratio when it is slower; -t "the factor is"
   CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts -t "the factor is" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
-  EVIDENCE: pending
+  EVIDENCE: 10 expect() calls | Ran 2 tests across 1 file. [40.00ms]
 
-- [ ] G3: the budgets scale by the factor, and the scaled budget is what the absolute targets are gated against; -t "scaled budget"
+- [x] G3: the budgets scale by the factor, and the scaled budget is what the absolute targets are gated against; -t "scaled budget"
   CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts -t "scaled budget" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
-  EVIDENCE: pending
+  EVIDENCE: 13 expect() calls | Ran 2 tests across 1 file. [39.00ms]
 
-- [ ] G4: a factor above the cap fails on its own, whatever the scaled budgets and the regression rule say; -t "above the cap"
+- [x] G4: a factor above the cap fails on its own, whatever the scaled budgets and the regression rule say; -t "above the cap"
   CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts -t "above the cap" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
-  EVIDENCE: pending
+  EVIDENCE: 7 expect() calls | Ran 1 test across 1 file. [36.00ms]
 
-- [ ] G5: the printed report carries the raw budget, the factor, the reference, the scaled budget and the measurement; -t "the report prints"
+- [x] G5: the printed report carries the raw budget, the factor, the reference, the scaled budget and the measurement; -t "the report prints"
   CHECK: FORCE_COLOR=0 bun test bench/test/perf-report.test.ts -t "the report prints" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
-  EVIDENCE: pending
+  EVIDENCE: 12 expect() calls | Ran 1 test across 1 file. [38.00ms]
 
-- [ ] G6: the written payload carries the runner block, the raw targets and the scaled targets; -t "writes a result"
+- [x] G6: the written payload carries the runner block, the raw targets and the scaled targets; -t "writes a result"
   CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts -t "writes a result" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
-  EVIDENCE: pending
+  EVIDENCE: 30 expect() calls | Ran 1 test across 1 file. [3.02s]
 
-- [ ] G7: the factor a real fixture run measures is the factor its median and the reference produce; -t "reports p50, p95 and peak RSS"
+- [x] G7: the factor a real fixture run measures is the factor its median and the reference produce; -t "reports p50, p95 and peak RSS"
   CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts -t "reports p50, p95 and peak RSS" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
-  EVIDENCE: pending
+  EVIDENCE: 43 expect() calls | Ran 1 test across 1 file. [2.88s]
 
-- [ ] G8: the generator states the scaling rule beside the P1 and P2 rows README carries, and not twice; -t "RESULTS.md states"
+- [x] G8: the generator states the scaling rule beside the P1 and P2 rows README carries, and not twice; -t "RESULTS.md states"
   CHECK: FORCE_COLOR=0 bun test bench/test/perf-report.test.ts -t "RESULTS.md states" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
-  EVIDENCE: pending
+  EVIDENCE: 4 expect() calls | Ran 1 test across 1 file. [47.00ms]
 
-- [ ] G8b: the regression rule compares machine equivalent p50s, both sides divided by the factor of the run they came from; -t "machine equivalent"
+- [x] G8b: the regression rule compares machine equivalent p50s, both sides divided by the factor of the run they came from; -t "machine equivalent"
   CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts -t "machine equivalent" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
-  EVIDENCE: pending
+  EVIDENCE: 6 expect() calls | Ran 1 test across 1 file. [36.00ms]
 
-- [ ] G8c: the Bench 3 section merges every pinned perf payload, newest first; -t "merges the payloads"
+- [x] G8c: the Bench 3 section merges every pinned perf payload, newest first; -t "merges the payloads"
   CHECK: FORCE_COLOR=0 bun test bench/test/perf-report.test.ts -t "merges the payloads" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
-  EVIDENCE: pending
+  EVIDENCE: 9 expect() calls | Ran 1 test across 1 file. [40.00ms]
 
-- [ ] G8d: each repo's baseline is the newest pinned payload that measured that repo, and a repo nothing measured says so; -t "baseline is the newest"
+- [x] G8d: each repo's baseline is the newest pinned payload that measured that repo, and a repo nothing measured says so; -t "baseline is the newest"
   CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts -t "baseline is the newest" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
-  EVIDENCE: pending
+  EVIDENCE: 12 expect() calls | Ran 1 test across 1 file. [37.00ms]
 
-- [ ] G8e: past the cap there is no baseline comparison at all, so no regression line and no `baseline` in the payload; -t "past the cap"
+- [x] G8e: past the cap there is no baseline comparison at all, so no regression line and no `baseline` in the payload; -t "past the cap"
   CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts -t "past the cap" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
-  EVIDENCE: pending
+  EVIDENCE: 8 expect() calls | Ran 2 tests across 1 file. [1486.00ms]
 
-- [ ] G9: the whole bench suite is green
+- [x] G9: the whole bench suite is green
   CHECK: FORCE_COLOR=0 bun test bench 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n^ 0 fail$/m
-  EVIDENCE: pending
+  EVIDENCE: 3879 expect() calls | Ran 667 tests across 23 files. [82.49s]
 
-- [ ] G10: every workspace typechecks
+- [x] G10: every workspace typechecks
   CHECK: FORCE_COLOR=0 bun run typecheck 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^== scripts$/m
-  EVIDENCE: pending
+  EVIDENCE: == bench | == scripts
 
-- [ ] G11: the anyq perf gate prints the factor, the reference and the scaled budget, and passes
+- [x] G11: the anyq perf gate prints the factor, the reference and the scaled budget, and passes
   CHECK: FORCE_COLOR=0 bun run bench:perf --repo anyq --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g' | grep -E "runner factor|raw 1000ms|GATE"
   EXPECT: /^perf: runner factor \d+\.\d\d \(median \d+ms over 3 builds of fixtures\/tiny-ts, reference \d+ms, budgets scale by max\(1, median \/ reference\), fail above 8\.00\)$\n.*raw 1000ms x \d+\.\d\d.*$\n^perf: GATE PASS$/m
-  EVIDENCE: pending
+  EVIDENCE: P1  full build (p50)          <=1000ms (raw 1000ms x 1.00)  447ms | perf: GATE PASS
 
-- [ ] G12: the gin perf gate does the same
+- [x] G12: the gin perf gate does the same
   CHECK: FORCE_COLOR=0 bun run bench:perf --repo gin --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g' | grep -E "runner factor|raw 1000ms|GATE"
   EXPECT: /^perf: runner factor \d+\.\d\d \(median \d+ms over 3 builds of fixtures\/tiny-ts, reference \d+ms, budgets scale by max\(1, median \/ reference\), fail above 8\.00\)$\n.*raw 1000ms x \d+\.\d\d.*$\n^perf: GATE PASS$/m
-  EVIDENCE: pending
+  EVIDENCE: P1  full build (p50)          <=1000ms (raw 1000ms x 1.00)  216ms | perf: GATE PASS
 
-- [ ] G13: both CI perf steps gate on every event, and the workflow still parses
+- [x] G13: both CI perf steps gate on every event, and the workflow still parses
   CHECK: python3 -c "import yaml; d = yaml.safe_load(open('.github/workflows/ci.yml')); s = [x for x in d['jobs']['test']['steps'] if 'performance gate' in x.get('name', '')]; print('perf steps', len(s), 'advisory', sum(1 for x in s if 'continue-on-error' in x))"
   EXPECT: /^perf steps 2 advisory 0$/m
-  EVIDENCE: pending
+  EVIDENCE: perf steps 2 advisory 0
 
-- [ ] G14: the rule is stated once beside the P1 and P2 rows, in RESULTS.md and in the README those rows are synced into
+- [x] G14: the rule is stated once beside the P1 and P2 rows, in RESULTS.md and in the README those rows are synced into
   CHECK: grep -c -F "multiplies the budgets in this table by" README.md bench/RESULTS.md
   EXPECT: /^README.md:1$\n^bench\/RESULTS.md:1$/m
-  EVIDENCE: pending
+  EVIDENCE: README.md:1 | bench/RESULTS.md:1
 
-- [ ] G15: regenerating the report twice leaves RESULTS.md, INDEX.json and README.md byte identical to what is committed
+- [x] G15: regenerating the report twice leaves RESULTS.md, INDEX.json and README.md byte identical to what is committed
   CHECK: FORCE_COLOR=0 bun run bench:report >/dev/null 2>&1; FORCE_COLOR=0 bun run bench:report >/dev/null 2>&1; FORCE_COLOR=0 bun run readme:sync >/dev/null 2>&1; echo "dirty=$(git status --porcelain bench/RESULTS.md bench/results/INDEX.json README.md | wc -l | tr -d ' ')"
   EXPECT: /^dirty=0$/m
-  EVIDENCE: pending
+  EVIDENCE: dirty=0
 
-- [ ] G16: README's generated tables still match RESULTS.md
+- [x] G16: README's generated tables still match RESULTS.md
   CHECK: FORCE_COLOR=0 bun run readme:check 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^sync-readme: README.md up to date$/m
-  EVIDENCE: pending
+  EVIDENCE: $ bun scripts/sync-readme.ts --check | sync-readme: README.md up to date
 
-- [ ] G17: both perf payloads pinned in INDEX.json carry the runner block, the raw budgets and the scaled budgets
+- [x] G17: both perf payloads pinned in INDEX.json carry the runner block, the raw budgets and the scaled budgets
   CHECK: python3 -c "import json; i = json.load(open('bench/results/INDEX.json')); [print('pinned', f, 'factor', d['runner']['factor'], 'reference', d['runner']['referenceMs'], 'measured', round(d['runner']['measuredMs']), 'raw', sorted(d['targets']), 'scaled', sorted(d['scaledTargets']), 'cap', d['maxRunnerFactor']) for f in i['payloads']['perf'] for d in [json.load(open('bench/results/' + f))]]"
   EXPECT: /^pinned perf-\d{4}-\d{2}-\d{2}-[0-9a-f]{7}\.json factor \d+(\.\d+)? reference \d+ measured \d+ raw \['anyq'\] scaled \['anyq'\] cap 8$\n^pinned perf-\d{4}-\d{2}-\d{2}-[0-9a-f]{7}\.json factor \d+(\.\d+)? reference \d+ measured \d+ raw \['gin'\] scaled \['gin'\] cap 8$/m
-  EVIDENCE: pending
+  EVIDENCE: pinned perf-2026-09-10-756639e.json factor 1.052 reference 135 measured 142 raw ['anyq'] scaled ['anyq'] cap 8 | pinned perf-2026-09-10-505d348.json factor 1 reference 135 measured 133 raw ['gin'] sca
 
-- [ ] G17b: every pinned payload names a baseline it was really compared against, and that file is on disk
+- [x] G17b: every pinned payload names a baseline it was really compared against, and that file is on disk
   CHECK: python3 -c "import json, os; [print(r['repo'], 'compared', r['compared'], 'baseline', r['file'], 'onDisk', os.path.exists('bench/results/' + r['file'])) for f in json.load(open('bench/results/INDEX.json'))['payloads']['perf'] for r in json.load(open('bench/results/' + f))['baseline']['repos']]"
   EXPECT: /^anyq compared True baseline perf-\d{4}-\d{2}-\d{2}-[0-9a-f]{7}\.json onDisk True$\n^gin compared True baseline perf-\d{4}-\d{2}-\d{2}-[0-9a-f]{7}\.json onDisk True$/m
-  EVIDENCE: pending
+  EVIDENCE: anyq compared True baseline perf-2026-09-10-c3a74fc.json onDisk True | gin compared True baseline perf-2026-09-10-310089d.json onDisk True
 
-- [ ] G18: both test files this leaf wrote are under 500 lines, `perf.ts` excepted above
+- [x] G18: both test files this leaf wrote are under 500 lines, `perf.ts` excepted above
   CHECK: wc -l bench/test/perf.test.ts bench/test/perf-report.test.ts | awk '/test.ts$/ {if ($1 >= 500) bad = 1} END {print (bad ? "OVER 500" : "both under 500")}'
   EXPECT: /^both under 500$/m
-  EVIDENCE: pending
+  EVIDENCE: both under 500
 
-- [ ] G19: no NUL byte reached any file this leaf touched, and no long dash reached the prose it wrote
+- [x] G19: no NUL byte reached any file this leaf touched, and no long dash reached the prose it wrote
   CHECK: perl -ne 'exit 1 if /\0/' bench/src/perf.ts bench/test/perf.test.ts bench/test/perf-report.test.ts bench/src/report-evals.ts bench/src/report-sections.ts bench/src/report.ts .github/workflows/ci.yml bench/RESULTS.md README.md bench/results/INDEX.json gates/leaf-2.18.md && perl -CSD -ne 'exit 1 if /[\x{2013}\x{2014}]/' bench/src/perf.ts bench/test/perf.test.ts bench/test/perf-report.test.ts bench/src/report-evals.ts bench/src/report-sections.ts bench/src/report.ts gates/leaf-2.18.md && echo "no NUL in 11 files, no long dash in the 7 this leaf wrote"
   EXPECT: /^no NUL in 11 files, no long dash in the 7 this leaf wrote$/m
-  EVIDENCE: pending
+  EVIDENCE: no NUL in 11 files, no long dash in the 7 this leaf wrote
