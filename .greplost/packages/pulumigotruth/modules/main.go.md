@@ -4,7 +4,7 @@
 
 > No summary yet; run `greplost refresh`.
 
-**Package:** `@greplost/bench` ([map](../../../MAP.md))
+**Package:** `pulumigotruth` ([map](../MAP.md))
 
 **Exports:** None.
 
