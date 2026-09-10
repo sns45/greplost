@@ -63,7 +63,7 @@ Recorded exception to the 500-line rule: `packages/core/test/resolve.test.ts` is
 - [x] G1: the package detection and resolution test file passes
   CHECK: FORCE_COLOR=0 bun test packages/core/test/resolve.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 197 expect() calls | Ran 107 tests across 1 file. [53.00ms]
+  EVIDENCE: 197 expect() calls | Ran 107 tests across 1 file. [50.00ms]
 
 - [x] G2: the go module group passes as a whole; -t "go modules"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/resolve.test.ts -t "go modules" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -73,17 +73,17 @@ Recorded exception to the 500-line rule: `packages/core/test/resolve.test.ts` is
 - [x] G3: a go.mod outside every workspace glob is still a package; -t "outside every workspace glob"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/resolve.test.ts -t "outside every workspace glob" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 1 expect() calls | Ran 1 test across 1 file. [23.00ms]
+  EVIDENCE: 1 expect() calls | Ran 1 test across 1 file. [22.00ms]
 
 - [x] G4: the name is the module path's last segment, a major version suffix names the segment before it, and a module path of one segment falls back to the directory basename; -t "segment"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/resolve.test.ts -t "segment" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 6 expect() calls | Ran 4 tests across 1 file. [26.00ms]
+  EVIDENCE: 6 expect() calls | Ran 4 tests across 1 file. [23.00ms]
 
 - [x] G5: nested modules nest, the deepest wins, and no file under a module falls to the root package; -t "nested modules nest"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/resolve.test.ts -t "nested modules nest" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 4 expect() calls | Ran 1 test across 1 file. [24.00ms]
+  EVIDENCE: 4 expect() calls | Ran 1 test across 1 file. [21.00ms]
 
 - [x] G6: a directory matched by a glob and holding a go.mod is one package, and package.json still wins the name inside a glob; -t "one package, not two"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/resolve.test.ts -t "one package, not two" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -93,12 +93,12 @@ Recorded exception to the 500-line rule: `packages/core/test/resolve.test.ts` is
 - [x] G7: packages.roots still gates package.json, so a manifest outside every glob is not a package; -t "packages.roots still gates"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/resolve.test.ts -t "packages.roots still gates" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 1 expect() calls | Ran 1 test across 1 file. [24.00ms]
+  EVIDENCE: 1 expect() calls | Ran 1 test across 1 file. [23.00ms]
 
 - [x] G8: results stay sorted by path with the root first, whatever the file order; -t "sorted by path whatever the file order"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/resolve.test.ts -t "sorted by path whatever the file order" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 2 expect() calls | Ran 1 test across 1 file. [23.00ms]
+  EVIDENCE: 2 expect() calls | Ran 1 test across 1 file. [24.00ms]
 
 - [x] G9: a repo whose indexed files hold no go file is never swept, and fixtures/tiny-go stays one package named from its module path; -t "never probed for go.mod"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/resolve.test.ts -t "never probed for go.mod" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -108,12 +108,12 @@ Recorded exception to the 500-line rule: `packages/core/test/resolve.test.ts` is
 - [x] G10: the core suite is green
   CHECK: FORCE_COLOR=0 bun test packages/core 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 2392 expect() calls | Ran 1008 tests across 24 files. [4.62s]
+  EVIDENCE: 2410 expect() calls | Ran 1023 tests across 24 files. [4.33s]
 
 - [x] G11: every package is green, render goldens included
   CHECK: FORCE_COLOR=0 bun test packages 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: 13983 expect() calls | Ran 1620 tests across 47 files. [58.62s]
+  EVIDENCE: 14001 expect() calls | Ran 1635 tests across 47 files. [25.87s]
 
 - [x] G12: fixtures/tiny-go builds the same artifacts as the code at HEAD before this leaf
   CHECK: S=/private/tmp/claude-501/-Users-shantanu-dev-greplost/36f19a14-277a-4aa9-91cc-30733a56ea7b/scratchpad; rm -rf $S/work/tiny-go && cp -R fixtures/tiny-go $S/work/tiny-go && FORCE_COLOR=0 bun packages/cli/src/main.ts init --no-hooks --root $S/work/tiny-go >/dev/null && diff -r $S/work/tiny-go-base/.greplost $S/work/tiny-go/.greplost && echo "tiny-go artifacts identical"
@@ -198,9 +198,9 @@ Recorded exception to the 500-line rule: `packages/core/test/resolve.test.ts` is
 - [x] G28: inside a workspace glob a go.mod is a package even when the repo indexes no go file; -t "even when no go file is indexed"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/resolve.test.ts -t "even when no go file is indexed" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 1 expect() calls | Ran 1 test across 1 file. [22.00ms]
+  EVIDENCE: 1 expect() calls | Ran 1 test across 1 file. [23.00ms]
 
 - [x] G29: only v2 and above is a major version suffix, v0 and v1 are ordinary segments, and v10 is a suffix; -t "only v2 and above"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/resolve.test.ts -t "only v2 and above" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: 1 expect() calls | Ran 1 test across 1 file. [23.00ms]
+  EVIDENCE: 1 expect() calls | Ran 1 test across 1 file. [24.00ms]
