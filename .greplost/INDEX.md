@@ -4,9 +4,14 @@
 > Read this file first. `greplost query <symbol|path> --json` and `greplost impact <path> --json` answer structural questions in one call; module cards under `packages/<pkg>/modules/` are one per source file.
 > Provenance: written by greplost 0.1.0; 70 test files excluded by the config's exclude patterns (see `.greplost/config.json`); `git log .greplost/INDEX.md` dates the map.
 
-## Packages (8)
+## Packages (11)
 
 ```text
+├── bench  @greplost/bench
+│   └── truth
+│       ├── gocallgraph  gocallgraph
+│       ├── pulumigotruth  pulumigotruth
+│       └── tfinspect  tfinspect
 ├── packages
 │   ├── cli  greplost
 │   ├── core  @greplost/core
@@ -14,16 +19,18 @@
 │   ├── semantic  @greplost/semantic
 │   ├── sync  @greplost/sync
 │   └── workspace  @greplost/workspace
-├── .  greplost-monorepo
-└── bench  @greplost/bench
+└── .  greplost-monorepo
 ```
 
 | Package | Path | Files | LOC | Nodes | Deps | Fan-in | Fan-out | Map |
 |---|---|---|---|---|---|---|---|---|
 | greplost-monorepo | . | 4 | 363 | 39 | 3 | 0 | 0 | [MAP](packages/greplost-monorepo/MAP.md) |
-| @greplost/bench | bench | 53 | 29863 | 0 | 49 | 0 | 2 | [MAP](packages/greplost__bench/MAP.md) |
+| @greplost/bench | bench | 50 | 27949 | 0 | 30 | 0 | 2 | [MAP](packages/greplost__bench/MAP.md) |
+| gocallgraph | bench/truth/gocallgraph | 1 | 444 | 0 | 15 | 0 | 0 | [MAP](packages/gocallgraph/MAP.md) |
+| pulumigotruth | bench/truth/pulumigotruth | 1 | 588 | 0 | 13 | 0 | 0 | [MAP](packages/pulumigotruth/MAP.md) |
+| tfinspect | bench/truth/tfinspect | 1 | 882 | 0 | 12 | 0 | 0 | [MAP](packages/tfinspect/MAP.md) |
 | greplost | packages/cli | 23 | 3133 | 0 | 5 | 0 | 5 | [MAP](packages/greplost/MAP.md) |
-| @greplost/core | packages/core | 66 | 19782 | 0 | 10 | 6 | 0 | [MAP](packages/greplost__core/MAP.md) |
+| @greplost/core | packages/core | 66 | 19861 | 0 | 10 | 6 | 0 | [MAP](packages/greplost__core/MAP.md) |
 | @greplost/render | packages/render | 16 | 2482 | 0 | 1 | 4 | 1 | [MAP](packages/greplost__render/MAP.md) |
 | @greplost/semantic | packages/semantic | 5 | 1509 | 0 | 4 | 1 | 3 | [MAP](packages/greplost__semantic/MAP.md) |
 | @greplost/sync | packages/sync | 12 | 3487 | 0 | 4 | 4 | 2 | [MAP](packages/greplost__sync/MAP.md) |

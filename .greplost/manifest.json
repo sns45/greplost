@@ -1006,7 +1006,7 @@
       "fanOut": 0,
       "lang": "go",
       "loc": 444,
-      "pkg": "@greplost/bench",
+      "pkg": "gocallgraph",
       "sha256": "13c973701ea8fc2fedbb7d0f655a54bb0f2c3e9004e3ed20e9ab313a298c1532",
       "staleSummary": false
     },
@@ -1071,7 +1071,7 @@
       "fanOut": 0,
       "lang": "go",
       "loc": 588,
-      "pkg": "@greplost/bench",
+      "pkg": "pulumigotruth",
       "sha256": "42ebf165f59f4ede23e15d52be6c5ad4a90f17b9c418249d5b9097d2c40e24e5",
       "staleSummary": false
     },
@@ -1126,7 +1126,7 @@
       "fanOut": 0,
       "lang": "go",
       "loc": 882,
-      "pkg": "@greplost/bench",
+      "pkg": "tfinspect",
       "sha256": "2504ede6190d1f13c7cf70bd346edf5d76ea2ab1985761026c6e4aca50ad17c1",
       "staleSummary": false
     },
@@ -2527,9 +2527,9 @@
       "fanIn": 1,
       "fanOut": 1,
       "lang": "ts",
-      "loc": 401,
+      "loc": 480,
       "pkg": "@greplost/core",
-      "sha256": "57a6a3e0cfb47677d8806d68c00e94781354046def790ab2350f7072c3178ee6",
+      "sha256": "c0a04868107b6d8debd5a99a01ea155ef12c6a2683b3a25e0471aed6d7d2959b",
       "staleSummary": false
     },
     "packages/core/src/resolve/python.ts": {
@@ -3738,15 +3738,15 @@
         "@greplost/core",
         "@greplost/sync"
       ],
-      "files": 53,
-      "loc": 29863,
+      "files": 50,
+      "loc": 27949,
       "path": "bench",
       "rdeps": []
     },
     "@greplost/core": {
       "deps": [],
       "files": 66,
-      "loc": 19782,
+      "loc": 19861,
       "path": "packages/core",
       "rdeps": [
         "@greplost/bench",
@@ -3812,6 +3812,13 @@
         "greplost"
       ]
     },
+    "gocallgraph": {
+      "deps": [],
+      "files": 1,
+      "loc": 444,
+      "path": "bench/truth/gocallgraph",
+      "rdeps": []
+    },
     "greplost": {
       "deps": [
         "@greplost/core",
@@ -3830,6 +3837,20 @@
       "files": 4,
       "loc": 363,
       "path": ".",
+      "rdeps": []
+    },
+    "pulumigotruth": {
+      "deps": [],
+      "files": 1,
+      "loc": 588,
+      "path": "bench/truth/pulumigotruth",
+      "rdeps": []
+    },
+    "tfinspect": {
+      "deps": [],
+      "files": 1,
+      "loc": 882,
+      "path": "bench/truth/tfinspect",
       "rdeps": []
     }
   },
