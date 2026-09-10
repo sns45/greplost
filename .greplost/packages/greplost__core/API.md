@@ -378,8 +378,8 @@
 
 ## packages/core/src/resolve/packages.ts
 
-- `function detectPackages(root: string, files: string[], config: GreplostConfig): PackageInfo[]` L46-58
-- `function packageOf(filePath: string, packages: PackageInfo[]): PackageInfo` L61-79
+- `function detectPackages(root: string, files: string[], config: GreplostConfig): PackageInfo[]` L55-75
+- `function packageOf(filePath: string, packages: PackageInfo[]): PackageInfo` L78-96
 
 ## packages/core/src/resolve/python.ts
 

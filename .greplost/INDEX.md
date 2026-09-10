@@ -23,7 +23,7 @@
 | greplost-monorepo | . | 4 | 363 | 39 | 3 | 0 | 0 | [MAP](packages/greplost-monorepo/MAP.md) |
 | @greplost/bench | bench | 53 | 29863 | 0 | 49 | 0 | 2 | [MAP](packages/greplost__bench/MAP.md) |
 | greplost | packages/cli | 23 | 3133 | 0 | 5 | 0 | 5 | [MAP](packages/greplost/MAP.md) |
-| @greplost/core | packages/core | 66 | 19638 | 0 | 10 | 6 | 0 | [MAP](packages/greplost__core/MAP.md) |
+| @greplost/core | packages/core | 66 | 19704 | 0 | 10 | 6 | 0 | [MAP](packages/greplost__core/MAP.md) |
 | @greplost/render | packages/render | 16 | 2482 | 0 | 1 | 4 | 1 | [MAP](packages/greplost__render/MAP.md) |
 | @greplost/semantic | packages/semantic | 5 | 1509 | 0 | 4 | 1 | 3 | [MAP](packages/greplost__semantic/MAP.md) |
 | @greplost/sync | packages/sync | 12 | 3487 | 0 | 4 | 4 | 2 | [MAP](packages/greplost__sync/MAP.md) |
