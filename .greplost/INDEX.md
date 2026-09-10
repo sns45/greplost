@@ -25,7 +25,7 @@
 | Package | Path | Files | LOC | Nodes | Deps | Fan-in | Fan-out | Map |
 |---|---|---|---|---|---|---|---|---|
 | greplost-monorepo | . | 4 | 366 | 39 | 3 | 0 | 0 | [MAP](packages/greplost-monorepo/MAP.md) |
-| @greplost/bench | bench | 50 | 28375 | 0 | 30 | 0 | 2 | [MAP](packages/greplost__bench/MAP.md) |
+| @greplost/bench | bench | 50 | 28388 | 0 | 30 | 0 | 2 | [MAP](packages/greplost__bench/MAP.md) |
 | gocallgraph | bench/truth/gocallgraph | 1 | 444 | 0 | 15 | 0 | 0 | [MAP](packages/gocallgraph/MAP.md) |
 | pulumigotruth | bench/truth/pulumigotruth | 1 | 588 | 0 | 13 | 0 | 0 | [MAP](packages/pulumigotruth/MAP.md) |
 | tfinspect | bench/truth/tfinspect | 1 | 882 | 0 | 12 | 0 | 0 | [MAP](packages/tfinspect/MAP.md) |

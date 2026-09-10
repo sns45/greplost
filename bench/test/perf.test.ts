@@ -357,6 +357,20 @@ describe("runner speed factor", () => {
     expect(baselineLines(baselinesFor([repoWith("anyq", "full", 110)], priors, machine, speed))).toEqual([]);
   });
 
+  test("the sub-millisecond diagnostic cannot fail the regression rule", () => {
+    const machine = { cpu: "Apple M3 Pro" };
+    const scenarios = [
+      { scenario: "parse-cache-save", ms: { p50: 4.7 } },
+      { scenario: "full", ms: { p50: 480 } },
+    ];
+    const prior = { machine: { cpu: "Apple M3 Pro" }, runner: { factor: 1 }, repos: [{ name: "anyq", files: 230, scenarios }] };
+    // Doubling a 4.7 ms diagnostic is jitter, and it is the one scenario this
+    // suite has always said it never gates.
+    expect(regressedScenarios([repoWith("anyq", "parse-cache-save", 10)], prior, machine, 0.15, 1)).toEqual([]);
+    // The same proportional jump on a gated scenario still fails.
+    expect(regressedScenarios([repoWith("anyq", "full", 960)], prior, machine, 0.15, 1)).toEqual(["anyq/full"]);
+  });
+
   test("past the cap there is no baseline comparison at all, not an empty one", () => {
     const machine = { cpu: "Apple M3 Pro" };
     const priors: PriorResult[] = [

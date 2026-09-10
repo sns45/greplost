@@ -409,6 +409,7 @@
         "ScenarioName",
         "ScenarioResult",
         "Stats",
+        "UNGATED_SCENARIOS",
         "baselineLines",
         "baselinesFor",
         "gateMisses",
@@ -427,9 +428,9 @@
       "fanIn": 0,
       "fanOut": 8,
       "lang": "ts",
-      "loc": 1248,
+      "loc": 1261,
       "pkg": "@greplost/bench",
-      "sha256": "f03ab0569e672378c404e698e8377cfb47e06feb69b690e663d8d9c129cb558e",
+      "sha256": "fe704bbd039380d529ae866432a4483eead2537350b8327e2600fd6d1cdc7e64",
       "staleSummary": false
     },
     "bench/src/replay.ts": {
@@ -3753,7 +3754,7 @@
         "@greplost/sync"
       ],
       "files": 50,
-      "loc": 28375,
+      "loc": 28388,
       "path": "bench",
       "rdeps": []
     },

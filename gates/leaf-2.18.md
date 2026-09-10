@@ -33,6 +33,11 @@ Three things go beyond the letter of ruling 14, which wrote the cap at 4.
 3. **The Bench 3 section merges every pinned perf payload**, because one run measures one repo and
    two runs on one day at one commit write the same file name, so anyq and gin arrive as two
    payloads and pinning both is the only way to keep the ten scenario rows the document had.
+4. **`parse-cache-save` is out of the regression rule** (`UNGATED_SCENARIOS`). The suite has always
+   called it a diagnostic it never gates, and making the gate blocking is what made that matter:
+   its p50 on anyq is 4.7 ms, it swung between 2 and 10 ms across one afternoon, and 15 % of 4.7 ms
+   is the timer's own jitter. Left in, it turned one anyq run in five into `GATE FAIL (regression)`
+   over nothing. It is still measured, still reported and still in the payload.
 
 The scaling rule is stated in the single-tool notes, which is the table `readme:sync` copies into
 README.md, so the rule travels with the P1 and P2 rows a reader actually sees.
@@ -49,10 +54,10 @@ Recorded exceptions to the 500-line rule: `bench/src/perf.ts` is over 500 lines 
 leaf, and the module documents the whole suite: the scenarios, which statistic gates what, the
 regression rule and now the runner factor, none of which reads better split across files).
 
-- [x] G1: both perf test files pass
+- [ ] G1: both perf test files pass
   CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts bench/test/perf-report.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n^ 0 fail$/m
-  EVIDENCE: 200 expect() calls | Ran 27 tests across 2 files. [10.04s]
+  EVIDENCE: pending
 
 - [x] G2: the factor is 1 when the runner is at or faster than the reference, and the ratio when it is slower; -t "the factor is"
   CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts -t "the factor is" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -89,10 +94,10 @@ regression rule and now the runner factor, none of which reads better split acro
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
   EVIDENCE: 4 expect() calls | Ran 1 test across 1 file. [43.00ms]
 
-- [x] G8b: the regression rule compares machine equivalent p50s, both sides divided by the factor of the run they came from; -t "machine equivalent"
+- [ ] G8b: the regression rule compares machine equivalent p50s, both sides divided by the factor of the run they came from; -t "machine equivalent"
   CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts -t "machine equivalent" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
-  EVIDENCE: 6 expect() calls | Ran 1 test across 1 file. [37.00ms]
+  EVIDENCE: pending
 
 - [x] G8c: the Bench 3 section merges every pinned perf payload, newest first; -t "merges the payloads"
   CHECK: FORCE_COLOR=0 bun test bench/test/perf-report.test.ts -t "merges the payloads" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
@@ -109,25 +114,30 @@ regression rule and now the runner factor, none of which reads better split acro
   EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
   EVIDENCE: 8 expect() calls | Ran 2 tests across 1 file. [1.53s]
 
-- [x] G9: the whole bench suite is green
+- [ ] G8f: the diagnostic scenario cannot fail the regression rule, and a gated one still can; -t "diagnostic cannot fail"
+  CHECK: FORCE_COLOR=0 bun test bench/test/perf.test.ts -t "diagnostic cannot fail" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
+  EXPECT: /^ [1-9]\d* pass$\n(?:^ \d+ filtered out$\n)?^ 0 fail$/m
+  EVIDENCE: pending
+
+- [ ] G9: the whole bench suite is green
   CHECK: FORCE_COLOR=0 bun test bench 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^ [1-9]\d* pass$\n^ 0 fail$/m
-  EVIDENCE: 3879 expect() calls | Ran 667 tests across 23 files. [85.19s]
+  EVIDENCE: pending
 
-- [x] G10: every workspace typechecks
+- [ ] G10: every workspace typechecks
   CHECK: FORCE_COLOR=0 bun run typecheck 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /^== scripts$/m
-  EVIDENCE: == bench | == scripts
+  EVIDENCE: pending
 
-- [x] G11: the anyq perf gate prints the factor, the reference and the scaled budget, and passes
+- [ ] G11: the anyq perf gate prints the factor, the reference and the scaled budget, and passes
   CHECK: FORCE_COLOR=0 bun run bench:perf --repo anyq --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g' | grep -E "runner factor|raw 1000ms|GATE"
   EXPECT: /^perf: runner factor \d+\.\d\d \(median \d+ms over 3 builds of fixtures\/tiny-ts, reference \d+ms, budgets scale by max\(1, median \/ reference\), fail above 8\.00\)$\n.*raw 1000ms x \d+\.\d\d.*$\n^perf: GATE PASS$/m
-  EVIDENCE: P1  full build (p50)          <=1000ms (raw 1000ms x 1.00)  446ms | perf: GATE PASS
+  EVIDENCE: pending
 
-- [x] G12: the gin perf gate does the same
+- [ ] G12: the gin perf gate does the same
   CHECK: FORCE_COLOR=0 bun run bench:perf --repo gin --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g' | grep -E "runner factor|raw 1000ms|GATE"
   EXPECT: /^perf: runner factor \d+\.\d\d \(median \d+ms over 3 builds of fixtures\/tiny-ts, reference \d+ms, budgets scale by max\(1, median \/ reference\), fail above 8\.00\)$\n.*raw 1000ms x \d+\.\d\d.*$\n^perf: GATE PASS$/m
-  EVIDENCE: P1  full build (p50)          <=1000ms (raw 1000ms x 1.00)  213ms | perf: GATE PASS
+  EVIDENCE: pending
 
 - [x] G13: both CI perf steps gate on every event, and the workflow still parses
   CHECK: python3 -c "import yaml; d = yaml.safe_load(open('.github/workflows/ci.yml')); s = [x for x in d['jobs']['test']['steps'] if 'performance gate' in x.get('name', '')]; print('perf steps', len(s), 'advisory', sum(1 for x in s if 'continue-on-error' in x))"
@@ -159,12 +169,12 @@ regression rule and now the runner factor, none of which reads better split acro
   EXPECT: /^anyq compared True baseline perf-\d{4}-\d{2}-\d{2}-[0-9a-f]{7}\.json onDisk True$\n^gin compared True baseline perf-\d{4}-\d{2}-\d{2}-[0-9a-f]{7}\.json onDisk True$/m
   EVIDENCE: anyq compared True baseline perf-2026-09-10-c3a74fc.json onDisk True | gin compared True baseline perf-2026-09-10-310089d.json onDisk True
 
-- [x] G18: both test files this leaf wrote are under 500 lines, `perf.ts` excepted above
+- [ ] G18: both test files this leaf wrote are under 500 lines, `perf.ts` excepted above
   CHECK: wc -l bench/test/perf.test.ts bench/test/perf-report.test.ts | awk '/test.ts$/ {if ($1 >= 500) bad = 1} END {print (bad ? "OVER 500" : "both under 500")}'
   EXPECT: /^both under 500$/m
-  EVIDENCE: both under 500
+  EVIDENCE: pending
 
-- [x] G19: no NUL byte reached any file this leaf touched, and no long dash reached the prose it wrote
+- [ ] G19: no NUL byte reached any file this leaf touched, and no long dash reached the prose it wrote
   CHECK: perl -ne 'exit 1 if /\0/' bench/src/perf.ts bench/test/perf.test.ts bench/test/perf-report.test.ts bench/src/report-evals.ts bench/src/report-sections.ts bench/src/report.ts .github/workflows/ci.yml bench/RESULTS.md README.md bench/results/INDEX.json gates/leaf-2.18.md && perl -CSD -ne 'exit 1 if /[\x{2013}\x{2014}]/' bench/src/perf.ts bench/test/perf.test.ts bench/test/perf-report.test.ts bench/src/report-evals.ts bench/src/report-sections.ts bench/src/report.ts gates/leaf-2.18.md && echo "no NUL in 11 files, no long dash in the 7 this leaf wrote"
   EXPECT: /^no NUL in 11 files, no long dash in the 7 this leaf wrote$/m
-  EVIDENCE: no NUL in 11 files, no long dash in the 7 this leaf wrote
+  EVIDENCE: pending

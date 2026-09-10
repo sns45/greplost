@@ -318,6 +318,19 @@ export function scaleTargets(targets: { p1Ms: number; p2Ms: number }, factor: nu
 export const GATED_TIERS: ReadonlySet<string> = new Set(["S", "M"]);
 
 /**
+ * Scenarios the regression rule leaves alone.
+ *
+ * `parse-cache-save` is the diagnostic this suite has always said it never gates
+ * (see the module comment), and the reason shows up the moment the gate is made
+ * blocking: its p50 on anyq is 4.7 ms, it has swung between 2 and 10 ms across
+ * runs of one afternoon, and 15 % of 4.7 ms is 0.7 ms, which is the timer's own
+ * jitter. Left in, it turned one anyq run in five into `GATE FAIL (regression)`
+ * over nothing. It is still measured, still reported and still in the payload;
+ * it just cannot fail a build. Every scenario the spec does gate stays in.
+ */
+export const UNGATED_SCENARIOS: ReadonlySet<string> = new Set(["parse-cache-save"]);
+
+/**
  * The absolute gate ids missed, in id order, against budgets scaled by `factor`.
  *
  * `factor` is the runner speed factor (`runnerFactor`); 1 is the reference
@@ -381,7 +394,7 @@ export function regressedScenarios(
     const before = priorRepos.get(repo.name);
     if (before === undefined) continue;
     for (const scenario of repo.scenarios) {
-      if (scenario.iterations === 0) continue;
+      if (scenario.iterations === 0 || UNGATED_SCENARIOS.has(scenario.scenario)) continue;
       const raw = before.get(scenario.scenario);
       if (raw === undefined || raw <= 0) continue;
       const baseline = normalize(raw, priorFactor);
