@@ -57,8 +57,8 @@ graph LR
 
 | Package | Path | Files | LOC | Depends on | Map |
 |---|---|---|---|---|---|
-| greplost-monorepo | . | 4 | 363 | none | [MAP](../packages/greplost-monorepo/MAP.md) |
-| @greplost/bench | bench | 50 | 27949 | @greplost/core, @greplost/sync | [MAP](../packages/greplost__bench/MAP.md) |
+| greplost-monorepo | . | 4 | 366 | none | [MAP](../packages/greplost-monorepo/MAP.md) |
+| @greplost/bench | bench | 50 | 28388 | @greplost/core, @greplost/sync | [MAP](../packages/greplost__bench/MAP.md) |
 | gocallgraph | bench/truth/gocallgraph | 1 | 444 | none | [MAP](../packages/gocallgraph/MAP.md) |
 | pulumigotruth | bench/truth/pulumigotruth | 1 | 588 | none | [MAP](../packages/pulumigotruth/MAP.md) |
 | tfinspect | bench/truth/tfinspect | 1 | 882 | none | [MAP](../packages/tfinspect/MAP.md) |

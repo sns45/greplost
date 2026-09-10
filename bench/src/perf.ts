@@ -9,6 +9,12 @@
  * committed result *on the same CPU* fails the gate, whatever the absolute
  * numbers say.
  *
+ * P1 and P2 are wall clock, so both budgets are scaled by the **runner speed
+ * factor**: every run measures the machine before it measures anything else and
+ * multiplies the absolute budgets by `max(1, median / RUNNER_REFERENCE_MS)`. A
+ * factor above `MAX_RUNNER_FACTOR` fails the run on its own. See
+ * `RUNNER_REFERENCE_MS` for what is measured and why (ruling 14, 2026-09-10).
+ *
  * **Everything is measured in a child `bun` process** (`perf-child.ts`, which
  * explains why). The parent prepares the checkout, times the process around the
  * child, and reads the child's marked JSON line.
@@ -59,7 +65,7 @@ import { MARKER, type ChildOp, type ChildReport } from "./perf-child.ts";
 // have to build a corpus repo the same way or their numbers are not about the
 // same map.
 import { configFor, writeConfig } from "./replay.ts";
-import { latestResult, writeResult } from "./results-io.ts";
+import { orderedResults, resultsDir, writeResult } from "./results-io.ts";
 
 const SUITE = "perf";
 
@@ -111,6 +117,65 @@ const REGRESSION_TOLERANCE = 0.15;
 
 /** Floating-point slack, so a run exactly at the tolerance is not a regression. */
 const EPSILON = 1e-9;
+
+/**
+ * Runner speed reference (ruling 14, 2026-09-10).
+ *
+ * P1 and P2 are wall clock, so a run of them says as much about the machine as
+ * about greplost, and a shared CI runner used to be either a false failure or a
+ * gate switched off. Every run now measures the machine first, in the same
+ * process and before the timed scenarios: it builds `fixtures/tiny-ts`
+ * `RUNNER_ITERATIONS` times through the same child the scenarios are measured
+ * in, takes the median, and multiplies the absolute budgets by
+ * `max(1, median / RUNNER_REFERENCE_MS)`. A machine at or faster than the
+ * reference is held to the written budget; a slower one is held to a budget
+ * scaled by exactly how much slower it is, and the factor, the reference, the
+ * raw budget and the scaled budget are all printed, so a slow runner is visible
+ * in the report instead of hidden inside a pass.
+ *
+ * This constant is data, not a target: what that machine measured on the day it
+ * was recorded, which is why it carries a date. Measured 2026-09-10 on an Apple
+ * M4 Max (16 cores, 128 GB, macOS 25.6.0, Bun 1.2.21, arm64), the machine
+ * bench/RESULTS.md's perf numbers come from, as the median of eleven medians
+ * taken back to back with nothing else running, which fell between 126 and
+ * 145 ms.
+ *
+ * **Take it on an idle machine.** The same measurement earlier that day ran
+ * from 253 to 822 ms while an IDE held twelve of the sixteen cores and two
+ * other agents benchmarked beside it. That spread is contention, not the
+ * machine, and a reference carrying it would scale every slower machine's
+ * budget by less than the slowdown that machine actually suffers, which is the
+ * false failure this whole mechanism exists to stop. Re-record it the same way,
+ * and say which machine and which day.
+ */
+export const RUNNER_REFERENCE_MS = 135;
+
+/**
+ * Builds behind the median above, fixed so two runs measure the same thing.
+ * Three of them, plus the checkout and the first index they need, is about a
+ * second and a quarter of wall clock on the reference machine: long enough that
+ * one slow build cannot decide the median, short enough to pay on every run.
+ */
+export const RUNNER_ITERATIONS = 3;
+
+/**
+ * The factor above which the run fails on the runner rather than on greplost.
+ *
+ * Eight times slower than the reference is a machine that cannot say anything: a
+ * budget scaled that far no longer bounds anything a user would feel, and a
+ * measurement taken beside three other jobs on a shared core is noise, not a
+ * number. Such a run reports `GATE FAIL (runner)` and drops the target and
+ * regression comparisons, because reporting them would dress noise up as a
+ * verdict about the code.
+ *
+ * Eight rather than four (ruling of 2026-09-10, on review of this leaf): the
+ * reference is measured on an idle machine's performance cores, the same
+ * machine's efficiency cores read 5.12, and `ubuntu-latest` is a four vCPU
+ * virtual machine, so four would fail honest runners for being ordinary rather
+ * than for being unmeasurable. The first factor CI prints decides whether this
+ * number moves again; every run prints it, so the reading will be there.
+ */
+export const MAX_RUNNER_FACTOR = 8;
 
 /** P3 is reported, not gated; this is the line RESULTS.md draws. */
 export const PEAK_RSS_TARGET_BYTES = 500 * 1024 * 1024;
@@ -172,11 +237,26 @@ export interface PerfOptions {
   quiet?: boolean;
   /** Leave the temporary working copies behind (debugging). */
   keep?: boolean;
+  /** Builds behind the runner median; `RUNNER_ITERATIONS` unless a test says otherwise. */
+  runnerIterations?: number;
+}
+
+/** How fast the machine this run happened on is, against the recorded reference. */
+export interface RunnerSpeed {
+  /** Median milliseconds of one `fixtures/tiny-ts` build, measured this run. */
+  measuredMs: number;
+  /** `RUNNER_REFERENCE_MS`, the median the budgets were written against. */
+  referenceMs: number;
+  /** Builds behind `measuredMs`. */
+  iterations: number;
+  /** `max(1, measuredMs / referenceMs)`, to three decimals: what scales the budgets. */
+  factor: number;
 }
 
 export interface PerfRun {
   repos: RepoPerf[];
   machine: MachineProfile;
+  runner: RunnerSpeed;
 }
 
 // ---------------------------------------------------------------------------
@@ -210,11 +290,51 @@ export function targetsFor(files: number): { p1Ms: number; p2Ms: number } {
   return files > 2000 ? { p1Ms: 10_000, p2Ms: 1000 } : { p1Ms: 1000, p2Ms: 500 };
 }
 
+/** Three decimals, so the number in the report is the number in the payload. */
+function round3(value: number): number {
+  return Math.round(value * 1000) / 1000;
+}
+
+/**
+ * `max(1, measuredMs / referenceMs)`: how much slower this machine is than the
+ * one the budgets were written on, and never less than 1.
+ *
+ * A machine faster than the reference is held to the written budget rather than
+ * to a tightened one: the budgets are what a user was promised, not a record to
+ * defend. A measurement or a reference that is not a positive number says
+ * nothing about the machine, so it scales nothing either.
+ */
+export function runnerFactor(measuredMs: number, referenceMs: number = RUNNER_REFERENCE_MS): number {
+  if (!Number.isFinite(measuredMs) || !Number.isFinite(referenceMs) || measuredMs <= 0 || referenceMs <= 0) return 1;
+  return Math.max(1, round3(measuredMs / referenceMs));
+}
+
+/** The absolute budgets a run on this machine is held to. P3 is reported, so nothing scales it. */
+export function scaleTargets(targets: { p1Ms: number; p2Ms: number }, factor: number): { p1Ms: number; p2Ms: number } {
+  return { p1Ms: round3(targets.p1Ms * factor), p2Ms: round3(targets.p2Ms * factor) };
+}
+
 /** Tiers whose absolute P1/P2 targets are gated (bench spec 1.5.5, tech spec 10.5). */
 export const GATED_TIERS: ReadonlySet<string> = new Set(["S", "M"]);
 
 /**
- * The absolute gate ids missed, in id order.
+ * Scenarios the regression rule leaves alone.
+ *
+ * `parse-cache-save` is the diagnostic this suite has always said it never gates
+ * (see the module comment), and the reason shows up the moment the gate is made
+ * blocking: its p50 on anyq is 4.7 ms, it has swung between 2 and 10 ms across
+ * runs of one afternoon, and 15 % of 4.7 ms is 0.7 ms, which is the timer's own
+ * jitter. Left in, it turned one anyq run in five into `GATE FAIL (regression)`
+ * over nothing. It is still measured, still reported and still in the payload;
+ * it just cannot fail a build. Every scenario the spec does gate stays in.
+ */
+export const UNGATED_SCENARIOS: ReadonlySet<string> = new Set(["parse-cache-save"]);
+
+/**
+ * The absolute gate ids missed, in id order, against budgets scaled by `factor`.
+ *
+ * `factor` is the runner speed factor (`runnerFactor`); 1 is the reference
+ * machine and the written budgets.
  *
  * Only tiers S and M are held to P1 and P2. The spec gates them there and
  * nowhere else, and the reason shows up in the numbers: the targets are written
@@ -223,11 +343,11 @@ export const GATED_TIERS: ReadonlySet<string> = new Set(["S", "M"]);
  * rule still applies to every tier, which is what actually catches a slowdown
  * on the large repos.
  */
-export function missedTargets(repos: readonly RepoPerf[]): string[] {
+export function missedTargets(repos: readonly RepoPerf[], factor: number = 1): string[] {
   const missed = new Set<string>();
   for (const repo of repos) {
     if (!GATED_TIERS.has(repo.tier)) continue;
-    const { p1Ms, p2Ms } = targetsFor(repo.files);
+    const { p1Ms, p2Ms } = scaleTargets(targetsFor(repo.files), factor);
     for (const scenario of repo.scenarios) {
       if (scenario.iterations === 0) continue;
       if (scenario.scenario === "full" && scenario.ms.p50 > p1Ms) missed.add("P1");
@@ -241,6 +361,10 @@ export function missedTargets(repos: readonly RepoPerf[]): string[] {
  * Scenarios whose p50 is more than `tolerance` worse than the last committed
  * result, as `<repo>/<scenario>`.
  *
+ * Both p50s are first divided by the runner factor of the run they came from,
+ * so a machine that was three times slower than itself on the day is not read as
+ * a code regression (see the comment in the body).
+ *
  * Silent when there is nothing comparable: no prior result, a prior result from
  * a different CPU, or a prior run that never measured this scenario. A
  * benchmark that invents a baseline is worse than one that admits it has none,
@@ -251,27 +375,186 @@ export function regressedScenarios(
   prior: unknown,
   machine: { cpu: string },
   tolerance: number = REGRESSION_TOLERANCE,
+  factor: number = 1,
 ): string[] {
   const priorRepos = readPriorRepos(prior, machine.cpu);
   if (priorRepos === null) return [];
+  // Both sides are divided by the runner factor of the run they came from, so
+  // the comparison is between two machine-equivalent p50s. "The same CPU" was
+  // always meant to mean "like for like", and one CPU is not one speed: the same
+  // laptop measured beside three other builds is three times slower than itself,
+  // and comparing that against a quiet baseline reports the other builds as a
+  // greplost regression. A payload written before the factor existed has no
+  // factor to divide by and is taken at 1, which is what it was measured as.
+  const priorFactor = readPriorFactor(prior);
+  const normalize = (ms: number, by: number): number => (by > 0 ? ms / by : ms);
 
   const regressed: string[] = [];
   for (const repo of current) {
     const before = priorRepos.get(repo.name);
     if (before === undefined) continue;
     for (const scenario of repo.scenarios) {
-      if (scenario.iterations === 0) continue;
-      const baseline = before.get(scenario.scenario);
-      if (baseline === undefined || baseline <= 0) continue;
+      if (scenario.iterations === 0 || UNGATED_SCENARIOS.has(scenario.scenario)) continue;
+      const raw = before.get(scenario.scenario);
+      if (raw === undefined || raw <= 0) continue;
+      const baseline = normalize(raw, priorFactor);
+      const measured = normalize(scenario.ms.p50, factor);
       // Ratio rather than `baseline * (1 + tolerance)`: 100 * 1.15 is
       // 114.99999999999999 in binary floating point, which would fail a run that
       // came in at exactly the tolerance. EPSILON keeps the boundary inclusive.
-      if ((scenario.ms.p50 - baseline) / baseline > tolerance + EPSILON) {
+      if ((measured - baseline) / baseline > tolerance + EPSILON) {
         regressed.push(`${repo.name}/${scenario.scenario}`);
       }
     }
   }
   return regressed.sort(compareStrings);
+}
+
+/** A committed result a run is allowed to compare itself against. */
+export interface PriorResult {
+  /** Path of the payload file, as `results-io` reported it. */
+  file: string;
+  payload: Record<string, unknown>;
+}
+
+/** One repo's comparison against the newest prior result that measured *that repo*. */
+export interface RepoBaseline {
+  repo: string;
+  /** Whether a prior result measuring this repo was found at all. */
+  compared: boolean;
+  /** The payload's file name, or null when nothing measured this repo. */
+  file: string | null;
+  date: string | null;
+  greplostSha: string | null;
+  /** `<repo>/<scenario>` for each scenario whose machine-equivalent p50 regressed. */
+  regressed: string[];
+}
+
+/**
+ * One baseline per repo, or null when the runner is past the cap.
+ *
+ * **Per repo, because one perf run measures one repo.** `bench:perf --repo anyq`
+ * and `--repo gin` write two payloads, so the single newest result is the other
+ * repo's more often than not; comparing against it found nothing to compare and
+ * reported an empty regression list, which reads exactly like a clean verdict.
+ * Each repo now takes the newest prior payload that actually measured it, and a
+ * repo nothing has measured says so (`compared: false`) instead of passing.
+ *
+ * **Null past the cap.** A machine more than `MAX_RUNNER_FACTOR` slower than the
+ * reference cannot support a p50 comparison any more than it can support P1 and
+ * P2, so the comparison is not made, not printed and not written: `GATE FAIL
+ * (runner)` is the only thing such a run says.
+ */
+export function baselinesFor(
+  repos: readonly RepoPerf[],
+  priors: readonly PriorResult[],
+  machine: { cpu: string },
+  speed: RunnerSpeed,
+  tolerance: number = REGRESSION_TOLERANCE,
+): RepoBaseline[] | null {
+  if (speed.factor > MAX_RUNNER_FACTOR) return null;
+  return repos.map((repo) => {
+    for (const prior of priors) {
+      const priorRepos = readPriorRepos(prior.payload, machine.cpu);
+      const scenarios = priorRepos?.get(repo.name);
+      if (scenarios === undefined || scenarios.size === 0) continue;
+      return {
+        repo: repo.name,
+        compared: true,
+        file: path.basename(prior.file),
+        date: typeof prior.payload["date"] === "string" ? prior.payload["date"] : null,
+        greplostSha: typeof prior.payload["greplostSha"] === "string" ? prior.payload["greplostSha"] : null,
+        regressed: regressedScenarios([repo], prior.payload, machine, tolerance, speed.factor),
+      };
+    }
+    return { repo: repo.name, compared: false, file: null, date: null, greplostSha: null, regressed: [] };
+  });
+}
+
+/** What a run prints about its baselines: one line per repo that has something to say. */
+export function baselineLines(baselines: readonly RepoBaseline[] | null): string[] {
+  if (baselines === null) return [];
+  const out: string[] = [];
+  for (const baseline of baselines) {
+    if (!baseline.compared) {
+      // Said out loud, because "nothing regressed" and "nothing was compared"
+      // are different results and only one of them is good news.
+      out.push(`${SUITE}: no prior measurement for ${baseline.repo}`);
+      continue;
+    }
+    if (baseline.regressed.length === 0) continue;
+    out.push(
+      `${SUITE}: p50 regressed by more than ${Math.round(REGRESSION_TOLERANCE * 100)}% vs ${baseline.file}: ` +
+        baseline.regressed.join(", "),
+    );
+  }
+  return out;
+}
+
+/**
+ * The results a comparison may use, newest first.
+ *
+ * `bench/results/INDEX.json` pins the payload set this repository publishes, and
+ * that set is the baseline: re-pinning is the deliberate act of re-baselining,
+ * so a run left behind by an experiment cannot quietly become the number every
+ * later run is judged against, and a payload from before a scope change stops
+ * being a baseline the moment it stops being published. With nothing pinned for
+ * this suite the fallback is every result on disk, which is what the single
+ * newest result used to be picked from.
+ */
+export function priorResults(dir?: string): PriorResult[] {
+  let all: PriorResult[];
+  try {
+    all = orderedResults(SUITE, dir).map((entry) => ({ file: entry.file, payload: entry.payload }));
+  } catch {
+    return [];
+  }
+  const pinned = pinnedNames(dir);
+  const chosen = pinned.size === 0 ? all : all.filter((entry) => pinned.has(path.basename(entry.file)));
+  return chosen.reverse();
+}
+
+/** The payload file names `INDEX.json` pins for this suite, or an empty set. */
+function pinnedNames(dir?: string): Set<string> {
+  try {
+    const parsed = JSON.parse(readFileSync(path.join(resultsDir(dir), "INDEX.json"), "utf8")) as unknown;
+    if (!isRecord(parsed)) return new Set();
+    const payloads = parsed["payloads"];
+    const listed = isRecord(payloads) ? payloads[SUITE] : undefined;
+    if (!Array.isArray(listed)) return new Set();
+    return new Set(listed.filter((name): name is string => typeof name === "string"));
+  } catch {
+    return new Set();
+  }
+}
+
+/** The runner factor a prior payload was measured at, or 1 when it records none. */
+function readPriorFactor(prior: unknown): number {
+  if (!isRecord(prior)) return 1;
+  const runner = prior["runner"];
+  if (!isRecord(runner)) return 1;
+  const factor = runner["factor"];
+  return typeof factor === "number" && Number.isFinite(factor) && factor > 0 ? factor : 1;
+}
+
+/**
+ * Everything this run failed, as the ids `--gate` prints.
+ *
+ * A runner past `MAX_RUNNER_FACTOR` fails as `runner` and on nothing else: the
+ * scaled budgets no longer bound anything and the p50 comparison is noise, so
+ * naming P1, P2 or a regression beside it would report the machine's mood as a
+ * verdict about the code. Inside the cap the ids are the absolute targets the
+ * scaled budgets missed, plus `regression` when the p50 rule caught something.
+ */
+export function gateMisses(
+  repos: readonly RepoPerf[],
+  speed: RunnerSpeed,
+  regressed: readonly string[],
+): string[] {
+  if (speed.factor > MAX_RUNNER_FACTOR) return ["runner"];
+  const missed = missedTargets(repos, speed.factor);
+  if (regressed.length > 0) missed.push("regression");
+  return missed;
 }
 
 /** `repo -> scenario -> p50` from a prior payload, or null when it cannot be compared. */
@@ -585,11 +868,56 @@ function skipped(name: ScenarioName, reason: string): ScenarioResult {
 // the suite
 // ---------------------------------------------------------------------------
 
+/**
+ * How fast this machine is, measured before anything else is timed.
+ *
+ * The same code path the scenarios use: the fixture is copied into a fresh git
+ * repository, indexed, and then rebuilt `iterations` times by `runScenario`'s
+ * `full` branch, one child process per build, with the structure artifacts
+ * deleted first so every build writes what it claims to. The median of those
+ * builds is the machine's number.
+ *
+ * `GREPLOST_PERF_RUNNER_MS` supplies that median instead of measuring it. It is
+ * for tests, which need a factor they chose rather than one the machine they run
+ * on happened to produce; a real run that sets it is warned about, because a
+ * budget scaled by a number nobody measured is not a gate.
+ */
+async function measureRunnerSpeed(iterations: number): Promise<RunnerSpeed> {
+  const override = Number.parseFloat(process.env["GREPLOST_PERF_RUNNER_MS"] ?? "");
+  if (Number.isFinite(override) && override > 0) {
+    return { measuredMs: override, referenceMs: RUNNER_REFERENCE_MS, iterations: 0, factor: runnerFactor(override) };
+  }
+
+  const root = mkdtempSync(path.join(tmpdir(), "greplost-perf-runner-"));
+  try {
+    const target = fixtureTarget();
+    prepareWorkingCopy(target, root);
+    writeConfig(root, target.config);
+    await init(root, { hooks: false, quiet: true });
+    const measured = runScenario("full", { root, manifest: readManifest(root), iterations, warmups: 0 });
+    return {
+      measuredMs: measured.ms.p50,
+      referenceMs: RUNNER_REFERENCE_MS,
+      iterations: measured.iterations,
+      factor: runnerFactor(measured.ms.p50),
+    };
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
 export async function perf(options: PerfOptions = {}): Promise<PerfRun> {
   const iterations = Math.max(1, options.iterations ?? DEFAULT_ITERATIONS);
   const warmups = Math.max(0, options.warmups ?? DEFAULT_WARMUPS);
   const quiet = options.quiet === true;
   const targets = resolveTargets(options);
+  const runnerIterations = Math.max(1, options.runnerIterations ?? RUNNER_ITERATIONS);
+
+  // Before the timed scenarios, and in the same process: a factor measured after
+  // them, or in another run, would be a different machine state from the one the
+  // numbers it scales were taken in.
+  if (!quiet) console.log(`${SUITE}: measuring runner speed (${runnerIterations} builds of fixtures/tiny-ts)`);
+  const runner = await measureRunnerSpeed(runnerIterations);
 
   const created: string[] = [];
   const repos: RepoPerf[] = [];
@@ -618,13 +946,20 @@ export async function perf(options: PerfOptions = {}): Promise<PerfRun> {
     }
   }
 
-  return { repos, machine: machineProfile() };
+  return { repos, machine: machineProfile(), runner };
+}
+
+/**
+ * `fixtures/tiny-ts` as a target: tier S, because it stands in for a small repo
+ * and gate G6 requires the absolute targets to hold on it. It is also what the
+ * runner factor is measured on, so both uses build the same tree the same way.
+ */
+function fixtureTarget(): Target {
+  return { name: "tiny-ts", origin: "", sha: null, config: undefined, tier: "S" };
 }
 
 function resolveTargets(options: PerfOptions): Target[] {
-  // The fixture is tier S: it stands in for a small repo, and gate G6 requires
-  // the absolute targets to hold on it.
-  if (options.fixture === true) return [{ name: "tiny-ts", origin: "", sha: null, config: undefined, tier: "S" }];
+  if (options.fixture === true) return [fixtureTarget()];
   const args = options.repo === undefined ? ["--tier", options.tier ?? "S"] : ["--repo", options.repo];
   return selectRepos(args).map((entry) => ({
     name: entry.name,
@@ -650,7 +985,34 @@ function printScenario(result: ScenarioResult): void {
   );
 }
 
-function printTable(repos: readonly RepoPerf[]): void {
+/**
+ * The one line that says how fast the machine was, and therefore what the
+ * budgets below it mean. `null` is a run that measured no machine (`--dry-run`),
+ * which says so rather than printing a factor of 1 it never measured.
+ */
+export function runnerLine(speed: RunnerSpeed | null): string {
+  if (speed === null) return `${SUITE}: runner factor not measured (dry run)`;
+  const over = speed.iterations === 0 ? "supplied" : `over ${speed.iterations} builds of fixtures/tiny-ts`;
+  return (
+    `${SUITE}: runner factor ${speed.factor.toFixed(2)} (median ${fmt(speed.measuredMs)} ${over}, ` +
+    `reference ${fmt(speed.referenceMs)}, budgets scale by max(1, median / reference), ` +
+    `fail above ${MAX_RUNNER_FACTOR.toFixed(2)})`
+  );
+}
+
+/**
+ * The whole printed report, as lines.
+ *
+ * Every gated row carries both budgets: the scaled one it was actually held to
+ * and, beside it, the raw one and the factor that produced it. A run on a slow
+ * machine therefore reads as a slow machine rather than as a pass.
+ */
+export function reportLines(repos: readonly RepoPerf[], speed: RunnerSpeed | null): string[] {
+  const factor = speed?.factor ?? 1;
+  const budget = (raw: number): string =>
+    speed === null ? `<=${fmt(raw)}` : `<=${fmt(raw * factor)} (raw ${fmt(raw)} x ${factor.toFixed(2)})`;
+
+  const out: string[] = [runnerLine(speed)];
   for (const repo of repos) {
     const { p1Ms, p2Ms } = targetsFor(repo.files);
     const full = repo.scenarios.find((s) => s.scenario === "full");
@@ -658,15 +1020,16 @@ function printTable(repos: readonly RepoPerf[]): void {
     const ten = repo.scenarios.find((s) => s.scenario === "incremental-10");
     const peak = Math.max(0, ...repo.scenarios.map((s) => s.peakRssBytes));
     const rows: [string, string, string, string][] = [
-      ["P1", "full build (p50)", `<=${fmt(p1Ms)}`, full === undefined ? "not run" : fmt(full.ms.p50)],
+      ["P1", "full build (p50)", budget(p1Ms), full === undefined ? "not run" : fmt(full.ms.p50)],
       [
         "P2",
         "incremental update (p95)",
-        `<=${fmt(p2Ms)}`,
+        budget(p2Ms),
         [single, ten]
           .map((s) => (s === undefined || s.iterations === 0 ? "not run" : fmt(s.ms.p95)))
           .join(" / "),
       ],
+      // P3 is reported and not gated, so the runner factor leaves it alone.
       ["P3", "peak RSS", `<=${mb(PEAK_RSS_TARGET_BYTES)} at 10k files`, mb(peak)],
     ];
     const header: [string, string, string, string] = ["ID", "Metric", "Target", "Measured"];
@@ -675,10 +1038,13 @@ function printTable(repos: readonly RepoPerf[]): void {
     );
     const line = (cells: [string, string, string, string]): string =>
       `  ${cells.map((cell, i) => cell.padEnd(widths[i] ?? 0)).join("  ")}`.trimEnd();
-    console.log(`${SUITE}: ${repo.name} (${repo.files} files)`);
-    console.log(line(header));
-    for (const row of rows) console.log(line(row));
+    out.push(`${SUITE}: ${repo.name} (${repo.files} files)`, line(header), ...rows.map(line));
   }
+  return out;
+}
+
+function printTable(repos: readonly RepoPerf[], speed: RunnerSpeed | null): void {
+  for (const line of reportLines(repos, speed)) console.log(line);
 }
 
 function fmt(ms: number): string {
@@ -746,12 +1112,21 @@ function parseArgs(args: string[]): Options {
  * set for a real run, results are not landing in `bench/results/` and nobody would know.
  */
 function warnOnRedirectedResults(): void {
+  if (process.env["NODE_ENV"] === "test") return;
   const override = process.env["GREPLOST_BENCH_RESULTS_DIR"];
-  if (!override || process.env["NODE_ENV"] === "test") return;
-  console.error(
-    `${SUITE}: warning: GREPLOST_BENCH_RESULTS_DIR is set, so results go to ${override} ` +
-      "instead of bench/results/; that override is meant for tests only",
-  );
+  if (override) {
+    console.error(
+      `${SUITE}: warning: GREPLOST_BENCH_RESULTS_DIR is set, so results go to ${override} ` +
+        "instead of bench/results/; that override is meant for tests only",
+    );
+  }
+  const runner = process.env["GREPLOST_PERF_RUNNER_MS"];
+  if (runner) {
+    console.error(
+      `${SUITE}: warning: GREPLOST_PERF_RUNNER_MS is set, so the runner factor comes from ${runner} ` +
+        "instead of a measurement; that override is meant for tests only",
+    );
+  }
 }
 
 export async function run(args: string[]): Promise<number> {
@@ -784,17 +1159,20 @@ export async function run(args: string[]): Promise<number> {
 
   if (options.dryRun) {
     for (const target of targets) console.log(`${SUITE}: ${target.name} (not run)`);
-    printTable(targets.map((target) => ({ name: target.name, tier: target.tier, files: 0, scenarios: [] })));
+    printTable(
+      targets.map((target) => ({ name: target.name, tier: target.tier, files: 0, scenarios: [] })),
+      null,
+    );
     console.log(`${SUITE}: dry-run ok`);
     return 0;
   }
 
-  // Read the baseline before writing this run's result, or the comparison would
+  // Read the baselines before writing this run's result, or the comparison could
   // find the file it is about to write. The fixture has no baseline by design:
   // twelve files put the measurement inside process-startup noise, where a 15 %
   // rule reports the machine's mood rather than greplost's (gate G6 says the
   // fixture is gated on the absolute targets only).
-  const prior = options.fixture ? undefined : latestResult(SUITE);
+  const priors = options.fixture ? [] : priorResults();
 
   let measured: PerfRun;
   try {
@@ -812,17 +1190,22 @@ export async function run(args: string[]): Promise<number> {
     return 1;
   }
 
-  printTable(measured.repos);
+  printTable(measured.repos, measured.runner);
 
-  const missed = missedTargets(measured.repos);
-  const regressed = regressedScenarios(measured.repos, prior?.payload, measured.machine);
-  if (regressed.length > 0) {
+  // The runner check first. Past the cap `baselinesFor` returns null and nothing
+  // about the baseline is computed, printed or written: a p50 comparison on a
+  // machine that slow is noise, and printing it beside `GATE FAIL (runner)`
+  // would offer a verdict the run cannot support.
+  const baselines = options.fixture ? null : baselinesFor(measured.repos, priors, measured.machine, measured.runner);
+  const regressed = (baselines ?? []).flatMap((baseline) => baseline.regressed).sort(compareStrings);
+  for (const line of baselineLines(baselines)) console.log(line);
+
+  const missed = gateMisses(measured.repos, measured.runner, regressed);
+  if (missed[0] === "runner") {
     console.log(
-      `${SUITE}: p50 regressed by more than ${Math.round(REGRESSION_TOLERANCE * 100)}% vs ${
-        prior?.file ?? "the previous result"
-      }: ${regressed.join(", ")}`,
+      `${SUITE}: the runner is ${measured.runner.factor.toFixed(2)}x slower than the reference ` +
+        `(cap ${MAX_RUNNER_FACTOR.toFixed(2)}x), so this run says nothing about P1 or P2`,
     );
-    missed.push("regression");
   }
 
   writeResult(resultSuite(options.fixture), {
@@ -830,19 +1213,31 @@ export async function run(args: string[]): Promise<number> {
     machine: measured.machine,
     iterations: options.iterations ?? DEFAULT_ITERATIONS,
     warmups: options.warmups ?? DEFAULT_WARMUPS,
+    // Both budgets travel with the run: `targets` is what the spec wrote, and
+    // `scaledTargets` is what this machine was actually held to. The factor and
+    // the median that produced it are in `runner`, so a reader of the payload
+    // alone can redo the arithmetic and see how slow the machine was.
     targets: Object.fromEntries(measured.repos.map((repo) => [repo.name, targetsFor(repo.files)])),
+    scaledTargets: Object.fromEntries(
+      measured.repos.map((repo) => [repo.name, scaleTargets(targetsFor(repo.files), measured.runner.factor)]),
+    ),
+    runner: measured.runner,
+    maxRunnerFactor: MAX_RUNNER_FACTOR,
     peakRssTargetBytes: PEAK_RSS_TARGET_BYTES,
     repos: measured.repos,
-    // Which run this was compared against, by name *and* by the date and sha
-    // inside it: a same-day rerun at the same commit writes to the same path, so
-    // the filename alone does not say which measurement the comparison used.
+    // What each repo was compared against, by file name *and* by the date and
+    // sha inside it: a same-day rerun at the same commit writes to the same
+    // path, so the filename alone does not say which measurement was used.
+    // `null` is a run that made no comparison at all, which is the fixture (no
+    // baseline by design) and any run past the runner cap. `compared` is false
+    // whenever some repo in the run had nothing to compare against, so an empty
+    // `regressed` can never be read as a clean verdict on its own.
     baseline:
-      prior === undefined
+      baselines === null
         ? null
         : {
-            file: path.basename(prior.file),
-            date: prior.payload["date"] ?? null,
-            greplostSha: prior.payload["greplostSha"] ?? null,
+            compared: baselines.length > 0 && baselines.every((baseline) => baseline.compared),
+            repos: baselines,
             regressed,
           },
     gate: options.gate ? { passed: missed.length === 0, missed } : null,

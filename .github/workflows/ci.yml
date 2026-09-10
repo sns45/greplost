@@ -125,13 +125,16 @@ jobs:
         run: bun run bench:replay --repo pydantic --commits 100 --gate
       # The two repos build 1 measured, and the two the absolute P1/P2 budgets in
       # RESULTS.md were set against.
+      # Both steps gate on every event again (issue 14, ruling 14 of 2026-09-10).
+      # They used to be advisory off the nightly schedule, because the budgets are
+      # wall clock and a shared runner is slower than the machine they were
+      # written on. Each run now measures this runner first, as the median of
+      # three fixtures/tiny-ts builds against a reference recorded in
+      # bench/src/perf.ts, and holds the run to a budget scaled by
+      # max(1, median / reference); the factor, the reference and both budgets are
+      # printed. A runner more than four times slower than the reference fails as
+      # GATE FAIL (runner) rather than pretending to measure greplost.
       - name: performance gate (anyq)
-        # Wall-clock budgets on a shared runner are advisory on pushes and tags (issue 14); the
-        # nightly schedule still enforces them.
-        continue-on-error: ${{ github.event_name != 'schedule' }}
         run: bun run bench:perf --repo anyq --gate
       - name: performance gate (gin)
-        # Wall-clock budgets on a shared runner are advisory on pushes and tags (issue 14); the
-        # nightly schedule still enforces them.
-        continue-on-error: ${{ github.event_name != 'schedule' }}
         run: bun run bench:perf --repo gin --gate

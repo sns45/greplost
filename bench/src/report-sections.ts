@@ -104,6 +104,15 @@ export function singleTool(
       "structural payload when it reports one, and otherwise derived from it, a file every one of whose " +
       "truth items was missed is a file nothing was extracted from, and it is `n/a` with `not measured` " +
       "when the payload carries neither. Nothing about it is asserted here.",
+    // Beside the P1 and P2 rows rather than in the Bench 3 section, because this
+    // is the table `readme:sync` copies into README.md, and the budget in its
+    // target column is not the budget the machine that produced the measured
+    // column was held to (ruling 14 of 2026-09-10, cap of 8 on review).
+    "P1 and P2 are wall clock, so every perf run measures the machine first, as the median of a fixed " +
+      "number of `fixtures/tiny-ts` builds against a reference recorded in `bench/src/perf.ts`, multiplies " +
+      "the budgets in this table by `max(1, measured / reference)`, prints the raw budget, the factor, the " +
+      "reference and the scaled budget beside each other, and fails the gate on the runner alone once that " +
+      "factor passes 8, where the machine is too slow to say anything about greplost.",
   ];
   if (replay === null || perf === null || agent === null || mapquality === null) {
     notes.push(

@@ -1,0 +1,352 @@
+{
+  "baseline": {
+    "compared": true,
+    "regressed": [],
+    "repos": [
+      {
+        "compared": true,
+        "date": "2026-09-10",
+        "file": "perf-2026-09-10-c3a74fc.json",
+        "greplostSha": "c3a74fc",
+        "regressed": [],
+        "repo": "anyq"
+      }
+    ]
+  },
+  "corpus": [
+    {
+      "name": "anyq",
+      "sha": "657f41c2cbe06039c0d82cf81c17759d1149eda2"
+    }
+  ],
+  "date": "2026-09-10",
+  "gate": {
+    "missed": [],
+    "passed": true
+  },
+  "greplostSha": "756639e",
+  "iterations": 10,
+  "machine": {
+    "arch": "arm64",
+    "bun": "1.2.21",
+    "cores": 16,
+    "cpu": "Apple M4 Max",
+    "go": "go version go1.25.3 darwin/arm64",
+    "greplostSha": "756639e",
+    "greplostVersion": "0.1.0",
+    "memoryGB": 128,
+    "node": "24.3.0",
+    "os": "Darwin 25.6.0"
+  },
+  "maxRunnerFactor": 8,
+  "peakRssTargetBytes": 524288000,
+  "recordedAt": "2026-09-10T13:30:38.584Z",
+  "repos": [
+    {
+      "files": 230,
+      "name": "anyq",
+      "scenarios": [
+        {
+          "detail": {
+            "cached": 0,
+            "childMs": 659,
+            "deleted": 0,
+            "dirty": 0,
+            "maxRssRaw": 346636288,
+            "reparsed": 230,
+            "rssBytes": 346636288,
+            "written": 331
+          },
+          "iterations": 10,
+          "ms": {
+            "max": 658,
+            "mean": 519.3,
+            "min": 451,
+            "p50": 482,
+            "p95": 658,
+            "samples": [
+              586,
+              563,
+              566,
+              461,
+              514,
+              459,
+              453,
+              451,
+              482,
+              658
+            ]
+          },
+          "peakRssBytes": 346636288,
+          "processMs": {
+            "max": 703.6120839999994,
+            "mean": 572.6628751000001,
+            "min": 494.7126250000001,
+            "p50": 525.6588329999995,
+            "p95": 703.6120839999994,
+            "samples": [
+              632.3428330000002,
+              648.3733749999997,
+              614.4334170000002,
+              505.0484580000002,
+              602.3699999999999,
+              503.1729170000008,
+              496.90420900000026,
+              494.7126250000001,
+              525.6588329999995,
+              703.6120839999994
+            ]
+          },
+          "scenario": "full"
+        },
+        {
+          "detail": {
+            "cached": 229,
+            "childMs": 354,
+            "deleted": 0,
+            "dirty": 1,
+            "maxRssRaw": 210911232,
+            "reparsed": 1,
+            "rssBytes": 210911232,
+            "written": 1
+          },
+          "iterations": 10,
+          "ms": {
+            "max": 354,
+            "mean": 281,
+            "min": 230,
+            "p50": 244,
+            "p95": 354,
+            "samples": [
+              288,
+              244,
+              230,
+              352,
+              337,
+              290,
+              243,
+              240,
+              232,
+              354
+            ]
+          },
+          "peakRssBytes": 215318528,
+          "processMs": {
+            "max": 409.00112499999886,
+            "mean": 328.94427919999964,
+            "min": 272.88970899999913,
+            "p50": 287.25095800000054,
+            "p95": 409.00112499999886,
+            "samples": [
+              330.6465840000001,
+              287.25095800000054,
+              272.88970899999913,
+              394.86562500000036,
+              409.00112499999886,
+              353.6012090000004,
+              286.76304100000016,
+              283.24570799999856,
+              274.4588329999988,
+              396.71999999999935
+            ]
+          },
+          "scenario": "incremental-1",
+          "subject": [
+            "apps/testers/redis-streams/src/routes/publish.ts"
+          ]
+        },
+        {
+          "detail": {
+            "cached": 220,
+            "childMs": 289,
+            "deleted": 0,
+            "dirty": 10,
+            "maxRssRaw": 274186240,
+            "reparsed": 10,
+            "rssBytes": 274186240,
+            "written": 1
+          },
+          "iterations": 10,
+          "ms": {
+            "max": 396,
+            "mean": 294,
+            "min": 254,
+            "p50": 265,
+            "p95": 396,
+            "samples": [
+              254,
+              257,
+              257,
+              258,
+              303,
+              265,
+              396,
+              353,
+              308,
+              289
+            ]
+          },
+          "peakRssBytes": 280002560,
+          "processMs": {
+            "max": 439.65341699999954,
+            "mean": 345.16504580000054,
+            "min": 297.8075829999998,
+            "p50": 335.72412500000064,
+            "p95": 439.65341699999954,
+            "samples": [
+              297.8075829999998,
+              300.09329199999956,
+              300.7091250000012,
+              307.1976250000007,
+              350.87975000000006,
+              335.72412500000064,
+              439.65341699999954,
+              397.9805410000008,
+              377.65041700000074,
+              343.95458300000246
+            ]
+          },
+          "scenario": "incremental-10",
+          "subject": [
+            "apps/testers/redis-streams/src/routes/publish.ts",
+            "apps/testers/sns/src/routes/stats.ts",
+            "go/core/serialization.go",
+            "go/redis/producer.go",
+            "packages/core/src/serialization/json.ts",
+            "packages/kafka/src/config.ts",
+            "packages/kafka/src/consumer.ts",
+            "packages/memory/src/config.ts",
+            "packages/memory/src/registry.ts",
+            "packages/rabbitmq/src/index.ts"
+          ]
+        },
+        {
+          "detail": {
+            "cached": 230,
+            "childMs": 246,
+            "deleted": 0,
+            "dirty": 44,
+            "maxRssRaw": 143196160,
+            "reparsed": 0,
+            "rssBytes": 143212544,
+            "written": 57
+          },
+          "iterations": 10,
+          "ms": {
+            "max": 439,
+            "mean": 315.7,
+            "min": 236,
+            "p50": 246,
+            "p95": 439,
+            "samples": [
+              436,
+              242,
+              236,
+              335,
+              246,
+              439,
+              242,
+              438,
+              297,
+              246
+            ]
+          },
+          "peakRssBytes": 144015360,
+          "processMs": {
+            "max": 481.5794160000005,
+            "mean": 362.55880400000024,
+            "min": 279.0243330000012,
+            "p50": 292.2140830000026,
+            "p95": 481.5794160000005,
+            "samples": [
+              479.028542,
+              292.2140830000026,
+              279.0243330000012,
+              391.3888339999976,
+              289.30704200000037,
+              481.5794160000005,
+              286.0778329999994,
+              480.9424160000017,
+              355.99120799999946,
+              290.0343329999996
+            ]
+          },
+          "scenario": "package-rename",
+          "subject": [
+            "packages/core"
+          ]
+        },
+        {
+          "detail": {
+            "childMs": 13,
+            "entries": 218,
+            "maxRssRaw": 90226688,
+            "rssBytes": 90243072
+          },
+          "iterations": 10,
+          "ms": {
+            "max": 10.448,
+            "mean": 5.4221,
+            "min": 4.474,
+            "p50": 4.717,
+            "p95": 10.448,
+            "samples": [
+              5.283,
+              5.068,
+              4.717,
+              4.734,
+              4.474,
+              4.556,
+              4.661,
+              4.518,
+              5.762,
+              10.448
+            ]
+          },
+          "peakRssBytes": 100040704,
+          "processMs": {
+            "max": 87.13629100000253,
+            "mean": 60.481149900001036,
+            "min": 48.426375000002736,
+            "p50": 51.670208000003186,
+            "p95": 87.13629100000253,
+            "samples": [
+              65.26941599999918,
+              73.89949999999953,
+              58.798249999999825,
+              50.14595900000131,
+              48.762917000000016,
+              71.82287500000166,
+              48.87970800000039,
+              48.426375000002736,
+              51.670208000003186,
+              87.13629100000253
+            ]
+          },
+          "scenario": "parse-cache-save"
+        }
+      ],
+      "tier": "S"
+    }
+  ],
+  "runner": {
+    "factor": 1.052,
+    "iterations": 3,
+    "measuredMs": 142,
+    "referenceMs": 135
+  },
+  "scaledTargets": {
+    "anyq": {
+      "p1Ms": 1052,
+      "p2Ms": 526
+    }
+  },
+  "suite": "perf",
+  "targets": {
+    "anyq": {
+      "p1Ms": 1000,
+      "p2Ms": 500
+    }
+  },
+  "warmups": 2
+}

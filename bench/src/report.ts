@@ -282,6 +282,12 @@ export function buildModel(options: BuildOptions = {}): ReportModel {
   // section takes each id from the newest run that measured it and keeps that
   // run's corpus on the row.
   const headtoheads = loadAll("headtohead", dir);
+  // Every pinned perf payload, oldest first, for the same reason: one perf run
+  // measures one repo, so the two repos the absolute budgets were set against
+  // are two payloads. With nothing pinned this is every perf result on disk,
+  // which the section merges newest first, so a stale run can only fill a gap
+  // the newest one left, never overwrite it.
+  const perfs = loadAll("perf", dir);
   const human = load("human");
 
   const machineSource = machineWithSource([headtohead, structural, perf, mapquality, replay, agent]);
@@ -305,7 +311,7 @@ export function buildModel(options: BuildOptions = {}): ReportModel {
     sections: {
       eval1: eval1Section(structural, assetsRel),
       eval2: eval2Section(replay),
-      bench3: bench3Section(perf, assetsRel),
+      bench3: bench3Section(perfs, assetsRel),
       eval4: eval4Section(agent, assetsRel),
       eval5: eval5Section(human),
       mapquality: mapqualitySection(mapquality),

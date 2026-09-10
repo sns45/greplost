@@ -288,16 +288,45 @@ function runOfScenario(scenario: { repo: string | null; files: number | null } |
   return run === undefined ? {} : { run };
 }
 
-export function bench3Section(payload: Payload | null, assetsRel: string): EvalSection {
+/**
+ * Bench 3, from every perf payload the index pins.
+ *
+ * One perf run measures one repo (`bench:perf --repo <name>`) and two runs on
+ * one day at one commit write the same file name, so the two repos the budgets
+ * were set against arrive as two payloads rather than one. The section merges
+ * them newest first, which is `headToHeadFrom`'s rule for the same reason: a
+ * repo measured in more than one payload keeps its newest numbers, and one
+ * measured in only the older payload is still shown rather than silently
+ * dropped. Rows are sorted by name, so the merge order never reaches the table.
+ * The provenance line is the newest payload's, and the note below names each
+ * payload with the repos it carried when there is more than one.
+ */
+export function bench3Section(payloads: readonly Payload[], assetsRel: string): EvalSection {
   const section = emptySection();
-  if (payload === null) {
+  const ordered = [...payloads].reverse();
+  const payload = ordered[0];
+  if (payload === undefined) {
     section.notes.push("Run `bun bench/src/cli.ts perf --fixture` (or `--tier S`) to fill this section.");
     return section;
   }
   section.ran = true;
   section.provenance = provenanceOf(payload);
 
-  const scenarios = scenariosOf(payload);
+  const seen = new Set<string>();
+  const scenarios = ordered
+    .flatMap((entry) => scenariosOf(entry))
+    .filter((scenario) => (seen.has(scenario.name) ? false : seen.add(scenario.name)))
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  if (ordered.length > 1) {
+    section.notes.push(
+      `The rows above merge ${ordered.length} perf payloads, newest first: ${ordered
+        .map((entry) => {
+          const repos = [...new Set(scenariosOf(entry).map((s) => s.repo ?? "?"))].sort();
+          return `\`${entry.file.split("/").pop() ?? entry.file}\` (${repos.join(", ")})`;
+        })
+        .join(", ")}. One perf run measures one repo, and a repo measured in more than one payload keeps its newest numbers.`,
+    );
+  }
   const full = scenarios.find((s) => /full|build|cold/i.test(s.name)) ?? scenarios[0];
   const incremental = scenarios.find((s) => /incremental|single|edit/i.test(s.name)) ?? scenarios[1] ?? full;
   const peakRss = scenarios.reduce<number | null>((max, s) => (s.rss === null ? max : Math.max(max ?? 0, s.rss)), null);

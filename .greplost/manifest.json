@@ -8,9 +8,9 @@
       "fanIn": 0,
       "fanOut": 0,
       "lang": "yaml",
-      "loc": 137,
+      "loc": 140,
       "pkg": "greplost-monorepo",
-      "sha256": "56063b6c5d75bd01d2787a6e3b196a6599c8ab85767fd397801a710012764c53",
+      "sha256": "bb6acb9373abf174d260369244ab95f951230fd98fcb01f9cbbceb7adfdebace",
       "staleSummary": false
     },
     ".github/workflows/publish.yml": {
@@ -395,27 +395,42 @@
       "blast": 0,
       "exports": [
         "GATED_TIERS",
+        "MAX_RUNNER_FACTOR",
         "PEAK_RSS_TARGET_BYTES",
         "PerfOptions",
         "PerfRun",
+        "PriorResult",
+        "RUNNER_ITERATIONS",
+        "RUNNER_REFERENCE_MS",
+        "RepoBaseline",
         "RepoPerf",
+        "RunnerSpeed",
         "SCENARIOS",
         "ScenarioName",
         "ScenarioResult",
         "Stats",
+        "UNGATED_SCENARIOS",
+        "baselineLines",
+        "baselinesFor",
+        "gateMisses",
         "missedTargets",
         "perf",
+        "priorResults",
         "regressedScenarios",
+        "reportLines",
         "run",
+        "runnerFactor",
+        "runnerLine",
+        "scaleTargets",
         "summarize",
         "targetsFor"
       ],
       "fanIn": 0,
       "fanOut": 8,
       "lang": "ts",
-      "loc": 866,
+      "loc": 1261,
       "pkg": "@greplost/bench",
-      "sha256": "e3fddd73b2911f8f676568c9e52e8f19c29591da4f0e3a6cbdbcb1e44b982010",
+      "sha256": "fe704bbd039380d529ae866432a4483eead2537350b8327e2600fd6d1cdc7e64",
       "staleSummary": false
     },
     "bench/src/replay.ts": {
@@ -479,9 +494,9 @@
       "fanIn": 1,
       "fanOut": 4,
       "lang": "ts",
-      "loc": 601,
+      "loc": 630,
       "pkg": "@greplost/bench",
-      "sha256": "c32b35193c42aa2efacf1f405d1bff0a763b9e31cb95cf30bef2363cd1b7bce5",
+      "sha256": "af1355fa67bc112f93b9b07ac558f50c576474da0ecf79fa5bcdb578539a427b",
       "staleSummary": false
     },
     "bench/src/report-payload.ts": {
@@ -535,9 +550,9 @@
       "fanIn": 1,
       "fanOut": 3,
       "lang": "ts",
-      "loc": 439,
+      "loc": 448,
       "pkg": "@greplost/bench",
-      "sha256": "dc7ddcf43cfab1997263e7e73f1fba29407bf3381f34ba7987982c3d5f0d455d",
+      "sha256": "460b6d5d1bf6b2f60d00efac626b6a4af7f51e0f71e89dd5cfa21c59779f7801",
       "staleSummary": false
     },
     "bench/src/report.ts": {
@@ -553,9 +568,9 @@
       "fanIn": 0,
       "fanOut": 7,
       "lang": "ts",
-      "loc": 418,
+      "loc": 424,
       "pkg": "@greplost/bench",
-      "sha256": "0d34f6577f957dd479236c40e58a4d77ad84bc42ddac8ae173e41652bea0a1df",
+      "sha256": "d24830a7296ae4cc51f11f292b01653a68d2b666719bdde664eb89ea5124df6f",
       "staleSummary": false
     },
     "bench/src/results-io.ts": {
@@ -3739,7 +3754,7 @@
         "@greplost/sync"
       ],
       "files": 50,
-      "loc": 27949,
+      "loc": 28388,
       "path": "bench",
       "rdeps": []
     },
@@ -3835,7 +3850,7 @@
     "greplost-monorepo": {
       "deps": [],
       "files": 4,
-      "loc": 363,
+      "loc": 366,
       "path": ".",
       "rdeps": []
     },

@@ -14,14 +14,24 @@ import path from "node:path";
 
 import { peakRssBytes } from "../src/perf-child.ts";
 import {
+  MAX_RUNNER_FACTOR,
+  RUNNER_ITERATIONS,
+  RUNNER_REFERENCE_MS,
   SCENARIOS,
+  baselineLines,
+  baselinesFor,
+  gateMisses,
   missedTargets,
   perf,
   regressedScenarios,
   run,
+  runnerFactor,
+  scaleTargets,
   summarize,
   targetsFor,
+  type PriorResult,
   type RepoPerf,
+  type RunnerSpeed,
 } from "../src/perf.ts";
 
 const temporaries: string[] = [];
@@ -151,7 +161,14 @@ describe("perf report", () => {
   });
 
   test("the fixture run reports p50, p95 and peak RSS per scenario", async () => {
-    const { repos } = await perf({ fixture: true, iterations: 2, warmups: 0 });
+    const { repos, runner } = await perf({ fixture: true, iterations: 2, warmups: 0, runnerIterations: 2 });
+    // The runner factor is measured, not assumed: two real builds of the fixture
+    // through the same child the scenarios use, against the recorded reference.
+    expect(runner.iterations).toBe(2);
+    expect(runner.measuredMs).toBeGreaterThan(0);
+    expect(runner.referenceMs).toBe(RUNNER_REFERENCE_MS);
+    expect(runner.factor).toBeGreaterThanOrEqual(1);
+    expect(runner.factor).toBe(runnerFactor(runner.measuredMs, RUNNER_REFERENCE_MS));
     expect(repos).toHaveLength(1);
     const repo = repos[0] as RepoPerf;
     expect(repo.name).toBe("tiny-ts");
@@ -174,7 +191,7 @@ describe("perf report", () => {
   }, 300_000);
 
   test("every timed iteration does the work its scenario claims", async () => {
-    const { repos } = await perf({ fixture: true, iterations: 2, warmups: 0 });
+    const { repos } = await perf({ fixture: true, iterations: 2, warmups: 0, runnerIterations: 1 });
     const scenarios = new Map((repos[0] as RepoPerf).scenarios.map((s) => [s.scenario, s]));
     const detailOf = (name: string): Record<string, number> => scenarios.get(name)?.detail ?? {};
 
@@ -199,11 +216,194 @@ describe("perf report", () => {
   }, 300_000);
 });
 
+describe("runner speed factor", () => {
+  const speedOf = (measuredMs: number): RunnerSpeed => ({
+    measuredMs,
+    referenceMs: 100,
+    iterations: RUNNER_ITERATIONS,
+    factor: runnerFactor(measuredMs, 100),
+  });
+
+  test("the factor is 1 when the runner is at or faster than the reference", () => {
+    expect(runnerFactor(100, 100)).toBe(1);
+    expect(runnerFactor(50, 100)).toBe(1);
+    expect(runnerFactor(1, 100)).toBe(1);
+    // A reference or a measurement that is not a positive number says nothing
+    // about the machine, so it must not scale a budget either way.
+    expect(runnerFactor(0, 100)).toBe(1);
+    expect(runnerFactor(100, 0)).toBe(1);
+    expect(runnerFactor(Number.NaN, 100)).toBe(1);
+  });
+
+  test("the factor is the ratio when the runner is slower", () => {
+    expect(runnerFactor(150, 100)).toBe(1.5);
+    expect(runnerFactor(400, 100)).toBe(4);
+    expect(runnerFactor(1000, 100)).toBe(10);
+    // Three decimals, so the number in the report is the number in the payload.
+    expect(runnerFactor(1234, 1000)).toBe(1.234);
+  });
+
+  test("the budgets scale by the factor and nothing else", () => {
+    expect(scaleTargets({ p1Ms: 1000, p2Ms: 500 }, 1)).toEqual({ p1Ms: 1000, p2Ms: 500 });
+    expect(scaleTargets({ p1Ms: 1000, p2Ms: 500 }, 2.5)).toEqual({ p1Ms: 2500, p2Ms: 1250 });
+    expect(scaleTargets({ p1Ms: 10_000, p2Ms: 1000 }, 1.5)).toEqual({ p1Ms: 15_000, p2Ms: 1500 });
+  });
+
+  test("a scaled budget is what the absolute targets are gated against", () => {
+    // 1400 ms of full build misses a 1000 ms budget and clears a 2000 ms one.
+    expect(missedTargets([repoWith("anyq", "full", 1400)])).toEqual(["P1"]);
+    expect(missedTargets([repoWith("anyq", "full", 1400)], 1)).toEqual(["P1"]);
+    expect(missedTargets([repoWith("anyq", "full", 1400)], 2)).toEqual([]);
+    // The same for P2, which is gated on p95.
+    expect(missedTargets([repoWith("anyq", "incremental-1", 100, 700)], 1)).toEqual(["P2"]);
+    expect(missedTargets([repoWith("anyq", "incremental-1", 100, 700)], 2)).toEqual([]);
+    // Exactly at the scaled budget passes.
+    expect(missedTargets([repoWith("anyq", "full", 1500)], 1.5)).toEqual([]);
+  });
+
+  test("a factor above the cap fails on its own, whatever the scaled budgets say", () => {
+    const fast = speedOf(100);
+    const slow = speedOf(100 * MAX_RUNNER_FACTOR + 1);
+    expect(slow.factor).toBeGreaterThan(MAX_RUNNER_FACTOR);
+
+    // A machine that slow says nothing about greplost, so the target and the
+    // regression comparisons are dropped rather than reported beside it.
+    expect(gateMisses([repoWith("anyq", "full", 9_000_000)], slow, ["anyq/full"])).toEqual(["runner"]);
+    expect(gateMisses([repoWith("anyq", "full", 100)], slow, [])).toEqual(["runner"]);
+    // At the cap exactly, the run still counts.
+    expect(gateMisses([repoWith("anyq", "full", 100)], speedOf(100 * MAX_RUNNER_FACTOR), [])).toEqual([]);
+    // Inside the cap the misses are the target ids, plus the regression rule.
+    expect(gateMisses([repoWith("anyq", "full", 1400)], fast, [])).toEqual(["P1"]);
+    expect(gateMisses([repoWith("anyq", "full", 100)], fast, ["anyq/full"])).toEqual(["regression"]);
+    expect(gateMisses([repoWith("anyq", "full", 1400)], fast, ["anyq/full"])).toEqual(["P1", "regression"]);
+  });
+
+  test("the regression rule compares machine equivalent p50s, not wall clock", () => {
+    const machine = { cpu: "Apple M3 Pro" };
+    // A baseline measured on a machine three times slower than the reference: its
+    // 300 ms is 100 ms of the reference machine's time.
+    const slowPrior = {
+      machine: { cpu: "Apple M3 Pro" },
+      runner: { factor: 3 },
+      repos: [{ name: "anyq", files: 148, scenarios: [{ scenario: "full", ms: { p50: 300 } }] }],
+    };
+    const tolerance = 0.15;
+    // 110 ms on a quiet machine is 10 % worse than the baseline's 100, not 63 % better.
+    expect(regressedScenarios([repoWith("anyq", "full", 110)], slowPrior, machine, tolerance, 1)).toEqual([]);
+    expect(regressedScenarios([repoWith("anyq", "full", 130)], slowPrior, machine, tolerance, 1)).toEqual(["anyq/full"]);
+    // The same run measured on the same slow machine: 330 ms is 110 ms equivalent.
+    expect(regressedScenarios([repoWith("anyq", "full", 330)], slowPrior, machine, tolerance, 3)).toEqual([]);
+    expect(regressedScenarios([repoWith("anyq", "full", 390)], slowPrior, machine, tolerance, 3)).toEqual(["anyq/full"]);
+
+    // A payload written before the factor existed is taken at 1, which is what it
+    // was measured as.
+    const oldPrior = {
+      machine: { cpu: "Apple M3 Pro" },
+      repos: [{ name: "anyq", files: 148, scenarios: [{ scenario: "full", ms: { p50: 100 } }] }],
+    };
+    expect(regressedScenarios([repoWith("anyq", "full", 130)], oldPrior, machine, tolerance, 1)).toEqual(["anyq/full"]);
+    // Three times slower on the day, and the same code: not a regression.
+    expect(regressedScenarios([repoWith("anyq", "full", 330)], oldPrior, machine, tolerance, 3)).toEqual([]);
+  });
+
+  test("the baseline is the newest prior payload that measured this repo", () => {
+    const machine = { cpu: "Apple M3 Pro" };
+    const prior = (sha: string, repo: string, p50: number): PriorResult => ({
+      file: `/results/perf-2026-09-10-${sha}.json`,
+      payload: {
+        date: "2026-09-10",
+        greplostSha: sha,
+        machine: { cpu: "Apple M3 Pro" },
+        runner: { factor: 1 },
+        repos: [{ name: repo, files: 148, scenarios: [{ scenario: "full", ms: { p50 } }] }],
+      },
+    });
+    // Newest first, and the newest one measured the other repo: one perf run
+    // measures one repo, so the newest payload of all is usually not this repo's.
+    const priors = [prior("bbbbbbb", "gin", 135), prior("aaaaaaa", "anyq", 100)];
+    const speed = speedOf(100);
+
+    const found = baselinesFor([repoWith("anyq", "full", 130)], priors, machine, speed);
+    expect(found).toHaveLength(1);
+    expect(found?.[0]?.compared).toBe(true);
+    expect(found?.[0]?.file).toBe("perf-2026-09-10-aaaaaaa.json");
+    expect(found?.[0]?.greplostSha).toBe("aaaaaaa");
+    expect(found?.[0]?.regressed).toEqual(["anyq/full"]);
+    // The same repo inside the tolerance is compared and clean.
+    expect(baselinesFor([repoWith("anyq", "full", 110)], priors, machine, speed)?.[0]?.regressed).toEqual([]);
+
+    // No payload measured this repo: `compared: false`, never an empty list that
+    // reads as a clean verdict.
+    const unmeasured = baselinesFor([repoWith("hono", "full", 130)], priors, machine, speed);
+    expect(unmeasured?.[0]).toEqual({
+      repo: "hono",
+      compared: false,
+      file: null,
+      date: null,
+      greplostSha: null,
+      regressed: [],
+    });
+    expect(baselinesFor([repoWith("anyq", "full", 130)], [], machine, speed)?.[0]?.compared).toBe(false);
+
+    // A payload from another CPU is not this repo's baseline either.
+    const other = [{ ...prior("ccccccc", "anyq", 100), payload: { ...prior("ccccccc", "anyq", 100).payload, machine: { cpu: "Some Other CPU" } } }];
+    expect(baselinesFor([repoWith("anyq", "full", 900)], other, machine, speed)?.[0]?.compared).toBe(false);
+
+    // What the run prints, in both branches.
+    expect(baselineLines(found)).toEqual([
+      "perf: p50 regressed by more than 15% vs perf-2026-09-10-aaaaaaa.json: anyq/full",
+    ]);
+    expect(baselineLines(unmeasured)).toEqual(["perf: no prior measurement for hono"]);
+    expect(baselineLines(baselinesFor([repoWith("anyq", "full", 110)], priors, machine, speed))).toEqual([]);
+  });
+
+  test("the sub-millisecond diagnostic cannot fail the regression rule", () => {
+    const machine = { cpu: "Apple M3 Pro" };
+    const scenarios = [
+      { scenario: "parse-cache-save", ms: { p50: 4.7 } },
+      { scenario: "full", ms: { p50: 480 } },
+    ];
+    const prior = { machine: { cpu: "Apple M3 Pro" }, runner: { factor: 1 }, repos: [{ name: "anyq", files: 230, scenarios }] };
+    // Doubling a 4.7 ms diagnostic is jitter, and it is the one scenario this
+    // suite has always said it never gates.
+    expect(regressedScenarios([repoWith("anyq", "parse-cache-save", 10)], prior, machine, 0.15, 1)).toEqual([]);
+    // The same proportional jump on a gated scenario still fails.
+    expect(regressedScenarios([repoWith("anyq", "full", 960)], prior, machine, 0.15, 1)).toEqual(["anyq/full"]);
+  });
+
+  test("past the cap there is no baseline comparison at all, not an empty one", () => {
+    const machine = { cpu: "Apple M3 Pro" };
+    const priors: PriorResult[] = [
+      {
+        file: "/results/perf-2026-09-10-aaaaaaa.json",
+        payload: {
+          machine: { cpu: "Apple M3 Pro" },
+          runner: { factor: 1 },
+          repos: [{ name: "anyq", files: 148, scenarios: [{ scenario: "full", ms: { p50: 100 } }] }],
+        },
+      },
+    ];
+    const over = speedOf(100 * MAX_RUNNER_FACTOR + 1);
+    expect(over.factor).toBeGreaterThan(MAX_RUNNER_FACTOR);
+    // Null, not []: the p50 comparison is noise on a machine that slow, so the
+    // run prints no regression line and writes no `baseline.regressed`.
+    expect(baselinesFor([repoWith("anyq", "full", 9000)], priors, machine, over)).toBeNull();
+    expect(baselineLines(null)).toEqual([]);
+    // At the cap exactly the comparison still happens.
+    expect(baselinesFor([repoWith("anyq", "full", 9000)], priors, machine, speedOf(100 * MAX_RUNNER_FACTOR))).toHaveLength(1);
+  });
+});
+
 describe("perf run", () => {
   test("--fixture --gate passes the absolute targets and writes a result", async () => {
     const results = scratch("results");
     const previous = process.env["GREPLOST_BENCH_RESULTS_DIR"];
     process.env["GREPLOST_BENCH_RESULTS_DIR"] = results;
+    // The factor is measured for real here, and that is what makes this test
+    // survive a loaded machine: the whole bench suite runs its files in
+    // parallel, so the twelve-file fixture can take longer than the 500 ms P2
+    // budget, and the run is held to a budget scaled by exactly how much slower
+    // the machine was when it measured itself.
     try {
       const code = await run(["--fixture", "--gate", "--iterations", "2", "--warmups", "0"]);
       expect(code).toBe(0);
@@ -231,6 +431,46 @@ describe("perf run", () => {
       expect(scenario["peakRssBytes"]).toBeDefined();
     }
     expect((payload["gate"] as Record<string, unknown>)["passed"]).toBe(true);
+
+    // The runner factor, the reference and the measurement behind it travel with
+    // the run, beside both the raw and the scaled budgets.
+    const runner = payload["runner"] as Record<string, unknown>;
+    const factor = runner["factor"] as number;
+    expect(runner["referenceMs"]).toBe(RUNNER_REFERENCE_MS);
+    expect(runner["measuredMs"]).toBeGreaterThan(0);
+    expect(runner["iterations"]).toBe(RUNNER_ITERATIONS);
+    expect(factor).toBe(runnerFactor(runner["measuredMs"] as number, RUNNER_REFERENCE_MS));
+    expect(payload["maxRunnerFactor"]).toBe(MAX_RUNNER_FACTOR);
+    expect(payload["targets"]).toEqual({ "tiny-ts": { p1Ms: 1000, p2Ms: 500 } });
+    expect(payload["scaledTargets"]).toEqual({ "tiny-ts": scaleTargets({ p1Ms: 1000, p2Ms: 500 }, factor) });
+  }, 300_000);
+
+  test("a runner past the cap is GATE FAIL (runner), and the payload says so", async () => {
+    const results = scratch("cap-results");
+    const previous = process.env["GREPLOST_BENCH_RESULTS_DIR"];
+    process.env["GREPLOST_BENCH_RESULTS_DIR"] = results;
+    // The one place the supplied median earns its keep: a machine five times
+    // slower than the reference is not something a test can arrange, and the cap
+    // is the whole point of measuring the runner at all.
+    process.env["GREPLOST_PERF_RUNNER_MS"] = String(RUNNER_REFERENCE_MS * (MAX_RUNNER_FACTOR + 1));
+    let code: number;
+    try {
+      code = await run(["--fixture", "--gate", "--iterations", "1", "--warmups", "0"]);
+    } finally {
+      if (previous === undefined) delete process.env["GREPLOST_BENCH_RESULTS_DIR"];
+      else process.env["GREPLOST_BENCH_RESULTS_DIR"] = previous;
+      delete process.env["GREPLOST_PERF_RUNNER_MS"];
+    }
+    expect(code).toBe(1);
+
+    const files = readdirSync(results).filter((name) => name.startsWith("perf-"));
+    const payload = JSON.parse(readFileSync(path.join(results, files[0] as string), "utf8")) as Record<string, unknown>;
+    expect((payload["runner"] as Record<string, unknown>)["factor"]).toBe(MAX_RUNNER_FACTOR + 1);
+    // `runner` alone: the scaled budgets and the p50 comparison are both noise on
+    // a machine that slow, so nothing else is claimed about the run, and the
+    // baseline is absent rather than an empty comparison.
+    expect(payload["gate"]).toEqual({ passed: false, missed: ["runner"] });
+    expect(payload["baseline"]).toBeNull();
   }, 300_000);
 
   test("--dry-run produces the output shape without measuring", async () => {
