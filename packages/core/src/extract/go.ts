@@ -16,6 +16,12 @@
  * written and a call site is the callee text. `resolve/go.ts` turns those into
  * package-directory targets and call edges.
  *
+ * Go records one callee shape the shared `CallSite.callee` contract calls
+ * dropped, `x.f.m` (build 2.2, leaf 2.17): a struct writes down the type of
+ * every field, so one hop through a field is as decidable as a call on the
+ * receiver itself, and `resolve/go.ts` resolves it with the same promotion,
+ * shadowing and ambiguity rules. A second hop is not recorded.
+ *
  * The text helpers come from `ts-signature.ts`: they are pure functions of a
  * node and the source, with nothing TypeScript-specific in them.
  */
@@ -31,7 +37,7 @@ import type {
   Lang,
 } from "../schema.ts";
 import { compareStrings, symbolId } from "../schema.ts";
-import { calleeText, firstResultType, structShape, typedLocals } from "./go-types.ts";
+import { calleeText, firstResultType, structShape, typeParameterNames, typedLocals } from "./go-types.ts";
 import { clip, field, lineOf, spanOf } from "./ts-signature.ts";
 
 /** Node types whose children carry the specs of a parenthesised declaration group. */
@@ -256,13 +262,15 @@ function collectTypes(state: GoState, node: Node): void {
     const typeNode = field(spec, "type");
     const end = typeBodyStart(typeNode) ?? spec.endIndex;
     const signature = clip(`type ${state.source.slice(spec.startIndex, Math.max(end, spec.startIndex))}`);
-    // A struct body carries two facts no signature keeps: the embedded types,
-    // which are the type's promoted method sets, and the field names, which
-    // shadow any promoted method they collide with.
-    const shape = structShape(typeNode);
+    // A struct body carries three facts no signature keeps: the embedded types,
+    // which are the type's promoted method sets, the field names, which shadow
+    // any promoted method they collide with, and the type each field was
+    // written with, which is what makes `x.f.m()` decidable (leaf 2.17).
+    const shape = structShape(typeNode, typeParameterNames(spec));
     const meta: Record<string, string> = {};
     if (shape.embeds.length > 0) meta["embeds"] = shape.embeds.join(",");
     if (shape.fields.length > 0) meta["fields"] = shape.fields.join(",");
+    if (shape.fieldTypes.length > 0) meta["fieldTypes"] = shape.fieldTypes.join(",");
     const attributes = Object.keys(meta).length === 0 ? undefined : meta;
     addDeclaration(state, nameNode.text, typeKind(typeNode), signature, spec, undefined, attributes);
   }
@@ -376,6 +384,8 @@ function scopeOf(node: Node): Scope {
  */
 function withheld(callee: string, caller: string, scope: Scope | null): boolean {
   if (scope === null) return false;
+  // The object is the first segment, in `x.m` and in `x.f.m` alike: what a
+  // local binding shadows is the name the call is written against.
   const dot = callee.indexOf(".");
   if (dot === -1) return scope.bound.has(callee);
   const object = callee.slice(0, dot);

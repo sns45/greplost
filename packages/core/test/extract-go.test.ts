@@ -258,6 +258,37 @@ const Attempts = 3
     expect(decl(record, "Anon").meta).toBeUndefined();
   });
 
+  test("a struct records the named type of every field that has one", () => {
+    // The field types are what makes `x.f.m()` decidable (build 2.2, leaf 2.17):
+    // pointers are stripped, and a type no declaration could carry - predeclared,
+    // slice, map, function - is left out rather than written down as noise.
+    const record = extract(
+      'package a\n\nimport "x/core"\n\ntype C struct {\n\t*core.Base\n\tname string\n\tc *Consumer\n' +
+        "\tcfg core.Config\n\txs []Consumer\n\tm map[string]Consumer\n\thandle func() error\n}\n",
+    );
+    expect(decl(record, "C").meta).toEqual({
+      embeds: "core.Base",
+      fields: "c,cfg,handle,m,name,xs",
+      fieldTypes: "c:Consumer,cfg:core.Config",
+    });
+    // A type parameter names no declaration either: `v T` is whatever the
+    // instantiation passed, which this file does not know.
+    expect(decl(extract("package a\n\ntype Box[T any] struct{ v T; c *Consumer }\n"), "Box").meta).toEqual({
+      fields: "c,v",
+      fieldTypes: "c:Consumer",
+    });
+  });
+
+  test("a call through one field is recorded and a deeper chain is not", () => {
+    const record = extract(
+      "package a\n\nfunc (b *batcher) process() {\n\tb.c.ApplyStrategy()\n\tb.c.Logger.Error()\n\tb.f().m()\n}\n",
+    );
+    // `b.c.Logger.Error` is two field hops and `b.f().m` is a call on a call:
+    // neither names a value whose type the file wrote down. The inner `b.f()`
+    // is a call on the receiver and is recorded as it always was.
+    expect(record.calls.map((c) => c.callee)).toEqual(["b.c.ApplyStrategy", "b.f"]);
+  });
+
   test("a declaration records the local receivers its own calls use", () => {
     const record = extract(
       "package a\n\ntype delivery struct{}\n\nfunc (c *Consumer) Park() {\n\td := &delivery{}\n" +
@@ -321,7 +352,7 @@ func (s *Store) Put() {}
 });
 
 describe("extract-go call sites", () => {
-  test("identifiers, one-level selectors and receiver calls", () => {
+  test("identifiers, one field hop and receiver calls", () => {
     const record = extract(`package a
 
 import "fmt"
@@ -339,12 +370,15 @@ func (s *Store) Put() {
 	defer s.set()
 }
 `);
-    // `s.data.get()` is a deeper chain and `f()` calls the local `f`, which
-    // shadows package scope: neither is a call site the resolver could ever use.
+    // `s.data.get()` is one field hop, which `Store` decides by writing down
+    // the type of `data` (build 2.2, leaf 2.17). `f()` calls the local `f`,
+    // which shadows package scope, and is not a call site the resolver could
+    // ever use.
     expect(record.calls).toEqual([
       { caller: "Store.Put", callee: "s.set", line: 8 },
       { caller: "Store.Put", callee: "New", line: 9 },
       { caller: "Store.Put", callee: "fmt.Println", line: 10 },
+      { caller: "Store.Put", callee: "s.data.get", line: 11 },
       { caller: "Store.Put", callee: "New", line: 12 },
       { caller: "Store.Put", callee: "s.set", line: 14 },
       { caller: "Store.Put", callee: "s.set", line: 15 },
@@ -1048,6 +1082,226 @@ describe("resolve-go calls", () => {
         "app/main.go",
       ),
     ).toEqual([]);
+  });
+
+  // -------------------------------------------------------------------------
+  // one field hop: `x.f.m()` (build 2.2, leaf 2.17)
+  // -------------------------------------------------------------------------
+
+  describe("a field of a decidable receiver", () => {
+    /** The package the evaluation repo promotes its retry strategy from. */
+    const CORE =
+      "package core\n\ntype BaseConsumer struct{}\n\n" +
+      "func (b *BaseConsumer) ApplyStrategy() error { return nil }\n";
+    /** A consumer that promotes `ApplyStrategy` from the base it embeds. */
+    const CONSUMER =
+      'package pubsub\n\nimport "example.com/m/core"\n\n' +
+      "type Consumer struct {\n\t*core.BaseConsumer\n\tcfg int\n}\n\n";
+
+    test("a pointer-typed field reaches the method its own type promotes", () => {
+      // anyq's `go/pubsub/batcher.go:99`: `b` is the receiver, `c` is a field
+      // written `*Consumer`, and `Consumer` embeds `*core.BaseConsumer`.
+      expect(
+        resolveCalls(
+          {
+            "core/base.go": CORE,
+            "pubsub/batcher.go":
+              `${CONSUMER}type batcher struct {\n\tc *Consumer\n\tsize int\n}\n\n` +
+              "func (b *batcher) process() error { return b.c.ApplyStrategy() }\n",
+          },
+          "pubsub/batcher.go",
+        ),
+      ).toEqual(["b.c.ApplyStrategy -> core/base.go#BaseConsumer.ApplyStrategy (high)"]);
+    });
+
+    test("a value-typed field resolves exactly as a pointer-typed one does", () => {
+      for (const written of ["c Consumer", "c *Consumer"]) {
+        expect(
+          resolveCalls(
+            {
+              "pubsub/a.go":
+                "package pubsub\n\ntype Consumer struct{}\n\nfunc (c *Consumer) Close() error { return nil }\n\n" +
+                `type batcher struct {\n\t${written}\n}\n\n` +
+                "func (b *batcher) stop() error { return b.c.Close() }\n",
+            },
+            "pubsub/a.go",
+          ),
+        ).toEqual(["b.c.Close -> pubsub/a.go#Consumer.Close (high)"]);
+      }
+    });
+
+    test("the object may be a typed local or a typed parameter", () => {
+      const sources = (body: string): Record<string, string> => ({
+        "pubsub/a.go":
+          "package pubsub\n\ntype Consumer struct{}\n\nfunc (c *Consumer) Close() error { return nil }\n\n" +
+          `type batcher struct {\n\tc *Consumer\n}\n\n${body}`,
+      });
+      expect(
+        resolveCalls(sources("func Run() error {\n\tb := &batcher{}\n\treturn b.c.Close()\n}\n"), "pubsub/a.go"),
+      ).toEqual(["b.c.Close -> pubsub/a.go#Consumer.Close (high)"]);
+      expect(resolveCalls(sources("func Run(b *batcher) error { return b.c.Close() }\n"), "pubsub/a.go")).toEqual([
+        "b.c.Close -> pubsub/a.go#Consumer.Close (high)",
+      ]);
+    });
+
+    test("an interface-typed field never resolves", () => {
+      // The field holds whatever concrete type was assigned to it, which no
+      // rule here can name, so the call is dropped rather than guessed.
+      expect(
+        resolveCalls(
+          {
+            "pubsub/a.go":
+              "package pubsub\n\ntype Handler interface{ Handle() error }\n\n" +
+              "type batcher struct {\n\th Handler\n}\n\n" +
+              "func (b *batcher) run() error { return b.h.Handle() }\n",
+          },
+          "pubsub/a.go",
+        ),
+      ).toEqual(["b.h.Handle -> (dropped)"]);
+    });
+
+    test("a second field hop is never recorded at all", () => {
+      // `b.c.Logger.Error()` would need the type of `b.c.Logger`, which is one
+      // hop past what the extractor writes down.
+      expect(
+        resolveCalls(
+          {
+            "pubsub/a.go":
+              "package pubsub\n\ntype Logger struct{}\n\nfunc (l *Logger) Error() {}\n\n" +
+              "type Consumer struct {\n\tLogger *Logger\n}\n\ntype batcher struct {\n\tc *Consumer\n}\n\n" +
+              "func (b *batcher) run() { b.c.Logger.Error() }\n",
+          },
+          "pubsub/a.go",
+        ),
+      ).toEqual([]);
+    });
+
+    test("a field on the way to the method shadows it", () => {
+      // `Consumer` declares a field called `Close`, so Go's selector picks the
+      // field and the promoted `Base.Close` is unreachable.
+      expect(
+        resolveCalls(
+          {
+            "pubsub/a.go":
+              "package pubsub\n\ntype Base struct{}\n\nfunc (b *Base) Close() error { return nil }\n\n" +
+              "type Consumer struct {\n\tClose func() error\n\t*Base\n}\n\n" +
+              "type batcher struct {\n\tc *Consumer\n}\n\n" +
+              "func (b *batcher) stop() error { return b.c.Close() }\n",
+          },
+          "pubsub/a.go",
+        ),
+      ).toEqual(["b.c.Close -> (dropped)"]);
+    });
+
+    test("two embedded types supplying the member drop the call rather than guess", () => {
+      expect(
+        resolveCalls(
+          {
+            "pubsub/a.go":
+              "package pubsub\n\ntype A struct{}\n\nfunc (a *A) Close() {}\n\ntype B struct{}\n\n" +
+              "func (b *B) Close() {}\n\ntype Consumer struct {\n\tA\n\tB\n}\n\n" +
+              "type batcher struct {\n\tc *Consumer\n}\n\nfunc (b *batcher) stop() { b.c.Close() }\n",
+          },
+          "pubsub/a.go",
+        ),
+      ).toEqual(["b.c.Close -> (dropped)"]);
+    });
+
+    test("a field whose type names no indexed package resolves nothing", () => {
+      expect(
+        resolveCalls(
+          {
+            "pubsub/a.go":
+              'package pubsub\n\nimport "sync"\n\ntype batcher struct {\n\tmu *sync.Mutex\n}\n\n' +
+              "func (b *batcher) lock() { b.mu.Lock() }\n",
+          },
+          "pubsub/a.go",
+        ),
+      ).toEqual(["b.mu.Lock -> (dropped)"]);
+    });
+
+    test("a name that is not a field of the receiver's type resolves nothing", () => {
+      expect(
+        resolveCalls(
+          {
+            "pubsub/a.go":
+              "package pubsub\n\ntype Consumer struct{}\n\nfunc (c *Consumer) Close() {}\n\n" +
+              "type batcher struct {\n\tc *Consumer\n}\n\nfunc (b *batcher) stop() { b.other.Close() }\n",
+          },
+          "pubsub/a.go",
+        ),
+      ).toEqual(["b.other.Close -> (dropped)"]);
+    });
+
+    test("a package-qualified object is not a field access", () => {
+      // `store.Default.Put()` selects a package-level variable, whose type this
+      // file never wrote down.
+      expect(
+        resolveCalls(
+          {
+            "store/a.go": "package store\n\ntype Store struct{}\n\nfunc (s *Store) Put() {}\n\nvar Default = &Store{}\n",
+            "app/main.go": 'package main\n\nimport "example.com/m/store"\n\nfunc main() { store.Default.Put() }\n',
+          },
+          "app/main.go",
+        ),
+      ).toEqual(["store.Default.Put -> (dropped)"]);
+    });
+
+    test("an untyped local is withheld before it reaches the field rule", () => {
+      expect(
+        resolveCalls(
+          {
+            "pubsub/a.go":
+              "package pubsub\n\ntype Consumer struct{}\n\nfunc (c *Consumer) Close() {}\n\n" +
+              "type batcher struct {\n\tc *Consumer\n}\n\n" +
+              "func Run(xs []*batcher) {\n\tb := xs[0]\n\tb.c.Close()\n}\n",
+          },
+          "pubsub/a.go",
+        ),
+      ).toEqual([]);
+    });
+
+    test("two build-tag variants of one struct never merge their fields", () => {
+      expect(
+        resolveCalls(
+          {
+            "pubsub/linux.go":
+              "//go:build linux\n\npackage pubsub\n\ntype Consumer struct{}\n\nfunc (c *Consumer) Close() {}\n\n" +
+              "type batcher struct {\n\tc *Consumer\n}\n",
+            "pubsub/other.go":
+              "//go:build !linux\n\npackage pubsub\n\ntype batcher struct {\n\tc int\n}\n",
+            "pubsub/run.go": "package pubsub\n\nfunc Run(b *batcher) { b.c.Close() }\n",
+          },
+          "pubsub/run.go",
+        ),
+      ).toEqual(["b.c.Close -> (dropped)"]);
+    });
+
+    test("the batcher fixture: one file, every field situation at once", () => {
+      // The shape the evaluator's miss came from, with the five refusals beside
+      // the two resolutions, so one run says both halves of the rule.
+      const sources = {
+        "core/base.go": CORE,
+        "pubsub/batcher.go":
+          `${CONSUMER}type Handler interface{ Handle() error }\n\n` +
+          "type Logger struct{}\n\nfunc (l *Logger) Error() {}\n\n" +
+          "type Twin struct{}\n\nfunc (t *Twin) Flush() {}\n\ntype Other struct{}\n\n" +
+          "func (o *Other) Flush() {}\n\ntype Both struct {\n\tTwin\n\tOther\n}\n\n" +
+          "type Shadowed struct {\n\tClose func() error\n\t*Consumer\n}\n\n" +
+          "func (c *Consumer) Close() error { return nil }\n\n" +
+          "type batcher struct {\n\tc *Consumer\n\tvalue Consumer\n\th Handler\n\tlog *Logger\n" +
+          "\tboth *Both\n\tshadow *Shadowed\n}\n\n" +
+          "func (b *batcher) process() {\n\t_ = b.c.ApplyStrategy()\n\t_ = b.value.Close()\n" +
+          "\t_ = b.h.Handle()\n\tb.both.Flush()\n\t_ = b.shadow.Close()\n\tb.c.Logger.Error()\n}\n",
+      };
+      expect(resolveCalls(sources, "pubsub/batcher.go")).toEqual([
+        "b.c.ApplyStrategy -> core/base.go#BaseConsumer.ApplyStrategy (high)",
+        "b.value.Close -> pubsub/batcher.go#Consumer.Close (high)",
+        "b.h.Handle -> (dropped)",
+        "b.both.Flush -> (dropped)",
+        "b.shadow.Close -> (dropped)",
+      ]);
+    });
   });
 
   test("the six probe shapes of the evaluation fixture", () => {
