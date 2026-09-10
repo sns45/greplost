@@ -49,101 +49,101 @@ before this leaf; the module documents two jobs, import resolution and call link
 it would need a re-export shim in `graph/link.ts`, which this leaf does not own), and
 `packages/core/test/extract-go.test.ts` is 1469 lines (a test file, 1215 before this leaf).
 
-- [ ] G1: the Go extraction, resolution and call-linking test file passes
+- [x] G1: the Go extraction, resolution and call-linking test file passes
   CHECK: FORCE_COLOR=0 bun test packages/core/test/extract-go.test.ts 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: pending
+  EVIDENCE: 142 expect() calls | Ran 103 tests across 1 file. [853.00ms]
 
-- [ ] G2: every field-hop rule resolves or refuses as the ruling fixes it, pointer and value
+- [x] G2: every field-hop rule resolves or refuses as the ruling fixes it, pointer and value
       fields, typed local and typed parameter objects, the interface field, the second hop, the
       shadowing field, the ambiguous embed, the unindexed package, the unknown field, the
       package-qualified object, the untyped local and the two build-tag variants; -t "field of a
       decidable receiver"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/extract-go.test.ts -t "field of a decidable receiver" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: pending
+  EVIDENCE: 15 expect() calls | Ran 13 tests across 1 file. [197.00ms]
 
-- [ ] G3: a struct records the named type of every field that has one, sorted, with predeclared,
+- [x] G3: a struct records the named type of every field that has one, sorted, with predeclared,
       slice, map, function and type-parameter fields left out; -t "named type of every field"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/extract-go.test.ts -t "named type of every field" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: pending
+  EVIDENCE: 2 expect() calls | Ran 1 test across 1 file. [176.00ms]
 
-- [ ] G4: the extractor records one field hop and never a second one, nor a call on a call;
+- [x] G4: the extractor records one field hop and never a second one, nor a call on a call;
       -t "call through one field"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/extract-go.test.ts -t "call through one field" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: pending
+  EVIDENCE: 1 expect() calls | Ran 1 test across 1 file. [286.00ms]
 
-- [ ] G5: the written fixture answers all six situations in one file, two resolutions and four
+- [x] G5: the written fixture answers all six situations in one file, two resolutions and four
       refusals; -t "batcher fixture"
   CHECK: FORCE_COLOR=0 bun test packages/core/test/extract-go.test.ts -t "batcher fixture" 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n(?: \d+ filtered out\n)? 0 fail/
-  EVIDENCE: pending
+  EVIDENCE: 1 expect() calls | Ran 1 test across 1 file. [188.00ms]
 
-- [ ] G6: the core suite is green
+- [x] G6: the core suite is green
   CHECK: FORCE_COLOR=0 bun test packages/core 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: pending
+  EVIDENCE: 2388 expect() calls | Ran 1007 tests across 24 files. [20.43s]
 
-- [ ] G7: every package and the bench suite are green
+- [x] G7: every package and the bench suite are green
   CHECK: FORCE_COLOR=0 bun test packages bench 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: / [1-9]\d* pass\n 0 fail/
-  EVIDENCE: pending
+  EVIDENCE: 17766 expect() calls | Ran 2273 tests across 69 files. [117.52s]
 
-- [ ] G8: every workspace typechecks
+- [x] G8: every workspace typechecks
   CHECK: FORCE_COLOR=0 bun run typecheck 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: /== scripts\s*$/
-  EVIDENCE: pending
+  EVIDENCE: == bench | == scripts
 
-- [ ] G9: gin keeps call-edge precision 1.000 with no false positive, and gains recall
+- [x] G9: gin keeps call-edge precision 1.000 with no false positive, and gains recall
   CHECK: FORCE_COLOR=0 bun run bench:structural --repo gin --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g' | grep -E "S3|GATE"
   EXPECT: /call edge precision \(confidence=high\) +>=0\.95 +1\.000 +recall [\d.]+, tp \d+, fp 0/
-  EVIDENCE: pending
+  EVIDENCE: S3  call edge precision (confidence=high)  >=0.95           1.000          recall 0.704, tp 451, fp 0, fn 190 | structural: GATE PASS
 
-- [ ] G10: the same on pulumi-go
+- [x] G10: the same on pulumi-go
   CHECK: FORCE_COLOR=0 bun run bench:structural --repo pulumi-go --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g' | grep -E "S3|GATE"
   EXPECT: /call edge precision \(confidence=high\) +>=0\.95 +1\.000 +recall [\d.]+, tp \d+, fp 0/
-  EVIDENCE: pending
+  EVIDENCE: S3  call edge precision (confidence=high)  >=0.95           1.000          recall 1.000, tp 24, fp 0, fn 0 | structural: GATE PASS
 
-- [ ] G11: the same on bubbletea, the third Go repo of the corpus
+- [x] G11: the same on bubbletea, the third Go repo of the corpus
   CHECK: FORCE_COLOR=0 bun run bench:structural --repo bubbletea --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g' | grep -E "S3|GATE"
   EXPECT: /call edge precision \(confidence=high\) +>=0\.95 +1\.000 +recall [\d.]+, tp \d+, fp 0/
-  EVIDENCE: pending
+  EVIDENCE: S3  call edge precision (confidence=high)  >=0.95           1.000          recall 0.461, tp 88, fp 0, fn 103 | structural: GATE PASS
 
-- [ ] G12: S1 to S4 pass on the pinned fixture
+- [x] G12: S1 to S4 pass on the pinned fixture
   CHECK: FORCE_COLOR=0 bun run bench:structural --fixture tiny-go --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g'
   EXPECT: structural: GATE PASS
-  EVIDENCE: pending
+  EVIDENCE: S6  signal node precision                  >=0.95           n/a            not measured by this oracle | structural: GATE PASS
 
-- [ ] G13: on a copy of the evaluator's repo, `query BaseConsumer.ApplyStrategy --json` lists the
+- [x] G13: on a copy of the evaluator's repo, `query BaseConsumer.ApplyStrategy --json` lists the
       batcher among the callers, and the count rises from 16 to 17
   CHECK: S=/private/tmp/claude-501/-Users-shantanu-dev-greplost/36f19a14-277a-4aa9-91cc-30733a56ea7b/scratchpad; rm -rf $S/gate217-anyq && cp -R /Users/shantanu/.claude/jobs/36f19a14/tmp/anyq $S/gate217-anyq && rm -rf $S/gate217-anyq/.greplost && FORCE_COLOR=0 bun packages/cli/src/main.ts init --no-hooks --root $S/gate217-anyq >/dev/null && FORCE_COLOR=0 bun packages/cli/src/main.ts query BaseConsumer.ApplyStrategy --json --root $S/gate217-anyq > $S/gate217-anyq.json; echo "callers=$(grep -c '"from"' $S/gate217-anyq.json) batcher=$(grep -c 'go/pubsub/batcher.go#batcher.process' $S/gate217-anyq.json)"
   EXPECT: callers=17 batcher=1
-  EVIDENCE: pending
+  EVIDENCE: callers=17 batcher=1
 
-- [ ] G14: the edge that closes the issue is the one written at `go/pubsub/batcher.go:99`
+- [x] G14: the edge that closes the issue is the one written at `go/pubsub/batcher.go:99`
   CHECK: S=/private/tmp/claude-501/-Users-shantanu-dev-greplost/36f19a14-277a-4aa9-91cc-30733a56ea7b/scratchpad; grep -o '"from":"go/pubsub/batcher.go#batcher.process","kind":"call","line":99,"to":"go/core/base.go#BaseConsumer.ApplyStrategy"' $S/gate217-anyq/.greplost/graph/calls.jsonl
   EXPECT: "from":"go/pubsub/batcher.go#batcher.process","kind":"call","line":99,"to":"go/core/base.go#BaseConsumer.ApplyStrategy"
-  EVIDENCE: pending
+  EVIDENCE: "from":"go/pubsub/batcher.go#batcher.process","kind":"call","line":99,"to":"go/core/base.go#BaseConsumer.ApplyStrategy"
 
-- [ ] G15: `batcher.process` gains that one edge and no other, so the two `b.c.Logger.Error(...)`
+- [x] G15: `batcher.process` gains that one edge and no other, so the two `b.c.Logger.Error(...)`
       calls at lines 101 and 112, which are a second field hop, resolved nothing
   CHECK: S=/private/tmp/claude-501/-Users-shantanu-dev-greplost/36f19a14-277a-4aa9-91cc-30733a56ea7b/scratchpad; echo "edges=$(grep -c '"from":"go/pubsub/batcher.go#batcher.process"' $S/gate217-anyq/.greplost/graph/calls.jsonl)"
   EXPECT: edges=1
-  EVIDENCE: pending
+  EVIDENCE: edges=1
 
-- [ ] G16: two builds of that repo produce byte-identical artifacts, `meta.fieldTypes` included
+- [x] G16: two builds of that repo produce byte-identical artifacts, `meta.fieldTypes` included
   CHECK: S=/private/tmp/claude-501/-Users-shantanu-dev-greplost/36f19a14-277a-4aa9-91cc-30733a56ea7b/scratchpad; rm -rf $S/det217-a $S/det217-b && cp -R /Users/shantanu/.claude/jobs/36f19a14/tmp/anyq $S/det217-a && cp -R /Users/shantanu/.claude/jobs/36f19a14/tmp/anyq $S/det217-b && rm -rf $S/det217-a/.greplost $S/det217-b/.greplost && FORCE_COLOR=0 bun packages/cli/src/main.ts init --no-hooks --root $S/det217-a >/dev/null && FORCE_COLOR=0 bun packages/cli/src/main.ts init --no-hooks --root $S/det217-b >/dev/null && diff -r --exclude=.state.json --exclude=cache $S/det217-a/.greplost $S/det217-b/.greplost && echo "byte identical"
   EXPECT: byte identical
-  EVIDENCE: pending
+  EVIDENCE: byte identical
 
-- [ ] G17: the source files this leaf owns are under 500 lines, `resolve/go.ts` excepted above
+- [x] G17: the source files this leaf owns are under 500 lines, `resolve/go.ts` excepted above
   CHECK: for f in packages/core/src/extract/go.ts packages/core/src/extract/go-types.ts; do wc -l < $f; done | awk '$1 >= 500 {bad = 1} END {print (bad ? "OVER 500" : "under 500")}'
   EXPECT: under 500
-  EVIDENCE: pending
+  EVIDENCE: under 500
 
-- [ ] G18: no NUL byte reached any file this leaf wrote
+- [x] G18: no NUL byte reached any file this leaf wrote
   CHECK: for f in packages/core/src/extract/go.ts packages/core/src/extract/go-types.ts packages/core/src/resolve/go.ts packages/core/test/extract-go.test.ts gates/leaf-2.17.md; do perl -0777 -ne 'exit(/\0/ ? 1 : 0)' $f || exit 1; done; echo "no NUL in 5 files"
   EXPECT: no NUL in 5 files
-  EVIDENCE: pending
+  EVIDENCE: no NUL in 5 files
