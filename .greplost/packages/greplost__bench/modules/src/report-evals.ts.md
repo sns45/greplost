@@ -6,7 +6,7 @@
 
 **Package:** `@greplost/bench` ([map](../../MAP.md))
 
-**Exports:** `bench3Section(payload: Payload | null, assetsRel: string): EvalSection`, `eval1Section(payload: Payload | null, assetsRel = "docs/assets"): EvalSection`, `eval2Section(payload: Payload | null): EvalSection`, `eval4Section(payload: Payload | null, assetsRel: string): EvalSection`, `eval5Section(payload: Payload | null): EvalSection`, `mapqualitySection(payload: Payload | null): EvalSection`
+**Exports:** `bench3Section(payloads: readonly Payload[], assetsRel: string): EvalSection`, `eval1Section(payload: Payload | null, assetsRel = "docs/assets"): EvalSection`, `eval2Section(payload: Payload | null): EvalSection`, `eval4Section(payload: Payload | null, assetsRel: string): EvalSection`, `eval5Section(payload: Payload | null): EvalSection`, `mapqualitySection(payload: Payload | null): EvalSection`
 
 **Imports:** [`./charts.ts`](charts.ts.md) (BoxDatum, ChartSpec, boxChart, groupedBarChart, lineChart, mermaidXy), [`./report-charts.ts`](report-charts.ts.md) (structuralAccuracyChart), [`./results-md.ts`](results-md.ts.md) (EvalRow, EvalSection, NOT_APPLICABLE, RunTarget, TRUTH_NOTE_GLOSS, emptySection), [`./report-payload.ts`](report-payload.ts.md) (ConditionStats, Payload, agentCategories, arr, firstNum, firstStr, fmt, num, provenanceOf, rec, replayF1, replayF2, runFor, scenariosOf, str, targetOf)
 
@@ -22,11 +22,11 @@
 - `function counts(score: Record<string, unknown> | null): string`  L212-217
 - `function eval2Section(payload: Payload | null): EvalSection`  L223-278
 - `function runOfScenario(scenario: { repo: string | null; files: number | null } | undefined): { run?: RunTarget }`  L285-289
-- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection`  L291-407
-- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection`  L413-500
-- `function meanOver( categories: Map<string, Map<string, ConditionStats>>, condition: string, pick: (stats: ConditionStats) => number | null, ): number | null`  L502-514
-- `function pct(ratio: number | null): string | null`  L516-518
-- `function eval5Section(payload: Payload | null): EvalSection`  L524-552
-- `function mapqualitySection(payload: Payload | null): EvalSection`  L554-612
+- `function bench3Section(payloads: readonly Payload[], assetsRel: string): EvalSection`  L304-436
+- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection`  L442-529
+- `function meanOver( categories: Map<string, Map<string, ConditionStats>>, condition: string, pick: (stats: ConditionStats) => number | null, ): number | null`  L531-543
+- `function pct(ratio: number | null): string | null`  L545-547
+- `function eval5Section(payload: Payload | null): EvalSection`  L553-581
+- `function mapqualitySection(payload: Payload | null): EvalSection`  L583-641
 
 **Calls:** `boxChart` → [`bench/src/charts.ts#boxChart`](charts.ts.md) (high), `groupedBarChart` → [`bench/src/charts.ts#groupedBarChart`](charts.ts.md) (high), `lineChart` → [`bench/src/charts.ts#lineChart`](charts.ts.md) (high), `mermaidXy` → [`bench/src/charts.ts#mermaidXy`](charts.ts.md) (high), `structuralAccuracyChart` → [`bench/src/report-charts.ts#structuralAccuracyChart`](report-charts.ts.md) (high), `callRow` → [`bench/src/report-evals.ts#callRow`](report-evals.ts.md) (high), `counts` → [`bench/src/report-evals.ts#counts`](report-evals.ts.md) (high), `meanOver` → [`bench/src/report-evals.ts#meanOver`](report-evals.ts.md) (high), `pct` → [`bench/src/report-evals.ts#pct`](report-evals.ts.md) (high), `runOfScenario` → [`bench/src/report-evals.ts#runOfScenario`](report-evals.ts.md) (high), `scoreRow` → [`bench/src/report-evals.ts#scoreRow`](report-evals.ts.md) (high), `agentCategories` → [`bench/src/report-payload.ts#agentCategories`](report-payload.ts.md) (high), `arr` → [`bench/src/report-payload.ts#arr`](report-payload.ts.md) (high), `firstNum` → [`bench/src/report-payload.ts#firstNum`](report-payload.ts.md) (high), `firstStr` → [`bench/src/report-payload.ts#firstStr`](report-payload.ts.md) (high), `fmt` → [`bench/src/report-payload.ts#fmt`](report-payload.ts.md) (high), `num` → [`bench/src/report-payload.ts#num`](report-payload.ts.md) (high), `provenanceOf` → [`bench/src/report-payload.ts#provenanceOf`](report-payload.ts.md) (high), `rec` → [`bench/src/report-payload.ts#rec`](report-payload.ts.md) (high), `replayF1` → [`bench/src/report-payload.ts#replayF1`](report-payload.ts.md) (high), `replayF2` → [`bench/src/report-payload.ts#replayF2`](report-payload.ts.md) (high), `runFor` → [`bench/src/report-payload.ts#runFor`](report-payload.ts.md) (high), `scenariosOf` → [`bench/src/report-payload.ts#scenariosOf`](report-payload.ts.md) (high), `targetOf` → [`bench/src/report-payload.ts#targetOf`](report-payload.ts.md) (high), `emptySection` → [`bench/src/results-md.ts#emptySection`](results-md.ts.md) (high)

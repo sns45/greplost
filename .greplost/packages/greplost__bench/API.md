@@ -280,10 +280,10 @@
 
 - `function eval1Section(payload: Payload | null, assetsRel = "docs/assets"): EvalSection` L49-157
 - `function eval2Section(payload: Payload | null): EvalSection` L223-278
-- `function bench3Section(payload: Payload | null, assetsRel: string): EvalSection` L291-407
-- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection` L413-500
-- `function eval5Section(payload: Payload | null): EvalSection` L524-552
-- `function mapqualitySection(payload: Payload | null): EvalSection` L554-612
+- `function bench3Section(payloads: readonly Payload[], assetsRel: string): EvalSection` L304-436
+- `function eval4Section(payload: Payload | null, assetsRel: string): EvalSection` L442-529
+- `function eval5Section(payload: Payload | null): EvalSection` L553-581
+- `function mapqualitySection(payload: Payload | null): EvalSection` L583-641
 
 ## bench/src/report-payload.ts
 
@@ -328,9 +328,9 @@
 - `const PAYLOAD_INDEX = "INDEX.json"` L74-74
 - `interface BuildOptions` L76-85
 - `async function run(args: string[]): Promise<number>` L101-129
-- `function buildModel(options: BuildOptions = {}): ReportModel` L178-341
-- `interface PayloadIndexFile` L348-354
-- `function readPayloadIndex(dir?: string): PayloadIndexFile | null` L357-374
+- `function buildModel(options: BuildOptions = {}): ReportModel` L178-347
+- `interface PayloadIndexFile` L354-360
+- `function readPayloadIndex(dir?: string): PayloadIndexFile | null` L363-380
 
 ## bench/src/results-io.ts
 

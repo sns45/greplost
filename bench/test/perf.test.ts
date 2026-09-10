@@ -309,18 +309,62 @@ describe("runner speed factor", () => {
 
   test("RESULTS.md states the scaling rule in its perf section", () => {
     const section = bench3Section(
-      {
-        data: {
-          repos: [{ name: "anyq", files: 148, tier: "S", scenarios: [{ scenario: "full", ms: { p50: 203, p95: 216 } }] }],
+      [
+        {
+          data: {
+            repos: [
+              { name: "anyq", files: 148, tier: "S", scenarios: [{ scenario: "full", ms: { p50: 203, p95: 216 } }] },
+            ],
+          },
+          file: "perf-2026-09-10-abcdef1.json",
         },
-        file: "perf-2026-09-10-abcdef1.json",
-      },
+      ],
       "docs/assets",
     );
     const notes = section.notes.join("\n");
     expect(notes).toContain("max(1, measured / reference)");
     expect(notes).toContain("bench/src/perf.ts");
     expect(notes).toContain("4");
+  });
+
+  test("the perf section merges the payloads the index pins, newest first", () => {
+    const payloadFor = (file: string, repo: string, p50: number): { data: Record<string, unknown>; file: string } => ({
+      data: {
+        date: file.slice(5, 15),
+        greplostSha: file.slice(16, 23),
+        repos: [{ name: repo, files: 148, tier: "S", scenarios: [{ scenario: "full", ms: { p50, p95: p50 } }] }],
+      },
+      file,
+    });
+    // Oldest first in, as the index pins them.
+    const section = bench3Section(
+      [payloadFor("perf-2026-09-10-aaaaaaa.json", "anyq", 203), payloadFor("perf-2026-09-10-bbbbbbb.json", "gin", 135)],
+      "docs/assets",
+    );
+    const everyScenario = section.groups.find((group) => group.name === "every scenario");
+    // Both repos are in the table, sorted by name whatever order they arrived in.
+    expect(everyScenario?.rows.map((row) => row.metric)).toEqual(["anyq full", "gin full"]);
+    // The headline rows come from the first repo by name, as they did when one
+    // payload carried both.
+    expect(section.groups[0]?.rows[0]?.detail).toContain("anyq full");
+    // The newest payload names the provenance, and the note says what was merged.
+    expect(section.provenance).toContain("bbbbbbb");
+    const merged = section.notes.join("\n");
+    expect(merged).toContain("merge 2 perf payloads, newest first");
+    expect(merged).toContain("`perf-2026-09-10-bbbbbbb.json` (gin)");
+    expect(merged).toContain("`perf-2026-09-10-aaaaaaa.json` (anyq)");
+
+    // A repo measured twice keeps the newest numbers and appears once.
+    const twice = bench3Section(
+      [payloadFor("perf-2026-09-09-aaaaaaa.json", "anyq", 900), payloadFor("perf-2026-09-10-bbbbbbb.json", "anyq", 203)],
+      "docs/assets",
+    );
+    const rows = twice.groups.find((group) => group.name === "every scenario")?.rows ?? [];
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.measured).toContain("203");
+
+    // No payload at all is the empty section, not a crash.
+    expect(bench3Section([], "docs/assets").ran).toBe(false);
   });
 });
 
