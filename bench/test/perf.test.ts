@@ -14,15 +14,24 @@ import path from "node:path";
 
 import { peakRssBytes } from "../src/perf-child.ts";
 import {
+  MAX_RUNNER_FACTOR,
+  RUNNER_ITERATIONS,
+  RUNNER_REFERENCE_MS,
   SCENARIOS,
+  gateMisses,
   missedTargets,
   perf,
   regressedScenarios,
+  reportLines,
   run,
+  runnerFactor,
+  scaleTargets,
   summarize,
   targetsFor,
   type RepoPerf,
+  type RunnerSpeed,
 } from "../src/perf.ts";
+import { bench3Section } from "../src/report-evals.ts";
 
 const temporaries: string[] = [];
 
@@ -151,7 +160,14 @@ describe("perf report", () => {
   });
 
   test("the fixture run reports p50, p95 and peak RSS per scenario", async () => {
-    const { repos } = await perf({ fixture: true, iterations: 2, warmups: 0 });
+    const { repos, runner } = await perf({ fixture: true, iterations: 2, warmups: 0, runnerIterations: 2 });
+    // The runner factor is measured, not assumed: two real builds of the fixture
+    // through the same child the scenarios use, against the recorded reference.
+    expect(runner.iterations).toBe(2);
+    expect(runner.measuredMs).toBeGreaterThan(0);
+    expect(runner.referenceMs).toBe(RUNNER_REFERENCE_MS);
+    expect(runner.factor).toBeGreaterThanOrEqual(1);
+    expect(runner.factor).toBe(runnerFactor(runner.measuredMs, RUNNER_REFERENCE_MS));
     expect(repos).toHaveLength(1);
     const repo = repos[0] as RepoPerf;
     expect(repo.name).toBe("tiny-ts");
@@ -174,7 +190,7 @@ describe("perf report", () => {
   }, 300_000);
 
   test("every timed iteration does the work its scenario claims", async () => {
-    const { repos } = await perf({ fixture: true, iterations: 2, warmups: 0 });
+    const { repos } = await perf({ fixture: true, iterations: 2, warmups: 0, runnerIterations: 1 });
     const scenarios = new Map((repos[0] as RepoPerf).scenarios.map((s) => [s.scenario, s]));
     const detailOf = (name: string): Record<string, number> => scenarios.get(name)?.detail ?? {};
 
@@ -199,17 +215,132 @@ describe("perf report", () => {
   }, 300_000);
 });
 
+describe("runner speed factor", () => {
+  const speedOf = (measuredMs: number): RunnerSpeed => ({
+    measuredMs,
+    referenceMs: 100,
+    iterations: RUNNER_ITERATIONS,
+    factor: runnerFactor(measuredMs, 100),
+  });
+
+  test("the factor is 1 when the runner is at or faster than the reference", () => {
+    expect(runnerFactor(100, 100)).toBe(1);
+    expect(runnerFactor(50, 100)).toBe(1);
+    expect(runnerFactor(1, 100)).toBe(1);
+    // A reference or a measurement that is not a positive number says nothing
+    // about the machine, so it must not scale a budget either way.
+    expect(runnerFactor(0, 100)).toBe(1);
+    expect(runnerFactor(100, 0)).toBe(1);
+    expect(runnerFactor(Number.NaN, 100)).toBe(1);
+  });
+
+  test("the factor is the ratio when the runner is slower", () => {
+    expect(runnerFactor(150, 100)).toBe(1.5);
+    expect(runnerFactor(400, 100)).toBe(4);
+    expect(runnerFactor(1000, 100)).toBe(10);
+    // Three decimals, so the number in the report is the number in the payload.
+    expect(runnerFactor(1234, 1000)).toBe(1.234);
+  });
+
+  test("the budgets scale by the factor and nothing else", () => {
+    expect(scaleTargets({ p1Ms: 1000, p2Ms: 500 }, 1)).toEqual({ p1Ms: 1000, p2Ms: 500 });
+    expect(scaleTargets({ p1Ms: 1000, p2Ms: 500 }, 2.5)).toEqual({ p1Ms: 2500, p2Ms: 1250 });
+    expect(scaleTargets({ p1Ms: 10_000, p2Ms: 1000 }, 1.5)).toEqual({ p1Ms: 15_000, p2Ms: 1500 });
+  });
+
+  test("a scaled budget is what the absolute targets are gated against", () => {
+    // 1400 ms of full build misses a 1000 ms budget and clears a 2000 ms one.
+    expect(missedTargets([repoWith("anyq", "full", 1400)])).toEqual(["P1"]);
+    expect(missedTargets([repoWith("anyq", "full", 1400)], 1)).toEqual(["P1"]);
+    expect(missedTargets([repoWith("anyq", "full", 1400)], 2)).toEqual([]);
+    // The same for P2, which is gated on p95.
+    expect(missedTargets([repoWith("anyq", "incremental-1", 100, 700)], 1)).toEqual(["P2"]);
+    expect(missedTargets([repoWith("anyq", "incremental-1", 100, 700)], 2)).toEqual([]);
+    // Exactly at the scaled budget passes.
+    expect(missedTargets([repoWith("anyq", "full", 1500)], 1.5)).toEqual([]);
+  });
+
+  test("a factor above the cap fails on its own, whatever the scaled budgets say", () => {
+    const fast = speedOf(100);
+    const slow = speedOf(100 * MAX_RUNNER_FACTOR + 1);
+    expect(slow.factor).toBeGreaterThan(MAX_RUNNER_FACTOR);
+
+    // A machine that slow says nothing about greplost, so the target and the
+    // regression comparisons are dropped rather than reported beside it.
+    expect(gateMisses([repoWith("anyq", "full", 9_000_000)], slow, ["anyq/full"])).toEqual(["runner"]);
+    expect(gateMisses([repoWith("anyq", "full", 100)], slow, [])).toEqual(["runner"]);
+    // At the cap exactly, the run still counts.
+    expect(gateMisses([repoWith("anyq", "full", 100)], speedOf(100 * MAX_RUNNER_FACTOR), [])).toEqual([]);
+    // Inside the cap the misses are the target ids, plus the regression rule.
+    expect(gateMisses([repoWith("anyq", "full", 1400)], fast, [])).toEqual(["P1"]);
+    expect(gateMisses([repoWith("anyq", "full", 100)], fast, ["anyq/full"])).toEqual(["regression"]);
+    expect(gateMisses([repoWith("anyq", "full", 1400)], fast, ["anyq/full"])).toEqual(["P1", "regression"]);
+  });
+
+  test("the report prints the raw budget, the factor, the reference, the scaled budget and the measurement", () => {
+    const lines = reportLines([repoWith("anyq", "full", 1400)], speedOf(200));
+    const text = lines.join("\n");
+    // The factor line: what was measured, over how many builds, against what.
+    expect(text).toContain("runner factor 2.00");
+    expect(text).toContain("median 200ms");
+    expect(text).toContain(`over ${RUNNER_ITERATIONS} builds`);
+    expect(text).toContain("reference 100ms");
+    expect(text).toContain("fail above 4.00");
+    // The budget cells: the scaled bound a repo is held to, and the raw one it came from.
+    expect(text).toContain("<=2000ms (raw 1000ms x 2.00)");
+    expect(text).toContain("<=1000ms (raw 500ms x 2.00)");
+    // P3 is reported rather than gated, so nothing scales it.
+    expect(text).toContain("<=500MB at 10k files");
+    // The measurement itself is still there beside the budget.
+    expect(text).toContain("1400ms");
+
+    // A dry run has measured no machine, and must not print a factor it invented.
+    const dry = reportLines([repoWith("anyq", "full", 0)], null).join("\n");
+    expect(dry).toContain("runner factor not measured");
+    expect(dry).toContain("<=1000ms");
+    expect(dry).not.toContain("raw 1000ms x");
+  });
+
+  test("the reference constant is a positive number of milliseconds", () => {
+    expect(RUNNER_REFERENCE_MS).toBeGreaterThan(0);
+    expect(RUNNER_ITERATIONS).toBeGreaterThan(0);
+    expect(MAX_RUNNER_FACTOR).toBe(4);
+  });
+
+  test("RESULTS.md states the scaling rule in its perf section", () => {
+    const section = bench3Section(
+      {
+        data: {
+          repos: [{ name: "anyq", files: 148, tier: "S", scenarios: [{ scenario: "full", ms: { p50: 203, p95: 216 } }] }],
+        },
+        file: "perf-2026-09-10-abcdef1.json",
+      },
+      "docs/assets",
+    );
+    const notes = section.notes.join("\n");
+    expect(notes).toContain("max(1, measured / reference)");
+    expect(notes).toContain("bench/src/perf.ts");
+    expect(notes).toContain("4");
+  });
+});
+
 describe("perf run", () => {
   test("--fixture --gate passes the absolute targets and writes a result", async () => {
     const results = scratch("results");
     const previous = process.env["GREPLOST_BENCH_RESULTS_DIR"];
     process.env["GREPLOST_BENCH_RESULTS_DIR"] = results;
+    // The runner factor is supplied rather than measured here, and set to the
+    // reference itself. What this test is about is the gate and the payload, and
+    // a machine slow enough to fail on the runner would otherwise turn that into
+    // a red unit test rather than the honest `GATE FAIL (runner)` it is.
+    process.env["GREPLOST_PERF_RUNNER_MS"] = String(RUNNER_REFERENCE_MS);
     try {
       const code = await run(["--fixture", "--gate", "--iterations", "2", "--warmups", "0"]);
       expect(code).toBe(0);
     } finally {
       if (previous === undefined) delete process.env["GREPLOST_BENCH_RESULTS_DIR"];
       else process.env["GREPLOST_BENCH_RESULTS_DIR"] = previous;
+      delete process.env["GREPLOST_PERF_RUNNER_MS"];
     }
 
     const files = readdirSync(results).filter((name) => name.startsWith("perf-"));
@@ -231,6 +362,17 @@ describe("perf run", () => {
       expect(scenario["peakRssBytes"]).toBeDefined();
     }
     expect((payload["gate"] as Record<string, unknown>)["passed"]).toBe(true);
+
+    // The runner factor, the reference and the measurement behind it travel with
+    // the run, beside both the raw and the scaled budgets.
+    const runner = payload["runner"] as Record<string, unknown>;
+    expect(runner["referenceMs"]).toBe(RUNNER_REFERENCE_MS);
+    expect(runner["measuredMs"]).toBe(RUNNER_REFERENCE_MS);
+    expect(runner["factor"]).toBe(1);
+    expect(runner["iterations"]).toBeDefined();
+    expect(payload["maxRunnerFactor"]).toBe(MAX_RUNNER_FACTOR);
+    expect(payload["targets"]).toEqual({ "tiny-ts": { p1Ms: 1000, p2Ms: 500 } });
+    expect(payload["scaledTargets"]).toEqual({ "tiny-ts": { p1Ms: 1000, p2Ms: 500 } });
   }, 300_000);
 
   test("--dry-run produces the output shape without measuring", async () => {
