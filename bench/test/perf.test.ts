@@ -373,18 +373,17 @@ describe("perf run", () => {
     const results = scratch("results");
     const previous = process.env["GREPLOST_BENCH_RESULTS_DIR"];
     process.env["GREPLOST_BENCH_RESULTS_DIR"] = results;
-    // The runner factor is supplied rather than measured here, and set to the
-    // reference itself. What this test is about is the gate and the payload, and
-    // a machine slow enough to fail on the runner would otherwise turn that into
-    // a red unit test rather than the honest `GATE FAIL (runner)` it is.
-    process.env["GREPLOST_PERF_RUNNER_MS"] = String(RUNNER_REFERENCE_MS);
+    // The factor is measured for real here, and that is what makes this test
+    // survive a loaded machine: the whole bench suite runs its files in
+    // parallel, so the twelve-file fixture can take longer than the 500 ms P2
+    // budget, and the run is held to a budget scaled by exactly how much slower
+    // the machine was when it measured itself.
     try {
       const code = await run(["--fixture", "--gate", "--iterations", "2", "--warmups", "0"]);
       expect(code).toBe(0);
     } finally {
       if (previous === undefined) delete process.env["GREPLOST_BENCH_RESULTS_DIR"];
       else process.env["GREPLOST_BENCH_RESULTS_DIR"] = previous;
-      delete process.env["GREPLOST_PERF_RUNNER_MS"];
     }
 
     const files = readdirSync(results).filter((name) => name.startsWith("perf-"));
@@ -410,13 +409,40 @@ describe("perf run", () => {
     // The runner factor, the reference and the measurement behind it travel with
     // the run, beside both the raw and the scaled budgets.
     const runner = payload["runner"] as Record<string, unknown>;
+    const factor = runner["factor"] as number;
     expect(runner["referenceMs"]).toBe(RUNNER_REFERENCE_MS);
-    expect(runner["measuredMs"]).toBe(RUNNER_REFERENCE_MS);
-    expect(runner["factor"]).toBe(1);
-    expect(runner["iterations"]).toBeDefined();
+    expect(runner["measuredMs"]).toBeGreaterThan(0);
+    expect(runner["iterations"]).toBe(RUNNER_ITERATIONS);
+    expect(factor).toBe(runnerFactor(runner["measuredMs"] as number, RUNNER_REFERENCE_MS));
     expect(payload["maxRunnerFactor"]).toBe(MAX_RUNNER_FACTOR);
     expect(payload["targets"]).toEqual({ "tiny-ts": { p1Ms: 1000, p2Ms: 500 } });
-    expect(payload["scaledTargets"]).toEqual({ "tiny-ts": { p1Ms: 1000, p2Ms: 500 } });
+    expect(payload["scaledTargets"]).toEqual({ "tiny-ts": scaleTargets({ p1Ms: 1000, p2Ms: 500 }, factor) });
+  }, 300_000);
+
+  test("a runner past the cap is GATE FAIL (runner), and the payload says so", async () => {
+    const results = scratch("cap-results");
+    const previous = process.env["GREPLOST_BENCH_RESULTS_DIR"];
+    process.env["GREPLOST_BENCH_RESULTS_DIR"] = results;
+    // The one place the supplied median earns its keep: a machine five times
+    // slower than the reference is not something a test can arrange, and the cap
+    // is the whole point of measuring the runner at all.
+    process.env["GREPLOST_PERF_RUNNER_MS"] = String(RUNNER_REFERENCE_MS * 5);
+    let code: number;
+    try {
+      code = await run(["--fixture", "--gate", "--iterations", "1", "--warmups", "0"]);
+    } finally {
+      if (previous === undefined) delete process.env["GREPLOST_BENCH_RESULTS_DIR"];
+      else process.env["GREPLOST_BENCH_RESULTS_DIR"] = previous;
+      delete process.env["GREPLOST_PERF_RUNNER_MS"];
+    }
+    expect(code).toBe(1);
+
+    const files = readdirSync(results).filter((name) => name.startsWith("perf-"));
+    const payload = JSON.parse(readFileSync(path.join(results, files[0] as string), "utf8")) as Record<string, unknown>;
+    expect((payload["runner"] as Record<string, unknown>)["factor"]).toBe(5);
+    // `runner` alone: the scaled budgets and the p50 comparison are both noise on
+    // a machine that slow, so nothing else is claimed about the run.
+    expect(payload["gate"]).toEqual({ passed: false, missed: ["runner"] });
   }, 300_000);
 
   test("--dry-run produces the output shape without measuring", async () => {
