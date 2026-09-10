@@ -24,7 +24,7 @@ greplost is not a search tool. It is the map you read so you do not have to sear
 
 *On this corpus no tool decays once its own hook is installed: greplost stays at 1.000, graphify and code-review-graph hold their (lower) starting accuracy. The gap is coverage, not staleness; the decay that appears when no sync is installed is the companion chart in [bench/RESULTS.md](bench/RESULTS.md). Every number behind both charts is there, with the losses.*
 
-Status: pre-release 0.1.0. Design: [docs/greplost-tech-spec.md](docs/greplost-tech-spec.md).
+Status: pre-release 0.1.1. Design: [docs/greplost-tech-spec.md](docs/greplost-tech-spec.md).
 
 
 <details>
