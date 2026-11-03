@@ -131,12 +131,12 @@ regression rule and now the runner factor, none of which reads better split acro
 
 - [x] G11: the anyq perf gate prints the factor, the reference and the scaled budget, and passes
   CHECK: FORCE_COLOR=0 bun run bench:perf --repo anyq --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g' | grep -E "runner factor|raw 1000ms|GATE"
-  EXPECT: /^perf: runner factor \d+\.\d\d \(median \d+ms over 3 builds of fixtures\/tiny-ts, reference \d+ms, budgets scale by max\(1, median \/ reference\), fail above 8\.00\)$\n.*raw 1000ms x \d+\.\d\d.*$\n^perf: GATE PASS$/m
+  EXPECT: /^perf: runner factor \d+\.\d\d \(median \d+ms over 3 builds of 80 copies of fixtures\/tiny-ts, reference \d+ms, budgets scale by max\(1, median \/ reference\), fail above 8\.00\)$\n.*raw 1000ms x \d+\.\d\d.*$\n^perf: GATE PASS$/m
   EVIDENCE: P1  full build (p50)          <=1000ms (raw 1000ms x 1.00)  458ms | perf: GATE PASS
 
 - [x] G12: the gin perf gate does the same
   CHECK: FORCE_COLOR=0 bun run bench:perf --repo gin --gate 2>&1 | perl -pe 's/\e\[[0-9;]*m//g' | grep -E "runner factor|raw 1000ms|GATE"
-  EXPECT: /^perf: runner factor \d+\.\d\d \(median \d+ms over 3 builds of fixtures\/tiny-ts, reference \d+ms, budgets scale by max\(1, median \/ reference\), fail above 8\.00\)$\n.*raw 1000ms x \d+\.\d\d.*$\n^perf: GATE PASS$/m
+  EXPECT: /^perf: runner factor \d+\.\d\d \(median \d+ms over 3 builds of 80 copies of fixtures\/tiny-ts, reference \d+ms, budgets scale by max\(1, median \/ reference\), fail above 8\.00\)$\n.*raw 1000ms x \d+\.\d\d.*$\n^perf: GATE PASS$/m
   EVIDENCE: P1  full build (p50)          <=1000ms (raw 1000ms x 1.00)  218ms | perf: GATE PASS
 
 - [x] G13: both CI perf steps gate on every event, and the workflow still parses

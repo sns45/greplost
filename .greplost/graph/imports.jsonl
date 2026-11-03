@@ -81,7 +81,7 @@
 {"confidence":"high","from":"bench/src/perf.ts","importKind":"static","kind":"import","specifier":"./replay.ts","symbols":["configFor","writeConfig"],"to":"bench/src/replay.ts"}
 {"confidence":"high","from":"bench/src/perf.ts","importKind":"static","kind":"import","specifier":"./results-io.ts","symbols":["orderedResults","resultsDir","writeResult"],"to":"bench/src/results-io.ts"}
 {"confidence":"high","from":"bench/src/perf.ts","importKind":"static","kind":"import","specifier":"node:child_process","symbols":["spawnSync"],"to":"ext:node:child_process"}
-{"confidence":"high","from":"bench/src/perf.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","mkdirSync","mkdtempSync","readFileSync","renameSync","rmSync","writeFileSync"],"to":"ext:node:fs"}
+{"confidence":"high","from":"bench/src/perf.ts","importKind":"static","kind":"import","specifier":"node:fs","symbols":["existsSync","mkdirSync","mkdtempSync","readFileSync","readdirSync","renameSync","rmSync","writeFileSync"],"to":"ext:node:fs"}
 {"confidence":"high","from":"bench/src/perf.ts","importKind":"static","kind":"import","specifier":"node:os","symbols":["tmpdir"],"to":"ext:node:os"}
 {"confidence":"high","from":"bench/src/perf.ts","importKind":"static","kind":"import","specifier":"node:path","symbols":["default"],"to":"ext:node:path"}
 {"confidence":"high","from":"bench/src/perf.ts","importKind":"static","kind":"import","specifier":"node:perf_hooks","symbols":["performance"],"to":"ext:node:perf_hooks"}

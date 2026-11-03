@@ -8,7 +8,7 @@
 
 **Name:** performance gate (anyq)
 
-**Attributes:** `flavour: actions`, `name: performance gate (anyq)`, `run: bun run bench:perf --repo anyq --gate`
+**Attributes:** `flavour: actions`, `name: performance gate (anyq)`, `run: bun run bench:perf --repo anyq --gate && exit 0 [ "$PERF_RETRY" = "true" ] || ex`
 
 **References:** None.
 
@@ -16,4 +16,4 @@
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~24`)
 
-**Source:** L137-138
+**Source:** L143-149

@@ -129,12 +129,28 @@ jobs:
       # They used to be advisory off the nightly schedule, because the budgets are
       # wall clock and a shared runner is slower than the machine they were
       # written on. Each run now measures this runner first, as the median of
-      # three fixtures/tiny-ts builds against a reference recorded in
-      # bench/src/perf.ts, and holds the run to a budget scaled by
-      # max(1, median / reference); the factor, the reference and both budgets are
-      # printed. A runner more than four times slower than the reference fails as
-      # GATE FAIL (runner) rather than pretending to measure greplost.
+      # three builds of RUNNER_COPIES copies of fixtures/tiny-ts against a
+      # reference recorded in bench/src/perf.ts, and holds the run to a budget
+      # scaled by max(1, median / reference); the factor, the reference and both
+      # budgets are printed. A runner more than eight times slower than the
+      # reference fails as GATE FAIL (runner) rather than pretending to measure
+      # greplost.
+      #
+      # On the nightly schedule only, a failed gate is measured once more before
+      # the step fails (2026-11-03): nobody is waiting on that run, and one noisy
+      # neighbour on a shared runner should not page anyone. Pushes and pull
+      # requests still gate on the first measurement.
       - name: performance gate (anyq)
-        run: bun run bench:perf --repo anyq --gate
+        env: { PERF_RETRY: "${{ github.event_name == 'schedule' }}" }
+        run: |
+          bun run bench:perf --repo anyq --gate && exit 0
+          [ "$PERF_RETRY" = "true" ] || exit 1
+          echo "::warning::perf gate (anyq) failed on the nightly run; measuring once more"
+          bun run bench:perf --repo anyq --gate
       - name: performance gate (gin)
-        run: bun run bench:perf --repo gin --gate
+        env: { PERF_RETRY: "${{ github.event_name == 'schedule' }}" }
+        run: |
+          bun run bench:perf --repo gin --gate && exit 0
+          [ "$PERF_RETRY" = "true" ] || exit 1
+          echo "::warning::perf gate (gin) failed on the nightly run; measuring once more"
+          bun run bench:perf --repo gin --gate

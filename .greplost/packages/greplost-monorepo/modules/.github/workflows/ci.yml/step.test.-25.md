@@ -8,7 +8,7 @@
 
 **Name:** performance gate (gin)
 
-**Attributes:** `flavour: actions`, `name: performance gate (gin)`, `run: bun run bench:perf --repo gin --gate`
+**Attributes:** `flavour: actions`, `name: performance gate (gin)`, `run: bun run bench:perf --repo gin --gate && exit 0 [ "$PERF_RETRY" = "true" ] || exi`
 
 **References:** None.
 
@@ -16,4 +16,4 @@
 
 **Blast radius:** 0 node(s) (`greplost impact .github/workflows/ci.yml#step.test.~25`)
 
-**Source:** L139-140
+**Source:** L150-156

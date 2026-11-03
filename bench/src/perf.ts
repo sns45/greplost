@@ -49,7 +49,7 @@
  * latency an editor hook pays. (Ruling, leaf 1.5.5.)
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
@@ -124,8 +124,8 @@ const EPSILON = 1e-9;
  * P1 and P2 are wall clock, so a run of them says as much about the machine as
  * about greplost, and a shared CI runner used to be either a false failure or a
  * gate switched off. Every run now measures the machine first, in the same
- * process and before the timed scenarios: it builds `fixtures/tiny-ts`
- * `RUNNER_ITERATIONS` times through the same child the scenarios are measured
+ * process and before the timed scenarios: it builds `RUNNER_COPIES` copies of
+ * `fixtures/tiny-ts` `RUNNER_ITERATIONS` times through the same child the scenarios are measured
  * in, takes the median, and multiplies the absolute budgets by
  * `max(1, median / RUNNER_REFERENCE_MS)`. A machine at or faster than the
  * reference is held to the written budget; a slower one is held to a budget
@@ -134,11 +134,12 @@ const EPSILON = 1e-9;
  * in the report instead of hidden inside a pass.
  *
  * This constant is data, not a target: what that machine measured on the day it
- * was recorded, which is why it carries a date. Measured 2026-09-10 on an Apple
- * M4 Max (16 cores, 128 GB, macOS 25.6.0, Bun 1.2.21, arm64), the machine
- * bench/RESULTS.md's perf numbers come from, as the median of eleven medians
- * taken back to back with nothing else running, which fell between 126 and
- * 145 ms.
+ * was recorded, which is why it carries a date. Re-recorded 2026-11-03 for the
+ * `RUNNER_COPIES` tree on the same Apple M4 Max (16 cores, 128 GB, Bun 1.2.21,
+ * arm64), the machine bench/RESULTS.md's perf numbers come from, as the median
+ * of eleven medians taken back to back with nothing else heavy running, which
+ * fell between 502 and 536 ms. (The single copy reference of 2026-09-10 was
+ * 135 ms, between 126 and 145.)
  *
  * **Take it on an idle machine.** The same measurement earlier that day ran
  * from 253 to 822 ms while an IDE held twelve of the sixteen cores and two
@@ -148,15 +149,41 @@ const EPSILON = 1e-9;
  * false failure this whole mechanism exists to stop. Re-record it the same way,
  * and say which machine and which day.
  */
-export const RUNNER_REFERENCE_MS = 135;
+export const RUNNER_REFERENCE_MS = 508;
 
 /**
  * Builds behind the median above, fixed so two runs measure the same thing.
- * Three of them, plus the checkout and the first index they need, is about a
- * second and a quarter of wall clock on the reference machine: long enough that
- * one slow build cannot decide the median, short enough to pay on every run.
+ * Three of them, plus the checkout and the first index they need, is a few
+ * seconds of wall clock on the reference machine: long enough that one slow
+ * build cannot decide the median, short enough to pay on every run.
  */
 export const RUNNER_ITERATIONS = 3;
+
+/**
+ * Copies of `fixtures/tiny-ts` the runner factor builds (2026-11-03).
+ *
+ * One copy is 12 TypeScript files, and its build time did not track how much
+ * slower a shared runner is on a repo the size of the gated ones. Over ten
+ * nightly `ubuntu-latest` runs, anyq's incremental-10 p50 sat at 3.6 to 3.8
+ * times the single-copy median, against 2.1 on the reference machine, so the
+ * scaled P2 budget fell short of anyq's real slowdown on every slow runner and
+ * the nightly gate failed four nights in seven with no code change. greplost is
+ * single threaded, so the gap is not core count. The full build ratio between a
+ * fast runner and the reference grows with repo size (tiny-ts 0.8, gin 1.3,
+ * anyq 1.5), which points at working set (anyq peaks near 260 MB), and a 12
+ * file, 4.6 KB build never touches it.
+ *
+ * Eighty copies is 960 files and about 370 KB of source, sized so the tree's
+ * full build on the reference machine (508 ms) is the same order as anyq's
+ * (483 ms on 2026-09-10, 340 ms on 2026-11-03): the factor is measured on work
+ * the size of what it scales. Every copy's files get
+ * a distinct header, because the parse cache is content addressed and identical
+ * copies would parse once.
+ */
+export const RUNNER_COPIES = 80;
+
+/** How the runner tree is named in the report. */
+const RUNNER_TREE = `${RUNNER_COPIES} copies of fixtures/tiny-ts`;
 
 /**
  * The factor above which the run fails on the runner rather than on greplost.
@@ -636,16 +663,9 @@ interface Target {
  */
 function prepareWorkingCopy(target: Target, dest: string): void {
   if (target.origin === "") {
-    const fixture = path.join(REPO_ROOT, "fixtures", "tiny-ts");
-    if (!existsSync(fixture)) throw new Error(`${SUITE}: fixture not found at ${fixture}`);
     mkdirSync(dest, { recursive: true });
-    copySourceTree(fixture, dest);
-    gitOrThrow(dest, ["init", "--quiet", "-b", "main"]);
-    gitOrThrow(dest, ["config", "user.name", "greplost bench"]);
-    gitOrThrow(dest, ["config", "user.email", "bench@greplost.invalid"]);
-    gitOrThrow(dest, ["config", "commit.gpgsign", "false"]);
-    gitOrThrow(dest, ["add", "-A"]);
-    gitOrThrow(dest, ["commit", "--quiet", "-m", "fixture"]);
+    copySourceTree(tinyTsFixture(), dest);
+    commitFixture(dest);
     return;
   }
   if (!existsSync(path.join(target.origin, ".git"))) {
@@ -654,6 +674,44 @@ function prepareWorkingCopy(target: Target, dest: string): void {
     );
   }
   cloneWorkingCopy(target.origin, dest, target.sha as string);
+}
+
+function tinyTsFixture(): string {
+  const fixture = path.join(REPO_ROOT, "fixtures", "tiny-ts");
+  if (!existsSync(fixture)) throw new Error(`${SUITE}: fixture not found at ${fixture}`);
+  return fixture;
+}
+
+/** A fresh git repository holding whatever `dest` already contains, committed once. */
+function commitFixture(dest: string): void {
+  gitOrThrow(dest, ["init", "--quiet", "-b", "main"]);
+  gitOrThrow(dest, ["config", "user.name", "greplost bench"]);
+  gitOrThrow(dest, ["config", "user.email", "bench@greplost.invalid"]);
+  gitOrThrow(dest, ["config", "commit.gpgsign", "false"]);
+  gitOrThrow(dest, ["add", "-A"]);
+  gitOrThrow(dest, ["commit", "--quiet", "-m", "fixture"]);
+}
+
+/**
+ * The tree the runner factor is measured on: `RUNNER_COPIES` copies of
+ * `fixtures/tiny-ts` side by side in one git repository. See `RUNNER_COPIES`.
+ */
+function prepareRunnerTree(dest: string): void {
+  const fixture = tinyTsFixture();
+  mkdirSync(dest, { recursive: true });
+  for (let i = 0; i < RUNNER_COPIES; i++) {
+    const copy = path.join(dest, `copy-${String(i).padStart(2, "0")}`);
+    copySourceTree(fixture, copy);
+    // The parse cache is content addressed, so identical copies would parse
+    // once and the tree would weigh one copy. A per-copy header makes every
+    // file distinct bytes without changing what it declares.
+    for (const file of readdirSync(copy, { recursive: true, encoding: "utf8" })) {
+      if (!file.endsWith(".ts")) continue;
+      const abs = path.join(copy, file);
+      writeFileSync(abs, `// runner copy ${i}\n${readFileSync(abs, "utf8")}`);
+    }
+  }
+  commitFixture(dest);
 }
 
 function readManifest(root: string): Manifest {
@@ -890,9 +948,8 @@ async function measureRunnerSpeed(iterations: number): Promise<RunnerSpeed> {
 
   const root = mkdtempSync(path.join(tmpdir(), "greplost-perf-runner-"));
   try {
-    const target = fixtureTarget();
-    prepareWorkingCopy(target, root);
-    writeConfig(root, target.config);
+    prepareRunnerTree(root);
+    writeConfig(root, undefined);
     await init(root, { hooks: false, quiet: true });
     const measured = runScenario("full", { root, manifest: readManifest(root), iterations, warmups: 0 });
     return {
@@ -916,7 +973,7 @@ export async function perf(options: PerfOptions = {}): Promise<PerfRun> {
   // Before the timed scenarios, and in the same process: a factor measured after
   // them, or in another run, would be a different machine state from the one the
   // numbers it scales were taken in.
-  if (!quiet) console.log(`${SUITE}: measuring runner speed (${runnerIterations} builds of fixtures/tiny-ts)`);
+  if (!quiet) console.log(`${SUITE}: measuring runner speed (${runnerIterations} builds of ${RUNNER_TREE})`);
   const runner = await measureRunnerSpeed(runnerIterations);
 
   const created: string[] = [];
@@ -992,7 +1049,7 @@ function printScenario(result: ScenarioResult): void {
  */
 export function runnerLine(speed: RunnerSpeed | null): string {
   if (speed === null) return `${SUITE}: runner factor not measured (dry run)`;
-  const over = speed.iterations === 0 ? "supplied" : `over ${speed.iterations} builds of fixtures/tiny-ts`;
+  const over = speed.iterations === 0 ? "supplied" : `over ${speed.iterations} builds of ${RUNNER_TREE}`;
   return (
     `${SUITE}: runner factor ${speed.factor.toFixed(2)} (median ${fmt(speed.measuredMs)} ${over}, ` +
     `reference ${fmt(speed.referenceMs)}, budgets scale by max(1, median / reference), ` +
